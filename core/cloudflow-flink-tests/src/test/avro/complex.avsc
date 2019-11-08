@@ -1,0 +1,20 @@
+{
+    "namespace": "cloudflow.flink.avro",
+    "type": "record",
+    "name": "Complex",
+    "fields":[
+         {
+            "name": "simple", "type": "cloudflow.flink.avro.Simple"
+         },
+         {
+            "name": "count", "type": "int"
+         },
+         {
+            "name": "range", "type": "double"
+         },
+         {
+            "name": "error", "type": "float"
+         }
+    ]
+}
+

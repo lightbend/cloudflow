@@ -1,0 +1,41 @@
+
+pipeline {
+    agent any
+    environment {
+        BINTRAY_CREDENTIAL_FILE = credentials('cinnamon-config-bintray-file')
+    }
+    stages {
+        stage('Build') {
+
+            steps {
+                echo "Compiling..."
+                echo "tool: ${tool name: 'sbt-1.1.0', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'}"
+                sh "cp -n $BINTRAY_CREDENTIAL_FILE ./project"
+                sh "${tool name: 'sbt-1.1.0', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'}/bin/sbt -mem 2048 -Dsbt.log.noformat=true clean compile"
+
+            }
+        }
+        stage('Unit Test') {
+            steps {
+                echo "Testing..."
+                sh "${tool name: 'sbt-1.1.0', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'}/bin/sbt -mem 2048 -Dsbt.log.noformat=true test"
+                junit "akkastream/target/test-reports/*.xml"
+                junit "akkastream-runner/target/test-reports/*.xml"
+                junit "spark-runner/target/test-reports/*.xml"
+                junit "sbt-pipelines/target/test-reports/*.xml"
+                junit "spark/target/test-reports/*.xml"
+                junit "streamlets/target/test-reports/*.xml"
+
+            }
+        }
+        stage('Docker Publish') {
+            steps {                
+                echo "TODO: Docker Publish stage"
+                // Run the Docker tool to build the image
+                //script {
+                //     sh "${tool name: 'sbt-1.1.0', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'}/bin/sbt -Dsbt.log.noformat=true dockerBuildAndPush"
+                //}
+            }
+        }
+    }
+}

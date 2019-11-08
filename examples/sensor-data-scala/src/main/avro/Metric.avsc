@@ -1,0 +1,28 @@
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "Metric",
+    "fields":[
+         {
+            "name": "deviceId", 
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+         },
+         {
+            "name": "timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+         },
+         {
+            "name": "name", "type": "string"
+         },
+         {
+            "name": "value", "type": "double"
+         }
+    ]
+}
+

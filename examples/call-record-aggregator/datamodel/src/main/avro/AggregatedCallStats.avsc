@@ -1,0 +1,24 @@
+{
+    "namespace": "carly.data",
+    "type": "record",
+    "name": "AggregatedCallStats",
+    "fields":[
+         {
+            "name": "startTime",
+            "type": "long"
+         },
+         {
+             "name": "windowDuration",
+             "type": "long"
+          },
+         {
+             "name": "avgCallDuration",
+             "type": "double"
+          },
+          {
+              "name": "totalCallDuration",
+              "type": "long"
+           }
+    ]
+}
+

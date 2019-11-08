@@ -1,0 +1,11 @@
+{
+    "namespace": "cloudflow.spark.avro",
+    "type": "record",
+    "name": "Simple",
+    "fields":[
+         {
+            "name": "name", "type": "string"
+         }
+    ]
+}
+

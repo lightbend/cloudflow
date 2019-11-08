@@ -1,0 +1,165 @@
+/*
+ * Copyright (C) 2016-2019 Lightbend Inc. <https://www.lightbend.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package cloudflow.akkastream.testkit
+
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent._
+
+import akka.NotUsed
+import akka.actor._
+import akka.kafka.ConsumerMessage._
+import akka.stream._
+import akka.stream.scaladsl._
+import com.typesafe.config._
+
+import cloudflow.akkastream._
+import cloudflow.streamlets._
+
+private[testkit] abstract class Completed
+
+private[testkit] case class TestContext(
+    override val streamletRef: String,
+    system: ActorSystem,
+    inletTaps: List[InletTap[_]],
+    outletTaps: List[OutletTap[_]],
+    override val config: Config = ConfigFactory.empty()
+) extends AkkaStreamletContext {
+  //TODO reuse more from StreamletContextImpl
+  implicit def materializer = ActorMaterializer()(system)
+  private val readyPromise = Promise[Dun]()
+  private val completionPromise = Promise[Dun]()
+  private val completionFuture = completionPromise.future
+  val killSwitch = KillSwitches.shared(streamletRef)
+
+  override def streamletDefinition: StreamletDefinition = StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
+
+  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+    inletTaps
+      .find(_.portName == inlet.name)
+      .map(
+        _.source
+          .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
+          .via(killSwitch.flow)
+          .mapError {
+            case cause: Throwable ⇒
+              completionPromise.failure(cause)
+              cause
+          }.asSourceWithContext(_._2).map(_._1)
+      )
+      .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
+
+  def flowWithOffsetContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithOffsetContext[T, T] = {
+    val flow = Flow[T]
+
+    outletTaps
+      .find(_.portName == outlet.name)
+      .map { outletTap ⇒
+        val tout = outletTap.asInstanceOf[OutletTap[T]]
+        flow
+          .via(killSwitch.flow)
+          .mapError {
+            case cause: Throwable ⇒
+              completionPromise.failure(cause)
+              cause
+          }
+          .alsoTo(
+            Flow[T].map(t ⇒ tout.toPartitionedValue(t)).to(tout.sink)
+          )
+          .asFlowWithContext[T, CommittableOffset, CommittableOffset]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
+      }
+      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+  }
+
+  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] = sourceWithOffsetContext[T](inlet).asSource.map(_._1)
+  def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒ (el, TestCommittableOffset()) }
+  def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
+    new WritableSinkRef[T] {
+      def sink = {
+        val flow = Flow[(T, CommittableOffset)]
+        outletTaps
+          .find(_.portName == outlet.name)
+          .map { tap ⇒
+            val outletTap = tap.asInstanceOf[OutletTap[T]]
+            flow
+              .map { case (t, _) ⇒ outletTap.toPartitionedValue(t) }
+              .via(killSwitch.flow)
+              .mapError {
+                case cause: Throwable ⇒
+                  completionPromise.failure(cause)
+                  cause
+              }
+              .to(outletTap.sink)
+          }
+          .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+      }
+
+      def write(value: T): Future[T] = {
+        Source.single(value).runWith(sink.contramap[T](t ⇒ (t, TestCommittableOffset())))
+        Future.successful(value)
+      }
+    }
+  }
+
+  def streamletExecution: StreamletExecution = new StreamletExecution() {
+    val readyFuture = readyPromise.future
+    def completed: Future[Dun] = completionFuture
+    def ready: Future[Dun] = readyFuture
+    def stop(): Future[Dun] = TestContext.this.stop()
+  }
+
+  private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
+
+  def onStop(f: () ⇒ Future[Dun]): Unit = {
+    stoppers.getAndUpdate(old ⇒ old :+ f)
+  }
+
+  def signalReady(): Boolean = readyPromise.trySuccess(Dun)
+
+  def stop(): Future[Dun] = {
+    killSwitch.shutdown()
+    import system.dispatcher
+    Future.sequence(
+      stoppers.get.map { f ⇒
+        f().recover {
+          case _ ⇒ Dun
+        }
+      }
+    ).flatMap { _ ⇒
+        completionPromise.trySuccess(Dun)
+        completionFuture
+      }
+  }
+
+  def metricTags(): Map[String, String] = {
+    Map()
+  }
+}
+
+case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)
+
+// Some hacking to compile
+import akka.kafka.ConsumerMessage._
+import scala.compat.java8.FutureConverters._
+case class TestCommittableOffset(partitionOffset: PartitionOffset) extends CommittableOffset {
+  def batchSize: Long = 1L
+  def commitJavadsl(): java.util.concurrent.CompletionStage[akka.Done] = Future.successful(akka.Done.getInstance).toJava
+  def commitScaladsl(): scala.concurrent.Future[akka.Done] = Future.successful(akka.Done)
+}
+object TestCommittableOffset {
+  def apply(): CommittableOffset = TestCommittableOffset(PartitionOffset(GroupTopicPartition("", "", 0), 0L))
+}

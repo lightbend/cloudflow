@@ -1,0 +1,20 @@
+{
+    "namespace": "sensors",
+    "type": "record",
+    "name": "Agg",
+    "fields":[
+         {
+            "name": "src", 
+            "type": "string"
+         },
+         {
+            "name": "gauge",
+            "type": "string"
+         },
+         {
+            "name": "value",
+            "type": "double"
+         }
+    ]
+}
+

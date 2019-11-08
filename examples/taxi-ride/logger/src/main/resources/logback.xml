@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <logger name="akka" level="${LOGLEVEL_AKKA:-WARN}" />
+  <logger name="akka.actor.ActorSystemImpl" level="WARN" />
+
+  <logger name="org.apache.kafka" level="${LOGLEVEL_KAFKA:-WARN}" />
+  <logger name="org.apache.kafka.clients.producer.ProducerConfig" level="${LOGLEVEL_KAFKA:-WARN}" />
+  <logger name="org.apache.kafka.clients.consumer.ConsumerConfig" level="${LOGLEVEL_KAFKA:-WARN}" />
+  <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
+  <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
+
+  <root level="${LOGLEVEL_ROOT:-INFO}">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <target>System.out</target>
+      <encoder>
+        <pattern>%d{ISO8601} %-5level [%logger{0}] - %msg%n</pattern>
+      </encoder>
+    </appender>
+  </root>
+</configuration>

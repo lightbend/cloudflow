@@ -1,0 +1,54 @@
+{
+  "cloudflow": {
+    "common" : {"attribute" : "value"},
+    "kafka": {
+      "bootstrap-servers": "cloudflow-kafka.lightbend:9092"
+    },
+    "runner": {
+        "streamlets": [{
+          "class_name": "cloudflow.examples.sensordata.SensorDataIngress$",
+          "streamlet_ref": "sensor-data",
+          "context": {
+            "app_id": "appId",
+            "app_version": "unknown",
+            "config": {
+              "cloudflow": {
+                "internal": {
+                  "server": {
+                    "container-port": 2049
+                  }
+                }
+              }
+            },
+            "connected_ports": [
+              {
+                "port": "accepted",
+                "savepoint_path": 
+                  {
+                    "app_id": "appId",
+                    "streamlet_ref": "sensor-data",
+                    "port_name": "accepted"
+                  }
+              },
+              {
+                "port": "rejected",
+                "savepoint_path": 
+                  {
+                    "app_id": "appId",
+                    "streamlet_ref": "sensor-data",
+                    "port_name": "rejected"
+                  }
+              }
+            ],
+            "volume_mounts" : [
+              {
+                "name" : "mounted-vol",
+                "path": "/mnt/streamlet",
+                "access_mode": "ReadWriteMany"
+              }
+            ]
+          }
+        }]
+      }
+    }
+  }

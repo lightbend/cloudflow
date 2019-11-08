@@ -1,0 +1,13 @@
+{
+    "namespace": "cloudflow.akkastream.testdata",
+    "type": "record",
+    "name": "IncompleteData",
+    "fields":[
+         {
+            "name": "id", "type": "int"
+         }
+    ]
+}
+
+
+

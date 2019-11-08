@@ -1,0 +1,20 @@
+examples:
+  - id: "sensor-data-scala"
+    path: "sensor-data-scala"
+    description: |
+      This example shows how sensor data can be consumed and transformed into metrics using the Akka streams Scala DSL.
+  - id: "sensor-data-java"
+    path: "sensor-data-java"
+    description: |
+      This example shows how sensor data can be consumed and transformed into metrics using the Akka streams Java DSL.
+  - id: "spark-sensors"
+    path: "spark-sensors"
+    description: |
+      This example shows how sensor data can be aggregated using Spark.
+  - id: "call-record-aggregator"
+    path: "call-record-aggregator"
+    description: |
+      This multi-project example shows the combination of Akka/Scala, Akka/Java and Spark projects into an end-to-end application.
+  - id: "taxi-ride"
+    path: "taxi-ride"
+    description: This app shows the combination of multi-project streamlets using Flink and Akka

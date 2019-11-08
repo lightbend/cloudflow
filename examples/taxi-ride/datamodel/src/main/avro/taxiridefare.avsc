@@ -1,0 +1,13 @@
+{
+    "namespace": "taxiride.flink.avro",
+    "type": "record",
+    "name": "TaxiRideFare",
+    "fields":[
+         {
+            "name": "rideId", "type": "long"
+         },
+         {
+            "name": "totalFare", "type": "float"
+         }
+    ]
+}

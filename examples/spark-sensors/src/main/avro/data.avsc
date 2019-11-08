@@ -1,0 +1,24 @@
+{
+    "namespace": "sensors",
+    "type": "record",
+    "name": "Data",
+    "fields":[
+         {
+            "name": "src", 
+            "type": "string"
+         },
+         {
+            "name": "timestamp",
+            "type": "long"
+         },
+         {
+            "name": "gauge",
+            "type": "string"
+         },
+         {
+            "name": "value",
+            "type": "double"
+         }
+    ]
+}
+
