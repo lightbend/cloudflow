@@ -255,7 +255,6 @@ object ImagePlugin extends AutoPlugin {
     log.info("You can deploy the application to a Kubernetes cluster using any of the the following commands:")
     log.info(" ")
     log.info(s"  kubectl cloudflow deploy $imagePushed")
-    log.info(s"  oc plugin cloudflow deploy $imagePushed")
     log.info(" ")
   }
 

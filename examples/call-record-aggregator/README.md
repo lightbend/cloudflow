@@ -51,7 +51,6 @@ At the very end you should see the application image built and instructions for 
 [info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
 [info]  
 [info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty
-[info]   oc plugin cloudflow deploy eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty
 [info]  
 [success] Total time: 24 s, completed Nov 8, 2019 3:44:21 PM
 ```
