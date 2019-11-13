@@ -64,7 +64,7 @@ At the very end you should see the application image built and instructions for 
 [success] Total time: 24 s, completed Nov 8, 2019 3:44:21 PM
 ```
 
-* Make sure you have the `kubectl cloudflow` plugin setup.
+* Make sure you have the `kubectl cloudflow` plugin configured.
 
 ```
 $ kubectl cloudflow help
