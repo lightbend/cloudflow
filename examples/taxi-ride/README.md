@@ -1,4 +1,4 @@
-## Flink based Cloudflow Application
+## Akka and Flink based Cloudflow Application
 
 ### Problem Definition
 
@@ -24,7 +24,7 @@ Here's the sequence of steps that you need to follow:
 
 ```
 $ pwd
-.../flink-taxi-ride
+.../taxi-ride
 $ sbt
 $ clean
 $ buildAndPublish
@@ -41,9 +41,10 @@ The `buildAndPublish` command, if successful, will publish the exact command to 
 The project comes with scripts that can be used to feed data into the ingresses using http.
 
 The folder `test-data` contains 2 bash scripts, `send-data-rides.sh` and `send-data-fares.sh` that can be used to feed data through http to the 2 ingresses. In order to access the ingresses use port-forwarding to the two pods that are running the ingresses.
+
 For example list the application pods:
 
-sh```
+```bash
 $ kubectl get pods -n taxi-ride-fare
 NAME                                                    READY   STATUS    RESTARTS   AGE
 taxi-ride-fare-logger-5b5d8786bc-4qpjj                  1/1     Running   0          16m
@@ -53,21 +54,23 @@ taxi-ride-fare-processor-53e8cece-tm-bc9df878f-qnbsz    1/1     Running   0     
 taxi-ride-fare-taxi-fare-8474457d5-tptr7                1/1     Running   0          16m
 taxi-ride-fare-taxi-ride-84b454c56f-hr9h4               1/1     Running   0          16m
 ```
+
 Then port-forward to the correct pods:
-sh```
+
+```bash
 $ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3000:3000
 $ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3001:3001
 ```
+
 Now you are ready to run the two scripts.
-If you want to access the Flink job manager you can check which processor pod exposes the 8080 port and also
-port-forward to it.
 
-### Example Deployment example on GKE
+> **Note:** If you want to access the Flink job manager you can check which processor pod exposes the 8080 port and also port-forward to it.
 
-Steps:
+### Example Deployment on GKE
 
-1) Make sure you have installed a gke cluster and you are running Cloudflow
-(check https://github.com/lightbend/cloudflow-installer for more).
+**Steps:**
+
+* Make sure you have installed a gke cluster with cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 Make sure you have access to your cluster:
 
 ```
@@ -80,14 +83,17 @@ and that you have access to the Google docker registry:
 $ gcloud auth configure-docker
 ```
 
-2) Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
+* Add the Google docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
+
 
 ```
 ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
 ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 ```
 
-3) Build the application.
+`my-awesome-project` refers to the project ID of your Google Cloud Platform project.
+
+* Build the application.
 
 ```
 $ sbt buildAndPublish
@@ -102,19 +108,19 @@ At the very end you should see the application image built and instructions for 
 [info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
 [info]  
 [info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/taxi-ride-fare:34-69082eb-dirty
-[info]   oc plugin cloudflow deploy eu.gcr.io/my-awesome-project/taxi-ride-fare:34-69082eb-dirty
 [info]  
 [success] Total time: 63 s, completed Nov 8, 2019 1:05:02 PM
 ```
 
-4) Make sure you have the kubectl cloudflow plugin setup.
+* Make sure you have the `kubectl cloudflow` plugin setup.
 
 ```
 $ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
-5) Deploy the app.
+
+* Deploy the app.
 
 ```
 $ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p
@@ -124,7 +130,8 @@ WARNING! Using --password via the CLI is insecure. Use --password-stdin.
 [Done] Deployment of application `taxi-ride-fare` has started.
 ```
 
-6) Verify that the application is deployed.
+* Verify that the application is deployed.
+
 ```
 $ kubectl cloudflow list
 
@@ -132,7 +139,7 @@ NAME              NAMESPACE         VERSION           CREATION-TIME
 taxi-ride-fare    taxi-ride-fare    34-69082eb-dirty  2019-11-08 15:53:50 +0000 UTC
 ```
 
-7) Check all pods are running.
+* Check all pods are running.
 
 
 ```
@@ -146,11 +153,13 @@ taxi-ride-fare-taxi-fare-688ffcb66c-6jnkb               1/1     Running   0     
 taxi-ride-fare-taxi-ride-7b65bb666c-fg6l4               1/1     Running   0          2m35s
 ```
 
-8)Verify the application output.
+* Verify the application output.
 
 Execute the steps above for ingesting data.
 If everything worked fine you should see output similar to this:
-sh```$ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
+
+```
+$ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
 ...
 [INFO] [11/08/2019 13:35:47.510] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"rideId": 1, "totalFare": 21.5}
 [INFO] [11/08/2019 13:35:47.596] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"rideId": 23485, "totalFare": 14.0}
@@ -160,7 +169,7 @@ sh```$ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
 ...
 ```
 
-9) Undeploy:
+* Undeploy.
 
 ```
 kubectl cloudflow  undeploy taxi-ride-fare
