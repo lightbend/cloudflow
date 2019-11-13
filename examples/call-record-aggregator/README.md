@@ -21,7 +21,7 @@ This application consists of the following sub-projects:
 
 **Steps:**
 
-* Make sure you have installed a gke cluster with cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
+* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 Make sure you have access to your cluster:
 
 ```
