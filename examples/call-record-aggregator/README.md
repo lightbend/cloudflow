@@ -3,7 +3,7 @@
 
 ### Problem Definition
 
-This application aggregates streaming data for phone call records. It's a mixed cloudflow application consisting of Akka and Spark based streamlets.
+This application aggregates streaming data for phone call records. It's a mixed Cloudflow application consisting of Akka and Spark-based streamlets.
 
 
 ### Sub projects
