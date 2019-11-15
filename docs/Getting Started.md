@@ -1,14 +1,14 @@
 # Getting Started
 
-This document introduces the basic steps needed to install all components of cloudflow and deploy and run a simple cloudflow application on the GKE cluster.
+This document introduces the basic steps needed to install all components of Cloudflow and deploy and run a simple Cloudflow application on the GKE cluster.
 
 We will discuss the following steps in sequence:
 
-1. Download and install cloudflow CLI
-2. Go through all steps of developing a sample hello world application using cloudflow libraries
+1. Download and install Cloudflow CLI
+2. Go through all steps of developing a sample hello world application using Cloudflow libraries
 3. Install a GKE cluster following instructions in `cloudflow-installer` repository
 4. Build the application and publish to GKE repository using `sbt buildAndPublish`
-5. Deploy the application to the cluster using cloudflow CLI
+5. Deploy the application to the cluster using Cloudflow CLI
 6. Show usage of CLI helpers like `status`, `list` etc.
 7. Show how to deal with http ingress and push some data to the application
 8. Verify that the application works
@@ -17,11 +17,11 @@ We will discuss the following steps in sequence:
 
 ## Download and install the CLI
 
-cloudflow CLI can be downloaded from [lightbend public bintray repository](https://bintray.com/lightbend/cloudflow-cli). Download the version appropriate for your platform and install it in your local system. Please make sure you have the executable in your path with proper permission settings.
+Cloudflow CLI can be downloaded from [lightbend public bintray repository](https://bintray.com/lightbend/cloudflow-cli). Download the version appropriate for your platform and install it in your local system. Please make sure you have the executable in your path with proper permission settings.
 
-## Develop a sample cloudflow application
+## Develop a sample Cloudflow application
 
-In this section we will develop a sample application that will feature the main components of cloudflow. It will be a simple hello-world style application, expressive enough to demonstrate the major features of cloudflow. It will not have many of the advanced features that cloudflow offers - the main idea is to give you a feel for what it takes to build a complete application and deploy it in running condition in a GKE cluster.
+In this section we will develop a sample application that will feature the main components of Cloudflow. It will be a simple hello-world style application, expressive enough to demonstrate the major features of Cloudflow. It will not have many of the advanced features that Cloudflow offers - the main idea is to give you a feel for what it takes to build a complete application and deploy it in running condition in a GKE cluster.
 
 We will develop a simple pipeline that processes events from a wind turbine farm. The application will receive streaming data that will pass through the following transformations :
 
@@ -30,15 +30,15 @@ We will develop a simple pipeline that processes events from a wind turbine farm
 * validated by a streamlet (splitter) that separates valid and invalid records
 * logged in to loggers to be checked at output (egress)
 
-Each of the above terminologies (ingress, processor, splitter and egress) are explained in the [Concepts Guide](https://blank.com). Here's an overview of the application pipeline architecture:
+Each of the above terminologies (ingress, processor, splitter and egress) are explained in the [Basic Concepts](Basic\ Concepts.md). Here's an overview of the application pipeline architecture:
 
 ![Application Pipeline](images/pipe.001.jpeg?raw=true "Application Pipeline")
 
-One of the important features of cloudflow architecture is the complete separation of the components from how they are connected as part of the pipeline. The _streamlets_ described above are the individual building blocks of the pipeline. You can connect them using a declarative language that forms the _blueprint_ of the pipeline. Streamlets can be shared across blueprints making them individual reusable objects. And just like streamlets, blueprints also form an independent component of a cloudflow application.
+One of the important features of Cloudflow architecture is the complete separation of the components from how they are connected as part of the pipeline. The _streamlets_ described above are the individual building blocks of the pipeline. You can connect them using a declarative language that forms the _blueprint_ of the pipeline. Streamlets can be shared across blueprints making them individual reusable objects. And just like streamlets, blueprints also form an independent component of a Cloudflow application.
 
 ### Project structure
 
-Here's how we would structure a typical cloudflow application as a project.
+Here's how we would structure a typical Cloudflow application as a project.
 
 ```
    |-project
@@ -63,6 +63,8 @@ This is a Scala project and we have the following structural components at the l
 
 Here's a minimal version of the sbt build script:
 
+**build.sbt:**
+
 ```
 import sbt._
 import sbt.Keys._
@@ -84,15 +86,15 @@ lazy val sensorData =  (project in file("."))
   )
 ```
 
-cloudflow offers a few plugins that abstract quite a bit of boilerplates necessary to build a complete application. In this example we use the plugin `CloudflowAkkaStreamsApplicationPlugin` that provides you all building blocks of developing an Akka Streams based cloudflow application.
+Cloudflow offers several sbt plugins that abstract quite a bit of boilerplates necessary to build a complete application. In this example we use the plugin `CloudflowAkkaStreamsApplicationPlugin` that provides you all building blocks of developing an Akka Streams based Cloudflow application.
 
 > **Note:** You can use multiple plugins to develop an application that uses multiple runtimes (Akka, Spark, Flink etc.). For simplicity of this example we will be using only one.
  
-The above build script is standard Scala sbt - the only difference is the lugin which we provide as part of cloudflow.
+The above build script is standard Scala sbt - the only difference is the plugin which we provide as part of Cloudflow.
 
 ### Schema first approach
 
-In cloudflow streamlets work with optional inputs and outputs that are statically typed. The types represent objects that the specific input / output can handle. The first step in application development is to encode the objects in the form of avro schema. cloudflow will generate appropriate classes corresponding to each schema.
+In Cloudflow streamlets work with optional inputs and outputs that are statically typed. The types represent objects that the specific input / output can handle. The first step in application development is to encode the objects in the form of [avro schema](https://avro.apache.org/docs/current/). Cloudflow will generate appropriate classes corresponding to each schema.
 
 Let's start building the avro schema for the domain objects that we need for the application. These schema files will have an extension `.avsc` and will go directly under `src/main/avro` in the project structure that we discussed earlier.
 
@@ -197,7 +199,7 @@ Let's start building the avro schema for the domain objects that we need for the
 }
 ```
 
-> **Note:** The above schema files are processed during the build process through the infrastructure of the cloudflow plugin system. For each of these schema files, cloudflow will generate Scala case classes that can be directly used form within the application.
+> **Note:** The above schema files are processed during the build process through the infrastructure of the Cloudflow plugin system. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used form within the application.
                         
     
 ### Let's build some streamlets
@@ -370,7 +372,7 @@ class InvalidMetricLogger extends AkkaStreamlet {
 }
 ```
 
-Finally we have some support classes that we need to process JSON records through cloudflow pipeline. 
+Finally we have some support classes that we need to process JSON records through Cloudflow pipeline. 
 
 **JsonFormats.scala**
 
@@ -456,7 +458,7 @@ Now that we have the application code implemented, let's try to build the applic
 
 **Verify the Blueprint**
 
-cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected end points, invalid streamlets and other issues related to the structure and semantics of the pipeline.
+Cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected end points, invalid streamlets and other issues related to the structure and semantics of the pipeline.
 
 ```
 sbt:sensor-data> verifyBlueprint
@@ -508,16 +510,16 @@ Let's now move to the cluster mode and install a GKE cluster following the instr
 
 ## Install a GKE Cluster
 
-Instructions to install a GKE cluster with cloudflow is described in details in the [installer Github repo](https://github.com/lightbend/cloudflow-installer). If you want to install a new cluster, clone the repo in your local system and follow the following instructions.
+Instructions to install a GKE cluster with Cloudflow is described in details in the [installer Github repo](https://github.com/lightbend/cloudflow-installer). If you want to install a new cluster, clone the repo in your local system and follow the following instructions.
 
 * Run `gcloud init` if this is a new cluster and you are creating a GKE cluster for the first time. This command initializes the gcloud system on your local and performs necessary settings of gcloud credentials. You can have a look at the details [here](https://cloud.google.com/sdk/gcloud/reference/init).
 
 >**Note:** This can be done once you have a valid Google account and have access to a project set up for you by the administrator.
 
 * Create a GKE cluster with a specific name `./gke-create-cluster.sh <cluster-name>`
-* Install cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
+* Install Cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
 
-This will take you through the process of installing cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
+This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
 
 ```
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteMany'.
@@ -537,7 +539,7 @@ Examples of these are Kafka, Zookeeper, and Prometheus.
 > 1
 ```
 
-It then takes you through the installation of the cloudflow operator, the strimzi Kafka operator, the Spark operator and the Flink operator. If things go ok, you will see something like the following on your console:
+It then takes you through the installation of the Cloudflow operator, the strimzi Kafka operator, the Spark operator and the Flink operator. If things go ok, you will see something like the following on your console:
 
 ```
 +------------------------------------------------------------------------------------+
@@ -606,7 +608,7 @@ Once the image is successfully published, you will see something like the follow
 [info]   kubectl-cloudflow deploy eu.gcr.io/<gcloud project id>/sensor-data:2-89ce8a7
 ```
 
-So now the image is available in the registry for deployment. We will next use cloudflow CLI to deploy the application to the cluster.
+So now the image is available in the registry for deployment. We will next use Cloudflow CLI to deploy the application to the cluster.
 
 ## Deploy Application to the Cluster
 
@@ -636,11 +638,11 @@ sensor-data-validation-7dd858b6c5-lcp2n       1/1     Running   0          3m1s
 
 Note that all streamlets run in a namespace that matches the name of the application.
 
-**Congratulations!** You have deployed and started your first cloudflow application.
+**Congratulations!** You have deployed and started your first Cloudflow application.
 
 ## Using some CLI Helpers
 
-Once you have one or more cloudflow applications started, you can use some CLI helpers to monitor the status of your applications.
+Once you have one or more Cloudflow applications started, you can use some CLI helpers to monitor the status of your applications.
 
 * **--help** to see all options available
 

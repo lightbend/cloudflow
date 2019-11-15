@@ -1,10 +1,10 @@
 # Cloudflow - Basic Concepts
 
-This document gives you an overview of the main building blocks of a cloudflow application.
+This document gives you an overview of the main building blocks of a Cloudflow application.
 
 ## Application
 
-A Cloudflow application is a self-contained distributed system of data processing services connected together by data streams. A Cloudflow cluster can host multiple applications.
+A Cloudflow application is a collection of data processing components connected via data streams. A Cloudflow cluster can host multiple applications.
 
 ![Application](images/apps-1.png?resize=400,400&classes=center)
 
@@ -12,7 +12,7 @@ A Cloudflow application consists of the following basic building blocks:
 
 1. Streamlets
 2. Blueprint
-3. Deployed
+3. Deployed Application
 
 We will go through each of the above in the following sections.
 
@@ -21,7 +21,7 @@ We will go through each of the above in the following sections.
 
 ## Streamlets
 
-A streamlet is one of the building blocks of a Cloudflow application. Each streamlet represents a stage in the data transformation pipeline. Streamlets can have inlets and outlets that provide the conduit for the flow of data. Each inlet and outlet is typed and can handle data _of that specific type_ only.
+A streamlet is one of the building blocks of a Cloudflow application. Each streamlet represents a stage in the data transformation pipeline. Streamlets can have input endpoints called _inlets_ and output endpoints called _outlets_. Each inlet and outlet is typed and can handle data _of that specific type_ only.
 
 Some of the commonly used streamlet shapes are the following:
 
@@ -59,3 +59,4 @@ A Blueprint connects streamlets together. This is what transforms a bunch of str
 
 A deployed application is the runtime realization of the blueprint. The pipeline gets formed according to the streamlets and connections specified in the blueprint and data flows across the streamlets.
 
+![Deployed App](images/deploy-2.png?raw=true "Deployed App")
