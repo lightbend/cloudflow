@@ -1,20 +1,27 @@
-## Spark based Cloudflow Application
+## Akka and Spark based Cloudflow Application
 
 
 ### Problem Definition
 
+This application aggregates streaming data for phone call records. It's a mixed Cloudflow application consisting of Akka and Spark-based streamlets.
 
 
 ### Sub projects
 
+This application consists of the following sub-projects:
+
+* `akka-cdr-ingestor`: Akka streams based data ingestion, merging and validation
+* `spark-aggregation`: Spark based aggregation of data coming from the ingestor streamlets
+* `akka-java-aggregation-output`: Egress implementation for logging in Java
+* `call-record-pipelines`: Contains the blueprint
+* `datamodel`: Contains the Avro schema
 
 
 ### Example Deployment example on GKE
 
-Steps:
+**Steps:**
 
-1) Make sure you have installed a gke cluster and you are running Cloudflow
-(check https://github.com/lightbend/cloudflow-installer for more).
+* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 Make sure you have access to your cluster:
 
 ```
@@ -27,17 +34,19 @@ and that you have access to the Google docker registry:
 gcloud auth configure-docker
 ```
 
-2) Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
+* Add the Google docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
 
 ```
 ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
 ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 ```
 
-3) Build the application:
+`my-awesome-project` refers to the project ID of your Google Cloud Platform project.
+
+* Build the application:
 
 ```
-sbt buildAndPublish
+$ sbt buildAndPublish
 ```
 At the very end you should see the application image built and instructions for how to deploy it:
 
@@ -55,17 +64,18 @@ At the very end you should see the application image built and instructions for 
 [success] Total time: 24 s, completed Nov 8, 2019 3:44:21 PM
 ```
 
-4) Make sure you have the kubectl cloudflow plugin setup.
+* Make sure you have the `kubectl cloudflow` plugin configured.
 
 ```
-kubectl cloudflow help
+$ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
-5) Deploy the app.
+
+* Deploy the app.
 
 ```
-kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
+$ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
 Existing value will be used for configuration parameter 'cdr-generator2.records-per-second'
 Existing value will be used for configuration parameter 'cdr-generator1.records-per-second'
 Existing value will be used for configuration parameter 'cdr-aggregator.group-by-window'
@@ -75,7 +85,8 @@ WARNING! Using --password via the CLI is insecure. Use --password-stdin.
 
 ```
 
-6) Verify it is deployed.
+*  Verify it is deployed correctly.
+
 ```
 $ kubectl cloudflow list
 
@@ -83,7 +94,7 @@ NAME                   NAMESPACE              VERSION           CREATION-TIME
 call-record-aggregator call-record-aggregator 34-69082eb-dirty  2019-11-08 15:46:22 +0000 UTC
 ```
 
-7) Check all pods are running.
+* Check all pods are running.
 
 ```
 $ kubectl get pods -n call-record-aggregator
@@ -104,7 +115,7 @@ call-record-aggregator-error-egress-8858f68-5sjp8            1/1     Running   0
 call-record-aggregator-merge-67b66c8fdb-2r247                1/1     Running   0          80s
 ```
 
-8) Verify the application output.
+* Verify the application output.
 
 ```
 $ kubectl logs call-record-aggregator-console-egress-5f6f7777f8-dknt6  -n call-record-aggregator
@@ -122,7 +133,7 @@ Loading application.conf from: /etc/cloudflow-runner/application.conf, secret co
 {"startTime": 1573217820, "windowDuration": 60, "avgCallDuration": 3587085.590874525, "totalCallDuration": 4717017552}
 ```
 
-9) Undeploy.
+* Undeploy.
 
 ```
 $ kubectl cloudflow  undeploy call-record-aggregator
