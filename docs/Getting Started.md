@@ -30,7 +30,7 @@ We will develop a simple pipeline that processes events from a wind turbine farm
 * validated by a streamlet (splitter) that separates valid and invalid records
 * logged in to loggers to be checked at output (egress)
 
-Each of the above terminologies (ingress, processor, splitter and egress) are explained in the [Basic Concepts](Basic\ Concepts.md). Here's an overview of the application pipeline architecture:
+Each of the above terminologies (ingress, processor, splitter and egress) are explained in the [Basic Concepts](Basic%20Concepts.md). Here's an overview of the application pipeline architecture:
 
 ![Application Pipeline](images/pipe.001.jpeg?raw=true "Application Pipeline")
 
@@ -89,7 +89,7 @@ lazy val sensorData =  (project in file("."))
 Cloudflow offers several sbt plugins that abstract quite a bit of boilerplates necessary to build a complete application. In this example we use the plugin `CloudflowAkkaStreamsApplicationPlugin` that provides you all building blocks of developing an Akka Streams based Cloudflow application.
 
 > **Note:** You can use multiple plugins to develop an application that uses multiple runtimes (Akka, Spark, Flink etc.). For simplicity of this example we will be using only one.
- 
+
 The above build script is standard Scala sbt - the only difference is the plugin which we provide as part of Cloudflow.
 
 ### Schema first approach
@@ -107,7 +107,7 @@ Let's start building the avro schema for the domain objects that we need for the
     "name": "SensorData",
     "fields":[
          {
-            "name": "deviceId", 
+            "name": "deviceId",
             "type": {
                 "type": "string",
                 "logicalType": "uuid"
@@ -158,7 +158,7 @@ Let's start building the avro schema for the domain objects that we need for the
     "name": "Metric",
     "fields":[
          {
-            "name": "deviceId", 
+            "name": "deviceId",
             "type": {
                 "type": "string",
                 "logicalType": "uuid"
@@ -200,8 +200,8 @@ Let's start building the avro schema for the domain objects that we need for the
 ```
 
 > **Note:** The above schema files are processed during the build process through the infrastructure of the Cloudflow plugin system. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used form within the application.
-                        
-    
+
+
 ### Let's build some streamlets
 
 All streamlets will reside under `src/main/scala/sensordata` where `sensordata` is the package name. Let's start with the ingress, which we implement in a class named `SensorDataHttpIngress`.
@@ -372,7 +372,7 @@ class InvalidMetricLogger extends AkkaStreamlet {
 }
 ```
 
-Finally we have some support classes that we need to process JSON records through Cloudflow pipeline. 
+Finally we have some support classes that we need to process JSON records through Cloudflow pipeline.
 
 **JsonFormats.scala**
 
