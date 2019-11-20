@@ -130,7 +130,7 @@ func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec domain
 			for _, configValue := range secret.Data {
 				lines := strings.Split(string(configValue), "\r\n")
 				for _, line := range lines {
-					cleaned := strings.TrimPrefix(strings.TrimSpace(line), "pipelines.streamlets.")
+					cleaned := strings.TrimPrefix(strings.TrimSpace(line), "cloudflow.streamlets.")
 					if len(cleaned) != 0 {
 						keyValueArray, err := splitOnFirstCharacter(cleaned, '=')
 						if err != nil {
