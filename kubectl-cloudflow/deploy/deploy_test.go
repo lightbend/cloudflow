@@ -29,13 +29,21 @@ func commandLineForConfiguration() []string {
 }
 
 func Test_SplitConfigurationParameters(t *testing.T) {
-
-	result := SplitConfigurationParameters([]string{`a="b"`, "key=ddd", `some.key="some, value"`})
+	result := SplitConfigurationParameters([]string{
+		`a="b"`,
+		"key=ddd",
+		`some.key="some, value"`,
+		`some.key2=c29tZSBzdHJpbmc9PQ==`,
+		`some.key3="some text passed to a streamlet"`,
+		`some.key4=post Cobra processed, unquoted string`})
 
 	assert.NotEmpty(t, result)
-	assert.Equal(t, result["a"], `b`)
+	assert.Equal(t, result["a"], "b")
 	assert.Equal(t, result["key"], "ddd")
-	assert.Equal(t, result["some.key"], `some, value`)
+	assert.Equal(t, result["some.key"], "some, value")
+	assert.Equal(t, result["some.key2"], "c29tZSBzdHJpbmc9PQ==")
+	assert.Equal(t, result["some.key3"], "some text passed to a streamlet")
+	assert.Equal(t, result["some.key4"], "post Cobra processed, unquoted string")
 
 	empty := SplitConfigurationParameters([]string{})
 	assert.Empty(t, empty)

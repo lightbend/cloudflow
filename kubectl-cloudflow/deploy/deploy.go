@@ -96,15 +96,28 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 	return spec, *pulledImage
 }
 
+func splitOnFirstCharacter(str string, char byte) ([]string, error) {
+	var arr []string
+	if idx := strings.IndexByte(str, char); idx >= 0 {
+		arr = append(arr, str[:idx])
+		arr = append(arr, strings.Trim(str[idx+1:], "\""))
+		return arr, nil
+	}
+	return arr, fmt.Errorf("The configuration parameters must be formated as space delimited '[streamlet-name[.[property]=[value]' pairs")
+}
+
 // SplitConfigurationParameters maps string representations of a key/value pair into a map
 func SplitConfigurationParameters(configurationParameters []string) map[string]string {
 	configurationKeyValues := make(map[string]string)
+
 	for _, v := range configurationParameters {
-		keyValueArray := strings.Split(v, "=")
-		if len(keyValueArray) != 2 {
-			util.LogAndExit("The configuration parameters must be formated as space delimited '[streamlet-name[.[property]=[value]' pairs.")
+		keyValueArray, err := splitOnFirstCharacter(v, '=')
+		if err != nil {
+			util.LogAndExit(err.Error())
+		} else {
+			configurationKeyValues[keyValueArray[0]] = keyValueArray[1]
+
 		}
-		configurationKeyValues[keyValueArray[0]] = strings.Trim(keyValueArray[1], "\"")
 	}
 	return configurationKeyValues
 }
@@ -119,11 +132,12 @@ func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec domain
 				for _, line := range lines {
 					cleaned := strings.TrimPrefix(strings.TrimSpace(line), "cloudflow.streamlets.")
 					if len(cleaned) != 0 {
-						keyValueArray := strings.Split(cleaned, "=")
-						if len(keyValueArray) != 2 {
-							util.LogAndExit("Configuration for streamlet %s in secret %s is corrupted.", deployment.StreamletName, secret.Name)
+						keyValueArray, err := splitOnFirstCharacter(cleaned, '=')
+						if err != nil {
+							util.LogAndExit("Configuration for streamlet %s in secret %s is corrupted. %s", deployment.StreamletName, secret.Name, err.Error())
+						} else {
+							existingConfigurationKeyValues[keyValueArray[0]] = keyValueArray[1]
 						}
-						existingConfigurationKeyValues[keyValueArray[0]] = strings.Trim(keyValueArray[1], "\"")
 					}
 				}
 			}
