@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DIR=$PWD
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 TARGET=$1
 
 echo "========================================================================="
 echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
-cd core
+cd $DIR/../core
 sbt $TARGET publishLocal
 RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
@@ -40,7 +40,7 @@ echo "Plugin versions changed to $version"
 # to publish artifacts since we need to specify the plugin version for each example
 
 # Obtain current project list from examples.yaml
-PROJECTS=$(cat $DIR/examples/examples.yaml | grep "path" | cut -d\" -f2)
+PROJECTS=$(cat $DIR/../examples/examples.yaml | grep "path" | cut -d\" -f2)
 
 for prj in $PROJECTS; do
   echo "========================================================================="
