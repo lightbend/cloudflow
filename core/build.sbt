@@ -255,8 +255,6 @@ lazy val blueprint =
       ),
 
       publishArtifact in Test := true,
-      publishArtifact in (Compile, packageDoc) := false,
-      publishArtifact in (Compile, packageSrc) := false,
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
@@ -277,8 +275,6 @@ lazy val plugin =
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
 
-      resolvers += Resolver.url("lightbend-oss", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
-
       addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.5.0"),
       addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("com.cavorite" % "sbt-avro-1-8" % "1.1.9"),
@@ -294,9 +290,6 @@ lazy val plugin =
         Logback % Test,
         ScalaTest
       ),
-
-      publishArtifact in (Compile, packageDoc) := false,
-      publishArtifact in (Compile, packageSrc) := false,
     )
 
 lazy val runner =
@@ -451,11 +444,7 @@ def cloudflowModule(moduleID: String): Project = {
 
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
-  bintrayOrganization := Some("lightbend"),
-  bintrayRepository := altBintrayRepository.value.getOrElse("cloudflow"),
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2019", "Lightbend Inc. <https://www.lightbend.com>")),
-  publishMavenStyle := false,
-  bintrayOmitLicense := true,
   scalaVersion := Version.Scala,
   autoAPIMappings := true,
 
@@ -479,9 +468,6 @@ lazy val commonSettings = Seq(
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
   )
   
-val altBintrayRepository = settingKey[Option[String]]("Overrides the default bintray repository if defined")
-ThisBuild / altBintrayRepository := None
-
 lazy val formattingSettings = Seq(
   scalariformPreferences := scalariformPreferences.value
     .setPreference(AlignParameters, false)
