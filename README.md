@@ -20,6 +20,8 @@ The different parts of Cloudflow work in unison to dramatically accelerate your 
 
 ## Basic Concepts
 
+[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 <p>
 <img src="./docs/images/apps.png" width="600">
 
