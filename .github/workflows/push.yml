@@ -5,15 +5,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    - name: Setup environment
+      run: |
+        make -C .github/workflows/setup setup-local-all
     - name: build-and-test
-      uses: agemooij/github-actions-sbt@master
       env:
-        BINTRAY_PASSWORD: ${{ secrets.BINTRAY_PASSWORD }}
-        BINTRAY_USERNAME: ${{ secrets.BINTRAY_USERNAME }}
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
-      with:
-        entrypoint: scripts/build-all.sh
-        args: test
+      run: |
+        export PATH="$HOME/opt/sbt/bin:$PATH"
+        cd scripts
+        ./build-all.sh test
 
   build-and-test-cli:
     runs-on: ubuntu-latest

@@ -14,13 +14,13 @@ lazy val root =
       skip in publish := true,
       commands += InternalReleaseCommand.command,
       unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
-          streamlets,
-          akkastream,
-          akkastreamUtil,
-          akkastreamTestkit,
-          spark,
-          sparkTestkit
-        )
+        streamlets,
+        akkastream,
+        akkastreamUtil,
+        akkastreamTestkit,
+        spark,
+        sparkTestkit
+      )
     )
     .withId("root")
     .settings(commonSettings)
@@ -55,7 +55,7 @@ lazy val streamlets =
       )
     )
 
-lazy val events = 
+lazy val events =
   cloudflowModule("cloudflow-events")
     .enablePlugins(BuildInfoPlugin)
     .dependsOn(streamlets)
@@ -177,7 +177,7 @@ lazy val sparkTestkit =
         Junit
       )
     )
-  
+
 lazy val sparkTests =
   cloudflowModule("cloudflow-spark-tests")
     .dependsOn(sparkTestkit)
@@ -194,7 +194,7 @@ lazy val sparkTests =
     .settings(
       parallelExecution in Test := false
     )
-  
+
 lazy val flink =
   cloudflowModule("cloudflow-flink")
     .dependsOn(streamlets)
@@ -339,7 +339,7 @@ lazy val operator =
         Ficus,
         Logback,
         Skuber,
-	      AkkaStreamTestkit,
+        AkkaStreamTestkit,
         ScalaTest,
         ScalaCheck              % "test",
         Avro4sJson              % "test",
@@ -466,8 +466,8 @@ lazy val commonSettings = Seq(
   resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/",
   scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
-  )
-  
+)
+
 lazy val formattingSettings = Seq(
   scalariformPreferences := scalariformPreferences.value
     .setPreference(AlignParameters, false)
