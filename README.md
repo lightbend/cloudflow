@@ -3,8 +3,8 @@
 </p>
 Cloudflow enables users to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.
 Cloudflow allows you to easily break down your streaming application to smaller composable components and wire them together with schema-based contracts.
-Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure you streaming applications at runtime.
-With its powerful abstractions Cloudflow allows to define, build and deploy the most complex streaming applications.
+Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime.
+With its powerful abstractions, Cloudflow allows to define, build and deploy the most complex streaming applications.
 
 In a nutshell, Cloudflow is an application development toolkit composed of:
 
