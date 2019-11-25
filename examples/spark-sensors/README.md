@@ -1,19 +1,14 @@
 ## Spark based Cloudflow Application
 
-
 ### Problem Definition
 
+In this application we use a an ingress to generate random data from a set of virtual sensors, use Spark to emit moving average values for each sensor id and the report the values to the console egress.
 
-
-### Sub projects
-
-
-
-### Example Deployment example on GKE
+### Example Deployment on GKE
 
 Steps:
 
-1) Make sure you have installed a gke cluster and you are running Cloudflow
+* Make sure you have installed a gke cluster and you are running Cloudflow
 (check https://github.com/lightbend/cloudflow-installer for more).
 Make sure you have access to your cluster:
 
@@ -27,14 +22,16 @@ and that you have access to the Google docker registry:
 gcloud auth configure-docker
 ```
 
-2) Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
+* Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
 
 ```
 ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
 ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 ```
 
-3) Build the application.
+`my-awesome-project` refers to the project ID of your Google Cloud Platform project.
+
+* Build the application.
 
 ```
 sbt buildAndPublish
@@ -55,21 +52,21 @@ At the very end you should see the application image built and instructions for 
 [success] Total time: 53 s, completed Nov 8, 2019 1:40:52 PM
 ```
 
-4) Make sure you have the kubectl cloudflow plugin setup.
+* Make sure you have the kubectl cloudflow plugin setup.
 
 ```
 kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
-5) Deploy the app.
+* Deploy the app.
 
 ```
 kubectl cloudflow deploy -u oauth2accesstoken  eu.gcr.io/my-awesome-project/spark-sensors:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
 
 ```
 
-6) Verify it is deployed.
+* Verify it is deployed.
 ```
 $ kubectl cloudflow list
 
@@ -93,7 +90,7 @@ spark-sensors-process-1573220481718-exec-2   1/1     Running             0      
 spark-sensors-process-driver     
 ```
 
-8) Verify the application output.
+* Verify the application output.
 
 ```
 $ kubectl log spark-sensors-egress-driver -n spark-sensors
@@ -187,9 +184,8 @@ Batch: 2
 only showing top 20 rows
 ```
 
-
-9) Undeploy.
+* Undeploy.
 
 ```
-$ kubectl cloudflow  undeploy spark-sensors
+$ kubectl cloudflow undeploy spark-sensors
 ```

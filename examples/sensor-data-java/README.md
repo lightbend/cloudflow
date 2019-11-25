@@ -1,69 +1,194 @@
-# `sensor-data-java`
+## `sensor-data-java`
 
-A simple Java based pipeline that ingests, converts, and filters data
+### Problem Definition
 
-# Required configuration
+A simple pipeline that processes events from a wind turbine farm.
 
-The application requires a persistent volume claim (PVC) to be created before deployment. This PVC is mounted by the `FilterStreamlet` pod, which checks the mounted directory for a configuration file containing device ids that should be filtered out from the data stream.
+Note: This app has very limited functionality (eg. supports only filtering of events) compared to the more advanced Scala version of it, which can be found under the [sensor-data-scala](../sensor-data-scala) directory.
 
-Example PVC:
+### Required configuration
+
+`valid-logger.log-level`
+
+Log level for `*-logger` streamlets to log to.  Ex) `info`
+
+`valid-logger.msg-prefix` - Log line prefix for `*-logger` streamlets to include.  Ex) `VALID`
+
+### Generating data
+
+This example has two ingresses that are combined using a merge operation. Data can be sent to either of the ingresses or to both.
+
+- Pick a test data file from `./test-data`, for example `test-data/04-moderate-breeze.json`
+- Send the file to the HTTP ingress using `curl` (see deployment example later on).
+
+To send data to the file ingress, use the following shell script found in the project root directory:
+
+    ./load-data-into-pvc.sh
+
+The shell script will load several files from the `test-data` directory and the ingress will continuously read those files and emit their content to the merge streamlet:
+
+```
+./load-data-into-pvc.sh
+Copying files to /mnt/data in pod sensor-data-java-filter-6bd89bd94-lhqvq
+Done
+```
+
+### Using [`wrk`](https://github.com/wg/wrk) benchmarking tool
+
+To send a continuous stream of data.
+
+#### Install
+
+* Ubuntu: Follow the instructions [here](https://github.com/wg/wrk/wiki/Installing-Wrk-on-Linux).
+* MacOS: `brew install wrk`
+
+#### Run
+
+Ex)
+
+```
+wrk -c 400 -t 400 -d 500 -s wrk-04-moderate-breeze.lua <http-ingress-url>
+```
+
+### Example Deployment on GKE
+
+* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
+Make sure you have access to your cluster:
+
+```
+$ gcloud container clusters get-credentials <CLUSTER_NAME>
+```
+
+and that you have access to the Google docker registry:
+
+```
+$ gcloud auth configure-docker
+```
+
+* Add the Google docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
+
+
+```
+ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
+ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
+```
+
+`my-awesome-project` refers to the project ID of your Google Cloud Platform project.
+
+* Build the application:
+
+```
+$ sbt buildAndPublish
+...
+[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
+[info]  
+[info]   kubectl cloudflow deploy eu.gcr.io/<projectID>/sensor-data-java:9-bbdec44-dirty
+[info]  
+[success] Total time: 27 s, completed Nov 26, 2019 12:54:41 PM
+
+
+```
+
+* Make sure you have the `kubectl cloudflow` plugin configured.
+
+```
+$ kubectl cloudflow help
+This command line tool can be used to deploy and operate Cloudflow applications.
+...
+```
+
+* Install the required PVC for the file ingress (This is optional as you can remove the file ingress
+  from the blueprint and use only the HTTP ingress for posting data.)
+
+First create the application namespace (since a PVC is namespaced).
+
+```
+$ kubectl create ns sensor-data-java
+```
+
+claim.yaml:
 
 ```
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: source-data-claim
+  name: claim1
   namespace: sensor-data-java
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: nfs-client
   resources:
     requests:
-      storage: 10Mi
+      storage: 1Gi
 ```
 
-# Upload device id filter list
-
-The filter streamlet will read a configuration file from the mounted volume. The file should contain the device ids that should be filtered out, with one device id per line. If the file is empty or does not exist, all device ids are accepted.
-
-To upload a prepared file that will filter out one device id (c75cb448-df0e-4692-8e06-0321b7703992), run the following script.
-
-    ./load-data-into-pvc.sh
-
-The file uploaded is named `test-data/device-ids.txt`.
-
-# Generate data
-
-To send data to the HTTP ingress, do the following:
-
-- Get `sensor-data` ingress HTTP endpoint with `kubectl cloudflow status sensor-data-java`
-
-In the example output below the HTTP endpoint would be `docker-registry-default.my.kubernetes.cluster/sensor-data`:
-
 ```
-kubectl cloudflow status sensor-data-java
-Name:             sensor-data-java
-Namespace:        sensor-data-java
-Version:          445-fcd70ca
-Created:          2019-08-20 11:24:54 +0200 CEST
-Status:           Running
-
-STREAMLET         ENDPOINT          
-sensor-data       docker-registry-default.my.kubernetes.cluster/sensor-data
-
-STREAMLET         POD                                          STATUS            RESTARTS          READY             
-metrics           sensor-data-java-metrics-67bc5c45f7-7v5p9    Running           0                 True
-sensor-data       sensor-data-java-sensor-data-f8fb77d85-bgtb9 Running           0                 True
-filter            sensor-data-java-filter-667d85d44b-8ltmg     Running           0                 True
-validation        sensor-data-java-validation-7754885f99-h4l67 Running           0                 True
+$ kubectl apply -f claim.yaml
 ```
 
-- Pick a test data file from `./test-data`, for example `test-data/04-moderate-breeze.json`
-- Send the file to the HTTP endpoint of the ingress using the following `curl` command
+* Deploy the app.
 
+```
+$ kubectl cloudflow  deploy -u oauth2accesstoken --volume-mount filter.configuration=claim1   eu.gcr.io/<projectID>/sensor-data-java:9-bbdec44-dirty  -p "$(gcloud auth print-access-token)" valid-logger.log-level=info valid-logger.msg-prefix=valid
+```
 
-    curl -i -X POST sensor-data-java.robert-test.ingestion.io/sensor-data -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
+Note: The application uses Akka system log which by default it has log level _Warning_.
+We have deployed with log level _info_ so we can see the valid entries on the console.
 
-### Example Deployment example on GKE
+* Verify that the application is deployed.
 
-TODO:
+```
+$ kubectl cloudflow list
+NAME              NAMESPACE         VERSION           CREATION-TIME     
+sensor-data-java  sensor-data-java  9-bbdec44-dirty   2019-11-26 13:58:55 +0200 EET
+
+```
+
+* Check all pods are running.
+
+```
+$ kubectl get pods -n sensor-data-java
+NAME                                            READY   STATUS    RESTARTS   AGE
+sensor-data-java-filter-6bd89bd94-lhqvq         1/1     Running   0          93s
+sensor-data-java-metrics-6db886c9f8-8xt4d       1/1     Running   0          94s
+sensor-data-java-sensor-data-845f4dcdc4-g9rs9   1/1     Running   0          93s
+sensor-data-java-validation-59cb8fbb56-rln6l    1/1     Running   0          94s
+```
+
+* Posting data
+
+Access the HTTP ingress (no public ingress is available by default):
+
+```
+$ kubectl port-forward sensor-data-java-sensor-data-845f4dcdc4-g9rs9 -n sensor-data-java 3002:3002
+
+$ cat test-data/04-moderate-breeze.json
+{
+   "deviceId": "c75cb448-df0e-4692-8e06-0321b7703992",
+   "timestamp": 1495545346279,
+   "measurements": {
+       "power": 1.7,
+       "rotorSpeed": 3.9,
+       "windSpeed": 25.3
+   }
+}
+
+$ curl -i -X POST localhost:3003 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
+HTTP/1.1 202 Accepted
+Server: akka-http/10.1.10
+Date: Mon, 25 Nov 2019 11:23:14 GMT
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 88
+
+The request has been accepted for processing, but the processing has not been completed.
+```
+
+This application does not log processed data. For a more complete application check the Scala version
+[here](../sensor-data-scala/README.md).
+
+* Undeploy.
+
+```
+$ kubectl cloudflow undeploy sensor-data-java
+```

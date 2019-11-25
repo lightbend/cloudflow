@@ -30,7 +30,7 @@ $ clean
 $ buildAndPublish
 ```
 
-The above will build the application and publish application Docker images to the Docker registry, as configured in `target-env.sbt`.
+The above command builds the application and publish application Docker images to the Docker registry, as configured in `target-env.sbt`.
 
 > **Note:** You need to copy `target-env.sbt.example` to `target-env.sbt` with appropriate settings for the Docker registry in order for the build and publish to go through.
 
@@ -172,5 +172,5 @@ $ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
 * Undeploy.
 
 ```
-kubectl cloudflow  undeploy taxi-ride-fare
+$ kubectl cloudflow undeploy taxi-ride-fare
 ```
