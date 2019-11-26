@@ -74,5 +74,6 @@ Cloudflow aims to make this easier by integrating the most popular streaming fra
 
 * [Getting Started](docs/Getting%20Started.md)
 * Example / walk-through
+* [Creating a Cloudflow cluster on Kubernetes](https://github.com/lightbend/cloudflow-installer) 
 * Deploying to a cluster
 * Contributors
