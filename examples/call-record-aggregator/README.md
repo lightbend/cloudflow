@@ -5,7 +5,6 @@
 
 This application aggregates streaming data for phone call records. It's a mixed Cloudflow application consisting of Akka and Spark-based streamlets.
 
-
 ### Sub projects
 
 This application consists of the following sub-projects:
@@ -136,5 +135,5 @@ Loading application.conf from: /etc/cloudflow-runner/application.conf, secret co
 * Undeploy.
 
 ```
-$ kubectl cloudflow  undeploy call-record-aggregator
+$ kubectl cloudflow undeploy call-record-aggregator
 ```

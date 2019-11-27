@@ -3,7 +3,8 @@
 # This script loads the necessary files into the PVC that is mounted by the file based ingress
 # For this to work the application has to be deployed and all pods need to have entered `running` state
 
-streamletName="sensor-data-file-ingress"
+# name of the streamlet in te blueprint
+streamletName="file-ingress"
 podName=$(kubectl get pods -n sensor-data-scala -l com.lightbend.cloudflow/streamlet-name=$streamletName --output jsonpath={.items..metadata.name})
 if [ $? -ne 0 ]; then
     echo "Could not find the streamlet `$streamletName` which contains the mounted PVC this script will copy test files into."
