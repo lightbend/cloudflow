@@ -5,7 +5,7 @@ This document introduces the basic steps needed to install all components of Clo
 We will discuss the following steps in sequence:
 
 1. Download and install Cloudflow CLI
-2. Go through all steps of developing a sample hello world application using Cloudflow libraries
+2. Go through all steps of developing a sample "hello world" application using Cloudflow libraries
 3. Install a GKE cluster following instructions in `cloudflow-installer` repository
 4. Build the application and publish to GKE repository using `sbt buildAndPublish`
 5. Deploy the application to the cluster using Cloudflow CLI
@@ -21,7 +21,7 @@ Cloudflow CLI can be downloaded from [lightbend public bintray repository](https
 
 ## Develop a sample Cloudflow application
 
-In this section we will develop a sample application that will feature the main components of Cloudflow. It will be a simple hello-world style application, expressive enough to demonstrate the major features of Cloudflow. It will not have many of the advanced features that Cloudflow offers - the main idea is to give you a feel for what it takes to build a complete application and deploy it in running condition in a GKE cluster.
+In this section we will develop a sample application that will feature the main components of Cloudflow. It will be a simple "hello world" style application, expressive enough to demonstrate the major features of Cloudflow. It will not have many of the advanced features that Cloudflow offers - the main idea is to give you a feel for what it takes to build a complete application and deploy it in running condition in a GKE cluster.
 
 We will develop a simple pipeline that processes events from a wind turbine farm. The application will receive streaming data that will pass through the following transformations :
 
@@ -94,7 +94,7 @@ The above build script is standard Scala sbt - the only difference is the plugin
 
 ### Schema first approach
 
-In Cloudflow streamlets work with optional inputs and outputs that are statically typed. The types represent objects that the specific input / output can handle. The first step in application development is to encode the objects in the form of [avro schema](https://avro.apache.org/docs/current/). Cloudflow will generate appropriate classes corresponding to each schema.
+In Cloudflow, streamlets work with optional inputs and outputs that are statically typed. The types represent objects that the specific input / output can handle. The first step in application development is to encode the objects in the form of [avro schema](https://avro.apache.org/docs/current/). Cloudflow will generate appropriate classes corresponding to each schema.
 
 Let's start building the avro schema for the domain objects that we need for the application. These schema files will have an extension `.avsc` and will go directly under `src/main/avro` in the project structure that we discussed earlier.
 
@@ -199,7 +199,7 @@ Let's start building the avro schema for the domain objects that we need for the
 }
 ```
 
-> **Note:** The above schema files are processed during the build process through the infrastructure of the Cloudflow plugin system. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used form within the application.
+> **Note:** The above schema files are processed during the build process through the infrastructure of the Cloudflow plugin system. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used from within the application.
 
 
 ### Let's build some streamlets
@@ -263,7 +263,7 @@ class SensorDataToMetrics extends AkkaStreamlet {
 
 The above streamlet has an inlet and an outlet and processes data that it receives using the business logic. In this example we convert `SensorData` to `Metric` - note that the inlets and outlets are typed accordingly.
 
-Now that we have the metric that we would like to measure and track, we need to validate them as per business rules. And we have a separate streamlet (`validation`) for doing exactly this.
+Now that we have the metric that we would like to measure and track, we need to validate them as per business rules. We have a separate streamlet (`validation`) for doing exactly this.
 
 **MetricsValidation.scala**
 
@@ -304,9 +304,9 @@ object SensorDataUtils {
 }
 ```
 
-In real life we will have more complex business logic - this is just for demonstration only.
+In real life we will have more complex business logic - this is just for demonstration.
 
-Finally we are down to the point where we can log the valid and invalid metrics separately in 2 streamlets - `valid-logger` nd `invalid-logger`.
+Finally we are down to the point where we can log the valid and invalid metrics separately in 2 streamlets - `valid-logger` and `invalid-logger`.
 
 
 **ValidMetricLogger.scala**
@@ -431,7 +431,7 @@ package object sensordata {
 
 ### Let's join Streamlets to form the Pipeline
 
-As we mentioned above, we need to have a blueprint of the pipeline that will declare which streamlets join together to form our pipeline. Here's `blueprint.conf` in `src/main/blueprint` that does specify the connection:
+As we mentioned above, we need to have a blueprint of the pipeline that will declare which streamlets are joined together to form our pipeline. Here's `blueprint.conf` in `src/main/blueprint` that does specify the connection:
 
 ```
 blueprint {
@@ -458,7 +458,7 @@ Now that we have the application code implemented, let's try to build the applic
 
 **Verify the Blueprint**
 
-Cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected end points, invalid streamlets and other issues related to the structure and semantics of the pipeline.
+Cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected endpoints, invalid streamlets and other issues related to the structure and semantics of the pipeline.
 
 ```
 sbt:sensor-data> verifyBlueprint
@@ -506,7 +506,7 @@ To terminate, press [ENTER]
 
 ```
 
-Let's now move to the cluster mode and install a GKE cluster following the instructions from [Cloudflow Installer Guide](https://blank.com).
+Let's now move to the cluster mode and install a GKE cluster following the instructions from [Cloudflow Installer Guide](https://github.com/lightbend/cloudflow-installer).
 
 ## Install a GKE Cluster
 
@@ -519,7 +519,7 @@ Instructions to install a GKE cluster with Cloudflow is described in details in 
 * Create a GKE cluster with a specific name `./gke-create-cluster.sh <cluster-name>`
 * Install Cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
 
-This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
+This will take you through the process of installing Cloudflow in the cluster. In the course of this installation, it will ask a few questions regarding the storage class to be installed. The following should be the responses to these:
 
 ```
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteMany'.
@@ -618,7 +618,7 @@ This is quite straightforward and the output of `buildAndPublish` actually tells
 $ kubectl-cloudflow deploy -u oauth2accesstoken eu.gcr.io/<gcloud project id>/sensor-data:2-89ce8a7 -p "$(gcloud auth print-access-token)"
 ```
 
-If the command goes through you will see the following output:
+If the command succeeds, you will see the following output:
 
 ```
 [Done] Deployment of application `sensor-data` has started.
@@ -747,7 +747,7 @@ Handling connection for 3003
 * Push data to the application. In order to do that follow the steps:
  * create a json file named `data.json` with the content `{"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545346279,"measurements":{"power":1.7,"rotorSpeed":23.4,"windSpeed":100.1}}`
  * run the following bash script:
- ```
+```
  for str in $(cat test-data/10-storm.json)
 do
   echo "Using $str"
