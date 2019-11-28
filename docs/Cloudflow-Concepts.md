@@ -1,4 +1,4 @@
-# Cloudflow - Basic Concepts
+# Cloudflow - Core Concepts
 
 This document gives you an overview of the main building blocks of a Cloudflow application.
 
