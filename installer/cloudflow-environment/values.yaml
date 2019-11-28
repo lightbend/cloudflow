@@ -1,0 +1,101 @@
+# Copyright (C) 2016-2019 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+tags:
+  targetGke: false
+  targetMinikube: false
+  targetMinishift: false
+  
+## Kafka & Strimzi
+kafka:
+  mode: "CloudflowManaged"
+  bootstrapServers: ""
+  zookeeperHosts: ""
+  strimzi:
+    name: "cloudflow-strimzi"
+    namespace: ""
+    version: ""
+    clusterOperatorNamespace: ""
+    topicOperatorNamespace: ""
+    deletePersistentVolumeClaimsOnDelete: false
+    useDedicatedNodes: false
+    kafka:
+      version: 2.3.0
+      config:
+        offsets.topic.replication.factor: 3
+        transaction.state.log.replication.factor: 3
+        transaction.state.log.min.isr: 2
+        log.retention.hours: -1
+        log.retention.bytes: 112197632
+        auto.create.topics.enable: false
+        log.message.format.version: "2.3"
+      replicas: 3
+      resources: {}
+      persistentVolumeClaimSize: 1Gi
+    zookeeper:
+      replicas: 3
+      resources: {}
+      persistentVolumeClaimSize: 1Gi
+    entityOperator:
+      topicOperator:
+        resources: {}
+    standaloneTopicOperator:
+      resources: {}
+
+cloudflow:
+  domain: ""
+
+operator:
+  clusterType: ""
+  image:
+    name: ""
+    pullPolicy: "IfNotPresent"
+  resources:
+    requests:
+      cpu: ""
+      memory: ""
+    limits:
+      cpu: ""
+      memory: ""
+  ## Akka runner settings
+  akkaRunner:
+    requestsCpu: ""
+    requestsMemory: ""
+    limitsMemory: ""
+  ## Spark driver settings
+  sparkDriver:
+    requestsCpu: ""
+    requestsMemory: ""
+  ## Spark executor settings
+  sparkExecutor:
+    requestsCpu: ""
+    requestsMemory: ""
+  ## Events Persistence
+  eventsPersistence:
+    enabled: false
+    es:
+      useConsoleEs: false
+      host: "localhost"
+      port: 9200
+      index: "cloudflow_events"
+      type: "_doc"
+  ## JVM command line options
+  jvm:
+    opts: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
+  # PVC configuration
+  persistentStorageClass: ""
+## Prometheus
+prometheus:
+  enabled: true
+  port: 2049

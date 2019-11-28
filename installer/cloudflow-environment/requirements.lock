@@ -1,0 +1,6 @@
+dependencies:
+- name: cloudflow-api-server
+  repository: http://127.0.0.1:8879/
+  version: 0.2.0
+digest: sha256:1aa3352505e58df0757d0d0ca200a5bf176cdfc6dc2b6c258ec148db7726b119
+generated: 2018-12-16T13:31:23.697116827+01:00
