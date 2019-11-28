@@ -4,7 +4,7 @@ import sbt.Keys._
 import scalariform.formatter.preferences._
 import Library._
 
-import Library._
+import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
   Project(id = "root", base = file("."))
@@ -447,6 +447,21 @@ lazy val commonSettings = Seq(
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2019", "Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Version.Scala,
   autoAPIMappings := true,
+
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("publishSigned"),
+    releaseStepCommand("sonatypeBundleRelease"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  ),
 
   unidocGenjavadocVersion := "0.13",
 
