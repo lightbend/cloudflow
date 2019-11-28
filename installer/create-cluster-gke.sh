@@ -37,7 +37,8 @@ gcloud container clusters create $CLUSTER_NAME \
   --enable-autoscaling \
   --max-nodes=7 \
   --min-nodes=1 \
-  --no-enable-legacy-authorization
+  --no-enable-legacy-authorization \
+  --no-enable-autoupgrade
 
 # Create node-pool for Strimzi resources.
 # `gcloud beta` required to init taints as of 04/10/18
