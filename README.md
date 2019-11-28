@@ -81,7 +81,8 @@ Cloudflow aims to make this easier by integrating the most popular streaming fra
 
 * [Getting Started with Cloudflow](https://cloudflow.io/docs/current/get-started/index.html)
 * [Developing Applications with Cloudflow](https://cloudflow.io/docs/current/develop/cloudflow-streamlets.html)
-* Want to [contribute](./CONTRIBUTING.md)?
+* [Setup Cloudflow on a Kubernetes Cluster](./installer/README.md)
 * Chat with us on [Gitter](https://gitter.im/lightbend/cloudflow)
 * Ask us a question on [Discuss](https://discuss.lightbend.com/c/cloudflow)
+* Want to [contribute](./CONTRIBUTING.md)?
 
