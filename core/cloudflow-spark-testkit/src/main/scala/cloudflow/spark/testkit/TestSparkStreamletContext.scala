@@ -40,7 +40,6 @@ import cloudflow.streamlets._
 private[testkit] class TestSparkStreamletContext(
     override val streamletRef: String,
     session: SparkSession,
-    portMapping: Map[String, String],
     inletTaps: Seq[SparkInletTap[_]],
     outletTaps: Seq[SparkOutletTap[_]],
     override val config: Config = ConfigFactory.empty)

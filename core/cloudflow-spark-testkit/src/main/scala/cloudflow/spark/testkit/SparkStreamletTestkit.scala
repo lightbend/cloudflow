@@ -144,7 +144,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       outletTaps: Seq[SparkOutletTap[_]],
       duration: Duration
   ): Unit = {
-    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Map.empty[String, String], inletTaps, outletTaps, config)
+    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, inletTaps, outletTaps, config)
     doRun(ctx, sparkStreamlet, duration)
   }
 
@@ -166,7 +166,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       outletTap: SparkOutletTap[_],
       duration: Duration
   ): Unit = {
-    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Map.empty[String, String], Seq(inletTap), Seq(outletTap), config)
+    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Seq(inletTap), Seq(outletTap), config)
     doRun(ctx, sparkStreamlet, duration)
   }
 
@@ -188,7 +188,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       outletTap: SparkOutletTap[_],
       duration: Duration
   ): Unit = {
-    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Map.empty[String, String], inletTaps, Seq(outletTap), config)
+    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, inletTaps, Seq(outletTap), config)
     doRun(ctx, sparkStreamlet, duration)
   }
 
@@ -210,7 +210,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       outletTaps: Seq[SparkOutletTap[_]],
       duration: Duration
   ): Unit = {
-    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Map.empty[String, String], Seq(inletTap), outletTaps, config)
+    val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Seq(inletTap), outletTaps, config)
     doRun(ctx, sparkStreamlet, duration)
   }
 
