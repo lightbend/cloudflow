@@ -1,4 +1,12 @@
-on: push
+on:
+  # Trigger the workflow on push or pull request,
+  # push only for the master branch
+  # PR for all branches
+  push:
+    branches:
+      - master
+  pull_request:
+    
 name: Build and Test
 jobs:
   build-and-test-scala:
