@@ -18,16 +18,11 @@ Testing on other major cloud providers is in the roadmap.
 
 ## Prerequisites
 
-### K8s CLI's
-You need the command line tool for your particular Kubernetes cluster:
+To use the Cloudflow GKE installer, you need to have the following packages installed on your local machine:
+
 * [Google Cloud SDK](https://cloud.google.com/sdk/)
-* [Amazon CLI for EKS](https://eksctl.io/)
-
-Note: Make sure you have the latest `aws-cli` version.
-
-### Utilities
 * [jq](https://stedolan.github.io/jq/)
-* [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
+* [Helm v2](https://helm.sh/) *note: Cloudflow installer is currently not compatible with Helm v3*
 
 ## Installation Procedure
 
@@ -58,6 +53,10 @@ Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 Some extra considerations are needed when integrating EFS with EKS. Please make sure the user launching the cluster
 satisfies the security groups requirements explained
 [here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html).
+
+## Uninstall Procedure
+
+In case of a failed installation, or if you simply want to uninstall entirely, run `./uninstall-cloudflow.sh`.
 
 ## Uninstall Procedure
 
