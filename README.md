@@ -1,6 +1,9 @@
 <p>
 <img src="./docs/images/logo.svg" width="300">
 </p>
+
+[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Cloudflow enables users to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.
 Cloudflow allows you to easily break down your streaming application to smaller composable components and wire them together with schema-based contracts.
 Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime.
@@ -17,8 +20,6 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 - A CLI, in the form of a `kubectl` plugin, that facilitates manual and scripted management of the application.  
 
 The different parts of Cloudflow work in unison to dramatically accelerate your application development efforts, reducing the time required to create, package, and deploy an application from weeks to hours.
-
-[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Basic Concepts
 
