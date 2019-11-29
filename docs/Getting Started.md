@@ -86,7 +86,17 @@ lazy val sensorData =  (project in file("."))
   )
 ```
 
-Cloudflow offers several sbt plugins that abstract quite a bit of boilerplates necessary to build a complete application. In this example we use the plugin `CloudflowAkkaStreamsApplicationPlugin` that provides you all building blocks of developing an Akka Streams based Cloudflow application.
+Cloudflow offers several sbt plugins that abstract quite a bit of boilerplates necessary to build a complete application. In this example we use the plugin `CloudflowAkkaStreamsApplicationPlugin` that provides you all building blocks of developing an Akka Streams based Cloudflow application. Create `project/cloudflow-plugins.sbt` with the following content so sbt can resolve that plugin: 
+
+**cloudflow-plugins.sbt**
+
+```
+// Resolver for the cloudflow-sbt plugin
+//
+resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/"
+
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.0-M1")
+```
 
 > **Note:** You can use multiple plugins to develop an application that uses multiple runtimes (Akka, Spark, Flink etc.). For simplicity of this example we will be using only one.
 
@@ -201,6 +211,11 @@ Let's start building the avro schema for the domain objects that we need for the
 
 > **Note:** The above schema files are processed during the build process through the infrastructure of the Cloudflow plugin system. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used from within the application.
 
+Launch a first compilation to generate those scala case classes: 
+
+```
+sbt compile
+```
 
 ### Let's build some streamlets
 
