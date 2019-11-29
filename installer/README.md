@@ -16,6 +16,14 @@ Additionally, this installer deploys:
 Currently, the provided installation scripts are validated for Google Kubernetes Engine (GKE) on the Google Cloud Platform. 
 Testing on other major cloud providers is in the roadmap.
 
+## Prerequisites
+
+To use the Cloudflow GKE installer, you need to have the following packages installed on your local machine:
+
+* [Google Cloud SDK](https://cloud.google.com/sdk/)
+* [jq](https://stedolan.github.io/jq/)
+* [Helm v2](https://helm.sh/) *note: Cloudflow installer is currently not compatible with Helm v3*
+
 ## Installation Procedure
 
 To install Cloudflow on GKE it is a straightforward process:
@@ -28,6 +36,10 @@ $ ./install-gke.sh <gke-cluster-name>
 ```
 Replace above `<gke-cluster-name>` with the preferred name for
 your GKE cluster.
+
+## Uninstall Procedure
+
+In case of a failed installation, or if you simply want to uninstall entirely, run `./uninstall-cloudflow.sh`.
 
 Notes
 -----

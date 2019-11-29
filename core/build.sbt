@@ -447,6 +447,7 @@ lazy val commonSettings = Seq(
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2019", "Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Version.Scala,
   autoAPIMappings := true,
+  useGpgAgent := false,
 
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
