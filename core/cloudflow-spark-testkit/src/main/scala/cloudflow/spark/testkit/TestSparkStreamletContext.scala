@@ -37,13 +37,13 @@ import cloudflow.streamlets._
  * `writeStream` returns a `StreamingQuery` that pushes the input `Dataset[Out]` to
  *              a `MemorySink`.
  */
-private[testkit] class TestSparkStreamletContext(override val streamletRef: String,
-                                                 session: SparkSession,
-                                                 inletTaps: Seq[SparkInletTap[_]],
-                                                 outletTaps: Seq[SparkOutletTap[_]],
-                                                 override val config: Config = ConfigFactory.empty)
-    extends SparkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
-                                  session) {
+private[testkit] class TestSparkStreamletContext(
+    override val streamletRef: String,
+    session: SparkSession,
+    inletTaps: Seq[SparkInletTap[_]],
+    outletTaps: Seq[SparkOutletTap[_]],
+    override val config: Config = ConfigFactory.empty)
+  extends SparkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config), session) {
 
   override def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
     inletTaps
