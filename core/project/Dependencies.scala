@@ -28,6 +28,7 @@ object Library {
   val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9"
+  val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9"
 
   val Skuber                = "io.skuber"             %% "skuber"                   % "2.3.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 
