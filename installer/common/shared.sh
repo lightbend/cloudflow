@@ -37,7 +37,7 @@ set +x
 
 # Cloudflow operator version
 export operatorImageName="lightbend/cloudflow-operator"
-export operatorImageTag="89-f8a4ddc"
+export operatorImageTag="24-4a50b57"
 export operatorImage="$operatorImageName:$operatorImageTag"
 
 # Kafka installation mode CloudflowManaged|ExternalStrimzi|External
