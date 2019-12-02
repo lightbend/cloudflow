@@ -75,7 +75,7 @@ abstract class FlinkStreamlet extends Streamlet with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
   // ctx is always first set by runner through `init` so this is safe.
-  private var ctx: FlinkStreamletContext = null
+  @volatile private var ctx: FlinkStreamletContext = null
 
   private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
