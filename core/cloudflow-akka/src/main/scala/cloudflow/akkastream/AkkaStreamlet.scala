@@ -33,6 +33,24 @@ import net.ceedubs.ficus.Ficus._
 abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
   final override val runtime = AkkaStreamletRuntime
 
+  // ctx is always first set by runner through `init` so this is safe.
+  @volatile private var ctx: AkkaStreamletContext = null
+
+  /**
+   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
+   */
+  protected final implicit def context: AkkaStreamletContext = {
+    if (ctx == null) throw new StreamletContextException()
+    ctx
+  }
+
+  /**
+   * Java API
+   *
+   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
+   */
+  protected final def getStreamletContext(): AkkaStreamletContext = context
+
   /**
    * Initialize the streamlet from the config. In some cases (e.g. the tests) we may pass a context
    * directly to be used instead of building it from the config.

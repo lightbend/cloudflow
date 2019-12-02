@@ -66,7 +66,10 @@ import cloudflow.streamlets._
 trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
 
-  private val readyPromise      = Promise[Dun]()
+  // ctx is always first set by runner through `init` so this is safe.
+  @volatile private var ctx: SparkStreamletContext = null
+
+  private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
   private val completionFuture  = completionPromise.future
 

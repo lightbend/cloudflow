@@ -71,7 +71,10 @@ import cloudflow.streamlets._
 abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
-  private val readyPromise      = Promise[Dun]()
+  // ctx is always first set by runner through `init` so this is safe.
+  @volatile private var ctx: FlinkStreamletContext = null
+
+  private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
   private val completionFuture  = completionPromise.future
 
