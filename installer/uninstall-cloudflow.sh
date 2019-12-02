@@ -25,7 +25,7 @@ fi
 
 
 # shellcheck source=common/detect.sh
-source "$currentDirectory"/detect.sh
+. common/detect.sh
 
 echo "This script will remove all Cloudflow related objects from the Kubernetes cluster currently logged in to"
 read -p "Do you want to continue ? (y/n) " -n 1 -r
