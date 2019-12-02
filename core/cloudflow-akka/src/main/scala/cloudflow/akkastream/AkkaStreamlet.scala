@@ -36,7 +36,7 @@ abstract class AkkaStreamlet extends Streamlet {
   final override val runtime = AkkaStreamletRuntime
 
   // ctx is always first set by runner through `init` so this is safe.
-  private var ctx: AkkaStreamletContext = null
+  @volatile private var ctx: AkkaStreamletContext = null
 
   /**
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
