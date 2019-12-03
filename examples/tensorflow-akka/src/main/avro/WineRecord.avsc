@@ -1,0 +1,57 @@
+{
+  "namespace": "modelserving.wine.avro",
+  "type": "record",
+  "name": "WineRecord",
+  "doc": "'lot_id' is added to the original records, simulating the id of the 'lot' where this wine originated. Mostly we use it as a potential partition key.",
+  "fields":[
+    {
+      "name": "datatype",
+      "type": "string",
+      "default": "wine"
+    },
+    {
+      "name": "fixed_acidity",
+      "type": "double"
+    },
+    {
+      "name": "volatile_acidity",
+      "type": "double"
+    },
+    {
+      "name": "citric_acid",
+      "type": "double"
+    },
+    {
+      "name": "residual_sugar",
+      "type": "double"
+    },
+    {
+      "name": "chlorides",
+      "type": "double"
+    },
+    {
+      "name": "free_sulfur_dioxide",
+      "type": "double"
+    },
+    {
+      "name": "total_sulfur_dioxide",
+      "type": "double"
+    },
+    {
+      "name": "density",
+      "type": "double"
+    },
+    {
+      "name": "pH",
+      "type": "double"
+    },
+    {
+      "name": "sulphates",
+      "type": "double"
+    },
+    {
+      "name": "alcohol",
+      "type": "double"
+    }
+  ]
+}
