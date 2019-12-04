@@ -42,6 +42,7 @@ Here's how we would structure a typical Cloudflow application as a project.
 
 ```
    |-project
+   |---cloudflow-plugins.sbt
    |-src
    |---main
    |-----avro
@@ -58,6 +59,7 @@ This is a Scala project and we have the following structural components at the l
 * **blueprint** : contains the blueprint of the application in a file named `blueprint.conf`
 * **scala** : contains the source code of the application under the package name `sensordata`
 * **build.sbt** : the sbt build script
+* **project/cloudflow-plugins.sbt** : contains the cloudflow sbt plugin name and version
 
 ### The sbt build script
 
@@ -90,7 +92,17 @@ Cloudflow offers several sbt plugins that abstract quite a bit of boilerplates n
 
 > **Note:** You can use multiple plugins to develop an application that uses multiple runtimes (Akka, Spark, Flink etc.). For simplicity of this example we will be using only one.
 
-The above build script is standard Scala sbt - the only difference is the plugin which we provide as part of Cloudflow.
+The above build script is standard Scala sbt - the only difference is the plugin which we provide as part of Cloudflow. And here's how we specify the name and version of the plugin to use:
+
+**project/cloudflow-plugins.sbt**
+
+```
+// Resolver for the cloudflow-sbt plugin
+//
+resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/"
+
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.0-M1")
+```
 
 ### Schema first approach
 
