@@ -1,0 +1,96 @@
+{
+  "namespace": "pipelines.examples.frauddetection.data",
+  "type": "record",
+  "name": "CustomerTransaction",
+  "doc": "'lot_id' is added to the original records, simulating the id of the 'lot' where this wine originated. Mostly we use it as a potential partition key.",
+  "fields":[
+    {
+      "name": "time",
+      "type": "long"
+     },
+    {
+      "name": "v1",
+      "type": "float"
+    },
+    {
+      "name": "v2",
+      "type": "float"
+    },
+    {
+      "name": "v3",
+      "type": "float"
+    },
+    {
+      "name": "v4",
+      "type": "float"
+    },
+    {
+      "name": "v5",
+      "type": "float"
+    },
+    {
+      "name": "v6",
+      "type": "float"
+    },
+    {
+      "name": "v7",
+      "type": "float"
+    },
+    {
+      "name": "v9",
+      "type": "float"
+    },
+    {
+      "name": "v10",
+      "type": "float"
+    },
+    {
+      "name": "v11",
+      "type": "float"
+    },
+    {
+      "name": "v12",
+      "type": "float"
+    },
+    {
+      "name": "v14",
+      "type": "float"
+    },
+    {
+      "name": "v16",
+      "type": "float"
+    },
+    {
+      "name": "v17",
+      "type": "float"
+    },
+    {
+      "name": "v18",
+      "type": "float"
+    },
+    {
+      "name": "v19",
+      "type": "float"
+    },
+    {
+      "name": "v21",
+      "type": "float"
+    },
+    {
+      "name": "amount",
+      "type": "float"
+    },
+    {
+      "name": "transactionId",
+      "type": "string"
+    },
+    {
+      "name": "customerId",
+      "type": "string"
+    },
+    {
+      "name": "merchantId",
+      "type": "string"
+    }
+  ]
+}

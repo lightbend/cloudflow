@@ -24,7 +24,8 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
-    name := "taxi-ride-fare"
+    name := "taxi-ride-fare",
+    cloudflowDockerRegistry := Some("gcr.io/gsa-pipeliners")
   )
   .dependsOn(ingestor, processor, ridelogger)
 

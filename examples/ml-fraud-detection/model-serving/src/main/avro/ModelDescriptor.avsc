@@ -1,0 +1,30 @@
+{
+  "namespace": "modelserving.model",
+  "type": "record",
+  "name": "ModelDescriptor",
+  "doc": "Messages for exchanging model data (bytes for deserializing, optionally) and metadata. Note that using a enum string, rather than an ordinal for modelType may cause problems for Spark usage of this library.",
+  "fields":[
+    {
+      "name": "modelName",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "modelType",
+      "type" : {"type": "enum",
+                "name": "ModelType",
+                "symbols" : ["UNKNOWN", "TENSORFLOW", "TENSORFLOWSAVED", "TENSORFLOWSERVING"]}
+    },
+    {
+      "name": "modelBytes",
+      "type": ["bytes","null"]
+    },
+    {
+      "name": "modelSourceLocation",
+      "type": ["string","null"]
+    }
+  ]
+}

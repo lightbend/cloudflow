@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+
+  <logger name="akka" level="DEBUG" />
+
+  <logger name="akka.io"             level="INFO" />
+  <logger name="akka.kafka.internal" level="INFO" />
+
+  <logger name="pipelinesx.ingress.RecordsReader$"   level="DEBUG" />
+
+  <root level="DEBUG">
+<!--
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+      <file>logs/test.log</file>
+      <encoder>
+        <pattern>%msg%n</pattern>
+      </encoder>
+    </appender>
+ -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <target>System.out</target>
+      <encoder>
+        <pattern>%msg%n</pattern>
+      </encoder>
+    </appender>
+  </root>
+</configuration>

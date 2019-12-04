@@ -1,0 +1,13 @@
+{
+  "namespace": "pipelines.examples.frauddetection.data",
+  "name": "ScoreFromTheModel",
+  "type": "record",
+  "doc": "Use this type when the model output 'value' is a double.",
+  "fields": [
+    {
+      "name": "value",
+      "type": "double",
+      "default": 0.0
+    }
+  ]
+}
