@@ -1,3 +1,4 @@
+[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 <p>
 <img src="./docs/images/logo.svg" width="300">
 </p>
@@ -6,7 +7,13 @@ Cloudflow allows you to easily break down your streaming application to smaller 
 Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime.
 With its powerful abstractions, Cloudflow allows to define, build and deploy the most complex streaming applications.
 
-In a nutshell, Cloudflow is an application development toolkit composed of:
+- Develop: Focus only on business logic, leave the boilerplate to us.
+- Build: We provide all the tooling for going from business logic to a deployable Docker image.
+- Deploy: We provide Kubernetes tooling to deploy your distributed system with a single command, and manage durable connections between processing stages.
+- Operate: With a Lightbend subscription, you get all the tools you need to provide insights, observability, and lifecycle management for evolving your distributed streaming application.
+
+As data pipelines become first-class citizens in microservices architectures, Cloudflow gives developers data-optimized programming abstractions and run-time tooling for Kubernetes. 
+In a nutshell, Cloudflow is an application development toolkit comprising:
 
 - An API definition for `Streamlet`, the core abstraction in Cloudflow.
 - An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Spark's Structured Streaming, Flink, and Akka.
@@ -18,7 +25,6 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 
 The different parts of Cloudflow work in unison to dramatically accelerate your application development efforts, reducing the time required to create, package, and deploy an application from weeks to hours.
 
-[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Basic Concepts
 
@@ -51,9 +57,9 @@ Your code is written in your familiar Structured Streaming, Flink, or Akka Strea
 
 Applications are deployed as a whole. Cloudflow takes care of deploying the individual `streamlets` and making sure connections get translated into data flowing between them at runtime.
 
----
+Learn more about the Cloudflow building blocks in our [Cloudflow Core Concepts](./docs/Cloudflow-Concepts.md)
 
-## Motivation: Why Cloudflow?
+## The Drivers Behind Cloudflow
 
 Technologies like mobile, the Internet of Things (IoT), Big Data analytics, machine learning, and others are driving enterprises to modernize how they process large volumes of data.
 A rapidly growing percentage of that data is now arriving in the form of data streams.
@@ -71,8 +77,12 @@ It can be quite hard to develop, deploy, and operate large-scale microservices-b
 Cloudflow aims to make this easier by integrating the most popular streaming frameworks into a single platform for creating and running distributed Fast Data applications on Kubernetes.
 
 ---
+## Where to Go Next?
 
-* [Getting Started](docs/Getting%20Started.md)
-* Example / walk-through
-* Deploying to a cluster
-* Contributors
+* [Getting Started with Cloudflow](https://cloudflow.io/docs/current/get-started/index.html)
+* [Developing Applications with Cloudflow](https://cloudflow.io/docs/current/develop/cloudflow-streamlets.html)
+* [Setup Cloudflow on a Kubernetes Cluster](./installer/README.md)
+* Chat with us on [Gitter](https://gitter.im/lightbend/cloudflow)
+* Ask us a question on [Discuss](https://discuss.lightbend.com/c/cloudflow)
+* Want to [contribute](./CONTRIBUTING.md)?
+

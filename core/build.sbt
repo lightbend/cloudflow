@@ -340,6 +340,7 @@ lazy val operator =
         Logback,
         Skuber,
         AkkaStreamTestkit,
+	JacksonDatabind,
         ScalaTest,
         ScalaCheck              % "test",
         Avro4sJson              % "test",

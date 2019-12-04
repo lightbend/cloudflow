@@ -69,7 +69,7 @@ trait SparkStreamlet extends Streamlet with Serializable {
   final override val runtime = SparkStreamletRuntime
 
   // ctx is always first set by runner through `init` so this is safe.
-  private var ctx: SparkStreamletContext = null
+  @volatile private var ctx: SparkStreamletContext = null
 
   private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
