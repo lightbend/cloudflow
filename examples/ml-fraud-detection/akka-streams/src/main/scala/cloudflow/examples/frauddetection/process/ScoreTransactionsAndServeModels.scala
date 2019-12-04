@@ -9,7 +9,7 @@ import model.{Model, MultiModelFactory}
 import model.actor.ModelServingActor
 import modelserving.model.{ModelDescriptor, ModelType}
 import cloudflow.akkastream.scaladsl.RunnableGraphStreamletLogic
-import cloudflow.streamlets.StreamletShape
+import cloudflow.streamlets.{StreamletShape, StringConfigParameter}
 import cloudflow.streamlets.avro.{AvroInlet, AvroOutlet}
 import cloudflow.examples.frauddetection.data.{CustomerTransaction, ScoreFromTheModel, ScoredTransaction}
 import cloudflow.examples.frauddetection.models.tensorflow.{FraudTensorFlowBundledModelFactory, FraudTensorFlowModelFactory}
@@ -33,9 +33,21 @@ final case object ScoreTransactionsAndServeModels extends AkkaStreamlet {
       ModelType.TENSORFLOWSAVED -> FraudTensorFlowBundledModelFactory,
     ))
 
+  val MLModelName = StringConfigParameter(
+    "ml-model-name",
+    "Name of ML Model",Some("a-tensorflow-model"))
+
+  val MLModelFileLocation = StringConfigParameter(
+    "ml-model-file-location",
+    "The File Path to the ml model", Some("models/a-tensorflow-model.pb"))
+
+  override def configParameters = Vector(MLModelName, MLModelFileLocation)
+
   //\\//\\//\\ LOGIC //\\//\\//\\
   final override def createLogic = new RunnableGraphStreamletLogic() {
 
+    val mlModelName = streamletConfig.getString(MLModelName.key)
+    val mlModelFileLocation = streamletConfig.getString(MLModelFileLocation.key)
 
     def runnableGraph() = {
       plainSource(transactionsComeInHere).via(theTransactionsFlow).to(plainSink(scoredTransactionsComeOutHere))
@@ -47,7 +59,8 @@ final case object ScoreTransactionsAndServeModels extends AkkaStreamlet {
       ModelServingActor.props[CustomerTransaction, Double](
         "fraud",
         modelFactory,
-        () ⇒ 0.0),
+        () ⇒ 0.0,
+        ModelDescriptor(mlModelName, "", ModelType.TENSORFLOW, null, Some(mlModelFileLocation))),
         )
 
     protected def theTransactionsFlow =

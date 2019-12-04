@@ -23,8 +23,7 @@ lazy val callRecordPipeline = appModule("call-record-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
-    name := "call-record-aggregator",
-    cloudflowDockerRegistry := Some("gcr.io/gsa-pipeliners")
+    name := "call-record-aggregator"
   )
   .dependsOn(akkaCdrIngestor, akkaJavaAggregationOutput, sparkAggregation)
 //end::docs-CloudflowApplicationPlugin-example[]

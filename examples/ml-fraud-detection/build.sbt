@@ -3,16 +3,28 @@ import sbt.Keys._
 import scalariform.formatter.preferences._
 import Dependencies._
 
-lazy val thisVersion = "1.3.0"
-version in ThisBuild := thisVersion
-fork := true
+lazy val root =
+  Project(id = "root", base = file("."))
+    .settings(
+      name := "root",
+      skip in publish := true,
+    )
+    .withId("root")
+    .settings(commonSettings)
+    .aggregate(
+      mlFraudDetection,
+      modelServing,
+      fraudDetectionSchema,
+      fraudDetectionAkkaStreams,
+      fraudDetectionSpark,
 
-lazy val mlFraudDetection = (project in file("./cloudflow"))
+    )
+
+lazy val mlFraudDetection = (project in file("./ml-fraud-detection"))
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(
     name := s"ml-fraud-detection",
-    version := thisVersion,
-    runLocalConfigFile := Some("./cloudflow/src/main/resources/local.conf")
+    runLocalConfigFile := Some("./ml-fraud-detection/src/main/resources/local.conf")
   )
   .settings(commonSettings)
   .dependsOn(fraudDetectionSchema, fraudDetectionSpark, fraudDetectionAkkaStreams)
