@@ -16,4 +16,8 @@
 
 # Perform checks of utilities required to perform the installation
 
+if [ "${BASH_VERSINFO}" -lt 4 ] | [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+	echo "Bash version must be >= 4 in order to run the Cloudflow installer script for GKE"
+	exit 1
+fi
 hash jq 2>/dev/null || { print_error_message >&2 "'jq' is required but it's not installed."; exit 1; }
