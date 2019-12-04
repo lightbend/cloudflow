@@ -79,7 +79,7 @@ Existing value will be used for configuration parameter 'transaction-generator.d
 Existing value will be used for configuration parameter 'fraud-detection.ml-model-file-location'
 Existing value will be used for configuration parameter 'fraud-detection.ml-model-name'
 WARNING! Using --password via the CLI is insecure. Use --password-stdin.
-[Done] Deployment of application `call-record-aggregator` has started.
+[Done] Deployment of application `ml-fraud-detection` has started.
 
 ```
 
@@ -118,7 +118,7 @@ log-transactions       ml-fraud-detection-log-transactions-6589d7b84d-hzswj     
 * Verify the application output.
 
 ```
-$ kubectl logs call-record-aggregator-console-egress-5f6f7777f8-dknt6  -n call-record-aggregator
+$ kubectl -n ml-fraud-detection logs -f ml-fraud-detection-log-transactions-558cbd847b-7wmps
 Running Akka entrypoint script
 Pipelines Runner
 Java opts: -javaagent:/app/prometheus/jmx_prometheus_javaagent-0.11.0.jar=2050:/etc/cloudflow-runner/prometheus.yaml -XX:MaxRAMPercentage=50.0 -Djdk.nio.maxCachedBufferSize=1048576
