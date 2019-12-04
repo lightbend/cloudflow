@@ -1,5 +1,5 @@
 {
-    "namespace": "pipelinesx.test",
+    "namespace": "cloudflowx.test",
     "type": "record",
     "name": "TestData",
     "fields":[

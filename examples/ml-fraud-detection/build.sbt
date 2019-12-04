@@ -7,13 +7,12 @@ lazy val thisVersion = "1.3.0"
 version in ThisBuild := thisVersion
 fork := true
 
-lazy val fraudDetectionPipeline = (project in file("./pipelines"))
+lazy val mlFraudDetection = (project in file("./cloudflow"))
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(
     name := s"ml-fraud-detection",
     version := thisVersion,
-    runLocalConfigFile := Some("./pipelines/src/main/resources/local.conf"),
-    cloudflowDockerRegistry := Some("gcr.io/gsa-pipeliners")
+    runLocalConfigFile := Some("./cloudflow/src/main/resources/local.conf")
   )
   .settings(commonSettings)
   .dependsOn(fraudDetectionSchema, fraudDetectionSpark, fraudDetectionAkkaStreams)

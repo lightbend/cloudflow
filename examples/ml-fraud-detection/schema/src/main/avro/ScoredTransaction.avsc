@@ -1,5 +1,5 @@
 {
-    "namespace": "pipelines.examples.frauddetection.data",
+    "namespace": "cloudflow.examples.frauddetection.data",
     "type": "record",
     "name": "ScoredTransaction",
     "fields":[
@@ -9,7 +9,7 @@
       },
       {
         "name": "modelResult",
-        "type": "pipelines.examples.frauddetection.data.ScoreFromTheModel"
+        "type": "cloudflow.examples.frauddetection.data.ScoreFromTheModel"
       }
   ]
 }

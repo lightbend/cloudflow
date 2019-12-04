@@ -1,5 +1,5 @@
 {
-  "namespace": "pipelines.examples.frauddetection.data",
+  "namespace": "cloudflow.examples.frauddetection.data",
   "type": "record",
   "name": "FraudReport",
   "fields":[

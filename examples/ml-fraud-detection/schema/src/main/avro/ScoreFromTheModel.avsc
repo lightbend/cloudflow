@@ -1,5 +1,5 @@
 {
-  "namespace": "pipelines.examples.frauddetection.data",
+  "namespace": "cloudflow.examples.frauddetection.data",
   "name": "ScoreFromTheModel",
   "type": "record",
   "doc": "Use this type when the model output 'value' is a double.",

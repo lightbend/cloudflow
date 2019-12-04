@@ -17,7 +17,7 @@ package model
 
 import model.ModelDescriptorUtil.implicits._
 import modelserving.model.{ ModelDescriptor, ModelType }
-import pipelinesx.logging.LoggingUtil
+import cloudflowx.logging.LoggingUtil
 
 /**
  * Generic definition of a model factory

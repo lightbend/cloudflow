@@ -1,5 +1,5 @@
 {
-  "namespace": "pipelines.examples.frauddetection.data",
+  "namespace": "cloudflow.examples.frauddetection.data",
   "type": "record",
   "name": "CustomerTransaction",
   "doc": "'lot_id' is added to the original records, simulating the id of the 'lot' where this wine originated. Mostly we use it as a potential partition key.",
