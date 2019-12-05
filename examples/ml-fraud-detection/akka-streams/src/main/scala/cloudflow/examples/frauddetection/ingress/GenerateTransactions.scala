@@ -32,24 +32,15 @@ class GenerateTransactions extends AkkaStreamlet {
 
   //\\//\\//\\ LOGIC //\\//\\//\\
   final override def createLogic = new RunnableGraphStreamletLogic {
-    val dataFrequency = FiniteDuration(streamletConfig.getInt("data-frequency"), "ms")
 
     def runnableGraph =
-      GenerateTransactionsUtil.makeSource(dataFrequency)
+      GenerateTransactionsUtil.makeSource()
         .map(transaction ⇒ {
           log.info("Reading Transaction: " + transaction.toString)
           transaction
         })
         .to(plainSink(out))
   }
-
-  val DataFrequency = IntegerConfigParameter(
-    key = "data-frequency",
-    description = "",
-    defaultValue = Some(1000)
-  )
-
-  override def configParameters = Vector(DataFrequency)
 
 }
 
@@ -70,7 +61,7 @@ object GenerateTransactionsUtil {
       .throttle(1, frequency)
   }
 
-  val defaultSeparator = ","
+  val DefaultSeparator = ","
 
   def makeRecordsReader(configRoot: String = rootConfigKey): RecordsReader[CustomerTransaction] =
     RecordsReader.fromConfiguration[CustomerTransaction](
@@ -78,9 +69,9 @@ object GenerateTransactionsUtil {
       dropFirstN = 1)(parse)
 
   val parse: String ⇒ Either[String, CustomerTransaction] = line ⇒ {
-    val tokens = line.split(defaultSeparator)
+    val tokens = line.split(DefaultSeparator)
     if (tokens.length < 11) {
-      Left(s"Record does not have 11 fields, ${tokens.mkString(defaultSeparator)}")
+      Left(s"Record does not have 11 fields, ${tokens.mkString(DefaultSeparator)}")
     } else try {
       val dtokens = tokens.map(_.trim.toFloat)
       Right(CustomerTransaction(
@@ -110,7 +101,7 @@ object GenerateTransactionsUtil {
     } catch {
       case scala.util.control.NonFatal(nf) ⇒
         Left(
-          s"Failed to parse string ${tokens.mkString(defaultSeparator)}. cause: $nf")
+          s"Failed to parse string ${tokens.mkString(DefaultSeparator)}. cause: $nf")
     }
   }
 }
