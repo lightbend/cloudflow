@@ -15,11 +15,11 @@
 # limitations under the License.
 
 # Usage:
-# gke-create-cluster.sh [CLUSTER-NAME]
+# create-cluster-gke.sh [CLUSTER-NAME]
 if [ $# -eq 0 ]
   then
     echo "No cluster name supplied"
-    echo "Usage: gke-create-cluster.sh [CLUSTER-NAME]"
+    echo "Usage: create-cluster-gke.sh [CLUSTER-NAME]"
     exit 1
 fi
 

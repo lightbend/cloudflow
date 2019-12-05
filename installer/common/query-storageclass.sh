@@ -58,6 +58,7 @@ clusterStorageClassKeys=(${!clusterStorageClassProvisioner[@]})
 
 # List of verified RWM provisioners
 declare -a readWriteManyProvisioners=(
+    "kubernetes.io/aws-efs"
     "kubernetes.io/glusterfs"
     "kubernetes.io/azure-file"
     "kubernetes.io/quobyte"

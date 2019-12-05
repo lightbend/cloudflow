@@ -22,15 +22,14 @@
 
 if [ -z "$1" ]
   then
-    print_error_message "Please provide the cluster name of the GKE cluster where Cloudflow should be installed."
-    echo "NOTE: this should not be a URL but a plain domain name."
+    print_error_message "Please provide the cluster type of the Kubernetes cluster where Cloudflow should be installed."
+    echo "NOTE: this should be either gke or eks."
     exit 1
 fi
 
 . common/cloudflow-chart-version.sh
 
-
-export CLUSTER_NAME=$1
+export CLUSTER_TYPE=$1
 export CLOUDFLOW_NAMESPACE="cloudflow"
 export TILLER_SERVICE_ACCOUNT="tiller"
 export TILLER_NAMESPACE="kube-system"
@@ -98,11 +97,10 @@ helm repo update > /dev/null 2>&1
 
 # Install Cloudflow
 echo "Installing Cloudflow $CLOUDFLOW_CHART_VERSION"
-echo " - cluster: $CLUSTER_NAME"
 echo " - namespace: $CLOUDFLOW_NAMESPACE"
 
 #######################3
 ## Check OK until here
 #######################3
 
-common/gke-install-cloudflow.sh "$CLUSTER_NAME" "$CLOUDFLOW_NAMESPACE"
+common/install-cloudflow.sh "$CLOUDFLOW_NAMESPACE" "$CLUSTER_TYPE"

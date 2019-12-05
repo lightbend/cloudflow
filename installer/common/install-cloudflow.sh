@@ -14,39 +14,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Usage: gke-install-cloudflow <CLUSTER_NAME> <CLOUDFLOW_NAMESPACE>
-
+# Usage: install-cloudflow.sh [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]
+if [ $# -ne 2 ]; then
+  echo "Not enough arguments supplied"
+  echo "Usage: install-cloudflow.sh [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]"
+  exit 1
+fi
 
 # The Namespace to install all our charts in
-CLUSTER_NAME=$1
-NAMESPACE=$2
+NAMESPACE=$1
+CLUSTER_TYPE=$2
 
 currentDirectory=$(dirname "$0")
 
 # shellcheck source=common/utils.sh
 . "$currentDirectory"/utils.sh
 
-if [ $# -eq 0 ]
-  then
-    print_error_message "No cluster name supplied"
-    echo "Usage: gke-install-cloudflow.sh [CLUSTER-NAME]"
-    exit 1
-fi
-
 # shellcheck source=common/shared.sh
 . "$currentDirectory"/shared.sh $NAMESPACE
 
-# Adjust the user rights
-echo "Creating admin cluster role binding for modifying Spark role"
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user "$(gcloud config get-value account)" > /dev/null
+case $CLUSTER_TYPE in
+ gke)
+    # Adjust the user rights
+    echo "Creating admin cluster role binding for modifying Spark role"
+    kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user "$(gcloud config get-value account)" >/dev/null
 
-echo "Installing NFS Server"
-result=$(install_nfs_server "$NAMESPACE" "false")
-if [ $? -ne 0 ]; then
-  print_error_message "$result"
-  print_error_message "installation failed"
-  exit 1
-fi
+    echo "Installing NFS Server"
+    result=$(install_nfs_server "$NAMESPACE" "false")
+    if [ $? -ne 0 ]; then
+      print_error_message "$result"
+      print_error_message "installation failed"
+      exit 1
+    fi
+    ;;
+ eks)
+    # Adjust the user rights
+    echo "Creating admin cluster role binding for modifying Spark role"
+    kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user "$(aws iam get-user | jq -r '.User.UserName')" >/dev/null
+
+    echo "Installing EFS Provisioner"
+    file_system_id="$(aws efs describe-file-systems --query "FileSystems[?Name=='$NAMESPACE'].FileSystemId" --output json | jq -r '.[]')"
+    result=$(install_efs_provisioner "$NAMESPACE" "$file_system_id" "$AWS_DEFAULT_REGION")
+    if [ $? -ne 0 ]; then
+      print_error_message "$result"
+      print_error_message "installation failed"
+      exit 1
+    fi
+    ;;
+ *)
+    print_error_message "Unknown cluster type: $CLUSTER_TYPE"
+    exit 1
+    ;;
+esac
 
 # shellcheck source=common/query-storageclass.sh
 . "$currentDirectory"/query-storageclass.sh
@@ -55,8 +74,8 @@ fi
 # shellcheck source=common/install-operators.sh
 . "$currentDirectory"/install-operators.sh
 
-# Call Helm with all args and overrrides, 
-## TODO -- check docker note here:  is this a problem for Cloudflow OSS install?
+# Call Helm with all args and overrrides,
+## TODO -- check docker note here: is this a problem for Cloudflow OSS install?
 # Note! We point the docker registry to localhost on gke, our GKE clusters cannot resolve the external address
 ## TODO -- check the domain here below -- not supported in OSS. Consequences?
 echo "Installing Cloudflow"
@@ -64,7 +83,7 @@ result=$(helm upgrade cloudflow cloudflow-environment \
 --install \
 --namespace "$NAMESPACE" \
 --timeout 600 \
---values="$currentDirectory"/gke-values.yaml \
+--values="$currentDirectory"/k8s-values.yaml \
 --set \
 kafka.mode="$KAFKA",\
 kafka.bootstrapServers="$kafkaBootstrapServers",\
