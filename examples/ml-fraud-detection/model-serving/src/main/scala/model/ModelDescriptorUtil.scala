@@ -17,6 +17,7 @@ package model
 
 import java.io.{ DataInputStream, DataOutputStream }
 
+import cloudflowx.ingress.ByteArrayReader
 import modelserving.model.{ ModelDescriptor, ModelType }
 
 object ModelDescriptorUtil {
@@ -144,4 +145,22 @@ object ModelDescriptorUtil {
     val location = loc()
     ModelDescriptor(modelName, description, modelType, modelBytes, location)
   }
+
+  def create(modelName: String, description: String, modelType: ModelType, modelFilePath: String): ModelDescriptor = {
+    val resourceName = ModelType.TENSORFLOW
+    val barray = readBytes(modelFilePath)
+    ModelDescriptor(
+      modelType = ModelType.TENSORFLOW,
+      modelName = s"Tensorflow Model - $resourceName",
+      description = "generated from TensorFlow",
+      modelBytes = Some(barray),
+      modelSourceLocation = None)
+  }
+
+  protected def readBytes(source: String): Array[Byte] =
+    ByteArrayReader.fromClasspath(source) match {
+      case Left(error) ⇒
+        throw new IllegalArgumentException(error) // TODO: return Either from readBytes!
+      case Right(array) ⇒ array
+    }
 }

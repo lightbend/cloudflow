@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
 import cloudflow.akkastream.AkkaStreamlet
-import model.{Model, MultiModelFactory}
+import model.{Model, ModelDescriptorUtil, MultiModelFactory}
 import model.actor.ModelServingActor
 import modelserving.model.{ModelDescriptor, ModelType}
 import cloudflow.akkastream.scaladsl.RunnableGraphStreamletLogic
@@ -60,8 +60,8 @@ final case object ScoreTransactionsAndServeModels extends AkkaStreamlet {
         "fraud",
         modelFactory,
         () ⇒ 0.0,
-        ModelDescriptor(mlModelName, "", ModelType.TENSORFLOW, null, Some(mlModelFileLocation))),
-        )
+        ModelDescriptorUtil.create(mlModelName, "", ModelType.TENSORFLOW, mlModelFileLocation))
+    )
 
     protected def theTransactionsFlow =
       Flow[CustomerTransaction].mapAsync(1) { transaction ⇒
