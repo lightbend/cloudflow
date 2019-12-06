@@ -28,7 +28,7 @@ TODO
 ### Example Deployment on GKE
 
 * Make sure you have created a GKE cluster and installed Cloudflow as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
-Make sure you have access to your cluster:
+Verify access to your cluster:
 
 ```
 $ gcloud container clusters get-credentials <CLUSTER_NAME>
