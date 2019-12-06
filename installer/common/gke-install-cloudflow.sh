@@ -63,7 +63,7 @@ echo "Installing Cloudflow"
 result=$(helm upgrade cloudflow cloudflow-environment \
 --install \
 --namespace "$NAMESPACE" \
---timeout 600 \
+--timeout $HELM_TIMEOUT \
 --values="$currentDirectory"/gke-values.yaml \
 --set \
 kafka.mode="$KAFKA",\
