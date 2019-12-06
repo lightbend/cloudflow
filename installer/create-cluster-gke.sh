@@ -23,6 +23,22 @@ if [ $# -eq 0 ]
     exit 1
 fi
 
+gcloudZone=$(gcloud config get-value compute/zone)
+if [ "$gcloudZone" == "" ]
+  then
+    echo "No compute/zone set in your GCloud configuration"
+    echo "Please set a compute zone by running: gcloud config set compute/zone VALUE [optional flags]"
+    exit 1
+fi
+
+gcloudRegion=$(gcloud config get-value compute/region)
+if [ "$gcloudRegion" == "" ]
+  then
+    echo "No compute/region set in your GCloud configuration"
+    echo "Please set a compute region by running: gcloud config set compute/region VALUE [optional flags]"
+    exit 1
+fi
+
 CLUSTER_NAME=$1
 
 # Create cluster
