@@ -22,7 +22,6 @@ package cloudflow.streamlets
 trait StreamletPort {
   def name: String
   def schemaDefinition: SchemaDefinition
-  def readFromAllPartitions : Boolean
 }
 
 /**
@@ -42,7 +41,9 @@ final case class SchemaDefinition(
 /**
  * A handle to read data according to a schema.
  */
-trait Inlet extends StreamletPort
+trait Inlet extends StreamletPort {
+  def readFromAllPartitions: Boolean
+}
 
 /**
  * A handle to write data according to a schema.
