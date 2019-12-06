@@ -48,6 +48,6 @@ case class AvroInletAllPartitions[T <: SpecificRecordBase: ClassTag](name: Strin
 
 object AvroInletAllPartitions {
   // Java API
-  def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInlet[T] =
+  def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInletAllPartitions[T] =
     AvroInletAllPartitions[T](name)(ClassTag.apply(clazz))
 }
