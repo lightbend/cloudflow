@@ -25,6 +25,7 @@ import scala.reflect._
 import AvroUtil._
 
 case class AvroInlet[T <: SpecificRecordBase: ClassTag](name: String) extends CodecInlet[T] {
+  def readFromAllPartitions = false
   def codec = new AvroCodec[T](makeSchema)
   def schemaDefinition = createSchemaDefinition(makeSchema)
   def schemaAsString = makeSchema.toString(false)
@@ -34,4 +35,19 @@ object AvroInlet {
   // Java API
   def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInlet[T] =
     AvroInlet[T](name)(ClassTag.apply(clazz))
+}
+
+// Additional AvroInlet reading from all partitions of the topic. This is done by ensuring unique
+// groupID for Kafka listener
+case class AvroInletAllPartitions[T <: SpecificRecordBase: ClassTag](name: String) extends CodecInlet[T] {
+  def readFromAllPartitions = true
+  def codec = new AvroCodec[T](makeSchema)
+  def schemaDefinition = createSchemaDefinition(makeSchema)
+  def schemaAsString = makeSchema.toString(false)
+}
+
+object AvroInletAllPartitions {
+  // Java API
+  def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInlet[T] =
+    AvroInletAllPartitions[T](name)(ClassTag.apply(clazz))
 }

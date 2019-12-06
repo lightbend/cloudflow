@@ -22,6 +22,7 @@ package cloudflow.streamlets
 trait StreamletPort {
   def name: String
   def schemaDefinition: SchemaDefinition
+  def readFromAllPartitions : Boolean
 }
 
 /**

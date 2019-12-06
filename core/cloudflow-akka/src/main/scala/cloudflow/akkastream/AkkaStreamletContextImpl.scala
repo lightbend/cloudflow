@@ -17,27 +17,14 @@
 package cloudflow.akkastream
 
 import java.util.concurrent.atomic.AtomicReference
-
-import java.nio.file.{ Paths, Files }
-
-import scala.concurrent._
-import scala.util._
-
-import akka._
-import akka.actor.ActorSystem
-import akka.kafka._
-import akka.kafka.ConsumerMessage._
-import akka.kafka.scaladsl._
-import akka.stream._
-import akka.stream.scaladsl._
+import java.nio.file.{Files, Paths}
 
 import com.typesafe.config._
-
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 
-import cloudflow.streamlets._
+import scala.util.Random
 
 final case class PortNotFoundException(port: StreamletPort, context: StreamletContext)
   extends RuntimeException(s"Port ${port.name} not found in context $context.")
@@ -72,8 +59,16 @@ final class AkkaStreamletContextImpl(
     def stop(): Future[Dun] = AkkaStreamletContextImpl.this.stop()
   }
 
+  private generator = Random
+
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
-  private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
+  private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = {
+    val base = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
+    inlet.readFromAllPartitions match {
+      case true => base + generator.nextInt.toString
+      case _ => base
+    }
+  }
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
