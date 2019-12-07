@@ -92,7 +92,7 @@ object SparkStreamletAsCompanionObject extends TrivialSparklet {
   def bar: String = "spark"
 }
 
-// trait that extends a class that extends SparkStreamlet
+// trait that extend a class that extends SparkStreamlet
 // this Spark Streamlet should not load
 class ASparkStreamlet extends SparkStreamlet {
 

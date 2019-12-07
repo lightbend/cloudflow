@@ -112,7 +112,7 @@ class BarFlowWithJavaConfig extends TestStreamlet {
 }
 
 // ===============================
-// Invalid Streamlets
+// Invalid Streamlets.
 // ===============================
 
 class NoDefaultConstructorStreamlet(noDefArgs: String) extends TestStreamlet {
