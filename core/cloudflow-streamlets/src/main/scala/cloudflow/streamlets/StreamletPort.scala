@@ -63,6 +63,11 @@ trait CodecInlet[T] extends Inlet {
    * Describes the schema used to deserialize the data.
    */
   def schemaAsString: String
+
+  /**
+   * Adding support for reading all partitions.
+   */
+  def withUniqueGroupId : CodecInlet[T]
 }
 
 /**

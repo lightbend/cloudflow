@@ -81,8 +81,8 @@ class SparkEgressSpec extends SparkScalaTestSupport {
       val r2 = asCollection[String](session, "allNamesUpper")
 
       // assert
-      r1 must contain("name2")
-      r2 must contain("NAME2")
+      r1 must contain("name1")
+      r2 must contain("NAME1")
     }
   }
 }

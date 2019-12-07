@@ -1,7 +1,9 @@
 import sbt._
-import sbt.Keys.{javacOptions, _}
+import sbt.Keys._
+
 import scalariform.formatter.preferences._
 import Library._
+
 import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
@@ -122,10 +124,7 @@ lazy val akkastreamTestkit =
     .settings(
       (sourceDirectory in AvroConfig) := baseDirectory.value / "src/test/avro",
       (stringType in AvroConfig) := "String",
-      javacOptions += "-Xlint:unchecked",
-      javaOptions += "-XX:MaxMetaspaceSize=512M",
-      javaOptions += "-Xms1536m",
-      javaOptions += "-Xms1536m"
+      javacOptions += "-Xlint:unchecked"
     )
 
 lazy val akkastreamTests =
