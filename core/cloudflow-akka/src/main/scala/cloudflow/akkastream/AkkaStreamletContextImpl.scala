@@ -19,6 +19,7 @@ package cloudflow.akkastream
 import java.util.concurrent.atomic.AtomicReference
 
 import java.nio.file.{ Paths, Files }
+import java.util.UUID.randomUUID
 
 import scala.concurrent._
 import scala.util._
@@ -38,7 +39,6 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 
 import cloudflow.streamlets._
-import scala.util.Random
 
 final case class PortNotFoundException(port: StreamletPort, context: StreamletContext)
   extends RuntimeException(s"Port ${port.name} not found in context $context.")
@@ -73,13 +73,11 @@ final class AkkaStreamletContextImpl(
     def stop(): Future[Dun] = AkkaStreamletContextImpl.this.stop()
   }
 
-  private val generator = Random
-
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
   private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
     inlet.readFromAllPartitions match {
-      case true ⇒ base + generator.nextInt.toString
+      case true ⇒ base + randomUUID.toString
       case _    ⇒ base
     }
   }
