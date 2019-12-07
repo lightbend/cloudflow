@@ -36,6 +36,7 @@ object Ports {
   def inletFor(schema: Schema) = new Inlet() {
     def name = "in"
     def schemaDefinition = AvroUtil.createSchemaDefinition(schema)
+    def readFromAllPartitions = false
   }
 }
 

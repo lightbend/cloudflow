@@ -23,7 +23,7 @@ import cloudflow.streamlets.avro.AvroUtil
 
 case class TestData(name: String, description: String)
 case class TestResult(result: String)
-case class TestInlet(name: String, schemaDefinition: SchemaDefinition) extends Inlet
+case class TestInlet(name: String, schemaDefinition: SchemaDefinition, readFromAllPartitions: Boolean = false) extends Inlet
 case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
 
 trait TrivialSparklet extends SparkStreamlet {
