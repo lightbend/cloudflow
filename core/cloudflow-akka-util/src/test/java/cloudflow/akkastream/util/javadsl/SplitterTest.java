@@ -23,14 +23,10 @@ import akka.NotUsed;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.javadsl.*;
 
-import org.apache.avro.Schema;
-
 import cloudflow.akkastream.AkkaStreamlet;
 import cloudflow.akkastream.javadsl.util.*;
 import cloudflow.akkastream.testdata.Data;
-import cloudflow.akkastream.testdata.Data$;
 import cloudflow.akkastream.testdata.BadData;
-import cloudflow.akkastream.testdata.BadData$;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 

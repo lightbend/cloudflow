@@ -131,7 +131,7 @@ abstract class AkkaStreamlet extends Streamlet {
   /**
    * Implement this method to define the logic that this streamlet should execute once it is run.
    */
-  protected def createLogic(): StreamletLogic
+  protected def createLogic(): AkkaStreamletLogic
 
   private def readyAfterStart(): Boolean = if (attributes.contains(ServerAttribute)) false else true
 

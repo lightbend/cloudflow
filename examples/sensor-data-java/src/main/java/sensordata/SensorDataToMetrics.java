@@ -20,7 +20,7 @@ public class SensorDataToMetrics extends AkkaStreamlet {
   public StreamletShape shape() {
    return StreamletShape.createWithInlets(in).withOutlets(out);
   }
-  
+
   private FlowWithContext<SensorData,CommittableOffset,Metric,CommittableOffset,NotUsed> flowWithContext() {
     return FlowWithOffsetContext.<SensorData>create()
       .mapConcat(data ->
@@ -32,7 +32,7 @@ public class SensorDataToMetrics extends AkkaStreamlet {
       );
   }
 
-  public StreamletLogic createLogic() {
+  public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getStreamletContext()) {
       public RunnableGraph createRunnableGraph() {
         return getSourceWithOffsetContext(in).via(flowWithContext()).to(getSinkWithOffsetContext(out));
