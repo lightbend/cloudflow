@@ -13,6 +13,65 @@ import org.tensorflow.framework._
 import org.tensorflow.{ Graph, SavedModelBundle, Session, Tensor }
 import modelserving.wine.avro._
 
+import TensorFlowModelBundle._
+
+/**
+ * Encapsulates TensorFlow scoring using a [[LoadedModel]] (from a SavedModelBundle).
+ */
+trait TensorFlowModel[Record, ServingResult] {
+  def loadedModel: LoadedModel
+
+  def emptyServingResult: ServingResult
+  def toTensor(record: Record): Tensor[_]
+  def invokeModel(record: Record): Either[String, ServingResult]
+
+  val startTime = System.currentTimeMillis
+
+  /**
+   * Score a record with the model
+   */
+  def score(record: Record): (ServingResult, ModelResultMetadata) = {
+    val start = System.currentTimeMillis()
+    val (errors, modelOutput) = invokeModel(record) match {
+      case Left(errors)  ⇒ (errors, emptyServingResult)
+      case Right(output) ⇒ ("", output)
+    }
+    val duration = (System.currentTimeMillis() - start)
+    val resultMetadata = ModelResultMetadata(errors, loadedModel.modelName, startTime, duration)
+    (modelOutput, resultMetadata)
+  }
+
+  def cleanup() = loadedModel.cleanup()
+}
+
+/**
+ * Contains TensorFlow model resources loaded from a SavedModelBundle.
+ */
+final case class LoadedModel(
+    modelName: String,
+    graph: Graph,
+    session: Session,
+    signatures: Map[String, Signature]
+) {
+
+  /**
+   * Cleans up used session and graph
+   */
+  def cleanup(): Unit = {
+    try {
+      session.close
+    } catch {
+      case NonFatal(e) ⇒ throw e
+    } finally {
+      try {
+        graph.close
+      } catch {
+        case NonFatal(e) ⇒ throw e
+      }
+    }
+  }
+}
+
 /**
  * Loads a model from a TensorFlow SavedModelBundle
  * @param modelName the name of the model
@@ -84,14 +143,15 @@ object TensorFlowModelBundle {
         var dtype: Descriptors.EnumValueDescriptor = null
         var shape = Seq.empty[Int]
         info.getAllFields.asScala.foreach { descriptor ⇒
-          if (descriptor._1.getName.contains("shape")) {
+          val fieldName = descriptor._1.getName
+          if (fieldName.contains("shape")) {
             descriptor._2.asInstanceOf[TensorShapeProto].getDimList.toArray.map(d ⇒
               d.asInstanceOf[TensorShapeProto.Dim].getSize).toSeq.foreach(v ⇒ shape = shape :+ v.toInt)
           }
-          if (descriptor._1.getName.contains("name")) {
+          if (fieldName.contains("name")) {
             name = descriptor._2.toString.split(":")(0)
           }
-          if (descriptor._1.getName.contains("dtype")) {
+          if (fieldName.contains("dtype")) {
             dtype = descriptor._2.asInstanceOf[Descriptors.EnumValueDescriptor]
           }
         }
@@ -104,63 +164,4 @@ object TensorFlowModelBundle {
 
   /** Definition of the signature */
   case class Signature(inputs: Map[String, Field], outputs: Map[String, Field])
-}
-
-import TensorFlowModelBundle._
-
-/**
- * Encapsulates TensorFlow scoring using a [[LoadedModel]] (from a SavedModelBundle).
- */
-trait TensorFlowModel[Record, ServingResult] {
-  def loadedModel: LoadedModel
-
-  def emptyServingResult: ServingResult
-  def toTensor(record: Record): Tensor[_]
-  def invokeModel(record: Record): Either[String, ServingResult]
-
-  val startTime = System.currentTimeMillis
-
-  /**
-   * Score a record with the model
-   */
-  def score(record: Record): (ServingResult, ModelResultMetadata) = {
-    val start = System.currentTimeMillis()
-    val (errors, modelOutput) = invokeModel(record) match {
-      case Left(errors)  ⇒ (errors, emptyServingResult)
-      case Right(output) ⇒ ("", output)
-    }
-    val duration = (System.currentTimeMillis() - start)
-    val resultMetadata = ModelResultMetadata(errors, loadedModel.modelName, startTime, duration)
-    (modelOutput, resultMetadata)
-  }
-
-  def cleanup() = loadedModel.cleanup()
-}
-
-/**
- * Contains TensorFlow model resources loaded from a SavedModelBundle.
- */
-final case class LoadedModel(
-    modelName: String,
-    graph: Graph,
-    session: Session,
-    signatures: Map[String, Signature]
-) {
-
-  /**
-   * Cleans up used session and graph
-   */
-  def cleanup(): Unit = {
-    try {
-      session.close
-    } catch {
-      case NonFatal(e) ⇒ throw e
-    } finally {
-      try {
-        graph.close
-      } catch {
-        case NonFatal(e) ⇒ throw e
-      }
-    }
-  }
 }
