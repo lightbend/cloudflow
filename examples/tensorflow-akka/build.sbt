@@ -11,8 +11,8 @@ lazy val tensorflowAkka =  (project in file("."))
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.10" % "test",
-        "org.tensorflow"         % "tensorflow"                 % "1.13.1",
-        "org.tensorflow"         % "proto"                      % "1.13.1",
+        "org.tensorflow"         % "tensorflow"                 % "1.15.0",
+        "org.tensorflow"         % "proto"                      % "1.15.0",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 //tag::docs-projectName-example[]
       ),

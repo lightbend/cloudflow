@@ -17,7 +17,7 @@ import modelserving.wine.avro._
  * Loads a model from a TensorFlow SavedModelBundle
  * @param modelName the name of the model
  * @param savedModelBundlePath the path to the SavedModelBundle
- * @param createModel a function to create a model from a LoadedModel
+ * @param createModel a function to create a specific model from a LoadedModel
  */
 object TensorFlowModelBundle {
   def load[Record, ServingResult, Model](
@@ -53,8 +53,8 @@ object TensorFlowModelBundle {
   }
 
   /**
-   * TODO ask about these tags
-   * Gets all tags in the saved bundle and uses the first one. If you need a specific tag, overwrite this method
+   * Gets all tags in the saved bundle and uses the first one. 
+   * If you need a specific tag, overwrite this method
    * With a seq (of one) tags returning desired tag.
    *
    * @param directory - directory for saved model
@@ -62,17 +62,18 @@ object TensorFlowModelBundle {
    */
   private def getTags(directory: Path): Seq[String] = {
 
-    val d = directory.toFile
-    val pbfiles = if (d.exists && d.isDirectory)
-      d.listFiles.filter(_.isFile).filter(name ⇒ (name.getName.endsWith("pb") || name.getName.endsWith("pbtxt"))).toList
+    val directoryFile = directory.toFile
+    val pbfiles = if (directoryFile.exists && directoryFile.isDirectory)
+      directoryFile.listFiles.filter(_.isFile).filter(name ⇒ (name.getName.endsWith("pb") || name.getName.endsWith("pbtxt"))).toList
     else
       List[File]()
     if (pbfiles.length > 0) {
       val byteArray = Files.readAllBytes(pbfiles(0).toPath)
       SavedModel.parseFrom(byteArray).getMetaGraphsList.asScala.
         flatMap(graph ⇒ graph.getMetaInfoDef.getTagsList.asByteStringList.asScala.map(_.toStringUtf8))
-    } else
+    } else {
       Seq.empty
+    }
   }
 
   /**
@@ -91,7 +92,6 @@ object TensorFlowModelBundle {
           if (descriptor._1.getName.contains("shape")) {
             descriptor._2.asInstanceOf[TensorShapeProto].getDimList.toArray.map(d ⇒
               d.asInstanceOf[TensorShapeProto.Dim].getSize).toSeq.foreach(v ⇒ shape = shape :+ v.toInt)
-
           }
           if (descriptor._1.getName.contains("name")) {
             name = descriptor._2.toString.split(":")(0)
@@ -105,16 +105,16 @@ object TensorFlowModelBundle {
   }
 
   /** Definition of the field (input/output) */
-  private[modelserving] case class Field(name: String, `type`: Descriptors.EnumValueDescriptor, shape: Seq[Int])
+  case class Field(name: String, `type`: Descriptors.EnumValueDescriptor, shape: Seq[Int])
 
   /** Definition of the signature */
-  private[modelserving] case class Signature(inputs: Map[String, Field], outputs: Map[String, Field])
+  case class Signature(inputs: Map[String, Field], outputs: Map[String, Field])
 }
 
 import TensorFlowModelBundle._
 
 /**
- * Encapsulates TensorFlow scoring using a LoadedModel (from a SavedModelBundle).
+ * Encapsulates TensorFlow scoring using a [[LoadedModel]] (from a SavedModelBundle).
  */
 trait TensorFlowModel[Record, ServingResult] {
   def loadedModel: LoadedModel
