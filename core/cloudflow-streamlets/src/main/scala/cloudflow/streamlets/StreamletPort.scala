@@ -61,6 +61,20 @@ trait CodecInlet[T] extends Inlet {
    * Describes the schema used to deserialize the data.
    */
   def schemaAsString: String
+
+  /**
+   * Returns true when this inlet has a unique group Id, so that the inlet will receive data from all partitions.
+   * This is useful for when you scale a streamlet, and you want all the streamlet instances to receive all the data.
+   * If no unique group Id is set (which is the default), streamlet instances will each receive part of the data (on this inlet).
+   */
+  def hasUniqueGroupId: Boolean
+
+  /**
+   * Sets a unique group Id so that the inlet will receive data from all partitions.
+   * This is useful for when you scale a streamlet, and you want all the streamlet instances to receive all the data.
+   * If no unique group Id is set (which is the default), streamlet instances will each receive part of the data (on this inlet).
+   */
+  def withUniqueGroupId: CodecInlet[T]
 }
 
 /**

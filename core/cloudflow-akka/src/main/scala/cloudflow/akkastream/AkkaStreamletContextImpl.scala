@@ -19,6 +19,7 @@ package cloudflow.akkastream
 import java.util.concurrent.atomic.AtomicReference
 
 import java.nio.file.{ Paths, Files }
+import java.util.UUID.randomUUID
 
 import scala.concurrent._
 import scala.util._
@@ -73,7 +74,11 @@ final class AkkaStreamletContextImpl(
   }
 
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
-  private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
+  private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = {
+    val base = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
+    if (inlet.hasUniqueGroupId) base + randomUUID.toString
+    else base
+  }
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
