@@ -59,7 +59,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
         override def configParameters = Vector(NameFilter)
 
-        override final def createLogic = new RunnableGraphStreamletLogic() {
+        override final def createLogic = new RunnableGraphAkkaStreamletLogic() {
           val nameFilter = streamletConfig.getString(NameFilter.key)
           val flow = Flow[Data].filter(data ⇒ data.name == nameFilter)
           def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
@@ -87,7 +87,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
         val out = AvroOutlet[Data]("out")
         final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
-        override final def createLogic = new RunnableGraphStreamletLogic() {
+        override final def createLogic = new RunnableGraphAkkaStreamletLogic() {
           // The test
           streamletConfig mustBe empty
 
@@ -141,7 +141,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
     val flow = Flow[Data]
-    override final def createLogic = new RunnableGraphStreamletLogic() {
+    override final def createLogic = new RunnableGraphAkkaStreamletLogic() {
       def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
     }
   }
@@ -152,7 +152,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
     val flow = Flow[Data]
-    override final def createLogic = new RunnableGraphStreamletLogic() {
+    override final def createLogic = new RunnableGraphAkkaStreamletLogic() {
       def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
     }
   }
@@ -161,7 +161,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     val out = AvroOutlet[Data]("out", _.id.toString)
     final override val shape = StreamletShape.withOutlets(out)
 
-    override final def createLogic = new RunnableGraphStreamletLogic() {
+    override final def createLogic = new RunnableGraphAkkaStreamletLogic() {
       def runnableGraph = source.to(plainSink(out))
     }
   }

@@ -43,7 +43,7 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
     val right = AvroOutlet[Data]("out-1", _.id.toString)
     val shape = StreamletShape(in).withOutlets(left, right)
 
-    override def createLogic = new SplitterLogic(in, left, right) {
+    override def createLogic = new SplitterLogicAkka(in, left, right) {
       def flow = {
         flowWithOffsetContext().map { data ⇒
           if (data.id % 2 == 0) Right(data) else Left(BadData(data.name))

@@ -32,7 +32,7 @@ import akka.stream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
 
-object HttpServerLogic {
+object HttpServerLogicAkka {
   final def default[Out](
       server: Server,
       outlet: CodecOutlet[Out]
@@ -40,7 +40,7 @@ object HttpServerLogic {
       implicit
       context: AkkaStreamletContext,
       fbu: FromByteStringUnmarshaller[Out]) =
-    new HttpServerLogic(server, outlet) {
+    new HttpServerLogicAkka(server, outlet) {
       final override def route(writer: WritableSinkRef[Out]): Route = defaultRoute(writer)
     }
 
@@ -53,7 +53,7 @@ object HttpServerLogic {
       fbs: FromByteStringUnmarshaller[Out],
       ess: EntityStreamingSupport
   ) =
-    new StreamingHttpServerLogic(server, outlet) {
+    new StreamingHttpServerLogicAkka(server, outlet) {
       def entityStreamingSupport: EntityStreamingSupport = ess
       final override def route(writer: WritableSinkRef[Out]): Route = defaultStreamingRoute(writer)
     }
@@ -120,10 +120,10 @@ object HttpServerLogic {
  *  }
  * }}}
  */
-abstract class HttpServerLogic[Out](
+abstract class HttpServerLogicAkka[Out](
     server: Server,
     outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext, fbu: FromByteStringUnmarshaller[Out]) extends ServerStreamletLogic(server) {
+)(implicit context: AkkaStreamletContext, fbu: FromByteStringUnmarshaller[Out]) extends ServerAkkaStreamletLogic(server) {
   implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
     PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
       .andThen(implicitly[FromByteStringUnmarshaller[Out]])
@@ -177,9 +177,9 @@ abstract class HttpServerLogic[Out](
  * allows rendering and receiving incoming ``Source[T, _]`` from HTTP entities.
  * The elements in the source are unmarshalled using the `FromByteStringUnmarshaller`.
  *
- * This [[HttpServerLogic]] requires a [[Server]] to be passed in when it is created.
+ * This [[HttpServerLogicAkka]] requires a [[Server]] to be passed in when it is created.
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
- * When you define the [[StreamingHttpServerLogic]] inside the streamlet, you can just pass in `this`:
+ * When you define the [[StreamingHttpServerLogicAkka]] inside the streamlet, you can just pass in `this`:
  * {{{
  *  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
  *
@@ -194,10 +194,10 @@ abstract class HttpServerLogic[Out](
  *  }
  * }}}
  */
-abstract class StreamingHttpServerLogic[Out: FromByteStringUnmarshaller](
+abstract class StreamingHttpServerLogicAkka[Out: FromByteStringUnmarshaller](
     server: Server,
     outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext) extends HttpServerLogic(server, outlet) {
+)(implicit context: AkkaStreamletContext) extends HttpServerLogicAkka(server, outlet) {
   implicit def entityStreamingSupport: EntityStreamingSupport
 
   /**

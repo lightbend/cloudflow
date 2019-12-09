@@ -270,7 +270,7 @@ abstract class FlinkStreamlet extends Streamlet with Serializable {
  *  }
  * }}}
  */
-abstract class FlinkStreamletLogic(implicit context: FlinkStreamletContext) extends Serializable {
+abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) extends StreamletLogic[FlinkStreamletContext] {
   /**
    * Read from the underlying external storage through the inlet `inlet` and return a DataStream
    *

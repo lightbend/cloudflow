@@ -20,7 +20,7 @@ package cloudflow.akkastream
  * Extends a StreamletLogic. provides access to a containerPort so that it is possible to
  * start a TCP server inside an [[AkkaStreamlet]] which will be exposed through an endpoint in Kubernetes.
  */
-abstract class ServerStreamletLogic(server: Server)(implicit context: AkkaStreamletContext) extends StreamletLogic {
+abstract class ServerAkkaStreamletLogic(server: Server)(implicit context: AkkaStreamletContext) extends AkkaStreamletLogic {
   /**
    * Returns a TCP port on the container that a streamlet can listen on.
    */

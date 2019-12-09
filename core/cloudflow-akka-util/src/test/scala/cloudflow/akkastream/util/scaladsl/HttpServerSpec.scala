@@ -117,7 +117,7 @@ class HttpServerSpec extends WordSpec
     val outlet = AvroOutlet[Data]("out", _.id.toString)
     val shape = StreamletShape(outlet)
 
-    override def createLogic = new HttpServerLogic(this, outlet) {
+    override def createLogic = new HttpServerLogicAkka(this, outlet) {
       override def route(writer: WritableSinkRef[Data]): Route = {
         put {
           entity(as[Data]) { data ⇒
@@ -140,7 +140,7 @@ class HttpServerSpec extends WordSpec
   val outlet = AvroOutlet[Data]("out", _.id.toString)
   def createDefaultIngress = new AkkaServerStreamlet() {
     val shape = StreamletShape(outlet)
-    override def createLogic = HttpServerLogic.default(this, outlet)
+    override def createLogic = HttpServerLogicAkka.default(this, outlet)
   }
 
   def startIngress(ingress: AkkaStreamlet = createDefaultIngress): Unit = {

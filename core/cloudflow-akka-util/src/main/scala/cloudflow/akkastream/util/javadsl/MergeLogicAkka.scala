@@ -18,20 +18,16 @@ package cloudflow.akkastream.util.javadsl
 
 import cloudflow._
 import cloudflow.akkastream._
-import cloudflow.akkastream.javadsl._
-import cloudflow.akkastream.javadsl.util.{ Either ⇒ JEither }
 import cloudflow.streamlets._
+import scala.collection.JavaConverters._
 
-abstract class SplitterLogic[I, L, R](
-    in: CodecInlet[I],
-    left: CodecOutlet[L],
-    right: CodecOutlet[R],
+/**
+ * A `MergeLogic` merges two or more inlets into one outlet.
+ * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
+ * in semi-random order and with equal priority for all inlets.
+ */
+final class MergeLogicAkka[T](
+    inletPorts: java.util.List[CodecInlet[T]],
+    outlet: CodecOutlet[T],
     context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.SplitterLogic(in, left, right)(context) {
-
-  def createFlow(): FlowWithOffsetContext[I, JEither[L, R]]
-  def flow: scaladsl.FlowWithOffsetContext[I, Either[L, R]] = {
-    createFlow().map(jEither ⇒ if (jEither.isRight) Right(jEither.get()) else Left(jEither.getLeft())).asScala
-  }
-  final def createFlowWithOffsetContext() = FlowWithOffsetContext.create[I]()
-}
+) extends akkastream.util.scaladsl.MergeLogicAkka(inletPorts.asScala.toIndexedSeq, outlet)(context)
