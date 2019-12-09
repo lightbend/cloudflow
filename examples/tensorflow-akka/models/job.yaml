@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copy-models
+  namespace: tensorflow-akka
+spec:
+  template:
+    spec:
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: claim1
+      containers:
+      - name: copy-models
+        image: eu.gcr.io/bubbly-observer-178213/lightbend/copy-models:latest
+        volumeMounts:
+          - mountPath: "/models"
+            name: models
+        command: ["cp",  "-rf", "/staging/models", "/"]
+      restartPolicy: Never
+  backoffLimit: 4
