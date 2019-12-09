@@ -76,10 +76,8 @@ final class AkkaStreamletContextImpl(
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
   private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
-    inlet.readFromAllPartitions match {
-      case true ⇒ base + randomUUID.toString
-      case _    ⇒ base
-    }
+    if (inlet.hasUniqueGroupId) base + randomUUID.toString
+    else base
   }
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {

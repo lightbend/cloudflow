@@ -24,11 +24,11 @@ import scala.reflect._
 
 import AvroUtil._
 
-case class AvroInlet[T <: SpecificRecordBase: ClassTag](name: String, readFromAllPartitions : Boolean = false) extends CodecInlet[T] {
+case class AvroInlet[T <: SpecificRecordBase: ClassTag](name: String, hasUniqueGroupId: Boolean = false) extends CodecInlet[T] {
   def codec = new AvroCodec[T](makeSchema)
   def schemaDefinition = createSchemaDefinition(makeSchema)
   def schemaAsString = makeSchema.toString(false)
-  def withUniqueGroupId : AvroInlet[T] = copy(readFromAllPartitions = true)
+  def withUniqueGroupId: AvroInlet[T] = copy(hasUniqueGroupId = true)
 }
 
 object AvroInlet {
@@ -36,6 +36,6 @@ object AvroInlet {
   def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInlet[T] =
     AvroInlet[T](name)(ClassTag.apply(clazz))
 
-  def create[T <: SpecificRecordBase](name: String, readFromAllPartitions : Boolean, clazz: Class[T]): AvroInlet[T] =
-    AvroInlet[T](name, readFromAllPartitions)(ClassTag.apply(clazz))
+  def create[T <: SpecificRecordBase](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): AvroInlet[T] =
+    AvroInlet[T](name, hasUniqueGroupId)(ClassTag.apply(clazz))
 }
