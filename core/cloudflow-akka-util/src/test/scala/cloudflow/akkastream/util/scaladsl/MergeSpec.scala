@@ -124,7 +124,7 @@ class ScalaTestMerge(inletCount: Int) extends TestMerge {
    * The streamlet logic for a `Merge` is fixed and merges inlet elements in the order they become
    * available to the streamlet.
    */
-  override final def createLogic = new MergeLogic(inletPorts, outlet)
+  override final def createLogic = new MergeLogicAkka(inletPorts, outlet)
 }
 
 class JavaTestMerge(inletCount: Int) extends TestMerge {
@@ -140,5 +140,5 @@ class JavaTestMerge(inletCount: Int) extends TestMerge {
    * The streamlet logic for a `Merge` is fixed and merges inlet elements in the order they become
    * available to the streamlet.
    */
-  override final def createLogic = new cloudflow.akkastream.util.javadsl.MergeLogic(inletPorts.asJava, outlet, getStreamletContext())
+  override final def createLogic = new cloudflow.akkastream.util.javadsl.MergeLogicAkka(inletPorts.asJava, outlet, getStreamletContext())
 }

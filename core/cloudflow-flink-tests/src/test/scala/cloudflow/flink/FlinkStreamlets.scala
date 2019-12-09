@@ -39,7 +39,8 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
 
   // Step 3: Provide custom implementation of `FlinkStreamletLogic` that defines
   //         the behavior of the streamlet
-  override def createLogic() = new FlinkStreamletLogic {
+  override def createLogic(): FlinkStreamletLogic = new FlinkStreamletLogic {
+
     override def buildExecutionGraph = {
       val rides: DataStream[TaxiRide] =
         readStream(inTaxiRide)

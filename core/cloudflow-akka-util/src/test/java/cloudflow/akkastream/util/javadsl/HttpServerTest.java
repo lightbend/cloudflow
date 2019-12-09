@@ -19,15 +19,11 @@ package cloudflow.akkastream.util.javadsl;
 import org.junit.Test;
 import org.scalatest.junit.JUnitSuite;
 
-import akka.NotUsed;
-import akka.stream.javadsl.*;
 import akka.http.javadsl.common.EntityStreamingSupport;
 import akka.http.javadsl.unmarshalling.*;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.util.ByteString;
-import org.apache.avro.Schema;
 import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
 import cloudflow.akkastream.testdata.Data;
 import cloudflow.akkastream.testdata.Data$;
 import cloudflow.streamlets.*;
@@ -52,8 +48,8 @@ public class HttpServerTest extends JUnitSuite {
       return StreamletShape.createWithOutlets(outlet);
     }
 
-    public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefault(this, outlet, fbu, getStreamletContext());
+    public HttpServerLogicAkka createLogic() {
+      return HttpServerLogicAkka.createDefault(this, outlet, fbu, getStreamletContext());
     }
   }
 
@@ -61,13 +57,13 @@ public class HttpServerTest extends JUnitSuite {
     AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
     Unmarshaller<ByteString, Data> fbu = Jackson.byteStringUnmarshaller(Data.class);
     EntityStreamingSupport entityStreamingSupport = EntityStreamingSupport.json();
-    
+
     public StreamletShape shape() {
       return StreamletShape.createWithOutlets(outlet);
     }
 
-    public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefaultStreaming(this, outlet, fbu, entityStreamingSupport, getStreamletContext());
+    public HttpServerLogicAkka createLogic() {
+      return HttpServerLogicAkka.createDefaultStreaming(this, outlet, fbu, entityStreamingSupport, getStreamletContext());
     }
   }
 }

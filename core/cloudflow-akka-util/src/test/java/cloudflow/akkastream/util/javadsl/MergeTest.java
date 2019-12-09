@@ -19,13 +19,7 @@ import java.util.*;
 import org.junit.Test;
 import org.scalatest.junit.JUnitSuite;
 
-import akka.NotUsed;
-import akka.stream.javadsl.*;
-
-import org.apache.avro.Schema;
-
 import cloudflow.akkastream.AkkaStreamlet;
-import cloudflow.akkastream.javadsl.util.*;
 import cloudflow.akkastream.testdata.Data;
 import cloudflow.akkastream.testdata.Data$;
 import cloudflow.akkastream.testdata.BadData;
@@ -42,7 +36,7 @@ public class MergeTest extends JUnitSuite {
     public void shouldBeTested() {
         TestMerger merger = new TestMerger();
     }
-    
+
     class TestMerger extends AkkaStreamlet {
         AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
         AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
@@ -51,11 +45,11 @@ public class MergeTest extends JUnitSuite {
         public StreamletShape shape() {
          return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
         }
-        public MergeLogic createLogic() {
+        public MergeLogicAkka createLogic() {
           List<CodecInlet<Data>> inlets = new ArrayList<CodecInlet<Data>>();
           inlets.add(inlet1);
-          inlets.add(inlet2); 
-          return new MergeLogic(inlets, outlet, getStreamletContext());
+          inlets.add(inlet2);
+          return new MergeLogicAkka(inlets, outlet, getStreamletContext());
         }
     }
 }

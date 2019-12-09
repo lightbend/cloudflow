@@ -105,8 +105,9 @@ public class AkkaStreamletTest extends JUnitSuite {
       return StreamletShape.createWithInlets(inlet).withOutlets(outlet);
     }
 
-    public StreamletLogic createLogic() {
-      return new StreamletLogic(getStreamletContext()) {
+    public AkkaStreamletLogic createLogic() {
+      final AkkaStreamletContext context = getStreamletContext();
+      return new AkkaStreamletLogic(context) {
         public void run() {
           getSourceWithOffsetContext(inlet)
             .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
@@ -135,8 +136,8 @@ public class AkkaStreamletTest extends JUnitSuite {
       return new ConfigParameter[]{ nameFilter };
     }
 
-    public StreamletLogic createLogic() {
-      return new StreamletLogic(getStreamletContext()) {
+    public AkkaStreamletLogic createLogic() {
+      return new AkkaStreamletLogic(getStreamletContext()) {
         public void run() {
           String configuredNameToFilterFor = streamletConfig().getString(nameFilter.getKey());
 

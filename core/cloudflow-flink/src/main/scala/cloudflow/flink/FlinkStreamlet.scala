@@ -17,13 +17,13 @@
 package cloudflow.flink
 
 import java.nio.file.Path
+
 import org.slf4j.LoggerFactory
 import com.typesafe.config.Config
 
 import scala.concurrent.{ Future, Promise }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{ Failure, Try }
-
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.client.program.OptimizerPlanEnvironment
@@ -31,7 +31,6 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.{ DataStreamSink, DataStream ⇒ JDataStream }
 import org.apache.flink.streaming.api.environment.CheckpointConfig
 import org.apache.flink.streaming.api.scala._
-
 import net.ceedubs.ficus.Ficus._
 import cloudflow.streamlets._
 import cloudflow.streamlets.BootstrapInfo._
@@ -270,7 +269,9 @@ abstract class FlinkStreamlet extends Streamlet with Serializable {
  *  }
  * }}}
  */
-abstract class FlinkStreamletLogic(implicit context: FlinkStreamletContext) extends Serializable {
+abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) extends StreamletLogic[FlinkStreamletContext] {
+  override def getContext(): FlinkStreamletContext = super.getContext()
+
   /**
    * Read from the underlying external storage through the inlet `inlet` and return a DataStream
    *

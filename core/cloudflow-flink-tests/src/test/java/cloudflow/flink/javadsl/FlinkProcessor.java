@@ -45,15 +45,16 @@ public class FlinkProcessor extends FlinkStreamlet {
   // Step 3: Provide custom implementation of `FlinkStreamletLogic` that defines
   //         the behavior of the streamlet
   @Override public FlinkStreamletLogic createLogic() {
-    return new FlinkStreamletLogic(getStreamletContext()) {
+    final FlinkStreamletContext context =  getStreamletContext();
+    return new FlinkStreamletLogic(context) {
       @Override public void buildExecutionGraph() {
 
-        DataStream<Data> ins = 
+        DataStream<Data> ins =
           this.<Data>readStream(in, Data.class)
             .map((Data d) -> d)
             .returns(new TypeHint<Data>(){}.getTypeInfo());
 
-        DataStream<Simple> simples = ins.map((Data d) -> new Simple(d.name())); 
+        DataStream<Simple> simples = ins.map((Data d) -> new Simple(d.name()));
         DataStreamSink<Simple> sink = writeStream(out, simples, Simple.class);
       }
     };

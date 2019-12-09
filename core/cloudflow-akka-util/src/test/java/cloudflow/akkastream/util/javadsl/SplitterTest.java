@@ -23,8 +23,6 @@ import akka.NotUsed;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.javadsl.*;
 
-import org.apache.avro.Schema;
-
 import cloudflow.akkastream.AkkaStreamlet;
 import cloudflow.akkastream.javadsl.util.*;
 import cloudflow.akkastream.testdata.Data;
@@ -53,8 +51,8 @@ public class SplitterTest extends JUnitSuite {
      return StreamletShape.createWithInlets(inlet).withOutlets(badOutlet, goodOutlet);
     }
 
-    public SplitterLogic createLogic() {
-      return new SplitterLogic(inlet, badOutlet, goodOutlet, getStreamletContext()) {
+    public SplitterLogicAkka createLogic() {
+      return new SplitterLogicAkka(inlet, badOutlet, goodOutlet, getStreamletContext()) {
         public FlowWithContext<Data, CommittableOffset, Either<BadData, Data>, CommittableOffset, NotUsed> createFlow() {
           return FlowWithContext.<Data, CommittableOffset>create().map(d -> Either.right(d));
         }

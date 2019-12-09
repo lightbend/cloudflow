@@ -32,10 +32,10 @@ import akka.kafka.ConsumerMessage._
  * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
  * in semi-random order and with equal priority for all inlets.
  */
-class MergeLogic[T](
+class MergeLogicAkka[T](
     inletPorts: immutable.IndexedSeq[CodecInlet[T]],
     outlet: CodecOutlet[T]
-)(implicit context: AkkaStreamletContext) extends RunnableGraphStreamletLogic {
+)(implicit context: AkkaStreamletContext) extends RunnableGraphAkkaStreamletLogic {
   require(inletPorts.size >= 2)
   final def flowWithCommittableOffset() = FlowWithOffsetContext[T]
 

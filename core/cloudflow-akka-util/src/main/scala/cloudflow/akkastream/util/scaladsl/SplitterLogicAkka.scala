@@ -28,11 +28,11 @@ import cloudflow.akkastream.scaladsl._
 /**
  * A StreamletLogic that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
  */
-abstract class SplitterLogic[I, L, R](
+abstract class SplitterLogicAkka[I, L, R](
     inlet: CodecInlet[I],
     leftOutlet: CodecOutlet[L],
     rightOutlet: CodecOutlet[R]
-)(implicit context: AkkaStreamletContext) extends RunnableGraphStreamletLogic()(context) {
+)(implicit context: AkkaStreamletContext) extends RunnableGraphAkkaStreamletLogic()(context) {
   /**
    * Defines the flow that receives elements from the inlet.
    * The offset associated with every output element is automatically committed using at-least-once semantics.
