@@ -10,8 +10,7 @@ docker build -t copy-models .
 docker tag copy-models:latest $DOCKER_REPO/copy-models:latest
 docker push $DOCKER_REPO/copy-models:latest
 
-kubectl create ns tensorflow-akka
-kubectl delete job copy-models --cascade --ignore-not-found
+kubectl -n tensorflow-akka delete job copy-models --cascade --ignore-not-found
 
 cat << EOF > temp-job.yaml
 apiVersion: batch/v1
