@@ -53,7 +53,7 @@ object TensorFlowModelBundle {
   }
 
   /**
-   * Gets all tags in the saved bundle and uses the first one. 
+   * Gets all tags in the saved bundle and uses the first one.
    * If you need a specific tag, overwrite this method
    * With a seq (of one) tags returning desired tag.
    *
