@@ -18,6 +18,10 @@ object WineModelBundle {
   def load(savedModelBundlePath: Path, modelName: String) = TensorFlowModelBundle.load(savedModelBundlePath, modelName, WineModel.apply)
 }
 
+object WineModel {
+  val EmptyServingResult = WineServingResult(.0)
+}
+
 /**
  * Serves wine quality scores.
  */
@@ -25,7 +29,7 @@ final case class WineModel(val loadedModel: LoadedModel) extends TensorFlowModel
   val session = loadedModel.session
   val signatures = loadedModel.signatures
 
-  def emptyServingResult = WineServingResult(.0)
+  def emptyServingResult = WineModel.EmptyServingResult
 
   /**
    * Scores WineRecords.

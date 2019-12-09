@@ -36,15 +36,23 @@ final class WineModelServer extends AkkaStreamlet {
     val savedModelBundlePath = getMountedPath(modelBundleMount).resolve(modelName)
 
     log.info(s"Loading model from $savedModelBundlePath.")
-    val model = WineModelBundle.load(savedModelBundlePath, modelName).fold(
-      e ⇒ throw new Exception(s"Could not load model from $savedModelBundlePath", e),
-      identity
+
+    val modelScoringFlow = WineModelBundle.load(savedModelBundlePath, modelName).fold(
+      e ⇒ {
+        log.error(s"Could not load model from $savedModelBundlePath.", e)
+        FlowWithOffsetContext[WineRecord]
+          .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}"))),
+      },
+      model ⇒ {
+        log.info(s"Loaded model from $savedModelBundlePath.")
+        FlowWithOffsetContext[WineRecord]
+          .map(record ⇒ model.scoreWine(record))
+      }
     )
-    log.info(s"Loaded model from $savedModelBundlePath.")
 
     def runnableGraph() = {
       sourceWithOffsetContext(in)
-        .via(FlowWithOffsetContext[WineRecord].map(record ⇒ model.scoreWine(record)))
+        .via(modelScoringFlow)
         .to(sinkWithOffsetContext(out))
     }
   }
