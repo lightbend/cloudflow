@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 if [ -z "$1" ]
   then
-    echo "Please provide the docker registry to push the models image to."
+    echo "Please provide the docker registry to push the models image to, for instance eu.gcr.io/<projectID> (replace <projectID> with your own project)."
     exit 1
 fi
 DOCKER_REPO=$1
