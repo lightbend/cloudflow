@@ -23,13 +23,11 @@ object TensorFlowModelBundle {
   def load[Record, ServingResult, Model](
       savedModelBundlePath: Path,
       modelName: String,
-      createModel: LoadedModel ⇒ Model
+      createModel: LoadedModel ⇒ Model,
+      tags: Path ⇒ Seq[String] = firstTag
   ): Try[Model] = {
     Try {
-      // TODO fix, don't know what these tags are for.
-      // get tags. We assume here that the first tag is the one we use
-      val tags: Seq[String] = getTags(savedModelBundlePath)
-      val bundle = SavedModelBundle.load(savedModelBundlePath.toAbsolutePath.toString, tags(0))
+      val bundle = SavedModelBundle.load(savedModelBundlePath.toAbsolutePath.toString, tags(savedModelBundlePath): _*)
       val graph = bundle.graph
       // get metatagraph and signature
       val metaGraphDef = MetaGraphDef.parseFrom(bundle.metaGraphDef)
@@ -54,13 +52,10 @@ object TensorFlowModelBundle {
 
   /**
    * Gets all tags in the saved bundle and uses the first one.
-   * If you need a specific tag, overwrite this method
-   * With a seq (of one) tags returning desired tag.
-   *
    * @param directory - directory for saved model
    * @returns sequence of tags
    */
-  private def getTags(directory: Path): Seq[String] = {
+  private def firstTag(directory: Path): Seq[String] = {
 
     val directoryFile = directory.toFile
     val pbfiles = if (directoryFile.exists && directoryFile.isDirectory)
