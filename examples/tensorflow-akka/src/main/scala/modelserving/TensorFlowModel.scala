@@ -60,14 +60,8 @@ final case class LoadedModel(
   def cleanup(): Unit = {
     try {
       session.close
-    } catch {
-      case NonFatal(e) ⇒ throw e
     } finally {
-      try {
-        graph.close
-      } catch {
-        case NonFatal(e) ⇒ throw e
-      }
+      graph.close
     }
   }
 }

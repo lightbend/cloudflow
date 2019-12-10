@@ -41,7 +41,7 @@ final class WineModelServer extends AkkaStreamlet {
       e ⇒ {
         log.error(s"Could not load model from $savedModelBundlePath.", e)
         FlowWithOffsetContext[WineRecord]
-          .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}"))),
+          .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}")))
       },
       model ⇒ {
         log.info(s"Loaded model from $savedModelBundlePath.")
