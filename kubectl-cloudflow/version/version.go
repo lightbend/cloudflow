@@ -21,9 +21,6 @@ var ReleaseTagSnapshot = "SNAPSHOT"
 // ReleaseTag is the tag used for a release, this tag is used to fetch the matching examples repository for this version of the CLI
 var ReleaseTag = ReleaseTagSnapshot
 
-// ProtocolVersionNamespace is the namespace that must contain the protocol version configmap
-const ProtocolVersionNamespace = "cloudflow"
-
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.
 const ProtocolVersion = "1"
@@ -42,7 +39,7 @@ func FailOnProtocolVersionMismatch() {
 	}
 	var err error
 	var cm *corev1.ConfigMap
-	if cm, err = k8sClient.CoreV1().ConfigMaps(ProtocolVersionNamespace).Get(ProtocolVersionConfigMapName, metav1.GetOptions{}); err == nil {
+	if cm, err = k8sClient.CoreV1().ConfigMaps("").Get(ProtocolVersionConfigMapName, metav1.GetOptions{}); err == nil {
 		operatorProtocolVersion := cm.Data[ProtocolVersionKey]
 		if operatorProtocolVersion != ProtocolVersion {
 			if version, err := strconv.Atoi(operatorProtocolVersion); err == nil {
