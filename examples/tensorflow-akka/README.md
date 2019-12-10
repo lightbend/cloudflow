@@ -106,7 +106,7 @@ spec:
 $ kubectl apply -f claim.yaml
 ```
 
-Copy the models in this project to the persistent volume:
+Copy the models in this project to the persistent volume (NOTE: this script expects the `tensorflow-akka` namespace to already exist):
 
 ```
 $ cd models
