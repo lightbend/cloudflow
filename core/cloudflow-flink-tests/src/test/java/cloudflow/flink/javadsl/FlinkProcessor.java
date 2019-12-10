@@ -48,12 +48,12 @@ public class FlinkProcessor extends FlinkStreamlet {
     return new FlinkStreamletLogic(getStreamletContext()) {
       @Override public void buildExecutionGraph() {
 
-        DataStream<Data> ins = 
+        DataStream<Data> ins =
           this.<Data>readStream(in, Data.class)
             .map((Data d) -> d)
             .returns(new TypeHint<Data>(){}.getTypeInfo());
 
-        DataStream<Simple> simples = ins.map((Data d) -> new Simple(d.name())); 
+        DataStream<Simple> simples = ins.map((Data d) -> new Simple(d.name()));
         DataStreamSink<Simple> sink = writeStream(out, simples, Simple.class);
       }
     };

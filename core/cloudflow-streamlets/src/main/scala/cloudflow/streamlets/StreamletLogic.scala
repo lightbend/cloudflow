@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package cloudflow.akkastream
+package cloudflow.streamlets
 
-/**
- * Extends a StreamletLogic. provides access to a containerPort so that it is possible to
- * start a TCP server inside an [[AkkaStreamlet]] which will be exposed through an endpoint in Kubernetes.
- */
-abstract class ServerStreamletLogic(server: Server)(implicit context: AkkaStreamletContext) extends AkkaStreamletLogic {
+trait StreamletLogic[Context <: StreamletContext] extends Serializable {
   /**
-   * Returns a TCP port on the container that a streamlet can listen on.
+   *
+   * Returns the [[StreamletContext]] in which this [[StreamletLogic]] is run. It can only be accessed when the streamlet is run.
    */
-  final def containerPort: Int = server.containerPort
+  def context: Context
 
   /**
    * Java API
-   * Returns a TCP port on the container that a streamlet can listen on.
+   *
+   * Returns the [[StreamletContext]] in which this [[StreamletLogic]] is run. It can only be accessed when the streamlet is run.
    */
-  final def getContainerPort(): Int = server.containerPort
+  def getContext(): Context = context
 }

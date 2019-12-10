@@ -65,7 +65,7 @@ public class FilterStreamlet extends AkkaStreamlet {
         return true;
     }
 
-    public StreamletLogic createLogic() {        
+    public AkkaStreamletLogic createLogic() {
         return new RunnableGraphStreamletLogic(getStreamletContext()) {
             final Config streamletConfig = getStreamletConfig();
             final Path referenceFilesPath = getMountedPath(referenceFiles);
@@ -75,35 +75,35 @@ public class FilterStreamlet extends AkkaStreamlet {
 
             final FiniteDuration pollingInterval = FiniteDuration
                     .create(streamletConfig.getInt(filterPollingInterval.getKey()), TimeUnit.SECONDS);
-            
-            final Source<ArrayList<String>, NotUsed> filterFileContent = 
+
+            final Source<ArrayList<String>, NotUsed> filterFileContent =
                 DirectoryChangesSource
                 .create(referenceFilesPath, pollingInterval, Integer.MAX_VALUE)
-                .filter(changedFile -> 
+                .filter(changedFile ->
                     changedFile.second() != DirectoryChange.Deletion
                     &&
                     changedFile.first().equals(filterFilenamePath)
                 )
                 .map(Pair::first)
-                .mapAsync(1, path -> 
+                .mapAsync(1, path ->
                     FileIO.fromPath(path)
                         .via(Framing.delimiter(ByteString.fromString("\n"), Integer.MAX_VALUE))
                         .runFold(
                             new ArrayList<String>(), (acc, entry) -> {
                                 acc.addAll(Collections.singletonList(entry.utf8String()));
                                 return acc;
-                            }, 
+                            },
                             getMaterializer()
                         )
-                );                
+                );
 
             public RunnableGraph createRunnableGraph() {
                 return getPlainSource(inlet)
                     .via(Flow.create())
                     .zipLatest(filterFileContent)
-                    .filter(filterFileAndMetric -> 
+                    .filter(filterFileAndMetric ->
                         findDeviceIdInFilterFile(
-                            filterFileAndMetric.first().getDeviceId(), 
+                            filterFileAndMetric.first().getDeviceId(),
                             filterFileAndMetric.second()
                         )
                     )

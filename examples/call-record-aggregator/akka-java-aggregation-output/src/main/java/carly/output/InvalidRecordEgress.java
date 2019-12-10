@@ -26,7 +26,7 @@ import cloudflow.akkastream.*;
 import cloudflow.akkastream.javadsl.*;
 import carly.data.*;
 
-public class InvalidRecordEgress extends AkkaStreamlet { 
+public class InvalidRecordEgress extends AkkaStreamlet {
   public AvroInlet<InvalidRecord> in = AvroInlet.create("in", InvalidRecord.class);
 
   private Object doPrint(final InvalidRecord record) {
@@ -39,7 +39,7 @@ public class InvalidRecordEgress extends AkkaStreamlet {
   }
 
   @Override
-  public StreamletLogic createLogic() {
+  public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getStreamletContext()) {
       @Override
       public RunnableGraph<?> createRunnableGraph() {
