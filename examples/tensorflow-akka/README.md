@@ -4,6 +4,12 @@
 
 A simple pipeline that scores the quality of wines using a TensorFlow model.
 
+<p>
+<img src="./images/tensorflow-akka.png" width="600">
+
+<i>Simple model serving application using TensorFlow and Akka</i>
+</p>
+
 The TensorFlow models must be provided through a persistent volume claim. 
 The `models` directory contains a `copy-models.sh` script that copies the models found in this directory to the volume that is mounted on the model-server streamlet.
 (The example only contains one example model, under `models/model-1/saved/1`)
