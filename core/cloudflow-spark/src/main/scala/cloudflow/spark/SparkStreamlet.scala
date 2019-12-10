@@ -230,6 +230,8 @@ trait SparkStreamlet extends Streamlet with Serializable {
  */
 abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) extends StreamletLogic[SparkStreamletContext] {
 
+  override def getContext(): SparkStreamletContext = super.getContext()
+
   implicit class StreamingQueryExtensions(val query: StreamingQuery) {
     def toQueryExecution: StreamletQueryExecution = StreamletQueryExecution(query)
   }
