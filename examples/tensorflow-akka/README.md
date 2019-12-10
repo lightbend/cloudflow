@@ -5,7 +5,7 @@
 A simple pipeline that scores the quality of wines using a TensorFlow model.
 
 <p>
-<img src="./images/tensorflow-akka.png" width="600">
+<img src="./images/tensorflow-akka.png" width="800">
 
 <i>Simple model serving application using TensorFlow and Akka</i>
 </p>
