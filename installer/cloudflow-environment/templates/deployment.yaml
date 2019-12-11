@@ -112,15 +112,3 @@ spec:
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
-          {{- if .Values.operator.eventsPersistence.es.useConsoleEs }}
-          volumeMounts:
-          - mountPath: /etc/console-discovery-elasticsearch
-            name: discovery-elasticsearch-volume
-          {{- end }}
-      {{- if .Values.operator.eventsPersistence.es.useConsoleEs }}
-      volumes:
-      - configMap:
-          defaultMode: 420
-          name: discovery-elasticsearch
-        name: discovery-elasticsearch-volume
-      {{- end }}
