@@ -2,7 +2,7 @@ package sensordata;
 
 import cloudflow.akkastream.AkkaServerStreamlet;
 
-import cloudflow.akkastream.StreamletLogic;
+import cloudflow.akkastream.AkkaStreamletLogic;
 import cloudflow.akkastream.util.javadsl.HttpServerLogic;
 
 import cloudflow.streamlets.RoundRobinPartitioner;
@@ -19,7 +19,7 @@ public class SensorDataIngress extends AkkaServerStreamlet {
    return StreamletShape.createWithOutlets(out);
   }
 
-  public StreamletLogic createLogic() {
+  public AkkaStreamletLogic createLogic() {
     return HttpServerLogic.createDefault(this, out, Jackson.byteStringUnmarshaller(SensorData.class), getStreamletContext());
   }
 }

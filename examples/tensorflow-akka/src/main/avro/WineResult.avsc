@@ -1,0 +1,20 @@
+{
+    "namespace": "modelserving.wine.avro",
+    "type": "record",
+    "name": "WineResult",
+    "fields":[
+      {
+        "name": "inputRecord",
+        "type": "WineRecord"
+      },
+      {
+        "name": "modelResult",
+        "type": "WineServingResult"
+      },
+      {
+        "name": "modelResultMetadata",
+        "type": "ModelResultMetadata"
+      }
+  ]
+}
+

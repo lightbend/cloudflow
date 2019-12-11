@@ -19,17 +19,12 @@ package cloudflow.akkastream.util.javadsl;
 import org.junit.Test;
 import org.scalatest.junit.JUnitSuite;
 
-import akka.NotUsed;
-import akka.stream.javadsl.*;
 import akka.http.javadsl.common.EntityStreamingSupport;
 import akka.http.javadsl.unmarshalling.*;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.util.ByteString;
-import org.apache.avro.Schema;
 import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
 import cloudflow.akkastream.testdata.Data;
-import cloudflow.akkastream.testdata.Data$;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 
@@ -61,7 +56,7 @@ public class HttpServerTest extends JUnitSuite {
     AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
     Unmarshaller<ByteString, Data> fbu = Jackson.byteStringUnmarshaller(Data.class);
     EntityStreamingSupport entityStreamingSupport = EntityStreamingSupport.json();
-    
+
     public StreamletShape shape() {
       return StreamletShape.createWithOutlets(outlet);
     }

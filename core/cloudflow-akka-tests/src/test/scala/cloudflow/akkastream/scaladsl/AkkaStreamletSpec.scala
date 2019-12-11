@@ -171,7 +171,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     var result: Seq[Data] = _
     final override val shape = StreamletShape.withInlets(in)
 
-    override final def createLogic = new StreamletLogic() {
+    override final def createLogic = new AkkaStreamletLogic() {
       def run() = {
         result = scala.concurrent.Await.result(plainSource(in).toMat(sink)(Keep.right).run, timeout)
       }

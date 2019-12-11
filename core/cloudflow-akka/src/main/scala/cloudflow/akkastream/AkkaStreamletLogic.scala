@@ -41,7 +41,10 @@ import cloudflow.streamlets._
  * consuming elements from these using akka stream operators, and writing to outlets via Sinks that are provided by
  * [[[atLeastOnceSink[T](outlet* atLeastOnceSink]]] or [[atMostOnceSink]].
  */
-abstract class StreamletLogic(implicit context: AkkaStreamletContext) {
+abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) extends StreamletLogic[AkkaStreamletContext] {
+
+  override def getContext(): AkkaStreamletContext = super.getContext()
+
   /**
    * This method is called when the streamlet is run.
    * Override this method to define what the specific streamlet logic should do.

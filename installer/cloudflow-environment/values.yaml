@@ -16,7 +16,7 @@ tags:
   targetGke: false
   targetMinikube: false
   targetMinishift: false
-  
+
 ## Kafka & Strimzi
 kafka:
   mode: "CloudflowManaged"
@@ -81,21 +81,8 @@ operator:
   sparkExecutor:
     requestsCpu: ""
     requestsMemory: ""
-  ## Events Persistence
-  eventsPersistence:
-    enabled: false
-    es:
-      useConsoleEs: false
-      host: "localhost"
-      port: 9200
-      index: "cloudflow_events"
-      type: "_doc"
   ## JVM command line options
   jvm:
     opts: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
   # PVC configuration
   persistentStorageClass: ""
-## Prometheus
-prometheus:
-  enabled: true
-  port: 2049
