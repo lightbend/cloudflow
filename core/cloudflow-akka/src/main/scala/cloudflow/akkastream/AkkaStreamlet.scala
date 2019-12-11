@@ -42,7 +42,7 @@ abstract class AkkaStreamlet extends Streamlet {
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
    */
   protected final implicit def context: AkkaStreamletContext = {
-    if (ctx == null) throw new StreamletContextException()
+    if (ctx == null) throw new AkkaStreamletContextException()
     ctx
   }
 

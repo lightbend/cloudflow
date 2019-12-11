@@ -17,9 +17,7 @@
 package cloudflow.streamlets
 
 import scala.collection.immutable
-
 import com.typesafe.config.Config
-
 import descriptors.StreamletDescriptor
 
 abstract class Streamlet {

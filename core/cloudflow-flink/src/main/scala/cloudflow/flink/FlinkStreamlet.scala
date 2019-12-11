@@ -141,7 +141,7 @@ abstract class FlinkStreamlet extends Streamlet with Serializable {
     this
   }
 
-  final class FlinkStreamletContextException() extends Exception("The FlinkStreamletContext can only be accessed from within the streamlet logic.")
+  final class FlinkStreamletContextException() extends StreamletContextException("The FlinkStreamletContext can only be accessed from within the streamlet logic.")
 
   protected def createLogic(): FlinkStreamletLogic
 

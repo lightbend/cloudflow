@@ -102,7 +102,7 @@ trait SparkStreamlet extends Streamlet with Serializable {
     ctx
   }
 
-  final class SparkStreamletContextException() extends Exception("Can only access the SparkStreamletContext within the run() scope")
+  final class SparkStreamletContextException() extends StreamletContextException("Can only access the SparkStreamletContext within the run() scope")
 
   protected def createLogic(): SparkStreamletLogic
 
