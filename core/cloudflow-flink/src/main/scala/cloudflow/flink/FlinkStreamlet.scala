@@ -18,12 +18,12 @@ package cloudflow.flink
 
 import java.nio.file.Path
 
-import org.slf4j.LoggerFactory
-import com.typesafe.config.Config
-
-import scala.concurrent.{ Future, Promise }
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ Future, Promise }
 import scala.util.{ Failure, Try }
+
+import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.client.program.OptimizerPlanEnvironment
@@ -31,9 +31,9 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.{ DataStreamSink, DataStream ⇒ JDataStream }
 import org.apache.flink.streaming.api.environment.CheckpointConfig
 import org.apache.flink.streaming.api.scala._
-import net.ceedubs.ficus.Ficus._
-import cloudflow.streamlets._
+
 import cloudflow.streamlets.BootstrapInfo._
+import cloudflow.streamlets._
 
 /**
  * The base class for defining Flink streamlets. Derived classes need to override `createLogic` to
@@ -68,29 +68,12 @@ import cloudflow.streamlets.BootstrapInfo._
  *  }
  * }}}
  */
-abstract class FlinkStreamlet extends Streamlet with Serializable {
-  @transient lazy val log = LoggerFactory.getLogger(getClass.getName)
-
+abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
   final override val runtime = FlinkStreamletRuntime
-
-  // ctx is always first set by runner through `init` so this is safe.
-  @volatile private var ctx: FlinkStreamletContext = null
 
   private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
   private val completionFuture = completionPromise.future
-
-  protected final implicit def context: FlinkStreamletContext = {
-    if (ctx == null) throw new FlinkStreamletContextException()
-    ctx
-  }
-
-  /**
-   * Java API
-   *
-   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
-   */
-  protected final def getStreamletContext(): FlinkStreamletContext = context
 
   override protected final def createContext(config: Config): FlinkStreamletContext = {
     (for {
@@ -147,7 +130,7 @@ abstract class FlinkStreamlet extends Streamlet with Serializable {
 
   override final def run(config: Config): StreamletExecution = {
     // create a context only when it is not set
-    if (ctx == null) ctx = createContext(config)
+    val ctx = getOrCreateContext(config)
 
     val configStr = getFlinkConfigInfo(ctx.env).foldLeft("\n") {
       case (acc, (k, v)) ⇒

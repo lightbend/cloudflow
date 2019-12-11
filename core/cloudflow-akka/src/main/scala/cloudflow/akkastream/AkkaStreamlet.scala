@@ -19,7 +19,6 @@ package cloudflow.akkastream
 import java.nio.file.{ Paths, Files }
 import java.nio.charset.StandardCharsets
 
-import org.slf4j.LoggerFactory
 import cloudflow.streamlets._
 import BootstrapInfo._
 
@@ -31,27 +30,8 @@ import net.ceedubs.ficus.Ficus._
 /**
  * Extend from this class to build Akka-based Streamlets.
  */
-abstract class AkkaStreamlet extends Streamlet {
-  @transient lazy val log = LoggerFactory.getLogger(getClass.getName)
+abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
   final override val runtime = AkkaStreamletRuntime
-
-  // ctx is always first set by runner through `init` so this is safe.
-  @volatile private var ctx: AkkaStreamletContext = null
-
-  /**
-   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
-   */
-  protected final implicit def context: AkkaStreamletContext = {
-    if (ctx == null) throw new AkkaStreamletContextException()
-    ctx
-  }
-
-  /**
-   * Java API
-   *
-   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
-   */
-  protected final def getStreamletContext(): AkkaStreamletContext = context
 
   /**
    * Initialize the streamlet from the config. In some cases (e.g. the tests) we may pass a context
@@ -79,7 +59,7 @@ abstract class AkkaStreamlet extends Streamlet {
   }
 
   override def run(config: Config): StreamletExecution = {
-    if (ctx == null) ctx = createContext(config)
+    val ctx = getOrCreateContext(config)
 
     // readiness probe to be done at operator using this
     // the streamlet context has been created and the streamlet is ready to take requests

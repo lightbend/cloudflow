@@ -16,12 +16,8 @@
 
 package cloudflow.flink.javadsl;
 
-import java.util.List;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.serialization.*;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.avro.*;
@@ -45,7 +41,7 @@ public class FlinkProcessor extends FlinkStreamlet {
   // Step 3: Provide custom implementation of `FlinkStreamletLogic` that defines
   //         the behavior of the streamlet
   @Override public FlinkStreamletLogic createLogic() {
-    return new FlinkStreamletLogic(getStreamletContext()) {
+    return new FlinkStreamletLogic(getContext()) {
       @Override public void buildExecutionGraph() {
 
         DataStream<Data> ins =

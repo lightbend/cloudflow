@@ -33,7 +33,7 @@ public class SensorDataToMetrics extends AkkaStreamlet {
   }
 
   public AkkaStreamletLogic createLogic() {
-    return new RunnableGraphStreamletLogic(getStreamletContext()) {
+    return new RunnableGraphStreamletLogic(getContext()) {
       public RunnableGraph createRunnableGraph() {
         return getSourceWithOffsetContext(in).via(flowWithContext()).to(getSinkWithOffsetContext(out));
       }

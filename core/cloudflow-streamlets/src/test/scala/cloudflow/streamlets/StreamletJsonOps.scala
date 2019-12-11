@@ -60,7 +60,7 @@ object StreamletJsonOps {
       fls1 must equal(fls2)
     }
 
-    def mustBeAStreamletDescriptorFor(streamlet: Streamlet): Unit = {
+    def mustBeAStreamletDescriptorFor(streamlet: Streamlet[StreamletContext]): Unit = {
       val streamletDescriptor = json
       streamletDescriptor.field("runtime").value must haveStringValue(streamlet.runtime.name)
       streamletDescriptor.field("description").value must haveStringValue(streamlet.description)

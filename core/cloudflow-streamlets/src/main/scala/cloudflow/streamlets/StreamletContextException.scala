@@ -16,8 +16,4 @@
 
 package cloudflow.streamlets
 
-class StreamletContextException(message: String) extends Exception(message) {
-  def this() {
-    this("StreamletContext can only be accessed from the `createLogic()` method.")
-  }
-}
+class StreamletContextException(message: String) extends Exception(message)

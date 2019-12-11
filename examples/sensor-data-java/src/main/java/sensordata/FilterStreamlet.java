@@ -66,7 +66,7 @@ public class FilterStreamlet extends AkkaStreamlet {
     }
 
     public AkkaStreamletLogic createLogic() {
-        return new RunnableGraphStreamletLogic(getStreamletContext()) {
+        return new RunnableGraphStreamletLogic(getContext()) {
             final Config streamletConfig = getStreamletConfig();
             final Path referenceFilesPath = getMountedPath(referenceFiles);
 

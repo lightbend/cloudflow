@@ -19,7 +19,7 @@ package cloudflow.events.errors
 import java.time.{ Clock, Instant, ZoneId }
 
 import scala.concurrent.Future
-import cloudflow.streamlets.{ LoadedStreamlet, Streamlet, StreamletDefinition, StreamletRuntime }
+import cloudflow.streamlets.{ LoadedStreamlet, Streamlet, StreamletContext, StreamletDefinition, StreamletRuntime }
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{ FreeSpec, MustMatchers, OptionValues }
 import skuber.{ ObjectMeta, ObjectReference }
@@ -59,7 +59,7 @@ class ErrorEventsSpec extends FreeSpec
 
     val config = ConfigFactory.load("config-map-sample.json")
     val streamletDef = StreamletDefinition.read(config).get
-    val streamlet = mock[Streamlet]
+    val streamlet = mock[Streamlet[StreamletContext]]
     when(streamlet.runtime).thenAnswer(new StreamletRuntime { def name = "akka" })
     val loadedStreamlet = LoadedStreamlet(streamlet, streamletDef)
 

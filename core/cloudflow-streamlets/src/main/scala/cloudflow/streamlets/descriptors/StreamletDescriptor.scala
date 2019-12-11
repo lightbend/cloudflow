@@ -16,9 +16,8 @@
 
 package cloudflow.streamlets.descriptors
 
-import spray.json._
-
 import cloudflow.streamlets._
+import spray.json._
 
 final case class VolumeMountDescriptor(
     name: String,
@@ -58,17 +57,17 @@ object ConfigParameterDescriptor {
 
 object StreamletDescriptor extends DefaultJsonProtocol {
 
-  def jsonDescriptor(streamlet: Streamlet): String = {
-    streamlet.toJson.compactPrint
+  def jsonDescriptor[Context <: StreamletContext](streamlet: Streamlet[Context]): String = {
+    streamlet.toJson(streamletWriter.asInstanceOf[JsonWriter[Streamlet[Context]]]).compactPrint
   }
 
-  implicit val volumeMountDescriptorFormat = jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
+  implicit val volumeMountDescriptorFormat: RootJsonFormat[VolumeMountDescriptor] = jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
 
   implicit final class VolumeMountToDescriptor(val volumeMount: VolumeMount) extends AnyVal {
     def toDescriptor = VolumeMountDescriptor(volumeMount.name, volumeMount.path, volumeMount.accessMode.toString)
   }
 
-  implicit val configParameterDescriptorFormat = jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
+  implicit val configParameterDescriptorFormat: RootJsonFormat[ConfigParameterDescriptor] = jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
 
   implicit final class ConfigParameterDescriptorToDescriptor(val configParameterDescriptor: ConfigParameterDescriptor) extends AnyVal {
     def toDescriptor = ConfigParameterDescriptor(
@@ -122,9 +121,9 @@ object StreamletDescriptor extends DefaultJsonProtocol {
       })
   }
 
-  implicit val streamletWriter: JsonFormat[Streamlet] =
-    lift(new JsonWriter[Streamlet] {
-      def write(streamlet: Streamlet): JsValue = {
+  implicit val streamletWriter: JsonFormat[Streamlet[_ <: StreamletContext]] =
+    lift(new JsonWriter[Streamlet[_ <: StreamletContext]] {
+      def write(streamlet: Streamlet[_ <: StreamletContext]): JsValue = {
         import StreamletAttributeDescriptor._
         import StreamletPortDescriptor._
         val canonicalName = streamlet.getClass.getCanonicalName

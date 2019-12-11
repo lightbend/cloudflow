@@ -16,30 +16,22 @@
 
 package cloudflow.akkastream.javadsl;
 
-import java.util.*;
-
 import scala.concurrent.duration.Duration;
 
-import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.ActorMaterializer;
-import akka.stream.javadsl.*;
 import akka.stream.javadsl.Flow;
 import akka.testkit.TestKit;
 import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.util.*;
 import cloudflow.akkastream.testdata.*;
 import cloudflow.akkastream.testkit.javadsl.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
-import cloudflow.streamlets.descriptors.*;
 
-import org.apache.avro.Schema;
 import org.scalatest.junit.JUnitSuite;
 import org.junit.*;
-import static org.junit.Assert.*;
 
 public class AkkaStreamletTest extends JUnitSuite {
   static ActorMaterializer mat;
@@ -106,7 +98,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     }
 
     public AkkaStreamletLogic createLogic() {
-      return new AkkaStreamletLogic(getStreamletContext()) {
+      return new AkkaStreamletLogic(getContext()) {
         public void run() {
           getSourceWithOffsetContext(inlet)
             .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
@@ -136,7 +128,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     }
 
     public AkkaStreamletLogic createLogic() {
-      return new AkkaStreamletLogic(getStreamletContext()) {
+      return new AkkaStreamletLogic(getContext()) {
         public void run() {
           String configuredNameToFilterFor = streamletConfig().getString(nameFilter.getKey());
 

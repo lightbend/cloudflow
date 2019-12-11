@@ -15,16 +15,19 @@
  */
 
 package cloudflow.akkastream.util.javadsl;
-import java.util.*;
-import org.junit.Test;
-import org.scalatest.junit.JUnitSuite;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import cloudflow.akkastream.AkkaStreamlet;
 import cloudflow.akkastream.testdata.Data;
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
+import cloudflow.streamlets.CodecInlet;
+import cloudflow.streamlets.StreamletShape;
+import cloudflow.streamlets.avro.AvroInlet;
+import cloudflow.streamlets.avro.AvroOutlet;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.scalatest.junit.JUnitSuite;
 
 public class MergeTest extends JUnitSuite {
     private int inletCount = 10;
@@ -46,7 +49,7 @@ public class MergeTest extends JUnitSuite {
           List<CodecInlet<Data>> inlets = new ArrayList<CodecInlet<Data>>();
           inlets.add(inlet1);
           inlets.add(inlet2);
-          return new MergeLogic(inlets, outlet, getStreamletContext());
+          return new MergeLogic(inlets, outlet, getContext());
         }
     }
 }
