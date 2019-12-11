@@ -1,0 +1,28 @@
+{
+  "namespace": "modelserving.wine.avro",
+  "name": "ModelResultMetadata",
+  "type": "record",
+  "doc": "Extra output, besides the 'score' itself, from the process of scoring with a model.",
+  "fields": [
+    {
+      "name": "errors",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "modelName",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "startTime",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "duration",
+      "type": "long",
+      "default": 0
+    }
+  ]
+}

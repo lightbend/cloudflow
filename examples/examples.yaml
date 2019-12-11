@@ -18,3 +18,6 @@ examples:
   - id: "taxi-ride"
     path: "taxi-ride"
     description: This app shows the combination of multi-project streamlets using Flink and Akka
+  - id: "tensorflow-akka"
+    path: "tensorflow-akka"
+    description: This app shows how to serve a Tensorflow model using Akka

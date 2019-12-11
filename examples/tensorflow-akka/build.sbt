@@ -4,20 +4,19 @@ import sbt.Keys._
 
 import scalariform.formatter.preferences._
 
-lazy val sensorData =  (project in file("."))
+lazy val tensorflowAkka =  (project in file("."))
     .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
     .settings(
 //end::docs-projectSetup-example[]
       libraryDependencies ++= Seq(
-        "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
-        "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.10",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.10" % "test",
+        "org.tensorflow"         % "tensorflow"                 % "1.15.0",
+        "org.tensorflow"         % "proto"                      % "1.15.0",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-
 //tag::docs-projectName-example[]
       ),
-      name := "sensor-data-scala",
+      name := "tensorflow-akka",
 //end::docs-projectName-example[]
       organization := "com.lightbend",
 
@@ -35,6 +34,7 @@ lazy val sensorData =  (project in file("."))
         "-language:_",
         "-unchecked"
       ),
+
       runLocalConfigFile := Some("src/main/resources/local.conf"),
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
