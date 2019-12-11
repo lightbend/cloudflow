@@ -32,10 +32,6 @@ spec:
   template:
     metadata:
       annotations:
-      {{- if .Values.prometheus.enabled }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "2049"
-      {{- end }}
       labels: {{ include "operator.labels" . | indent 8 }}
     spec:
       serviceAccountName: {{ template "operator.name" . }}
@@ -69,19 +65,7 @@ spec:
               value: "{{ template "operator.strimziClusterName" . }}"
             - name: KAFKA_STRIMZI_TOPIC_OPERATOR_NAMESPACE
               value: "{{ required "Strimzi Kafka topic operator namespace cannot be empty" .Values.kafka.strimzi.topicOperatorNamespace }}"
-            # Configure events persistence
-            - name: EVENTS_PERSISTENCE_ENABLED
-              value: "{{ required "Events persistence enabled cannot be empty" .Values.operator.eventsPersistence.enabled }}"
-            - name: EVENTS_PERSISTENCE_USE_CONSOLE_ES
-              value: "{{ .Values.operator.eventsPersistence.es.useConsoleEs }}"  
-            - name: EVENTS_PERSISTENCE_ES_HOST
-              value: "{{ .Values.operator.eventsPersistence.es.host }}"
-            - name: EVENTS_PERSISTENCE_ES_PORT
-              value: "{{ .Values.operator.eventsPersistence.es.port }}"
-            - name: EVENTS_PERSISTENCE_ES_INDEX
-              value: "{{ .Values.operator.eventsPersistence.es.index }}"
-            - name: EVENTS_PERSISTENCE_ES_TYPE
-              value: "{{ .Values.operator.eventsPersistence.es.type }}"
+            # Configure runner resource request/limit defaults
             - name: AKKA_RUNNER_REQUESTS_MEMORY
               value: "{{ .Values.operator.akkaRunner.requestsMemory }}"
             - name: AKKA_RUNNER_REQUESTS_CPU
@@ -96,6 +80,7 @@ spec:
               value: "{{ .Values.operator.sparkDriver.requestsMemory }}"
             - name: SPARK_DRIVER_REQUESTS_CPU
               value: "{{ .Values.operator.sparkDriver.requestsCpu }}"
+            # Misc values
             - name: PERSISTENT_STORAGE_CLASS
               value: "{{ required "Persistent Storage Class for PVC configuration required" .Values.operator.persistentStorageClass }}"
             - name: RELEASE_VERSION
