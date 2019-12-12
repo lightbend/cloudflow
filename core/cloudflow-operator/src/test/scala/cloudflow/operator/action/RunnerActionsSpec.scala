@@ -24,7 +24,7 @@ import skuber.apps.v1.Deployment
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import BlueprintBuilder._
-import cloudflow.operator.runner.AkkaRunner.{ AdminPort, CinnamonExporterPort, PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
+import cloudflow.operator.runner.AkkaRunner.{ AdminPort, PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
 import cloudflow.operator.runner._
 
 class RunnerActionsSpec extends WordSpec
@@ -297,7 +297,6 @@ class RunnerActionsSpec extends WordSpec
 
     container.ports must contain allOf (
       Container.Port(AdminPort, name = Name.ofContainerAdminPort),
-      Container.Port(CinnamonExporterPort, name = Name.ofContainerCinnamonExporterPort),
       Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
     )
 
