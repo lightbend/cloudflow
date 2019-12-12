@@ -65,7 +65,8 @@ gcloud beta container node-pools create kafka-pool-0 \
   --cluster=$CLUSTER_NAME \
   --machine-type n1-highmem-2  \
   --node-labels=dedicated=StrimziKafka \
-  --node-taints=dedicated=StrimziKafka:NoSchedule
+  --node-taints=dedicated=StrimziKafka:NoSchedule \
+  --no-enable-autoupgrade
 
 ## Wait for clusters to come up
 echo "Waiting for cluster to become stable before continuing with the installation....."
