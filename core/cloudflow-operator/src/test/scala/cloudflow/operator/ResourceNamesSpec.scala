@@ -18,7 +18,6 @@ package cloudflow.operator
 
 import action._
 import skuber._
-import skuber.ext.Ingress
 import org.scalatest.{ ConfigMap ⇒ _, _ }
 
 import cloudflow.blueprint._
