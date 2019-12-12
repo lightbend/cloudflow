@@ -132,13 +132,6 @@ object Name {
 
   val ofContainerAdminPort = max15Chars("admin")
 
-  /*
-   * To support multiple prometheus endpoints on a single pod we encode the `-metrics` suffix into the port name
-   * instead of adding `prometheus.io/port` annotations.
-   * https://developer.lightbend.com/docs/console/current/configuration/discovery.html#named-ports-annotation-example
-   */
-  val ofContainerCinnamonExporterPort = max15Chars("cinn-metrics")
-
   val ofContainerPrometheusExporterPort = max15Chars("prom-metrics")
 
   def ofIngress(streamletDeploymentName: String) = {
