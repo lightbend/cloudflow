@@ -1,0 +1,83 @@
+= Running in a local sandbox
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+Now that we have the application code implemented, let's try to build the application and see what we can do with it locally without deploying in the cluster.
+
+**Verify the Blueprint**
+
+Cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected end points, invalid streamlets and other issues related to the structure and semantics of the pipeline.
+
+To verify the blueprint:
+
+. From the project directory, run `sbt` in interactive mode:
++
+```
+sbt
+```
+. Enter the verify command:
++
+```
+verifyBlueprint
+```
++ 
+You should see output similar to the following:
++
+```
+sbt:sensor-data> verifyBlueprint
+[info] Streamlet 'sensordata.SensorDataToMetrics' found
+[info] Streamlet 'sensordata.MetricsValidation' found
+[info] Streamlet 'sensordata.SensorDataHttpIngress' found
+[info] Streamlet 'sensordata.ValidMetricLogger' found
+[info] Streamlet 'sensordata.InvalidMetricLogger' found
+[success] /Users/debasishghosh/lightbend/oss/cloudflow-oss/cloudflow/examples/sensor-data/src/main/blueprint/blueprint.conf verified.
+```
+
+**Run the Streamlets Locally**
+The `sbt runLocal` command allows you to run your application on your local machine without a Kubernetes cluster. 
+
+. From the `sbt` shell, invoke `runLocal`:
++
+You should see output similar to the following:
+```
+sbt:sensor-data> runLocal
+[info] Streamlet 'sensordata.SensorDataToMetrics' found
+[info] Streamlet 'sensordata.MetricsValidation' found
+[info] Streamlet 'sensordata.SensorDataHttpIngress' found
+[info] Streamlet 'sensordata.ValidMetricLogger' found
+[info] Streamlet 'sensordata.InvalidMetricLogger' found
+[success] /Users/debasishghosh/lightbend/oss/cloudflow-oss/cloudflow/examples/sensor-data/src/main/blueprint/blueprint.conf verified.
+[info] Using sandbox configuration from resources/local.conf
+---------------------------------- Streamlets ----------------------------------
+http-ingress [sensordata.SensorDataHttpIngress]
+	- HTTP port [3000]
+invalid-logger [sensordata.InvalidMetricLogger]
+metrics [sensordata.SensorDataToMetrics]
+valid-logger [sensordata.ValidMetricLogger]
+validation [sensordata.MetricsValidation]
+--------------------------------------------------------------------------------
+
+--------------------------------- Connections ---------------------------------
+validation.valid -> valid-logger.in
+http-ingress.out -> metrics.in
+validation.invalid -> invalid-logger.in
+metrics.out -> validation.in
+--------------------------------------------------------------------------------
+
+------------------------------------ Output ------------------------------------
+Pipeline log output available in file: /var/folders/th/mq68kp9533z31prp3x7fm7rw0000gn/T/local-cloudflow2752564492899894997/local-cloudflow7958636402825157289.log
+--------------------------------------------------------------------------------
+
+Running sensor-data  
+To terminate, press [ENTER]
+
+```
+
+. Press **ENTER** to terminate the application.
+
+== What's next
+
+Now, we are ready to xref:setup-gke-cluster.adoc[Set up a GKE cluster].

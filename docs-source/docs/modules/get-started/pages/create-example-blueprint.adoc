@@ -1,0 +1,34 @@
+= Creating the blueprint
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+ifdef::review[REVIEWERS: it would be great to provide some comments explaining the important lines in this blueprint. If you give me the information, I can use a special annotation callout that shows onscreen, but doesn't mess up the code when the reader copies it. That might be cleaner than embedding comments.]
+
+
+The blueprint declares which streamlets join together to form our pipeline. Create `blueprint.conf` in `src/main/blueprint` to specify the connection as follows:
+
+```
+blueprint {
+  streamlets {
+    http-ingress = sensordata.SensorDataHttpIngress
+    metrics = sensordata.SensorDataToMetrics
+    validation = sensordata.MetricsValidation
+    valid-logger = sensordata.ValidMetricLogger
+    invalid-logger = sensordata.InvalidMetricLogger
+  }
+
+  connections {
+    http-ingress.out = [metrics.in]
+    metrics.out = [validation.in]
+    validation.invalid = [invalid-logger.in]
+    validation.valid = [valid-logger.in]
+  }
+}
+```
+
+== What's next
+
+With the streamlets implemented and the blueprint ready, let's try xref:run-in-sandbox.adoc[running Hello World in a development sandbox].

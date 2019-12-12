@@ -1,0 +1,107 @@
+= Lightbend Cloudflow Docs README
+
+
+The source files for this guide use asciidoc syntax and the project is configured to build with Antora. To review and suggest changes, we recommend building the HTML files locally. This allows you to view the guide structure as a whole and to read pages the way someone using the documentation would.
+
+This readme covers the following topics:
+
+* <<Building the guide locally>>
+* <<Adding tabbed example blocks>>
+* <<Linking to section headings>>
+* <<Versioning the doc>>
+
+== Building the guide locally
+
+Building the Antora site is managed by the `Makefile` at the root of the project. List of all available target is available in the top level README.
+
+A few selected commands:
+
+* `make techhub-html` - build the antora site.
+* `make techhub-html-author-mode` - build the antora site in author mode, with the `todo` and `reviewer` attributes rendered in the output.
+
+The result of the build is available in the `techhub/build/site` directory.
+
+== Creating new pages
+To create a new page, start your file with a title and select from the following attributes. You only need to use the *supergroup* attribute for the type of examples a page will include. The tabbed example boxes are specific to the Lightbend skin that we build against. (https://github.com/lightbend/antora-ui-lightbend-theme/).
+
+[source,adoc]
+----
+= # Add page title here, the file name should be close if not identical, for SEO
+:idprefix:
+:idseparator: -
+:!example-caption:
+:toc: // enables page-level toc, to disable for pages with no sub-heads, add a !, :!toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+:!page-supergroup-scala-java: Language //remove '!' to enable tabbed example boxes for scala and java
+:!page-supergroup-sbt-maven: Build Tool //remove '!' to enable tabbed example boxes for sbt and maven
+:!page-supergroup-sbt-maven-gradle: Build Tool  //remove '!' to enable tabbed example boxes for sbt, maven, and gradle
+:!page-supergroup-minishift-minikube: Platform  //remove '!' to enable tabbed example boxes for Minishift and Minikube
+:!page-supergroup-kubernetes-openshift: Platform //remove '!' to enable tabbed example boxes for Kubernetes and OpenShift
+:!page-supergroup-mac-ubuntu: OS //remove '!' to enable tabbed example boxes for Mac and Ubuntu
+----
+When you add a new page, you must also add it to the `nav.adoc` file in the `docs/modules/ROOT` directory.
+
+== Adding tabbed example blocks
+To add tabbed example blocks to a page, use the following syntax:
+
+[source,adoc]
+----
+[.tabset]
+Mac::
+. Download and install VirtualBox: https://www.virtualbox.org/wiki/Downloads[https://www.virtualbox.org/wiki/Downloads].
+Ubuntu::
++
+--
+Follow these steps to install Virtualbox on Ubuntu 16.04+:
+
+. If you do not have `curl`, install it:
+
+    ```bash
+    sudo apt-get install curl
+    ```
+
+. Use the following command in a shell to download and install VirtualBox:
+
+    ```bash
+    sudo apt-get install virtualbox virtualbox-ext-pack
+    ```
+--
+----
+
+NOTE: For more examples of tabbed example blocks, or to request an addition to the tabs, see https://github.com/lightbend/antora-ui-lightbend-theme/
+
+== Linking to section headings
+
+Antora creates anchors for each section heading by default: they start with a leading _, and they include the full title of the section in lower case separated by underscores. So, unless you want to provide a shorter way to x-ref, no need to define the section anchors.
+
+For example, using the default anchors, the following creates a cross-ref to the mypage page, Reference this heading section:
+
+----
+xref:mypage.adoc#_reference_this_heading[Reference this heading]
+----
+
+Interestingly, on the same page, you can use the following  notation including spaces and mixed case and antora converts the link to the correct format.
+
+----
+<<Title of section>>
+----
+
+== Versioning the doc
+The author-mode-site.yml and site.yml files are both set up to generate multiple versions of the doc, which are available to the end-user via version selectors. The 
+
+To add a new version: 
+* Create a new branch named with the version number, for example 1.2.2. In this branch, in docs/antora.yml, set the new version number, for example version: 1.2.2 
+* In the master branch, in site.yml, add the new branch, for example:    branches: [1.2.2, 1.2.1].
+
+NOTE: Because this is a new repo, we currently have the site.yml set to publish master and 1.2.0, which is the version that was converted from markdown. Moving forward, when we have version 1.2.1 ready to publish, the site.yml file should no longer refer to master and master will be the work in progress.
+
+
+
+== For reference
+
+Antora is built on top of Asciidoctor. One of the main differences between Asciidoctor and Antora is that Antora requires a specfic directory structure. If you are new to Antora and asciidoc, the following references might be helpful:
+
+* https://docs.antora.org/antora/2.0/
+* https://asciidoctor.org/docs/
+* http://asciidoc.org/

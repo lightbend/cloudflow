@@ -1,0 +1,11 @@
+.metals/
+.DS_Store
+.vscode
+*.swp
+.cache/
+docs-source/test-ui-site.yml
+target/
+output/
+build/
+docs-source/docs/modules/ROOT/examples/
+

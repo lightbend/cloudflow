@@ -1,0 +1,44 @@
+= Introducing Cloudflow
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+:description: Quickly develop distributed streaming applications to deploy on Kubernetes
+include::partial$include.adoc[]
+
+Cloudflow enables you to quickly develop distributed streaming applications to deploy on Kubernetes. Using Cloudflow, you can easily break down your streaming application into small composable components and wire them together with schema-based contracts. Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime. With its powerful abstractions, Cloudflow enables you to define, build and deploy the most complex streaming applications.
+
+The open source Cloudflow application development toolkit includes:
+
+- An API definition for `Streamlet`, the core abstraction in Cloudflow.
+- An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Spark's Structured Streaming, Flink, and Akka.
+- A `Streamlet` composition model driven by a `blueprint` definition. 
+- A sandbox execution mode that accelerates the development and testing of your applications.
+- A set of `sbt` plugins for packaging Cloudflow applications into a deployable container.
+- The Cloudflow operator, a Kubernetes operator that manages the application lifecycle on Kubernetes.
+- A CLI, in the form of a `kubectl` plugin, that facilitates manual and scripted management of the application.  
+
+Cloudflow can dramatically accelerate your application development efforts, reducing the time required to create, package, and deploy an application from weeks to hours. Lightbend also offers support and enhanced deployment and operational features with a Lightbend Subscription. 
+
+ifdef::todo[TODO: add x-refs to subscription info and to the commercial doc here.]
+
+== Basic concepts
+
+// TODO Add an illustration here
+
+As discussed above, Cloudflow allows you to quickly build and deploy distributed stream processing applications by breaking them into smaller stream processing units called `Streamlets`. Each `Streamlet` represents an independent stream processing component that implements a self-contained stage of the application logic. `Streamlets` let you break down your application into logical pieces that communicate with each other in a streaming fashion to accomplish an end to end goal. `Streamlets` can be composed into larger systems using _blueprints_, which specify how `Streamlets` can be connected together to form a topology.
+
+The `Streamlet` logic can be written using an extensible choice of streaming runtimes, such as Akka Streams and Spark. The lightweight API exposes the raw power of the underlying runtime and its libraries while providing a higher-level abstraction for composing `streamlets` and expressing data schemas. Your code is written in your familiar Structured Streaming, Flink, or Akka Streams native API. 
+
+`Streamlets` expose one or more inlets and outlets that represent the data consumed and produced by the `Streamlet`, respectively. Inlets and outlets are schema-driven, ensuring that data flows are always consistent and that connections between `streamlets` are compatible. The data sent between `Streamlets` is safely persisted in the underlying pub-sub system, allowing for independent lifecycle management of the different components.
+
+Applications are deployed as a whole. Cloudflow takes care of deploying the individual `streamlets` and making sure connections get translated into data flowing between them at runtime. `Streamlets` can be scaled up and down to meet the load requirements of the application. 
+The underlying data streams are partitioned to allow for parallelism in a distributed application execution.
+
+== What's next
+
+Choose from the following topics:
+
+* xref:get-started:index.adoc[How to get started with an example application]
+* xref:develop:cloudflow-streamlets.adoc[How create Cloudflow applications using streamlets and blueprints].
+
+**This guide last published: {localdate}**
