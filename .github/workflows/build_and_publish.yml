@@ -1,0 +1,14 @@
+name: Build and Publish Docs
+on:
+  # Trigger the workflow on push only for the master branch
+  push:
+    branches:
+      - master
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Build Docs 
+      run: |
+        make all 
