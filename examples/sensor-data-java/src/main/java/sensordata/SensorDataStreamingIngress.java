@@ -22,6 +22,6 @@ public class SensorDataStreamingIngress extends AkkaServerStreamlet {
 
   public AkkaStreamletLogic createLogic() {
     EntityStreamingSupport ess = EntityStreamingSupport.json();
-    return HttpServerLogic.createDefaultStreaming(this, out, Jackson.byteStringUnmarshaller(SensorData.class), ess, getStreamletContext());
+    return HttpServerLogic.createDefaultStreaming(this, out, Jackson.byteStringUnmarshaller(SensorData.class), ess, getContext());
   }
 }

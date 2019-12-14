@@ -36,7 +36,7 @@ public class AggregateRecordEgress extends AkkaStreamlet {
 
   @Override
   public AkkaStreamletLogic createLogic() {
-    return new RunnableGraphStreamletLogic(getStreamletContext()) {
+    return new RunnableGraphStreamletLogic(getContext()) {
       @Override
       public RunnableGraph<?> createRunnableGraph() {
         return getSourceWithOffsetContext(in)

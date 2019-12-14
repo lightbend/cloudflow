@@ -19,10 +19,40 @@ package cloudflow.streamlets
 import scala.collection.immutable
 
 import com.typesafe.config.Config
+import org.slf4j.LoggerFactory
 
-import descriptors.StreamletDescriptor
+import cloudflow.streamlets.descriptors.StreamletDescriptor
 
-abstract class Streamlet {
+abstract class Streamlet[Context <: StreamletContext] {
+  @transient protected lazy val log = LoggerFactory.getLogger(getClass.getName)
+
+  // ctx is always first set by runner through `init` so this is safe.
+  @volatile protected var ctx: Context = _
+
+  /**
+   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
+   */
+  protected final implicit def context: Context = {
+    if (ctx == null) throw new StreamletContextException("StreamletContext can only be accessed from the `createLogic()` method.")
+    ctx
+  }
+
+  /**
+   * Java API
+   *
+   * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
+   */
+  protected final def getContext(): Context = context
+
+  /**
+   * This method is used to inject a `StreamletContext` directly instead of through the
+   * `Config`. This is used mainly by the testkit to inject the test context.
+   */
+  private def setContext(context: Context): Streamlet[Context] = {
+    ctx = context
+    this
+  }
+
   def runtime: StreamletRuntime
 
   def shape(): StreamletShape
@@ -72,10 +102,15 @@ abstract class Streamlet {
    */
   def run(config: Config): StreamletExecution
 
+  protected def getOrCreateContext(config: Config): Context = {
+    if (ctx ne null) ctx else this.synchronized {
+      if (ctx ne null) ctx else createContext(config)
+    }
+  }
   /**
    * Create a `StreamletContext` for the appropriate runtime
    */
-  protected def createContext(config: Config): StreamletContext
+  protected def createContext(config: Config): Context
 
   def logStartRunnerMessage(buildInfo: String): Unit
 

@@ -62,7 +62,7 @@ case object TestRuntime extends StreamletRuntime {
   override val name = "test-runtime"
 }
 
-trait TestStreamlet extends Streamlet {
+trait TestStreamlet extends Streamlet[StreamletContext] {
   override def createContext(config: Config): StreamletContext = ???
   override def run(config: Config): StreamletExecution = ???
   override def runtime: StreamletRuntime = TestRuntime

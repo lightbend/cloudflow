@@ -20,6 +20,6 @@ public class SensorDataIngress extends AkkaServerStreamlet {
   }
 
   public AkkaStreamletLogic createLogic() {
-    return HttpServerLogic.createDefault(this, out, Jackson.byteStringUnmarshaller(SensorData.class), getStreamletContext());
+    return HttpServerLogic.createDefault(this, out, Jackson.byteStringUnmarshaller(SensorData.class), getContext());
   }
 }
