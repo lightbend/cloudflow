@@ -31,7 +31,7 @@ fi
 
 
 export CLUSTER_NAME=$1
-export CLOUDFLOW_NAMESPACE="lightbend"
+export CLOUDFLOW_NAMESPACE="cloudflow"
 export TILLER_SERVICE_ACCOUNT="tiller"
 export TILLER_NAMESPACE="kube-system"
 
