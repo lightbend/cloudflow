@@ -69,7 +69,7 @@ javascaladoc_staged: ${staging_dir} javascaladoc
 
 # Cloudflow streamlets source for java and scala doc
 ${javascaladoc_src}: ${staging_dir}
-	git clone git@github.com:lightbend/cloudflow.git ${javascaladoc_src}
+	git clone https://github.com/lightbend/cloudflow.git ${javascaladoc_src}
 	# need to use the release branch during release
 	# git clone --single-branch --branch v1.3.0 git@github.com:lightbend/cloudflow.git ${javascaladoc_src}
 
@@ -77,7 +77,7 @@ ${staging_dir}:
 	mkdir -p ${staging_dir}
 
 ${examples_src}: clean
-	git clone git@github.com:lightbend/cloudflow.git ${examples_src}
+	git clone https://github.com/lightbend/cloudflow.git ${examples_src}
 	cp -r ${examples_src}/examples/* ${examples_src}/ 
 	# need to use the release branch during release
 	# git clone --single-branch --branch v1.3.0 git@github.com:lightbend/cloudflow.git ${examples_src}

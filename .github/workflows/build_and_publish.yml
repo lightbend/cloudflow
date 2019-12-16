@@ -2,13 +2,29 @@ name: Build and Publish Docs
 on:
   # Trigger the workflow on push only for the master branch
   push:
-    branches:
+    branches:  
       - master
 jobs:
   build-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Build Docs 
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Make all  
       run: |
-        make all 
+        make all
+    - name: Publish to cloudflow.io  
+      env:
+         CFIO_USER: ${{ secrets.CLOUDFLOWIO_USER }}
+         CFIO_EMAIL: ${{ secrets.CLOUDFLOWIO_EMAIL }}
+         CFIO_TOKEN: ${{ secrets.CLOUDFLOWIO_TOKEN }}
+      run: |
+        git clone https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git ./cloudflow.io
+        cp -r docs-source/build/site/* ./cloudflow.io
+        cd ./cloudflow.io
+        git config  user.email "$CFIO_EMAIL"
+        git config  user.name "$CFIO_USER"
+        git add .
+        git commit -m "Automated publishing using a Github action on cloudflow-docs"
+        git push "https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git"
+        
