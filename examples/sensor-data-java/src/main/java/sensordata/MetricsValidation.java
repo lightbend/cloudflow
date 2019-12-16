@@ -25,7 +25,7 @@ public class MetricsValidation extends AkkaStreamlet {
   }
 
   public SplitterLogic createLogic() {
-    return new SplitterLogic<Metric,InvalidMetric, Metric>(inlet, invalidOutlet, validOutlet, getStreamletContext()) {
+    return new SplitterLogic<Metric,InvalidMetric, Metric>(inlet, invalidOutlet, validOutlet, getContext()) {
       public FlowWithContext<Metric, CommittableOffset, Either<InvalidMetric, Metric>, CommittableOffset, NotUsed> createFlow() {
         return createFlowWithOffsetContext()
           .map(metric -> {

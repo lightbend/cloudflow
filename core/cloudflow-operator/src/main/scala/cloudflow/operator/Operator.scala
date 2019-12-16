@@ -31,7 +31,7 @@ import scala.concurrent._
 import scala.util._
 
 object Operator {
-  val ProtocolVersionNamespace = "lightbend"
+  val ProtocolVersionNamespace = "cloudflow"
   val ProtocolVersion = "1"
   val ProtocolVersionKey = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"

@@ -39,7 +39,7 @@ case object TestRuntime extends StreamletRuntime {
   override val name = "test-runtime"
 }
 
-trait TestStreamlet extends Streamlet {
+trait TestStreamlet extends Streamlet[StreamletContext] {
   override def runtime: StreamletRuntime = TestRuntime
   def logStartRunnerMessage(buildInfo: String): Unit = ???
   override protected def createContext(config: Config): StreamletContext = ???
@@ -47,7 +47,7 @@ trait TestStreamlet extends Streamlet {
 
 }
 
-class CoffeeIngress extends Streamlet with TestStreamlet {
+class CoffeeIngress extends Streamlet[StreamletContext] with TestStreamlet {
   case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
   override val shape = StreamletShape(TestOutlet("out", AvroUtil.createSchemaDefinition(Schemas.coffeeSchema)))
   override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")

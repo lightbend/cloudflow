@@ -18,20 +18,20 @@ package cloudflow.spark
 
 import java.nio.file.Path
 
-import scala.reflect.runtime.universe._
-import com.typesafe.config.Config
-
-import scala.util.{ Failure, Try }
-import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import ExecutionContext.Implicits.global
+import scala.concurrent.{ Future, Promise }
+import scala.reflect.runtime.universe._
+import scala.util.{ Failure, Try }
+
 import akka.actor.ActorSystem
-import org.apache.log4j.Logger
-import cloudflow.streamlets._
-import BootstrapInfo._
-import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import com.typesafe.config.Config
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
+
+import cloudflow.streamlets.BootstrapInfo._
+import cloudflow.streamlets._
 
 /**
  * The base class for defining Spark streamlets. Derived classes need to override `createLogic` to
@@ -63,13 +63,8 @@ import org.apache.spark.SparkConf
  *  }
  * }}}
  */
-trait SparkStreamlet extends Streamlet with Serializable {
-  @transient lazy val log = Logger.getLogger(getClass.getName)
-
+trait SparkStreamlet extends Streamlet[SparkStreamletContext] {
   final override val runtime = SparkStreamletRuntime
-
-  // ctx is always first set by runner through `init` so this is safe.
-  @volatile private var ctx: SparkStreamletContext = null
 
   private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
@@ -97,18 +92,13 @@ trait SparkStreamlet extends Streamlet with Serializable {
     this
   }
 
-  protected final implicit def context: SparkStreamletContext = {
-    if (ctx == null) throw new SparkStreamletContextException()
-    ctx
-  }
-
-  final class SparkStreamletContextException() extends Exception("Can only access the SparkStreamletContext within the run() scope")
+  final class SparkStreamletContextException() extends StreamletContextException("The SparkStreamletContext can only be accessed from within the streamlet logic.")
 
   protected def createLogic(): SparkStreamletLogic
 
   override final def run(config: Config): StreamletExecution = {
     // create a context only when it is not set
-    if (ctx == null) ctx = createContext(config)
+    val ctx = getOrCreateContext(config)
 
     val InitialDelay = 2 seconds
     val MonitorFrequency = 5 seconds

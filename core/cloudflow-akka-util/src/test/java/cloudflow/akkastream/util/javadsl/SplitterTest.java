@@ -50,7 +50,7 @@ public class SplitterTest extends JUnitSuite {
     }
 
     public SplitterLogic createLogic() {
-      return new SplitterLogic(inlet, badOutlet, goodOutlet, getStreamletContext()) {
+      return new SplitterLogic(inlet, badOutlet, goodOutlet, getContext()) {
         public FlowWithContext<Data, CommittableOffset, Either<BadData, Data>, CommittableOffset, NotUsed> createFlow() {
           return FlowWithContext.<Data, CommittableOffset>create().map(d -> Either.right(d));
         }
