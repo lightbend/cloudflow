@@ -115,24 +115,10 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
     env
   }
 
-  /**
-   * This method is used to inject a `FlinkStreamletContext` directly instead of through the
-   * `Config`. This is used mainly by the testkit to inject the test context
-   */
-  private[flink] def setContext(streamletContext: FlinkStreamletContext): FlinkStreamlet = {
-    ctx = streamletContext
-    this
-  }
-
-  final class FlinkStreamletContextException() extends StreamletContextException("The FlinkStreamletContext can only be accessed from within the streamlet logic.")
-
   protected def createLogic(): FlinkStreamletLogic
 
-  override final def run(config: Config): StreamletExecution = {
-    // create a context only when it is not set
-    val ctx = getOrCreateContext(config)
-
-    val configStr = getFlinkConfigInfo(ctx.env).foldLeft("\n") {
+  override final def run(context: FlinkStreamletContext): StreamletExecution = {
+    val configStr = getFlinkConfigInfo(context.env).foldLeft("\n") {
       case (acc, (k, v)) ⇒
         s"$acc\n$k = $v"
     }
@@ -144,7 +130,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
     )
 
     readyPromise.trySuccess(Dun)
-    val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+    val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
     if (localMode) LocalFlinkJobExecutor.execute()
     else ClusterFlinkJobExecutor.execute()
   }
@@ -161,8 +147,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
    */
   private case object LocalFlinkJobExecutor extends FlinkJobExecutor {
     def execute(): StreamletExecution = {
-      log.info(s"Executing local mode ${ctx.streamletRef}")
-      val jobResult = Future(createLogic.executeStreamingQueries(ctx.env))
+      log.info(s"Executing local mode ${context.streamletRef}")
+      val jobResult = Future(createLogic.executeStreamingQueries(context.env))
 
       new StreamletExecution {
         val readyFuture = readyPromise.future
@@ -181,10 +167,10 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
    */
   private case object ClusterFlinkJobExecutor extends FlinkJobExecutor {
     def execute(): StreamletExecution = {
-      log.info(s"Executing cluster mode ${ctx.streamletRef}")
+      log.info(s"Executing cluster mode ${context.streamletRef}")
 
       Try {
-        createLogic.executeStreamingQueries(ctx.env)
+        createLogic.executeStreamingQueries(context.env)
       }.fold(
         th ⇒ th match {
           // rethrow for Flink to catch as Flink control flow depends on this

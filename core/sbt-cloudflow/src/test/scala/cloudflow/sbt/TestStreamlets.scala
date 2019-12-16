@@ -64,7 +64,7 @@ case object TestRuntime extends StreamletRuntime {
 
 trait TestStreamlet extends Streamlet[StreamletContext] {
   override def createContext(config: Config): StreamletContext = ???
-  override def run(config: Config): StreamletExecution = ???
+  override def run(context: StreamletContext): StreamletExecution = ???
   override def runtime: StreamletRuntime = TestRuntime
   def logStartRunnerMessage(buildInfo: String): Unit = ???
 }

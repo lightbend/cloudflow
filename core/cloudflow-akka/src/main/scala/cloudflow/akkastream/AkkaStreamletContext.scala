@@ -84,8 +84,6 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def metricTags(): Map[String, String]
 }
 
-final class AkkaStreamletContextException() extends StreamletContextException("The AkkaStreamletContext can only be accessed from within the streamlet logic.")
-
 /**
  * The position to initially start reading from, when using `plainSource`.
  *

@@ -43,7 +43,7 @@ trait TestStreamlet extends Streamlet[StreamletContext] {
   override def runtime: StreamletRuntime = TestRuntime
   def logStartRunnerMessage(buildInfo: String): Unit = ???
   override protected def createContext(config: Config): StreamletContext = ???
-  override def run(config: Config): StreamletExecution = ???
+  override def run(context: StreamletContext): StreamletExecution = ???
 
 }
 

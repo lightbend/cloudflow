@@ -83,26 +83,12 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] {
       }.get
   }
 
-  /**
-   * This method is used to inject a `SparkStreamletContext` directly instead of through the
-   * `Config`. This is used mainly by the testkit to inject the test context
-   */
-  private[cloudflow] def setContext(streamletContext: SparkStreamletContext): SparkStreamlet = {
-    ctx = streamletContext
-    this
-  }
-
-  final class SparkStreamletContextException() extends StreamletContextException("The SparkStreamletContext can only be accessed from within the streamlet logic.")
-
   protected def createLogic(): SparkStreamletLogic
 
-  override final def run(config: Config): StreamletExecution = {
-    // create a context only when it is not set
-    val ctx = getOrCreateContext(config)
-
+  override final def run(context: SparkStreamletContext): StreamletExecution = {
     val InitialDelay = 2 seconds
     val MonitorFrequency = 5 seconds
-    implicit val system: ActorSystem = ActorSystem("spark_streamlet", ctx.config)
+    implicit val system: ActorSystem = ActorSystem("spark_streamlet", context.config)
 
     readyPromise.trySuccess(Dun)
     val streamletQueryExecution = createLogic.buildStreamingQueries
