@@ -26,7 +26,7 @@ import cloudflow.streamlets.descriptors.StreamletDescriptor
 abstract class Streamlet[Context <: StreamletContext] {
   @transient protected lazy val log = LoggerFactory.getLogger(getClass.getName)
 
-  @volatile private var ctx: Context = _
+  @transient @volatile private var ctx: Context = _
 
   /**
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.

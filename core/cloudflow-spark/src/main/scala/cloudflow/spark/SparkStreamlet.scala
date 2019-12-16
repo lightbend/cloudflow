@@ -63,7 +63,7 @@ import cloudflow.streamlets._
  *  }
  * }}}
  */
-trait SparkStreamlet extends Streamlet[SparkStreamletContext] {
+trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
 
   private val readyPromise = Promise[Dun]()

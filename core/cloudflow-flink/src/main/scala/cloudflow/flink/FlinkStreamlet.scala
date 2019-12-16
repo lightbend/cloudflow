@@ -68,7 +68,7 @@ import cloudflow.streamlets._
  *  }
  * }}}
  */
-abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] {
+abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
   private val readyPromise = Promise[Dun]()
