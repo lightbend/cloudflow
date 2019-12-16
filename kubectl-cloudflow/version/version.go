@@ -22,7 +22,7 @@ var ReleaseTagSnapshot = "SNAPSHOT"
 var ReleaseTag = ReleaseTagSnapshot
 
 // ProtocolVersionNamespace is the namespace that must contain the protocol version configmap
-const ProtocolVersionNamespace = "lightbend"
+const ProtocolVersionNamespace = "cloudflow"
 
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.

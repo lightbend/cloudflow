@@ -83,7 +83,7 @@ func GetAllKafkaTopics(applicationId string) []KafkaTopic {
 	err = restClient.
 		Get().
 		Resource("kafkatopics").
-		Namespace("lightbend").
+		Namespace("cloudflow").
 		Do().
 		Into(&result)
 
@@ -122,7 +122,7 @@ func RemoveKafkaTopics(applicationId string) {
 			result := restClient.
 				Delete().
 				Resource("kafkatopics").
-				Namespace("lightbend").
+				Namespace("cloudflow").
 				Name(topicName).
 				Do()
 

@@ -80,6 +80,6 @@ trait TestDeploymentContext {
         storageClassName = "storage"
       ),
       podName = "cloudflow-operator",
-      podNamespace = "lightbend"
+      podNamespace = "cloudflow"
     )
 }
