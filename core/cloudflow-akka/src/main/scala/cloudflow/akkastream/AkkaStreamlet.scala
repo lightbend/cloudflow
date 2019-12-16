@@ -49,24 +49,14 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       }.get
   }
 
-  /**
-   * This method is used to inject a `AkkaStreamletContext` directly instead of through the
-   * `Config`. This is used mainly by the testkit to inject the test context.
-   */
-  private[akkastream] def setContext(streamletContext: AkkaStreamletContext): AkkaStreamlet = {
-    ctx = streamletContext
-    this
-  }
-
-  override def run(config: Config): StreamletExecution = {
-    val ctx = getOrCreateContext(config)
+  override final def run(context: AkkaStreamletContext): StreamletExecution = {
 
     // readiness probe to be done at operator using this
     // the streamlet context has been created and the streamlet is ready to take requests
     // needs to be done only in cluster mode - not in local running
 
-    val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
-    if (!localMode) createTempFile(s"${ctx.streamletRef}-ready.txt", ctx.streamletRef)
+    val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+    if (!localMode) createTempFile(s"${context.streamletRef}-ready.txt", context.streamletRef)
 
     val blockingIODispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
     val dispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-dispatcher")
@@ -83,7 +73,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     // this will be used for pod liveness probe
     // needs to be done only in cluster mode - not in local running
 
-    if (!localMode) createTempFile(s"${ctx.streamletRef}-live.txt", ctx.streamletRef)
+    if (!localMode) createTempFile(s"${context.streamletRef}-live.txt", context.streamletRef)
 
     logic.run()
     signalReadyAfterStart()
