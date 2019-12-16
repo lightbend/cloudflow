@@ -177,7 +177,7 @@ object AkkaRunner extends Runner[Deployment] {
 
   val AdminPort = 2048
 
-  val AdminPortEnvVar = "PIPELINES_RUNNER_ADMIN_PORT"
+  val AdminPortEnvVar = "CLOUDFLOW_RUNNER_ADMIN_PORT"
   val JavaOptsEnvVar = "JAVA_OPTS"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
   val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"

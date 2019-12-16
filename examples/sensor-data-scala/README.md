@@ -194,7 +194,7 @@ Verify that the application has processed the invalid record:
 ```
 $ kubectl logs sensor-data-scala-invalid-logger-5d7dc9964b-7bkjz -n sensor-data-scala
 Running Akka entrypoint script
-Pipelines Runner
+Cloudflow Runner
 ...
 [WARN] [11/25/2019 10:29:39.274] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] Invalid metric detected! {"metric": {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "power", "value": -1.7}, "error": "All measurements must be positive numbers!"}
 ```
@@ -233,7 +233,7 @@ The request has been accepted for processing, but the processing has not been co
 
 $ kubectl logs sensor-data-scala-valid-logger-84fff7468d-dd72t  -n sensor-data-scala
 Running Akka entrypoint script
-Pipelines Runner
+Cloudflow Runner
 ...
 $
 [INFO] [11/25/2019 11:23:16.020] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "rotorSpeed", "value": 3.9}

@@ -119,7 +119,7 @@ call-record-aggregator-merge-67b66c8fdb-2r247                1/1     Running   0
 ```
 $ kubectl logs call-record-aggregator-console-egress-5f6f7777f8-dknt6  -n call-record-aggregator
 Running Akka entrypoint script
-Pipelines Runner
+Cloudflow Runner
 Java opts: -javaagent:/app/prometheus/jmx_prometheus_javaagent-0.11.0.jar=2050:/etc/cloudflow-runner/prometheus.yaml -XX:MaxRAMPercentage=50.0 -Djdk.nio.maxCachedBufferSize=1048576
 Classpath: /etc/cloudflow-runner:/opt/cloudflow/*
 Loading application.conf from: /etc/cloudflow-runner/application.conf, secret config from: /etc/cloudflow-runner-secret/secret.conf

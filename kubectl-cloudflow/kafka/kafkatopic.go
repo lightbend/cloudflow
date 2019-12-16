@@ -61,7 +61,7 @@ func (in *kafakTopicList) DeepCopyObject() runtime.Object {
 	return &out
 }
 
-// GetAllKafkaTopics returns a list of all Kafka topics managed by Piplines for a specific application
+// GetAllKafkaTopics returns a list of all Kafka topics managed by Cloudflow for a specific application
 func GetAllKafkaTopics(applicationId string) []KafkaTopic {
 
 	config, err := clientcmd.BuildConfigFromFlags("", k8s.GetKubeConfig())
