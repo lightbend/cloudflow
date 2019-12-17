@@ -42,7 +42,7 @@ if [ "$installFlinkOperator" = true ]; then
     --set serviceAccounts.flink.name=cloudflow-app-serviceaccount \
     https://github.com/lightbend/flink-operator/releases/download/v${flinkOperatorChartVersion}/flink-operator-${flinkOperatorChartVersion}.tgz)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1
@@ -52,7 +52,7 @@ if [ "$installFlinkOperator" = true ]; then
     kubectl label deployment -n "$flinkOperatorNamespace" cloudflow-flink-flink-operator installed-by=cloudflow --overwrite
 fi
 
-# Strimzi 
+# Strimzi
 if [ "$installStrimzi" = true ]; then
     echo "Installing Strimzi"
     result=$(helm upgrade "$strimziReleaseName" \
@@ -61,7 +61,7 @@ if [ "$installStrimzi" = true ]; then
     --version "$strimziVersion" \
     strimzi/strimzi-kafka-operator)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1
@@ -81,9 +81,9 @@ if [ "$installSparkOperator" = true ]; then
     --version "$sparkOperatorChartVersion" \
     --set sparkJobNamespace="" \
     --set operatorVersion="$sparkOperatorImageVersion" \
-    lightbend-helm-charts/fdp-sparkoperator)
+    https://github.com/lightbend/fdp-sparkoperator/releases/download/v${sparkOperatorChartVersion}/fdp-sparkoperator-${sparkOperatorChartVersion}.tgz)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1

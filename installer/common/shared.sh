@@ -205,8 +205,9 @@ export limitsCpu="2"
 # Installs an NFS server: $1: namespace, $2: boolean onOpenShift
 NFS_SERVER_NAME=cloudflow-nfs
 NFS_CHART_NAME=fdp-nfs
+NFS_CHART_VERSION=0.3.0
 install_nfs_server() {
-helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
+helm upgrade $NFS_SERVER_NAME https://github.com/lightbend/${NFS_CHART_NAME}/releases/download/v${NFS_CHART_VERSION}/${NFS_CHART_NAME}-${NFS_CHART_VERSION}.tgz \
 --install \
 --namespace "$1" \
 --timeout $HELM_TIMEOUT \
@@ -214,8 +215,7 @@ helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
 --set serviceAccount.create=false \
 --set serviceAccount.name=cloudflow-operator \
 --set onOpenShift="$2" \
---set storageClassName=nfs-client \
---version 0.2.0
+--set storageClassName=nfs-client
 }
 
 EFS_SERVER_NAME=cloudflow-efs
