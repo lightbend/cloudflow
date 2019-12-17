@@ -46,7 +46,7 @@ object Main extends {
       HealthChecks.serve(settings)
 
       val client = connectToKubernetes()
-      installProtocolVersion(client)
+      installProtocolVersion(client, settings.podNamespace)
       installCRD(client)
 
       Operator.handleAppEvents(client)
@@ -121,10 +121,10 @@ object Main extends {
     )
   }
 
-  private def installProtocolVersion(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
+  private def installProtocolVersion(client: skuber.api.client.KubernetesClient, podNamespace: String)(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
     Await.ready(
-      client
+      client.usingNamespace(podNamespace)
         .getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {
           _.fold(client.create(Operator.ProtocolVersionConfigMap)) { configMap ⇒
             if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
