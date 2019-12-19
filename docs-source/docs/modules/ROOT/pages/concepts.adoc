@@ -85,7 +85,7 @@ The application pipeline gets formed according to the `Streamlets` included and 
 [caption="Fig. 6 - "]
 image::deploy-2.png[]
 
-= Where to go Next? 
+== Where to go Next? 
 
 * xref:get-started:index.adoc[Get started with Cloudflow]
 * xref:streaming-apps-with-cloudflow.adoc[Understanding Streaming Applications with Cloudflow]

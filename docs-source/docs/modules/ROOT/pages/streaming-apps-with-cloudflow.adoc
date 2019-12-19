@@ -41,6 +41,7 @@ image::business-logic.png[]
 
 Cloudflow introduces a new component model, called _Streamlets_. 
 The Streamlet model offers an abstraction to:
+
 - Identify the connections of a component as inlets and outlets
 - Attach the schema of the data for each connection, and
 - Provide an entry point for the business logic of the component.
