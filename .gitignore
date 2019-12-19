@@ -8,4 +8,5 @@ target/
 output/
 build/
 docs-source/docs/modules/ROOT/examples/
-
+##
+view.sh
