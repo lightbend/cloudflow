@@ -26,8 +26,7 @@ import cloudflow.streamlets.descriptors.StreamletDescriptor
 abstract class Streamlet[Context <: StreamletContext] {
   @transient protected lazy val log = LoggerFactory.getLogger(getClass.getName)
 
-  // ctx is always first set by runner through `init` so this is safe.
-  @volatile protected var ctx: Context = _
+  @transient @volatile private var ctx: Context = _
 
   /**
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
@@ -48,7 +47,7 @@ abstract class Streamlet[Context <: StreamletContext] {
    * This method is used to inject a `StreamletContext` directly instead of through the
    * `Config`. This is used mainly by the testkit to inject the test context.
    */
-  private def setContext(context: Context): Streamlet[Context] = {
+  private[cloudflow] def setContext(context: Context): Streamlet[Context] = {
     ctx = context
     this
   }
@@ -98,17 +97,22 @@ abstract class Streamlet[Context <: StreamletContext] {
   def defineCustomAttributes(): Array[StreamletAttribute] = Array[StreamletAttribute]()
 
   /**
-   * Run the streamlet
+   * Runs the streamlet. Called by the cloudflow.runner.Runner.
    */
-  def run(config: Config): StreamletExecution
-
-  protected def getOrCreateContext(config: Config): Context = {
-    if (ctx ne null) ctx else this.synchronized {
-      if (ctx ne null) ctx else createContext(config)
+  private[cloudflow] final def run(config: Config): StreamletExecution = {
+    this.synchronized {
+      if (ctx == null) ctx = createContext(config)
     }
+    run(ctx)
   }
+
   /**
-   * Create a `StreamletContext` for the appropriate runtime
+   * Runs the streamlet.
+   */
+  def run(context: Context): StreamletExecution
+
+  /**
+   * Creates a `StreamletContext` for the appropriate runtime
    */
   protected def createContext(config: Config): Context
 
@@ -136,7 +140,7 @@ abstract class Streamlet[Context <: StreamletContext] {
  * a streamlet, e.g. "akka", "spark", etc.
  *
  * Implementations will usually be provided by a runtime support library
- * such as cloudflow-akkastream or cloudflow-spark.
+ * such as cloudflow-akka, cloudflow-spark and cloudflow-flink.
  */
 trait StreamletRuntime {
   def name: String

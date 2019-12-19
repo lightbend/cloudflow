@@ -10,7 +10,7 @@ addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.5.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.24")
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0")
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
 
 // to generate one complete scaladoc site and one complete javadoc site
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
