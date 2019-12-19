@@ -97,7 +97,7 @@ The above build script is standard Scala sbt - the only difference is the plugin
 **project/cloudflow-plugins.sbt**
 
 ```
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.0-M5")
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.0")
 ```
 
 ### Schema first approach
