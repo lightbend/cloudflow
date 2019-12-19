@@ -20,7 +20,7 @@ jobs:
          CFIO_TOKEN: ${{ secrets.CLOUDFLOWIO_TOKEN }}
       run: |
         git clone https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git ./cloudflow.io
-        cp -r docs-source/build/site/* ./cloudflow.io
+        cp -r target/staging/* ./cloudflow.io
         cd ./cloudflow.io
         git config  user.email "$CFIO_EMAIL"
         git config  user.name "$CFIO_USER"

@@ -29,5 +29,5 @@ asciidoc:
     doc-title: 'Cloudflow Guide'
 
 output:
-#   dir: ./
+   dir: ./../target/staging
    clean: true
