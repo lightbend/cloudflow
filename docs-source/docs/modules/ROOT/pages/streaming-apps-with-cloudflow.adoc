@@ -187,4 +187,4 @@ And with a fully developed application, the `kubectl cloudflow` plugin gives you
 
 Cloudflow takes away the pain of creating and deploying distributed applications on Kubernetes, speeds up your development process, and gives you full control over the operational deployment.
 
-In an nutshell, it gives you distributed application development super-powers on Kubernetes.
+In a nutshell, it gives you distributed application development super-powers on Kubernetes.
