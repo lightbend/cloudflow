@@ -21,7 +21,6 @@ import skuber.Resource.Quantity
 trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
-      clusterType = OpenshiftClusterType,
       kafkaContext = KafkaContext(
         strimziClusterName = "kafka",
         strimziTopicOperatorNamespace = "strimzi",

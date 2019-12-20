@@ -24,7 +24,6 @@ import skuber.Resource._
  * and in many cases, will be defined per streamlet.
  */
 case class DeploymentContext(
-    clusterType: ClusterType,
     kafkaContext: KafkaContext,
     akkaRunnerSettings: AkkaRunnerSettings,
     sparkRunnerSettings: SparkRunnerSettings,
@@ -34,7 +33,6 @@ case class DeploymentContext(
     podNamespace: String) {
   import kafkaContext._
   def infoMessage = s"""
-   | cluster-type:                     ${clusterType}
    | pod-name:                         ${podName}
    | pod-namespace                     ${podNamespace}
    |
@@ -51,23 +49,6 @@ case class KafkaContext(
     partitionsPerTopic: Int,
     replicationFactor: Int
 )
-
-sealed trait ClusterType {
-  val identifier: String
-  override def toString = identifier
-}
-
-case object GkeClusterType extends ClusterType {
-  override val identifier = "gke"
-}
-
-case object OpenshiftClusterType extends ClusterType {
-  override val identifier = "openshift"
-}
-
-case object MinishiftClusterType extends ClusterType {
-  override val identifier = "minishift"
-}
 
 final case class Host(name: String, port: Option[Int]) {
   override def toString = s"""$name:${port.getOrElse(80)}"""
