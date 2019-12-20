@@ -57,7 +57,7 @@ Your code is written in your familiar Structured Streaming, Flink, or Akka Strea
 
 Applications are deployed as a whole. Cloudflow takes care of deploying the individual `streamlets` and making sure connections get translated into data flowing between them at runtime.
 
-Learn more about the Cloudflow building blocks in our [Cloudflow Core Concepts](./docs/Cloudflow-Concepts.md)
+Learn more about the Cloudflow building blocks in our [Cloudflow Core Concepts](https://cloudflow.io/docs/current/concepts.html)
 
 ## The Drivers Behind Cloudflow
 
@@ -78,7 +78,7 @@ Cloudflow aims to make this easier by integrating the most popular streaming fra
 
 ---
 ## Where to Go Next?
-
+* [Understanding Streaming Data Applications with Cloudflow](https://cloudflow.io/docs/current/streaming-apps-with-cloudflow.html)
 * [Getting Started with Cloudflow](https://cloudflow.io/docs/current/get-started/index.html)
 * [Developing Applications with Cloudflow](https://cloudflow.io/docs/current/develop/cloudflow-streamlets.html)
 * [Setup Cloudflow on a Kubernetes Cluster](./installer/README.md)
