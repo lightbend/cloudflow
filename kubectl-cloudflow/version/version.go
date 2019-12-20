@@ -2,7 +2,6 @@ package version
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
@@ -21,9 +20,6 @@ var ReleaseTagSnapshot = "SNAPSHOT"
 // ReleaseTag is the tag used for a release, this tag is used to fetch the matching examples repository for this version of the CLI
 var ReleaseTag = ReleaseTagSnapshot
 
-// ProtocolVersionNamespace is the namespace that must contain the protocol version configmap
-const ProtocolVersionNamespace = "cloudflow"
-
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.
 const ProtocolVersion = "1"
@@ -40,26 +36,34 @@ func FailOnProtocolVersionMismatch() {
 	if k8sErr != nil {
 		util.LogAndExit("Failed to create new kubernetes client, %s", k8sErr.Error())
 	}
-	var err error
+
 	var cm *corev1.ConfigMap
-	if cm, err = k8sClient.CoreV1().ConfigMaps(ProtocolVersionNamespace).Get(ProtocolVersionConfigMapName, metav1.GetOptions{}); err == nil {
-		operatorProtocolVersion := cm.Data[ProtocolVersionKey]
-		if operatorProtocolVersion != ProtocolVersion {
-			if version, err := strconv.Atoi(operatorProtocolVersion); err == nil {
-				if supportedVersion, err := strconv.Atoi(ProtocolVersion); err == nil {
-					if version < supportedVersion {
-						util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
-					}
-					if version > supportedVersion {
-						util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade the Cloudflow operator")
-					}
-				}
+	if configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(metav1.ListOptions{}); err == nil {
+		for i, v := range configMaps.Items {
+			if v.Name == ProtocolVersionConfigMapName {
+				cm = &configMaps.Items[i]
 			}
-			util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
 		}
-	} else if strings.Contains(err.Error(), "not found") {
-		util.LogAndExit("Cannot find the '%s' configmap, please make sure that the Cloudflow operator is installed", ProtocolVersionConfigMapName)
 	} else {
 		util.LogAndExit("Could not verify protocol version. Kubernetes API returned an error: %s", err)
+	}
+
+	if cm == nil {
+		util.LogAndExit("Cannot find the '%s' configmap, please make sure that the Cloudflow operator is installed", ProtocolVersionConfigMapName)
+	}
+
+	operatorProtocolVersion := cm.Data[ProtocolVersionKey]
+	if operatorProtocolVersion != ProtocolVersion {
+		if version, err := strconv.Atoi(operatorProtocolVersion); err == nil {
+			if supportedVersion, err := strconv.Atoi(ProtocolVersion); err == nil {
+				if version < supportedVersion {
+					util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
+				}
+				if version > supportedVersion {
+					util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade the Cloudflow operator")
+				}
+			}
+		}
+		util.LogAndExit("This version of kubectl cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
 	}
 }
