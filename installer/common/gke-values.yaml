@@ -17,13 +17,12 @@ tags:
   targetMinikube: false
   targetMinishift: false
 
-
 kafka:
   strimzi:
     useDedicatedNodes: true
     kafka:
-     persistentVolumeClaimSize: 100Gi
-     resources:
+      persistentVolumeClaimSize: 100Gi
+      resources:
         requests:
           memory: "5Gi"
         limits:
@@ -36,9 +35,7 @@ kafka:
         limits:
           memory: "3Gi"
 
-
 operator:
-  clusterType: "gke"
   akkaRunner:
     requestsMemory: "128M"
     requestsCpu: "0.5"

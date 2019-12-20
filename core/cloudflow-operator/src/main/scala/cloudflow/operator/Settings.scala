@@ -126,15 +126,6 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     )
   }
 
-  private def getClusterType(config: Config, key: String): ClusterType = {
-    getNonEmptyString(config, key) match {
-      case GkeClusterType.identifier       ⇒ GkeClusterType
-      case OpenshiftClusterType.identifier ⇒ OpenshiftClusterType
-      case MinishiftClusterType.identifier ⇒ MinishiftClusterType
-      case unknownType                     ⇒ throw new ConfigException.BadValue(key, s"Unknown cluster type: $unknownType")
-    }
-  }
-
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
     case runner.AkkaRunner.runtime ⇒
       appendResourcesToString(
@@ -176,7 +167,6 @@ final case class Settings(config: Config) extends Extension {
   val partitionsPerTopic = getPartitionsPerTopic(config, s"$root.kafka.partitions-per-topic")
   val replicationFactor = getReplicationFactor(config, s"$root.kafka.replication-factor")
 
-  val clusterType = getClusterType(config, s"$root.cluster-type")
   val releaseVersion = getNonEmptyString(config, s"$root.release-version")
   val podName = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace = getNonEmptyString(config, s"$root.pod-namespace")
@@ -201,7 +191,6 @@ final case class Settings(config: Config) extends Extension {
 
   val deploymentContext = {
     DeploymentContext(
-      clusterType,
       KafkaContext(
         kafka.strimziTopicOperatorNamespace,
         kafka.strimziClusterName,

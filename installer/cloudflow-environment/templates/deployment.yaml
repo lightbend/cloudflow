@@ -55,9 +55,6 @@ spec:
             # Configure the JVM to behave itself when run in a Docker container
             - name: JAVA_OPTS
               value: {{ .Values.operator.jvm.opts }}
-            # Cluster type
-            - name: CLUSTER_TYPE
-              value: {{ required "Cluster type cannot be empty" .Values.operator.clusterType }}
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "{{ required "Kafka bootstrap servers cannot be empty" .Values.kafka.bootstrapServers }}"
             # Configure Strimzi details
