@@ -15,7 +15,7 @@ java_opts="$agents $JAVA_OPTS"
 app_config="/etc/cloudflow-runner"
 java_classpath="$app_config:$lib_dir/*"
 
-echo "Pipelines Runner"
+echo "Cloudflow Runner"
 echo "Java opts: $java_opts"
 echo "Classpath: $java_classpath"
 

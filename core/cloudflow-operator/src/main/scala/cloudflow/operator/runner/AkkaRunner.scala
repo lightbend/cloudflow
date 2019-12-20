@@ -47,11 +47,9 @@ object AkkaRunner extends Runner[Deployment] {
     val appId = app.appId
     val podName = Name.ofPod(deployment.name)
     val k8sStreamletPorts = deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
-    val k8sAdminPort = Container.Port(AdminPort, name = Name.ofContainerAdminPort)
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
     val environmentVariables = List(
-      EnvVar(AdminPortEnvVar, AdminPort.toString),
       EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions),
       EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
       EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
@@ -88,7 +86,7 @@ object AkkaRunner extends Runner[Deployment] {
       image = deployment.image,
       env = environmentVariables,
       args = args,
-      ports = k8sStreamletPorts :+ k8sAdminPort :+ k8sPrometheusMetricsPort,
+      ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
       volumeMounts = List(secretMount) ++ pvcVolumeMounts :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
     val appliedCpuLimits = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits.map { cpuLimits ⇒
@@ -175,9 +173,6 @@ object AkkaRunner extends Runner[Deployment] {
     )
   }
 
-  val AdminPort = 2048
-
-  val AdminPortEnvVar = "PIPELINES_RUNNER_ADMIN_PORT"
   val JavaOptsEnvVar = "JAVA_OPTS"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
   val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"

@@ -1,4 +1,4 @@
-# Spark Support for Pipelines
+# Spark Support for Cloudflow
 
 This module implements the support for 'Sparklets' or Spark-enabled Streamlets.
 
