@@ -39,9 +39,9 @@ func FailOnProtocolVersionMismatch() {
 
 	var cm *corev1.ConfigMap
 	if configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(metav1.ListOptions{}); err == nil {
-		for _, v := range configMaps.Items {
+		for i, v := range configMaps.Items {
 			if v.Name == ProtocolVersionConfigMapName {
-				cm = &v
+				cm = &configMaps.Items[i]
 			}
 		}
 	} else {
