@@ -24,7 +24,7 @@ import skuber.apps.v1.Deployment
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import BlueprintBuilder._
-import cloudflow.operator.runner.AkkaRunner.{ AdminPort, PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
+import cloudflow.operator.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
 import cloudflow.operator.runner._
 
 class RunnerActionsSpec extends WordSpec
@@ -276,18 +276,13 @@ class RunnerActionsSpec extends WordSpec
     val readinessProbe = container.readinessProbe.value
     readinessProbe.action mustBe a[ExecAction]
 
-    val adminPortEnvVar = EnvVar(AkkaRunner.AdminPortEnvVar, EnvVar.StringValue(AkkaRunner.AdminPort.toString))
     val runnerSettings = ctx.akkaRunnerSettings
 
     val javaOptsEnvVar = EnvVar(AkkaRunner.JavaOptsEnvVar, EnvVar.StringValue(runnerSettings.javaOptions))
     val promPortEnvVar = EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString)
     val promRulesPathEnvVar = EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
 
-    container.env must contain allOf (adminPortEnvVar, javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
-
-    val exposedAdminPort = container.ports.find(_.containerPort == AkkaRunner.AdminPort).value
-    exposedAdminPort.name mustEqual Name.ofContainerAdminPort
-    exposedAdminPort.name.length must be <= 15
+    container.env must contain allOf (javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
 
     streamletDeployment.endpoint.map { ep ⇒
       val exposedStreamletPort = container.ports.find(_.containerPort == ep.containerPort).value
@@ -295,10 +290,7 @@ class RunnerActionsSpec extends WordSpec
       exposedStreamletPort.name.length must be <= 15
     }
 
-    container.ports must contain allOf (
-      Container.Port(AdminPort, name = Name.ofContainerAdminPort),
-      Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
-    )
+    container.ports must contain(Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort))
 
     val resourceRequirements = container.resources.value
     val resourceConstraints = runnerSettings.resourceConstraints
