@@ -40,7 +40,7 @@ if [ "$installFlinkOperator" = true ]; then
     --version "$flinkOperatorChartVersion" \
     --set serviceAccounts.flink.create=false \
     --set serviceAccounts.flink.name=cloudflow-app-serviceaccount \
-    lightbend-helm-charts/flink-operator)
+    https://github.com/lightbend/flink-operator/releases/download/v${flinkOperatorChartVersion}/flink-operator-${flinkOperatorChartVersion}.tgz)
 
     if [ $? -ne 0 ]; then 
         print_error_message "$result"
