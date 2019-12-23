@@ -17,6 +17,9 @@
 export TILLER_SERVICE_ACCOUNT="tiller"
 export TILLER_NAMESPACE="kube-system"
 
+# Utils
+. common/utils.sh
+
 # Utility functions to interact with Tiller
 . common/helm2.sh
 
@@ -24,6 +27,25 @@ export TILLER_NAMESPACE="kube-system"
 export_helm3_timeout() {
 	HELM_TIMEOUT="600s"
 	export HELM_TIMEOUT
+}
+
+# Detect which version of Helm is installed
+detect_helm_version() {
+  if [[ $(helm version | awk -F '[".]' '/version.Version/ { print $3 }') == "v2" ]]
+  then
+    echo "Detected Helm version 2"
+    HELM_VERSION="2"
+  elif [[ $(helm version | awk -F '[".]' '/version.BuildInfo/ { print $3 }') == "v3" ]]
+  then
+    echo "Detected Helm version 3"
+
+    HELM_VERSION="3"
+  else
+    print_error_message "Helm not found. Please install Helm before proceeding."
+    exit 1
+  fi
+
+  export HELM_VERSION
 }
 
 # Test Helm3 installation
@@ -54,24 +76,36 @@ result=$(helm upgrade test-helm3 helm-test-chart --install \
 
 # Initialise either Helm 2 or 3
 init_helm() {
-  if [[ $(helm version | awk -F '[".]' '/version.Version/ { print $3 }') == "v2" ]]
+  detect_helm_version
+
+  if [[ $HELM_VERSION == "2" ]]
   then
-    echo "Detected Helm version 2"
-    
     export_helm2_timeout
 
     init_helm2
     verify_tiller_installation
     test_tiller_installation
-  elif [[ $(helm version | awk -F '[".]' '/version.BuildInfo/ { print $3 }') == "v3" ]]
+  elif [[ $HELM_VERSION == "3" ]]
   then
-    echo "Detected Helm version 3"
-
     export_helm3_timeout
     
     test_helm3_installation
-  else
-    print_error_message "Helm not found. Please install Helm before proceeding."
-    exit 1
+  fi
+}
+
+# Delete chart in either Helm 2 or 3
+helm_delete() {
+  if [ -z "$1" ]
+    then
+      print_error_message "Please provide a chart name to delete"
+      exit 1
+  fi
+
+  if [[ $HELM_VERSION == "2" ]]
+  then
+    helm delete $1 --purge --no-hooks
+  elif [[ $HELM_VERSION == "3" ]]
+  then
+    helm delete $1 --no-hooks
   fi
 }
