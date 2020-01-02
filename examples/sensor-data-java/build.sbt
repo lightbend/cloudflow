@@ -15,7 +15,8 @@ lazy val sensorDataJava =  (project in file("."))
       ),
 
       name := "sensor-data-java",
-      organization := "com.lightbend",
+      organization := "com.lightbend.cloudflow",
+      headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
       schemaCodeGenerator := SchemaCodeGenerator.Java,
 

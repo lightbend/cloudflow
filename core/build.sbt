@@ -445,7 +445,7 @@ def cloudflowModule(moduleID: String): Project = {
 
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
-  headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2019", "Lightbend Inc. <https://www.lightbend.com>")),
+  headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Version.Scala,
   autoAPIMappings := true,
   useGpgAgent := false,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2016-2019 Lightbend Inc. <https://www.lightbend.com>
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
