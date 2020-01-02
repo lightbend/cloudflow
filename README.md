@@ -1,4 +1,5 @@
 [![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+![Build status](https://github.com/lightbend/cloudflow/workflows/Build%20and%20Test/badge.svg)
 <p>
 <img src="logo.svg" width="300">
 </p>
