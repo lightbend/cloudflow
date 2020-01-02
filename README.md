@@ -32,8 +32,6 @@ The different parts of Cloudflow work in unison to dramatically accelerate your 
 ## Basic Concepts
 
 <p>
-<img src="./docs/images/apps.png" width="600">
-
 <i>Basic components of a Cloudflow Application</i>
 </p>
 
