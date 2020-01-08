@@ -56,7 +56,7 @@ A FanOut (also known as a Splitter) has one inlet and more than one outlets. The
 image::streamlets-fanout.png[]
 
 Egress
-An Egress represents data leaving the Pipelines application. For instance this could be data being persisted to some database, notifications being sent to Slack, files being written to HDFS, etc.
+An Egress represents data leaving the Cloudflow application. For instance this could be data being persisted to some database, notifications being sent to Slack, files being written to HDFS, etc.
 
 [#egress-shape]
 .Egress

@@ -7,9 +7,9 @@ include::ROOT:partial$include.adoc[]
 
 Please read xref:ROOT:index.adoc[Basic concepts] for an introduction. This section goes into more depth on streamlets and how to develop them. Akka and Flink streamlets can be developed in Scala or Java, Spark streamlets can only be developed in Scala.
 
-== Schema first approach
+== Schema-first approach
 
-Cloudflow has adopted the schema first approach for building streaming data pipelines. You simply need to supply an http://avro.apache.org/docs/current/spec.html[Avro] schema as the starting point of the domain model for which a streaming data flow needs to be built. Cloudflow plugs in the appropriate plug-ins into the build system of the application to generate Java / Scala classes corresponding to the Avro schema.
+Cloudflow has adopted a schema-first approach for building streaming data pipelines. You simply need to supply an http://avro.apache.org/docs/current/spec.html[Avro] schema as the starting point of the domain model for which a streaming data flow needs to be built. Cloudflow plugs in the appropriate plug-ins into the build system of the application to generate Java / Scala classes corresponding to the Avro schema.
 
 This approach has the advantage that the you _only_ need to take care of the core domain model and Cloudflow does the heavy lifting of generating the classes and integrating them with the main application.
 
@@ -37,7 +37,7 @@ lazy val datamodel = (project in file("./my-cloudflow-library"))
   )
 ----
 
-=== Schema aware inlets and outlets
+=== Schema-aware inlets and outlets
 
 In Cloudflow, all streamlet inlets and outlets are schema-aware. This means two things:
 
@@ -80,7 +80,7 @@ If no partitioning function is specified, it will default to the `RoundRobinPart
 All logic regarding data safety that we discussed for inlets in the last section applies for outlets as well.
 
 [[schema-aware]]
-=== Schema aware StreamletLogic
+=== Schema-aware StreamletLogic
 
 When we implement `StreamletLogic` for a streamlet, we use the inlets and outlets which, as we discussed above, are schema aware. Note that in the following code fragment, all inlet and outlet types are parameterized with domain classes `CallRecord` and `AggregatedCallStats` that have been generated using the schema. Here's an example:
 
@@ -147,7 +147,7 @@ Streamlet types (classes or objects) are specified by their fully qualified name
 Every assignment in the `streamlets` section assigns a streamlet reference to an instance of a type of streamlet. Once deployed, Cloudflow will run at least one streamlet–depending on the requested number of replicas–for each streamlet reference that has been defined in the blueprint.
 
 The Streamlets can be defined in Java or Scala,
-as Java or Scala classes with default constructors or as Scala objects. These classes must be available on the classpath, which can be defined directly in the cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
+as Java or Scala classes with default constructors or as Scala objects. These classes must be available on the classpath, which can be defined directly in the Cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
 
 [NOTE]
 ====

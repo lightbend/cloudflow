@@ -97,9 +97,9 @@ Containers:
 ...
 ```
 
-So one of the POD ports is `3003` - let's set up a port forwarding on it.
+So one of the Pod ports is `3003` - let's set up a port forwarding on it.
 
-* Setup port forwarding for the POD port
+* Setup port forwarding for the Pod port
 
 ```
 $ kubectl port-forward sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data 3003:3003
@@ -118,7 +118,7 @@ do
   curl -i -X POST http://localhost:3003 -H "Content-Type: application/json" --data "$str"
 done
 ```
-* Note that we are using the port number `3003` of `localhost` to which we mapped the POD port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
+* Note that we are using the port number `3003` of `localhost` to which we mapped the Pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
 
 
 ## Verify the Application works

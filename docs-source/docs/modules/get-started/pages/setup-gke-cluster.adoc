@@ -13,7 +13,7 @@ To install a new cluster, clone the https://github.com/lightbend/cloudflow/[repo
 
 NOTE:: This can be done once you have a valid Google account and have access to a project set up for you by the administrator.
 
-* Create a GKE cluster with a specific name `./gke-create-cluster.sh <cluster-name>`
+* Create a GKE cluster with a specific name `./create-cluster-gke.sh <cluster-name>`
 * Install Cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
 
 This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
@@ -50,10 +50,10 @@ cloudflow-sparkoperator-fdp-sparkoperator-69669fdd54-88brw   0/1     ContainerCr
 strimzi-cluster-operator-7ff64d4b7-c9r2n                     1/1     Running             0          51s
 ```
 
-The complete installtion take a bit of a time and you can follow the progress using `kubectl` command. All operators are installed in the namespace `lightbend`. When everything is installed, you will see the following:
+The complete installtion take a bit of a time and you can follow the progress using `kubectl` command. All operators are installed in the namespace `cloudflow`. When everything is installed, you will see the following:
 
 ```
-$ kubectl get pods -n lightbend
+$ kubectl get pods -n cloudflow
 NAME                                                         READY   STATUS    RESTARTS   AGE
 cloudflow-flink-flink-operator-8588dbd8f4-gsjnm              1/1     Running   0          3m26s
 cloudflow-nfs-fdp-nfs-6f8855d44-vdhhj                        1/1     Running   0          109s
