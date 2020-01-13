@@ -5,9 +5,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-Detailed instructions on how to install a GKE cluster with Cloudflow are described in the https://github.com/lightbend/cloudflow/tree/master/installer[Cloudflow installer section] of the GitHub repo. 
+Detailed instructions on how to install a GKE cluster with Cloudflow are described in the https://github.com/lightbend/cloudflow/tree/master/installer[Cloudflow installer section] of the GitHub repo.
 
-To install a new cluster, clone the https://github.com/lightbend/cloudflow/[repo] in your local system, go to the `installer/` folder and follow these instructions.
+To install a new cluster, clone the https://github.com/lightbend/cloudflow/[repo] in your local system by selecting the latest release branch or download the latest release file from https://github.com/lightbend/cloudflow/releases[here], go to the `installer/` folder and follow the instructions bellow.
 
 * Run `gcloud init` if this is a new cluster and you are creating a GKE cluster for the first time. This command initializes the gcloud system on your local and performs necessary settings of gcloud credentials. You can have a look at the details in the https://cloud.google.com/sdk/gcloud/reference/init[GKE documentation].
 
@@ -16,13 +16,16 @@ NOTE:: This can be done once you have a valid Google account and have access to 
 * Create a GKE cluster with a specific name `./create-cluster-gke.sh <cluster-name>`
 * Install Cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
 
+NOTE:: This step uses Helm which can be installed from https://v2.helm.sh/docs/using_helm/#installing-helm[here]. Currently only Helm 2 is supported while Helm 3 support is WIP.
+Please make sure you have installed the right version of Helm on your local machine.
+
 This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
 
 ```
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteMany'.
 Examples of these are Spark and Flink checkpointing and savepointing.
 
-   NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?                      
+   NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?
 1. standard             kubernetes.io/gce-pd           Unknown                       -
 2. nfs-client           lightbend.com/nfs              Unknown                       -
 > 2
@@ -30,7 +33,7 @@ Examples of these are Spark and Flink checkpointing and savepointing.
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteOnce'.
 Examples of these are Kafka, Zookeeper, and Prometheus.
 
-   NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?                      
+   NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?
 1. standard             kubernetes.io/gce-pd           Verified                      -
 2. nfs-client           lightbend.com/nfs              Unknown                       -
 > 1

@@ -11,7 +11,7 @@ First, make sure that you have the following installed:
 * https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
 * https://www.docker.com/community-edition[Docker,window=_blank], we recommend version 18.09
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl], the Kubernetes CLI
-* https://helm.sh/docs/intro/install/[helm], the Helm CLI
+* https://helm.sh/docs/intro/install/[helm], the Helm CLI, only version 2 is currently supported (Helm 3 support is WIP).
 
 == Download and install the Cloudflow CLI
 
@@ -35,4 +35,3 @@ ifdef::review[Reviewers:still need recommendations for Windows.]
 
 == What's next
 Let's get an overview of the xref:wind-turbine-example.adoc[Wind Turbine example].
-
