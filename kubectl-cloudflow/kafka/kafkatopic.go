@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,7 +63,7 @@ func (in *kafakTopicList) DeepCopyObject() runtime.Object {
 }
 
 // GetAllKafkaTopics returns a list of all Kafka topics managed by Piplines for a specific application
-func GetAllKafkaTopics(applicationId string) []KafkaTopic {
+func GetAllKafkaTopics(applicationID string) []KafkaTopic {
 
 	config, err := clientcmd.BuildConfigFromFlags("", k8s.GetKubeConfig())
 	if err != nil {
@@ -79,11 +80,16 @@ func GetAllKafkaTopics(applicationId string) []KafkaTopic {
 		util.LogAndExit("Failed to connect to cluster, %s", err.Error())
 	}
 
+	namespace, err := version.FindCloudflowNamespace()
+	if err != nil {
+		util.LogAndExit("Failed to find the Cloudflow namespace, %s", err.Error())
+	}
+
 	result := kafakTopicList{}
 	err = restClient.
 		Get().
 		Resource("kafkatopics").
-		Namespace("cloudflow").
+		Namespace(namespace).
 		Do().
 		Into(&result)
 
@@ -95,7 +101,7 @@ func GetAllKafkaTopics(applicationId string) []KafkaTopic {
 }
 
 // RemoveKafkaTopics removes all Kafka topics created by Cloudflow in a namespace
-func RemoveKafkaTopics(applicationId string) {
+func RemoveKafkaTopics(applicationID string) {
 
 	config, err := clientcmd.BuildConfigFromFlags("", k8s.GetKubeConfig())
 	if err != nil {
@@ -112,12 +118,12 @@ func RemoveKafkaTopics(applicationId string) {
 		util.LogAndExit("Failed to connect to cluster, %s", err.Error())
 	}
 
-	kafkaTopics := GetAllKafkaTopics(applicationId)
+	kafkaTopics := GetAllKafkaTopics(applicationID)
 
 	fmt.Println("Removing Kafka topics.")
 	for _, topic := range kafkaTopics {
 		labels := topic.GetLabels()
-		if labels["app.kubernetes.io/part-of"] == applicationId && labels["app.kubernetes.io/managed-by"] == "cloudflow" {
+		if labels["app.kubernetes.io/part-of"] == applicationID && labels["app.kubernetes.io/managed-by"] == "cloudflow" {
 			topicName := topic.GetObjectMeta().GetName()
 			result := restClient.
 				Delete().
