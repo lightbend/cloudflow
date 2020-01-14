@@ -9,9 +9,10 @@ First, make sure that you have the following installed:
 
 * Java 8 (JDK)
 * https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
-* https://www.docker.com/community-edition[Docker,window=_blank], we recommend version 18.09
-* https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl], the Kubernetes CLI
-* https://helm.sh/docs/intro/install/[helm], the Helm CLI, only version 2 is currently supported (Helm 3 support is WIP).
+* https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
+* https://helm.sh/docs/intro/install/[helm,window=_blank], only version 2 is currently supported (Helm 3 support is WIP).
+* https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
+* https://git-scm.com/[git,window=_blank]
 
 == Download and install the Cloudflow CLI
 

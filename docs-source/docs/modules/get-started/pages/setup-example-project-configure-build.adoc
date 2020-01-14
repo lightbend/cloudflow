@@ -5,6 +5,13 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: Full sources for all Cloudflow example applications can be found in the
+https://github.com/lightbend/cloudflow/tree/master/examples/[examples folder] of the
+https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
+The sources for the example described below can be found in the application called
+https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala[sensor-data-scala]
+and there is also a https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-java[Java version] available.
+
 A typical Cloudflow application uses the organization shown below. We will implement the example in Scala. Create the following directory structure:
 
 ```
@@ -56,13 +63,19 @@ lazy val sensorData =  (project in file("."))
   )
 ```
 +
-The script is a standard Scala `sbt` build file--with the addition of the Cloudflow plugin for Akka Streams.
+The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams.
 
 . Add the Cloudflow plugin in `project/cloudflow-plugins.sbt`:
 +
 ```
 addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.0")
 ```
+
+NOTE: The Cloudflow sbt plugin will assume that your project is version managed using
+git. It will use git commit information to generate dynamic versioning for the
+Docker images it produces. If the project doesn't have an initialized git index
+with at least one commit, some commands will fail with a `not a git repository`
+error.
 
 == What's next
 
