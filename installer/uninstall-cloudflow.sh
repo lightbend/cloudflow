@@ -16,6 +16,9 @@
 
 currentDirectory=$(dirname "$0")
 
+# Utils
+. common/utils.sh
+
 # Check that we have logged into a Kubernetes cluster
 kubectl get pods > /dev/null 2>&1
 if [ $? -ne 0 ]; then 
@@ -23,9 +26,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
 # shellcheck source=common/detect.sh
 . common/detect.sh
+
+# Utility functions for interacting with Helm
+. common/helm.sh
 
 echo "This script will remove all Cloudflow related objects from the Kubernetes cluster currently logged in to"
 read -p "Do you want to continue ? (y/n) " -n 1 -r
@@ -39,10 +44,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
     # All our charts
     echo "Removing all Helm charts..."
-    helm delete cloudflow --purge --no-hooks
-    helm delete cloudflow-sparkoperator --purge --no-hooks
-    helm delete cloudflow-strimzi --purge --no-hooks
-    helm delete cloudflow-flink --purge --no-hooks
+    detect_helm_version
+    
+    helm_delete cloudflow
+    helm_delete cloudflow-sparkoperator
+    helm_delete cloudflow-strimzi
+    helm_delete cloudflow_flink
 
     # The namespace
     # TODO FIX_HARDCODED_NAMESPACE 

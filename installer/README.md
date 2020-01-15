@@ -22,7 +22,7 @@ To use the Cloudflow GKE installer, you need to have the following packages inst
 
 * [Google Cloud SDK](https://cloud.google.com/sdk/)
 * [jq](https://stedolan.github.io/jq/)
-* [Helm v2](https://helm.sh/) *note: Cloudflow installer is currently not compatible with Helm v3*
+* [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
 
 ## Installation Procedure
 

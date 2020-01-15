@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: tiller-test-chart
+name: helm-test-chart
 description: Deploy a basic Alpine Linux pod
 version: 0.1.0
 appVersion: 3.3

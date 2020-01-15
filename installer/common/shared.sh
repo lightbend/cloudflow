@@ -32,28 +32,8 @@ set +x
 # shellcheck source=common/detect.sh
 . "$currentDirectory"/detect.sh
 
-# Tiller check
-. "$currentDirectory"/tiller.sh
-
 # Utils
 . "$currentDirectory"/utils.sh
-
-export_tiller_namespace
-if [ $? -ne 0 ]; then
-    print_error_message "Cannot detect the namespace that Tiller is installed in."
-    print_error_message ""
-    print_error_message "This can be caused by:"
-    print_error_message "1. Tiller has not yet been installed."
-    print_error_message "2. The cluster is new and all components have not yet started."
-    print_error_message ""
-    print_error_message "Please check if helm is correctly installed using `helm version`."
-    print_error_message "If the connection times out the cluster is still undergoing setup."
-    print_error_message "In that case please wait a few minutes before trying again."
-    print_error_message ""
-    exit 1
-fi
-echo "The tiller namespace is '$TILLER_NAMESPACE'"
-
 
 # Cloudflow operator version
 export operatorImageName="lightbend/cloudflow-operator"
@@ -229,7 +209,7 @@ install_nfs_server() {
 helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
---timeout 600 \
+--timeout $HELM_TIMEOUT \
 --set createStorage=false \
 --set serviceAccount.create=false \
 --set serviceAccount.name=cloudflow-operator \
