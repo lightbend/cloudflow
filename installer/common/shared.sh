@@ -57,7 +57,7 @@ echo "The tiller namespace is '$TILLER_NAMESPACE'"
 
 # Cloudflow operator version
 export operatorImageName="lightbend/cloudflow-operator"
-export operatorImageTag="1.3.0"
+export operatorImageTag="89-f8a4ddc"
 export operatorImage="$operatorImageName:$operatorImageTag"
 
 
@@ -199,7 +199,7 @@ elif [ "${KAFKA}" = "External" ]; then
 else
     print_error_message "Invalid Kafka installation mode defined: '${KAFKA}'."
     print_error_message ""
-    
+
     exit 1
 fi
 
