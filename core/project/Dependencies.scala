@@ -20,6 +20,7 @@ object Library {
   val AkkaSlf4j             = "com.typesafe.akka"     %% "akka-slf4j"               % Version.Akka
   val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"      % "0.10"
   val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"        % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
+  val AkkaStreamKafkaTestkit = "com.typesafe.akka"   %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka exclude("com.typesafe.akka", "akka-stream-testkit")
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
@@ -51,16 +52,15 @@ object Library {
   val Avro4sJson            = "com.sksamuel.avro4s"   %% "avro4s-json"              % "3.0.0"
 
   // Test Dependencies
-  val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp % Test
-  val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                        % Test
-  val AkkaStreamKafkaTestkit = "com.typesafe.akka"   %% "akka-stream-kafka-testkit"  % Version.AlpakkaKafka
-  val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka     % Test
-  val Avro4sTest             = "com.sksamuel.avro4s" %% "avro4s-core"                % "3.0.0"          % Test
+  val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test
+  val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                            % Test
+  val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka         % Test 
+  val Avro4sTest             = "com.sksamuel.avro4s" %% "avro4s-core"                % "3.0.0"              % Test
   val AkkaTestkit            = "com.typesafe.akka"   %% "akka-testkit"               % Version.Akka
-  val ScalaTest              = ScalaTestUnscoped                                                        % Test
-  val Junit                  = "junit"                % "junit"                      % "4.12"           % Test
-  val JUnitInterface         = "com.novocode"         % "junit-interface"            % "0.11"           % Test
-  val MockitoScala           = "org.mockito"         %% "mockito-scala-scalatest"    % "1.5.16"         % Test
+  val ScalaTest              = ScalaTestUnscoped                                                            % Test
+  val Junit                  = "junit"                % "junit"                      % "4.12"               % Test
+  val JUnitInterface         = "com.novocode"         % "junit-interface"            % "0.11"               % Test
+  val MockitoScala           = "org.mockito"         %% "mockito-scala-scalatest"    % "1.5.16"             % Test
 }
 
 // format: ON

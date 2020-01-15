@@ -87,7 +87,7 @@ lazy val akkastream =
 lazy val akkastreamUtil =
   cloudflowModule("cloudflow-akka-util")
     .enablePlugins(GenJavadocPlugin)
-    .dependsOn(akkastream, akkastreamTestkit)
+    .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
       libraryDependencies ++= Vector(
         AkkaHttp,
@@ -130,7 +130,7 @@ lazy val akkastreamTestkit =
 
 lazy val akkastreamTests =
   cloudflowModule("cloudflow-akka-tests")
-    .dependsOn(akkastream, akkastreamTestkit)
+    .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
       libraryDependencies ++= Vector(
         AkkaHttpTestkit,
