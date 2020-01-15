@@ -115,6 +115,7 @@ lazy val akkastreamTestkit =
         AkkaStreamContrib,
         Ficus,
         Logback % Test,
+        AkkaStreamKafkaTestkit,
         AkkaStreamTestkit,
         AkkaTestkit,
         ScalaTest,

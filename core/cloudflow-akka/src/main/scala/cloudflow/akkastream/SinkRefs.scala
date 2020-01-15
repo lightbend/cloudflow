@@ -22,7 +22,7 @@ import scala.compat.java8.FutureConverters._
 import scala.concurrent.Future
 
 import akka.stream._
-import akka.kafka.ConsumerMessage.CommittableOffset
+import akka.kafka.ConsumerMessage.Committable
 /**
  * Extends [[akka.stream.SinkRef]] with a `write` method that can be used to
  * write data directly to the implementation that `SinkRef.sink` writes to.
@@ -34,7 +34,7 @@ import akka.kafka.ConsumerMessage.CommittableOffset
  * }}}
  * but in that case it is not known when the value has been written.
  */
-trait WritableSinkRef[T] extends SinkRef[(T, CommittableOffset)] {
+trait WritableSinkRef[T] extends SinkRef[(T, Committable)] {
   /**
    * Writes the value to this SinkRef. The Future contains the written value
    * once the value has been written.

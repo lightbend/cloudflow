@@ -47,15 +47,15 @@ abstract class SplitterLogic[I, L, R](
    */
   override def runnableGraph() = {
     val in = sourceWithOffsetContext[I](inlet)
-    val left = sinkWithOffsetContext[L](leftOutlet)
-    val right = sinkWithOffsetContext[R](rightOutlet)
+    val left = committableSink[L](leftOutlet)
+    val right = committableSink[R](rightOutlet)
 
     val splitterGraph = RunnableGraph.fromGraph(
       GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
         import GraphDSL.Implicits._
 
         val toEitherFlow = builder.add(flow.asFlow)
-        val partitionWith = PartitionWith[(Either[L, R], CommittableOffset), (L, CommittableOffset), (R, CommittableOffset)] {
+        val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
           case (Left(e), offset)  ⇒ Left((e, offset))
           case (Right(e), offset) ⇒ Right((e, offset))
         }

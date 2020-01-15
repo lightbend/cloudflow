@@ -45,7 +45,7 @@ class MergeLogic[T](
   override def runnableGraph() = {
 
     val inlets = inletPorts.map(inlet ⇒ sourceWithOffsetContext[T](inlet)).toList
-    val out = sinkWithOffsetContext[T](outlet)
+    val out = committableSink[T](outlet)
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
       import GraphDSL.Implicits._

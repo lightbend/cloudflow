@@ -27,7 +27,7 @@ package testkit {
     def portName: String
 
     // This is for internal usage so using a scaladsl Source and a Tuple is no problem
-    private[testkit] def source: Source[(T, CommittableOffset), NotUsed]
+    private[testkit] def source: Source[(T, Committable), NotUsed]
   }
 
   trait OutletTap[T] {
