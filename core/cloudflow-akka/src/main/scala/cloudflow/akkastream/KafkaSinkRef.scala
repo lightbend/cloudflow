@@ -55,7 +55,7 @@ final class KafkaSinkRef[T](
           val bytesValue = outlet.codec.encode(value)
           ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue), offset)
       }
-      .via(Producer.flexiFlow(producerSettings, producer))
+      .via(Producer.flexiFlow(producerSettings.withProducer(producer)))
       .via(handleTermination)
       .to(Sink.ignore).mapMaterializedValue(_ ⇒ NotUsed)
   }
