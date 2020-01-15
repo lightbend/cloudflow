@@ -33,7 +33,8 @@ object CloudflowSparkLibraryPlugin extends AutoPlugin {
       "com.lightbend.cloudflow" %% "cloudflow-spark" % BuildInfo.version,
       "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
     ),
-
+    dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9",
+    dependencyOverrides += "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9",
     javaOptions in com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.Universal ++= Seq( // this is for local experimentation - do not remove
     // -J params will be added as jvm parameters
     // "-J-Xmx1536m",
