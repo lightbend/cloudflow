@@ -19,9 +19,9 @@ object Library {
   val AkkaStream            = "com.typesafe.akka"     %% "akka-stream"              % Version.Akka
   val AkkaSlf4j             = "com.typesafe.akka"     %% "akka-slf4j"               % Version.Akka
   val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"      % "0.10"
-  val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"        % Version.AlpakkaKafka
+  val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"        % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
-  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("com.fasterxml.jackson.core","jackson-databind")
+  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
   val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"

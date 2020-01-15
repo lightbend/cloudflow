@@ -39,7 +39,9 @@ lazy val akkaCdrIngestor= appModule("akka-cdr-ingestor")
         "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.10",
         "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
         "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
-      )
+      ), 
+      dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9",
+      dependencyOverrides += "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9",
     )
   .dependsOn(datamodel)
 
@@ -51,7 +53,9 @@ lazy val akkaJavaAggregationOutput= appModule("akka-java-aggregation-output")
       "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.10",
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
-    )
+    ), 
+      dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9",
+      dependencyOverrides += "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9",
   )
   .dependsOn(datamodel)
 
@@ -64,7 +68,9 @@ lazy val sparkAggregation = appModule("spark-aggregation")
       libraryDependencies ++= Seq(
 	      "ch.qos.logback" %  "logback-classic"    % "1.2.3",
         "org.scalatest"  %% "scalatest"          % "3.0.8"  % "test"
-      )
+      ), 
+      dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9",
+      dependencyOverrides += "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9",
     )
   .dependsOn(datamodel)
 
