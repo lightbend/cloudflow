@@ -20,6 +20,7 @@ import scala.concurrent.duration.Duration;
 
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
+import akka.kafka.ConsumerMessage.Committable;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;

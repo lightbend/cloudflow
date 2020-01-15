@@ -22,6 +22,7 @@ import scala.concurrent._
 
 import akka.NotUsed
 import akka.actor._
+import akka.kafka.CommitterSettings
 import akka.kafka.ConsumerMessage._
 import akka.stream._
 import akka.stream.scaladsl._
@@ -63,7 +64,7 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
-  def flowWithOffsetContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithOffsetContext[T, T] = {
+  def flowWithCommittableContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
     val flow = Flow[T]
 
     outletTaps
@@ -80,17 +81,29 @@ private[testkit] case class TestContext(
           .alsoTo(
             Flow[T].map(t ⇒ tout.toPartitionedValue(t)).to(tout.sink)
           )
-          .asFlowWithContext[T, CommittableOffset, CommittableOffset]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
+          .asFlowWithContext[T, Committable, Committable]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
       }
       .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
+  def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
+    Flow[(T, Committable)].toMat(Sink.ignore)(Keep.left)
+  def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
+    flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
+
+  @deprecated("Use `committableSink` instead.", "1.3.1")
+  def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+    Flow[(T, Committable)].toMat(Sink.ignore)(Keep.left)
+
+  @deprecated("Use `committableSink` instead.", "1.3.1")
+  def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+    flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] = sourceWithOffsetContext[T](inlet).asSource.map(_._1)
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒ (el, TestCommittableOffset()) }
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
     new WritableSinkRef[T] {
       def sink = {
-        val flow = Flow[(T, CommittableOffset)]
+        val flow = Flow[(T, Committable)]
         outletTaps
           .find(_.portName == outlet.name)
           .map { tap ⇒
@@ -152,14 +165,7 @@ private[testkit] case class TestContext(
 
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)
 
-// Some hacking to compile
 import akka.kafka.ConsumerMessage._
-import scala.compat.java8.FutureConverters._
-case class TestCommittableOffset(partitionOffset: PartitionOffset) extends CommittableOffset {
-  def batchSize: Long = 1L
-  def commitJavadsl(): java.util.concurrent.CompletionStage[akka.Done] = Future.successful(akka.Done.getInstance).toJava
-  def commitScaladsl(): scala.concurrent.Future[akka.Done] = Future.successful(akka.Done)
-}
 object TestCommittableOffset {
-  def apply(): CommittableOffset = TestCommittableOffset(PartitionOffset(GroupTopicPartition("", "", 0), 0L))
+  def apply(): CommittableOffset = akka.kafka.testkit.ConsumerResultFactory.committableOffset(PartitionOffset(GroupTopicPartition("", "", 0), 0L), "")
 }

@@ -25,7 +25,6 @@ import akka.stream.scaladsl._
 
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
-import akka.kafka.scaladsl._
 
 import com.typesafe.config.Config
 
@@ -118,14 +117,6 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): javadsl.SourceWithOffsetContext[T] = sourceWithOffsetContext(inlet).asJava
 
-  // TODO think about `Out` type of FlowWithContext.
-  // TODO it looks like it will be possible to improve producer performance in alpakka kafka if we don't care about passthrough
-  // TODO and most of the time all you want to do is commit the messages, which is already done in sinkWithOffsetContext,
-  // TODO which is why this method is private.
-  private def flowWithOffsetContext[T](outlet: CodecOutlet[T]): scaladsl.FlowWithOffsetContext[T, _] = context.flowWithOffsetContext(outlet)
-  private def getFlowWithOffsetContext[T](outlet: CodecOutlet[T]): javadsl.FlowWithOffsetContext[T, _] =
-    flowWithOffsetContext(outlet).asJava
-
   /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
    *
@@ -172,45 +163,99 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
    * The `outlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to serialize the records that are written to Kafka.
    */
-  // TODO use the upcoming sinkWithOffsetContext on producer.
+  def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, Committable), NotUsed] =
+    context.committableSink(outlet, committerSettings)
+
+  /**
+   * Creates a sink, purely for committing the offsets that have been read further upstream.
+   * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
+   */
+  def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
+    context.committableSink(committerSettings)
+
+  /**
+   * Creates a sink, purely for committing the offsets that have been read further upstream.
+   * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
+   * Uses a default CommitterSettings, which is configured
+   * through the default configuration in `akka.kafka.committer`.
+   */
+  def committableSink[T]: Sink[(T, Committable), NotUsed] =
+    committableSink[T](defaultCommitterSettings)
+
+  /**
+   * Creates a sink for publishing records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.
+   * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
+   * The `outlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to serialize the records that are written to Kafka.
+   */
+  @deprecated("Use `committableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
-    flowWithOffsetContext[T](outlet).asFlow.to(Committer.sinkWithOffsetContext(committerSettings))
+    context.sinkWithOffsetContext(outlet, committerSettings)
 
   /**
    * Creates a sink, purely for committing the offsets that have been read further upstream.
    * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
    */
+  @deprecated("Use `committableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
-    Committer.sinkWithOffsetContext(committerSettings).mapMaterializedValue(_ ⇒ NotUsed)
+    context.sinkWithOffsetContext(committerSettings).mapMaterializedValue(_ ⇒ NotUsed)
 
   /**
    * Creates a sink, purely for committing the offsets that have been read further upstream.
    * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
    */
+  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T]: Sink[(T, CommittableOffset), NotUsed] =
     sinkWithOffsetContext(defaultCommitterSettings)
 
   /**
    * Java API
    */
+  def getCommittableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+    committableSink[T](outlet, committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+
+  /**
+   * Java API
+   */
+  def getCommittableSink[T](outlet: CodecOutlet[T]): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+    getCommittableSink[T](outlet, defaultCommitterSettings)
+
+  /**
+   * Java API
+   */
+  def getCommittableSink[T](committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+    committableSink[T](committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+
+  /**
+   * Java API
+   */
+  def getCommittableSink[T](): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+    getCommittableSink[T](defaultCommitterSettings)
+
+  /**
+   * Java API
+   */
+  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](outlet: CodecOutlet[T]): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
-    getFlowWithOffsetContext[T](outlet).asFlow.to(akka.kafka.javadsl.Committer.sinkWithOffsetContext(defaultCommitterSettings))
+    getSinkWithOffsetContext(outlet, defaultCommitterSettings)
 
   /**
    * Java API
    */
+  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
-    getFlowWithOffsetContext[T](outlet).asFlow.to(akka.kafka.javadsl.Committer.sinkWithOffsetContext(committerSettings))
+    committableSink[T](outlet, committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
 
   /**
    * Java API
    */
+  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
-    akka.kafka.javadsl.Committer.sinkWithOffsetContext(committerSettings).mapMaterializedValue(_ ⇒ NotUsed)
+    committableSink[T](committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
 
   /**
    * Java API
    */
+  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
     getSinkWithOffsetContext(defaultCommitterSettings)
 

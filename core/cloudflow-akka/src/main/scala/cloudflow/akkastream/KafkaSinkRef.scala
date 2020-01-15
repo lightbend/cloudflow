@@ -45,15 +45,15 @@ final class KafkaSinkRef[T](
 
   private val producer = producerSettings.createKafkaProducer()
 
-  def sink: Sink[(T, CommittableOffset), NotUsed] = {
+  def sink: Sink[(T, Committable), NotUsed] = {
     system.log.info(s"Creating sink for topic: $topic")
 
-    Flow[(T, CommittableOffset)]
+    Flow[(T, Committable)]
       .map {
         case (value, offset) ⇒
           val key = outlet.partitioner(value)
           val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message[Array[Byte], Array[Byte], CommittableOffset](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue), offset)
+          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue), offset)
       }
       .via(Producer.flexiFlow(producerSettings, producer))
       .via(handleTermination)
