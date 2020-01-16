@@ -74,15 +74,15 @@ esac
 # shellcheck source=common/install-operators.sh
 . "$currentDirectory"/install-operators.sh
 
-# Call Helm with all args and overrrides,
-## TODO -- check docker note here: is this a problem for Cloudflow OSS install?
+# Call Helm with all args and overrrides, 
+## TODO -- check docker note here:  is this a problem for Cloudflow OSS install?
 # Note! We point the docker registry to localhost on gke, our GKE clusters cannot resolve the external address
 ## TODO -- check the domain here below -- not supported in OSS. Consequences?
 echo "Installing Cloudflow"
 result=$(helm upgrade cloudflow cloudflow-environment \
 --install \
 --namespace "$NAMESPACE" \
---timeout 600 \
+--timeout $HELM_TIMEOUT \
 --values="$currentDirectory"/k8s-values.yaml \
 --set \
 kafka.mode="$KAFKA",\

@@ -31,8 +31,6 @@ fi
 
 export CLUSTER_TYPE=$1
 export CLOUDFLOW_NAMESPACE="cloudflow"
-export TILLER_SERVICE_ACCOUNT="tiller"
-export TILLER_NAMESPACE="kube-system"
 
 # Check that we have logged into a Kubernetes cluster
 kubectl get pods > /dev/null 2>&1
@@ -43,51 +41,14 @@ fi
 
 # Utility function to query Kubernetes for components
 . common/detect.sh
-# Utility functions to interact with Tiller
-. common/tiller.sh
-
-# Init tiller
-export_tiller_namespace
-if [ $? -ne 0 ]; then
-    echo "Tiller not found. Installing Tiller."
-
-    namespaceExists=$(detect_k8s_object "kubectl get ns $TILLER_NAMESPACE")
-    if [ "$namespaceExists" == "0" ]; then
-    	kubectl create ns $TILLER_NAMESPACE
-    fi
-
-    kubectl create serviceaccount --namespace "$TILLER_NAMESPACE" "$TILLER_SERVICE_ACCOUNT"
-    kubectl create clusterrolebinding "$TILLER_NAMESPACE":tiller --clusterrole=cluster-admin --serviceaccount="$TILLER_NAMESPACE":"$TILLER_SERVICE_ACCOUNT"
-    helm init --wait --service-account "$TILLER_SERVICE_ACCOUNT" --upgrade --tiller-namespace="$TILLER_NAMESPACE"
-else
-    echo "Tiller found, the version of Tiller will be synchronized with the local Helm version, this may downgrade Tiller."
-    read -p "Do you want to continue? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Upgrade Tiller so versions match
-        helm init --upgrade --force-upgrade 2>&1 > /dev/null
-    else
-        print_error_message "Installation cancelled."
-        exit 1
-    fi
-fi
-
-# Wait for tiller to deploy
-kubectl rollout status deployment/tiller-deploy  -n "$TILLER_NAMESPACE"
-if [ $? -ne 0 ]; then
-    print_error_message "Tiller failed to deploy. Please correct the problem and re-run the installer."
-    exit 1
-fi
+# Utility functions for interacting with Helm
+. common/helm.sh
 
 # Create namespace
 kubectl create namespace "$CLOUDFLOW_NAMESPACE"
 
-# Test the installation of Tiller
-echo "Testing Tiller"
-test_tiller "$CLOUDFLOW_NAMESPACE"
-if [ $? -ne 0 ]; then
-    exit 1
-fi
+# Init Helm
+init_helm
 
 # helm repos.
 helm repo add lightbend-helm-charts https://repo.lightbend.com/helm-charts/ > /dev/null 2>&1
