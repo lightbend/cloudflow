@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pv-volume
+  name: aws-efs
   namespace: sensor-data-scala
 spec:
   accessModes:
