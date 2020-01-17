@@ -69,6 +69,11 @@ object Merger {
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {
     Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
   }
+  def source[T](
+      inlet: CodecInlet[T], inlets: CodecInlet[T]*
+  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {
+    Source.fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
+  }
 }
 
 /**

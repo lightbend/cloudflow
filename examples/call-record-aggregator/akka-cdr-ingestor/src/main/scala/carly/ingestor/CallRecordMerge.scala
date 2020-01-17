@@ -19,7 +19,8 @@ package carly.ingestor
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl.MergeLogic
+import cloudflow.akkastream.scaladsl._
+import cloudflow.akkastream.util.scaladsl.Merger
 
 import carly.data._
 
@@ -28,7 +29,9 @@ class CallRecordMerge extends AkkaStreamlet {
   val in1 = AvroInlet[CallRecord]("in-1")
   val in2 = AvroInlet[CallRecord]("in-2")
   val out = AvroOutlet[CallRecord]("out", _.user)
+
   final override val shape = StreamletShape.withInlets(in0, in1, in2).withOutlets(out)
+
   final override def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph = Merger.source(in0, in1, in2).to(committableSink(out))
   }

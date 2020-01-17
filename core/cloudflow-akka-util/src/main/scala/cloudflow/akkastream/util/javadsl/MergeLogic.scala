@@ -16,10 +16,8 @@
 
 package cloudflow.akkastream.util.javadsl
 
+import scala.annotation.varargs
 import scala.collection.JavaConverters._
-import akka.NotUsed
-import akka.japi.Pair
-import akka.stream._
 import akka.kafka.ConsumerMessage._
 import cloudflow._
 import cloudflow.akkastream._
@@ -48,10 +46,18 @@ object Merger {
    * in semi-random order and with equal priority for all inlets.
    */
   def source[T](
-      inlets: java.util.List[CodecInlet[T]],
-      context: AkkaStreamletContext
+      context: AkkaStreamletContext,
+      inlets: java.util.List[CodecInlet[T]]
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlets.asScala)(context).asJava
+
+  @varargs
+  def source[T](
+      context: AkkaStreamletContext,
+      inlet: CodecInlet[T],
+      inlets: CodecInlet[T]*
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+    cloudflow.akkastream.util.scaladsl.Merger.source(inlet +: inlets)(context).asJava
 }
 
 /**

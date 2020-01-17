@@ -146,7 +146,7 @@ class JavaTestMerge(inletCount: Int) extends TestMerge {
    */
   override final def createLogic = new cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic(context) {
     def createRunnableGraph = {
-      cloudflow.akkastream.util.javadsl.Merger.source(inletPorts.asJava, context).to(getCommittableSink(outlet))
+      cloudflow.akkastream.util.javadsl.Merger.source(context, inletPorts.asJava).to(getCommittableSink(outlet))
     }
   }
 }
