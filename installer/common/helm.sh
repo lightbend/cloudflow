@@ -31,7 +31,7 @@ export_helm3_timeout() {
 
 # Detect which version of Helm is installed
 detect_helm_version() {
-  if [[ $(helm version | awk -F '[".]' '/version.Version/ { print $3 }') == "v2" ]]
+  if [[ $(helm version | awk -F '[".]' '/version.Version/ { print $3 }' | sed -n '1p') == "v2" ]]
   then
     echo "Detected Helm version 2"
     HELM_VERSION="2"
