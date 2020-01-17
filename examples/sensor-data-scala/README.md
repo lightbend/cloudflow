@@ -48,24 +48,24 @@ Ex)
 wrk -c 400 -t 400 -d 500 -s wrk-04-moderate-breeze.lua <http-ingress-url>
 ```
 
+### Example Deployment on Kubernetes
 
-### Example Deployment on GKE
+* Make sure you have installed a Kubernetes cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 
-* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
-Make sure you have access to your cluster:
+* Verify GKE cluster and Google docker registry 
 
 ```
 $ gcloud container clusters get-credentials <CLUSTER_NAME>
-```
-
-and that you have access to the Google docker registry:
-
-```
 $ gcloud auth configure-docker
 ```
 
-* Add the Google docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
+* Verify EKS cluster and ECR docker registry
+```
+$ aws eks describe-cluster <CLUSTER_NAME>
+$ eval $(aws ecr get-login --no-include-email --region us-east-1)
+```
 
+* Add the docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
 
 ```
 ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
@@ -95,40 +95,35 @@ This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
 
-* Install the required PVC for the file ingress (This is optional as you can remove the file ingress
-  from the blueprint and use only the HTTP ingress for posting data.)
-
-First create the application namespace (since a PVC is namespaced).
+* Create the application namespace
 
 ```
 $ kubectl create ns sensor-data-scala
 ```
 
-claim.yaml:
+Install the required PVC for the file ingress (This is optional as you can remove the file ingress from the blueprint
+and use only the HTTP ingress for posting data.)
 
+* Install PVC on GKE
 ```
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: claim1
-  namespace: sensor-data-scala
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: nfs-client
-  resources:
-    requests:
-      storage: 1Gi
+kubectl apply -f templates/nfs.yaml -n sensor-data-scala
 ```
 
+* Install PVC on EKS
 ```
-$ kubectl apply -f claim.yaml
+kubectl apply -f templates/efs.yaml -n sensor-data-scala
 ```
 
-* Deploy the app.
+* Deploy the app to a GKE cluster
 
 ```
-$ kubectl cloudflow  deploy -u oauth2accesstoken --volume-mount file-ingress.source-data-mount=claim1  eu.gcr.io/<projectID>/sensor-data-scala:8-2a0f65d-dirty -p "$(gcloud auth print-access-token)"
+$ kubectl cloudflow deploy -u oauth2accesstoken --volume-mount file-ingress.source-data-mount=pv-volume eu.gcr.io/<projectID>/sensor-data-scala:8-2a0f65d-dirty -p "$(gcloud auth print-access-token)"
+```
+
+* Deploy the app to an EKS cluster
+
+```
+$ kubectl cloudflow deploy -u $(aws iam get-user | jq -r .User.UserName) --volume-mount file-ingress.source-data-mount=pv-volume index.docker.io/<user>/sensor-data-scala:8-2a0f65d-dirty -p "<docker_hub_password>"
 ```
 
 * Verify that the application is deployed.
@@ -203,7 +198,7 @@ Note: This application prints to console using log level WARN. If you want to ch
 by changing the application log level at deployment time:
 
 ```
-kubectl cloudflow  deploy -u oauth2accesstoken --volume-mount file-ingress.source-data-mount=file-ingress.source-data-mount   eu.gcr.io/<projectID>/sensor-data-scala:8-2a0f65d-dirty -p "$(gcloud auth print-access-token)" valid-logger.log-level=info valid-logger.msg-prefix=valid
+kubectl cloudflow  deploy -u oauth2accesstoken --volume-mount file-ingress.source-data-mount=file-ingress.source-data-mount eu.gcr.io/<projectID>/sensor-data-scala:8-2a0f65d-dirty -p "$(gcloud auth print-access-token)" valid-logger.log-level=info valid-logger.msg-prefix=valid
 ```
 
 The application uses Akka system log which by default it has log level _Warning_.

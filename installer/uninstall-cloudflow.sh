@@ -53,8 +53,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
     # The namespace
     # TODO FIX_HARDCODED_NAMESPACE 
-    echo "Removing the Lightbend namespace..."
-    kubectl delete ns lightbend --cascade
+    echo "Removing the Cloudflow namespace..."
+    kubectl delete ns cloudflow --cascade
 
     if [ "$1" == "icp4d" ]; then
         kubectl delete clusterrole lightbend-role &&

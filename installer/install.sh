@@ -20,24 +20,33 @@
 #Check env preconditions to execute the installation (should always pass on docker!)
 . common/requirements.sh
 
-if [ -z "$1" ]
-  then
-    print_error_message "Please provide the cluster name of the GKE cluster where Cloudflow should be installed."
-    echo "NOTE: this should not be a URL but a plain domain name."
-    exit 1
-fi
-
 . common/cloudflow-chart-version.sh
 
-export CLUSTER_NAME=$1
-export CLOUDFLOW_NAMESPACE="cloudflow"
+CLOUDFLOW_NAMESPACE="cloudflow"
+CLUSTER_NAME=$1
+CLUSTER_TYPE=$2
 
-# Check that we have logged into a Kubernetes cluster
-kubectl get pods > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    print_error_message "It looks like you are not logged into a Kubernetes cluster. Please 'gcloud init' before running the installer."
+case $CLUSTER_TYPE in
+ gke)
+    # Check that we have logged into a GKE cluster
+    kubectl get pods > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        print_error_message "It looks like you are not logged into a Kubernetes cluster. Please 'gcloud init' before running the installer."
+        exit 1
+    fi
+    ;;
+ eks)
+    # Check AWS_DEFAULT_REGION is set
+    if [[ -z "${AWS_DEFAULT_REGION}" ]]; then
+        print_error_message "It looks like the AWS_DEFAULT_REGION environment variable is not set. Please set the value for the AWS_DEFAULT_REGION environment variable before running the installer."
+        exit 1
+    fi
+    ;;
+ *)
+    print_error_message "Unknown cluster type: $CLUSTER_TYPE"
     exit 1
-fi
+    ;;
+esac
 
 # Utility function to query Kubernetes for components
 . common/detect.sh
@@ -65,4 +74,4 @@ echo " - namespace: $CLOUDFLOW_NAMESPACE"
 ## Check OK until here
 #######################3
 
-common/gke-install-cloudflow.sh "$CLUSTER_NAME" "$CLOUDFLOW_NAMESPACE"
+common/install-cloudflow.sh "$CLUSTER_NAME" "$CLOUDFLOW_NAMESPACE" "$CLUSTER_TYPE"

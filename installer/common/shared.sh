@@ -217,3 +217,15 @@ helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
 --set storageClassName=nfs-client \
 --version 0.2.0
 }
+
+EFS_SERVER_NAME=cloudflow-efs
+EFS_CHART_NAME=efs-provisioner
+install_efs_provisioner() {
+helm upgrade $EFS_SERVER_NAME stable/$EFS_CHART_NAME \
+--install \
+--namespace "$1" \
+--timeout 600 \
+--set efsProvisioner.dnsName="$2.efs.$3.amazonaws.com" \
+--set efsProvisioner.efsFileSystemId="$2" \
+--set efsProvisioner.awsRegion="$3"
+}

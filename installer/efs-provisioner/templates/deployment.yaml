@@ -1,0 +1,122 @@
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+{{- if or (ne .Values.efsProvisioner.efsFileSystemId "fs-12345678") (.Values.efsProvisioner.dnsName) }}
+{{/*
+The `efsFileSystemId` value must be set.
+
+The above `if` condition also prevents the helm integration tests from failing.
+Given that the helm test infrastructure does not have access to valid
+AWS EFS resources, a deployment that references the example `fs-12345678`
+creates pods that will never enter a clean, running state.
+
+Omitting the deployment hacks around this limitation.
+*/}}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ template "efs-provisioner.fullname" . }}
+  labels:
+    app: {{ template "efs-provisioner.name" . }}
+    env: {{ .Values.global.deployEnv }}
+    chart: {{ template "efs-provisioner.chartname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+{{ toYaml .Values.annotations | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "efs-provisioner.name" . }}
+      release: "{{ .Release.Name }}"
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+    {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8}}
+    {{- end }}
+      labels:
+        app: {{ template "efs-provisioner.name" . }}
+        release: "{{ .Release.Name }}"
+    spec:
+      serviceAccount: {{ template "efs-provisioner.serviceAccountName" . }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: "{{ .Values.priorityClassName }}"
+      {{- end }}
+{{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range $pullSecret := .Values.image.pullSecrets }}
+        - name: {{ $pullSecret }}
+      {{- end }}
+{{- end }}
+      containers:
+      - name: {{ template "efs-provisioner.fullname" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: FILE_SYSTEM_ID
+          value: {{ .Values.efsProvisioner.efsFileSystemId }}
+        - name: AWS_REGION
+          value: {{ .Values.efsProvisioner.awsRegion }}
+        - name: PROVISIONER_NAME
+          value: {{ .Values.efsProvisioner.provisionerName }}
+        {{- if .Values.efsProvisioner.dnsName }}
+        - name: DNS_NAME
+          value: {{ .Values.efsProvisioner.dnsName }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: pv-volume
+          subPath: {{ (trimPrefix "/" .Values.efsProvisioner.path) }}
+          mountPath: /persistentvolumes
+      {{- if ne .Values.efsProvisioner.path "/" }}
+      initContainers:
+      - name: "init-path"
+        image: {{ .Values.busyboxImage.repository}}:{{ .Values.busyboxImage.tag}}
+        imagePullPolicy: {{ .Values.busyboxImage.pullPolicy }}
+        command: [ "sh", "-c", "mkdir -p /efs-vol-root/{{ (trimPrefix "/" .Values.efsProvisioner.path) }}" ]
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: pv-volume
+          mountPath: /efs-vol-root
+      {{- end }}
+      volumes:
+      - name: pv-volume
+        nfs:
+          {{- if .Values.efsProvisioner.dnsName }}
+          server: {{ .Values.efsProvisioner.dnsName }}
+          {{- else }}
+          server: {{ .Values.efsProvisioner.efsFileSystemId }}.efs.{{ .Values.efsProvisioner.awsRegion }}.amazonaws.com
+          {{- end }}
+          path: /
+{{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations| indent 8 }}
+    {{- end }}

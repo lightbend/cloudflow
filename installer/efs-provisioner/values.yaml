@@ -1,0 +1,97 @@
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# Default values for EFS provisioner service
+# https://github.com/kubernetes-incubator/external-storage/tree/master/aws/efs
+#
+
+## Deploy environment label, e.g. dev, test, prod
+##
+global:
+  deployEnv: dev
+
+## Containers
+##
+replicaCount: 1
+revisionHistoryLimit: 10
+image:
+  repository: quay.io/external_storage/efs-provisioner
+  tag: v2.4.0
+  pullPolicy: IfNotPresent
+  # If specified, use these secrets to access the images
+  # pullSecrets:
+  #   - registry-secret
+
+busyboxImage:
+  repository: gcr.io/google_containers/busybox
+  tag: 1.27
+  pullPolicy: IfNotPresent
+
+## Deployment annotations
+##
+annotations: {}
+
+## Configure provisioner
+## https://github.com/kubernetes-incubator/external-storage/tree/master/aws/efs#deployment
+##
+efsProvisioner:
+  path: /
+  provisionerName: kubernetes.io/aws-efs
+  storageClass:
+    name: pv-volume
+    isDefault: false
+    gidAllocate:
+      enabled: true
+      gidMin: 40000
+      gidMax: 50000
+    reclaimPolicy: Delete
+    mountOptions: []
+
+## Enable RBAC
+##
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: false
+
+## Annotations to be added to deployment
+##
+podAnnotations: {}
+# iam.amazonaws.com/role: efs-provisioner-role
+
+## Node labels for pod assignment
+##
+nodeSelector: {}
+
+# Affinity for pod assignment
+# Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# Tolerations for pod assignment
+# Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: {}
+
+## Configure resources
+##
+resources: {}
+  # To specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 200m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+priorityClassName: ""

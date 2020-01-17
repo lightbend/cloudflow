@@ -18,24 +18,44 @@ Testing on other major cloud providers is in the roadmap.
 
 ## Prerequisites
 
-To use the Cloudflow GKE installer, you need to have the following packages installed on your local machine:
-
+### K8s CLI's
+You need the command line tool for your particular Kubernetes cluster:
 * [Google Cloud SDK](https://cloud.google.com/sdk/)
+* [Amazon CLI for EKS](https://eksctl.io/)
+
+### Utilities
 * [jq](https://stedolan.github.io/jq/)
 * [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
 
 ## Installation Procedure
 
+### GKE
 To install Cloudflow on GKE it is a straightforward process:
 
 ```
-# create a GKE cluster with name <gke-cluster-name>
-$ ./create-cluster-gke.sh <gke-cluster-name>
-# install Cloudflow in that cluster
-$ ./install-gke.sh <gke-cluster-name>
+# create a GKE cluster with name <cluster-name>
+$ ./create-cluster-gke.sh <cluster-name>
+# install Cloudflow in the GKE cluster
+$ ./install.sh <cluster-name> gke
 ```
-Replace above `<gke-cluster-name>` with the preferred name for
-your GKE cluster.
+Replace above `<cluster-name>` with the preferred name for your GKE cluster.
+
+### EKS
+Similarly, to install Cloudflow on EKS follow this process:
+
+```
+# create an EKS cluster with name <cluster-name>
+$ ./create-cluster-eks.sh <cluster-name> <aws-region>
+# install Cloudflow in the EKS cluster
+$ ./install.sh <cluster-name> eks
+```
+Replace above `<cluster-name>` with the preferred name for your EKS cluster.
+
+#### EFS integration with EKS
+
+Some extra considerations needs are needed when integrating EFS with EKS. Please make sure the user launching the
+launching cluster satisfies the security groups requirements explained
+[here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html).
 
 ## Uninstall Procedure
 
@@ -43,10 +63,13 @@ In case of a failed installation, or if you simply want to uninstall entirely, r
 
 Notes
 -----
-- `create-cluster-gke.sh` is optional. 
-It creates a cluster on GKE that's large enough to launch several applications.
-You can also opt to create a cluster customized to your needs by either changing the values in the `create-cluster-gke.sh`, using the [Google Cloud Console](cloud.google.com), or the `gcloud` CLI.
+- `create-cluster-<gke|eks>.sh` is optional. 
+It creates a cluster on GKE/EKS that's large enough to launch several applications.
+You can also opt to create a cluster customized to your needs by either changing the values in the 
+`create-cluster-gke.sh`, using the [Google Cloud Console](cloud.google.com), or the `gcloud` CLI for GKE.
+Similarly, you can also opt to create a cluster customized to your needs by either changing the values in the
+`create-cluster-eks.sh`, using the [Amazon Web Services Console](aws.amazon.com), or the `ekstl` CLI for EKS.
 
-- The `lightbend` namespace
-The installer creates a namespace called `lightbend` where all supporting components are installed.
+- The `cloudflow` namespace
+The installer creates a namespace called `cloudflow` where all supporting components are installed.
 This restriction will be removed in the future.
