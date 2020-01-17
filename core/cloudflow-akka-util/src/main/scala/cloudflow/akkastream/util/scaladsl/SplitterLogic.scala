@@ -50,8 +50,8 @@ object Splitter {
 
         // format: OFF
         toEitherFlow ~> partitioner.in
-                              partitioner.out0 ~> il
-                              partitioner.out1 ~> ir
+                        partitioner.out0 ~> il
+                        partitioner.out1 ~> ir
       // format: ON
 
       SinkShape(toEitherFlow.in)
