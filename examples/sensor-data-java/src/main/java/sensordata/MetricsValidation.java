@@ -44,7 +44,7 @@ public class MetricsValidation extends AkkaStreamlet {
   public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
       public RunnableGraph createRunnableGraph() {
-        return getSourceWithOffsetContext(inlet).to(Splitter.<Metric, InvalidMetric, Metric>sink(createFlow(), invalidOutlet, validOutlet, getContext()));
+        return getSourceWithCommittableContext(inlet).to(Splitter.sink(createFlow(), invalidOutlet, validOutlet, getContext()));
       }
     };
   }
