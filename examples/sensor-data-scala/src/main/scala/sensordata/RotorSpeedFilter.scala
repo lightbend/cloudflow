@@ -27,7 +27,7 @@ class RotorSpeedFilter extends AkkaStreamlet {
   val shape = StreamletShape(in, out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(sinkWithOffsetContext(out))
-    def flow = FlowWithOffsetContext[Metric].filter(_.name == "rotorSpeed")
+    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
+    def flow = FlowWithCommittableContext[Metric].filter(_.name == "rotorSpeed")
   }
 }
