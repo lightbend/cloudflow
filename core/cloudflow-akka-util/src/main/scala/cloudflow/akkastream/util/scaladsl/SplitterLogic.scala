@@ -31,7 +31,7 @@ import cloudflow.akkastream.scaladsl._
  */
 object Splitter {
   /**
-   * A Graph that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Graph that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    */
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
@@ -59,7 +59,7 @@ object Splitter {
   }
 
   /**
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
@@ -69,7 +69,7 @@ object Splitter {
   ): Sink[(I, Committable), NotUsed] = Sink.fromGraph(graph(flow, left, right))
 
   /**
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
@@ -82,7 +82,7 @@ object Splitter {
   }
 
   /**
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](

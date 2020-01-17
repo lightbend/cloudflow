@@ -32,7 +32,7 @@ import cloudflow.streamlets._
 object Merger {
   /**
    * Java API
-   * Merges two or more sources into one Source.
+   * Merges two or more sources into one source.
    * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all sources.
    */
@@ -43,7 +43,7 @@ object Merger {
 
   /**
    * Java API
-   * Merges two or more inlets into one Source.
+   * Merges two or more inlets into one source.
    * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all inlets.
    */

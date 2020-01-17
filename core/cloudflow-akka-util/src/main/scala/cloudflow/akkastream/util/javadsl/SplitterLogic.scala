@@ -35,7 +35,7 @@ import cloudflow.streamlets._
 object Splitter {
   /**
    * Java API
-   * A Graph that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * Creates a graph that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def graph[I, L, R](
@@ -50,7 +50,7 @@ object Splitter {
     )
   /**
    * Java API
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
@@ -66,7 +66,7 @@ object Splitter {
 
   /**
    * Java API
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
@@ -85,7 +85,7 @@ object Splitter {
 
   /**
    * Java API
-   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
