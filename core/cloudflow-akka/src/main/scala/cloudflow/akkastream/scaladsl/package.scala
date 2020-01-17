@@ -25,7 +25,7 @@ package object scaladsl {
   type FlowWithOffsetContext[-In, +Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
   type FlowWithCommittableContext[-In, +Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
 
-  type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, NotUsed]
+  type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
 
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   object FlowWithOffsetContext {

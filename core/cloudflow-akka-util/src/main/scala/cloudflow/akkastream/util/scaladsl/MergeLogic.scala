@@ -19,6 +19,7 @@ package cloudflow.akkastream.util.scaladsl
 import scala.collection.immutable
 
 import akka.NotUsed
+
 import akka.stream._
 import akka.stream.ClosedShape
 import akka.stream.scaladsl._
@@ -30,7 +31,7 @@ import akka.kafka.ConsumerMessage._
 
 object Merger {
   def graph[T](
-      sources: List[SourceWithOffsetContext[T]]
+      sources: Seq[SourceWithOffsetContext[T]]
   ): Graph[SourceShape[(T, CommittableOffset)], NotUsed] =
     GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
       import GraphDSL.Implicits._
@@ -40,9 +41,15 @@ object Merger {
     }
 
   def source[T](
-      sources: List[SourceWithOffsetContext[T]]
+      sources: Seq[SourceWithOffsetContext[T]]
   ): SourceWithOffsetContext[T] = {
     Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
+  }
+
+  def source[T](
+      inlets: Seq[CodecInlet[T]]
+  )(implicit context: AkkaStreamletContext): SourceWithOffsetContext[T] = {
+    Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
   }
 }
 

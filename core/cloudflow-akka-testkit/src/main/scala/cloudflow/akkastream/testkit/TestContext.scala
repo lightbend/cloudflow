@@ -98,7 +98,7 @@ private[testkit] case class TestContext(
   def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] = sourceWithOffsetContext[T](inlet).asSource.map(_._1)
+  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] = sourceWithOffsetContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒ (el, TestCommittableOffset()) }
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
     new WritableSinkRef[T] {

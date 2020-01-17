@@ -28,9 +28,9 @@ import org.scalatest.concurrent._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
+import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testdata._
 import cloudflow.akkastream.testkit.scaladsl._
-
 class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("MergeSpec")
@@ -124,7 +124,11 @@ class ScalaTestMerge(inletCount: Int) extends TestMerge {
    * The streamlet logic for a `Merge` is fixed and merges inlet elements in the order they become
    * available to the streamlet.
    */
-  override final def createLogic = new MergeLogic(inletPorts, outlet)
+  override final def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = {
+      Merger.source(inletPorts).to(committableSink(outlet))
+    }
+  }
 }
 
 class JavaTestMerge(inletCount: Int) extends TestMerge {
@@ -140,5 +144,9 @@ class JavaTestMerge(inletCount: Int) extends TestMerge {
    * The streamlet logic for a `Merge` is fixed and merges inlet elements in the order they become
    * available to the streamlet.
    */
-  override final def createLogic = new cloudflow.akkastream.util.javadsl.MergeLogic(inletPorts.asJava, outlet, getContext())
+  override final def createLogic = new cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic(context) {
+    def createRunnableGraph = {
+      cloudflow.akkastream.util.javadsl.Merger.source(inletPorts.asJava, context).to(getCommittableSink(outlet))
+    }
+  }
 }

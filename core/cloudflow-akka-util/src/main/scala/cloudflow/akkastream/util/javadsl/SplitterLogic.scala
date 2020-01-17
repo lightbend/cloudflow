@@ -17,6 +17,7 @@
 package cloudflow.akkastream.util.javadsl
 
 import akka.NotUsed
+import akka.japi.Pair
 import akka.stream._
 import akka.stream.javadsl._
 import akka.kafka.ConsumerMessage._
@@ -29,15 +30,25 @@ import cloudflow.streamlets._
 object Splitter {
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
-      left: Sink[(L, Committable), NotUsed],
-      right: Sink[(R, Committable), NotUsed]
-  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] = akkastream.util.scaladsl.Splitter.graph[I, L, R](flow.asScala, left.asScala, right.asScala)
+      left: Sink[Pair[L, Committable], NotUsed],
+      right: Sink[Pair[R, Committable], NotUsed]
+  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
+    akkastream.util.scaladsl.Splitter.graph[I, L, R](
+      flow.asScala,
+      left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
+      right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
+    )
 
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
-      left: Sink[(L, Committable), NotUsed],
-      right: Sink[(R, Committable), NotUsed]
-  ): Sink[(I, Committable), NotUsed] = akkastream.util.scaladsl.Splitter.sink[I, L, R](flow.asScala, left.asScala, right.asScala).asJava
+      left: Sink[Pair[L, Committable], NotUsed],
+      right: Sink[Pair[R, Committable], NotUsed]
+  ): Sink[(I, Committable), NotUsed] =
+    akkastream.util.scaladsl.Splitter.sink[I, L, R](
+      flow.asScala,
+      left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
+      right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
+    ).asJava
 }
 
 @deprecated("Use `Splitter.sink` instead.", "1.3.1")
