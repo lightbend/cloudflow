@@ -19,7 +19,8 @@ package carly.ingestor
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets.StreamletShape
 import cloudflow.akkastream.AkkaStreamlet
-import cloudflow.akkastream.util.scaladsl.SplitterLogic
+import cloudflow.akkastream.scaladsl._
+import cloudflow.akkastream.util.scaladsl.Splitter
 
 import carly.data._
 
@@ -32,9 +33,12 @@ class CallRecordValidation extends AkkaStreamlet {
   val right = AvroOutlet[CallRecord]("valid", _.user)
 
   final override val shape = StreamletShape(in).withOutlets(left, right)
-  final override def createLogic = new SplitterLogic(in, left, right) {
+  final override def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = {
+      sourceWithOffsetContext(in).to(Splitter.sink(flow, left, right))
+    }
     def flow =
-      flowWithOffsetContext()
+      FlowWithCommittableContext[CallRecord]
         .map { record ⇒
           if (record.timestamp < oldDataWatermark) Left(InvalidRecord(record.toString, "Timestamp outside range!"))
           else Right(record)
