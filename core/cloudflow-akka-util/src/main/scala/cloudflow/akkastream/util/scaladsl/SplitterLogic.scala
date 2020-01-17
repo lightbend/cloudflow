@@ -25,9 +25,42 @@ import cloudflow.streamlets._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 
+object Splitter {
+  def graph[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      left: Sink[(L, Committable), NotUsed],
+      right: Sink[(R, Committable), NotUsed]
+  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] = {
+    GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
+      import GraphDSL.Implicits._
+
+      val toEitherFlow = builder.add(flow.asFlow)
+      val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
+        case (Left(e), offset)  ⇒ Left((e, offset))
+        case (Right(e), offset) ⇒ Right((e, offset))
+      }
+      val partitioner = builder.add(partitionWith)
+
+        // format: OFF
+        toEitherFlow ~> partitioner.in
+                              partitioner.out0 ~> il
+                              partitioner.out1 ~> ir
+      // format: ON
+
+      SinkShape(toEitherFlow.in)
+    }
+  }
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      left: Sink[(L, Committable), NotUsed],
+      right: Sink[(R, Committable), NotUsed]
+  ): Sink[(I, Committable), NotUsed] = Sink.fromGraph(graph(flow, left, right))
+}
+
 /**
  * A StreamletLogic that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
  */
+@deprecated("Use `Splitter.sink` instead.", "1.3.1")
 abstract class SplitterLogic[I, L, R](
     inlet: CodecInlet[I],
     leftOutlet: CodecOutlet[L],
@@ -37,8 +70,10 @@ abstract class SplitterLogic[I, L, R](
    * Defines the flow that receives elements from the inlet.
    * The offset associated with every output element is automatically committed using at-least-once semantics.
    */
+  @deprecated("Use `Splitter.sink` instead.", "1.3.1")
   def flow: FlowWithOffsetContext[I, Either[L, R]]
 
+  @deprecated("Use `Splitter.sink` instead.", "1.3.1")
   final def flowWithOffsetContext() = FlowWithOffsetContext[I]
 
   /**

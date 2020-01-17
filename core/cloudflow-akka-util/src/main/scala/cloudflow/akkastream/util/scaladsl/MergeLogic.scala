@@ -19,6 +19,7 @@ package cloudflow.akkastream.util.scaladsl
 import scala.collection.immutable
 
 import akka.NotUsed
+import akka.stream._
 import akka.stream.ClosedShape
 import akka.stream.scaladsl._
 
@@ -27,17 +28,35 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 import akka.kafka.ConsumerMessage._
 
+object Merger {
+  def graph[T](
+      sources: List[SourceWithOffsetContext[T]]
+  ): Graph[SourceShape[(T, CommittableOffset)], NotUsed] =
+    GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
+      import GraphDSL.Implicits._
+      val merge = builder.add(Merge[(T, CommittableOffset)](sources.size))
+      sources.foreach(inlet ⇒ inlet ~> merge)
+      SourceShape[(T, CommittableOffset)](merge.out)
+    }
+
+  def source[T](
+      sources: List[SourceWithOffsetContext[T]]
+  ): SourceWithOffsetContext[T] = {
+    Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
+  }
+}
+
 /**
  * A `MergeLogic` merges two or more inlets into one outlet.
  * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
  * in semi-random order and with equal priority for all inlets.
  */
+@deprecated("Use `Merger.source` instead.", "1.3.1")
 class MergeLogic[T](
     inletPorts: immutable.IndexedSeq[CodecInlet[T]],
     outlet: CodecOutlet[T]
 )(implicit context: AkkaStreamletContext) extends RunnableGraphStreamletLogic {
   require(inletPorts.size >= 2)
-  final def flowWithCommittableOffset() = FlowWithOffsetContext[T]
 
   /**
    * The graph is built from input elements using at-least-once processing semantics
@@ -49,10 +68,8 @@ class MergeLogic[T](
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
       import GraphDSL.Implicits._
-      val merge = builder.add(Merge[(T, CommittableOffset)](inletPorts.size))
-      val head :: tail = inlets
-      head ~> merge ~> out
-      tail.foreach(inlet ⇒ inlet ~> merge)
+      val merge = builder.add(Merger.graph(inlets))
+      merge ~> out
       ClosedShape
     })
   }
