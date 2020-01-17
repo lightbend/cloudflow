@@ -16,7 +16,7 @@
 
 # Usage:
 # create-cluster-eks.sh [CLUSTER_NAME] [AWS_DEFAULT_REGION]
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
   echo "Not enough arguments supplied"
   echo "Usage: create-cluster-eks.sh [CLUSTER_NAME] [AWS_DEFAULT_REGION]"
   exit 1
@@ -79,7 +79,7 @@ SECURITY_GROUP_IDS="$(aws eks describe-cluster --name "$CLUSTER_NAME" | jq -r '.
 echo "Security group id's: $SECURITY_GROUP_IDS"
 
 CLUSTER_SECURITY_GROUP_ID="$(aws eks describe-cluster --name "$CLUSTER_NAME" | jq -r '.cluster.resourcesVpcConfig.clusterSecurityGroupId')"
-echo "Cluster security group id: $CLUSTER_SECURITY_GROUP_ID"
+echo "Cluster security group id: ${CLUSTER_SECURITY_GROUP_ID:-'not found'}"
 
 # Mount EFS targets (one for each zone)
 for zone_value in $ZONE_1 $ZONE_2 $ZONE_3; do
@@ -90,8 +90,9 @@ for zone_value in $ZONE_1 $ZONE_2 $ZONE_3; do
   SUBNET_ID="$(aws ec2 describe-subnets --filters Name=tag:Name,Values="eksctl-$CLUSTER_NAME-cluster/SubnetPublic$AWS_REGION_NO_HYPENS$ZONE" --output json | jq -r '.Subnets | .[].SubnetId')"
   echo "Subnet id: $SUBNET_ID"
 
+  # shellcheck disable=SC2086
   aws efs create-mount-target \
     --file-system-id "$FILE_SYSTEM_ID" \
     --subnet-id "$SUBNET_ID" \
-    --security-groups "$SECURITY_GROUP_IDS" "$CLUSTER_SECURITY_GROUP_ID"
+    --security-groups "$SECURITY_GROUP_IDS" ${CLUSTER_SECURITY_GROUP_ID:-}
 done

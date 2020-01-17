@@ -51,6 +51,12 @@ $ ./install.sh <cluster-name> eks
 ```
 Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 
+#### EFS integration with EKS
+
+Some extra considerations needs are needed when integrating EFS with EKS. Please make sure the user launching the
+launching cluster satisfies the security groups requirements explained
+[here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html).
+
 ## Uninstall Procedure
 
 In case of a failed installation, or if you simply want to uninstall entirely, run `./uninstall-cloudflow.sh`.
