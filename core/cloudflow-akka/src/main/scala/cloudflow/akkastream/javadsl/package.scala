@@ -33,7 +33,7 @@ package object javadsl {
   /**
    * Java API
    */
-  type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
+  type SourceWithOffsetContext[+T] = SourceWithContext[T, CommittableOffset, _]
 }
 
 package javadsl {

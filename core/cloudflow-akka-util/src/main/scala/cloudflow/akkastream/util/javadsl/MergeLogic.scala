@@ -27,14 +27,14 @@ import cloudflow.streamlets._
 
 object Merger {
   def source[T](
-      sources: java.util.List[cloudflow.akkastream.javadsl.SourceWithOffsetContext[T]]
-  ): cloudflow.akkastream.javadsl.SourceWithOffsetContext[T] =
+      sources: java.util.List[akka.stream.javadsl.SourceWithContext[T, Committable, _]]
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(sources.asScala.map(_.asScala)).asJava
 
   def source[T](
       inlets: java.util.List[CodecInlet[T]],
       context: AkkaStreamletContext
-  ): cloudflow.akkastream.javadsl.SourceWithOffsetContext[T] =
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlets.asScala)(context).asJava
 }
 

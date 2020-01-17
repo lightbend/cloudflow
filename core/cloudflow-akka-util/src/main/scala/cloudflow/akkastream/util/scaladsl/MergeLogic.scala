@@ -31,24 +31,24 @@ import akka.kafka.ConsumerMessage._
 
 object Merger {
   def graph[T](
-      sources: Seq[SourceWithOffsetContext[T]]
-  ): Graph[SourceShape[(T, CommittableOffset)], NotUsed] =
+      sources: Seq[SourceWithContext[T, Committable, _]]
+  ): Graph[SourceShape[(T, Committable)], NotUsed] =
     GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
       import GraphDSL.Implicits._
-      val merge = builder.add(Merge[(T, CommittableOffset)](sources.size))
+      val merge = builder.add(Merge[(T, Committable)](sources.size))
       sources.foreach(inlet ⇒ inlet ~> merge)
-      SourceShape[(T, CommittableOffset)](merge.out)
+      SourceShape[(T, Committable)](merge.out)
     }
 
   def source[T](
-      sources: Seq[SourceWithOffsetContext[T]]
-  ): SourceWithOffsetContext[T] = {
+      sources: Seq[SourceWithContext[T, Committable, _]]
+  ): SourceWithContext[T, Committable, _] = {
     Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
   }
 
   def source[T](
       inlets: Seq[CodecInlet[T]]
-  )(implicit context: AkkaStreamletContext): SourceWithOffsetContext[T] = {
+  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {
     Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
   }
 }
