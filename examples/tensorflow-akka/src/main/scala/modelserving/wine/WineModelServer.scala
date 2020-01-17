@@ -17,7 +17,7 @@
 package modelserving.wine
 
 import cloudflow.akkastream.AkkaStreamlet
-import cloudflow.akkastream.scaladsl.{ FlowWithOffsetContext, RunnableGraphStreamletLogic }
+import cloudflow.akkastream.scaladsl.{ FlowWithCommittableContext, RunnableGraphStreamletLogic }
 import cloudflow.streamlets.avro.{ AvroInlet, AvroOutlet }
 import cloudflow.streamlets.{ ReadWriteMany, StreamletShape, StringConfigParameter, VolumeMount }
 
@@ -56,12 +56,12 @@ final class WineModelServer extends AkkaStreamlet {
     val modelScoringFlow = WineModelBundle.load(savedModelBundlePath, modelName).fold(
       e ⇒ {
         log.error(s"Could not load model from $savedModelBundlePath.", e)
-        FlowWithOffsetContext[WineRecord]
+        FlowWithCommittableContext[WineRecord]
           .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}")))
       },
       model ⇒ {
         log.info(s"Loaded model from $savedModelBundlePath.")
-        FlowWithOffsetContext[WineRecord]
+        FlowWithCommittableContext[WineRecord]
           .map(record ⇒ model.scoreWine(record))
       }
     )
@@ -69,7 +69,7 @@ final class WineModelServer extends AkkaStreamlet {
     def runnableGraph() = {
       sourceWithOffsetContext(in)
         .via(modelScoringFlow)
-        .to(sinkWithOffsetContext(out))
+        .to(committableSink(out))
     }
   }
 }
