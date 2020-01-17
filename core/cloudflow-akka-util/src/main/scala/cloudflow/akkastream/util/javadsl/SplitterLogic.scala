@@ -39,12 +39,12 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def graph[I, L, R](
-      flow: FlowWithCommittableContext[I, Either[L, R]],
+      flow: FlowWithCommittableContext[I, JEither[L, R]],
       left: Sink[Pair[L, Committable], NotUsed],
       right: Sink[Pair[R, Committable], NotUsed]
   ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
     akkastream.util.scaladsl.Splitter.graph[I, L, R](
-      flow.asScala,
+      flow.via(toEitherFlow).asScala,
       left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
       right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
     )
@@ -54,12 +54,12 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, Either[L, R]],
+      flow: FlowWithCommittableContext[I, JEither[L, R]],
       left: Sink[Pair[L, Committable], NotUsed],
       right: Sink[Pair[R, Committable], NotUsed]
   ): Sink[(I, Committable), NotUsed] =
     akkastream.util.scaladsl.Splitter.sink[I, L, R](
-      flow.asScala,
+      flow.via(toEitherFlow).asScala,
       left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
       right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
     ).asJava
@@ -70,7 +70,7 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, Either[L, R]],
+      flow: FlowWithCommittableContext[I, JEither[L, R]],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       committerSettings: CommitterSettings,
@@ -89,13 +89,15 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, Either[L, R]],
+      flow: FlowWithCommittableContext[I, JEither[L, R]],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       context: AkkaStreamletContext
   ): Sink[(I, Committable), NotUsed] = {
     sink[I, L, R](flow, leftOutlet, rightOutlet, CommitterSettings(context.system), context)
   }
+
+  private def toEitherFlow[L, R] = FlowWithContext.create[JEither[L, R], Committable]().map(jEither ⇒ if (jEither.isRight) Right(jEither.get()) else Left(jEither.getLeft()))
 }
 
 @deprecated("Use `Splitter.sink` instead.", "1.3.1")
