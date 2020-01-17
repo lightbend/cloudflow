@@ -55,7 +55,7 @@ class FarePerRideLogger extends AkkaStreamlet {
     }
 
     def flow = {
-      FlowWithOffsetContext[TaxiRideFare]
+      FlowWithCommittableContext[TaxiRideFare]
         .map { taxiRideFare ⇒
           log(taxiRideFare)
           taxiRideFare
@@ -65,6 +65,6 @@ class FarePerRideLogger extends AkkaStreamlet {
     def runnableGraph =
       sourceWithOffsetContext(inlet)
         .via(flow)
-        .to(sinkWithOffsetContext)
+        .to(committableSink)
   }
 }
