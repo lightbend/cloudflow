@@ -36,7 +36,7 @@ To install Cloudflow on GKE it is a straightforward process:
 # create a GKE cluster with name <cluster-name>
 $ ./create-cluster-gke.sh <cluster-name>
 # install Cloudflow in the GKE cluster
-$ ./install.sh gke
+$ ./install.sh <cluster-name> gke
 ```
 Replace above `<cluster-name>` with the preferred name for your GKE cluster.
 
@@ -47,7 +47,7 @@ Similarly, to install Cloudflow on EKS follow this process:
 # create an EKS cluster with name <cluster-name>
 $ ./create-cluster-eks.sh <cluster-name> <aws-region>
 # install Cloudflow in the EKS cluster
-$ ./install.sh eks
+$ ./install.sh <cluster-name> eks
 ```
 Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 

@@ -14,16 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Usage: install-cloudflow.sh [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]
+# Usage: install-cloudflow.sh [CLUSTER_NAME] [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]
 if [ $# -ne 2 ]; then
   echo "Not enough arguments supplied"
-  echo "Usage: install-cloudflow.sh [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]"
+  echo "Usage: install-cloudflow.sh [CLUSTER_NAME] [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]"
   exit 1
 fi
 
 # The Namespace to install all our charts in
-NAMESPACE=$1
-CLUSTER_TYPE=$2
+CLUSTER_NAME=$1
+NAMESPACE=$2
+CLUSTER_TYPE=$3
 
 currentDirectory=$(dirname "$0")
 
@@ -53,7 +54,7 @@ case $CLUSTER_TYPE in
     kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user "$(aws iam get-user | jq -r '.User.UserName')" >/dev/null
 
     echo "Installing EFS Provisioner"
-    file_system_id="$(aws efs describe-file-systems --query "FileSystems[?Name=='$NAMESPACE'].FileSystemId" --output json | jq -r '.[]')"
+    file_system_id="$(aws efs describe-file-systems --query "FileSystems[?Name=='$CLUSTER_NAME'].FileSystemId" --output json | jq -r '.[]')"
     result=$(install_efs_provisioner "$NAMESPACE" "$file_system_id" "$AWS_DEFAULT_REGION")
     if [ $? -ne 0 ]; then
       print_error_message "$result"

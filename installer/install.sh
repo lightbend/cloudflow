@@ -22,8 +22,9 @@
 
 . common/cloudflow-chart-version.sh
 
-export CLUSTER_TYPE=$1
-export CLOUDFLOW_NAMESPACE="cloudflow"
+CLOUDFLOW_NAMESPACE="cloudflow"
+CLUSTER_NAME=$1
+CLUSTER_TYPE=$2
 
 case $CLUSTER_TYPE in
  gke)
@@ -66,10 +67,11 @@ helm repo update > /dev/null 2>&1
 
 # Install Cloudflow
 echo "Installing Cloudflow $CLOUDFLOW_CHART_VERSION"
+echo " - cluster: $CLUSTER_NAME"
 echo " - namespace: $CLOUDFLOW_NAMESPACE"
 
 #######################3
 ## Check OK until here
 #######################3
 
-common/install-cloudflow.sh "$CLOUDFLOW_NAMESPACE" "$CLUSTER_TYPE"
+common/install-cloudflow.sh "$CLUSTER_NAME" "$CLOUDFLOW_NAMESPACE" "$CLUSTER_TYPE"
