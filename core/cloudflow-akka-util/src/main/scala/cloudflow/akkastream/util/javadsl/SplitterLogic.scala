@@ -18,6 +18,7 @@ package cloudflow.akkastream.util.javadsl
 
 import akka.NotUsed
 import akka.japi.Pair
+import akka.kafka._
 import akka.stream._
 import akka.stream.javadsl._
 import akka.kafka.ConsumerMessage._
@@ -27,7 +28,16 @@ import cloudflow.akkastream.javadsl._
 import cloudflow.akkastream.javadsl.util.{ Either ⇒ JEither }
 import cloudflow.streamlets._
 
+/**
+ * Java API
+ * Provides functions to split elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+ */
 object Splitter {
+  /**
+   * Java API
+   * A Graph that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[Pair[L, Committable], NotUsed],
@@ -38,7 +48,11 @@ object Splitter {
       left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
       right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
     )
-
+  /**
+   * Java API
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[Pair[L, Committable], NotUsed],
@@ -49,6 +63,39 @@ object Splitter {
       left.contramap[Tuple2[L, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala,
       right.contramap[Tuple2[R, Committable]] { case (t, c) ⇒ new Pair(t, c) }.asScala
     ).asJava
+
+  /**
+   * Java API
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R],
+      committerSettings: CommitterSettings,
+      context: AkkaStreamletContext
+  ): Sink[(I, Committable), NotUsed] = {
+    sink[I, L, R](
+      flow,
+      context.committableSink(leftOutlet, committerSettings).asJava.contramap[Pair[L, Committable]] { pair ⇒ (pair.first, pair.second) },
+      context.committableSink(rightOutlet, committerSettings).asJava.contramap[Pair[R, Committable]] { pair ⇒ (pair.first, pair.second) }
+    )
+  }
+
+  /**
+   * Java API
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R],
+      context: AkkaStreamletContext
+  ): Sink[(I, Committable), NotUsed] = {
+    sink[I, L, R](flow, leftOutlet, rightOutlet, CommitterSettings(context.system), context)
+  }
 }
 
 @deprecated("Use `Splitter.sink` instead.", "1.3.1")

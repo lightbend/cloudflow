@@ -29,7 +29,15 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 import akka.kafka.ConsumerMessage._
 
+/**
+ * Merges two or more sources, or inlets, of the same type, into one source.
+ */
 object Merger {
+  /**
+   * Creates Source Graph to merge two or more sources into one source.
+   * Elements from all sources will be processed with at-least-once semantics. The elements will be processed
+   * in semi-random order and with equal priority for all sources.
+   */
   def graph[T](
       sources: Seq[SourceWithContext[T, Committable, _]]
   ): Graph[SourceShape[(T, Committable)], NotUsed] =
@@ -40,12 +48,22 @@ object Merger {
       SourceShape[(T, Committable)](merge.out)
     }
 
+  /**
+   * Merges two or more sources into one Source.
+   * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
+   * in semi-random order and with equal priority for all sources.
+   */
   def source[T](
       sources: Seq[SourceWithContext[T, Committable, _]]
   ): SourceWithContext[T, Committable, _] = {
     Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
   }
 
+  /**
+   * Merges two or more inlets into one Source.
+   * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
+   * in semi-random order and with equal priority for all inlets.
+   */
   def source[T](
       inlets: Seq[CodecInlet[T]]
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {

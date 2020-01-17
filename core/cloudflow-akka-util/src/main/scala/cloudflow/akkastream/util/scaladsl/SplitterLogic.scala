@@ -17,6 +17,7 @@
 package cloudflow.akkastream.util.scaladsl
 
 import akka._
+import akka.kafka._
 import akka.stream._
 import akka.stream.contrib._
 import akka.stream.scaladsl._
@@ -25,7 +26,13 @@ import cloudflow.streamlets._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 
+/**
+ * Provides functions to split elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+ */
 object Splitter {
+  /**
+   * A Graph that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   */
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
@@ -50,11 +57,42 @@ object Splitter {
       SinkShape(toEitherFlow.in)
     }
   }
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
       right: Sink[(R, Committable), NotUsed]
   ): Sink[(I, Committable), NotUsed] = Sink.fromGraph(graph(flow, left, right))
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R]
+  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+    val defaultSettings = CommitterSettings(context.system)
+    sink[I, L, R](flow, context.committableSink(leftOutlet, defaultSettings), context.committableSink(rightOutlet, defaultSettings))
+  }
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R],
+      committerSettings: CommitterSettings
+  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+    sink[I, L, R](flow, context.committableSink(leftOutlet, committerSettings), context.committableSink(rightOutlet, committerSettings))
+  }
 }
 
 /**

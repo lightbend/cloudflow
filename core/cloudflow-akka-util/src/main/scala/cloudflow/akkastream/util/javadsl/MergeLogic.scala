@@ -25,12 +25,28 @@ import cloudflow._
 import cloudflow.akkastream._
 import cloudflow.streamlets._
 
+/**
+ * Java API
+ * Merges two or more sources, or inlets, of the same type, into one source.
+ */
 object Merger {
+  /**
+   * Java API
+   * Merges two or more sources into one Source.
+   * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
+   * in semi-random order and with equal priority for all sources.
+   */
   def source[T](
       sources: java.util.List[akka.stream.javadsl.SourceWithContext[T, Committable, _]]
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(sources.asScala.map(_.asScala)).asJava
 
+  /**
+   * Java API
+   * Merges two or more inlets into one Source.
+   * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
+   * in semi-random order and with equal priority for all inlets.
+   */
   def source[T](
       inlets: java.util.List[CodecInlet[T]],
       context: AkkaStreamletContext
@@ -39,6 +55,7 @@ object Merger {
 }
 
 /**
+ * Java API
  * A `MergeLogic` merges two or more inlets into one outlet.
  * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
  * in semi-random order and with equal priority for all inlets.
