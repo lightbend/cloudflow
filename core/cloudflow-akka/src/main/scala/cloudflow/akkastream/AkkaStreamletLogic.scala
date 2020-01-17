@@ -118,6 +118,11 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): javadsl.SourceWithOffsetContext[T] = sourceWithOffsetContext(inlet).asJava
 
   /**
+   * Java API
+   */
+  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] = getSourceWithOffsetContext(inlet)
+
+  /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
    *
    * It has no support for committing offsets to Kafka.
