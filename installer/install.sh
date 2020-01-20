@@ -20,8 +20,6 @@
 #Check env preconditions to execute the installation (should always pass on docker!)
 . common/requirements.sh
 
-. common/cloudflow-chart-version.sh
-
 CLOUDFLOW_NAMESPACE="cloudflow"
 CLUSTER_NAME=$1
 CLUSTER_TYPE=$2
@@ -66,7 +64,7 @@ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ > /dev/nu
 helm repo update > /dev/null 2>&1
 
 # Install Cloudflow
-echo "Installing Cloudflow $CLOUDFLOW_CHART_VERSION"
+echo "Installing Cloudflow 
 echo " - cluster: $CLUSTER_NAME"
 echo " - namespace: $CLOUDFLOW_NAMESPACE"
 
