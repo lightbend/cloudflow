@@ -46,7 +46,7 @@ export KAFKA="${KAFKA:-CloudflowManaged}"
 
 # Flink
 export flinkReleaseName="cloudflow-flink"
-export flinkOperatorChartVersion="0.7.1"
+export flinkOperatorChartVersion="0.8.0"
 export flinkOperatorNamespace=""
 export installFlinkOperator=false
 
