@@ -89,10 +89,6 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 	for i := range spec.Deployments {
 		spec.Deployments[i].Image = imageRef
 	}
-	// replace tagged images with digest based names
-	for i := range spec.Streamlets {
-		spec.Streamlets[i].Descriptor.DockerImage = imageRef
-	}
 	return spec, *pulledImage
 }
 

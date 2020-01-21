@@ -49,9 +49,10 @@ class CloudflowApplicationSpec extends WordSpec
 
       val appId = "def-jux-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
       val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val cr = CloudflowApplication(newApp)
       val customResource = Json.fromJson[CloudflowApplication.CR](Json.toJson(cr)).asEither.right.value
       customResource.spec mustBe cr.spec

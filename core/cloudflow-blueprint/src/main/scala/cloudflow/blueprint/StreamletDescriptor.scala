@@ -23,7 +23,6 @@ object StreamletDescriptor {
 }
 
 final case class StreamletDescriptor(
-    projectId: String,
     className: String,
     runtime: StreamletRuntimeDescriptor,
     labels: immutable.IndexedSeq[String],
@@ -32,7 +31,6 @@ final case class StreamletDescriptor(
     outlets: immutable.IndexedSeq[OutletDescriptor],
     configParameters: immutable.IndexedSeq[ConfigParameterDescriptor],
     attributes: immutable.IndexedSeq[StreamletAttributeDescriptor] = Vector.empty,
-    image: String,
     volumeMounts: immutable.IndexedSeq[VolumeMountDescriptor]
 ) {
   def isIngress: Boolean = inlets.isEmpty && outlets.nonEmpty

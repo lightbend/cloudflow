@@ -54,6 +54,7 @@ object ApplicationDescriptor {
   def apply(
       appId: String,
       appVersion: String,
+      image: String,
       streamlets: Vector[StreamletInstance],
       connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
@@ -64,7 +65,7 @@ object ApplicationDescriptor {
       appVersion,
       streamlets,
       connections,
-      deployments,
+      deployments.map(deployment ⇒ deployment.copy(image = image)),
       agentPaths,
       Version,
       LibraryVersion
@@ -74,6 +75,7 @@ object ApplicationDescriptor {
   def apply(
       appId: String,
       appVersion: String,
+      image: String,
       blueprint: VerifiedBlueprint,
       agentPaths: Map[String, String]): ApplicationDescriptor = {
 
@@ -85,7 +87,7 @@ object ApplicationDescriptor {
         .zipWithIndex
         .map {
           case (streamlet, index) ⇒
-            StreamletDeployment(sanitizedApplicationId, streamlet, index, connections)
+            StreamletDeployment(sanitizedApplicationId, streamlet, image, index, connections)
         }
 
     ApplicationDescriptor(sanitizedApplicationId, appVersion, namedStreamletDescriptors, connections, deployments, agentPaths, Version, LibraryVersion)
@@ -154,6 +156,7 @@ object StreamletDeployment {
   def apply(
       appId: String,
       streamlet: StreamletInstance,
+      image: String,
       index: Int,
       allConnections: Vector[Connection],
       replicas: Option[Int] = None): StreamletDeployment = {
@@ -161,7 +164,7 @@ object StreamletDeployment {
     StreamletDeployment(
       name(appId, streamlet.name),
       streamlet.descriptor.runtime.name,
-      streamlet.descriptor.image,
+      image,
       streamlet.name,
       streamlet.descriptor.className,
       endpoint,

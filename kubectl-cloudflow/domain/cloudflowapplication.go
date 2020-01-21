@@ -95,11 +95,9 @@ type Descriptor struct {
 	ClassName        string                      `json:"class_name"`
 	ConfigParameters []ConfigParameterDescriptor `json:"config_parameters"`
 	VolumeMounts     []VolumeMountDescriptor     `json:"volume_mounts"`
-	DockerImage      string                      `json:"image"`
 	Inlets           []InOutlet                  `json:"inlets"`
 	Labels           []string                    `json:"labels"`
 	Outlets          []InOutlet                  `json:"outlets"`
-	ProjectID        string                      `json:"project_id"`
 	Runtime          string                      `json:"runtime"`
 	Description      string                      `json:"description"`
 }

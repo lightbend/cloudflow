@@ -232,7 +232,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val streamletDescriptors: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
     val streamletInfo = streamletDescriptors.zipWithIndex.map {
       case (streamlet, idx) ⇒
-        val deployment = StreamletDeployment(appDescriptor.appId, streamlet, idx, appDescriptor.connections)
+        val deployment = StreamletDeployment(appDescriptor.appId, streamlet, "", idx, appDescriptor.connections)
         val serverPort: Option[Int] = if (deployment.config.hasPath(ServerAttribute.configPath)) {
           Some(ServerAttribute.containerPort(deployment.config))
         } else {

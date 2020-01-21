@@ -26,6 +26,7 @@ object CloudflowApplicationSpecBuilder {
   def create(
       appId: String,
       appVersion: String,
+      image: String,
       blueprint: VerifiedBlueprint,
       agentPaths: Map[String, String]): CloudflowApplication.Spec = {
 
@@ -37,7 +38,7 @@ object CloudflowApplicationSpecBuilder {
         .zipWithIndex
         .map {
           case (streamlet, index) ⇒
-            StreamletDeployment(sanitizedApplicationId, streamlet, index, connections)
+            StreamletDeployment(sanitizedApplicationId, streamlet, image, index, connections)
         }
 
     CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, connections, deployments, agentPaths)
