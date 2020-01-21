@@ -41,11 +41,15 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	version.FailOnProtocolVersionMismatch()
 
 	applicationName := args[0]
+
+	// TODO parse configFiles and validate them against descriptor (done in separate task)
+
 	for _, file := range c.configFiles {
 		if !deploy.FileExists(file) {
 			util.LogAndExit("configuration file %s passed with --conf does not exist", file)
 		}
 	}
+
 	cloudflowApplicationClient, err := k8s.GetCloudflowApplicationClient(applicationName)
 	if err != nil {
 		util.LogAndExit("Failed to create new client for Cloudflow application `%s`, %s", applicationName, err.Error())

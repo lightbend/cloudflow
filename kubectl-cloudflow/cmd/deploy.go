@@ -140,7 +140,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	configurationParameters = deploy.AppendDefaultValuesForMissingConfigurationValues(applicationSpec, configurationParameters)
 	configurationKeyValues, validationError := deploy.ValidateConfigurationAgainstDescriptor(applicationSpec, configurationParameters)
 
-	// TODO validate configuration files against descriptor (done in separate task)
+	// TODO parse configFiles and validate them against descriptor (done in separate task)
 
 	if validationError != nil {
 		util.LogAndExit("%s", validationError.Error())

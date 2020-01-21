@@ -32,6 +32,10 @@ const ProtocolVersionKey = "protocol-version"
 // ProtocolVersionConfigMapName is the name of the configmap that contains the protocol-version
 const ProtocolVersionConfigMapName = "cloudflow-protocol-version"
 
+// LegacyCloudflowNamespace is the old fixed namespace that Cloudflow can be installed in,
+// which is used if no protocol version configmap can be found with expected label.
+const LegacyCloudflowNamespace = "cloudflow"
+
 // GetProtocolVersionConfigMap Get the protocol version config map set by the operator
 func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
 	k8sClient, k8sErr := k8s.GetClient()
@@ -43,11 +47,19 @@ func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(
 		metav1.ListOptions{LabelSelector: labels.Set(labelSelector.MatchLabels).String()})
+
 	if err == nil {
 		if len(configMaps.Items) > 1 {
 			return nil, errors.New("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting")
 		}
-		return &configMaps.Items[0], nil
+		if len(configMaps.Items) > 0 {
+			return &configMaps.Items[0], nil
+		}
+		cm, err := k8sClient.CoreV1().ConfigMaps(LegacyCloudflowNamespace).Get(ProtocolVersionConfigMapName, metav1.GetOptions{})
+		if err == nil {
+			return cm, err
+		}
+		return nil, errors.New("No Cloudflow operator detected in the cluster. Exiting")
 	}
 	return cm, err
 }
