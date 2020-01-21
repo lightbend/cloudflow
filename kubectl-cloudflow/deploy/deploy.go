@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -290,21 +292,21 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 	case "int32":
 		_, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			return fmt.Errorf("Value `%s` is not a valid integer.", value)
+			return fmt.Errorf("value `%s` is not a valid integer", value)
 		}
 	case "double":
 		_, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return fmt.Errorf("Value `%s` is not a valid double.", value)
+			return fmt.Errorf("value `%s` is not a valid double", value)
 		}
 	case "string":
 		r, err := regexp.Compile(descriptor.Pattern)
 		if err != nil {
-			return fmt.Errorf("The regular expression pattern failed to compile: %s", err.Error())
+			return fmt.Errorf("the regular expression pattern failed to compile: %s", err.Error())
 		}
 
 		if !r.MatchString(value) {
-			return fmt.Errorf("Value `%s` does not match the regular expression `%s`.", value, descriptor.Pattern)
+			return fmt.Errorf("value `%s` does not match the regular expression `%s`", value, descriptor.Pattern)
 		}
 	case "duration":
 		if err := util.ValidateDuration(value); err != nil {
@@ -315,7 +317,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 			return err
 		}
 	default:
-		return fmt.Errorf("Encountered an unknown validation type `%s`. Please make sure that the CLI is up-to-date.", descriptor.Type)
+		return fmt.Errorf("encountered an unknown validation type `%s`. Please make sure that the CLI is up-to-date", descriptor.Type)
 	}
 
 	return nil
@@ -323,7 +325,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 
 // CreateSecretsData creates a map of streamlet names and K8s Secrets for those streamlets with configuration parameters,
 // the secrets contain a single key/value where the key is the name of the hocon configuration file
-func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]*corev1.Secret {
+func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string, configFiles []string) (map[string]*corev1.Secret, error) {
 	streamletSecretNameMap := make(map[string]*corev1.Secret)
 	for _, streamlet := range spec.Streamlets {
 		var str strings.Builder
@@ -331,12 +333,22 @@ func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyVa
 			fqKey := formatStreamletConfigKeyFq(streamlet.Name, descriptor.Key)
 			str.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", fqKey, configurationKeyValues[prefixWithStreamletName(streamlet.Name, descriptor.Key)]))
 		}
+		for _, configFile := range configFiles {
+			content, err := ioutil.ReadFile(configFile)
+			if err != nil {
+				err = fmt.Errorf("failed to read configuration file %s: %s", configFile, err.Error())
+				return make(map[string]*corev1.Secret), err
+			}
+			str.WriteString("\n")
+			str.WriteString(string(content))
+			str.WriteString("\n")
+		}
 		secretMap := make(map[string]string)
 		secretMap["secret.conf"] = str.String()
 		secretName := findSecretName(spec, streamlet.Name)
 		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
 	}
-	return streamletSecretNameMap
+	return streamletSecretNameMap, nil
 }
 
 func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string) string {
@@ -369,4 +381,13 @@ func prefixWithStreamletName(streamletName string, key string) string {
 
 func formatStreamletConfigKeyFq(streamletName string, key string) string {
 	return fmt.Sprintf("cloudflow.streamlets.%s", prefixWithStreamletName(streamletName, key))
+}
+
+// FileExists checks if a file exists and is not a directory.
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

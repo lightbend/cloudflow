@@ -78,7 +78,8 @@ func Test_CreateSecretsData(t *testing.T) {
 
 	properConfig := SplitConfigurationParameters(commandLineForConfiguration())
 
-	secrets := CreateSecretsData(&spec, properConfig)
+	secrets, err := CreateSecretsData(&spec, properConfig, []string{})
+	assert.Empty(t, err)
 
 	assert.NotEmpty(t, secrets)
 	assert.True(t, len(secrets["valid-logger"].Name) <= 63)

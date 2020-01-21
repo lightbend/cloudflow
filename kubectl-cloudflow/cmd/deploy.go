@@ -33,6 +33,7 @@ type deployOptions struct {
 	password      string
 	passwordStdin bool
 	volumeMounts  []string
+	configFiles   []string
 }
 
 func init() {
@@ -45,6 +46,8 @@ func init() {
 The arguments to the command consists of a docker image path and optionally one
 or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
 a space.
+
+Configuration files in HOCON format can be passed through with the --conf flag.
 
 Streamlet volume mounts can be configured using the --volume-mount flag.
 The flag accepts one or more key/value pair where the key is the name of the
@@ -89,6 +92,7 @@ You can update the credentials with the "update-docker-credentials" command.
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.password, "password", "p", "", "docker registry password.")
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin")
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
+	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.configFiles, "conf", []string{}, "Accepts one or more files in HOCON format.")
 
 	rootCmd.AddCommand(deployOpts.cmd)
 }
@@ -101,6 +105,12 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		util.LogAndExit("%s", err.Error())
+	}
+
+	for _, file := range opts.configFiles {
+		if !deploy.FileExists(file) {
+			util.LogAndExit("configuration file %s passed with --conf does not exist", file)
+		}
 	}
 
 	dockerRegistryURL := imageReference.registry
@@ -129,6 +139,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	configurationParameters = deploy.AppendExistingValuesNotConfigured(k8sClient, applicationSpec, configurationParameters)
 	configurationParameters = deploy.AppendDefaultValuesForMissingConfigurationValues(applicationSpec, configurationParameters)
 	configurationKeyValues, validationError := deploy.ValidateConfigurationAgainstDescriptor(applicationSpec, configurationParameters)
+
+	// TODO validate configuration files against descriptor (done in separate task)
 
 	if validationError != nil {
 		util.LogAndExit("%s", validationError.Error())
@@ -159,7 +171,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("%s", err)
 	}
 
-	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues)
+	streamletNameSecretMap, err := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues, opts.configFiles)
 	createStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
 	applicationSpec, err = copyReplicaConfigurationFromCurrentApplication(cloudflowApplicationClient, applicationSpec)

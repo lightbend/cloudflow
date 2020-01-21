@@ -14,7 +14,8 @@ import (
 )
 
 type configureApplicationCMD struct {
-	cmd *cobra.Command
+	cmd         *cobra.Command
+	configFiles []string
 }
 
 func init() {
@@ -32,6 +33,7 @@ kubectl cloudflow configure my-app`,
 		Run:  configureCMD.configureImpl,
 		Args: validateConfigureCMDArgs,
 	}
+	configureCMD.cmd.Flags().StringArrayVar(&configureCMD.configFiles, "conf", []string{}, "Accepts one or more files in HOCON format.")
 	rootCmd.AddCommand(configureCMD.cmd)
 }
 
@@ -39,7 +41,11 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	version.FailOnProtocolVersionMismatch()
 
 	applicationName := args[0]
-
+	for _, file := range c.configFiles {
+		if !deploy.FileExists(file) {
+			util.LogAndExit("configuration file %s passed with --conf does not exist", file)
+		}
+	}
 	cloudflowApplicationClient, err := k8s.GetCloudflowApplicationClient(applicationName)
 	if err != nil {
 		util.LogAndExit("Failed to create new client for Cloudflow application `%s`, %s", applicationName, err.Error())
@@ -65,7 +71,11 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		util.LogErrorAndExit(validationError)
 	}
 
-	streamletNameSecretMap := deploy.CreateSecretsData(&applicationCR.Spec, configurationKeyValues)
+	streamletNameSecretMap, err := deploy.CreateSecretsData(&applicationCR.Spec, configurationKeyValues, c.configFiles)
+	if err != nil {
+		util.LogAndExit(err.Error())
+	}
+
 	for streamletName, secret := range streamletNameSecretMap {
 		if _, err := k8sClient.CoreV1().Secrets(applicationName).Update(secret); err != nil {
 			util.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())
