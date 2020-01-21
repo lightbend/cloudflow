@@ -35,7 +35,7 @@ class Generator extends AkkaStreamlet {
 
   final override val shape = StreamletShape.withOutlets(faresOut, ridesOut)
   final override def createLogic = new AkkaStreamletLogic() {
-    val throttleElements = context.streamletConfig.getInt(Throttle.key)
+    val throttleElements = Throttle.value
     println(s"Throttling fares and rides to $throttleElements/s")
     override def run() = {
       val fares = readFares()

@@ -51,7 +51,7 @@ class DataInput extends AkkaStreamlet {
 
   // in `createLogic` we implement the business logic of this Streamlet
   override def createLogic() = new RunnableGraphStreamletLogic() {
-    val rate = getStreamletConfig.getInt(RateConf.key)
+    val rate = RateConf.value
     println(s"Producing elements at $rate/s")
     def runnableGraph = {
       val source = Source.repeat(NotUsed).map(_ => Data("id-" + Random.nextInt(9999), Random.nextDouble))

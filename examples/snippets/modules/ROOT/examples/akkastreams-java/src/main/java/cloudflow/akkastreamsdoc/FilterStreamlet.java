@@ -90,10 +90,10 @@ public class FilterStreamlet extends AkkaStreamlet {
 
             //tag::usage[]
             final Path filterFilenamePath = Paths.get(referenceFilesPath.toString(),
-                    streamletConfig.getString(filterFilenameConfig.getKey()));
+                    filterFilenameConfig.getValue(getContext()));
             //end::usage[]
 
-            final Duration pollingInterval = java.time.Duration.ofSeconds(streamletConfig.getInt(filterPollingInterval.getKey()));
+            final Duration pollingInterval = java.time.Duration.ofSeconds(filterPollingInterval.getValue(getContext()));
 
             final Source<ArrayList<String>, NotUsed> filterFileContent =
                 DirectoryChangesSource

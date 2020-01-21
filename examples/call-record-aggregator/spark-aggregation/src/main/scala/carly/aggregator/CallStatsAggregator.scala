@@ -45,8 +45,8 @@ class CallStatsAggregator extends SparkStreamlet {
 
   override def configParameters = Vector(GroupByWindow, Watermark)
   override def createLogic = new SparkStreamletLogic {
-    val watermark     = context.streamletConfig.getDuration(Watermark.key)
-    val groupByWindow = context.streamletConfig.getDuration(GroupByWindow.key)
+    val watermark     = Watermark.value
+    val groupByWindow = GroupByWindow.value
 //    val t0 = System.currentTimeMillis() // serialization error!
 
     //tag::docs-aggregationQuery-example[]

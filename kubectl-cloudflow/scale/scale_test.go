@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +15,9 @@ func TestMain(m *testing.M) {
 }
 func Test_updateDeploymentWithReplicas(t *testing.T) {
 
-	applicationConfiguration := domain.TestApplicationDescriptor()
+	applicationConfiguration := cfapp.TestApplicationDescriptor()
 
-	var spec domain.CloudflowApplicationSpec
+	var spec cfapp.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
 	spec, err := UpdateDeploymentWithReplicas(spec, "invalid-logger", 2)

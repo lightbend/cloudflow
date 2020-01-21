@@ -48,7 +48,7 @@ final class WineModelServer extends AkkaStreamlet {
   override def configParameters = Vector(ModelName)
 
   override final def createLogic = new RunnableGraphStreamletLogic() {
-    val modelName            = streamletConfig.getString(ModelName.key)
+    val modelName            = ModelName.value
     val savedModelBundlePath = getMountedPath(modelBundleMount).resolve(modelName)
 
     log.info(s"Loading model from $savedModelBundlePath.")

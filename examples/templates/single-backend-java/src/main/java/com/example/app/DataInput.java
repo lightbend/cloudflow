@@ -63,7 +63,7 @@ public class DataInput extends AkkaStreamlet {
   @Override
   public RunnableGraphStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
-      int rate = this.getStreamletConfig().getInt(rateConf.getKey());
+      int rate = rateConf.getValue(getContext());
       Random rng = new Random();
       @Override
       public RunnableGraph<NotUsed> createRunnableGraph() {

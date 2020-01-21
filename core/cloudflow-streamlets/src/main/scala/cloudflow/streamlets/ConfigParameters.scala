@@ -33,7 +33,7 @@ final case class RegexpValidationType(regExpPattern: String) extends ValidationT
 }
 
 /**
- * Describe arguments that has to be supplied when deploying a Cloudflow application. Each streamlet in an application can require zero or more arguments.
+ * Describes arguments that has to be supplied when deploying a Cloudflow application. Each streamlet in an application can require zero or more arguments.
  * The configuration parameter contains information for the end user entering the values and logic to validate those values so they are entered correctly.
  *
  * Streamlet developers can create their own configuration parameters by deriving from [[ConfigParameter]], the parameter can use validation logic from a fixed set of types derived from [[ValidationType]].
@@ -117,6 +117,14 @@ object IntegerConfigParameter {
 final case class IntegerConfigParameter(key: String, description: String = "", defaultValue: Option[Int] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, IntegerValidationType, defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): Int =
+    context.streamletConfig.getInt(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getInt(key)
   def withDefaultValue(value: Int) =
     this.copy(defaultValue = Some(value))
 }
@@ -137,6 +145,14 @@ final case class StringConfigParameter(key: String, description: String = "", de
   def toDescriptor: ConfigParameterDescriptor =
     ConfigParameterDescriptor(key, description, RegexpValidationType(".*"), defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): String =
+    context.streamletConfig.getString(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getString(key)
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }
@@ -156,6 +172,14 @@ object DoubleConfigParameter {
 final case class DoubleConfigParameter(key: String, description: String = "", defaultValue: Option[Double] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DoubleValidationType, defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): Double =
+    context.streamletConfig.getDouble(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getDouble(key)
   def withDefaultValue(value: Double) =
     this.copy(defaultValue = Some(value))
 }
@@ -176,6 +200,14 @@ final case class BooleanConfigParameter(key: String, description: String = "", d
     extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, BooleanValidationType, defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): Boolean =
+    context.streamletConfig.getBoolean(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getBoolean(key)
   def withDefaultValue(value: Boolean) =
     this.copy(defaultValue = Some(value))
 }
@@ -209,6 +241,14 @@ final case class RegExpConfigParameter(key: String, description: String, pattern
     extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, RegexpValidationType(pattern), defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): String =
+    context.streamletConfig.getString(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getString(key)
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }
@@ -242,6 +282,14 @@ object DurationConfigParameter {
 case class DurationConfigParameter(val key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DurationValidationType, defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): java.time.Duration =
+    context.streamletConfig.getDuration(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getDuration(key)
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }
@@ -285,6 +333,14 @@ final case class MemorySizeConfigParameter(key: String, description: String = ""
     extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, MemorySizeValidationType, defaultValue)
 
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext) =
+    context.streamletConfig.getMemorySize(key)
+  def value(implicit context: StreamletContext) =
+    context.streamletConfig.getMemorySize(key)
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }
