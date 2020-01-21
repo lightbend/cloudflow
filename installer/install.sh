@@ -64,7 +64,7 @@ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ > /dev/nu
 helm repo update > /dev/null 2>&1
 
 # Install Cloudflow
-echo "Installing Cloudflow 
+echo "Installing Cloudflow"
 echo " - cluster: $CLUSTER_NAME"
 echo " - namespace: $CLOUDFLOW_NAMESPACE"
 

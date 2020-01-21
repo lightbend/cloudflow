@@ -16,7 +16,7 @@
 
 # Usage:
 # create-cluster-eks.sh [CLUSTER_NAME] [AWS_DEFAULT_REGION]
-if [ $# -ne 3 ]; then
+if [ $# -ne 2 ]; then
   echo "Not enough arguments supplied"
   echo "Usage: create-cluster-eks.sh [CLUSTER_NAME] [AWS_DEFAULT_REGION]"
   exit 1
@@ -33,7 +33,7 @@ ZONE_1="$(aws ec2 describe-availability-zones \
 
 ZONE_2="$(aws ec2 describe-availability-zones \
   --filters Name=region-name,Values="$AWS_DEFAULT_REGION" | jq -r ".AvailabilityZones | .[].ZoneName" | sed -n '2p' | grep -o .'\{1\}$')"
-  
+
 ZONE_3="$(aws ec2 describe-availability-zones \
   --filters Name=region-name,Values="$AWS_DEFAULT_REGION" | jq -r ".AvailabilityZones | .[].ZoneName" | sed -n '3p' | grep -o .'\{1\}$')"
 
@@ -79,6 +79,12 @@ SECURITY_GROUP_IDS="$(aws eks describe-cluster --name "$CLUSTER_NAME" | jq -r '.
 echo "Security group id's: $SECURITY_GROUP_IDS"
 
 CLUSTER_SECURITY_GROUP_ID="$(aws eks describe-cluster --name "$CLUSTER_NAME" | jq -r '.cluster.resourcesVpcConfig.clusterSecurityGroupId')"
+CLUSTER_SECURITY_GROUP_ID_TEST_NULL="${CLUSTER_SECURITY_GROUP_ID/#null/}"
+
+if [ "${#CLUSTER_SECURITY_GROUP_ID_TEST_NULL}" -eq "0" ]; then
+  CLUSTER_SECURITY_GROUP_ID=""
+fi
+
 echo "Cluster security group id: ${CLUSTER_SECURITY_GROUP_ID:-'not found'}"
 
 # Mount EFS targets (one for each zone)
