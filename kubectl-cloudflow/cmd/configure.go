@@ -14,7 +14,8 @@ import (
 )
 
 type configureApplicationCMD struct {
-	cmd *cobra.Command
+	cmd         *cobra.Command
+	configFiles []string
 }
 
 func init() {
@@ -25,13 +26,19 @@ func init() {
 		Short: "Configures a deployed Cloudflow application.",
 		Example: `kubectl cloudflow configure my-app mystreamlet.hostname=localhost
 
-or to list all required configuration parameters:
+The arguments to the command consists of optionally one
+or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
+a space. If the key does not point to a streamlet name in the blueprint, it is used to set application level configuration values for all streamlets, 
+for instance using 'akka.loglevel=DEBUG' (assuming there is no streamlet named akka) will set the akka loglevel to DEBUG for all streamlets.
 
-kubectl cloudflow configure my-app`,
+Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
+The streamlet arguments passed with '[streamlet-name].[configuration-parameter]=[value]' pairs take precedence over the files passed through with the --conf flag.
+`,
 
 		Run:  configureCMD.configureImpl,
 		Args: validateConfigureCMDArgs,
 	}
+	configureCMD.cmd.Flags().StringArrayVar(&configureCMD.configFiles, "conf", []string{}, "Accepts one or more files in HOCON format.")
 	rootCmd.AddCommand(configureCMD.cmd)
 }
 
@@ -54,28 +61,11 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	if err != nil {
 		util.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
+	namespace := applicationCR.Spec.AppID
 
-	configurationParameters := deploy.SplitConfigurationParameters(args[1:])
-	configurationParameters = deploy.AppendExistingValuesNotConfigured(k8sClient, applicationCR.Spec, configurationParameters)
-	configurationParameters = deploy.AppendDefaultValuesForMissingConfigurationValues(applicationCR.Spec, configurationParameters)
+	configurationArguments := deploy.SplitConfigurationParameters(args[1:])
 
-	configurationKeyValues, validationError := deploy.ValidateConfigurationAgainstDescriptor(applicationCR.Spec, configurationParameters)
-
-	if validationError != nil {
-		util.LogErrorAndExit(validationError)
-	}
-
-	// Get the Cloudflow operator ownerReference
-	ownerReference := applicationCR.GenerateOwnerReference()
-
-	streamletNameSecretMap := deploy.CreateSecretsData(&applicationCR.Spec, configurationKeyValues)
-	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
-
-	for streamletName, secret := range streamletNameSecretMap {
-		if _, err := k8sClient.CoreV1().Secrets(applicationName).Update(secret); err != nil {
-			util.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())
-		}
-	}
+	deploy.HandleConfig(k8sClient, namespace, applicationCR.Spec, configurationArguments, c.configFiles)
 
 	util.PrintSuccess("Configuration of application %s has been updated.\n", applicationName)
 }
