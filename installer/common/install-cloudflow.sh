@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Usage: install-cloudflow.sh [CLUSTER_NAME] [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
   echo "Not enough arguments supplied"
   echo "Usage: install-cloudflow.sh [CLUSTER_NAME] [CLOUDFLOW_NAMESPACE] [CLUSTER_TYPE]"
   exit 1
@@ -75,7 +75,7 @@ esac
 # shellcheck source=common/install-operators.sh
 . "$currentDirectory"/install-operators.sh
 
-# Call Helm with all args and overrrides, 
+# Call Helm with all args and overrrides,
 ## TODO -- check docker note here:  is this a problem for Cloudflow OSS install?
 # Note! We point the docker registry to localhost on gke, our GKE clusters cannot resolve the external address
 ## TODO -- check the domain here below -- not supported in OSS. Consequences?
