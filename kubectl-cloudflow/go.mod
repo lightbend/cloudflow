@@ -14,6 +14,7 @@ require (
 	github.com/docker/docker v0.0.0-20190327063223-da823cf3a5a3
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
+	github.com/go-akka/configuration v0.0.0-20200115015912-550403a6bd87 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
@@ -33,6 +34,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
+	github.com/rayroestenburg/configuration v0.0.0-20200115015912-550403a6bd87
 	github.com/sirupsen/logrus v1.4.0 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect

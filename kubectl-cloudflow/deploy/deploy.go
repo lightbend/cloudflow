@@ -14,6 +14,7 @@ import (
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
+	"github.com/rayroestenburg/configuration"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +22,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
+
+const cloudflowStreamletsPrefix = "cloudflow.streamlets."
 
 // GetCloudflowApplicationDescriptorFromDockerImage pulls a image and extracts the Cloudflow Application descriptor from a docker label
 func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (domain.CloudflowApplicationSpec, docker.PulledImage) {
@@ -120,56 +123,8 @@ func SplitConfigurationParameters(configurationParameters []string) map[string]s
 	return configurationKeyValues
 }
 
-// AppendExistingValuesNotConfigured adds values for those keys that are not entered by the user, which do already exist in secrets
-func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
-	existingConfigurationKeyValues := make(map[string]string)
-	for _, deployment := range spec.Deployments {
-		if secret, err := client.CoreV1().Secrets(spec.AppID).Get(deployment.SecretName, metav1.GetOptions{}); err == nil {
-			for _, configValue := range secret.Data {
-				lines := strings.Split(string(configValue), "\r\n")
-				for _, line := range lines {
-					cleaned := strings.TrimPrefix(strings.TrimSpace(line), "cloudflow.streamlets.")
-					if len(cleaned) != 0 {
-						keyValueArray, err := splitOnFirstCharacter(cleaned, '=')
-						if err != nil {
-							util.LogAndExit("Configuration for streamlet %s in secret %s is corrupted. %s", deployment.StreamletName, secret.Name, err.Error())
-						} else {
-							existingConfigurationKeyValues[keyValueArray[0]] = keyValueArray[1]
-						}
-					}
-				}
-			}
-		}
-	}
-
-	for _, streamlet := range spec.Streamlets {
-		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
-			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
-			if _, ok := configurationKeyValues[fqKey]; !ok {
-				if _, ok := existingConfigurationKeyValues[fqKey]; ok {
-					fmt.Printf("Existing value will be used for configuration parameter '%s'\n", fqKey)
-					configurationKeyValues[fqKey] = existingConfigurationKeyValues[fqKey]
-				}
-			}
-		}
-	}
-	return configurationKeyValues
-}
-
-// AppendDefaultValuesForMissingConfigurationValues adds default values for those keys that are not entered by the user
-func AppendDefaultValuesForMissingConfigurationValues(spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
-	for _, streamlet := range spec.Streamlets {
-		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
-			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
-			if _, ok := configurationKeyValues[fqKey]; !ok {
-				if len(descriptor.DefaultValue) > 0 {
-					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
-					configurationKeyValues[fqKey] = descriptor.DefaultValue
-				}
-			}
-		}
-	}
-	return configurationKeyValues
+func getConfigForStreamlet(conf *configuration.Config, streamletName string) *configuration.Config {
+	return conf.GetConfig(cloudflowStreamletsPrefix + streamletName)
 }
 
 // ValidateVolumeMounts validates that volume mounts command line arguments corresponds to a volume mount descriptor in the AD and that the PVC named in the argument exists
@@ -237,8 +192,8 @@ func accessModeExists(accessModes []corev1.PersistentVolumeAccessMode, accessMod
 	return false
 }
 
-// ValidateConfigurationAgainstDescriptor validates all configuration parameter keys in the descriptor against a set of provided keys
-func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) (map[string]string, error) {
+// ValidateConfigurationAgainstDescriptor validates all configuration values against configuration parameter descriptors
+func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) error {
 
 	type ValidationErrorDescriptor struct {
 		FqKey              string
@@ -249,15 +204,20 @@ func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec
 	var invalidKeys []ValidationErrorDescriptor
 
 	for _, streamlet := range spec.Streamlets {
+		conf := streamletConfigs[streamlet.Name]
+		if conf == nil {
+			conf = configuration.ParseString("")
+		}
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
-			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
+			streamletConfigKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
+			fqKey := cloudflowStreamletsPrefix + streamletConfigKey
 
-			if err := validateStreamletConfigKey(descriptor, configurationKeyValues[fqKey]); err != nil {
-				invalidKeys = append(invalidKeys, ValidationErrorDescriptor{fqKey, err.Error()})
+			if err := validateStreamletConfigValue(descriptor, conf.GetString(fqKey)); err != nil {
+				invalidKeys = append(invalidKeys, ValidationErrorDescriptor{streamletConfigKey, err.Error()})
 			}
 
-			if _, ok := configurationKeyValues[fqKey]; !ok {
-				missingKeys = append(missingKeys, ValidationErrorDescriptor{fqKey, descriptor.Description})
+			if conf.GetString(fqKey) == "" {
+				missingKeys = append(missingKeys, ValidationErrorDescriptor{streamletConfigKey, descriptor.Description})
 			}
 		}
 	}
@@ -268,19 +228,19 @@ func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec
 		for i := range missingKeys {
 			str.WriteString(fmt.Sprintf("- %s - %s\n", missingKeys[i].FqKey, missingKeys[i].ProblemDescription))
 		}
-		return make(map[string]string), errors.New(str.String())
+		return errors.New(str.String())
 	}
 	if len(invalidKeys) > 0 {
 		str.WriteString("The following configuration parameter(s) have failed to validate:\n")
 		for i := range invalidKeys {
 			str.WriteString(fmt.Sprintf("- %s - %s\n", invalidKeys[i].FqKey, invalidKeys[i].ProblemDescription))
 		}
-		return make(map[string]string), errors.New(str.String())
+		return errors.New(str.String())
 	}
-	return configurationKeyValues, nil
+	return nil
 }
 
-func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, value string) error {
+func validateStreamletConfigValue(descriptor domain.ConfigParameterDescriptor, value string) error {
 	switch descriptor.Type {
 
 	case "bool":
@@ -323,29 +283,239 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 	return nil
 }
 
-// CreateSecretsData creates a map of streamlet names and K8s Secrets for those streamlets with configuration parameters,
-// the secrets contain a single key/value where the key is the name of the hocon configuration file
-func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string, configFiles []string) (map[string]*corev1.Secret, error) {
-	streamletSecretNameMap := make(map[string]*corev1.Secret)
+// HandleConfig handles configuration files and configuration arguments
+func HandleConfig(
+	k8sClient *kubernetes.Clientset,
+	namespace string,
+	applicationSpec domain.CloudflowApplicationSpec,
+	configurationArguments map[string]string,
+	configFiles []string) {
+
+	existingConfigs := getConfigFromSecrets(k8sClient, applicationSpec)
+	streamletNameSecretMap, err := handleConfig(namespace, applicationSpec, configurationArguments, configFiles, existingConfigs)
+	if err != nil {
+		util.LogErrorAndExit(err)
+	}
+	createStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+}
+
+func handleConfig(
+	namespace string,
+	applicationSpec domain.CloudflowApplicationSpec,
+	configurationArguments map[string]string,
+	configFiles []string,
+	existingConfigs map[string]*configuration.Config) (map[string]*corev1.Secret, error) {
+
+	configMergedFromFiles, err := loadAndMergeConfigs(applicationSpec, configFiles, configurationArguments)
+	if err != nil {
+		return nil, err
+	}
+
+	configMergedFromFiles = addDefaultValues(applicationSpec, configMergedFromFiles)
+
+	streamletConfigs := mergeStreamletConfigs(applicationSpec, configMergedFromFiles, existingConfigs)
+
+	streamletConfigs = addApplicationLevelConfig(configMergedFromFiles, streamletConfigs)
+
+	streamletConfigs = addArguments(applicationSpec, streamletConfigs, configurationArguments)
+
+	validationError := ValidateConfigurationAgainstDescriptor(applicationSpec, streamletConfigs)
+	if validationError != nil {
+		return nil, validationError
+	}
+	streamletNameSecretMap, err := createSecretsData(&applicationSpec, streamletConfigs)
+	return streamletNameSecretMap, err
+}
+
+func mergeStreamletConfigs(spec domain.CloudflowApplicationSpec, configMergedFromFiles *configuration.Config, existingConfigs map[string]*configuration.Config) map[string]*configuration.Config {
+	configs := make(map[string]*configuration.Config)
+	// add existing configs loaded from secrets, only if there is no config for the streamlet (otherwise you can't unset anything)
+	for streamletName, existingConfig := range existingConfigs {
+		streamletConfigFromFile := configMergedFromFiles.GetConfig(cloudflowStreamletsPrefix + streamletName)
+		if streamletConfigFromFile == nil {
+			existingStreamletConfig := moveToRoot(existingConfig.GetConfig(cloudflowStreamletsPrefix+streamletName), streamletName)
+			fmt.Printf("Existing configuration values will be used for '%s'\n", streamletName)
+			configs[streamletName] = existingStreamletConfig
+		}
+	}
+	// add configs found in the --conf files
 	for _, streamlet := range spec.Streamlets {
-		var str strings.Builder
-		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
-			fqKey := formatStreamletConfigKeyFq(streamlet.Name, descriptor.Key)
-			str.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", fqKey, configurationKeyValues[prefixWithStreamletName(streamlet.Name, descriptor.Key)]))
+		streamletConfigFromFile := moveToRoot(configMergedFromFiles.GetConfig(cloudflowStreamletsPrefix+streamlet.Name), streamlet.Name)
+		if streamletConfigFromFile != nil {
+			configs[streamlet.Name] = streamletConfigFromFile
 		}
-		for _, configFile := range configFiles {
-			content, err := ioutil.ReadFile(configFile)
-			if err != nil {
-				err = fmt.Errorf("failed to read configuration file %s: %s", configFile, err.Error())
-				return make(map[string]*corev1.Secret), err
+	}
+	// move the configs under cloudflow.streamlets
+	for streamletName, conf := range configs {
+		configs[streamletName] = moveToRoot(moveToRoot(conf, "streamlets"), "cloudflow")
+	}
+
+	return configs
+}
+func addApplicationLevelConfig(configMergedFromFiles *configuration.Config, streamletConfigs map[string]*configuration.Config) map[string]*configuration.Config {
+	// merge in application level settings from config files.
+	for streamletName, streamletConfig := range streamletConfigs {
+
+		// merging per key is quite expensive, but not trusting the other methods in the go-akka lib just yet..
+		keys := configMergedFromFiles.Root().GetObject().GetKeys()
+		for _, key := range keys {
+			if key != "cloudflow" {
+				appLevelConfigItem := moveToRoot(configMergedFromFiles.GetConfig(key), key)
+				streamletConfigs[streamletName] = mergeWithFallback(streamletConfig, appLevelConfigItem)
 			}
-			str.WriteString("\n")
-			str.WriteString(string(content))
-			str.WriteString("\n")
 		}
+
+		streamletLevelConf := streamletConfig.GetConfig(fmt.Sprintf("cloudflow.streamlets.%s.application-level", streamletName))
+		if streamletLevelConf != nil {
+			streamletConfigs[streamletName] = mergeWithFallback(streamletLevelConf, streamletConfig)
+		}
+	}
+	return streamletConfigs
+}
+
+// Workaround for bad merging, root CANNOT be a dot separated path, needs fix in go-hocon
+func moveToRoot(config *configuration.Config, root string) *configuration.Config {
+	if config == nil {
+		return config
+	}
+	return configuration.NewConfigFromRoot(config.Root().AtKey(root))
+}
+
+//LoadAndMergeConfigs loads specified configuration files and merges them into one Config
+func loadAndMergeConfigs(spec domain.CloudflowApplicationSpec, configFiles []string, configurationArguments map[string]string) (*configuration.Config, error) {
+	// For some reason WithFallback does not work as expected, so we'll use this workaround for now.
+	var sb strings.Builder
+
+	for _, file := range configFiles {
+		if !FileExists(file) {
+			return nil, fmt.Errorf("configuration file %s passed with --conf does not exist", file)
+		}
+		content, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, fmt.Errorf("could not read configuration file %s", file)
+		}
+		sb.Write(content)
+		sb.WriteString("")
+
+	}
+
+	confStr := sb.String()
+	// go-akka/configuration can panic on error (not experienced), need to fix that in a fork.
+	config := configuration.ParseString(confStr)
+	return config, nil
+}
+
+func addDefaultValues(applicationSpec domain.CloudflowApplicationSpec, config *configuration.Config) *configuration.Config {
+	var sb strings.Builder
+	for _, streamlet := range applicationSpec.Streamlets {
+		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
+			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
+			if config.GetString(cloudflowStreamletsPrefix+fqKey) == "" {
+				if len(descriptor.DefaultValue) > 0 {
+					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
+					// Fix cloudflowStreamletsPrefix
+					sb.WriteString(fmt.Sprintf("%s%s=\"%s\"\r\n", cloudflowStreamletsPrefix, fqKey, descriptor.DefaultValue))
+				}
+			}
+		}
+	}
+	defaults := configuration.ParseString(sb.String())
+	config = mergeWithFallback(defaults, config)
+	return config
+}
+
+func addArguments(spec domain.CloudflowApplicationSpec, configs map[string]*configuration.Config, configurationArguments map[string]string) map[string]*configuration.Config {
+	// add pass through args on application level
+	written := make(map[string]string)
+
+	for _, streamlet := range spec.Streamlets {
+		var sb strings.Builder
+		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
+			key := prefixWithStreamletName(streamlet.Name, descriptor.Key)
+			configValue := configurationArguments[key]
+			if configValue != "" {
+				sb.WriteString(fmt.Sprintf("%s%s=\"%s\"\r\n", cloudflowStreamletsPrefix, key, configValue))
+				written[key] = configValue
+			}
+		}
+		if sb.Len() > 0 {
+			if configs[streamlet.Name] != nil {
+				configs[streamlet.Name] = mergeWithFallback(configuration.ParseString(sb.String()), configs[streamlet.Name])
+			} else {
+				configs[streamlet.Name] = configuration.ParseString(sb.String())
+			}
+		}
+	}
+
+	var sbAppLevel strings.Builder
+	for key, configValue := range configurationArguments {
+		if _, ok := written[key]; !ok {
+			sbAppLevel.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", key, configValue))
+		}
+	}
+	if sbAppLevel.Len() > 0 {
+		appLevelConfFromArgs := configuration.ParseString(sbAppLevel.String())
+
+		for streamletName, config := range configs {
+			configs[streamletName] = mergeWithFallback(appLevelConfFromArgs, config)
+		}
+	}
+	return configs
+}
+
+// workaround for WithFallback not working in go-akka/configuration
+func mergeWithFallback(config *configuration.Config, fallback *configuration.Config) *configuration.Config {
+	confStr := config.String()
+	fallbackStr := fallback.String()
+	var sb strings.Builder
+	// For some reason merging does not work on two objects in { } (it just reads the first and stops reading)
+	sb.WriteString("a : ")
+	sb.WriteString(fallbackStr)
+	sb.WriteString("\n\n")
+	sb.WriteString("a : ")
+	sb.WriteString(confStr)
+	sb.WriteString("\n")
+	conf := configuration.ParseString(sb.String()).GetConfig("a")
+	return conf
+}
+
+func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
+	for streamletName, secret := range streamletNameSecretMap {
+		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
+			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
+				util.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
+			}
+		} else {
+			if _, err := k8sClient.CoreV1().Secrets(namespace).Update(secret); err != nil {
+				util.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
+			}
+		}
+	}
+}
+
+func getConfigFromSecrets(client *kubernetes.Clientset, spec domain.CloudflowApplicationSpec) map[string]*configuration.Config {
+	var configs = make(map[string]*configuration.Config)
+
+	for _, deployment := range spec.Deployments {
+		if secret, err := client.CoreV1().Secrets(spec.AppID).Get(deployment.SecretName, metav1.GetOptions{}); err == nil {
+			for _, configBytes := range secret.Data {
+				conf := configuration.ParseString(string(configBytes))
+				configs[deployment.StreamletName] = conf
+			}
+		}
+	}
+	return configs
+}
+
+func createSecretsData(spec *domain.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) (map[string]*corev1.Secret, error) {
+	streamletSecretNameMap := make(map[string]*corev1.Secret)
+	for streamletName, config := range streamletConfigs {
 		secretMap := make(map[string]string)
-		secretMap["secret.conf"] = str.String()
-		secretName := findSecretName(spec, streamlet.Name)
+		var sb strings.Builder
+		sb.WriteString(config.String())
+		sb.WriteString("\n")
+		secretMap["secret.conf"] = sb.String()
+		secretName := findSecretName(spec, streamletName)
 		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
 	}
 	return streamletSecretNameMap, nil

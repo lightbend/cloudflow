@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"encoding/json"
+
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/deploy"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
@@ -19,9 +21,6 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 
-	"encoding/json"
-
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
@@ -45,9 +44,11 @@ func init() {
 		Long: `Deploys a Cloudflow application to the cluster.
 The arguments to the command consists of a docker image path and optionally one
 or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
-a space.
+a space. If the key does not point to a streamlet name in the blueprint, it is used to set application level configuration values for all streamlets, 
+for instance using 'akka.loglevel=DEBUG' (assuming there is no streamlet named akka) will set the akka loglevel to DEBUG for all streamlets.
 
-Configuration files in HOCON format can be passed through with the --conf flag.
+Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
+The streamlet arguments passed with '[streamlet-name].[configuration-parameter]=[value]' pairs take precedence over the files passed through with the --conf flag.
 
 Streamlet volume mounts can be configured using the --volume-mount flag.
 The flag accepts one or more key/value pair where the key is the name of the
@@ -107,12 +108,6 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("%s", err.Error())
 	}
 
-	for _, file := range opts.configFiles {
-		if !deploy.FileExists(file) {
-			util.LogAndExit("configuration file %s passed with --conf does not exist", file)
-		}
-	}
-
 	dockerRegistryURL := imageReference.registry
 	dockerRepository := imageReference.repository
 	applicationSpec, pulledImage := deploy.GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL, dockerRepository, imageRef)
@@ -135,16 +130,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		util.LogErrorAndExit(err)
 	}
 
-	configurationParameters := deploy.SplitConfigurationParameters(args[1:])
-	configurationParameters = deploy.AppendExistingValuesNotConfigured(k8sClient, applicationSpec, configurationParameters)
-	configurationParameters = deploy.AppendDefaultValuesForMissingConfigurationValues(applicationSpec, configurationParameters)
-	configurationKeyValues, validationError := deploy.ValidateConfigurationAgainstDescriptor(applicationSpec, configurationParameters)
+	configurationArguments := deploy.SplitConfigurationParameters(args[1:])
 
-	// TODO parse configFiles and validate them against descriptor (done in separate task)
-
-	if validationError != nil {
-		util.LogAndExit("%s", validationError.Error())
-	}
+	deploy.HandleConfig(k8sClient, namespace, applicationSpec, configurationArguments, opts.configFiles)
 
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
@@ -170,9 +158,6 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
 		util.LogAndExit("%s", err)
 	}
-
-	streamletNameSecretMap, err := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues, opts.configFiles)
-	createStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
 	applicationSpec, err = copyReplicaConfigurationFromCurrentApplication(cloudflowApplicationClient, applicationSpec)
 	if err != nil {
@@ -324,20 +309,6 @@ func copyReplicaConfigurationFromCurrentApplication(applicationClient *k8s.Cloud
 	}
 
 	return spec, nil
-}
-
-func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
-	for streamletName, secret := range streamletNameSecretMap {
-		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
-				util.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
-			}
-		} else {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Update(secret); err != nil {
-				util.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
-			}
-		}
-	}
 }
 
 func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec domain.CloudflowApplicationSpec) {

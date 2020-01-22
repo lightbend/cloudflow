@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/rayroestenburg/configuration"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,17 +56,20 @@ func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
 	var spec domain.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
-	var config []string
-	_, err := ValidateConfigurationAgainstDescriptor(spec, SplitConfigurationParameters(config))
+	configs := make(map[string]*configuration.Config)
+	err := ValidateConfigurationAgainstDescriptor(spec, configs)
 	assert.NotEmpty(t, err)
 
-	properConfig := SplitConfigurationParameters(commandLineForConfiguration())
+	args := SplitConfigurationParameters(commandLineForConfiguration())
+	configs = addArguments(spec, configs, args)
 
-	_, err = ValidateConfigurationAgainstDescriptor(spec, properConfig)
+	err = ValidateConfigurationAgainstDescriptor(spec, configs)
 	assert.Empty(t, err)
 
 	half := SplitConfigurationParameters([]string{`valid-logger.log-level="warning"`})
-	_, err = ValidateConfigurationAgainstDescriptor(spec, half)
+	configs = make(map[string]*configuration.Config)
+	configs = addArguments(spec, configs, half)
+	err = ValidateConfigurationAgainstDescriptor(spec, configs)
 	assert.NotEmpty(t, err)
 }
 
@@ -76,93 +79,18 @@ func Test_CreateSecretsData(t *testing.T) {
 	var spec domain.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
-	properConfig := SplitConfigurationParameters(commandLineForConfiguration())
+	args := SplitConfigurationParameters(commandLineForConfiguration())
 
-	secrets, err := CreateSecretsData(&spec, properConfig, []string{})
+	// TODO add test for configs
+	configs := make(map[string]*configuration.Config)
+	configs = addArguments(spec, configs, args)
+	fmt.Printf("Configs: \n%s\n", configs)
+	secrets, err := createSecretsData(&spec, configs)
 	assert.Empty(t, err)
 
 	assert.NotEmpty(t, secrets)
-	assert.True(t, len(secrets["valid-logger"].Name) <= 63)
-	assert.NotEmpty(t, secrets["valid-logger"].StringData["secret.conf"])
-	configValues, _ := parseCommandLine(secrets["valid-logger"].StringData["secret.conf"])
-	var values []string
-	var keys []string
-	for i := range configValues {
-		configValue := strings.Trim(configValues[i], " \n\r\t")
-		splitValues := strings.Split(configValue, "=")
-		assert.True(t, len(splitValues) == 2)
-		keys = append(keys, strings.Trim(splitValues[0], " \t\n\r"))
-		values = append(values, strings.Trim(splitValues[1], " \t\n\r"))
-	}
-	assert.True(t, keys[0] == "cloudflow.streamlets.valid-logger.log-level")
-	assert.True(t, values[0] == "warning")
-
-	assert.True(t, keys[1] == "cloudflow.streamlets.valid-logger.msg-prefix")
-	assert.True(t, values[1] == "test")
-}
-
-func parseCommandLine(commandLine string) ([]string, error) {
-	var args []string
-	state := "start"
-	current := ""
-	quote := "\""
-	escapeNext := true
-	command := strings.Trim(commandLine, " \t\r\n")
-	for i := 0; i < len(command); i++ {
-		c := command[i]
-
-		if state == "quotes" {
-			if string(c) != quote {
-				current += string(c)
-			} else {
-				args = append(args, current)
-				current = ""
-				state = "start"
-			}
-			continue
-		}
-
-		if escapeNext {
-			current += string(c)
-			escapeNext = false
-			continue
-		}
-
-		if c == '\\' {
-			escapeNext = true
-			continue
-		}
-
-		if c == '"' || c == '\'' {
-			state = "quotes"
-			quote = string(c)
-			continue
-		}
-
-		if state == "arg" {
-			if c == ' ' || c == '\t' {
-				args = append(args, current)
-				current = ""
-				state = "start"
-			} else {
-				current += string(c)
-			}
-			continue
-		}
-
-		if c != ' ' && c != '\t' {
-			state = "arg"
-			current += string(c)
-		}
-	}
-
-	if state == "quotes" {
-		return []string{}, fmt.Errorf("unclosed quote in command line: %s", command)
-	}
-
-	if current != "" {
-		args = append(args, current)
-	}
-
-	return args, nil
+	fmt.Printf("Secrets: \n%s\n", secrets)
+	config := configuration.ParseString(secrets["valid-logger"].StringData["secret.conf"])
+	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.log-level") == "warning")
+	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.msg-prefix") == "test")
 }
