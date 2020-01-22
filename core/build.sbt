@@ -443,7 +443,24 @@ def cloudflowModule(moduleID: String): Project = {
     .enablePlugins(AutomateHeaderPlugin)
 }
 
-lazy val commonSettings = Seq(
+// These settings are made active only when we use bintray for internal release
+// It is important that when we do final releases we need to invoke sbt as 
+// `sbt -Dsbt.sbtbintray=false`
+lazy val bintraySettings =
+  if (BintrayPlugin.isEnabledViaProp) {
+    Seq(bintrayOrganization := Some("lightbend"),
+      bintrayRepository := "cloudflow",
+      bintrayOmitLicense := true,
+      publishMavenStyle := false,
+      resolvers ++= Seq(
+        "Akka Snapshots" at "https://repo.akka.io/snapshots/",
+        "com-mvn" at "https://repo.lightbend.com/cloudflow" , Resolver.url("com-ivy",
+        url("https://repo.lightbend.com/cloudflow"))(Resolver.ivyStylePatterns)
+      )
+    )
+  } else Seq.empty
+
+lazy val commonSettings = bintraySettings ++ Seq(
   organization := "com.lightbend.cloudflow",
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
   scalaVersion := Version.Scala,
@@ -484,6 +501,8 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 )
+
+releaseIgnoreUntrackedFiles := true
 
 lazy val formattingSettings = Seq(
   scalariformPreferences := scalariformPreferences.value

@@ -42,11 +42,15 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   // common definitions
   final val CloudflowLocalConfigFile = ".lightbend/cloudflow/pipectl.json"
   final val CloudflowDockerBaseImage = "lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.1-scala-2.12"
+  // used for internal release
+  final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     // TODO: currently required for our custom build of Akka. Remove when our features have been merged.
     resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/",
+    // Cloudflow is released with Ivy patterns - bintray is used for internal release
+    resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
 
     cloudflowDockerParentImage := CloudflowDockerBaseImage,
 
