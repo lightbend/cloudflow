@@ -52,7 +52,7 @@ export installFlinkOperator=false
 
 # Strimzi
 export strimziReleaseName="cloudflow-strimzi"
-export strimziVersion="0.13.0"
+export strimziVersion="0.16.0"
 export installStrimzi="${installStrimzi:-false}"
 export strimziClusterOperatorNamespace=""
 export strimziTopicOperatorNamespace=""
@@ -63,7 +63,8 @@ export zookeeperHosts=""
 
 # Spark Operator
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
-export sparkOperatorChartVersion="0.4.0"
+export sparkOperatorChartVersion="0.6.2"
+export sparkOperatorImageName="lightbend/sparkoperator"
 export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-0.8.2-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
 
