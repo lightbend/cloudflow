@@ -65,7 +65,7 @@ export zookeeperHosts=""
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
 export sparkOperatorChartVersion="0.6.2"
 export sparkOperatorImageName="lightbend/sparkoperator"
-export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-0.8.2-cloudflow-2.12"
+export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
 
 
@@ -136,9 +136,6 @@ elif [ "${KAFKA}" = "ExternalStrimzi" ]; then
         print_error_message "Strimzi topic operator configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_STRIMZI_TOPIC_OPERATOR_NAMESPACE' and set it to a namespace that contains a running strimzi-topic-operator pod."
         print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_existing_strimzi_kafka"
-        print_error_message ""
         exit 1
     fi
     if [ -n "${KAFKA_BOOTSTRAP_SERVERS}" ]; then
@@ -146,23 +143,17 @@ elif [ "${KAFKA}" = "ExternalStrimzi" ]; then
     else
         print_error_message "Kafka bootstrap servers configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_BOOTSTRAP_SERVERS' and set it to the Kafka bootstrap servers hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_existing_strimzi_kafka"
         print_error_message ""
         exit 1
     fi
 elif [ "${KAFKA}" = "External" ]; then
     strimziTopicOperatorNamespace=$namespace
-    echo "Strimzi topic operator will be installed into '${strimziTopicOperatorNamespace}'."https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka
+    echo "Strimzi topic operator will be installed into '${strimziTopicOperatorNamespace}'."
     if [ -n "${KAFKA_BOOTSTRAP_SERVERS}" ]; then
         kafkaBootstrapServers=$KAFKA_BOOTSTRAP_SERVERS
     else
         print_error_message "Kafka bootstrap servers configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_BOOTSTRAP_SERVERS' and set it to the Kafka bootstrap servers hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka"
         print_error_message ""
         exit 1
     fi
@@ -171,9 +162,6 @@ elif [ "${KAFKA}" = "External" ]; then
     else
         print_error_message "ZooKeeper hosts configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_ZOOKEEPER_HOSTS' and set it to the ZooKeeper hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka"
         print_error_message ""
         exit 1
     fi
