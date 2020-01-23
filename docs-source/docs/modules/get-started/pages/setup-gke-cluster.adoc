@@ -14,10 +14,7 @@ To install a new cluster, clone the https://github.com/lightbend/cloudflow/[repo
 NOTE:: This can be done once you have a valid Google account and have access to a project set up for you by the administrator.
 
 * Create a GKE cluster with a specific name `./create-cluster-gke.sh <cluster-name>`
-* Install Cloudflow in the designated cluster `./install-gke.sh  <cluster-name>`
-
-NOTE:: This step uses Helm which can be installed from https://v2.helm.sh/docs/using_helm/#installing-helm[here]. Currently only Helm 2 is supported while Helm 3 support is WIP.
-Please make sure you have installed the right version of Helm on your local machine.
+* Install Cloudflow in the designated cluster `./install.sh <cluster-name> gke`
 
 This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
 
@@ -49,7 +46,7 @@ It then takes you through the installation of the Cloudflow operator, the strimz
 NAME                                                         READY   STATUS              RESTARTS   AGE
 cloudflow-flink-flink-operator-8588dbd8f4-gsjnm              1/1     Running             0          70s
 cloudflow-operator-57f47676f7-svbvj                          0/1     ContainerCreating   0          3s
-cloudflow-sparkoperator-fdp-sparkoperator-69669fdd54-88brw   0/1     ContainerCreating   0          35s
+cloudflow-sparkoperator-sparkoperator-69669fdd54-88brw       0/1     ContainerCreating   0          35s
 strimzi-cluster-operator-7ff64d4b7-c9r2n                     1/1     Running             0          51s
 ```
 
@@ -61,7 +58,7 @@ NAME                                                         READY   STATUS    R
 cloudflow-flink-flink-operator-8588dbd8f4-gsjnm              1/1     Running   0          3m26s
 cloudflow-nfs-fdp-nfs-6f8855d44-vdhhj                        1/1     Running   0          109s
 cloudflow-operator-57f47676f7-svbvj                          1/1     Running   0          2m19s
-cloudflow-sparkoperator-fdp-sparkoperator-69669fdd54-88brw   1/1     Running   0          2m51s
+cloudflow-sparkoperator-sparkoperator-69669fdd54-88brw       1/1     Running   0          2m51s
 cloudflow-strimzi-entity-operator-5bc9695975-584fb           1/2     Running   0          27s
 cloudflow-strimzi-kafka-0                                    2/2     Running   0          79s
 cloudflow-strimzi-kafka-1                                    2/2     Running   0          79s
