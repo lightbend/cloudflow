@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Usage shared.sh <NAMESPACE>
+# Usage shared.sh <NAMESPACE>
 
 if [ $# -eq 0 ]
   then
@@ -46,7 +46,7 @@ export KAFKA="${KAFKA:-CloudflowManaged}"
 
 # Flink
 export flinkReleaseName="cloudflow-flink"
-export flinkOperatorChartVersion="0.8.0"
+export flinkOperatorChartVersion="0.8.1"
 export flinkOperatorNamespace=""
 export installFlinkOperator=false
 

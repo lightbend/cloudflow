@@ -49,7 +49,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     helm_delete cloudflow
     helm_delete cloudflow-sparkoperator
     helm_delete cloudflow-strimzi
-    helm_delete cloudflow_flink
+    helm_delete cloudflow-flink
 
     # The namespace
     # TODO FIX_HARDCODED_NAMESPACE 
