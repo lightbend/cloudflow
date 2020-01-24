@@ -365,7 +365,7 @@ func addApplicationLevelConfig(configMergedFromFiles *configuration.Config, stre
 			}
 		}
 
-		streamletLevelConf := streamletConfig.GetConfig(fmt.Sprintf("cloudflow.streamlets.%s.application-level", streamletName))
+		streamletLevelConf := streamletConfig.GetConfig(fmt.Sprintf("cloudflow.streamlets.%s.application-conf", streamletName))
 		if streamletLevelConf != nil {
 			streamletConfigs[streamletName] = mergeWithFallback(streamletLevelConf, streamletConfig)
 		}
