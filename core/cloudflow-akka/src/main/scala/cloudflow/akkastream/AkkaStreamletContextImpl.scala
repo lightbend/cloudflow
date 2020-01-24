@@ -121,8 +121,7 @@ final class AkkaStreamletContextImpl(
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     Flow[(T, Committable)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
-  @deprecated("Use `committableSink` instead.", "1.3.1")
-  def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
+  private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
@@ -137,8 +136,7 @@ final class AkkaStreamletContextImpl(
     }.toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
   }
 
-  @deprecated("Use `committableSink` instead.", "1.3.1")
-  def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+  private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {

@@ -208,7 +208,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Creates a sink, purely for committing the offsets that have been read further upstream.
    * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
    */
-  @deprecated("Use `getCommittableSink` instead.", "1.3.1")
+  @deprecated("Use `committableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T]: Sink[(T, CommittableOffset), NotUsed] =
     sinkWithOffsetContext(defaultCommitterSettings)
 

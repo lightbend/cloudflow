@@ -41,9 +41,7 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
 
-  @deprecated("Use `committableSink` instead.", "1.3.1")
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
-  @deprecated("Use `committableSink` instead.", "1.3.1")
   private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
 
   /**
