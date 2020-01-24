@@ -54,7 +54,7 @@ class ValidMetricLogger extends AkkaStreamlet {
     }
 
     def flow = {
-      FlowWithOffsetContext[Metric]
+      FlowWithCommittableContext[Metric]
         .map { validMetric ⇒
           log(validMetric)
           validMetric
@@ -62,7 +62,7 @@ class ValidMetricLogger extends AkkaStreamlet {
     }
 
     def runnableGraph = {
-      sourceWithOffsetContext(inlet).via(flow).to(sinkWithOffsetContext)
+      sourceWithOffsetContext(inlet).via(flow).to(committableSink)
     }
   }
 }

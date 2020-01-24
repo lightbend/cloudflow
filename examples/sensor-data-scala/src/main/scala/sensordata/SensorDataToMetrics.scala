@@ -26,7 +26,7 @@ class SensorDataToMetrics extends AkkaStreamlet {
   val out = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
   val shape = StreamletShape(in, out)
   def flow = {
-    FlowWithOffsetContext[SensorData]
+    FlowWithCommittableContext[SensorData]
       .mapConcat { data ⇒
         List(
           Metric(data.deviceId, data.timestamp, "power", data.measurements.power),
@@ -36,6 +36,6 @@ class SensorDataToMetrics extends AkkaStreamlet {
       }
   }
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(sinkWithOffsetContext(out))
+    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
   }
 }

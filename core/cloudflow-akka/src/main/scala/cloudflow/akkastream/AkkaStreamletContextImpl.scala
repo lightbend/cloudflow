@@ -101,26 +101,45 @@ final class AkkaStreamletContextImpl(
       }.asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }.map { case (record, _) ⇒ record }
   }
 
-  // TODO the Out type of the flow is not correct yet. This needs some work, should it be the Alpakka Kafka Result, or the original message sent?
-  // TODO this might be removed, and only provide sinkWithOffsetContext (as Enno is now building it) to prevent unnecessary back-pressure issues.
-  def flowWithOffsetContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithOffsetContext[T, _] = {
+  def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
     val topic = savepointPath.value
-    // TODO this can be made simpler if mapError would be available on FlowWithContext
-    FlowWithContext.fromTuples(Flow[(T, CommittableOffset)]
-      .map {
-        case (value, offset) ⇒
-          val key = outlet.partitioner(value)
-          val bytesKey = keyBytes(key)
-          val bytesValue = outlet.codec.encode(value)
-          (ProducerMessage.single(new ProducerRecord(topic, bytesKey, bytesValue)), offset)
-      }
+
+    Flow[(T, Committable)].map {
+      case (value, committable) ⇒
+        val key = outlet.partitioner(value)
+        val bytesKey = keyBytes(key)
+        val bytesValue = outlet.codec.encode(value)
+        ProducerMessage.Message(new ProducerRecord(topic, bytesKey, bytesValue), committable)
+    }
       .via(handleTermination)
-    )
-      .via(Producer.flowWithContext(producerSettings))
+      .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
   }
+
+  def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
+    Flow[(T, Committable)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
+
+  @deprecated("Use `committableSink` instead.", "1.3.1")
+  def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(bootstrapServers)
+    val savepointPath = findSavepointPathForPort(outlet)
+    val topic = savepointPath.value
+
+    Flow[(T, CommittableOffset)].map {
+      case (value, committable) ⇒
+        val key = outlet.partitioner(value)
+        val bytesKey = keyBytes(key)
+        val bytesValue = outlet.codec.encode(value)
+        ProducerMessage.Message(new ProducerRecord(topic, bytesKey, bytesValue), committable)
+    }.toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+  }
+
+  @deprecated("Use `committableSink` instead.", "1.3.1")
+  def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+    Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.

@@ -91,7 +91,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
           // The test
           streamletConfig mustBe empty
 
-          def runnableGraph = sourceWithOffsetContext(in).to(sinkWithOffsetContext(out))
+          def runnableGraph = sourceWithOffsetContext(in).to(committableSink(out))
         }
       }
 

@@ -20,10 +20,11 @@ import org.junit.Test;
 import org.scalatest.junit.JUnitSuite;
 
 import akka.NotUsed;
-import akka.kafka.ConsumerMessage.CommittableOffset;
+import akka.kafka.ConsumerMessage.Committable;
 import akka.stream.javadsl.*;
 
 import cloudflow.akkastream.AkkaStreamlet;
+import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
 import cloudflow.akkastream.javadsl.util.*;
 import cloudflow.akkastream.testdata.Data;
 import cloudflow.akkastream.testdata.BadData;
@@ -49,10 +50,13 @@ public class SplitterTest extends JUnitSuite {
      return StreamletShape.createWithInlets(inlet).withOutlets(badOutlet, goodOutlet);
     }
 
-    public SplitterLogic createLogic() {
-      return new SplitterLogic(inlet, badOutlet, goodOutlet, getContext()) {
-        public FlowWithContext<Data, CommittableOffset, Either<BadData, Data>, CommittableOffset, NotUsed> createFlow() {
-          return FlowWithContext.<Data, CommittableOffset>create().map(d -> Either.right(d));
+    public RunnableGraphStreamletLogic createLogic() {
+      return new RunnableGraphStreamletLogic(getContext()){
+        public RunnableGraph createRunnableGraph() {
+          return getSourceWithCommittableContext(inlet).to(Splitter.sink(createFlow(), badOutlet, goodOutlet, getContext()));
+        }
+        private FlowWithContext<Data, Committable, Either<BadData, Data>, Committable, NotUsed> createFlow() {
+          return FlowWithContext.<Data, Committable>create().map(d -> Either.right(d));
         }
       };
     }

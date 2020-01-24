@@ -17,6 +17,7 @@
 package cloudflow.akkastream.util.scaladsl
 
 import akka._
+import akka.kafka._
 import akka.stream._
 import akka.stream.contrib._
 import akka.stream.scaladsl._
@@ -26,8 +27,78 @@ import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 
 /**
+ * Provides functions to split elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+ */
+object Splitter {
+  /**
+   * A Graph that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+   */
+  def graph[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      left: Sink[(L, Committable), NotUsed],
+      right: Sink[(R, Committable), NotUsed]
+  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] = {
+    GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
+      import GraphDSL.Implicits._
+
+      val toEitherFlow = builder.add(flow.asFlow)
+      val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
+        case (Left(e), offset)  ⇒ Left((e, offset))
+        case (Right(e), offset) ⇒ Right((e, offset))
+      }
+      val partitioner = builder.add(partitionWith)
+
+        // format: OFF
+        toEitherFlow ~> partitioner.in
+                        partitioner.out0 ~> il
+                        partitioner.out1 ~> ir
+      // format: ON
+
+      SinkShape(toEitherFlow.in)
+    }
+  }
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      left: Sink[(L, Committable), NotUsed],
+      right: Sink[(R, Committable), NotUsed]
+  ): Sink[(I, Committable), NotUsed] = Sink.fromGraph(graph(flow, left, right))
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R]
+  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+    val defaultSettings = CommitterSettings(context.system)
+    sink[I, L, R](flow, context.committableSink(leftOutlet, defaultSettings), context.committableSink(rightOutlet, defaultSettings))
+  }
+
+  /**
+   * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
+   * At-least-once semantics are used.
+   */
+  def sink[I, L, R](
+      flow: FlowWithCommittableContext[I, Either[L, R]],
+      leftOutlet: CodecOutlet[L],
+      rightOutlet: CodecOutlet[R],
+      committerSettings: CommitterSettings
+  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+    sink[I, L, R](flow, context.committableSink(leftOutlet, committerSettings), context.committableSink(rightOutlet, committerSettings))
+  }
+}
+
+/**
  * A StreamletLogic that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
  */
+@deprecated("Use `Splitter.sink` instead.", "1.3.1")
 abstract class SplitterLogic[I, L, R](
     inlet: CodecInlet[I],
     leftOutlet: CodecOutlet[L],
@@ -37,8 +108,10 @@ abstract class SplitterLogic[I, L, R](
    * Defines the flow that receives elements from the inlet.
    * The offset associated with every output element is automatically committed using at-least-once semantics.
    */
+  @deprecated("Use `Splitter.sink` instead.", "1.3.1")
   def flow: FlowWithOffsetContext[I, Either[L, R]]
 
+  @deprecated("Use `Splitter.sink` instead.", "1.3.1")
   final def flowWithOffsetContext() = FlowWithOffsetContext[I]
 
   /**
@@ -47,15 +120,15 @@ abstract class SplitterLogic[I, L, R](
    */
   override def runnableGraph() = {
     val in = sourceWithOffsetContext[I](inlet)
-    val left = sinkWithOffsetContext[L](leftOutlet)
-    val right = sinkWithOffsetContext[R](rightOutlet)
+    val left = committableSink[L](leftOutlet)
+    val right = committableSink[R](rightOutlet)
 
     val splitterGraph = RunnableGraph.fromGraph(
       GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
         import GraphDSL.Implicits._
 
         val toEitherFlow = builder.add(flow.asFlow)
-        val partitionWith = PartitionWith[(Either[L, R], CommittableOffset), (L, CommittableOffset), (R, CommittableOffset)] {
+        val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
           case (Left(e), offset)  ⇒ Left((e, offset))
           case (Right(e), offset) ⇒ Right((e, offset))
         }

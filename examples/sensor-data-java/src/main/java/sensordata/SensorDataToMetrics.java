@@ -19,7 +19,7 @@ package sensordata;
 import java.util.Arrays;
 
 import akka.stream.javadsl.*;
-import akka.kafka.ConsumerMessage.CommittableOffset;
+import akka.kafka.ConsumerMessage.Committable;
 
 import akka.NotUsed;
 
@@ -37,8 +37,8 @@ public class SensorDataToMetrics extends AkkaStreamlet {
    return StreamletShape.createWithInlets(in).withOutlets(out);
   }
 
-  private FlowWithContext<SensorData,CommittableOffset,Metric,CommittableOffset,NotUsed> flowWithContext() {
-    return FlowWithOffsetContext.<SensorData>create()
+  private FlowWithContext<SensorData,Committable,Metric,Committable,NotUsed> flowWithContext() {
+    return FlowWithCommittableContext.<SensorData>create()
       .mapConcat(data ->
         Arrays.asList(
           new Metric(data.getDeviceId(), data.getTimestamp(), "power", data.getMeasurements().getPower()),
@@ -51,7 +51,7 @@ public class SensorDataToMetrics extends AkkaStreamlet {
   public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
       public RunnableGraph createRunnableGraph() {
-        return getSourceWithOffsetContext(in).via(flowWithContext()).to(getSinkWithOffsetContext(out));
+        return getSourceWithCommittableContext(in).via(flowWithContext()).to(getCommittableSink(out));
       }
     };
   }
