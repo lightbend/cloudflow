@@ -132,9 +132,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	configurationArguments := deploy.SplitConfigurationParameters(args[1:])
 
-	deploy.HandleConfig(k8sClient, namespace, applicationSpec, configurationArguments, opts.configFiles)
-
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
+
+	deploy.HandleConfig(k8sClient, namespace, applicationSpec, configurationArguments, opts.configFiles)
 
 	if pulledImage.Authenticated {
 		if err := verifyPasswordOptions(opts); err == nil {
