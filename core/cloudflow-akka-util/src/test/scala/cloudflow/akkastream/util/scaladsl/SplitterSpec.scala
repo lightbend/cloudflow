@@ -26,6 +26,7 @@ import org.scalatest.concurrent._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
+import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testkit.scaladsl._
 import cloudflow.akkastream.testdata._
 
@@ -43,11 +44,13 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
     val right = AvroOutlet[Data]("out-1", _.id.toString)
     val shape = StreamletShape(in).withOutlets(left, right)
 
-    override def createLogic = new SplitterLogic(in, left, right) {
-      def flow = {
-        flowWithOffsetContext().map { data ⇒
-          if (data.id % 2 == 0) Right(data) else Left(BadData(data.name))
-        }
+    override def createLogic = new RunnableGraphStreamletLogic() {
+      def flow = FlowWithCommittableContext[Data]().map { data ⇒
+        if (data.id % 2 == 0) Right(data) else Left(BadData(data.name))
+      }
+
+      def runnableGraph = {
+        sourceWithOffsetContext(in).to(Splitter.sink(flow, left, right))
       }
     }
   }
