@@ -115,3 +115,37 @@ func Test_loadAndMergeConfigs(t *testing.T) {
 	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
 	assert.Equal(t, "WARNING", conf.GetString("cloudflow.streamlets.cdr-aggregator.application-conf.akka.loglevel"))
 }
+
+func Test_addDefaultValues(t *testing.T) {
+
+	conf, err := loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
+	assert.Empty(t, err)
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Descriptor: domain.Descriptor{
+					ConfigParameters: []domain.ConfigParameterDescriptor{
+						domain.ConfigParameterDescriptor{
+							Key:          "group-by-window",
+							DefaultValue: "10m",
+						},
+						domain.ConfigParameterDescriptor{
+							Key:          "watermark",
+							DefaultValue: "10m",
+						},
+					},
+				},
+				Name: "cdr-aggregator",
+			},
+		},
+	}
+	conf = addDefaultValues(spec, conf)
+	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "11m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+
+	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf"})
+	assert.Empty(t, err)
+	conf = addDefaultValues(spec, conf)
+	assert.Equal(t, "10m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+}
