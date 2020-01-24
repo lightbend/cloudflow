@@ -94,3 +94,24 @@ func Test_CreateSecretsData(t *testing.T) {
 	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.log-level") == "warning")
 	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.msg-prefix") == "test")
 }
+
+func Test_loadAndMergeConfigs(t *testing.T) {
+	conf, err := loadAndMergeConfigs([]string{"non-existing.conf", "non-existing.conf"})
+	assert.NotEmpty(t, err)
+
+	_, err = loadAndMergeConfigs([]string{"non-existing.conf", "test_config_files/test1.conf"})
+	assert.NotEmpty(t, err)
+
+	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf"})
+	assert.Empty(t, err)
+	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
+
+	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
+	assert.Empty(t, err)
+	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "11m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
+	assert.Equal(t, "WARNING", conf.GetString("cloudflow.streamlets.cdr-aggregator.application-conf.akka.loglevel"))
+}
