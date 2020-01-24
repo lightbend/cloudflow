@@ -57,9 +57,10 @@ class EndpointActionsSpec extends WordSpec
 
       val appId = "def-jux-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
 
       val currentApp = None
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("endpoint actions are created from a new app")
       val actions = EndpointActions(newApp, currentApp, namespace)
@@ -97,8 +98,9 @@ class EndpointActionsSpec extends WordSpec
 
       val appId = "def-jux-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -126,12 +128,13 @@ class EndpointActionsSpec extends WordSpec
       val appId = "killer-mike-12345"
       val appVersion = "42-abcdef0"
       val newAppVersion = "43-abcdef0"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val image = "image-1"
+      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, newBp.verified.right.value, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
       val actions = EndpointActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -164,14 +167,15 @@ class EndpointActionsSpec extends WordSpec
 
       val appId = "odd-future-12345"
       val appVersion = "42-abcdef0"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val image = "image-1"
+      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("the new app adds an endpoint, ingress -> egress")
       val egressRef = egress.ref("egress")
       val newBp = bp.use(egressRef)
         .connect(ingressRef.out, egressRef.in)
       val newAppVersion = "43-abcdef0"
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, newBp.verified.right.value, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
 
       Then("create actions for service should be created for the new endpoint")
       val actions = EndpointActions(newApp, Some(currentApp), namespace)
