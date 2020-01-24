@@ -306,7 +306,7 @@ func handleConfig(
 	configFiles []string,
 	existingConfigs map[string]*configuration.Config) (map[string]*corev1.Secret, error) {
 
-	configMergedFromFiles, err := loadAndMergeConfigs(applicationSpec, configFiles, configurationArguments)
+	configMergedFromFiles, err := loadAndMergeConfigs(configFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +382,7 @@ func moveToRoot(config *configuration.Config, root string) *configuration.Config
 }
 
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
-func loadAndMergeConfigs(spec domain.CloudflowApplicationSpec, configFiles []string, configurationArguments map[string]string) (*configuration.Config, error) {
+func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
 	// For some reason WithFallback does not work as expected, so we'll use this workaround for now.
 	var sb strings.Builder
 
