@@ -192,8 +192,8 @@ func accessModeExists(accessModes []corev1.PersistentVolumeAccessMode, accessMod
 	return false
 }
 
-// ValidateConfigurationAgainstDescriptor validates all configuration values against configuration parameter descriptors
-func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) error {
+// validateConfigurationAgainstDescriptor validates all configuration values against configuration parameter descriptors
+func validateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) error {
 
 	type ValidationErrorDescriptor struct {
 		FqKey              string
@@ -313,23 +313,25 @@ func handleConfig(
 
 	configMergedFromFiles = addDefaultValues(applicationSpec, configMergedFromFiles)
 
-	streamletConfigs := mergeStreamletConfigs(applicationSpec, configMergedFromFiles, existingConfigs)
+	streamletConfigs := addExistingStreamletConfigsIfNotPresentInFile(applicationSpec, configMergedFromFiles, existingConfigs)
 
 	streamletConfigs = addApplicationLevelConfig(configMergedFromFiles, streamletConfigs)
 
 	streamletConfigs = addArguments(applicationSpec, streamletConfigs, configurationArguments)
 
-	validationError := ValidateConfigurationAgainstDescriptor(applicationSpec, streamletConfigs)
+	validationError := validateConfigurationAgainstDescriptor(applicationSpec, streamletConfigs)
 	if validationError != nil {
 		return nil, validationError
 	}
+	//TODO need to create empty secrets for streamlets that have no args.
 	streamletNameSecretMap, err := createSecretsData(&applicationSpec, streamletConfigs)
 	return streamletNameSecretMap, err
 }
 
-func mergeStreamletConfigs(spec domain.CloudflowApplicationSpec, configMergedFromFiles *configuration.Config, existingConfigs map[string]*configuration.Config) map[string]*configuration.Config {
+// adds existing configs (loaded from existing secrets), only if there is no config for the streamlet in the merged files (otherwise you can't unset anything)
+func addExistingStreamletConfigsIfNotPresentInFile(spec domain.CloudflowApplicationSpec, configMergedFromFiles *configuration.Config, existingConfigs map[string]*configuration.Config) map[string]*configuration.Config {
 	configs := make(map[string]*configuration.Config)
-	// add existing configs loaded from secrets, only if there is no config for the streamlet (otherwise you can't unset anything)
+	// add existing configs loaded from secrets, only if there is no config for the streamlet in the merged files (otherwise you can't unset anything)
 	for streamletName, existingConfig := range existingConfigs {
 		streamletConfigFromFile := configMergedFromFiles.GetConfig(cloudflowStreamletsPrefix + streamletName)
 		if streamletConfigFromFile == nil {
@@ -338,7 +340,7 @@ func mergeStreamletConfigs(spec domain.CloudflowApplicationSpec, configMergedFro
 			configs[streamletName] = existingStreamletConfig
 		}
 	}
-	// add configs found in the --conf files
+	// add streamlet configs found in the --conf files
 	for _, streamlet := range spec.Streamlets {
 		streamletConfigFromFile := moveToRoot(configMergedFromFiles.GetConfig(cloudflowStreamletsPrefix+streamlet.Name), streamlet.Name)
 		if streamletConfigFromFile != nil {
@@ -352,6 +354,7 @@ func mergeStreamletConfigs(spec domain.CloudflowApplicationSpec, configMergedFro
 
 	return configs
 }
+
 func addApplicationLevelConfig(configMergedFromFiles *configuration.Config, streamletConfigs map[string]*configuration.Config) map[string]*configuration.Config {
 	// merge in application level settings from config files.
 	for streamletName, streamletConfig := range streamletConfigs {
@@ -362,6 +365,7 @@ func addApplicationLevelConfig(configMergedFromFiles *configuration.Config, stre
 			if key != "cloudflow" {
 				appLevelConfigItem := moveToRoot(configMergedFromFiles.GetConfig(key), key)
 				streamletConfigs[streamletName] = mergeWithFallback(streamletConfig, appLevelConfigItem)
+
 			}
 		}
 

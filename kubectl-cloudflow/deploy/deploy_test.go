@@ -49,7 +49,7 @@ func Test_SplitConfigurationParameters(t *testing.T) {
 	assert.Empty(t, empty)
 }
 
-func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
+func Test_validateConfigurationAgainstDescriptor(t *testing.T) {
 
 	applicationConfiguration := domain.TestApplicationDescriptor()
 
@@ -57,19 +57,19 @@ func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
 	configs := make(map[string]*configuration.Config)
-	err := ValidateConfigurationAgainstDescriptor(spec, configs)
+	err := validateConfigurationAgainstDescriptor(spec, configs)
 	assert.NotEmpty(t, err)
 
 	args := SplitConfigurationParameters(commandLineForConfiguration())
 	configs = addArguments(spec, configs, args)
 
-	err = ValidateConfigurationAgainstDescriptor(spec, configs)
+	err = validateConfigurationAgainstDescriptor(spec, configs)
 	assert.Empty(t, err)
 
 	half := SplitConfigurationParameters([]string{`valid-logger.log-level="warning"`})
 	configs = make(map[string]*configuration.Config)
 	configs = addArguments(spec, configs, half)
-	err = ValidateConfigurationAgainstDescriptor(spec, configs)
+	err = validateConfigurationAgainstDescriptor(spec, configs)
 	assert.NotEmpty(t, err)
 }
 
@@ -114,6 +114,11 @@ func Test_loadAndMergeConfigs(t *testing.T) {
 	assert.Equal(t, "11m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
 	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
 	assert.Equal(t, "WARNING", conf.GetString("cloudflow.streamlets.cdr-aggregator.application-conf.akka.loglevel"))
+
+	conf, err = loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/test1.conf"})
+	assert.Empty(t, err)
+	assert.Equal(t, "2m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
 }
 
 func Test_addDefaultValues(t *testing.T) {
@@ -148,4 +153,233 @@ func Test_addDefaultValues(t *testing.T) {
 	conf = addDefaultValues(spec, conf)
 	assert.Equal(t, "10m", conf.GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
 	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+}
+
+func Test_addArguments(t *testing.T) {
+
+	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
+
+	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
+	conf := configuration.ParseString("")
+
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Descriptor: domain.Descriptor{
+					ConfigParameters: []domain.ConfigParameterDescriptor{
+						domain.ConfigParameterDescriptor{
+							Key:          "group-by-window",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+						domain.ConfigParameterDescriptor{
+							Key:          "watermark",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+					},
+				},
+				Name: "cdr-aggregator",
+			},
+			domain.Streamlet{
+				Descriptor: domain.Descriptor{
+					ConfigParameters: []domain.ConfigParameterDescriptor{
+						domain.ConfigParameterDescriptor{
+							Key:          "records-per-second",
+							DefaultValue: "10",
+							Type:         "int32",
+						},
+					},
+				},
+				Name: "cdr-generator1",
+			},
+		},
+	}
+
+	configs := addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+		"cdr-generator1": genConf,
+	})
+
+	configsAdded := addArguments(spec, configs, map[string]string{
+		"cdr-aggregator.group-by-window":    "14m",
+		"cdr-generator1.records-per-second": "100",
+	})
+
+	assert.EqualValues(t, 100, configsAdded["cdr-generator1"].GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
+	assert.Equal(t, "14m", configsAdded["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+	assert.Equal(t, "2m", configsAdded["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+
+	configs = addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+		"cdr-generator1": genConf,
+	})
+
+	configsAdded = addArguments(spec, configs, map[string]string{
+		"cdr-aggregator.group-by-window": "2m",
+	})
+	assert.Equal(t, "2m", configsAdded["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+	assert.EqualValues(t, 8, configsAdded["cdr-generator1"].GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
+}
+
+func Test_addExistingStreamletConfigsIfNotPresentInFile(t *testing.T) {
+	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
+
+	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
+
+	conf, err := loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
+	assert.Empty(t, err)
+
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Name: "cdr-aggregator",
+			},
+			domain.Streamlet{
+				Name: "cdr-generator1",
+			},
+		},
+	}
+
+	// conf (merged files) takes precedence
+	configs := addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+		"cdr-generator1": genConf,
+	})
+	// test2.conf
+	assert.EqualValues(t, 5, configs["cdr-generator1"].GetInt32("cloudflow.streamlets.cdr-generator1.records-per-second"))
+	// test3.conf
+	assert.Equal(t, "11m", configs["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.group-by-window"))
+	// test2.conf
+	assert.Equal(t, "5m", configs["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+}
+
+func Test_validateConfigFiles(t *testing.T) {
+	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
+
+	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
+	conf := configuration.ParseString("")
+
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Descriptor: domain.Descriptor{
+					ConfigParameters: []domain.ConfigParameterDescriptor{
+						domain.ConfigParameterDescriptor{
+							Key:          "group-by-window",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+						domain.ConfigParameterDescriptor{
+							Key:          "watermark",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+					},
+				},
+				Name: "cdr-aggregator",
+			},
+			domain.Streamlet{
+				Descriptor: domain.Descriptor{
+					ConfigParameters: []domain.ConfigParameterDescriptor{
+						domain.ConfigParameterDescriptor{
+							Key:          "records-per-second",
+							DefaultValue: "10",
+							Type:         "int32",
+						},
+					},
+				},
+				Name: "cdr-generator1",
+			},
+		},
+	}
+
+	configs := addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+		"cdr-generator1": genConf,
+	})
+
+	err := validateConfigurationAgainstDescriptor(spec, configs)
+	assert.Empty(t, err)
+
+	aggConf = configuration.LoadConfig("test_config_files/bad-cdr-aggregator.conf")
+	configs = addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+		"cdr-generator1": genConf,
+	})
+	err = validateConfigurationAgainstDescriptor(spec, configs)
+	assert.NotEmpty(t, err)
+}
+
+func Test_addApplicationLevelConfig(t *testing.T) {
+
+	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
+
+	conf, err := loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator-with-app-level.conf"})
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Name: "cdr-aggregator",
+			},
+		},
+	}
+
+	configs := addExistingStreamletConfigsIfNotPresentInFile(spec, conf, map[string]*configuration.Config{
+		"cdr-aggregator": aggConf,
+	})
+
+	assert.Empty(t, err)
+	added := addApplicationLevelConfig(conf, configs)
+	// the existing config is not used, since there is a config for the cdr-aggregator in the merged files.
+	assert.Equal(t, "", added["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "INFO", added["cdr-aggregator"].GetString("akka.loglevel"))
+	assert.Equal(t, "my-service", added["cdr-aggregator"].GetString("akka.kafka.producer.service-name"))
+}
+
+func Test_addApplicationLevelConfig2(t *testing.T) {
+
+	conf, err := loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/cdr-aggregator-with-app-level.conf"})
+	spec := domain.CloudflowApplicationSpec{
+		Streamlets: []domain.Streamlet{
+			domain.Streamlet{
+				Name: "cdr-aggregator",
+			},
+		},
+	}
+	configs := addExistingStreamletConfigsIfNotPresentInFile(spec, conf, make(map[string]*configuration.Config))
+
+	assert.Empty(t, err)
+	added := addApplicationLevelConfig(conf, configs)
+	assert.Equal(t, "2m", added["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.watermark"))
+	assert.Equal(t, "INFO", added["cdr-aggregator"].GetString("akka.loglevel"))
+	assert.Equal(t, "my-service", added["cdr-aggregator"].GetString("akka.kafka.producer.service-name"))
+}
+
+func Test_mergeWithFallback(t *testing.T) {
+	left := configuration.ParseString(`
+     a.b.c {
+			 d = 2
+			 e = 3
+		 }
+	`)
+	right := configuration.ParseString(`
+     a.b.c {
+			 d = 2
+			 e = 4
+			 f = 10
+		 }
+	`)
+
+	res := mergeWithFallback(left, right)
+	assert.Equal(t, "3", res.GetString("a.b.c.e"))
+	assert.Equal(t, "10", res.GetString("a.b.c.f"))
+	res = mergeWithFallback(right, left)
+	assert.Equal(t, "4", res.GetString("a.b.c.e"))
+
+	// NOTE: Uncomment this ONLY to see where go-akka/configuration fails merging
+	// res = left.WithFallback(right)
+	// assert.Equal(t, "3", res.GetString("a.b.c.e"))
+	// assert.Equal(t, "10", res.GetString("a.b.c.f"))
+	// res = right.WithFallback(left)
+	// assert.Equal(t, "4", res.GetString("a.b.c.e"))
 }
