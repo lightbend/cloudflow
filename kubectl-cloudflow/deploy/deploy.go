@@ -465,6 +465,12 @@ func addArguments(spec domain.CloudflowApplicationSpec, configs map[string]*conf
 
 // workaround for WithFallback not working in go-akka/configuration
 func mergeWithFallback(config *configuration.Config, fallback *configuration.Config) *configuration.Config {
+	if config == nil {
+		config = configuration.ParseString("")
+	}
+	if fallback == nil {
+		fallback = configuration.ParseString("")
+	}
 	confStr := config.String()
 	fallbackStr := fallback.String()
 	var sb strings.Builder
