@@ -519,14 +519,20 @@ func getConfigFromSecrets(client *kubernetes.Clientset, spec domain.CloudflowApp
 
 func createSecretsData(spec *domain.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) (map[string]*corev1.Secret, error) {
 	streamletSecretNameMap := make(map[string]*corev1.Secret)
-	for streamletName, config := range streamletConfigs {
-		secretMap := make(map[string]string)
-		var sb strings.Builder
-		sb.WriteString(config.String())
-		sb.WriteString("\n")
-		secretMap["secret.conf"] = sb.String()
+	for _, streamlet := range spec.Streamlets {
+		streamletName := streamlet.Name
 		secretName := findSecretName(spec, streamletName)
-		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
+		config := streamletConfigs[streamletName]
+		if config != nil {
+			secretMap := make(map[string]string)
+			var sb strings.Builder
+			sb.WriteString(config.String())
+			sb.WriteString("\n")
+			secretMap["secret.conf"] = sb.String()
+			streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
+		} else {
+			streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, make(map[string]string))
+		}
 	}
 	return streamletSecretNameMap, nil
 }
