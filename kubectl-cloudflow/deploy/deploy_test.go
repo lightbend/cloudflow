@@ -355,11 +355,32 @@ func Test_addApplicationLevelConfig2(t *testing.T) {
 	assert.Equal(t, "my-service", added["cdr-aggregator"].GetString("akka.kafka.producer.service-name"))
 }
 
+//Tests workaround for merging.
 func Test_mergeWithFallback(t *testing.T) {
+	os.Setenv("FOO", "1")
 	left := configuration.ParseString(`
      a.b.c {
 			 d = 2
 			 e = 3
+			 g {
+				 h = 8
+			 }
+		 }
+		 z = 7
+		 n {
+			 o.p {
+				 q.r = 45
+				 s = ${FOO}
+				 t = 15
+				 t = ${?FOO}
+				 u = ${?BAR}
+				 v = ["1", "2", "3"]
+			 }
+		 }
+
+		 # note, after mixing this format , nothing else is read. (this might be according to spec)
+		 {
+			 x : 12
 		 }
 	`)
 	right := configuration.ParseString(`
@@ -367,14 +388,55 @@ func Test_mergeWithFallback(t *testing.T) {
 			 d = 2
 			 e = 4
 			 f = 10
+			 g {
+				 h = 8
+			 }
 		 }
+		 z = 12
+		 # NOTE: This is not supported yet.
+		 # p = ${a.b.c}
+		 # p = ${a.b.c.d}
+
+		 i : {
+			 j : {
+				 k.l.m = 20
+			 }
+		 }
+
+		 n {
+			 o.p {
+				 q.r = 44
+				 v = ["4", "5", "6"]
+			 }
+		 }
+
+		 # note, after mixing this format , nothing else is read. (this might be according to spec)
+		 {
+			 x : 13
+		 }
+
 	`)
 
 	res := mergeWithFallback(left, right)
 	assert.Equal(t, "3", res.GetString("a.b.c.e"))
 	assert.Equal(t, "10", res.GetString("a.b.c.f"))
+	assert.Equal(t, "8", res.GetString("a.b.c.g.h"))
+	assert.Equal(t, "7", res.GetString("z"))
+	assert.Equal(t, "12", res.GetString("x"))
+	assert.Equal(t, "20", res.GetString("i.j.k.l.m"))
+	assert.Equal(t, "45", res.GetString("n.o.p.q.r"))
+	assert.Equal(t, "1", res.GetString("n.o.p.s"))
+	assert.Equal(t, "1", res.GetString("n.o.p.t"))
+	assert.Equal(t, "", res.GetString("n.o.p.u"))
+	assert.EqualValues(t, []string{"1", "2", "3"}, res.GetStringList("n.o.p.v"))
 	res = mergeWithFallback(right, left)
 	assert.Equal(t, "4", res.GetString("a.b.c.e"))
+	assert.Equal(t, "8", res.GetString("a.b.c.g.h"))
+	assert.Equal(t, "12", res.GetString("z"))
+	assert.Equal(t, "13", res.GetString("x"))
+	assert.Equal(t, "20", res.GetString("i.j.k.l.m"))
+	assert.Equal(t, "44", res.GetString("n.o.p.q.r"))
+	assert.EqualValues(t, []string{"4", "5", "6"}, res.GetStringList("n.o.p.v"))
 
 	// NOTE: Uncomment this ONLY to see where go-akka/configuration fails merging
 	// res = left.WithFallback(right)
