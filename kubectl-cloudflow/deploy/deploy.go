@@ -206,7 +206,7 @@ func validateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec
 	for _, streamlet := range spec.Streamlets {
 		conf := streamletConfigs[streamlet.Name]
 		if conf == nil {
-			conf = configuration.ParseString("")
+			conf = EmptyConfig()
 		}
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			streamletConfigKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
@@ -470,10 +470,10 @@ func addArguments(spec domain.CloudflowApplicationSpec, configs map[string]*conf
 // workaround for WithFallback not working in go-akka/configuration
 func mergeWithFallback(config *configuration.Config, fallback *configuration.Config) *configuration.Config {
 	if config == nil {
-		config = configuration.ParseString("")
+		config = EmptyConfig()
 	}
 	if fallback == nil {
-		fallback = configuration.ParseString("")
+		fallback = EmptyConfig()
 	}
 	confStr := config.String()
 	fallbackStr := fallback.String()
@@ -487,6 +487,11 @@ func mergeWithFallback(config *configuration.Config, fallback *configuration.Con
 	sb.WriteString("\n")
 	conf := configuration.ParseString(sb.String()).GetConfig("a")
 	return conf
+}
+
+//EmptyConfig creates an empty config (workaround, not found in go-akka configuration)
+func EmptyConfig() *configuration.Config {
+	return configuration.ParseString("")
 }
 
 func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {

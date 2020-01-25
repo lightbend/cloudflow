@@ -160,7 +160,7 @@ func Test_addArguments(t *testing.T) {
 	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
 
 	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
-	conf := configuration.ParseString("")
+	conf := EmptyConfig()
 
 	spec := domain.CloudflowApplicationSpec{
 		Streamlets: []domain.Streamlet{
@@ -258,7 +258,7 @@ func Test_validateConfigFiles(t *testing.T) {
 	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
 
 	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
-	conf := configuration.ParseString("")
+	conf := EmptyConfig()
 
 	spec := domain.CloudflowApplicationSpec{
 		Streamlets: []domain.Streamlet{
