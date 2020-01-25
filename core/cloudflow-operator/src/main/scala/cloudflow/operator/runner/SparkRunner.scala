@@ -316,7 +316,7 @@ object SparkResource {
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "sparkoperator.k8s.io",
-    version = "v1beta1",
+    version = "v1beta2",
     kind = "SparkApplication"
   )
 }
