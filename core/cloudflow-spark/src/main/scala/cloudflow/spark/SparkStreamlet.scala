@@ -73,9 +73,9 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
   override protected final def createContext(config: Config): SparkStreamletContext = {
     (for {
       streamletConfig ← StreamletDefinition.read(config)
-      session ← makeSparkSession(makeSparkConfig)
+      updatedConfig = streamletConfig.config.withFallback(config)
+      session ← makeSparkSession(makeSparkConfig(updatedConfig))
     } yield {
-      val updatedConfig = streamletConfig.config.withFallback(config)
       new kafka.SparkStreamletContextImpl(streamletConfig, session, updatedConfig)
     })
       .recoverWith {
@@ -156,15 +156,22 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
     context.streamletConfig.getString(configKey)
   }
 
-  private def makeSparkConfig(): SparkConf = {
-    val conf = new SparkConf()
+  private def makeSparkConfig(config: Config): SparkConf = {
+    var conf = new SparkConf()
     val master = conf.getOption("spark.master").getOrElse("local[2]")
-    conf.setMaster(master)
+    conf = conf.setMaster(master)
       // arbitrary number - default is 200 which is quite large for our sample apps
       // Needs to take a value passed through configuration, in case the user would like to override this.
       .set("spark.sql.shuffle.partitions", "20")
       .set("spark.sql.codegen.wholeStage", "false")
       .set("spark.shuffle.compress", "false")
+    import scala.collection.JavaConverters._
+    Try { config.getConfig("spark") }.toOption.foreach { cfg ⇒
+      cfg.entrySet.asScala.map { entry ⇒
+        conf = conf.set(entry.getKey(), entry.getValue().render())
+      }
+    }
+    conf
   }
 
   private def makeSparkSession(sparkConfig: SparkConf): Try[SparkSession] = Try {
