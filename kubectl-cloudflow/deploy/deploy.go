@@ -451,17 +451,17 @@ func addArguments(spec domain.CloudflowApplicationSpec, configs map[string]*conf
 		}
 	}
 
-	var sbAppLevel strings.Builder
+	var sbNonValidatedParameters strings.Builder
 	for key, configValue := range configurationArguments {
 		if _, ok := written[key]; !ok {
-			sbAppLevel.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", key, configValue))
+			sbNonValidatedParameters.WriteString(fmt.Sprintf("%s%s=\"%s\"\r\n", cloudflowStreamletsPrefix, key, configValue))
 		}
 	}
-	if sbAppLevel.Len() > 0 {
-		appLevelConfFromArgs := configuration.ParseString(sbAppLevel.String())
+	if sbNonValidatedParameters.Len() > 0 {
+		nonValidatedConfFromArgs := configuration.ParseString(sbNonValidatedParameters.String())
 
 		for streamletName, config := range configs {
-			configs[streamletName] = mergeWithFallback(appLevelConfFromArgs, config)
+			configs[streamletName] = mergeWithFallback(nonValidatedConfFromArgs, config)
 		}
 	}
 	return configs
