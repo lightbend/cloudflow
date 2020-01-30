@@ -40,7 +40,7 @@ The `buildAndPublish` command, if successful, will publish the exact command to 
 
 The project comes with scripts that can be used to feed data into the ingresses using http.
 
-The folder `test-data` contains 2 bash scripts, `send-data-rides.sh` and `send-data-fares.sh` that can be used to feed data through http to the 2 ingresses. In order to access the ingresses use port-forwarding to the two pods that are running the ingresses.
+The folder `test-data` contains 2 bash scripts, `send-data-rides.sh` and `send-data-fares.sh` that can be used to feed data through http to the 2 ingresses. Both scripts accept a port number as the argument, which you need to supply when invoking the script (see example below). In order to access the ingresses use port-forwarding to the two pods that are running the ingresses.
 
 For example list the application pods:
 
@@ -59,10 +59,18 @@ Then port-forward to the correct pods:
 
 ```bash
 $ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3000:3000
-$ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3001:3001
+$ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3001:3001
 ```
 
-Now you are ready to run the two scripts.
+Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3001`.
+
+```
+$ ./send-data-rides.sh -p 3000
+...
+$ ./send-data-fares.sh -p 3001
+```
+
+> **Note:** Just make sure that the port numbers passed in to the scripts match the ones where you port forwarded to.
 
 > **Note:** If you want to access the Flink job manager you can check which processor pod exposes the 8080 port and also port-forward to it.
 
@@ -70,7 +78,7 @@ Now you are ready to run the two scripts.
 
 **Steps:**
 
-* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
+* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow/blob/master/installer/README.md).
 Make sure you have access to your cluster:
 
 ```
@@ -123,7 +131,7 @@ This command line tool can be used to deploy and operate Cloudflow applications.
 * Deploy the app.
 
 ```
-$ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p
+$ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
 Existing value will be used for configuration parameter 'logger.log-level'
 Existing value will be used for configuration parameter 'logger.msg-prefix'
 WARNING! Using --password via the CLI is insecure. Use --password-stdin.
@@ -159,7 +167,7 @@ Execute the steps above for ingesting data.
 If everything worked fine you should see output similar to this:
 
 ```
-$ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
+$ kubectl logs taxi-ride-fare-logger-7c64c57885-rmc8n -n taxi-ride-fare
 ...
 [INFO] [11/08/2019 13:35:47.510] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"rideId": 1, "totalFare": 21.5}
 [INFO] [11/08/2019 13:35:47.596] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"rideId": 23485, "totalFare": 14.0}
@@ -174,3 +182,28 @@ $ taxi-ride-fare-logger-7c64c57885-rmc8n  -n taxi-ride-fare
 ```
 $ kubectl cloudflow undeploy taxi-ride-fare
 ```
+
+### Running inside the Sandbox
+
+For running this application in the local sandbox, follow the instructions in [Running in a local Sandbox](https://cloudflow.io/docs/current/get-started/run-in-sandbox.html) document. Once the streamlets start following the `runLocal` command, you will see something like the following displayed on stdout:
+
+```
+logger [taxiride.logger.FarePerRideLogger]
+processor [taxiride.processor.TaxiRideProcessor]
+taxi-fare [taxiride.ingestor.TaxiFareIngress]
+    - HTTP port [3002]
+taxi-ride [taxiride.ingestor.TaxiRideIngress]
+    - HTTP port [3003]
+```
+
+The port numbers indicate the ports for the two ingresses. In order to feed data to the application, you need to run the 2 bash scripts in folder `test-data`, named `send-data-rides.sh` and `send-data-fares.sh`. 
+
+```
+$ ./send-data-rides.sh -p 3003
+...
+$ ./send-data-fares.sh -p 3002
+```
+
+> **Note:** Before running the bash scripts, change the port numbers in the scripts to the ones displayed above by the `runLocal` command.
+
+This will start feeding data to the application. You can view the output of the application in the local file that got created by the `runLocal` command.

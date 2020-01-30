@@ -17,8 +17,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+while getopts ":p:" opt; do
+  case $opt in
+    p) 
+      port="$OPTARG"
+      ;;
+    \?) 
+      echo "Invalid option -$OPTARG" >&2
+      exit 1
+      ;;
+    :) 
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$port" ]]; then
+  echo "Usage: send-data-rides.sh -p <port>"
+  exit 1
+fi
+
 for str in $(cat nycTaxiRides.json)
 do
   echo "Using $str"
-    curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data "$str"
+  curl -i -X POST http://localhost:"$port" -H "Content-Type: application/json" --data "$str"
 done
