@@ -5,7 +5,7 @@ The current published artifacts are:
 * [Spark distribution file](https://github.com/lightbend/spark/releases/download/cloudflow-2.4.4-k8s-client-upgrade/spark-2.4.4-bin-cloudflow-2.12.tgz).
 * `lightbend/sparkoperator:1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12`
 * `lightbend/spark:1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12`
-* `lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.1-scala-2.12`
+* `lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.2-scala-2.12`
 * Cloudflow jars in: https://lightbend.bintray.com/cloudflow.
 * Cloudflow cli in: https://bintray.com/lightbend/cloudflow-cli.
 * CLI Download Links:

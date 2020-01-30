@@ -21,7 +21,7 @@ ARG SPARK_BASE_IMAGE=lightbend/spark:1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12
 FROM $SPARK_BASE_IMAGE
 
 # Prepare environment
-ENV FLINK_VERSION=1.9.1 \
+ENV FLINK_VERSION=1.9.2 \
     SPARK_VERSION=2.4.4 \
     SCALA_VERSION=2.12
 

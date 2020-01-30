@@ -6,7 +6,7 @@ object Version {
   val Akka      = "2.5.24"
   val AkkaHttp  = "10.1.9"
   val Spark     = "2.4.4"
-  val Flink     = "1.9.1"
+  val Flink     = "1.9.2"
 }
 
 object Library {

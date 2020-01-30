@@ -1,4 +1,4 @@
-## Spark based Cloudflow Application
+## Spark-based Cloudflow Application
 
 ### Problem Definition
 
