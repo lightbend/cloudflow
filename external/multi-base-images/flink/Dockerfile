@@ -24,7 +24,6 @@ ENV FLINK_VERSION=1.9.2 \
 
 ENV FLINK_HOME=/opt/flink
 
-# Add Flink
 USER root
 
 ENV FLINK_TGZ=flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
@@ -62,5 +61,3 @@ COPY flink-entrypoint.sh /opt/
 ENV FLINK_HOME=/opt/flink
 USER 185
 ENTRYPOINT ["/opt/flink-entrypoint.sh"]
-
-

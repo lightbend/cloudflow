@@ -556,7 +556,7 @@ extractHostName() {
 
     # Extract the hostname from the network hierarchy
     if [[ "$SLAVE" =~ ^.*/([0-9a-zA-Z.-]+)$ ]]; then
-            SLAVE=${BASH_REMATCH[1]}
+        SLAVE=${BASH_REMATCH[1]}
     fi
 
     echo $SLAVE
