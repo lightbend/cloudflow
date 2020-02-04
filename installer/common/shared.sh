@@ -225,7 +225,13 @@ helm upgrade $EFS_SERVER_NAME stable/$EFS_CHART_NAME \
 --install \
 --namespace "$1" \
 --timeout 600 \
+--set efsProvisioner.awsRegion="$3" \
 --set efsProvisioner.dnsName="$2.efs.$3.amazonaws.com" \
 --set efsProvisioner.efsFileSystemId="$2" \
---set efsProvisioner.awsRegion="$3"
+--set efsProvisioner.provisionerName="cloudflow.io/aws-efs" \
+--set efsProvisioner.storageClass.name="aws-efs" \
+--set rbac.create="true" \
+--set podSecurityPolicy.enabled="false" \
+--set serviceAccount.create="true" \
+--set serviceAccount.name="cloudflow-efs"
 }

@@ -22,8 +22,8 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
-export CLUSTER_NAME=$1
-export AWS_DEFAULT_REGION=$2
+CLUSTER_NAME=$1
+AWS_DEFAULT_REGION=$2
 
 # Find the first 3 avialable zones
 AWS_REGION_NO_HYPENS="$(echo "$AWS_DEFAULT_REGION" | sed -e 's/\-//g' | tr '[:lower:]' '[:upper:]')"
@@ -61,6 +61,44 @@ eksctl create nodegroup \
   --nodes 3 \
   --managed \
   --node-labels=dedicated=StrimziKafka
+
+# Attach EFS policy to Cloudflow roles
+cat <<EOF >describe-file-systems-policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "VisualEditor0",
+      "Effect": "Allow",
+      "Action": "elasticfilesystem:DescribeFileSystems",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+
+ROLE_NAME_KAFKA=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '1p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
+echo "Role name Kafka: ${ROLE_NAME_KAFKA##*/}"
+
+ROLE_NAME_STANDARD=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '2p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
+echo "Role name workers: ${ROLE_NAME_STANDARD##*/}"
+
+# Ignore the error if the policy was already created during a previus run
+aws iam create-policy \
+  --policy-name cloudlfow-describe-file-systems \
+  --policy-document file://describe-file-systems-policy.json > /dev/null 2>&1
+
+POLICY_ARN=$(aws iam list-policies | jq -r '.Policies[] | select(.PolicyName=="cloudlfow-describe-file-systems") | .Arn')
+
+aws iam attach-role-policy \
+  --policy-arn "${POLICY_ARN}" \
+  --role-name "${ROLE_NAME_KAFKA##*/}"
+
+aws iam attach-role-policy \
+  --policy-arn "${POLICY_ARN}" \
+  --role-name "${ROLE_NAME_STANDARD##*/}"
+
+rm describe-file-systems-policy.json
 
 # Create EFS
 aws efs create-file-system \
