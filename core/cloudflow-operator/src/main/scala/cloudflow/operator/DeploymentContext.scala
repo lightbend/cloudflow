@@ -113,4 +113,3 @@ final case class FlinkRunnerSettings(
     taskManagerSettings: FlinkTaskManagerSettings,
     prometheusRules: String
 ) extends RunnerSettings
-

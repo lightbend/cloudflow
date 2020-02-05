@@ -171,7 +171,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
 
 /**
  * Captures the status subresource update of the resource.
- * The `resource` needs to have the subrresource set (for instance using `withStatus`)
+ * The `resource` needs to have the subresource set (for instance using `withStatus`)
  */
 class UpdateStatusAction[T <: ObjectResource](
     val resource: T,

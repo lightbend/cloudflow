@@ -30,7 +30,7 @@ object Library {
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9"
   val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9"
 
-  val Skuber                = "io.skuber"             %% "skuber"                   % "2.3.0" exclude("com.fasterxml.jackson.core","jackson-databind")
+  val Skuber                = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 
   val Spark                 = "org.apache.spark"      %% "spark-core"               % Version.Spark
   val SparkMllib            = "org.apache.spark"      %% "spark-mllib"              % Version.Spark

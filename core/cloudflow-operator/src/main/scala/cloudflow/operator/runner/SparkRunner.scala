@@ -17,11 +17,12 @@
 package cloudflow.operator
 package runner
 
+import cloudflow.blueprint.deployment._
+import cloudflow.operator.runner.SparkResource._
 import play.api.libs.json._
+import skuber.ResourceSpecification.Subresources
 import skuber._
 import skuber.api.patch.{ JsonMergePatch, Patch }
-import cloudflow.blueprint.deployment._
-import SparkResource._
 
 trait PatchProvider[T <: Patch] {
   def patchFormat: Writes[T]
@@ -118,7 +119,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     import ctx.sparkRunnerSettings._
     val driver = Driver(
-      cores = driverSettings.cores.map(_.amount.floatValue),
+      cores = driverSettings.cores.map(_.amount.intValue),
       memory = driverSettings.memory.map(_.value),
       coreLimit = driverSettings.coreLimit.map(_.value),
       memoryOverhead = driverSettings.memoryOverhead.map(_.value),
@@ -130,7 +131,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       securityContext = securityContext
     )
     val executor = Executor(
-      cores = executorSettings.cores.map(_.amount.floatValue),
+      cores = executorSettings.cores.map(_.amount.intValue),
       memory = executorSettings.memory.map(_.value),
       coreLimit = executorSettings.coreLimit.map(_.value),
       memoryOverhead = executorSettings.memoryOverhead.map(_.value),
@@ -212,7 +213,7 @@ object SparkResource {
   )
 
   final case class Driver(
-      cores: Option[Float] = None,
+      cores: Option[Int] = Some(1),
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
@@ -227,7 +228,7 @@ object SparkResource {
 
   final case class Executor(
       instances: Int,
-      cores: Option[Float] = None,
+      cores: Option[Int] = Some(1),
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
@@ -242,6 +243,7 @@ object SparkResource {
   final case class Spec(
       `type`: String = "Scala",
       mode: String = "cluster",
+      sparkVersion: String = "2.4.4",
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
       mainClass: String = "", // required parameter
@@ -251,6 +253,22 @@ object SparkResource {
       executor: Executor,
       restartPolicy: RestartPolicy,
       monitoring: Monitoring
+  )
+
+  // --- Status definition
+  final case class ApplicationState(state: String, errorMessage: Option[String])
+  final case class DriverInfo(
+      podName: Option[String],
+      webUIAddress: Option[String],
+      webUIPort: Option[Int],
+      webUIServiceName: Option[String]
+  )
+  final case class Status(
+      appId: Option[String],
+      applicationState: ApplicationState,
+      completionTime: Option[String],
+      driverInfo: DriverInfo,
+      submissionTime: Option[String] // may need to parse it as a date later on
   )
 
   implicit val volumeMountFmt: Format[Volume.Mount] = skuber.json.format.volMountFormat
@@ -286,24 +304,9 @@ object SparkResource {
       case onFailure: OnFailureRestartPolicy ⇒ onFailureRestartPolicyWrites.writes(onFailure)
     }
   }
+
   implicit val specFmt: Format[Spec] = Json.format[Spec]
-
-  // --- Status definition
-
-  final case class ApplicationState(state: String, errorMessage: Option[String])
-  final case class DriverInfo(
-      podName: Option[String],
-      webUIAddress: Option[String],
-      webUIPort: Option[Int],
-      webUIServiceName: Option[String]
-  )
-  final case class Status(
-      appId: Option[String],
-      applicationState: ApplicationState,
-      completionTime: Option[String],
-      driverInfo: DriverInfo,
-      submissionTime: Option[String] // may need to parse it as a date later on
-  )
+  implicit val statusFmt: Format[Status] = Json.format[Status]
 
   final case class SpecPatch(spec: Spec) extends JsonMergePatch
 
@@ -311,12 +314,16 @@ object SparkResource {
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
   implicit val driverInfoFmt: Format[DriverInfo] = Json.format[DriverInfo]
-  implicit val statusFmt: Format[Status] = Json.format[Status]
   implicit val specPatchFmt: Format[SpecPatch] = Json.format[SpecPatch]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "sparkoperator.k8s.io",
     version = "v1beta2",
-    kind = "SparkApplication"
+    kind = "SparkApplication",
+    subresources = Some(Subresources()
+      .withStatusSubresource
+    )
   )
+
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
 }

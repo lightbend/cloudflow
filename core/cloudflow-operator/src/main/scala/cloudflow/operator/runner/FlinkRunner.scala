@@ -21,6 +21,7 @@ import play.api.libs.json._
 import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+import skuber.ResourceSpecification.Subresources
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Spark [[Runner]].
@@ -291,6 +292,21 @@ object FlinkResource {
       restartNonce: String = ""
   )
 
+  final case class ApplicationState(state: String, errorMessage: Option[String])
+  final case class JobManagerInfo(
+      podName: Option[String],
+      webUIAddress: Option[String],
+      webUIPort: Option[Int],
+      webUIServiceName: Option[String]
+  )
+  final case class Status(
+      appId: Option[String],
+      applicationState: Option[ApplicationState],
+      completionTime: Option[String],
+      jobManagerInfo: Option[JobManagerInfo],
+      submissionTime: Option[String] // may need to parse it as a date later on
+  )
+
   implicit val volumeMountFmt: Format[Volume.Mount] = skuber.json.format.volMountFormat
   implicit val volumeFmt: Format[Volume] = skuber.json.format.volumeFormat
   implicit val envVarFmt: Format[EnvVar] = skuber.json.format.envVarFormat
@@ -308,33 +324,23 @@ object FlinkResource {
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
   implicit val specFmt: Format[Spec] = Json.format[Spec]
+  implicit val statusFmt: Format[Status] = Json.format[Status]
 
   final case class EnvConfig(env: List[EnvVar] = Nil)
-
-  final case class ApplicationState(state: String, errorMessage: Option[String])
-  final case class JobManagerInfo(
-      podName: Option[String],
-      webUIAddress: Option[String],
-      webUIPort: Option[Int],
-      webUIServiceName: Option[String]
-  )
-  final case class Status(
-      appId: Option[String],
-      applicationState: Option[ApplicationState],
-      completionTime: Option[String],
-      jobManagerInfo: Option[JobManagerInfo],
-      submissionTime: Option[String] // may need to parse it as a date later on
-  )
 
   type CR = CustomResource[Spec, Status]
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
   implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
-  implicit val statusFmt: Format[Status] = Json.format[Status]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "flink.k8s.io",
     version = "v1beta1",
-    kind = "FlinkApplication"
+    kind = "FlinkApplication",
+    subresources = Some(Subresources()
+      .withStatusSubresource
+    )
   )
+
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
 }
