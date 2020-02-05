@@ -29,6 +29,4 @@
 *** xref:develop:build-flink-streamlets.adoc[Building a Flink streamlet]
 *** xref:develop:test-flink-streamlet.adoc[Testing a Flink streamlet]
 
-* xref:api:index.adoc[Streamlet API]
-** link:./scaladoc/cloudflow/streamlets/index.html[Scaladoc]
-** link:./javadoc/index.html[Javadoc]
+* xref:api:index.adoc[Streamlet API Reference]
