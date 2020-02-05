@@ -16,7 +16,7 @@
 ** xref:get-started:deploy-to-gke-cluster.adoc[Deploy to a GKE cluster]
 ** xref:get-started:exercise-example.adoc[Exercise the example]
 
-* xref:develop:cloudflow-streamlets.adoc[Developing Cloudflow streamlets]
+* xref:develop:index.adoc[Developing Cloudflow streamlets]
 ** xref:develop:cloudflow-local-sandbox.adoc[Using a local sandbox]
 ** xref:develop:use-akka-streamlets.adoc[Using Akka streamlets]
 *** xref:develop:build-akka-streamlets.adoc[Building an Akka streamlet]

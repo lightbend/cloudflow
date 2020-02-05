@@ -11,8 +11,8 @@ work_dir := target
 
 cloudflow_clone_dir := ${work_dir}/cloudflow
 
-# The Example code needs to be placed within the docs-source to be reachable from the asciidoc structure
-examples_src := docs-source/docs/modules/ROOT/examples
+# The Example code needs to be placed within the shared-content-source to be reachable from the asciidoc structure
+examples_src := shared-content-source/docs/modules/develop/examples
 
 staging_dir := ${work_dir}/staging
 

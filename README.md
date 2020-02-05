@@ -5,7 +5,7 @@ This repository contains the sources for the [Cloudflow web site](https://cloudf
 This repository is structured as follows:
 - The root directory contains the `makefile` for the documentation generation process.
 - The source files for the home page and other `root` pages in the website are located under `homepage-source/`.
-- The structured documentation is located under `docs-source/`.
+- The structured documentation is located under `docs-source/`, with content that is shareable located in `shared-content-source`. See the readme.adoc file in the `shared-content-source` folder for more information.
 
 Additionally, the style used to generate the published website is available at: https://github.com/lightbend/antora-ui-lightbend-cloud-theme
 

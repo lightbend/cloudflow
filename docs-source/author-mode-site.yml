@@ -10,6 +10,9 @@ content:
   - url: ./../
     branches: [HEAD]
     start-path: homepage-source/docs
+  - url: ./../
+    branches: [HEAD]
+    start-path: shared-content-source/docs
   
 ui:
   bundle:
