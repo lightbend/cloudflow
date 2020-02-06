@@ -53,6 +53,7 @@ trait CloudflowTaskKeys {
   val cloudflowDockerRegistry = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
   val cloudflowFlinkDockerImageName = taskKey[Option[DockerImageName]]("The name of the Flink Docker image to publish.")
+  val cloudflowSparkDockerImageName = taskKey[Option[DockerImageName]]("The name of the Spark Docker image to publish.")
 
   val verifyBlueprint = taskKey[Unit]("Verify Blueprint")
   val build = taskKey[Unit]("Build the image and app.")
