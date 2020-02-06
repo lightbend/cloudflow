@@ -44,6 +44,7 @@ class ResourceNamesSpec extends WordSpec
   val testApp01 = {
     val appVersion = "001"
     val appId = "longappid9012345678900123456789001234567890"
+    val image = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -58,13 +59,14 @@ class ResourceNamesSpec extends WordSpec
       .connect(ingressRef.out, egressRef.in)
       .verified.right.value
 
-    CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+    CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
   }
 
   // appId 80 characters.
   val testApp02 = {
     val appVersion = "001"
     val appId = "longappid9012345678900123456789001234567890012345678900123456789012345678901234567890"
+    val image = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -79,7 +81,7 @@ class ResourceNamesSpec extends WordSpec
       .connect(ingressRef.out, egressRef.in)
       .verified.right.value
 
-    CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+    CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
   }
 
   "Deployments" should {

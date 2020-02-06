@@ -58,9 +58,10 @@ class RunnerActionsSpec extends WordSpec
 
       val appId = "def-jux-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
 
       val currentApp = None
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("runner actions are created from a new app")
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
@@ -104,8 +105,9 @@ class RunnerActionsSpec extends WordSpec
 
       val appId = "def-jux-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -133,13 +135,14 @@ class RunnerActionsSpec extends WordSpec
 
       val appId = "thundercat-12345"
       val appVersion = "42-abcdef0"
+      val image = "image-1"
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, newBp.verified.right.value, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
       val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -175,14 +178,15 @@ class RunnerActionsSpec extends WordSpec
 
       val appId = "lord-quas-12345"
       val appVersion = "42-abcdef0"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+      val image = "image-1"
+      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       When("the new app adds a runner, ingress -> egress")
       val egressRef = egress.ref("egress")
       val newBp = bp.use(egressRef)
         .connect(ingressRef.out, egressRef.in)
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, newBp.verified.right.value, agentPaths)
+      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
 
       Then("create actions for runner resources should be created for the new endpoint")
       val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)

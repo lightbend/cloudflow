@@ -40,7 +40,6 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
 
   implicit val streamletDescriptorFormat = jsonFormat(
     StreamletDescriptor.apply,
-    "project_id",
     "class_name",
     "runtime",
     "labels",
@@ -49,7 +48,6 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
     "outlets",
     "config_parameters",
     "attributes",
-    "image",
     "volume_mounts"
   )
 }

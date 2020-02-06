@@ -23,6 +23,8 @@ You need the command line tool for your particular Kubernetes cluster:
 * [Google Cloud SDK](https://cloud.google.com/sdk/)
 * [Amazon CLI for EKS](https://eksctl.io/)
 
+Note: Make sure you have the latest `aws-cli` version.
+
 ### Utilities
 * [jq](https://stedolan.github.io/jq/)
 * [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
@@ -53,8 +55,8 @@ Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 
 #### EFS integration with EKS
 
-Some extra considerations needs are needed when integrating EFS with EKS. Please make sure the user launching the
-launching cluster satisfies the security groups requirements explained
+Some extra considerations are needed when integrating EFS with EKS. Please make sure the user launching the cluster
+satisfies the security groups requirements explained
 [here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html).
 
 ## Uninstall Procedure

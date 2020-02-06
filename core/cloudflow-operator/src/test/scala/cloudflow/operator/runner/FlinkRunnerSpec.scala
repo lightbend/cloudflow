@@ -64,7 +64,7 @@ class FlinkRunnerSpec extends WordSpecLike
       .connect(ingressRef.out, egressRef.in)
       .verified.right.value
 
-    val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, verifiedBlueprint, agentPaths)
+    val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
     val deployment = StreamletDeployment(
       name = appId,

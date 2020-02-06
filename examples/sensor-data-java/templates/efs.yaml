@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: aws-efs
+  name: pv-volume
   namespace: sensor-data-java
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: efs
+  storageClassName: aws-efs
   resources:
     requests:
       storage: 1Gi

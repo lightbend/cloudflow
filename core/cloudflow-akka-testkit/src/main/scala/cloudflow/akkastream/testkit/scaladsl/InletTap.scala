@@ -24,7 +24,7 @@ import akka.stream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
-case class SourceInletTap[T](inlet: CodecInlet[T], source: Source[(T, CommittableOffset), NotUsed]) extends InletTap[T] {
+case class SourceInletTap[T](inlet: CodecInlet[T], source: Source[(T, Committable), NotUsed]) extends InletTap[T] {
   def portName = inlet.name
 }
 
