@@ -1,0 +1,171 @@
+#
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+rules:
+
+  # These come from the master
+  # Example: master.aliveWorkers
+  - pattern: "metrics<name=master\\.(.*)><>Value"
+    name: spark_master_$1
+
+  # These come from the worker
+  # Example: worker.coresFree
+  - pattern: "metrics<name=worker\\.(.*)><>Value"
+    name: spark_worker_$1
+
+  # These come from the application driver
+  # Example: app-20160809000059-0000.driver.DAGScheduler.stage.failedStages
+  - pattern: "metrics<name=(.*)\\.driver\\.(DAGScheduler|BlockManager|jvm|appStatus)\\.(.*)><>Value"
+    name: spark_driver_$2_$3
+    type: GAUGE
+    labels:
+      app_id: "$1"
+
+  # These come from the application driver
+  # Counters for appStatus
+  - pattern: "metrics<name=(.*)\\.driver\\.appStatus\\.(.*)><>Count"
+    name: spark_driver_appStatus_$2_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+
+  # Gauge for appStatus
+  - pattern: "metrics<name=(.*)\\.driver\\.appStatus\\.(.*)><>Value"
+    name: spark_driver_appStatus_$2
+    type: GAUGE
+    labels:
+      app_id: "$1"
+
+  # These come from the application driver
+  # Emulate timers for DAGScheduler like messagePRocessingTime
+  - pattern: "metrics<name=(.*)\\.driver\\.DAGScheduler\\.(.*)><>Count"
+    name: spark_driver_DAGScheduler_$2_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+
+  # HiveExternalCatalog is of type counter
+  - pattern: "metrics<name=(.*)\\.driver\\.HiveExternalCatalog\\.(.*)><>Count"
+    name: spark_driver_HiveExternalCatalog_$2_total
+    type: COUNTER
+    labels:
+      app_id: "$1"
+
+  # These come from the application driver
+  # Emulate histograms for CodeGenerator
+  - pattern: "metrics<name=(.*)\\.driver\\.CodeGenerator\\.(.*)><>Count"
+    name: spark_driver_CodeGenerator_$2_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+
+  # These come from the application driver
+  # Emulate timer (keep only count attribute) plus counters for LiveListenerBus
+  - pattern: "metrics<name=(.*)\\.driver\\.LiveListenerBus\\.(.*)><>Count"
+    name: spark_driver_LiveListenerBus_$2_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+
+  # Get Gauge type metrics for LiveListenerBus
+  - pattern: "metrics<name=(.*)\\.driver\\.LiveListenerBus\\.(.*)><>Value"
+    name: spark_driver_LiveListenerBus_$2
+    type: GAUGE
+    labels:
+      app_id: "$1"
+
+  # These come from the application driver if it's a streaming application
+  # Example: app-20160809000059-0000.driver.com.example.ClassName.StreamingMetrics.streaming.lastCompletedBatch_schedulingDelay
+  - pattern: "metrics<name=(.*)\\.driver\\.(.*)\\.StreamingMetrics\\.streaming\\.(.*)><>Value"
+    name: spark_driver_streaming_$3
+    labels:
+      app_id: "$1"
+      app_name: "$2"
+
+  # These come from the application driver if it's a structured streaming application
+  # Example: app-20160809000059-0000.driver.spark.streaming.QueryName.inputRate-total
+  - pattern: "metrics<name=(.*)\\.driver\\.spark\\.streaming\\.(.*)\\.(.*)><>Value"
+    name: spark_driver_structured_streaming_$3
+    labels:
+      app_id: "$1"
+      query_name: "$2"
+
+  # These come from the application executors
+  # Example: app-20160809000059-0000.0.executor.threadpool.activeTasks (value)
+  #  app-20160809000059-0000.0.executor.JvmGCtime (counter)
+  - pattern: "metrics<name=(.*)\\.(.*)\\.executor\\.(.*)><>Value"
+    name: spark_executor_$3
+    type: GAUGE
+    labels:
+      app_id: "$1"
+      executor_id: "$2"
+
+  # Executors counters
+  - pattern: "metrics<name=(.*)\\.(.*)\\.executor\\.(.*)><>Count"
+    name: spark_executor_$3_total
+    type: COUNTER
+    labels:
+      app_id: "$1"
+      executor_id: "$2"
+
+  # These come from the application executors
+  # Example: app-20160809000059-0000.0.jvm.threadpool.activeTasks
+  - pattern: "metrics<name=(.*)\\.([0-9]+)\\.(jvm|NettyBlockTransfer)\\.(.*)><>Value"
+    name: spark_executor_$3_$4
+    type: GAUGE
+    labels:
+      app_id: "$1"
+      executor_id: "$2"
+
+  - pattern: "metrics<name=(.*)\\.([0-9]+)\\.HiveExternalCatalog\\.(.*)><>Count"
+    name: spark_executor_HiveExternalCatalog_$3_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+      executor_id: "$2"
+
+  # These come from the application driver
+  # Emulate histograms for CodeGenerator
+  - pattern: "metrics<name=(.*)\\.([0-9]+)\\.CodeGenerator\\.(.*)><>Count"
+    name: spark_executor_CodeGenerator_$3_count
+    type: COUNTER
+    labels:
+      app_id: "$1"
+      executor_id: "$2"
+
+  # Kafka Consumer lag and throughput, Kafka Producer throughput metrics
+
+  - pattern: "kafka\\.consumer<type=consumer-fetch-manager-metrics,(\\s*)client-id=(\\S+),(\\s*)topic=(\\S+),(\\s*)partition=([0-9]+)(.*)><>records-lag-max"
+    name: kafka_consumer_consumer_fetch_manager_metrics_records_lag_max
+    type: GAUGE
+    labels:
+      client_id: "$2"
+      topic: "$4"
+      partition: "$6"
+  - pattern: "kafka\\.consumer<type=consumer-fetch-manager-metrics,(\\s*)client-id=(\\S+),(\\s*)topic=(\\S+)(.*)><>records-consumed-rate"
+    name: kafka_consumer_consumer_fetch_manager_metrics_records_consumed_rate
+    type: GAUGE
+    labels:
+      client_id: "$2"
+      topic: "$4"
+  - pattern: "kafka\\.producer<type=producer-topic-metrics,(\\s*)client-id=(\\S+),(\\s*)topic=(\\S+)(.*)><>record-send-rate"
+    name: kafka_producer_producer_metrics_record_send_rate
+    type: GAUGE
+    labels:
+      client_id: "$2"
+      topic: "$4"
