@@ -40,7 +40,6 @@ export operatorImageName="lightbend/cloudflow-operator"
 export operatorImageTag="89-f8a4ddc"
 export operatorImage="$operatorImageName:$operatorImageTag"
 
-
 # Kafka installation mode CloudflowManaged|ExternalStrimzi|External
 export KAFKA="${KAFKA:-CloudflowManaged}"
 
@@ -63,7 +62,7 @@ export zookeeperHosts=""
 
 # Spark Operator
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
-export sparkOperatorChartVersion="0.6.2"
+export sparkOperatorChartVersion="0.6.3"
 export sparkOperatorImageName="lightbend/sparkoperator"
 export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"

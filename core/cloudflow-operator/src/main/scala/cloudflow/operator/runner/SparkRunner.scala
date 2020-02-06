@@ -118,8 +118,12 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId)
 
     import ctx.sparkRunnerSettings._
+    val cores = driverSettings.cores.map(_.amount.intValue).getOrElse(1)
     val driver = Driver(
-      cores = driverSettings.cores.map(_.amount.intValue),
+      cores = if (cores >= 1)
+        Some(cores)
+      else
+        Some(1),
       memory = driverSettings.memory.map(_.value),
       coreLimit = driverSettings.coreLimit.map(_.value),
       memoryOverhead = driverSettings.memoryOverhead.map(_.value),
