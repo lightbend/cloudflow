@@ -32,8 +32,7 @@ class InvalidMetricLogger extends AkkaStreamlet {
         invalidMetric
       }
 
-    def runnableGraph = {
+    def runnableGraph =
       sourceWithOffsetContext(inlet).via(flow).to(committableSink)
-    }
   }
 }

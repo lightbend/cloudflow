@@ -52,18 +52,18 @@ object WineRecordGeneratorUtils {
   lazy val dataFrequencyMilliseconds: FiniteDuration = 2.second
 
   // Make source
-  def makeSource(frequency: FiniteDuration = dataFrequencyMilliseconds): Source[WineRecord, NotUsed] = {
-    Source.repeat(WineRecordGenerator)
+  def makeSource(frequency: FiniteDuration = dataFrequencyMilliseconds): Source[WineRecord, NotUsed] =
+    Source
+      .repeat(WineRecordGenerator)
       .map(gen ⇒ gen.getRecord())
       .throttle(1, frequency)
-  }
 }
 
 // Request record generator
 private object WineRecordGenerator {
 
-  val recordList = new ListBuffer[WineRecord]
-  val stream = getClass.getResourceAsStream("/wine/data/winequality_red.csv")
+  val recordList     = new ListBuffer[WineRecord]
+  val stream         = getClass.getResourceAsStream("/wine/data/winequality_red.csv")
   val bufferedSource = scala.io.Source.fromInputStream(stream)
   for (line ← bufferedSource.getLines) {
     val cols = line.split(";").map(_.trim)
@@ -90,4 +90,3 @@ private object WineRecordGenerator {
     iterator.next()
   }
 }
-

@@ -22,10 +22,10 @@ import cloudflow.streamlets.{ RoundRobinPartitioner, StreamletShape }
 import cloudflow.streamlets.avro._
 
 class SensorDataToMetrics extends AkkaStreamlet {
-  val in = AvroInlet[SensorData]("in")
-  val out = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
+  val in    = AvroInlet[SensorData]("in")
+  val out   = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
   val shape = StreamletShape(in, out)
-  def flow = {
+  def flow =
     FlowWithCommittableContext[SensorData]
       .mapConcat { data ⇒
         List(
@@ -34,7 +34,6 @@ class SensorDataToMetrics extends AkkaStreamlet {
           Metric(data.deviceId, data.timestamp, "windSpeed", data.measurements.windSpeed)
         )
       }
-  }
   override def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
   }

@@ -31,21 +31,17 @@ import cloudflow.spark.sql.SQLImplicits._
 case class Rate(timestamp: Timestamp, value: Long)
 
 class SparkRandomGenDataIngress extends SparkStreamlet {
-  val out = AvroOutlet[Data]("out", d ⇒ d.src)
+  val out   = AvroOutlet[Data]("out", d ⇒ d.src)
   val shape = StreamletShape(out)
 
-  val RecordsPerSecond = IntegerConfigParameter(
-    "records-per-second",
-    "Records per second to produce.",
-    Some(50))
+  val RecordsPerSecond = IntegerConfigParameter("records-per-second", "Records per second to produce.", Some(50))
 
   override def configParameters = Vector(RecordsPerSecond)
 
   override def createLogic() = new SparkStreamletLogic {
 
-    override def buildStreamingQueries = {
+    override def buildStreamingQueries =
       writeStream(process, out, OutputMode.Append).toQueryExecution
-    }
 
     private def process: Dataset[Data] = {
 

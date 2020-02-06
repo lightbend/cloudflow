@@ -30,7 +30,7 @@ class CallRecordMerge extends AkkaStreamlet {
   val in1 = AvroInlet[CallRecord]("in-1")
   val in2 = AvroInlet[CallRecord]("in-2")
 
-  val left = AvroOutlet[InvalidRecord]("invalid", _.record)
+  val left  = AvroOutlet[InvalidRecord]("invalid", _.record)
   val right = AvroOutlet[CallRecord]("valid", _.user)
 
   private val oldDataWatermark = java.sql.Timestamp.valueOf("2010-01-01 00:00:00.000").getTime / 1000 //seconds
