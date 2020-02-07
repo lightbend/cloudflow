@@ -28,6 +28,6 @@ import cloudflow.akkastream.util.scaladsl.HttpServerLogic
 class TaxiRideIngress extends AkkaServerStreamlet {
   val out = AvroOutlet[TaxiRide]("out", _.rideId.toString)
 
-  final override val shape = StreamletShape.withOutlets(out)
+  final override val shape       = StreamletShape.withOutlets(out)
   final override def createLogic = HttpServerLogic.default(this, out)
 }

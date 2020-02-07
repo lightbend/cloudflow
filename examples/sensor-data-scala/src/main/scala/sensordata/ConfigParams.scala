@@ -32,6 +32,5 @@ trait ConfigParams {
     description = "",
     defaultValue = Some(true)
   )
-  */
+ */
 }
-

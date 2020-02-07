@@ -25,8 +25,7 @@ import cloudflow.streamlets.avro._
 import SensorDataJsonSupport._
 
 class SensorDataHttpIngress extends AkkaServerStreamlet {
-  val out = AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
-  def shape = StreamletShape.withOutlets(out)
+  val out                  = AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
+  def shape                = StreamletShape.withOutlets(out)
   override def createLogic = HttpServerLogic.default(this, out)
 }
-
