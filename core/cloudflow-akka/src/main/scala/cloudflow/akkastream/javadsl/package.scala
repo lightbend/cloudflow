@@ -22,6 +22,7 @@ import akka.stream.javadsl._
 import akka.kafka.ConsumerMessage._
 
 package object javadsl {
+
   /**
    * Java API
    */
@@ -37,21 +38,25 @@ package object javadsl {
 }
 
 package javadsl {
+
   /**
    * Java API
    */
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   object FlowWithOffsetContext {
+
     /**
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */
     @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
     def create[In]() = FlowWithContext.create[In, CommittableOffset]()
   }
+
   /**
    * Java API
    */
   object FlowWithCommittableContext {
+
     /**
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */

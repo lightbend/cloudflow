@@ -22,14 +22,14 @@ sealed trait ValidationType {
   def pattern: Option[String] = None
   def `type`: String
 }
-final case object BooleanValidationType extends ValidationType { val `type` = "bool" }
-final case object IntegerValidationType extends ValidationType { val `type` = "int32" }
-final case object DoubleValidationType extends ValidationType { val `type` = "double" }
-final case object DurationValidationType extends ValidationType { val `type` = "duration" }
+final case object BooleanValidationType    extends ValidationType { val `type` = "bool"       }
+final case object IntegerValidationType    extends ValidationType { val `type` = "int32"      }
+final case object DoubleValidationType     extends ValidationType { val `type` = "double"     }
+final case object DurationValidationType   extends ValidationType { val `type` = "duration"   }
 final case object MemorySizeValidationType extends ValidationType { val `type` = "memorysize" }
 final case class RegexpValidationType(regExpPattern: String) extends ValidationType {
   override val pattern = Some(regExpPattern)
-  override val `type` = "string"
+  override val `type`  = "string"
 }
 
 /**
@@ -87,10 +87,12 @@ final case class RegexpValidationType(regExpPattern: String) extends ValidationT
  * }}}
  */
 trait ConfigParameter {
+
   /**
    * The key that can be used to get a value for this configuration parameter from the streamletConfig
    */
   def key: String
+
   /**
    * Translates the parameter to a [[cloudflow.streamlets.descriptors.ConfigParameterDescriptor ConfigParameterDescriptor]], it's included in the application descriptor to describe configuration parameter at application deployment time.
    */
@@ -109,16 +111,14 @@ trait ConfigParameter {
  */
 object IntegerConfigParameter {
   // Java API
-  def create(key: String, description: String) = {
+  def create(key: String, description: String) =
     IntegerConfigParameter(key, description)
-  }
 }
 final case class IntegerConfigParameter(key: String, description: String = "", defaultValue: Option[Int] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, IntegerValidationType, defaultValue)
 
-  def withDefaultValue(value: Int) = {
+  def withDefaultValue(value: Int) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -130,16 +130,15 @@ final case class IntegerConfigParameter(key: String, description: String = "", d
  */
 object StringConfigParameter {
   // Java API
-  def create(key: String, description: String) = {
+  def create(key: String, description: String) =
     StringConfigParameter(key, description)
-  }
 }
 final case class StringConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, RegexpValidationType("""^.{1,1000}$"""), defaultValue)
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, RegexpValidationType("""^.{1,1000}$"""), defaultValue)
 
-  def withDefaultValue(value: String) = {
+  def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -151,16 +150,14 @@ final case class StringConfigParameter(key: String, description: String = "", de
  */
 object DoubleConfigParameter {
   // Java API
-  def create(key: String, description: String) = {
+  def create(key: String, description: String) =
     DoubleConfigParameter(key, description)
-  }
 }
 final case class DoubleConfigParameter(key: String, description: String = "", defaultValue: Option[Double] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DoubleValidationType, defaultValue)
 
-  def withDefaultValue(value: Double) = {
+  def withDefaultValue(value: Double) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -172,16 +169,15 @@ final case class DoubleConfigParameter(key: String, description: String = "", de
  */
 object BooleanConfigParameter {
   // Java API
-  def create(key: String, description: String) = {
+  def create(key: String, description: String) =
     BooleanConfigParameter(key, description)
-  }
 }
-final case class BooleanConfigParameter(key: String, description: String = "", defaultValue: Option[Boolean] = None) extends ConfigParameter {
+final case class BooleanConfigParameter(key: String, description: String = "", defaultValue: Option[Boolean] = None)
+    extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, BooleanValidationType, defaultValue)
 
-  def withDefaultValue(value: Boolean) = {
+  def withDefaultValue(value: Boolean) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -206,16 +202,15 @@ final case class BooleanConfigParameter(key: String, description: String = "", d
  */
 object RegExpConfigParameter {
   // Java API
-  def create(key: String, description: String, pattern: String) = {
+  def create(key: String, description: String, pattern: String) =
     RegExpConfigParameter(key, description, pattern)
-  }
 }
-final case class RegExpConfigParameter(key: String, description: String, pattern: String, defaultValue: Option[String] = None) extends ConfigParameter {
+final case class RegExpConfigParameter(key: String, description: String, pattern: String, defaultValue: Option[String] = None)
+    extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, RegexpValidationType(pattern), defaultValue)
 
-  def withDefaultValue(value: String) = {
+  def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -241,16 +236,14 @@ final case class RegExpConfigParameter(key: String, description: String, pattern
  */
 object DurationConfigParameter {
   // Java API
-  def create(key: String, description: String): DurationConfigParameter = {
+  def create(key: String, description: String): DurationConfigParameter =
     DurationConfigParameter(key, description, None)
-  }
 }
 case class DurationConfigParameter(val key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DurationValidationType, defaultValue)
 
-  def withDefaultValue(value: String) = {
+  def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
-  }
 }
 
 /**
@@ -285,14 +278,13 @@ case class DurationConfigParameter(val key: String, description: String = "", de
  */
 object MemorySizeConfigParameter {
   // Java API
-  def create(key: String, description: String) = {
+  def create(key: String, description: String) =
     MemorySizeConfigParameter(key, description, None)
-  }
 }
-final case class MemorySizeConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
+final case class MemorySizeConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None)
+    extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, MemorySizeValidationType, defaultValue)
 
-  def withDefaultValue(value: String) = {
+  def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
-  }
 }

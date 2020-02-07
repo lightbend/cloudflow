@@ -27,6 +27,7 @@ import skuber.api.patch.Patch
  * Captures an action to create, delete or update a Kubernetes resource.
  */
 sealed trait Action[+T <: ObjectResource] {
+
   /**
    * The Kubernetes resource to create, update, or delete
    */
@@ -48,10 +49,12 @@ sealed trait Action[+T <: ObjectResource] {
  * Creates actions.
  */
 object Action {
+
   /**
    * Creates a [[CreateAction]].
    */
-  def create[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T], resourceDefinition: ResourceDefinition[T]) =
+  def create[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
+                                                                        resourceDefinition: ResourceDefinition[T]) =
     new CreateAction(resource, format, resourceDefinition, editor)
 
   /**
@@ -63,19 +66,24 @@ object Action {
   /**
    * Creates an [[UpdateAction]].
    */
-  def update[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T], resourceDefinition: ResourceDefinition[T]) =
+  def update[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
+                                                                        resourceDefinition: ResourceDefinition[T]) =
     new UpdateAction(resource, format, resourceDefinition, editor)
 
   /**
    * Creates an [[PatchAction]].
    */
-  def patch[T <: ObjectResource, O <: Patch](resource: T, patch: O)(format: Format[T], patchWriter: Writes[O], resourceDefinition: ResourceDefinition[T]) =
+  def patch[T <: ObjectResource, O <: Patch](resource: T, patch: O)(format: Format[T],
+                                                                    patchWriter: Writes[O],
+                                                                    resourceDefinition: ResourceDefinition[T]) =
     new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
    * Creates an [[UpdateStatusAction]].
    */
-  def updateStatus[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T], resourceDefinition: ResourceDefinition[T], statusEv: HasStatusSubresource[T]) =
+  def updateStatus[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
+                                                                              resourceDefinition: ResourceDefinition[T],
+                                                                              statusEv: HasStatusSubresource[T]) =
     new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor)
 
   /**
@@ -104,20 +112,24 @@ class CreateAction[T <: ObjectResource](
 ) extends Action[T] {
 
   val name = "create"
+
   /**
    * Creates the resources if it does not exist. If it does exist it updates the resource as required.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
       res ← existing
         .map { existingResource ⇒
-          val resourceVersionUpdated = editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
-          client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o ⇒ new CreateAction(o, format, resourceDefinition, editor))
+          val resourceVersionUpdated =
+            editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
+          client
+            .update(resourceVersionUpdated)(format, resourceDefinition, lc)
+            .map(o ⇒ new CreateAction(o, format, resourceDefinition, editor))
         }
         .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ new CreateAction(o, format, resourceDefinition, editor)))
     } yield res
-  }
+
   /**
    * Reverts the action to create the resource.
    */
@@ -139,15 +151,16 @@ class UpdateAction[T <: ObjectResource](
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
       res ← existing
-        .map(existingResource ⇒ editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion)))
+        .map(existingResource ⇒
+          editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
+        )
         .map(resourceToUpdate ⇒ client.update(resourceToUpdate)(format, resourceDefinition, lc))
         .getOrElse(client.create(resource)(format, resourceDefinition, lc))
     } yield new UpdateAction(res, format, resourceDefinition, editor)
-  }
 }
 
 class PatchAction[T <: ObjectResource, O <: Patch](
@@ -163,10 +176,10 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   /**
    * Updates the target resource using a patch
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
-    client.patch(resource.name, patch, Some(resource.ns))(patchWriter, format, resourceDefinition, lc)
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    client
+      .patch(resource.name, patch, Some(resource.ns))(patchWriter, format, resourceDefinition, lc)
       .map(r ⇒ new PatchAction(r, patch, format, patchWriter, resourceDefinition))
-  }
 }
 
 /**
@@ -186,15 +199,18 @@ class UpdateStatusAction[T <: ObjectResource](
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
       resourceVersionUpdated = existing
-        .map(existingResource ⇒ editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion)))
+        .map(existingResource ⇒
+          editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
+        )
         .getOrElse(resource)
-      res ← client.updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc).map(o ⇒ new UpdateStatusAction(o, format, resourceDefinition, statusEv, editor))
+      res ← client
+        .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
+        .map(o ⇒ new UpdateStatusAction(o, format, resourceDefinition, statusEv, editor))
     } yield res
-  }
 }
 
 /**
@@ -206,6 +222,7 @@ class DeleteAction[T <: ObjectResource](
 ) extends Action[T] {
 
   val name = "delete"
+
   /**
    * Deletes the resource.
    */

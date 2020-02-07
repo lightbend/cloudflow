@@ -1,7 +1,6 @@
 import sbt._
 import sbt.Keys._
 
-import scalariform.formatter.preferences._
 import Library._
 
 import sbtrelease.ReleaseStateTransformations._
@@ -405,18 +404,8 @@ lazy val operator =
       ),
 
       scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
-      scalariformPreferences := scalariformPreferences.value
-        .setPreference(AlignParameters, false)
-        .setPreference(AlignSingleLineCaseStatements, true)
-        .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-        .setPreference(DoubleIndentConstructorArguments, true)
-        .setPreference(DoubleIndentMethodDeclaration, true)
-        .setPreference(RewriteArrowSymbols, true)
-        .setPreference(DanglingCloseParenthesis, Preserve)
-        .setPreference(NewlineAtEndOfFile, true)
-        .setPreference(AllowParamGroupsOnNewlines, true)
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](name,
@@ -440,7 +429,6 @@ def cloudflowModule(moduleID: String): Project = {
     )
     .withId(moduleID)
     .settings(commonSettings)
-    .settings(formattingSettings)
     .enablePlugins(AutomateHeaderPlugin)
 }
 
@@ -504,16 +492,3 @@ lazy val commonSettings = bintraySettings ++ Seq(
 )
 
 releaseIgnoreUntrackedFiles := true
-
-lazy val formattingSettings = Seq(
-  scalariformPreferences := scalariformPreferences.value
-    .setPreference(AlignParameters, false)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-    .setPreference(DoubleIndentConstructorArguments, true)
-    .setPreference(DoubleIndentMethodDeclaration, true)
-    .setPreference(RewriteArrowSymbols, true)
-    .setPreference(DanglingCloseParenthesis, Preserve)
-    .setPreference(NewlineAtEndOfFile, true)
-    .setPreference(AllowParamGroupsOnNewlines, true)
-)

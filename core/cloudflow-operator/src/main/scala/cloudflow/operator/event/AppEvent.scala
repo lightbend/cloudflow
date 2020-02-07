@@ -48,6 +48,7 @@ case class UndeployEvent(
 }
 
 object AppEvent {
+
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[AppEvent]]s.
    */
@@ -56,10 +57,10 @@ object AppEvent {
       .statefulMapConcat { () ⇒
         var currentApps = Map[String, WatchEvent[CloudflowApplication.CR]]()
         watchEvent ⇒ {
-          val cr = watchEvent._object
-          val namespace = cr.metadata.namespace
-          val appId = cr.spec.appId
-          val app = cr.spec
+          val cr         = watchEvent._object
+          val namespace  = cr.metadata.namespace
+          val appId      = cr.spec.appId
+          val app        = cr.spec
           val currentApp = currentApps.get(appId).map(_._object.spec)
           watchEvent._type match {
             case EventType.DELETED ⇒
@@ -67,10 +68,10 @@ object AppEvent {
               List(UndeployEvent(app, namespace, watchEvent._object))
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentApps.get(appId).forall { existingEvent ⇒
-                existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-                  // the spec must change, otherwise it is not a deploy event (but likely a status update).
-                  existingEvent._object.spec != watchEvent._object.spec
-              }) {
+                    existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
+                    // the spec must change, otherwise it is not a deploy event (but likely a status update).
+                    existingEvent._object.spec != watchEvent._object.spec
+                  }) {
                 currentApps = currentApps + (appId -> watchEvent)
                 List(DeployEvent(app, currentApp, namespace, watchEvent._object))
               } else List()

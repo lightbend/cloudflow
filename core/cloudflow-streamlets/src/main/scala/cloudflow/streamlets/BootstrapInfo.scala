@@ -27,15 +27,14 @@ object BootstrapInfo {
     gcMxBeans.asScala.map(b ⇒ (b.getName, b.getObjectName)).toList
   }
 
-  def box(str: String): String = {
+  def box(str: String): String =
     if ((str == null) || (str.isEmpty)) ""
     else {
       val line = s"""+${"-" * 80}+"""
       s"$line\n$str\n$line"
     }
-  }
 
-  private def prettyPrintConfig(c: Config): String = {
+  private def prettyPrintConfig(c: Config): String =
     c.root
       .render(
         ConfigRenderOptions
@@ -43,7 +42,6 @@ object BootstrapInfo {
           .setFormatted(true)
           .setJson(false)
       )
-  }
 
   private def getJVMRuntimeParameters: String = {
     val runtime = Runtime.getRuntime
@@ -57,12 +55,10 @@ object BootstrapInfo {
     """.stripMargin
   }
 
-  def startRunnerMessage(
-      blockingIODispatcherConfig: Config,
-      dispatcherConfig: Config,
-      deploymentConfig: Config,
-      streamletConfig: Config): String = {
-
+  def startRunnerMessage(blockingIODispatcherConfig: Config,
+                         dispatcherConfig: Config,
+                         deploymentConfig: Config,
+                         streamletConfig: Config): String =
     s"""
       |\n${box("JVM Resources")}
       |${getJVMRuntimeParameters}
@@ -77,5 +73,4 @@ object BootstrapInfo {
       |\n${box("GC Type")}
       |\n${getGCInfo}
       """.stripMargin
-  }
 }

@@ -27,7 +27,7 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
 object AkkaStreamletTestKit {
-  def apply(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
+  def apply(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys, Some(mat))
   def apply(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat), config)
 }
 
@@ -70,26 +70,24 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (
-    system: ActorSystem,
-    mat: Option[ActorMaterializer] = None,
-    config: Config = ConfigFactory.empty()) extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
+final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
+                                                        mat: Option[ActorMaterializer] = None,
+                                                        config: Config = ConfigFactory.empty())
+    extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 
   /**
    *
    */
-  def inletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] = {
+  def inletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] =
     QueueInletTap[T](inlet)(mat.getOrElse(ActorMaterializer()(system)))
-  }
 
   /**
    *
    */
-  def inletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] = {
+  def inletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] =
     SourceInletTap[T](inlet, source.map(t ⇒ (t, TestCommittableOffset())))
-  }
 
   /**
    * Creates an outlet tap. An outlet tap provides a probe that can be used to assert elements produced to the specified outlet.
@@ -113,9 +111,8 @@ final case class AkkaStreamletTestKit private[testkit] (
    * })
    * }}}
    */
-  def outletAsTap[T](outlet: CodecOutlet[T]): ProbeOutletTap[T] = {
+  def outletAsTap[T](outlet: CodecOutlet[T]): ProbeOutletTap[T] =
     ProbeOutletTap[T](outlet)(system)
-  }
 
   /**
    * Attaches the provided Sink to the specified outlet.
@@ -129,7 +126,6 @@ final case class AkkaStreamletTestKit private[testkit] (
    * This method can be used to for instance quickly collect all output produced
    * into a simple sequence using `Sink.seq[T]`.
    */
-  def outletToSink[T](outlet: CodecOutlet[T], sink: Sink[Tuple2[String, T], NotUsed]): SinkOutletTap[T] = {
+  def outletToSink[T](outlet: CodecOutlet[T], sink: Sink[Tuple2[String, T], NotUsed]): SinkOutletTap[T] =
     SinkOutletTap[T](outlet, sink)
-  }
 }

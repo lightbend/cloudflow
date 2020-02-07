@@ -31,25 +31,25 @@ final case class StreamletConnection(
 
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): StreamletConnection = {
     val fromPathError = VerifiedPortPath(from).left.toOption
-    val toPathError = VerifiedPortPath(to).left.toOption
+    val toPathError   = VerifiedPortPath(to).left.toOption
     val patternErrors = Set(fromPathError, toPathError).flatten
 
     val outletResult = VerifiedOutlet.find(verifiedStreamlets, from)
-    val inletResult = VerifiedInlet.find(verifiedStreamlets, to)
-    val outletError = outletResult.left.toOption
-    val inletError = inletResult.left.toOption
+    val inletResult  = VerifiedInlet.find(verifiedStreamlets, to)
+    val outletError  = outletResult.left.toOption
+    val inletError   = inletResult.left.toOption
 
     val verifiedFromPath = outletResult.fold(_ ⇒ from, _.portPath.toString)
-    val verifiedToPath = inletResult.fold(_ ⇒ to, _.portPath.toString)
+    val verifiedToPath   = inletResult.fold(_ ⇒ to, _.portPath.toString)
 
     val connectionFound = for {
-      verifiedOutlet ← outletResult
-      verifiedInlet ← inletResult
+      verifiedOutlet  ← outletResult
+      verifiedInlet   ← inletResult
       validConnection ← verifySchema(verifiedOutlet, verifiedInlet, label)
     } yield validConnection
     val schemaError = connectionFound.left.toOption
-    val conErrors = Set(outletError, inletError, schemaError).flatten
-    val verified = connectionFound.toOption
+    val conErrors   = Set(outletError, inletError, schemaError).flatten
+    val verified    = connectionFound.toOption
     copy(
       problems = (patternErrors ++ conErrors).toVector,
       verified = verified,
@@ -67,18 +67,17 @@ final case class StreamletConnection(
       verifiedOutlet: VerifiedOutlet,
       verifiedInlet: VerifiedInlet,
       label: Option[String]
-  ): Either[BlueprintProblem, VerifiedStreamletConnection] = {
-
+  ): Either[BlueprintProblem, VerifiedStreamletConnection] =
     if (verifiedOutlet.schemaDescriptor.format == verifiedInlet.schemaDescriptor.format &&
-      verifiedOutlet.schemaDescriptor.fingerprint == verifiedInlet.schemaDescriptor.fingerprint) {
+        verifiedOutlet.schemaDescriptor.fingerprint == verifiedInlet.schemaDescriptor.fingerprint) {
       Right(VerifiedStreamletConnection(verifiedOutlet, verifiedInlet, label))
     } else if (verifiedOutlet.schemaDescriptor.format == AvroFormat) {
       val writerSchema = new Schema.Parser().parse(verifiedOutlet.schemaDescriptor.schema)
       val readerSchema = new Schema.Parser().parse(verifiedInlet.schemaDescriptor.schema)
 
       val result = SchemaCompatibility.checkReaderWriterCompatibility(readerSchema, writerSchema).getType
-      if (result == SchemaCompatibility.SchemaCompatibilityType.COMPATIBLE) Right(VerifiedStreamletConnection(verifiedOutlet, verifiedInlet, label))
+      if (result == SchemaCompatibility.SchemaCompatibilityType.COMPATIBLE)
+        Right(VerifiedStreamletConnection(verifiedOutlet, verifiedInlet, label))
       else Left(IncompatibleSchema(verifiedOutlet.portPath, verifiedInlet.portPath))
     } else Left(IncompatibleSchema(verifiedOutlet.portPath, verifiedInlet.portPath))
-  }
 }

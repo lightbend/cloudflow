@@ -29,12 +29,14 @@ case class SourceInletTap[T](inlet: CodecInlet[T], source: Source[(T, Committabl
 }
 
 case class QueueInletTap[T](inlet: CodecInlet[T])(implicit mat: ActorMaterializer) extends InletTap[T] {
-  private val bufferSize = 1024
-  private val hub = BroadcastHub.sink[T](bufferSize)
-  private val qSource = Source.queue[T](bufferSize, OverflowStrategy.backpressure)
+  private val bufferSize        = 1024
+  private val hub               = BroadcastHub.sink[T](bufferSize)
+  private val qSource           = Source.queue[T](bufferSize, OverflowStrategy.backpressure)
   private[testkit] val (q, src) = qSource.toMat(hub)(Keep.both).run()
 
   val portName = inlet.name
-  val source = src.map { t ⇒ (t, TestCommittableOffset()) }
+  val source = src.map { t ⇒
+    (t, TestCommittableOffset())
+  }
   val queue: SourceQueueWithComplete[T] = q
 }

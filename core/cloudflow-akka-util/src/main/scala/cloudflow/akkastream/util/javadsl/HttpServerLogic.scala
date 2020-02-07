@@ -32,6 +32,7 @@ import cloudflow.streamlets._
  * Creates default [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
  */
 object HttpServerLogic {
+
   /**
    * Creates a HttpServerLogic that receives POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
    * writes the data to the providec `outlet`.
@@ -41,13 +42,11 @@ object HttpServerLogic {
       outlet: CodecOutlet[Out],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       context: AkkaStreamletContext
-  ) = {
+  ) =
     new HttpServerLogic(server, outlet, fromByteStringUnmarshaller, context) {
-      final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route = {
+      final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
         RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
-      }
     }
-  }
 
   /**
    * Creates a HttpServerLogic that receives streaming POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
@@ -60,11 +59,10 @@ object HttpServerLogic {
       ess: EntityStreamingSupport,
       context: AkkaStreamletContext
   ) = new StreamingHttpServerLogic(server, outlet, fromByteStringUnmarshaller, ess, context) {
-    implicit val fbs = fromByteStringUnmarshaller.asScala
+    implicit val fbs      = fromByteStringUnmarshaller.asScala
     implicit val essScala = EntityStreamingSupportDelegate(ess)
-    final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route = {
+    final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
       RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
-    }
   }
 }
 
@@ -138,19 +136,20 @@ abstract class StreamingHttpServerLogic[Out](
   override def route(sinkRef: WritableSinkRef[Out]): Route = createRoute(sinkRef).asScala
 }
 
-case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport) extends akka.http.scaladsl.common.EntityStreamingSupport {
-  def supported: akka.http.scaladsl.model.ContentTypeRange = {
+case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
+    extends akka.http.scaladsl.common.EntityStreamingSupport {
+  def supported: akka.http.scaladsl.model.ContentTypeRange =
     entityStreamingSupport.supported.asInstanceOf[akka.http.scaladsl.model.ContentTypeRange]
-  }
-  def contentType: akka.http.scaladsl.model.ContentType = {
+  def contentType: akka.http.scaladsl.model.ContentType =
     entityStreamingSupport.contentType.asInstanceOf[akka.http.scaladsl.model.ContentType]
-  }
-  def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] = entityStreamingSupport.getFramingDecoder.asScala
+  def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed]  = entityStreamingSupport.getFramingDecoder.asScala
   def framingRenderer: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] = entityStreamingSupport.getFramingRenderer.asScala
-  override def withSupported(range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport = EntityStreamingSupportDelegate(entityStreamingSupport.withSupported(range))
-  override def withContentType(contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport = EntityStreamingSupportDelegate(entityStreamingSupport.withContentType(contentType))
+  override def withSupported(range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport =
+    EntityStreamingSupportDelegate(entityStreamingSupport.withSupported(range))
+  override def withContentType(contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport =
+    EntityStreamingSupportDelegate(entityStreamingSupport.withContentType(contentType))
 
-  def parallelism: Int = entityStreamingSupport.parallelism
+  def parallelism: Int   = entityStreamingSupport.parallelism
   def unordered: Boolean = entityStreamingSupport.unordered
   def withParallelMarshalling(parallelism: Int, unordered: Boolean): akka.http.scaladsl.common.EntityStreamingSupport =
     EntityStreamingSupportDelegate(entityStreamingSupport.withParallelMarshalling(parallelism, unordered))

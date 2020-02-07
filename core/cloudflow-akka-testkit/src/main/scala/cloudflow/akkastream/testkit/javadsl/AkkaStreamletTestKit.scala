@@ -32,7 +32,7 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
 object AkkaStreamletTestKit {
-  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
+  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys, Some(mat))
   def create(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat), config)
 }
 
@@ -77,26 +77,24 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (
-    system: ActorSystem,
-    mat: Option[ActorMaterializer] = None,
-    config: Config = ConfigFactory.empty()) extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
+final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
+                                                        mat: Option[ActorMaterializer] = None,
+                                                        config: Config = ConfigFactory.empty())
+    extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 
   /**
    *
    */
-  def makeInletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] = {
+  def makeInletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] =
     QueueInletTap[T](inlet)(mat.getOrElse(ActorMaterializer()(system)))
-  }
 
   /**
    *
    */
-  def makeInletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] = {
+  def makeInletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] =
     SourceInletTap[T](inlet, source.map(t ⇒ (t, TestCommittableOffset())))
-  }
 
   /**
    * Creates an outlet tap. An outlet tap provides a probe that can be used to assert elements produced to the specified outlet.
@@ -121,9 +119,8 @@ final case class AkkaStreamletTestKit private[testkit] (
    * });
    * }}}
    */
-  def makeOutletAsTap[T](outlet: CodecOutlet[T]): ProbeOutletTap[T] = {
+  def makeOutletAsTap[T](outlet: CodecOutlet[T]): ProbeOutletTap[T] =
     ProbeOutletTap[T](outlet)(system)
-  }
 
   /**
    * Attaches the provided Sink to the specified outlet.
@@ -137,37 +134,27 @@ final case class AkkaStreamletTestKit private[testkit] (
    * This method can be used to for instance quickly collect all output produced
    * into a simple list using `Sink.seq[T]`.
    */
-  def makeOutletToSink[T](outlet: CodecOutlet[T], sink: Sink[Pair[String, T], NotUsed]): SinkOutletTap[T] = {
+  def makeOutletToSink[T](outlet: CodecOutlet[T], sink: Sink[Pair[String, T], NotUsed]): SinkOutletTap[T] =
     SinkOutletTap[T](outlet, sink)
-  }
 
   /**
    * Runs the `streamlet` using a list of `inletTaps` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      inletTaps: JList[InletTap[_]],
-      outletTaps: JList[OutletTap[_]],
-      assertions: () ⇒ Any): Unit = run(streamlet, inletTaps.asScala.toList, outletTaps.asScala.toList, assertions)
+  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTaps: JList[OutletTap[_]], assertions: () ⇒ Any): Unit =
+    run(streamlet, inletTaps.asScala.toList, outletTaps.asScala.toList, assertions)
 
   /**
    * Runs the `streamlet` using a list of `inletTaps` as the source and an `outletTap` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      inletTaps: JList[InletTap[_]],
-      outletTap: OutletTap[T],
-      assertions: () ⇒ Any): Unit = run(streamlet, inletTaps.asScala.toList, List(outletTap), assertions)
+  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTap: OutletTap[T], assertions: () ⇒ Any): Unit =
+    run(streamlet, inletTaps.asScala.toList, List(outletTap), assertions)
 
   /**
    * Runs the `streamlet` using an `inlettap` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      inletTap: InletTap[_],
-      outletTaps: JList[OutletTap[_]],
-      assertions: () ⇒ Any): Unit = run(streamlet, List(inletTap), outletTaps.asScala.toList, assertions)
+  def run[T](streamlet: AkkaStreamlet, inletTap: InletTap[_], outletTaps: JList[OutletTap[_]], assertions: () ⇒ Any): Unit =
+    run(streamlet, List(inletTap), outletTaps.asScala.toList, assertions)
 }

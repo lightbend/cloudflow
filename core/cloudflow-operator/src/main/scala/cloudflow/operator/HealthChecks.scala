@@ -25,7 +25,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream._
 
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, mat: ActorMaterializer, ec: ExecutionContext) = {
+  def serve(settings: Settings)(implicit system: ActorSystem, mat: ActorMaterializer, ec: ExecutionContext) =
     Http()
       .bindAndHandle(
         route,
@@ -42,7 +42,6 @@ object HealthChecks {
             sys.exit(-1)
           }
       }
-  }
   def route =
     // format: OFF
     path("robots.txt") {

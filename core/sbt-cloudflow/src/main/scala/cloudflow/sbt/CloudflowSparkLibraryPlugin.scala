@@ -23,23 +23,24 @@ import sbt.Keys._
  * SBT Plugin for building Cloudflow streamlet libraries that depend on the "spark" runtime.
  */
 object CloudflowSparkLibraryPlugin extends AutoPlugin {
+
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = CommonSettingsAndTasksPlugin
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-spark" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
-    ),
+          "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-spark"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
+        ),
     // FIX for making sure these libraries do not get evicted, since that makes spark fail.
     dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9",
-    dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.9",
+    dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"      % "2.9.9",
     javaOptions in com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport.Universal ++= Seq( // this is for local experimentation - do not remove
-    // -J params will be added as jvm parameters
-    // "-J-Xmx1536m",
-    //"-J-Xms1536m"
-    )
+                                                                                                    // -J params will be added as jvm parameters
+                                                                                                    // "-J-Xmx1536m",
+                                                                                                    //"-J-Xms1536m"
+        )
   )
 }

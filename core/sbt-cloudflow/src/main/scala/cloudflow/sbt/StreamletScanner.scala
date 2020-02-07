@@ -26,17 +26,17 @@ import scala.util._
 import scala.util.control.NoStackTrace
 
 object StreamletScanner {
-  val StreamletClassName = "cloudflow.streamlets.Streamlet"
-  val StreamletDescriptorMethod = "jsonDescriptor"
+  val StreamletClassName                   = "cloudflow.streamlets.Streamlet"
+  val StreamletDescriptorMethod            = "jsonDescriptor"
   val EmptyParameterTypes: Array[Class[_]] = Array.empty
-  val EmptyParameterValues: Array[AnyRef] = Array.empty
+  val EmptyParameterValues: Array[AnyRef]  = Array.empty
 
   def scanForStreamletDescriptors(classLoader: ClassLoader, projectId: String): Map[String, Try[Config]] =
     scan(classLoader)
       .map { case (s, c) ⇒ s -> enrichDescriptorWithProjectId(projectId)(c) }
 
-  def enrichDescriptorWithProjectId(projectId: String): Try[Config] ⇒ Try[Config] = {
-    rawStreamlet ⇒ rawStreamlet.map(_.withValue("project_id", ConfigValueFactory.fromAnyRef(projectId)))
+  def enrichDescriptorWithProjectId(projectId: String): Try[Config] ⇒ Try[Config] = { rawStreamlet ⇒
+    rawStreamlet.map(_.withValue("project_id", ConfigValueFactory.fromAnyRef(projectId)))
   }
 
   private[sbt] def scan(classLoader: ClassLoader): Map[String, Try[Config]] = {
@@ -57,9 +57,11 @@ object StreamletScanner {
   }
 
   private def nonAbstract(className: String, classLoader: ClassLoader): Try[Class[_]] =
-    loadClass(className, classLoader).filter { clazz ⇒ !Modifier.isAbstract(clazz.getModifiers) }
+    loadClass(className, classLoader).filter { clazz ⇒
+      !Modifier.isAbstract(clazz.getModifiers)
+    }
 
-  private[sbt] def getDescriptor(streamletClass: Class[_]): Try[Config] = {
+  private[sbt] def getDescriptor(streamletClass: Class[_]): Try[Config] =
     getInstance(streamletClass)
       .flatMap { streamletInstance ⇒
         val descriptorMethod = streamletClass.getMethod(StreamletDescriptorMethod, EmptyParameterTypes: _*)
@@ -69,7 +71,7 @@ object StreamletScanner {
         } else {
           Try {
             val emptyParameterValues: Array[AnyRef] = Array.empty
-            val descriptor = descriptorMethod.invoke(streamletInstance, emptyParameterValues: _*)
+            val descriptor                          = descriptorMethod.invoke(streamletInstance, emptyParameterValues: _*)
 
             ConfigFactory.parseString(descriptor.toString)
           }.recoverWith {
@@ -78,15 +80,13 @@ object StreamletScanner {
           }
         }
       }
-  }
 
-  private def getInstance(clazz: Class[_]): Try[Any] = {
+  private def getInstance(clazz: Class[_]): Try[Any] =
     getInstanceFromScalaObject(clazz).recoverWith {
       case _ ⇒ getInstanceFromDefaultConstructor(clazz)
     }
-  }
 
-  private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] = {
+  private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] =
     if (!hasDefaultConstructor(streamletClass)) {
       Failure(ConstructorMissing(streamletClass))
     } else {
@@ -94,13 +94,11 @@ object StreamletScanner {
         case error ⇒ Failure(ConstructorFailure(streamletClass, error))
       }
     }
-  }
 
   private def hasDefaultConstructor(cls: Class[_]) = cls.getConstructors.exists(_.getParameterCount == 0)
 
-  private def getInstanceFromScalaObject(clazz: Class[_]): Try[AnyRef] = {
+  private def getInstanceFromScalaObject(clazz: Class[_]): Try[AnyRef] =
     Try(clazz.getField("MODULE$").get(null))
-  }
 
   private def loadClass(className: String, classLoader: ClassLoader): Try[Class[_]] =
     Try(Class.forName(className, true, classLoader))
@@ -112,15 +110,19 @@ object StreamletScanner {
  */
 sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace
 
-final case class ConstructorMissing(streamletClass: Class[_]) extends StreamletScannerException(
-  s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. It has no default constructor."
-)
-final case class ConstructorFailure(streamletClass: Class[_], error: Throwable) extends StreamletScannerException(
-  s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. Its constructor threw an exception: ${error.getMessage}"
-)
-final case class DescriptorMethodMissing(streamletClass: Class[_]) extends StreamletScannerException(
-  s"Streamlet '${streamletClass.getName}' is not usable. It has no descriptor method to call."
-)
-final case class DescriptorMethodFailure(streamletClass: Class[_], error: Throwable) extends StreamletScannerException(
-  s"Streamlet '${streamletClass.getName}' could not be introspected. Its descriptor method threw an exception: ${error.getMessage}"
-)
+final case class ConstructorMissing(streamletClass: Class[_])
+    extends StreamletScannerException(
+      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. It has no default constructor."
+    )
+final case class ConstructorFailure(streamletClass: Class[_], error: Throwable)
+    extends StreamletScannerException(
+      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. Its constructor threw an exception: ${error.getMessage}"
+    )
+final case class DescriptorMethodMissing(streamletClass: Class[_])
+    extends StreamletScannerException(
+      s"Streamlet '${streamletClass.getName}' is not usable. It has no descriptor method to call."
+    )
+final case class DescriptorMethodFailure(streamletClass: Class[_], error: Throwable)
+    extends StreamletScannerException(
+      s"Streamlet '${streamletClass.getName}' could not be introspected. Its descriptor method threw an exception: ${error.getMessage}"
+    )

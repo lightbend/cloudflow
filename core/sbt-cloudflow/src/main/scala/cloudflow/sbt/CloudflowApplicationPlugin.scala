@@ -52,16 +52,14 @@ object CloudflowApplicationPlugin extends AutoPlugin {
     blueprint := None,
     runLocalConfigFile := None,
     packageOptions in (Compile, packageBin) +=
-      Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
-
+        Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
     javaAgents += JavaAgent(
-      module = PrometheusAgent,
-      name = ApplicationDescriptor.PrometheusAgentKey,
-      scope = JavaAgent.AgentScope(compile = false, test = false, run = false, dist = true),
-      arguments = "${PROMETHEUS_JMX_AGENT_PORT}:${PROMETHEUS_JMX_AGENT_CONFIG_PATH}"
-    ),
-
-    verifyBlueprint := (verifyBlueprint dependsOn checkUsageCount() andFinally resetCount()).value
+          module = PrometheusAgent,
+          name = ApplicationDescriptor.PrometheusAgentKey,
+          scope = JavaAgent.AgentScope(compile = false, test = false, run = false, dist = true),
+          arguments = "${PROMETHEUS_JMX_AGENT_PORT}:${PROMETHEUS_JMX_AGENT_CONFIG_PATH}"
+        ),
+    verifyBlueprint := verifyBlueprint.dependsOn(checkUsageCount()).andFinally(resetCount()).value
   )
 
   /**
@@ -70,13 +68,14 @@ object CloudflowApplicationPlugin extends AutoPlugin {
   private def checkUsageCount(): Def.Initialize[Task[Unit]] = Def.task {
     val isPipelineApp = thisProject.value.autoPlugins.exists(_.label.equals(CloudflowApplicationPlugin.label))
     if (isPipelineApp && cloudflowAppProjects.incrementAndGet() > 1) {
-      throw new MultipleCloudflowApplicationError("You can only define one project as a Cloudflow Application in a multi-project sbt build.")
+      throw new MultipleCloudflowApplicationError(
+        "You can only define one project as a Cloudflow Application in a multi-project sbt build."
+      )
     }
   }
 
-  private def resetCount() = {
+  private def resetCount() =
     cloudflowAppProjects.set(0)
-  }
 }
 
 class MultipleCloudflowApplicationError(msg: String) extends Exception(s"\n$msg") with NoStackTrace with sbt.FeedbackProvidedException

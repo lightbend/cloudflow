@@ -26,6 +26,7 @@ import skuber._
  * The [[ActionExecutor]] executes these actions.
  */
 object Actions {
+
   /**
    * Creates the [[Action]]s to deploy the application.
    * the deployment actions are derived from changes between the current application and the new application to deploy.
@@ -93,7 +94,7 @@ object Actions {
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     EndpointActions(newApp, currentApp, namespace) ++
-      AkkaRunnerActions(newApp, currentApp, namespace) ++
-      SparkRunnerActions(newApp, currentApp, namespace) ++
-      FlinkRunnerActions(newApp, currentApp, namespace)
+        AkkaRunnerActions(newApp, currentApp, namespace) ++
+        SparkRunnerActions(newApp, currentApp, namespace) ++
+        FlinkRunnerActions(newApp, currentApp, namespace)
 }

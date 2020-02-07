@@ -41,13 +41,14 @@ private[testkit] case class TestContext(
     override val config: Config = ConfigFactory.empty()
 ) extends AkkaStreamletContext {
   //TODO reuse more from StreamletContextImpl
-  implicit def materializer = ActorMaterializer()(system)
-  private val readyPromise = Promise[Dun]()
+  implicit def materializer     = ActorMaterializer()(system)
+  private val readyPromise      = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
-  private val completionFuture = completionPromise.future
-  val killSwitch = KillSwitches.shared(streamletRef)
+  private val completionFuture  = completionPromise.future
+  val killSwitch                = KillSwitches.shared(streamletRef)
 
-  override def streamletDefinition: StreamletDefinition = StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
+  override def streamletDefinition: StreamletDefinition =
+    StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     inletTaps
@@ -60,7 +61,9 @@ private[testkit] case class TestContext(
             case cause: Throwable ⇒
               completionPromise.failure(cause)
               cause
-          }.asSourceWithContext(_._2).map(_._1)
+          }
+          .asSourceWithContext(_._2)
+          .map(_._1)
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
@@ -98,9 +101,12 @@ private[testkit] case class TestContext(
   def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] = sourceWithOffsetContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
-  def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒ (el, TestCommittableOffset()) }
-  def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
+  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
+    sourceWithOffsetContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
+  def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒
+    (el, TestCommittableOffset())
+  }
+  def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] =
     new WritableSinkRef[T] {
       def sink = {
         val flow = Flow[(T, Committable)]
@@ -126,46 +132,46 @@ private[testkit] case class TestContext(
         Future.successful(value)
       }
     }
-  }
 
   def streamletExecution: StreamletExecution = new StreamletExecution() {
-    val readyFuture = readyPromise.future
+    val readyFuture            = readyPromise.future
     def completed: Future[Dun] = completionFuture
-    def ready: Future[Dun] = readyFuture
-    def stop(): Future[Dun] = TestContext.this.stop()
+    def ready: Future[Dun]     = readyFuture
+    def stop(): Future[Dun]    = TestContext.this.stop()
   }
 
   private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
 
-  def onStop(f: () ⇒ Future[Dun]): Unit = {
+  def onStop(f: () ⇒ Future[Dun]): Unit =
     stoppers.getAndUpdate(old ⇒ old :+ f)
-  }
 
   def signalReady(): Boolean = readyPromise.trySuccess(Dun)
 
   def stop(): Future[Dun] = {
     killSwitch.shutdown()
     import system.dispatcher
-    Future.sequence(
-      stoppers.get.map { f ⇒
-        f().recover {
-          case _ ⇒ Dun
+    Future
+      .sequence(
+        stoppers.get.map { f ⇒
+          f().recover {
+            case _ ⇒ Dun
+          }
         }
-      }
-    ).flatMap { _ ⇒
+      )
+      .flatMap { _ ⇒
         completionPromise.trySuccess(Dun)
         completionFuture
       }
   }
 
-  def metricTags(): Map[String, String] = {
+  def metricTags(): Map[String, String] =
     Map()
-  }
 }
 
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)
 
 import akka.kafka.ConsumerMessage._
 object TestCommittableOffset {
-  def apply(): CommittableOffset = akka.kafka.testkit.ConsumerResultFactory.committableOffset(PartitionOffset(GroupTopicPartition("", "", 0), 0L), "")
+  def apply(): CommittableOffset =
+    akka.kafka.testkit.ConsumerResultFactory.committableOffset(PartitionOffset(GroupTopicPartition("", "", 0), 0L), "")
 }

@@ -40,11 +40,11 @@ object StreamletScannerPlugin extends AutoPlugin {
   }
 
   private def scanForStreamlets: Def.Initialize[Task[Map[String, Config]]] = Def.task {
-    val log = streams.value.log
+    val log       = streams.value.log
     val projectId = (ThisProject / name).value
 
-    val classpath = applicationClasspath.value
-    val parent = ClassLoader.getSystemClassLoader.getParent
+    val classpath   = applicationClasspath.value
+    val parent      = ClassLoader.getSystemClassLoader.getParent
     val classLoader = new java.net.URLClassLoader(classpath, parent)
 
     val streamletDescriptors = StreamletScanner.scanForStreamletDescriptors(classLoader, projectId)
@@ -68,12 +68,14 @@ object StreamletScannerPlugin extends AutoPlugin {
         // TODO cleanup
         acc.withValue(
           s""""$name"""",
-          conf.root().withValue(
-            "image",
-            cloudflowDockerImageName
-              .value
-              .map(din ⇒ ConfigValueFactory.fromAnyRef(din.asTaggedName))
-              .getOrElse(ConfigValueFactory.fromAnyRef("placeholder")))
+          conf
+            .root()
+            .withValue(
+              "image",
+              cloudflowDockerImageName.value
+                .map(din ⇒ ConfigValueFactory.fromAnyRef(din.asTaggedName))
+                .getOrElse(ConfigValueFactory.fromAnyRef("placeholder"))
+            )
         )
     }
 
