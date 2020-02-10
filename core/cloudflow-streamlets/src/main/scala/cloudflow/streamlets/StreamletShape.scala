@@ -68,4 +68,3 @@ object StreamletShape {
   def createWithOutlets(outlet: Outlet, outlets: Outlet*): StreamletShapeImpl =
     withOutlets(outlet, outlets: _*)
 }
-

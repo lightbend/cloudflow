@@ -66,28 +66,26 @@ import cloudflow.streamlets._
 trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
 
-  private val readyPromise = Promise[Dun]()
+  private val readyPromise      = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
-  private val completionFuture = completionPromise.future
+  private val completionFuture  = completionPromise.future
 
-  override protected final def createContext(config: Config): SparkStreamletContext = {
+  override protected final def createContext(config: Config): SparkStreamletContext =
     (for {
       streamletConfig ← StreamletDefinition.read(config)
-      session ← makeSparkSession(makeSparkConfig)
+      session         ← makeSparkSession(makeSparkConfig)
     } yield {
       val updatedConfig = streamletConfig.config.withFallback(config)
       new kafka.SparkStreamletContextImpl(streamletConfig, session, updatedConfig)
-    })
-      .recoverWith {
-        case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
-      }.get
-  }
+    }).recoverWith {
+      case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
+    }.get
 
   protected def createLogic(): SparkStreamletLogic
 
   override final def run(context: SparkStreamletContext): StreamletExecution = {
-    val InitialDelay = 2 seconds
-    val MonitorFrequency = 5 seconds
+    val InitialDelay                 = 2 seconds
+    val MonitorFrequency             = 5 seconds
     implicit val system: ActorSystem = ActorSystem("spark_streamlet", context.config)
 
     readyPromise.trySuccess(Dun)
@@ -143,23 +141,21 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
     }
   }
 
-  override def logStartRunnerMessage(buildInfo: String): Unit = {
+  override def logStartRunnerMessage(buildInfo: String): Unit =
     log.info(s"""
       |Initializing Spark Runner ..
       |\n${box("Build Info")}
       |${buildInfo}
-      """.stripMargin
-    )
-  }
+      """.stripMargin)
 
-  final def configuredValue(context: SparkStreamletContext, configKey: String): String = {
+  final def configuredValue(context: SparkStreamletContext, configKey: String): String =
     context.streamletConfig.getString(configKey)
-  }
 
   private def makeSparkConfig(): SparkConf = {
-    val conf = new SparkConf()
+    val conf   = new SparkConf()
     val master = conf.getOption("spark.master").getOrElse("local[2]")
-    conf.setMaster(master)
+    conf
+      .setMaster(master)
       // arbitrary number - default is 200 which is quite large for our sample apps
       // Needs to take a value passed through configuration, in case the user would like to override this.
       .set("spark.sql.shuffle.partitions", "20")
@@ -168,7 +164,8 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
   }
 
   private def makeSparkSession(sparkConfig: SparkConf): Try[SparkSession] = Try {
-    val session = SparkSession.builder()
+    val session = SparkSession
+      .builder()
       .appName(applicationName)
       .config(sparkConfig)
       .getOrCreate()
@@ -211,17 +208,20 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   implicit class StreamingQueryExtensions(val query: StreamingQuery) {
     def toQueryExecution: StreamletQueryExecution = StreamletQueryExecution(query)
   }
+
   /**
    * Read from inlet to generate a `Dataset`.
    */
-  final def readStream[In](inPort: CodecInlet[In])
-    (implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = context.readStream(inPort)
+  final def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
+    context.readStream(inPort)
 
   /**
    * Write a `StreamingQuery` into outlet using the specified `OutputMode`
    */
-  final def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)
-    (implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = context.writeStream(stream, outPort, outputMode)
+  final def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(
+      implicit encoder: Encoder[Out],
+      typeTag: TypeTag[Out]
+  ): StreamingQuery = context.writeStream(stream, outPort, outputMode)
 
   final def config: Config = context.config
 
@@ -259,6 +259,7 @@ case class StreamletQueryExecution(queries: Vector[StreamingQuery]) {
 
 object StreamletQueryExecution {
   def apply(singleQuery: StreamingQuery): StreamletQueryExecution = StreamletQueryExecution(Vector(singleQuery))
-  def apply(oneQuery: StreamingQuery, moreQueries: StreamingQuery*): StreamletQueryExecution = StreamletQueryExecution(oneQuery +: moreQueries.toVector)
+  def apply(oneQuery: StreamingQuery, moreQueries: StreamingQuery*): StreamletQueryExecution =
+    StreamletQueryExecution(oneQuery +: moreQueries.toVector)
   def apply(querySeq: scala.collection.Seq[StreamingQuery]): StreamletQueryExecution = StreamletQueryExecution(querySeq.toVector)
 }

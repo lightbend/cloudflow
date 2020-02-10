@@ -46,7 +46,7 @@ package testkit {
    */
   case class PartitionedValue[T](key: String, value: T) {
     def getKey(): String = key
-    def getValue(): T = value
+    def getValue(): T    = value
   }
 
   trait ConfigParameterValue {

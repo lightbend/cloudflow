@@ -32,10 +32,7 @@ class ValidMetricLogger extends AkkaStreamlet {
     Some("debug")
   )
 
-  val MsgPrefix = StringConfigParameter(
-    "msg-prefix",
-    "Provide a prefix for the log lines",
-    Some("valid-logger"))
+  val MsgPrefix = StringConfigParameter("msg-prefix", "Provide a prefix for the log lines", Some("valid-logger"))
 
   override def configParameters = Vector(LogLevel, MsgPrefix)
 
@@ -49,20 +46,17 @@ class ValidMetricLogger extends AkkaStreamlet {
 
     val msgPrefix = streamletConfig.getString(MsgPrefix.key)
 
-    def log(metric: Metric) = {
+    def log(metric: Metric) =
       logF(s"$msgPrefix $metric")
-    }
 
-    def flow = {
+    def flow =
       FlowWithCommittableContext[Metric]
         .map { validMetric ⇒
           log(validMetric)
           validMetric
         }
-    }
 
-    def runnableGraph = {
+    def runnableGraph =
       sourceWithOffsetContext(inlet).via(flow).to(committableSink)
-    }
   }
 }

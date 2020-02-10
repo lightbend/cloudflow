@@ -35,7 +35,7 @@ object AkkaRunner extends Runner[Deployment] {
   def configEditor = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
 
   def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
-  val runtime = "akka"
+  val runtime            = "akka"
 
   def resource(
       deployment: StreamletDeployment,
@@ -43,10 +43,11 @@ object AkkaRunner extends Runner[Deployment] {
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): Deployment = {
-    val labels = CloudflowLabels(app)
-    val appId = app.appId
+    val labels  = CloudflowLabels(app)
+    val appId   = app.appId
     val podName = Name.ofPod(deployment.name)
-    val k8sStreamletPorts = deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
+    val k8sStreamletPorts =
+      deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
     val environmentVariables = List(
@@ -66,20 +67,22 @@ object AkkaRunner extends Runner[Deployment] {
 
     // Streamlet volume mounting
     val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
-    val pvcRefVolumes = streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
-    val pvcVolumeMounts = streamletToDeploy.map(_.descriptor.volumeMounts.map {
-      mount ⇒
+    val pvcRefVolumes =
+      streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
+    val pvcVolumeMounts = streamletToDeploy
+      .map(_.descriptor.volumeMounts.map { mount ⇒
         val readOnly = mount.accessMode match {
           case "ReadWriteMany" ⇒ false
           case "ReadOnlyMany"  ⇒ true
         }
         Volume.Mount(mount.name, mount.path, readOnly)
-    }.toList).getOrElse(List.empty)
+      }.toList)
+      .getOrElse(List.empty)
 
-    val secretName = deployment.secretName
+    val secretName   = deployment.secretName
     val secretVolume = Volume(Name.ofVolume(secretName), Volume.Secret(secretName))
-    val volumeMount = Volume.Mount(configMapName, Runner.ConfigMapMountPath, readOnly = true)
-    val secretMount = Volume.Mount(Name.ofVolume(secretName), Runner.SecretMountPath, readOnly = true)
+    val volumeMount  = Volume.Mount(configMapName, Runner.ConfigMapMountPath, readOnly = true)
+    val secretMount  = Volume.Mount(Name.ofVolume(secretName), Runner.SecretMountPath, readOnly = true)
 
     val c = Container(
       name = podName,
@@ -89,19 +92,23 @@ object AkkaRunner extends Runner[Deployment] {
       ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
       volumeMounts = List(secretMount) ++ pvcVolumeMounts :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
-    val appliedCpuLimits = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits.map { cpuLimits ⇒
-      c.limitCPU(cpuLimits)
-    }.getOrElse(c)
+    val appliedCpuLimits = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits
+      .map { cpuLimits ⇒
+        c.limitCPU(cpuLimits)
+      }
+      .getOrElse(c)
 
-    val appliedCpuAndMemoryLimits = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits.map { memoryLimits ⇒
-      appliedCpuLimits.limitMemory(memoryLimits)
-    }.getOrElse(appliedCpuLimits)
+    val appliedCpuAndMemoryLimits = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits
+      .map { memoryLimits ⇒
+        appliedCpuLimits.limitMemory(memoryLimits)
+      }
+      .getOrElse(appliedCpuLimits)
 
-    val fileNameToCheckLiveness = s"${deployment.streamletName}-live.txt"
+    val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
-    val tempDir = System.getProperty("java.io.tmpdir")
-    val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
+    val tempDir              = System.getProperty("java.io.tmpdir")
+    val pathToLivenessCheck  = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
 
     val container = appliedCpuAndMemoryLimits
@@ -136,7 +143,10 @@ object AkkaRunner extends Runner[Deployment] {
       .flatMap(_ ⇒ Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId))))
 
     val podSpec =
-      Pod.Spec(serviceAccountName = Name.ofServiceAccount(), volumes = pvcRefVolumes.getOrElse(List.empty[Volume]), securityContext = fsGroup)
+      Pod
+        .Spec(serviceAccountName = Name.ofServiceAccount(),
+              volumes = pvcRefVolumes.getOrElse(List.empty[Volume]),
+              securityContext = fsGroup)
         .addContainer(container)
         .addVolume(volume)
         .addVolume(secretVolume)
@@ -146,43 +156,40 @@ object AkkaRunner extends Runner[Deployment] {
       Pod.Template.Spec
         .named(podName)
         .addLabels(
-          labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId)
+          labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(Operator.StreamletNameLabel -> deployment.streamletName,
+                                                                                   Operator.AppIdLabel         -> appId)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)
         .withPodSpec(podSpec)
 
     val deploymentResource = Deployment(
-      metadata = ObjectMeta(
-        name = podName,
-        namespace = namespace,
-        labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent)))
-      .withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
+      metadata =
+        ObjectMeta(name = podName, namespace = namespace, labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent))
+    ).withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
       .withTemplate(template)
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))
 
     deploymentResource.copy(
       spec = deploymentResource.spec.map(s ⇒
-        s.copy(strategy =
-          deployment
-            .endpoint
-            .map(_ ⇒ Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
-            .orElse(Some(Deployment.Strategy(Deployment.StrategyType.Recreate)))
+        s.copy(strategy = deployment.endpoint
+          .map(_ ⇒ Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
+          .orElse(Some(Deployment.Strategy(Deployment.StrategyType.Recreate)))
         )
       )
     )
   }
 
-  val JavaOptsEnvVar = "JAVA_OPTS"
+  val JavaOptsEnvVar                    = "JAVA_OPTS"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
-  val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"
-  val NrOfReplicas = 1
-  val ImagePullPolicy = Container.PullPolicy.Always
+  val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
+  val NrOfReplicas                      = 1
+  val ImagePullPolicy                   = Container.PullPolicy.Always
 
   val HealthCheckPath = "/checks/healthy"
-  val ReadyCheckPath = "/checks/ready"
+  val ReadyCheckPath  = "/checks/ready"
 
   val ProbeInitialDelaySeconds = 10
-  val ProbeTimeoutSeconds = 1
-  val ProbePeriodSeconds = 10
+  val ProbeTimeoutSeconds      = 1
+  val ProbePeriodSeconds       = 10
 }

@@ -17,6 +17,7 @@
 package cloudflow.streamlets
 
 trait StreamletLogic[Context <: StreamletContext] extends Serializable {
+
   /**
    *
    * Returns the [[StreamletContext]] in which this [[StreamletLogic]] is run. It can only be accessed when the streamlet is run.

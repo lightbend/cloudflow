@@ -68,27 +68,29 @@ object CloudflowApplication {
     },
     Writes(r ⇒ JsString(r.name))
   )
-  implicit val schemaDescriptorFmt: Format[SchemaDescriptor] = Json.format[SchemaDescriptor]
-  implicit val outletDescriptorFmt: Format[OutletDescriptor] = Json.format[OutletDescriptor]
-  implicit val inletDescriptorFmt: Format[InletDescriptor] = Json.format[InletDescriptor]
+  implicit val schemaDescriptorFmt: Format[SchemaDescriptor]                   = Json.format[SchemaDescriptor]
+  implicit val outletDescriptorFmt: Format[OutletDescriptor]                   = Json.format[OutletDescriptor]
+  implicit val inletDescriptorFmt: Format[InletDescriptor]                     = Json.format[InletDescriptor]
   implicit val configParameterDescriptorFmt: Format[ConfigParameterDescriptor] = Json.format[ConfigParameterDescriptor]
-  implicit val volumeMountDescriptorFmt: Format[VolumeMountDescriptor] = Json.format[VolumeMountDescriptor]
-  implicit val streamletDescriptorFormat: Format[StreamletDescriptor] = Json.format[StreamletDescriptor]
-  implicit val streamletFmt: Format[StreamletInstance] = Json.format[StreamletInstance]
-  implicit val connectionFmt: Format[Connection] = Json.format[Connection]
+  implicit val volumeMountDescriptorFmt: Format[VolumeMountDescriptor]         = Json.format[VolumeMountDescriptor]
+  implicit val streamletDescriptorFormat: Format[StreamletDescriptor]          = Json.format[StreamletDescriptor]
+  implicit val streamletFmt: Format[StreamletInstance]                         = Json.format[StreamletInstance]
+  implicit val connectionFmt: Format[Connection]                               = Json.format[Connection]
 
   implicit val configFmt: Format[Config] = Format[Config](
-    Reads(jsValue ⇒ Try(ConfigFactory.parseString(jsValue.toString)).fold[JsResult[Config]](e ⇒ JsError(e.getMessage), conf ⇒ JsSuccess(conf))),
+    Reads(jsValue ⇒
+      Try(ConfigFactory.parseString(jsValue.toString)).fold[JsResult[Config]](e ⇒ JsError(e.getMessage), conf ⇒ JsSuccess(conf))
+    ),
     Writes(conf ⇒ Json.parse(conf.root().render(ConfigRenderOptions.concise())))
   )
-  implicit val savepointFmt: Format[Savepoint] = Json.format[Savepoint]
-  implicit val endpointFmt: Format[Endpoint] = Json.format[Endpoint]
+  implicit val savepointFmt: Format[Savepoint]            = Json.format[Savepoint]
+  implicit val endpointFmt: Format[Endpoint]              = Json.format[Endpoint]
   implicit val deploymentFmt: Format[StreamletDeployment] = Json.format[StreamletDeployment]
 
-  implicit val SpecFmt: Format[Spec] = Json.format[Spec]
-  implicit val PodStatusFmt: Format[PodStatus] = Json.format[PodStatus]
+  implicit val SpecFmt: Format[Spec]                       = Json.format[Spec]
+  implicit val PodStatusFmt: Format[PodStatus]             = Json.format[PodStatus]
   implicit val StreamletStatusFmt: Format[StreamletStatus] = Json.format[StreamletStatus]
-  implicit val StatusFmt: Format[Status] = Json.format[Status]
+  implicit val StatusFmt: Format[Status]                   = Json.format[Status]
 
   implicit val Definition = ResourceDefinition[CustomResource[Spec, Status]](
     group = "cloudflow.lightbend.com",
@@ -121,9 +123,8 @@ object CloudflowApplication {
   def hash(applicationSpec: CloudflowApplication.Spec): String = {
     val jsonString = Json.stringify(Json.toJson(CloudflowApplication(applicationSpec)))
 
-    def bytesToHexString(bytes: Array[Byte]): String = {
-      bytes.map("%02x" format _).mkString
-    }
+    def bytesToHexString(bytes: Array[Byte]): String =
+      bytes.map("%02x".format(_)).mkString
     val md = MessageDigest.getInstance("MD5")
     md.update(jsonString.getBytes("UTF8"))
     bytesToHexString(md.digest())
@@ -133,13 +134,12 @@ object CloudflowApplication {
     def apply(
         app: CloudflowApplication.CR,
         streamletStatuses: Vector[StreamletStatus] = Vector()
-    ): Status = {
+    ): Status =
       Status(
         app.spec.appId,
         app.spec.appVersion,
         streamletStatuses
       )
-    }
   }
 
   case class Status(
@@ -149,7 +149,8 @@ object CloudflowApplication {
   ) {
 
     def updateSpec(spec: CloudflowApplication.Spec) = {
-      val newStreamletStatuses = streamletStatuses.filter(streamletStatus ⇒ spec.deployments.map(_.streamletName).contains(streamletStatus.streamletName))
+      val newStreamletStatuses =
+        streamletStatuses.filter(streamletStatus ⇒ spec.deployments.map(_.streamletName).contains(streamletStatus.streamletName))
       copy(
         appId = spec.appId,
         appVersion = spec.appVersion,
@@ -180,9 +181,8 @@ object CloudflowApplication {
   }
 
   object StreamletStatus {
-    def apply(streamletName: String, pod: Pod): StreamletStatus = {
+    def apply(streamletName: String, pod: Pod): StreamletStatus =
       StreamletStatus(streamletName, Vector(PodStatus(pod)))
-    }
     def apply(streamletName: String): StreamletStatus = StreamletStatus(streamletName)
   }
 
@@ -197,27 +197,33 @@ object CloudflowApplication {
   object PodStatus {
     def apply(pod: Pod): PodStatus = {
       val name = pod.metadata.name
-      pod.status.map { status ⇒
-        val ready = status.conditions.find(_._type == "Ready").map(_.status).getOrElse("")
-        // this is on purpose, so that if this changes, it fails instead of silently providing wrong statuses
-        require(status.containerStatuses.size <= 1, s"Expected one container in a pod created by a runner, not '${status.containerStatuses.size}'.")
-        val containerStatus = status.containerStatuses.headOption
+      pod.status
+        .map { status ⇒
+          val ready = status.conditions.find(_._type == "Ready").map(_.status).getOrElse("")
+          // this is on purpose, so that if this changes, it fails instead of silently providing wrong statuses
+          require(status.containerStatuses.size <= 1,
+                  s"Expected one container in a pod created by a runner, not '${status.containerStatuses.size}'.")
+          val containerStatus = status.containerStatuses.headOption
 
-        val restarts = containerStatus.map(_.restartCount).getOrElse(0)
+          val restarts = containerStatus.map(_.restartCount).getOrElse(0)
 
-        val st = containerStatus.flatMap(_.state match {
-          case Some(Container.Waiting(Some(reason))) if reason == "CrashLoopBackOff" ⇒ Some("CrashLoopBackOff")
-          case _ ⇒ status.phase.map {
-            case Pod.Phase.Pending   ⇒ "ContainerCreating"
-            case Pod.Phase.Running   ⇒ "Running"
-            case Pod.Phase.Succeeded ⇒ "Terminated"
-            case Pod.Phase.Failed    ⇒ "Error"
-            case Pod.Phase.Unknown   ⇒ "Unknown"
-          }
-        }).getOrElse("Unknown")
+          val st = containerStatus
+            .flatMap(_.state match {
+              case Some(Container.Waiting(Some(reason))) if reason == "CrashLoopBackOff" ⇒ Some("CrashLoopBackOff")
+              case _ ⇒
+                status.phase.map {
+                  case Pod.Phase.Pending   ⇒ "ContainerCreating"
+                  case Pod.Phase.Running   ⇒ "Running"
+                  case Pod.Phase.Succeeded ⇒ "Terminated"
+                  case Pod.Phase.Failed    ⇒ "Error"
+                  case Pod.Phase.Unknown   ⇒ "Unknown"
+                }
+            })
+            .getOrElse("Unknown")
 
-        PodStatus(name, st, restarts, ready)
-      }.getOrElse(PodStatus(name, "Unknown", 0, ""))
+          PodStatus(name, st, restarts, ready)
+        }
+        .getOrElse(PodStatus(name, "Unknown", 0, ""))
     }
   }
 

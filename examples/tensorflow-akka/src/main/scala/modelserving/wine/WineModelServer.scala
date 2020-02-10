@@ -30,14 +30,14 @@ import modelserving.wine.avro._
  */
 final class WineModelServer extends AkkaStreamlet {
 
-  val in = AvroInlet[WineRecord]("wine-records")
+  val in  = AvroInlet[WineRecord]("wine-records")
   val out = AvroOutlet[WineResult]("wine-results", _.inputRecord.datatype)
 
   final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
   // the volume mount where all models are read from
   private val modelBundleMount = VolumeMount("models", "/models", ReadWriteMany)
-  override def volumeMounts = Vector(modelBundleMount)
+  override def volumeMounts    = Vector(modelBundleMount)
 
   // the relative directory under `/models` which contains a TensorFlow SavedModelBundle.
   val ModelName = StringConfigParameter(
@@ -48,28 +48,29 @@ final class WineModelServer extends AkkaStreamlet {
   override def configParameters = Vector(ModelName)
 
   override final def createLogic = new RunnableGraphStreamletLogic() {
-    val modelName = streamletConfig.getString(ModelName.key)
+    val modelName            = streamletConfig.getString(ModelName.key)
     val savedModelBundlePath = getMountedPath(modelBundleMount).resolve(modelName)
 
     log.info(s"Loading model from $savedModelBundlePath.")
 
-    val modelScoringFlow = WineModelBundle.load(savedModelBundlePath, modelName).fold(
-      e ⇒ {
-        log.error(s"Could not load model from $savedModelBundlePath.", e)
-        FlowWithCommittableContext[WineRecord]
-          .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}")))
-      },
-      model ⇒ {
-        log.info(s"Loaded model from $savedModelBundlePath.")
-        FlowWithCommittableContext[WineRecord]
-          .map(record ⇒ model.scoreWine(record))
-      }
-    )
+    val modelScoringFlow = WineModelBundle
+      .load(savedModelBundlePath, modelName)
+      .fold(
+        e ⇒ {
+          log.error(s"Could not load model from $savedModelBundlePath.", e)
+          FlowWithCommittableContext[WineRecord]
+            .map(record ⇒ WineResult(record, WineModel.EmptyServingResult, ModelResultMetadata(s"Could not load model: ${e.getMessage}")))
+        },
+        model ⇒ {
+          log.info(s"Loaded model from $savedModelBundlePath.")
+          FlowWithCommittableContext[WineRecord]
+            .map(record ⇒ model.scoreWine(record))
+        }
+      )
 
-    def runnableGraph() = {
+    def runnableGraph() =
       sourceWithOffsetContext(in)
         .via(modelScoringFlow)
         .to(committableSink(out))
-    }
   }
 }

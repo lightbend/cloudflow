@@ -41,7 +41,8 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
 
-  private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
+  private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
+                                                   committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
   private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
 
   /**
@@ -105,10 +106,10 @@ sealed trait ResetPosition {
 case object Earliest extends ResetPosition {
   val autoOffsetReset = "earliest"
 }
+
 /**
  * Automatically reset the offset to the latest offset.
  */
 case object Latest extends ResetPosition {
   val autoOffsetReset = "latest"
 }
-

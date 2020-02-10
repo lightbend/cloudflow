@@ -17,7 +17,7 @@
 package cloudflow.streamlets
 
 import scala.reflect.ClassTag
-import scala.util.{ Try, Failure }
+import scala.util.{ Failure, Try }
 
 object ClassOps {
 
@@ -37,9 +37,8 @@ object ClassOps {
   }
 
   case class Obj(clazz: Class[_]) extends ClassInstance {
-    override def instance(): Try[Any] = {
+    override def instance(): Try[Any] =
       Try(clazz.getField("MODULE$").get(clazz))
-    }
   }
 
   case class Clazz(clazz: Class[_]) extends ClassInstance {
@@ -49,18 +48,20 @@ object ClassOps {
   /**
    * Try to create an instance of the class `name`
    */
-  private def instanceFromClass(name: String): Try[Any] = for {
-    c ← loadClass(name)
-    i ← Clazz(c).instance
-  } yield i
+  private def instanceFromClass(name: String): Try[Any] =
+    for {
+      c ← loadClass(name)
+      i ← Clazz(c).instance
+    } yield i
 
   /**
    * Try to create a singleton object of name `name`
    */
-  private def instanceFromObject(name: String): Try[Any] = for {
-    c ← loadClass(name + "$")
-    i ← Obj(c).instance
-  } yield i
+  private def instanceFromObject(name: String): Try[Any] =
+    for {
+      c ← loadClass(name + "$")
+      i ← Obj(c).instance
+    } yield i
 
   /**
    * Helper method to use a `Try` for handling exceptions
@@ -72,7 +73,7 @@ object ClassOps {
   /**
    * Try to create an instance of a class or share a single object with name `className`.
    */
-  def instanceOf(className: String): Try[Any] = {
+  def instanceOf(className: String): Try[Any] =
     // name ending with `$` indicates it's a singleton object
     if (className.endsWith("$")) instanceFromObject(className.dropRight(1))
     else {
@@ -83,7 +84,6 @@ object ClassOps {
         // the fact that the class may not have a no-arg constructor or the name passed
         // is that of a singleton object
         case _: InstantiationException ⇒
-
           // try instantiating assuming it's an object
           instanceFromObject(className).map(identity).recoverWith {
 
@@ -96,6 +96,5 @@ object ClassOps {
         case ex: Exception ⇒ Failure(ex)
       }
     }
-  }
 
 }

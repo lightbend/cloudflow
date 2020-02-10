@@ -30,4 +30,3 @@ object AkkaRunnerActions extends RunnerActions(AkkaRunner) {
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = actions(newApp, currentApp, namespace)
 }
-

@@ -24,23 +24,21 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
   import CloudflowLabels._
 
   val baseLabels: Map[String, String] = Map(
-    PartOf -> partOf,
+    PartOf    -> partOf,
     ManagedBy -> CloudflowLabels.ManagedByCloudflow,
-    Version -> appVersion
+    Version   -> appVersion
   )
 
   def apply(name: String): Map[String, String] = baseLabels + (Name -> name)
 
-  def withComponent(name: String, component: String): Map[String, String] = {
+  def withComponent(name: String, component: String): Map[String, String] =
     this(name) + (CloudflowLabels.Component -> component)
-  }
 }
 
 object CloudflowLabels {
 
-  def apply(streamletConfig: StreamletDefinition): CloudflowLabels = {
+  def apply(streamletConfig: StreamletDefinition): CloudflowLabels =
     CloudflowLabels(streamletConfig.appId, streamletConfig.appVersion)
-  }
 
   // The name of the application
   val Name = "app.kubernetes.io/name"
@@ -59,4 +57,3 @@ object CloudflowLabels {
   // Managed by
   val ManagedByCloudflow = "cloudflow"
 }
-

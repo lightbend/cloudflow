@@ -55,7 +55,9 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
     val parameterValueConfig =
       ConfigFactory.parseString(
         configParameterValues
-          .map(parameterValue ⇒ s"cloudflow.streamlets.$defaultStreamletRefName.${parameterValue.configParameterKey} = ${parameterValue.value}")
+          .map(parameterValue ⇒
+            s"cloudflow.streamlets.$defaultStreamletRefName.${parameterValue.configParameterKey} = ${parameterValue.value}"
+          )
           .mkString("\n")
       )
 
@@ -66,75 +68,56 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
    * Runs the `streamlet` using `ip` as the source and `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: InletTap[_],
-      op: OutletTap[T],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, List(ip), List(op), config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, ip: InletTap[_], op: OutletTap[T], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), List(op), config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using an empty source and `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      op: OutletTap[T],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, List.empty, List(op), config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, op: OutletTap[T], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, List.empty, List(op), config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using `ip` as the source and an empty sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: InletTap[T],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, List(ip), List.empty, config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, ip: InletTap[T], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), List.empty, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using a list of `ip` as the source and a list of `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: List[InletTap[_]],
-      op: List[OutletTap[_]],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, ip, op, config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: List[OutletTap[_]], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, ip, op, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using a list of `ip` as the source and an `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: List[InletTap[_]],
-      op: OutletTap[T],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, ip, List(op), config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: OutletTap[T], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, ip, List(op), config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using an `ip` as the source and a list of `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: InletTap[_],
-      op: List[OutletTap[_]],
-      assertions: () ⇒ Any): Unit = doRun(TestContext(defaultStreamletRefName, system, List(ip), op, config), streamlet, assertions)
+  def run[T](streamlet: AkkaStreamlet, ip: InletTap[_], op: List[OutletTap[_]], assertions: () ⇒ Any): Unit =
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), op, config), streamlet, assertions)
 
   /**
    * This method is used when `testkit.run` and `StreamletExecution#stop` has to be
    * done under different control flows.
    */
-  def run[T](
-      streamlet: AkkaStreamlet,
-      ip: List[InletTap[_]],
-      op: List[OutletTap[_]]): StreamletExecution = {
+  def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: List[OutletTap[_]]): StreamletExecution = {
     val context = TestContext(defaultStreamletRefName, system, ip, op, config)
     streamlet.setContext(context).run(context.config)
   }
 
   private def doRun(context: TestContext, streamlet: AkkaStreamlet, assertions: () ⇒ Any): Unit = {
     val streamletExecution = streamlet.setContext(context).run(context.config)
-    val _ = assertions()
+    val _                  = assertions()
     Await.result(streamletExecution.stop(), 10 seconds)
   }
 }

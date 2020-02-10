@@ -20,23 +20,22 @@ case class VerifiedBlueprint(
     streamlets: Vector[VerifiedStreamlet],
     connections: Vector[VerifiedStreamletConnection]
 ) {
-  def findOutlet(outletPortPath: String): Either[PortPathError, VerifiedOutlet] = {
+  def findOutlet(outletPortPath: String): Either[PortPathError, VerifiedOutlet] =
     VerifiedOutlet.find(streamlets, outletPortPath)
-  }
 }
 
 object VerifiedPortPath {
   def apply(portPath: String): Either[PortPathError, VerifiedPortPath] = {
     val trimmed = portPath.trim()
-    val parts = trimmed.split("\\.").filterNot(_.isEmpty).toVector
+    val parts   = trimmed.split("\\.").filterNot(_.isEmpty).toVector
     if (trimmed.startsWith(".")) {
       Left(InvalidPortPath(portPath))
     } else if (parts.size == 1 && !portPath.endsWith(".")) {
       Right(VerifiedPortPath(parts.head, None))
     } else if (parts.size >= 2) {
-      val portName = parts.last
+      val portName          = parts.last
       val streamletNamePart = parts.init
-      val streamletRef = streamletNamePart.mkString(".")
+      val streamletRef      = streamletNamePart.mkString(".")
       if (streamletRef.isEmpty) Left(InvalidPortPath(portPath))
       else if (portName.isEmpty) Left(InvalidPortPath(portPath))
       else Right(VerifiedPortPath(streamletRef, Some(portName)))
@@ -52,7 +51,7 @@ final case class VerifiedPortPath(streamletRef: String, portName: Option[String]
 
 final case class VerifiedStreamlet(name: String, descriptor: StreamletDescriptor) {
   def outlet(outlet: OutletDescriptor) = VerifiedOutlet(this, outlet.name, outlet.schema)
-  def inlet(inlet: InletDescriptor) = VerifiedInlet(this, inlet.name, inlet.schema)
+  def inlet(inlet: InletDescriptor)    = VerifiedInlet(this, inlet.name, inlet.schema)
 }
 
 final case class VerifiedStreamletConnection(verifiedOutlet: VerifiedOutlet, verifiedInlet: VerifiedInlet, label: Option[String] = None)
@@ -66,7 +65,7 @@ object VerifiedOutlet {
   def find(
       verifiedStreamlets: Vector[VerifiedStreamlet],
       outletPortPath: String
-  ): Either[PortPathError, VerifiedOutlet] = {
+  ): Either[PortPathError, VerifiedOutlet] =
     for {
       verifiedPortPath ← VerifiedPortPath(outletPortPath)
       verifiedOutlet ← verifiedStreamlets
@@ -81,22 +80,20 @@ object VerifiedOutlet {
               verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.outlets.head.name))
             } else verifiedPortPath
 
-            verifiedStreamlet.descriptor
-              .outlets
+            verifiedStreamlet.descriptor.outlets
               .find(outlet ⇒ Some(outlet.name) == portPath.portName)
               .map(outletDescriptor ⇒ VerifiedOutlet(verifiedStreamlet, outletDescriptor.name, outletDescriptor.schema))
               .toRight(PortPathNotFound(outletPortPath))
           }
         }
     } yield verifiedOutlet
-  }
 }
 
 object VerifiedInlet {
   def find(
       verifiedStreamlets: Vector[VerifiedStreamlet],
       inletPortPath: String
-  ): Either[BlueprintProblem, VerifiedInlet] = {
+  ): Either[BlueprintProblem, VerifiedInlet] =
     for {
       verifiedPortPath ← VerifiedPortPath(inletPortPath)
       verifiedInlet ← verifiedStreamlets
@@ -111,15 +108,13 @@ object VerifiedInlet {
               verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.inlets.head.name))
             } else verifiedPortPath
 
-            verifiedStreamlet.descriptor
-              .inlets
+            verifiedStreamlet.descriptor.inlets
               .find(inlet ⇒ Some(inlet.name) == portPath.portName)
               .map(inletDescriptor ⇒ VerifiedInlet(verifiedStreamlet, inletDescriptor.name, inletDescriptor.schema))
               .toRight(PortPathNotFound(inletPortPath))
           }
         }
     } yield verifiedInlet
-  }
 }
 
 final case class VerifiedInlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor) extends VerifiedPort {
@@ -127,9 +122,8 @@ final case class VerifiedInlet(streamlet: VerifiedStreamlet, portName: String, s
 }
 
 final case class VerifiedOutlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor) extends VerifiedPort {
-  def matches(outletDescriptor: OutletDescriptor) = {
+  def matches(outletDescriptor: OutletDescriptor) =
     outletDescriptor.name == portName &&
       outletDescriptor.schema.fingerprint == schemaDescriptor.fingerprint
-  }
   def portPath = VerifiedPortPath(streamlet.name, Some(portName))
 }

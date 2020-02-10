@@ -22,14 +22,17 @@ import scala.concurrent.Future
  * A handle to the running [[Streamlet]].
  */
 trait StreamletExecution {
+
   /**
    * Completes when the streamlet is ready to start processing.
    */
   def ready: Future[Dun]
+
   /**
    * Stops the streamlet.
    */
   def stop(): Future[Dun]
+
   /**
    * Completes when the streamlet is completed.
    */

@@ -23,15 +23,16 @@ import sbt.Keys._
  * SBT Plugin for building Cloudflow streamlet libraries that depend on the "flink" runtime.
  */
 object CloudflowFlinkLibraryPlugin extends AutoPlugin {
+
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = CommonSettingsAndTasksPlugin
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-flink" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
-    )
+          "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
+        )
   )
 }

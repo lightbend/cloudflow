@@ -25,6 +25,7 @@ import skuber._
  * Executes Kubernetes resource actions.
  */
 trait ActionExecutor {
+
   /**
    * Executes the action. Returns the action as executed, containing the object as it was returned by the action.
    * In the case of deletion, the original resource is returned.

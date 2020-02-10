@@ -71,9 +71,7 @@ class FlinkStreamletContextImpl(
    *
    * @return the `DataStream` used to write to sink
    */
-  override def writeStream[Out: TypeInformation](
-      outlet: CodecOutlet[Out],
-      stream: DataStream[Out]): DataStreamSink[Out] = {
+  override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] = {
 
     val destTopic = resolvePort(outlet.name)
 

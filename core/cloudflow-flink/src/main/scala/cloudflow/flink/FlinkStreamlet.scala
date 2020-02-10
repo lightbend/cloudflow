@@ -71,27 +71,25 @@ import cloudflow.streamlets._
 abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
-  private val readyPromise = Promise[Dun]()
+  private val readyPromise      = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
-  private val completionFuture = completionPromise.future
+  private val completionFuture  = completionPromise.future
 
-  override protected final def createContext(config: Config): FlinkStreamletContext = {
+  override protected final def createContext(config: Config): FlinkStreamletContext =
     (for {
       streamletDefinition ← StreamletDefinition.read(config)
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
       new FlinkStreamletContextImpl(streamletDefinition, createExecutionEnvironment, updatedConfig)
-    })
-      .recoverWith {
-        case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
-      }.get
-  }
+    }).recoverWith {
+      case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
+    }.get
 
   private def createExecutionEnvironment: StreamExecutionEnvironment = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
-    val StartCheckpointIntervalInMillis = 10000
-    val ProgressInMillisBetweenCheckpoints = 500
+    val StartCheckpointIntervalInMillis       = 10000
+    val ProgressInMillisBetweenCheckpoints    = 500
     val CheckpointCompletionTimeLimitInMillis = 60000 // 1 minute
 
     // start a checkpoint every `StartCheckpointIntervalInMillis` ms
@@ -126,8 +124,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     log.info(s"""
       |\n${box("Flink Config Values")}
       |${configStr}\n
-      """.stripMargin
-    )
+      """.stripMargin)
 
     readyPromise.trySuccess(Dun)
     val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
@@ -153,10 +150,9 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       new StreamletExecution {
         val readyFuture = readyPromise.future
 
-        def completed: Future[Dun] = {
+        def completed: Future[Dun] =
           jobResult.map(_ ⇒ Dun)
-        }
-        def ready: Future[Dun] = readyFuture
+        def ready: Future[Dun]  = readyFuture
         def stop(): Future[Dun] = ???
       }
     }
@@ -172,11 +168,12 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       Try {
         createLogic.executeStreamingQueries(context.env)
       }.fold(
-        th ⇒ th match {
-          // rethrow for Flink to catch as Flink control flow depends on this
-          case pax: OptimizerPlanEnvironment.ProgramAbortException ⇒ throw pax
-          case _: Throwable                                        ⇒ completionPromise.tryFailure(th)
-        },
+        th ⇒
+          th match {
+            // rethrow for Flink to catch as Flink control flow depends on this
+            case pax: OptimizerPlanEnvironment.ProgramAbortException ⇒ throw pax
+            case _: Throwable                                        ⇒ completionPromise.tryFailure(th)
+          },
         _ ⇒ completionPromise.trySuccess(Dun)
       )
 
@@ -184,35 +181,31 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         val readyFuture = readyPromise.future
 
         def completed: Future[Dun] = completionFuture
-        def ready: Future[Dun] = readyFuture
-        def stop(): Future[Dun] = ???
+        def ready: Future[Dun]     = readyFuture
+        def stop(): Future[Dun]    = ???
       }
     }
   }
 
-  override def logStartRunnerMessage(buildInfo: String): Unit = {
+  override def logStartRunnerMessage(buildInfo: String): Unit =
     log.info(s"""
       |Initializing Flink Runner ..
       |\n${box("Build Info")}
       |${buildInfo}
-      """.stripMargin
-    )
-  }
+      """.stripMargin)
 
-  private def getFlinkConfigInfo(env: StreamExecutionEnvironment): Map[String, String] = {
+  private def getFlinkConfigInfo(env: StreamExecutionEnvironment): Map[String, String] =
     Map.empty[String, String] +
-      ("Parallelism" -> s"${env.getParallelism}") +
-      ("Max Parallelism" -> s"${env.getMaxParallelism}") +
-      ("Checkpointing enabled" -> s"${env.getJavaEnv.getCheckpointConfig.isCheckpointingEnabled}") +
-      ("Checkpointing Mode" -> s"${env.getCheckpointingMode}") +
-      ("Checkpoint Interval (millis)" -> s"${env.getJavaEnv.getCheckpointInterval}") +
-      ("Checkpoint timeout" -> s"${env.getJavaEnv.getCheckpointConfig.getCheckpointTimeout}") +
-      ("Restart Strategy" -> s"${env.getRestartStrategy.getDescription}")
-  }
+        ("Parallelism"                  -> s"${env.getParallelism}") +
+        ("Max Parallelism"              -> s"${env.getMaxParallelism}") +
+        ("Checkpointing enabled"        -> s"${env.getJavaEnv.getCheckpointConfig.isCheckpointingEnabled}") +
+        ("Checkpointing Mode"           -> s"${env.getCheckpointingMode}") +
+        ("Checkpoint Interval (millis)" -> s"${env.getJavaEnv.getCheckpointInterval}") +
+        ("Checkpoint timeout"           -> s"${env.getJavaEnv.getCheckpointConfig.getCheckpointTimeout}") +
+        ("Restart Strategy"             -> s"${env.getRestartStrategy.getDescription}")
 
-  final def configuredValue(context: FlinkStreamletContext, configKey: String): String = {
+  final def configuredValue(context: FlinkStreamletContext, configKey: String): String =
     context.streamletConfig.getString(configKey)
-  }
 }
 
 /**
@@ -259,8 +252,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    * @return the data read as `DataStream[In]`
    */
   final def readStream[In](inlet: CodecInlet[In], clazz: Class[In]): JDataStream[In] =
-    context.readStream(inlet)(TypeInformation.of[In](clazz))
-      .javaStream
+    context.readStream(inlet)(TypeInformation.of[In](clazz)).javaStream
 
   /**
    * Write to the external storage using the outlet `outlet` from the stream `stream`
@@ -285,10 +277,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    *
    * @return the result `DataStreamSink[Out]`
    */
-  final def writeStream[Out](
-      outlet: CodecOutlet[Out],
-      stream: JDataStream[Out],
-      clazz: Class[Out]): DataStreamSink[Out] =
+  final def writeStream[Out](outlet: CodecOutlet[Out], stream: JDataStream[Out], clazz: Class[Out]): DataStreamSink[Out] =
     context.writeStream(outlet, new DataStream(stream))(TypeInformation.of[Out](clazz))
 
   final def config: Config = context.config
@@ -322,4 +311,3 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
 case object FlinkStreamletRuntime extends StreamletRuntime {
   override val name: String = "flink"
 }
-

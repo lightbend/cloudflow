@@ -22,11 +22,11 @@ import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
 class RotorspeedWindowLogger extends AkkaStreamlet {
-  val in = AvroInlet[Metric]("in")
+  val in    = AvroInlet[Metric]("in")
   val shape = StreamletShape(in)
   override def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph = sourceWithOffsetContext(in).via(flow).to(sinkWithOffsetContext)
-    def flow = {
+    def flow =
       FlowWithOffsetContext[Metric]
         .grouped(5)
         .map { rotorSpeedWindow ⇒
@@ -37,6 +37,5 @@ class RotorspeedWindowLogger extends AkkaStreamlet {
           avg
         }
         .mapContext(_.last) // TODO: this is a tricky one to understand...
-    }
   }
 }

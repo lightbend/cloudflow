@@ -24,14 +24,14 @@ import org.apache.flink.streaming.connectors.kafka._
 
 import cloudflow.streamlets.{ CodecInlet, CodecOutlet }
 
-private[flink] class FlinkKafkaCodecSerializationSchema[T: TypeInformation](outlet: CodecOutlet[T], topic: String) extends KafkaSerializationSchema[T] {
-  override def serialize(value: T, timestamp: java.lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+private[flink] class FlinkKafkaCodecSerializationSchema[T: TypeInformation](outlet: CodecOutlet[T], topic: String)
+    extends KafkaSerializationSchema[T] {
+  override def serialize(value: T, timestamp: java.lang.Long): ProducerRecord[Array[Byte], Array[Byte]] =
     new ProducerRecord(topic, outlet.codec.encode(value))
-  }
 }
 
 private[flink] class FlinkKafkaCodecDeserializationSchema[T: TypeInformation](inlet: CodecInlet[T]) extends KafkaDeserializationSchema[T] {
   override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = inlet.codec.decode(record.value)
-  override def isEndOfStream(value: T): Boolean = false
-  override def getProducedType: TypeInformation[T] = implicitly[TypeInformation[T]]
+  override def isEndOfStream(value: T): Boolean                                 = false
+  override def getProducedType: TypeInformation[T]                              = implicitly[TypeInformation[T]]
 }

@@ -23,14 +23,13 @@ import skuber.Resource._
  * TODO it is possible that a lot of these settings will come from the client,
  * and in many cases, will be defined per streamlet.
  */
-case class DeploymentContext(
-    kafkaContext: KafkaContext,
-    akkaRunnerSettings: AkkaRunnerSettings,
-    sparkRunnerSettings: SparkRunnerSettings,
-    flinkRunnerSettings: FlinkRunnerSettings,
-    persistentStorageSettings: PersistentStorageSettings,
-    podName: String,
-    podNamespace: String) {
+case class DeploymentContext(kafkaContext: KafkaContext,
+                             akkaRunnerSettings: AkkaRunnerSettings,
+                             sparkRunnerSettings: SparkRunnerSettings,
+                             flinkRunnerSettings: FlinkRunnerSettings,
+                             persistentStorageSettings: PersistentStorageSettings,
+                             podName: String,
+                             podNamespace: String) {
   import kafkaContext._
   def infoMessage = s"""
    | pod-name:                         ${podName}

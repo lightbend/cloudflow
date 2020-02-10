@@ -39,7 +39,7 @@ trait PatchProvider[T <: Patch] {
  */
 object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
-  def format = implicitly[Format[CR]]
+  def format                         = implicitly[Format[CR]]
   def patchFormat: Format[SpecPatch] = implicitly[Format[SpecPatch]]
   def editor = new ObjectEditor[CR] {
     override def updateMetadata(obj: CR, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
@@ -49,7 +49,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   }
 
   def resourceDefinition = implicitly[ResourceDefinition[CR]]
-  val runtime = "spark"
+  val runtime            = "spark"
 
   def resource(
       deployment: StreamletDeployment,
@@ -58,7 +58,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val _spec = patch(deployment, app, namespace, updateLabels)
-    val name = Name.ofSparkApplication(deployment.name)
+    val name  = Name.ofSparkApplication(deployment.name)
     CustomResource[Spec, Status](_spec.spec)
       .withMetadata(ObjectMeta(name = name, namespace = namespace))
   }
@@ -69,12 +69,12 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
-    val appLabels = CloudflowLabels(app)
-    val appId = app.appId
-    val agentPaths = app.agentPaths
-    val image = deployment.image
+    val appLabels     = CloudflowLabels(app)
+    val appId         = app.appId
+    val agentPaths    = app.agentPaths
+    val image         = deployment.image
     val configMapName = Name.ofConfigMap(deployment.name)
-    val configMaps = Seq(NamePath(configMapName, Runner.ConfigMapMountPath))
+    val configMaps    = Seq(NamePath(configMapName, Runner.ConfigMapMountPath))
 
     val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
@@ -82,17 +82,17 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     // Volume mounting
     val pvcName = Name.ofPVCInstance(appId)
 
-    val pvcVolume = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
+    val pvcVolume      = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
     val pvcVolumeMount = Volume.Mount(pvcVolume.name, "/mnt/spark/storage")
 
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
-    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map {
-      mount ⇒ Volume.Mount(mount.name, mount.path)
+    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+      Volume.Mount(mount.name, mount.path)
     })
 
-    val volumes = streamletPvcVolume :+ pvcVolume :+ Runner.DownwardApiVolume
+    val volumes      = streamletPvcVolume :+ pvcVolume :+ Runner.DownwardApiVolume
     val volumeMounts = streamletVolumeMount :+ pvcVolumeMount :+ Runner.DownwardApiVolumeMount
 
     // This is the group id of the user in the streamlet container,
@@ -100,10 +100,11 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     // If the image used with the container changes, this value most likely
     // have to be updated
     val dockerContainerGroupId = Runner.DockerContainerGroupId
-    val securityContext = if (streamletToDeploy.exists(_.descriptor.volumeMounts.exists(_.accessMode == "ReadWriteMany")))
-      Some(SparkResource.SecurityContext(fsGroup = Some(dockerContainerGroupId)))
-    else
-      None
+    val securityContext =
+      if (streamletToDeploy.exists(_.descriptor.volumeMounts.exists(_.accessMode == "ReadWriteMany")))
+        Some(SparkResource.SecurityContext(fsGroup = Some(dockerContainerGroupId)))
+      else
+        None
 
     val alwaysRestartPolicy: RestartPolicy = AlwaysRestartPolicy(
       onFailureRetryInterval = OnFailureRetryIntervalSecs,
@@ -114,8 +115,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     val name = Name.ofSparkApplication(deployment.name)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.0") ++
-      updateLabels ++
-      Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId)
+          updateLabels ++
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId)
 
     import ctx.sparkRunnerSettings._
     val cores = driverSettings.cores.map(_.amount.intValue).getOrElse(1)
@@ -150,7 +151,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     val monitoring = Monitoring(prometheus = Prometheus(
       jmxExporterJar = agentPaths(CloudflowApplication.PrometheusAgentKey),
       configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-    ))
+    )
+    )
 
     val spec = Spec(
       image = image,
@@ -167,7 +169,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   val DefaultNrOfExecutorInstances = 2
 
   // Lifecycle Management
-  private val OnFailureRetryIntervalSecs = 10
+  private val OnFailureRetryIntervalSecs           = 10
   private val OnSubmissionFailureRetryIntervalSecs = 60
 
 }
@@ -281,26 +283,27 @@ object SparkResource {
   implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
   implicit val namePathFmt: Format[NamePath] = Json.format[NamePath]
   implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
-  implicit val driverFmt: Format[Driver] = Json.format[Driver]
-  implicit val executorFmt: Format[Executor] = Json.format[Executor]
-  implicit val prometheusFmt: Format[Prometheus] = Json.format[Prometheus]
-  implicit val monitoringFmt: Format[Monitoring] = Json.format[Monitoring]
+  implicit val driverFmt: Format[Driver]                         = Json.format[Driver]
+  implicit val executorFmt: Format[Executor]                     = Json.format[Executor]
+  implicit val prometheusFmt: Format[Prometheus]                 = Json.format[Prometheus]
+  implicit val monitoringFmt: Format[Monitoring]                 = Json.format[Monitoring]
 
-  implicit val onFailureRestartPolicyReads: Reads[OnFailureRestartPolicy] = Json.reads[OnFailureRestartPolicy]
+  implicit val onFailureRestartPolicyReads: Reads[OnFailureRestartPolicy]   = Json.reads[OnFailureRestartPolicy]
   implicit val onFailureRestartPolicyWrites: Writes[OnFailureRestartPolicy] = Json.writes[OnFailureRestartPolicy]
 
-  implicit val alwaysRestartPolicyReads: Reads[AlwaysRestartPolicy] = Json.reads[AlwaysRestartPolicy]
+  implicit val alwaysRestartPolicyReads: Reads[AlwaysRestartPolicy]   = Json.reads[AlwaysRestartPolicy]
   implicit val alwaysRestartPolicyWrites: Writes[AlwaysRestartPolicy] = Json.writes[AlwaysRestartPolicy]
 
-  implicit val neverRestartPolicyReads: Reads[NeverRestartPolicy] = Json.reads[NeverRestartPolicy]
+  implicit val neverRestartPolicyReads: Reads[NeverRestartPolicy]   = Json.reads[NeverRestartPolicy]
   implicit val neverRestartPolicyWrites: Writes[NeverRestartPolicy] = Json.writes[NeverRestartPolicy]
 
   object RestartPolicy {
 
     implicit val reads: Reads[RestartPolicy] =
-      __.read[OnFailureRestartPolicy].map(x ⇒ x: RestartPolicy) orElse
-        __.read[AlwaysRestartPolicy].map(x ⇒ x: RestartPolicy) orElse
-        __.read[NeverRestartPolicy].map(x ⇒ x: RestartPolicy)
+      __.read[OnFailureRestartPolicy]
+        .map(x ⇒ x: RestartPolicy)
+        .orElse(__.read[AlwaysRestartPolicy].map(x ⇒ x: RestartPolicy))
+        .orElse(__.read[NeverRestartPolicy].map(x ⇒ x: RestartPolicy))
 
     implicit val writes: Writes[RestartPolicy] = {
       case never: NeverRestartPolicy         ⇒ neverRestartPolicyWrites.writes(never)

@@ -16,7 +16,7 @@
 
 package cloudflow.streamlets.avro
 
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 
 import scala.reflect.ClassTag
 import scala.reflect._
@@ -27,7 +27,7 @@ import cloudflow.streamlets._
 object AvroUtil {
   val Format = "avro"
 
-  def makeSchema[T <: SpecificRecordBase: ClassTag]: Schema = {
+  def makeSchema[T <: SpecificRecordBase: ClassTag]: Schema =
     Try(classTag[T].runtimeClass.getDeclaredMethod("SCHEMA$")) match {
       case Success(schema) ⇒ schema.invoke(null).asInstanceOf[Schema]
       case Failure(_) ⇒ {
@@ -37,7 +37,6 @@ object AvroUtil {
         }
       }
     }
-  }
   def fingerprintSha256(schema: Schema): String = {
     import java.util.Base64
 

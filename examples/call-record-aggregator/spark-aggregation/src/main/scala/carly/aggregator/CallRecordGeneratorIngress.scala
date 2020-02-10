@@ -41,14 +41,11 @@ class CallRecordGeneratorIngress extends SparkStreamlet {
   val rootLogger = Logger.getRootLogger()
   rootLogger.setLevel(Level.ERROR)
 
-  val RecordsPerSecond = IntegerConfigParameter(
-    "records-per-second",
-    "Records per second to process.",
-    Some(50))
+  val RecordsPerSecond = IntegerConfigParameter("records-per-second", "Records per second to process.", Some(50))
 
   override def configParameters = Vector(RecordsPerSecond)
 
-  val out = AvroOutlet[CallRecord]("out", _.user)
+  val out   = AvroOutlet[CallRecord]("out", _.user)
   val shape = StreamletShape(out)
 
   override def createLogic() = new SparkStreamletLogic {
@@ -64,26 +61,26 @@ object DataGenerator {
   def mkData(session: SparkSession, recordsPerSecond: Int): Dataset[CallRecord] = {
     // do we need to expose this through configuration?
 
-    val MaxTime = 2.hours.toMillis
-    val MaxUsers = 100000
-    val TS0 = new java.sql.Timestamp(0)
+    val MaxTime           = 2.hours.toMillis
+    val MaxUsers          = 100000
+    val TS0               = new java.sql.Timestamp(0)
     val ZeroTimestampProb = 0.05 // error rate
 
     // Random Data Generator
-    val usersUdf = udf(() ⇒ "user-" + Random.nextInt(MaxUsers))
+    val usersUdf     = udf(() ⇒ "user-" + Random.nextInt(MaxUsers))
     val directionUdf = udf(() ⇒ if (Random.nextDouble() < 0.5) "incoming" else "outgoing")
 
     // Time-biased randomized filter - 1/2 hour cycles
-    val sinTime: Long ⇒ Double = t ⇒ Math.sin((t / 1000 % 1800) * 1.0 / 1800 * Math.PI)
+    val sinTime: Long ⇒ Double                   = t ⇒ Math.sin((t / 1000 % 1800) * 1.0 / 1800 * Math.PI)
     val timeBoundFilter: Long ⇒ Double ⇒ Boolean = t ⇒ prob ⇒ (sinTime(t) + 0.5) > prob
-    val timeFilterUdf = udf((ts: java.sql.Timestamp, rng: Double) ⇒ timeBoundFilter(ts.getTime)(rng))
-    val zeroTimestampUdf = udf((ts: java.sql.Timestamp, rng: Double) ⇒ {
+    val timeFilterUdf                            = udf((ts: java.sql.Timestamp, rng: Double) ⇒ timeBoundFilter(ts.getTime)(rng))
+    val zeroTimestampUdf = udf { (ts: java.sql.Timestamp, rng: Double) ⇒
       if (rng < ZeroTimestampProb) {
         TS0
       } else {
         ts
       }
-    })
+    }
 
     val rateStream = session.readStream
       .format("rate")
@@ -92,15 +89,15 @@ object DataGenerator {
       .as[Rate]
 
     val randomDataset = rateStream.withColumn("rng", rand()).withColumn("tsRng", rand())
-    val sampledData = randomDataset.where(timeFilterUdf($"timestamp", $"rng"))
+    val sampledData = randomDataset
+      .where(timeFilterUdf($"timestamp", $"rng"))
       .withColumn("user", usersUdf())
       .withColumn("other", usersUdf())
       .withColumn("direction", directionUdf())
       .withColumn("duration", (round(abs(rand()) * MaxTime)).cast(LongType))
       .withColumn("updatedTimestamp", zeroTimestampUdf($"timestamp", $"tsRng"))
-      .select($"user", $"other", $"direction", $"duration", $"updatedTimestamp" as "timestamp")
+      .select($"user", $"other", $"direction", $"duration", $"updatedTimestamp".as("timestamp"))
       .as[CallRecord]
     sampledData
   }
 }
-

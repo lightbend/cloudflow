@@ -24,10 +24,12 @@ import scala.reflect._
 
 import AvroUtil._
 
-case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partitioner: T ⇒ String = RoundRobinPartitioner) extends CodecOutlet[T] {
-  def codec = new AvroCodec[T](makeSchema)
+case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partitioner: T ⇒ String = RoundRobinPartitioner)
+    extends CodecOutlet[T] {
+  def codec            = new AvroCodec[T](makeSchema)
   def schemaDefinition = createSchemaDefinition(makeSchema)
-  def schemaAsString = makeSchema.toString(false)
+  def schemaAsString   = makeSchema.toString(false)
+
   /**
    * Returns a CodecOutlet with the partitioner set.
    */
