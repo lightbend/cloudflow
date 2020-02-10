@@ -36,10 +36,9 @@ object HttpServerLogic {
   final def default[Out](
       server: Server,
       outlet: CodecOutlet[Out]
-  )(
-      implicit
-      context: AkkaStreamletContext,
-      fbu: FromByteStringUnmarshaller[Out]) =
+  )(implicit
+    context: AkkaStreamletContext,
+    fbu: FromByteStringUnmarshaller[Out]) =
     new HttpServerLogic(server, outlet) {
       final override def route(writer: WritableSinkRef[Out]): Route = defaultRoute(writer)
     }
@@ -54,7 +53,7 @@ object HttpServerLogic {
       ess: EntityStreamingSupport
   ) =
     new StreamingHttpServerLogic(server, outlet) {
-      def entityStreamingSupport: EntityStreamingSupport = ess
+      def entityStreamingSupport: EntityStreamingSupport            = ess
       final override def route(writer: WritableSinkRef[Out]): Route = defaultStreamingRoute(writer)
     }
 
@@ -123,7 +122,8 @@ object HttpServerLogic {
 abstract class HttpServerLogic[Out](
     server: Server,
     outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext, fbu: FromByteStringUnmarshaller[Out]) extends ServerStreamletLogic(server) {
+)(implicit context: AkkaStreamletContext, fbu: FromByteStringUnmarshaller[Out])
+    extends ServerStreamletLogic(server) {
   implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
     PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
       .andThen(implicitly[FromByteStringUnmarshaller[Out]])
@@ -149,7 +149,7 @@ abstract class HttpServerLogic[Out](
       context: AkkaStreamletContext,
       handler: Flow[HttpRequest, HttpResponse, _],
       port: Int
-  ): Unit = {
+  ): Unit =
     Http()
       .bindAndHandle(handler, "0.0.0.0", port)
       .map { binding ⇒
@@ -167,7 +167,6 @@ abstract class HttpServerLogic[Out](
           system.log.error(cause, s"Failed to bind to $port.")
           context.stop()
       }
-  }
 
 }
 
@@ -197,7 +196,8 @@ abstract class HttpServerLogic[Out](
 abstract class StreamingHttpServerLogic[Out: FromByteStringUnmarshaller](
     server: Server,
     outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext) extends HttpServerLogic(server, outlet) {
+)(implicit context: AkkaStreamletContext)
+    extends HttpServerLogic(server, outlet) {
   implicit def entityStreamingSupport: EntityStreamingSupport
 
   /**
@@ -206,7 +206,7 @@ abstract class StreamingHttpServerLogic[Out: FromByteStringUnmarshaller](
    * @param writer the writer to write to
    * @return the HTTP route
    */
-  override def route(writer: WritableSinkRef[Out]): Route = {
+  override def route(writer: WritableSinkRef[Out]): Route =
     entity(asSourceOf[Out]) { elements ⇒
       val written: Future[_] =
         elements
@@ -220,5 +220,4 @@ abstract class StreamingHttpServerLogic[Out: FromByteStringUnmarshaller](
         }
       }
     }
-  }
 }

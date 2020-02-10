@@ -35,7 +35,7 @@ import skuber.PersistentVolumeClaim.VolumeMode
  */
 object AppActions {
   def apply(appId: String, namespace: String, labels: CloudflowLabels)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
-    val roleAkka = akkaRole(namespace, labels)
+    val roleAkka  = akkaRole(namespace, labels)
     val roleSpark = sparkRole(namespace, labels)
     val roleFlink = flinkRole(namespace, labels)
     Vector(
@@ -50,7 +50,7 @@ object AppActions {
     )
   }
 
-  private def roleBinding(namespace: String, labels: CloudflowLabels): RoleBinding = {
+  private def roleBinding(namespace: String, labels: CloudflowLabels): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofRoleBinding(),
@@ -68,9 +68,8 @@ object AppActions {
         )
       )
     )
-  }
 
-  private def akkaRole(namespace: String, labels: CloudflowLabels): Role = {
+  private def akkaRole(namespace: String, labels: CloudflowLabels): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofAkkaRole(),
@@ -80,9 +79,8 @@ object AppActions {
       kind = "Role",
       rules = List(createEventPolicyRule)
     )
-  }
 
-  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding = {
+  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofAkkaRoleBinding(),
@@ -100,9 +98,8 @@ object AppActions {
         )
       )
     )
-  }
 
-  private def sparkRole(namespace: String, labels: CloudflowLabels): Role = {
+  private def sparkRole(namespace: String, labels: CloudflowLabels): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofSparkRole(),
@@ -122,9 +119,8 @@ object AppActions {
         createEventPolicyRule
       )
     )
-  }
 
-  private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding = {
+  private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofSparkRoleBinding(),
@@ -142,9 +138,8 @@ object AppActions {
         )
       )
     )
-  }
 
-  private def flinkRole(namespace: String, labels: CloudflowLabels): Role = {
+  private def flinkRole(namespace: String, labels: CloudflowLabels): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofFlinkRole(),
@@ -164,9 +159,8 @@ object AppActions {
         createEventPolicyRule
       )
     )
-  }
 
-  private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding = {
+  private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofFlinkRoleBinding(),
@@ -184,9 +178,10 @@ object AppActions {
         )
       )
     )
-  }
 
-  private def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels)(implicit ctx: DeploymentContext): PersistentVolumeClaim = {
+  private def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels)(
+      implicit ctx: DeploymentContext
+  ): PersistentVolumeClaim = {
     val metadata = ObjectMeta(
       name = Name.ofPVCInstance(appId),
       namespace = namespace,
@@ -196,9 +191,11 @@ object AppActions {
     val pvcSpec = PersistentVolumeClaim.Spec(
       accessModes = List(AccessMode.ReadWriteMany),
       volumeMode = Some(VolumeMode.Filesystem),
-      resources = Some(Resource.Requirements(
-        limits = Map(Resource.storage -> ctx.persistentStorageSettings.resources.limit),
-        requests = Map(Resource.storage -> ctx.persistentStorageSettings.resources.request))
+      resources = Some(
+        Resource.Requirements(
+          limits = Map(Resource.storage   -> ctx.persistentStorageSettings.resources.limit),
+          requests = Map(Resource.storage -> ctx.persistentStorageSettings.resources.request)
+        )
       ),
       storageClassName = Some(ctx.persistentStorageSettings.storageClassName),
       selector = None
@@ -216,15 +213,17 @@ object AppActions {
     verbs = List("get", "create", "update")
   )
 
-  private def roleEditor: ObjectEditor[Role] = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  private def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
   private def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-  private def persistentVolumeClaimEditor: ObjectEditor[PersistentVolumeClaim] = (obj: PersistentVolumeClaim, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  private def persistentVolumeClaimEditor: ObjectEditor[PersistentVolumeClaim] =
+    (obj: PersistentVolumeClaim, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
 
   /**
    * Creates an action for creating a Persistent Volume Claim.
    */
   object CreatePersistentVolumeClaimAction {
-    def apply(service: PersistentVolumeClaim)(implicit format: Format[PersistentVolumeClaim], resourceDefinition: ResourceDefinition[PersistentVolumeClaim]) =
+    def apply(service: PersistentVolumeClaim)(implicit format: Format[PersistentVolumeClaim],
+                                              resourceDefinition: ResourceDefinition[PersistentVolumeClaim]) =
       new CreatePersistentVolumeClaimAction(service, format, resourceDefinition)
   }
 
@@ -233,13 +232,13 @@ object AppActions {
       format: Format[PersistentVolumeClaim],
       resourceDefinition: ResourceDefinition[PersistentVolumeClaim]
   ) extends CreateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
-    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[PersistentVolumeClaim]] = {
+    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext,
+                                                   lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
       for {
         pvcResult ← client.getOption[PersistentVolumeClaim](resource.name)(format, resourceDefinition, lc)
         res ← pvcResult
           .map(_ ⇒ Future.successful(CreatePersistentVolumeClaimAction(resource)))
           .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreatePersistentVolumeClaimAction(o)))
       } yield res
-    }
   }
 }

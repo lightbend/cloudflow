@@ -24,12 +24,11 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import skuber.Resource.Quantity
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
-  override def lookup = Settings
+  override def lookup                                       = Settings
   override def createExtension(system: ExtendedActorSystem) = new Settings(system.settings.config)
 
-  override def apply(system: ActorSystem) = {
+  override def apply(system: ActorSystem) =
     new Settings(system.settings.config)
-  }
   // TODO change to cloudflow.operator
   val root = "cloudflow.platform"
 
@@ -39,31 +38,27 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     else throw new ConfigException.BadValue(key, s"Should be a non-empty String")
   }
 
-  private def getPort(config: Config, key: String) = {
+  private def getPort(config: Config, key: String) =
     validatePortnumber(config.getInt(key), key)
-  }
 
-  private def validatePortnumber(port: Int, key: String) = {
+  private def validatePortnumber(port: Int, key: String) =
     if (port >= 0 && port <= 65535) port
     else throw new ConfigException.BadValue(key, s"Not a valid port number: $port")
-  }
 
   private def getPartitionsPerTopic(config: Config, key: String): Int = {
 
-    def validatePartitionsPerTopic(partitionsPerTopic: Int) = {
+    def validatePartitionsPerTopic(partitionsPerTopic: Int) =
       if (partitionsPerTopic >= 1) partitionsPerTopic
       else throw new ConfigException.BadValue(key, s"Partition count has to be a positive number > 0: $partitionsPerTopic")
-    }
 
     validatePartitionsPerTopic(config.getInt(key))
   }
 
   private def getReplicationFactor(config: Config, key: String): Int = {
 
-    def validateReplicationFactor(replicationFactor: Int) = {
+    def validateReplicationFactor(replicationFactor: Int) =
       if (replicationFactor >= 1) replicationFactor
       else throw new ConfigException.BadValue(key, s"Replica count has to be a positive number > 0: $replicationFactor")
-    }
 
     validateReplicationFactor(config.getInt(key))
   }
@@ -98,10 +93,10 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   }
 
   private def getSparkRunnerSettings(config: Config, root: String, runnerStr: String): SparkRunnerSettings = {
-    val driverPath = s"$root.deployment.spark-runner-driver"
+    val driverPath   = s"$root.deployment.spark-runner-driver"
     val executorPath = s"$root.deployment.spark-runner-executor"
 
-    val driverConfig = config.getConfig(driverPath)
+    val driverConfig   = config.getConfig(driverPath)
     val executorConfig = config.getConfig(executorPath)
 
     SparkRunnerSettings(
@@ -114,9 +109,9 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   private def getFlinkRunnerSettings(config: Config, root: String, runnerStr: String): FlinkRunnerSettings = {
     val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
 
-    val jobManagerConfig = flinkRunnerConfig.getConfig("jobmanager")
+    val jobManagerConfig  = flinkRunnerConfig.getConfig("jobmanager")
     val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
-    val parallelism = flinkRunnerConfig.as[Int]("parallelism")
+    val parallelism       = flinkRunnerConfig.as[Int]("parallelism")
 
     FlinkRunnerSettings(
       parallelism,
@@ -165,11 +160,11 @@ final case class Settings(config: Config) extends Extension {
   import Settings._
 
   val partitionsPerTopic = getPartitionsPerTopic(config, s"$root.kafka.partitions-per-topic")
-  val replicationFactor = getReplicationFactor(config, s"$root.kafka.replication-factor")
+  val replicationFactor  = getReplicationFactor(config, s"$root.kafka.replication-factor")
 
   val releaseVersion = getNonEmptyString(config, s"$root.release-version")
-  val podName = getNonEmptyString(config, s"$root.pod-name")
-  val podNamespace = getNonEmptyString(config, s"$root.pod-namespace")
+  val podName        = getNonEmptyString(config, s"$root.pod-name")
+  val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
   val kafka = KafkaSettings(
     getNonEmptyString(config, s"$root.kafka.strimzi-topic-operator-namespace"),
@@ -179,9 +174,9 @@ final case class Settings(config: Config) extends Extension {
     replicationFactor
   )
 
-  val akkaRunnerSettings = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
-  val sparkRunnerSettings = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
-  val flinkRunnerSettings = getFlinkRunnerSettings(config, root, runner.FlinkRunner.runtime)
+  val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
+  val sparkRunnerSettings       = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
+  val flinkRunnerSettings       = getFlinkRunnerSettings(config, root, runner.FlinkRunner.runtime)
   val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
 
   val api = ApiSettings(

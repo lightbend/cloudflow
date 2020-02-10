@@ -23,7 +23,7 @@ import play.api.libs.json._
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
-  val SecretMountPath = "/etc/cloudflow-runner-secret"
+  val SecretMountPath    = "/etc/cloudflow-runner-secret"
   val DownwardApiVolume = Volume(
     name = "downward-api-volume",
     source = Volume.DownwardApiVolumeSource(items = List(
@@ -42,7 +42,8 @@ object Runner {
         path = "metadata.namespace",
         resourceFieldRef = None
       )
-    ))
+    )
+    )
   )
   val DownwardApiVolumeMount = Volume.Mount(DownwardApiVolume.name, "/mnt/downward-api-volume/")
 
@@ -65,7 +66,7 @@ trait Runner[T <: ObjectResource] {
   def runtime: String
 
   final val RuntimeMainClass = "cloudflow.runner.Runner"
-  final val RunnerJarName = "cloudflow-runner.jar"
+  final val RunnerJarName    = "cloudflow-runner.jar"
 
   /**
    * Creates the configmap for the runner.
@@ -96,5 +97,8 @@ trait Runner[T <: ObjectResource] {
   /**
    * Creates the runner resource.
    */
-  def resource(deployment: StreamletDeployment, app: CloudflowApplication.Spec, namespace: String, updateLabels: Map[String, String] = Map())(implicit ctx: DeploymentContext): T
+  def resource(deployment: StreamletDeployment,
+               app: CloudflowApplication.Spec,
+               namespace: String,
+               updateLabels: Map[String, String] = Map())(implicit ctx: DeploymentContext): T
 }

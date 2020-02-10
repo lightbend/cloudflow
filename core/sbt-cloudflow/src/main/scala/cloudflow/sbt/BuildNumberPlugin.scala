@@ -37,8 +37,8 @@ object BuildNumberPlugin extends AutoPlugin {
       if (Try("git rev-parse --git-dir".!!).isSuccess) {
         val isClean = "git diff --quiet --ignore-submodules HEAD".! == 0
         val commits = "git rev-list --count HEAD".!!.trim()
-        val hash = "git rev-parse --short HEAD".!!.trim()
-        val build = s"${commits}-${hash}"
+        val hash    = "git rev-parse --short HEAD".!!.trim()
+        val build   = s"${commits}-${hash}"
 
         BuildNumber(build, !isClean)
       } else {

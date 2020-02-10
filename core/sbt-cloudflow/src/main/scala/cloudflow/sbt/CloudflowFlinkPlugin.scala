@@ -37,103 +37,93 @@ import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptor
 
 object CloudflowFlinkPlugin extends AutoPlugin {
-  val AppHome = "${app_home}"
-  val AppTargetDir: String = "/app"
-  val appTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
-  val AppJarsDir: String = "app-jars"
-  val DepJarsDir: String = "dep-jars"
-  val optAppDir = "/opt/cloudflow/"
-  final val flinkVersion = "1.9.2"
-  final val scalaVersion = "2.12"
+  val AppHome                             = "${app_home}"
+  val AppTargetDir: String                = "/app"
+  val appTargetSubdir: String ⇒ String    = dir ⇒ s"$AppTargetDir/$dir"
+  val AppJarsDir: String                  = "app-jars"
+  val DepJarsDir: String                  = "dep-jars"
+  val optAppDir                           = "/opt/cloudflow/"
+  final val flinkVersion                  = "1.9.2"
+  final val scalaVersion                  = "2.12"
   final val CloudflowFlinkDockerBaseImage = s"lightbend/flink:cloudflow-flink-$flinkVersion-scala-$scalaVersion"
 
-  override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
-    JavaAppPackaging && sbtdocker.DockerPlugin
+  override def requires =
+    CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
+      JavaAppPackaging && sbtdocker.DockerPlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-flink" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
-    ),
+          "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
+        ),
     cloudflowDockerParentImage := CloudflowFlinkDockerBaseImage,
-
     cloudflowFlinkDockerImageName := Def.task {
-      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-    }.value,
-
+          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+        }.value,
     streamletDescriptorsInProject := Def.taskDyn {
-      val detectedStreamlets = cloudflowStreamletDescriptors.value
-      buildStreamletDescriptors(detectedStreamlets)
-    }.value,
-
+          val detectedStreamlets = cloudflowStreamletDescriptors.value
+          buildStreamletDescriptors(detectedStreamlets)
+        }.value,
     buildOptions in docker := BuildOptions(
-      cache = true,
-      removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-      pullBaseImage = BuildOptions.Pull.IfMissing
-    ),
-
+          cache = true,
+          removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
+          pullBaseImage = BuildOptions.Pull.IfMissing
+        ),
     cloudflowStageAppJars := Def.taskDyn {
-      Def.task {
-        val stagingDir = stage.value
-        val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
-        val depJars = (Runtime / externalDependencyClasspath).value.map(_.data)
+          Def.task {
+            val stagingDir  = stage.value
+            val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
+            val depJars     = (Runtime / externalDependencyClasspath).value.map(_.data)
 
-        val appJarDir = new File(stagingDir, AppJarsDir)
-        val depJarDir = new File(stagingDir, DepJarsDir)
-        projectJars.foreach { jar ⇒
-          IO.copyFile(jar, new File(appJarDir, jar.getName))
-        }
-        depJars.foreach { jar ⇒
-          if (jar.name startsWith "cloudflow-runner-") {
-            IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
-          } else IO.copyFile(jar, new File(depJarDir, jar.getName))
-        }
-      }
-    }.value,
-
+            val appJarDir = new File(stagingDir, AppJarsDir)
+            val depJarDir = new File(stagingDir, DepJarsDir)
+            projectJars.foreach { jar ⇒
+              IO.copyFile(jar, new File(appJarDir, jar.getName))
+            }
+            depJars.foreach { jar ⇒
+              if (jar.name.startsWith("cloudflow-runner-")) {
+                IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
+              } else IO.copyFile(jar, new File(depJarDir, jar.getName))
+            }
+          }
+        }.value,
     imageNames in docker := {
-      val registry = cloudflowDockerRegistry.value
+      val registry  = cloudflowDockerRegistry.value
       val namespace = cloudflowDockerRepository.value.orElse(registry.map(_ ⇒ "lightbend"))
 
-      cloudflowFlinkDockerImageName.value
-        .map { imageName ⇒
-          ImageName(
-            registry = registry,
-            namespace = namespace,
-            repository = imageName.name,
-            tag = Some(imageName.tag)
-          )
-        }
-        .toSeq
+      cloudflowFlinkDockerImageName.value.map { imageName ⇒
+        ImageName(
+          registry = registry,
+          namespace = namespace,
+          repository = imageName.name,
+          tag = Some(imageName.tag)
+        )
+      }.toSeq
     },
-
     dockerfile in docker := {
       // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // The UID and GID of the `jboss` user is used in different parts of Cloudflow
       // If you change this, you have to make sure that all references to this value are changed
       // - fsGroups on streamlet pods uses the GID to make volumes readable
-      val userInImage = "185" // default non-root user in the spark image
+      val userInImage                  = "185" // default non-root user in the spark image
       val userAsOwner: String ⇒ String = usr ⇒ s"$usr:cloudflow"
 
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
-      val appDir: File = stage.value
+      val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       val streamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
       // pack all streamlet-descriptors into a Json array
       val streamletDescriptorsJson =
-        streamletDescriptorsInProject
-          .value
-          .toJson
+        streamletDescriptorsInProject.value.toJson
 
       // create a root object with the array
       val streamletDescriptorsJsonStr =
-        JsObject("descriptors" -> streamletDescriptorsJson)
-          .compactPrint
+        JsObject("descriptors" -> streamletDescriptorsJson).compactPrint
 
       val compressed = zlibCompression(streamletDescriptorsJsonStr.getBytes(UTF_8))
       val streamletDescriptorsLabelValue =
@@ -149,20 +139,21 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         label(streamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     },
-
-    build := showResultOfBuild.dependsOn(
-      docker.dependsOn(
-        checkUncommittedChanges
-      )
-    ).value,
-
-    buildAndPublish := showResultOfBuildAndPublish.dependsOn(
-      dockerBuildAndPush.dependsOn(
-        checkUncommittedChanges,
-        verifyDockerRegistry
-      )
-    ).value,
-
+    build := showResultOfBuild
+          .dependsOn(
+            docker.dependsOn(
+              checkUncommittedChanges
+            )
+          )
+          .value,
+    buildAndPublish := showResultOfBuildAndPublish
+          .dependsOn(
+            dockerBuildAndPush.dependsOn(
+              checkUncommittedChanges,
+              verifyDockerRegistry
+            )
+          )
+          .value,
     fork in Compile := true
   )
 
@@ -173,12 +164,14 @@ object CloudflowFlinkPlugin extends AutoPlugin {
   private val checkUncommittedChanges = Def.task {
     val log = streams.value.log
     if (cloudflowBuildNumber.value.hasUncommittedChanges) {
-      log.warn(s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build.")
+      log.warn(
+        s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build."
+      )
     }
   }
 
   private val showResultOfBuild = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -192,7 +185,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
   }
 
   private val showResultOfBuildAndPublish = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -201,7 +194,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
   }
 
   def zlibCompression(raw: Array[Byte]): Array[Byte] = {
-    val deflater = new Deflater()
+    val deflater   = new Deflater()
     val compressed = new ByteArrayOutputStream(0)
     deflater.setInput(raw)
     deflater.finish()
@@ -214,8 +207,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
     compressed.toByteArray()
   }
 
-  def buildStreamletDescriptors(
-      detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] = Def.task {
+  def buildStreamletDescriptors(detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] = Def.task {
     val detectedStreamletDescriptors = detectedStreamlets.map {
       case (_, configDescriptor) ⇒
         val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())

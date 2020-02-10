@@ -40,7 +40,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     case _    ⇒ // okay
   }
 
-  val PVCMountPath: String = "/mnt/spark/storage"
+  val PVCMountPath: String               = "/mnt/spark/storage"
   val DownwardApiVolumeMountPath: String = "/mnt/downward-api-volume"
 
   def main(args: Array[String]): Unit = run()
@@ -48,13 +48,13 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
   private def run(): Unit = {
 
     val result: Try[(Config, LoadedStreamlet)] = for {
-      runnerConfig ← makeConfig
+      runnerConfig    ← makeConfig
       loadedStreamlet ← loadStreamlet(runnerConfig)
     } yield (runnerConfig, loadedStreamlet)
 
     result match {
       case Success((runnerConfig, loadedStreamlet)) ⇒
-        val withStorageConfig = addStorageConfig(runnerConfig, PVCMountPath)
+        val withStorageConfig    = addStorageConfig(runnerConfig, PVCMountPath)
         val withPodRuntimeConfig = addPodRuntimeConfig(withStorageConfig, DownwardApiVolumeMountPath)
 
         /*

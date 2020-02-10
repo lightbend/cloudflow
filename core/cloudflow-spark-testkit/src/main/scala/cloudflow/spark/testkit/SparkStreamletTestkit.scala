@@ -28,14 +28,12 @@ import cloudflow.streamlets._
 import scala.concurrent.Await
 
 object ConfigParameterValue {
-  def apply(configParameter: ConfigParameter, value: String): ConfigParameterValue = {
+  def apply(configParameter: ConfigParameter, value: String): ConfigParameterValue =
     ConfigParameterValue(configParameter.key, value)
-  }
 
   // Java API
-  def create(configParameter: ConfigParameter, value: String): ConfigParameterValue = {
+  def create(configParameter: ConfigParameter, value: String): ConfigParameterValue =
     ConfigParameterValue(configParameter.key, value)
-  }
 }
 final case class ConfigParameterValue private (configParameterKey: String, value: String)
 
@@ -107,7 +105,11 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
    */
   @varargs
   def withConfigParameterValues(configParameterValues: ConfigParameterValue*): SparkStreamletTestkit = {
-    val parameterValueConfig = ConfigFactory.parseString(configParameterValues.map(parameterValue ⇒ s"cloudflow.streamlets.streamlet-under-test.${parameterValue.configParameterKey} = ${parameterValue.value}").mkString("\n"))
+    val parameterValueConfig = ConfigFactory.parseString(
+      configParameterValues
+        .map(parameterValue ⇒ s"cloudflow.streamlets.streamlet-under-test.${parameterValue.configParameterKey} = ${parameterValue.value}")
+        .mkString("\n")
+    )
     this.copy(config = config.withFallback(parameterValueConfig).resolve)
   }
 

@@ -21,12 +21,10 @@ import spray.json.{ JsObject, JsString, JsValue }
 object JsonUtils {
 
   implicit class JsOps(val jsObject: JsValue) extends AnyVal {
-    def addField(name: String, value: String): JsValue = {
+    def addField(name: String, value: String): JsValue =
       addField(name, JsString(value))
-    }
 
-    def addField(name: String, value: JsValue): JsValue = {
+    def addField(name: String, value: JsValue): JsValue =
       JsObject(jsObject.asJsObject.fields + (name -> value))
-    }
   }
 }

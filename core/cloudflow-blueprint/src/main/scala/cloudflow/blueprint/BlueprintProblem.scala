@@ -21,22 +21,22 @@ import scala.collection.immutable
 sealed trait BlueprintProblem
 
 object BlueprintProblem {
-  val AmbiguousStreamletRefType = "ambiguous-streamlet-ref"
-  val MissingConfigurationType = "missing-configuration"
+  val AmbiguousStreamletRefType        = "ambiguous-streamlet-ref"
+  val MissingConfigurationType         = "missing-configuration"
   val DuplicateStreamletNamesFoundType = "duplicate-streamlet-names"
-  val EmptyStreamletsType = "empty-application-descriptor"
-  val EmptyStreamletDescriptorsType = "empty-streamlet-descriptors"
-  val InvalidStreamletNameType = "invalid-streamlet-name"
-  val IncompatibleSchemaType = "incompatible-schema"
-  val IllegalConnectionType = "illegal-connection"
-  val InvalidPortPathType = "invalid-port-path"
-  val InvalidStreamletClassNameType = "invalid-streamlet-ref"
-  val PortPathNotFoundType = "port-path-not-found"
-  val StreamletDescriptorNotFoundType = "streamlet-descriptor-not-found"
-  val UnconnectedInletsType = "unconnected"
-  val UnknownConfigKeyType = "unknown-configkey"
+  val EmptyStreamletsType              = "empty-application-descriptor"
+  val EmptyStreamletDescriptorsType    = "empty-streamlet-descriptors"
+  val InvalidStreamletNameType         = "invalid-streamlet-name"
+  val IncompatibleSchemaType           = "incompatible-schema"
+  val IllegalConnectionType            = "illegal-connection"
+  val InvalidPortPathType              = "invalid-port-path"
+  val InvalidStreamletClassNameType    = "invalid-streamlet-ref"
+  val PortPathNotFoundType             = "port-path-not-found"
+  val StreamletDescriptorNotFoundType  = "streamlet-descriptor-not-found"
+  val UnconnectedInletsType            = "unconnected"
+  val UnknownConfigKeyType             = "unknown-configkey"
 
-  def toMessage(problem: BlueprintProblem): String = {
+  def toMessage(problem: BlueprintProblem): String =
     problem match {
       case AmbiguousStreamletRef(streamletRef, className) ⇒
         s"ClassName matching `$className` is ambiguous for streamlet name $streamletRef."
@@ -91,42 +91,43 @@ object BlueprintProblem {
         val list = unconnectedInlets.map(ui ⇒ s"${ui.streamletRef}.${ui.inlet.name}").mkString(",")
         s"Inlets ($list) are not connected."
     }
-  }
 }
 
-final case class AmbiguousStreamletRef(streamletRef: String, streamletClassName: String) extends BlueprintProblem
+final case class AmbiguousStreamletRef(streamletRef: String, streamletClassName: String)      extends BlueprintProblem
 final case class DuplicateStreamletNamesFound(streamlets: immutable.IndexedSeq[StreamletRef]) extends BlueprintProblem
-case object EmptyStreamlets extends BlueprintProblem
-case object EmptyStreamletDescriptors extends BlueprintProblem
+case object EmptyStreamlets                                                                   extends BlueprintProblem
+case object EmptyStreamletDescriptors                                                         extends BlueprintProblem
 
 sealed trait InletProblem extends BlueprintProblem {
   def inletPath: VerifiedPortPath
 }
 
 final case class IllegalConnection(outletPaths: immutable.IndexedSeq[VerifiedPortPath], inletPath: VerifiedPortPath) extends InletProblem
-final case class IncompatibleSchema(outletPortPath: VerifiedPortPath, inletPath: VerifiedPortPath) extends InletProblem
+final case class IncompatibleSchema(outletPortPath: VerifiedPortPath, inletPath: VerifiedPortPath)                   extends InletProblem
 
-sealed trait PortPathError extends BlueprintProblem
+sealed trait PortPathError                     extends BlueprintProblem
 final case class InvalidPortPath(path: String) extends BlueprintProblem with PortPathError
-final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty) extends PortPathError
+final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
+    extends PortPathError
 
 final case class InvalidStreamletClassName(streamletRef: String, streamletClassName: String) extends BlueprintProblem
-final case class InvalidStreamletName(streamletRef: String) extends BlueprintProblem
+final case class InvalidStreamletName(streamletRef: String)                                  extends BlueprintProblem
 
 final case class InvalidConfigParameterKeyName(className: String, keyName: String) extends BlueprintProblem
-final case class InvalidValidationPatternConfigParameter(className: String, keyName: String, validationPattern: String) extends BlueprintProblem
-final case class DuplicateConfigParameterKeyFound(className: String, keyName: String) extends BlueprintProblem
+final case class InvalidValidationPatternConfigParameter(className: String, keyName: String, validationPattern: String)
+    extends BlueprintProblem
+final case class DuplicateConfigParameterKeyFound(className: String, keyName: String)                           extends BlueprintProblem
 final case class InvalidDefaultValueInConfigParameter(className: String, keyName: String, defaultValue: String) extends BlueprintProblem
-final case class StreamletDescriptorNotFound(streamletRef: String, streamletClassName: String) extends BlueprintProblem
+final case class StreamletDescriptorNotFound(streamletRef: String, streamletClassName: String)                  extends BlueprintProblem
 final case class UnconnectedInlet(streamletRef: String, inlet: InletDescriptor)
 final case class UnconnectedInlets(unconnectedInlets: immutable.IndexedSeq[UnconnectedInlet]) extends BlueprintProblem
 
 final case class BacktrackingVolumeMounthPath(className: String, name: String, path: String) extends BlueprintProblem
-final case class NonAbsoluteVolumeMountPath(className: String, name: String, path: String) extends BlueprintProblem
-final case class EmptyVolumeMountPath(className: String, name: String) extends BlueprintProblem
-final case class DuplicateVolumeMountPath(className: String, path: String) extends BlueprintProblem
-final case class InvalidVolumeMountName(className: String, name: String) extends BlueprintProblem
-final case class DuplicateVolumeMountName(className: String, name: String) extends BlueprintProblem
+final case class NonAbsoluteVolumeMountPath(className: String, name: String, path: String)   extends BlueprintProblem
+final case class EmptyVolumeMountPath(className: String, name: String)                       extends BlueprintProblem
+final case class DuplicateVolumeMountPath(className: String, path: String)                   extends BlueprintProblem
+final case class InvalidVolumeMountName(className: String, name: String)                     extends BlueprintProblem
+final case class DuplicateVolumeMountName(className: String, name: String)                   extends BlueprintProblem
 
-final case class InvalidInletName(className: String, name: String) extends BlueprintProblem
+final case class InvalidInletName(className: String, name: String)  extends BlueprintProblem
 final case class InvalidOutletName(className: String, name: String) extends BlueprintProblem

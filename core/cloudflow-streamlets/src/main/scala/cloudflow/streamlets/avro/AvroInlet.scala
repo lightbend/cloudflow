@@ -25,9 +25,9 @@ import scala.reflect._
 import AvroUtil._
 
 case class AvroInlet[T <: SpecificRecordBase: ClassTag](name: String, hasUniqueGroupId: Boolean = false) extends CodecInlet[T] {
-  def codec = new AvroCodec[T](makeSchema)
-  def schemaDefinition = createSchemaDefinition(makeSchema)
-  def schemaAsString = makeSchema.toString(false)
+  def codec                           = new AvroCodec[T](makeSchema)
+  def schemaDefinition                = createSchemaDefinition(makeSchema)
+  def schemaAsString                  = makeSchema.toString(false)
   def withUniqueGroupId: AvroInlet[T] = copy(hasUniqueGroupId = true)
 }
 

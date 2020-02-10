@@ -16,7 +16,7 @@
 
 package cloudflow.streamlets
 
-import scala.util.{ Try, Failure }
+import scala.util.{ Failure, Try }
 import scala.util.control.NoStackTrace
 
 import com.typesafe.config.Config
@@ -28,12 +28,13 @@ case class LoadedStreamlet(streamlet: Streamlet[StreamletContext], config: Strea
  */
 trait StreamletLoader {
 
-  def loadStreamlet(config: Config): Try[LoadedStreamlet] = for {
-    streamletConfig ← StreamletDefinition.read(config)
-    loadedStreamlet ← loadStreamlet(streamletConfig)
-  } yield loadedStreamlet
+  def loadStreamlet(config: Config): Try[LoadedStreamlet] =
+    for {
+      streamletConfig ← StreamletDefinition.read(config)
+      loadedStreamlet ← loadStreamlet(streamletConfig)
+    } yield loadedStreamlet
 
-  def loadStreamletClass(streamletClassName: String): Try[Streamlet[StreamletContext]] = {
+  def loadStreamletClass(streamletClassName: String): Try[Streamlet[StreamletContext]] =
     for {
       instance ← ClassOps.instanceOf(streamletClassName).recoverWith {
         case _: ClassNotFoundException ⇒ Failure(new StreamletClassNotFound(streamletClassName))
@@ -43,19 +44,22 @@ trait StreamletLoader {
         case ex: ClassCastException ⇒ Failure(new InvalidStreamletClass(streamletClassName, ex))
       }
     } yield streamlet
-  }
 
-  def loadStreamlet(streamletConfig: StreamletDefinition): Try[LoadedStreamlet] = {
-    loadStreamletClass(streamletConfig.streamletClass).map { streamlet ⇒ LoadedStreamlet(streamlet, streamletConfig) }
-  }
+  def loadStreamlet(streamletConfig: StreamletDefinition): Try[LoadedStreamlet] =
+    loadStreamletClass(streamletConfig.streamletClass).map { streamlet ⇒
+      LoadedStreamlet(streamlet, streamletConfig)
+    }
 
   case class StreamletClassNotFound(className: String)
-    extends Exception(s"The configured Streamlet class $className not found") with NoStackTrace
+      extends Exception(s"The configured Streamlet class $className not found")
+      with NoStackTrace
 
   case class InvalidStreamletClass(className: String, cause: Exception)
-    extends Exception(s"The configured Streamlet class $className is invalid") with NoStackTrace
+      extends Exception(s"The configured Streamlet class $className is invalid")
+      with NoStackTrace
 
   case class NoArgsConstructorExpectedException(className: String)
-    extends Exception(s"The configured Streamlet class $className must have an arg-less constructor") with NoStackTrace
+      extends Exception(s"The configured Streamlet class $className must have an arg-less constructor")
+      with NoStackTrace
 
 }

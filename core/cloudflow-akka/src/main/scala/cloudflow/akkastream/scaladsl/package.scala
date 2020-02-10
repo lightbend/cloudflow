@@ -22,13 +22,14 @@ import akka.kafka.ConsumerMessage._
 
 package object scaladsl {
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-  type FlowWithOffsetContext[-In, +Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
+  type FlowWithOffsetContext[-In, +Out]      = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
   type FlowWithCommittableContext[-In, +Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
 
   type SourceWithOffsetContext[+T] = SourceWithContext[T, CommittableOffset, _]
 
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   object FlowWithOffsetContext {
+
     /**
      * Creates a [[akka.stream.scaladsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads when
      * `StreamletLogic.atLeastOnceSource` and `StreamletLogic.atLeastOnceSink` is used.
@@ -38,6 +39,7 @@ package object scaladsl {
   }
 
   object FlowWithCommittableContext {
+
     /**
      * Creates a [[akka.stream.scaladsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads when
      * `StreamletLogic.atLeastOnceSource` and `StreamletLogic.atLeastOnceSink` is used.

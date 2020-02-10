@@ -43,7 +43,7 @@ object EndpointActions {
       app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
 
     val currentEndpoints = currentApp.map(distinctEndpoints).getOrElse(Set.empty[Endpoint])
-    val newEndpoints = distinctEndpoints(newApp)
+    val newEndpoints     = distinctEndpoints(newApp)
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
@@ -76,9 +76,11 @@ object EndpointActions {
     ).withSelector(CloudflowLabels.Name -> Name.ofPod(streamletDeploymentName))
   }
 
-  private def createServiceAction(endpoint: Endpoint, streamletDeploymentName: String, namespace: String, labels: CloudflowLabels): CreateServiceAction = {
+  private def createServiceAction(endpoint: Endpoint,
+                                  streamletDeploymentName: String,
+                                  namespace: String,
+                                  labels: CloudflowLabels): CreateServiceAction =
     CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, namespace, labels))
-  }
 
   /**
    * Creates an action for creating a service.
@@ -99,7 +101,7 @@ object EndpointActions {
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
   ) extends CreateAction[Service](resource, format, resourceDefinition, serviceEditor) {
-    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] = {
+    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
         res ← serviceResult
@@ -111,6 +113,5 @@ object EndpointActions {
           }
           .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o)))
       } yield res
-    }
   }
 }

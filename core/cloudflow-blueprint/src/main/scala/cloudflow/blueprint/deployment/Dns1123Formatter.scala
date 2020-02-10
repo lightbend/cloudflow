@@ -25,25 +25,23 @@ import java.text.Normalizer
   - Resource names are considered subdomains in RFC 1123 terminology
 
   - Namespaces names are an exception to the rule, they are considered labels
-*/
+ */
 
 object Dns1123Formatter {
 
   /**
    * Removes from the leading and trailing positions the specified characters.
    */
-  private def trim(name: String): String = {
+  private def trim(name: String): String =
     name.stripPrefix(".").stripPrefix("-").stripSuffix(".").stripSuffix("-")
-  }
 
-  private def normalize(name: String): String = {
+  private def normalize(name: String): String =
     Normalizer
       .normalize(name, Normalizer.Form.NFKD)
       .toLowerCase
       .replace('_', '-')
       .replace('.', '-')
       .replaceAll("[^-a-z0-9]", "")
-  }
 
   /**
    * Make a name compatible with DNS 1123 Label

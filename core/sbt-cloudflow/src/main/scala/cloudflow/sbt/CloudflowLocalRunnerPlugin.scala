@@ -40,76 +40,74 @@ import cloudflow.streamlets.ServerAttribute
  */
 object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def requires: Plugins = BlueprintVerificationPlugin
-  override def trigger = allRequirements
+  override def trigger           = allRequirements
 
   val LocalRunnerClass = "cloudflow.runner.LocalRunner"
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     runLocal := Def.taskDyn {
-      Def.task {
-        implicit val logger = streams.value.log
-        val _ = verifyBlueprint.value // force check blueprint with feedback
-        val classpath = cloudflowApplicationClasspath.value
+          Def.task {
+            implicit val logger = streams.value.log
+            val _               = verifyBlueprint.value // force check blueprint with feedback
+            val classpath       = cloudflowApplicationClasspath.value
 
-        // setup local file scaffolding
-        val (appId, appDescriptorFile, outputFile, log4jConfigFile) = (for {
-          tempRuntimeDir ← prepareTempDir("local-cloudflow")
-          outputFile ← prepareOutputFile(tempRuntimeDir)
-          log4jConfigFile ← prepareLog4JFileFromResource(tempRuntimeDir, "local-run-log4j.properties")
-          (localConf, localConfMsg) ← preparePluginConfig(runLocalConfigFile.value)
-          appDescriptor ← prepareApplicationDescriptor(
-            applicationDescriptor.value,
-            localConf,
-            tempRuntimeDir)
-          appDescriptorFile ← prepareApplicationFile(appDescriptor)
-        } yield {
-          logger.info(localConfMsg)
-          printInfo(appDescriptor, outputFile)
-          (appDescriptor.appId, appDescriptorFile, outputFile, log4jConfigFile)
-        }).recoverWith {
-          case NonFatal(ex) ⇒
-            warningBanner(s"Setup failed. Reason: ${ex.getMessage}")
-            Failure(ex)
-        }.get //force resolution
+            // setup local file scaffolding
+            val (appId, appDescriptorFile, outputFile, log4jConfigFile) = (for {
+              tempRuntimeDir            ← prepareTempDir("local-cloudflow")
+              outputFile                ← prepareOutputFile(tempRuntimeDir)
+              log4jConfigFile           ← prepareLog4JFileFromResource(tempRuntimeDir, "local-run-log4j.properties")
+              (localConf, localConfMsg) ← preparePluginConfig(runLocalConfigFile.value)
+              appDescriptor             ← prepareApplicationDescriptor(applicationDescriptor.value, localConf, tempRuntimeDir)
+              appDescriptorFile         ← prepareApplicationFile(appDescriptor)
+            } yield {
+              logger.info(localConfMsg)
+              printInfo(appDescriptor, outputFile)
+              (appDescriptor.appId, appDescriptorFile, outputFile, log4jConfigFile)
+            }).recoverWith {
+              case NonFatal(ex) ⇒
+                warningBanner(s"Setup failed. Reason: ${ex.getMessage}")
+                Failure(ex)
+            }.get //force resolution
 
-        logger.debug("Using log4 config file at:" + log4jConfigFile)
-        logger.debug("Using output log file at:" + outputFile)
+            logger.debug("Using log4 config file at:" + log4jConfigFile)
+            logger.debug("Using output log file at:" + outputFile)
 
-        val process = runPipelineJVM(appDescriptorFile, classpath, outputFile, log4jConfigFile)
+            val process = runPipelineJVM(appDescriptorFile, classpath, outputFile, log4jConfigFile)
 
-        println(s"Running ${appId}  \nTo terminate, press [ENTER]\n")
+            println(s"Running ${appId}  \nTo terminate, press [ENTER]\n")
 
-        try {
-          sbt.internal.util.SimpleReader.readLine("")
-          logger.info("Attempting to terminate local Pipeline")
-          process.destroy()
-        } catch {
-          case ex: Throwable ⇒
-            logger.warn("Stopping process failed.")
-            ex.printStackTrace()
-        }
-      }
-    }.value
+            try {
+              sbt.internal.util.SimpleReader.readLine("")
+              logger.info("Attempting to terminate local Pipeline")
+              process.destroy()
+            } catch {
+              case ex: Throwable ⇒
+                logger.warn("Stopping process failed.")
+                ex.printStackTrace()
+            }
+          }
+        }.value
   )
 
   def banner(bannerChar: Char)(name: String)(message: Any): Unit = {
-    val title = s" $name "
+    val title        = s" $name "
     val bannerLength = 80
-    val sideLength = (bannerLength - title.size) / 2
-    val side = List.fill(sideLength)(bannerChar).mkString("")
-    val bottom = List.fill(bannerLength)(bannerChar).mkString("")
+    val sideLength   = (bannerLength - title.size) / 2
+    val side         = List.fill(sideLength)(bannerChar).mkString("")
+    val bottom       = List.fill(bannerLength)(bannerChar).mkString("")
     println(side + title + side)
     println(message.toString)
     println(bottom + "\n")
   }
-  val infoBanner = banner('-')_
-  val warningBanner = banner('!')_
+  val infoBanner    = banner('-') _
+  val warningBanner = banner('!') _
 
   def prepareLog4JFileFromResource(tempDir: Path, resourcePath: String)(implicit logger: Logger): Try[Path] = Try {
-    val log4JSrc = Option(this.getClass.getClassLoader.getResourceAsStream(resourcePath))
+    val log4JSrc       = Option(this.getClass.getClassLoader.getResourceAsStream(resourcePath))
     val localLog4jFile = tempDir.resolve("local-log4j.properties")
     try {
-      log4JSrc.map(src ⇒ Files.copy(src, localLog4jFile))
+      log4JSrc
+        .map(src ⇒ Files.copy(src, localLog4jFile))
         .getOrElse {
           logger.warn("Could not find log4j configuration for local runner")
           0L
@@ -122,7 +120,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   def prepareApplicationFile(applicationDescriptor: ApplicationDescriptor): Try[Path] = Try {
     val localApplicationFile = Files.createTempFile("local-runner", ".json")
-    val contents = applicationDescriptor.toJson.prettyPrint
+    val contents             = applicationDescriptor.toJson.prettyPrint
     IO.write(localApplicationFile.toFile, contents)
     localApplicationFile
   }
@@ -141,10 +139,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .getOrElse((ConfigFactory.empty(), NoLocalConfFoundMsg))
   }
 
-  def prepareApplicationDescriptor(
-      applicationDescriptor: Option[ApplicationDescriptor],
-      config: Config,
-      tempDir: Path): Try[ApplicationDescriptor] = {
+  def prepareApplicationDescriptor(applicationDescriptor: Option[ApplicationDescriptor],
+                                   config: Config,
+                                   tempDir: Path): Try[ApplicationDescriptor] =
     (for {
       descriptor ← failOnEmpty(applicationDescriptor) {
         new RuntimeException("Invalid or missing application descriptor. This is certainly a bug. Please report it.")
@@ -157,14 +154,10 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         warningBanner("Setup Failure")(ex.getMessage)
         Failure(ex)
     }
-  }
 
-  def runPipelineJVM(
-      applicationDescriptorFile: Path,
-      classpath: Array[URL],
-      outputFile: File,
-      log4JConfigFile: Path)
-    (implicit logger: Logger): Process = {
+  def runPipelineJVM(applicationDescriptorFile: Path, classpath: Array[URL], outputFile: File, log4JConfigFile: Path)(
+      implicit logger: Logger
+  ): Process = {
     val cp = "-cp"
     val separator = new SystemProperties().get("path.separator").getOrElse {
       logger.warn("No \"path.separator\" setting found. Using default value \":\" ")
@@ -178,7 +171,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
     val classpathStr = classpath.map(url ⇒ new File(url.toURI)).mkString(separator)
-    val options = Seq(applicationDescriptorFile.toFile.getAbsolutePath, outputFile.getAbsolutePath)
+    val options      = Seq(applicationDescriptorFile.toFile.getAbsolutePath, outputFile.getAbsolutePath)
 
     val cmd = Seq(cp, classpathStr, LocalRunnerClass) ++ options
     Fork.java.fork(forkOptions, cmd)
@@ -197,9 +190,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
     val updatedStreamlets = streamlets.map { streamlet ⇒
       val streamletLocalConf = if (localConf.hasPath(streamlet.name)) localConf.getConfig(streamlet.name) else ConfigFactory.empty()
-      val volumeMounts = streamlet.descriptor.volumeMounts
+      val volumeMounts       = streamlet.descriptor.volumeMounts
       val localVolumeMounts = volumeMounts.map { volumeMount ⇒
-        val tryLocalPath = streamletLocalConf.as[Option[String]](volumeMount.name).map(Success(_))
+        val tryLocalPath = streamletLocalConf
+          .as[Option[String]](volumeMount.name)
+          .map(Success(_))
           .getOrElse {
             Try {
               val path = localStorageDir.resolve(volumeMount.name).toFile
@@ -228,7 +223,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def printInfo(appDescriptor: ApplicationDescriptor, outputFile: File): Unit = {
-    val connections = appDescriptor.connections
+    val connections                                  = appDescriptor.connections
     val streamletDescriptors: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
     val streamletInfo = streamletDescriptors.zipWithIndex.map {
       case (streamlet, idx) ⇒
@@ -241,9 +236,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
         def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
 
-        val volumeMounts = streamlet.descriptor.volumeMounts.map { mount ⇒
-          s"\t- mount [${mount.name}] available at [${mount.path}]"
-        }.mkString("\n")
+        val volumeMounts = streamlet.descriptor.volumeMounts
+          .map { mount ⇒
+            s"\t- mount [${mount.name}] available at [${mount.path}]"
+          }
+          .mkString("\n")
         val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
         s"${streamlet.name} [${streamlet.descriptor.className}]" +
           newLineIfNotEmpty(endpointMessage) +
@@ -251,11 +248,13 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
 
     infoBanner("Streamlets")(streamletInfo.mkString("\n"))
-    infoBanner("Connections")(connections.map(c ⇒ s"${c.outletStreamletName}.${c.outletName} -> ${c.inletStreamletName}.${c.inletName}").mkString("\n"))
+    infoBanner("Connections")(
+      connections.map(c ⇒ s"${c.outletStreamletName}.${c.outletName} -> ${c.inletStreamletName}.${c.inletName}").mkString("\n")
+    )
     infoBanner("Output")(s"Pipeline log output available in file: " + outputFile)
   }
 
   val NoLocalConfFoundMsg = "No local.conf file location configured. \n" +
-    "Set 'runLocalConfigFile' in your build to point to your local.conf location "
+        "Set 'runLocalConfigFile' in your build to point to your local.conf location "
 
 }

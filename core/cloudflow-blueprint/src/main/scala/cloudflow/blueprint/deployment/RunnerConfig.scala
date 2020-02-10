@@ -33,7 +33,7 @@ case class RunnerConfig(data: String) extends ConfigMapData {
 }
 
 object RunnerConfig extends DefaultJsonProtocol {
-  val AppConfigFilename = "application.conf"
+  val AppConfigFilename        = "application.conf"
   implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet_ref", "port_name")
 
   def apply(
@@ -48,58 +48,58 @@ object RunnerConfig extends DefaultJsonProtocol {
       appVersion: String,
       deployments: Vector[StreamletDeployment],
       kafkaBootstrapServers: String
-  ): RunnerConfig = {
+  ): RunnerConfig =
     RunnerConfig(
       JsObject(
         "cloudflow" -> JsObject(
-          "kafka" -> JsObject("bootstrap-servers" -> JsString(kafkaBootstrapServers)),
-          "runner" -> toRunnerJson(appId, appVersion, deployments)
-        )
+              "kafka"  -> JsObject("bootstrap-servers" -> JsString(kafkaBootstrapServers)),
+              "runner" -> toRunnerJson(appId, appVersion, deployments)
+            )
       ).compactPrint
     )
-  }
 
   private def toRunnerJson(appId: String, appVersion: String, deployments: Vector[StreamletDeployment]) = JsObject(
     "streamlets" -> JsArray(
-      deployments.map { deployment ⇒
-        JsObject(
-          "class_name" -> JsString(deployment.className),
-          "streamlet_ref" -> JsString(deployment.streamletName),
-          "context" -> JsObject(
-            "app_id" -> appId.toJson,
-            "app_version" -> appVersion.toJson,
-            "config" -> toJson(deployment.config),
-            "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
-            "connected_ports" -> toConnectedPortsJson(deployment.portMappings)
-          )
+          deployments.map { deployment ⇒
+            JsObject(
+              "class_name"    -> JsString(deployment.className),
+              "streamlet_ref" -> JsString(deployment.streamletName),
+              "context" -> JsObject(
+                    "app_id"          -> appId.toJson,
+                    "app_version"     -> appVersion.toJson,
+                    "config"          -> toJson(deployment.config),
+                    "volume_mounts"   -> toVolumeMountJson(deployment.volumeMounts),
+                    "connected_ports" -> toConnectedPortsJson(deployment.portMappings)
+                  )
+            )
+          }
         )
-      }
-    )
   )
 
   private def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
 
   private def toConnectedPortsJson(portMappings: Map[String, Savepoint]) =
     JsArray(
-      portMappings
-        .map {
-          case (portName, savepoint) ⇒ JsObject(
-            "port" -> JsString(portName),
+      portMappings.map {
+        case (portName, savepoint) ⇒
+          JsObject(
+            "port"           -> JsString(portName),
             "savepoint_path" -> savepoint.toJson
           )
-        }
-        .toVector
+      }.toVector
     )
 
   private def toVolumeMountJson(volumeMounts: Option[List[VolumeMountDescriptor]]) =
     JsArray(
-      volumeMounts.getOrElse(Vector())
+      volumeMounts
+        .getOrElse(Vector())
         .map {
-          case VolumeMountDescriptor(name, path, accessMode, _) ⇒ JsObject(
-            "name" -> JsString(name),
-            "path" -> JsString(path),
-            "access_mode" -> JsString(accessMode)
-          )
+          case VolumeMountDescriptor(name, path, accessMode, _) ⇒
+            JsObject(
+              "name"        -> JsString(name),
+              "path"        -> JsString(path),
+              "access_mode" -> JsString(accessMode)
+            )
         }
         .toVector
     )
@@ -111,7 +111,7 @@ case class PrometheusConfig(data: String) extends ConfigMapData {
 }
 
 object PrometheusConfig extends DefaultJsonProtocol {
-  val PrometheusConfigFilename = "prometheus.yaml"
-  val PrometheusJmxExporterPort = 2050
+  val PrometheusConfigFilename               = "prometheus.yaml"
+  val PrometheusJmxExporterPort              = 2050
   def prometheusConfigPath(basePath: String) = basePath + File.separator + PrometheusConfig.PrometheusConfigFilename
 }

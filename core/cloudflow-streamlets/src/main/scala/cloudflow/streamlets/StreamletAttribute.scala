@@ -22,15 +22,19 @@ package cloudflow.streamlets
  * The configuration value will be added by the platform under the `configPath` path in the Streamlet configuration.
  */
 trait StreamletAttribute {
+
   /** the prefix used for all attribute driven configuration, to prevent clashes with user defined configuration */
   final val configPrefix = "cloudflow.internal"
+
   /** The path to the section where configuration information is stored */
   final def configSection: String = s"$configPrefix.$attributeName"
+
   /** The absolute path to the config value in the the config for the Streamlet */
   final def configPath = s"$configSection.$configKey"
 
   /** The name of the attribute */
   def attributeName: String
+
   /** The key in the section pointed to by the `configSection` path, where the config value is stored */
   def configKey: String
 }

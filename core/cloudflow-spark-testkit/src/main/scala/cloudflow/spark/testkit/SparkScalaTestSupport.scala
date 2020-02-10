@@ -26,7 +26,6 @@ trait SparkScalaTestSupport extends WordSpec with MustMatchers with BeforeAndAft
 
   implicit lazy val sqlCtx = session.sqlContext
 
-  override def afterAll: Unit = {
+  override def afterAll: Unit =
     session.stop()
-  }
 }
