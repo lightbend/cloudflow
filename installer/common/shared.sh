@@ -51,7 +51,7 @@ export installFlinkOperator=false
 
 # Strimzi
 export strimziReleaseName="cloudflow-strimzi"
-export strimziVersion="0.16.0"
+export strimziVersion="0.16.2"
 export installStrimzi="${installStrimzi:-false}"
 export strimziClusterOperatorNamespace=""
 export strimziTopicOperatorNamespace=""
