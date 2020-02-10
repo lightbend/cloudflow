@@ -90,7 +90,7 @@ object StreamletScanner {
     if (!hasDefaultConstructor(streamletClass)) {
       Failure(ConstructorMissing(streamletClass))
     } else {
-      Try(streamletClass.newInstance()).recoverWith {
+      Try(streamletClass.getDeclaredConstructor().newInstance()).recoverWith {
         case error ⇒ Failure(ConstructorFailure(streamletClass, error))
       }
     }

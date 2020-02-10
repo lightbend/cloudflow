@@ -119,9 +119,6 @@ object Name {
 
   val ofContainerPrometheusExporterPort = max15Chars("prom-metrics")
 
-  def ofIngress(streamletDeploymentName: String) =
-    truncateTo63CharactersWithSuffix(makeDNS1123Compatible(streamletDeploymentName), "-ingress")
-
   def ofService(streamletDeploymentName: String) =
     truncateTo63CharactersWithSuffix(makeDNS1039Compatible(ofPod(streamletDeploymentName)), "-service")
 
