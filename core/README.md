@@ -1,5 +1,9 @@
 # Cloudflow Streamlets Library
 
+## Prerequisites
+
+  The Cloudflow streamlet library must be built and tested using JDK8.
+
 ## Building and testing the Cloudflow Operator image
 
 In order to test changes made to the `cloudflow-operator` module on GKE there are several steps involved:
