@@ -46,7 +46,7 @@ CLUSTER_NAME=$1
 # https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#versions_available_for_new_cluster_masters
 # use command `gcloud container get-server-config` to find latest supported master GKE cluster version
 gcloud container clusters create $CLUSTER_NAME \
-  --cluster-version 1.13.11-gke.14  \
+  --cluster-version 1.13.11-gke.23  \
   --image-type cos \
   --machine-type n1-standard-4 \
   --num-nodes 3 \
@@ -71,7 +71,7 @@ gcloud beta container node-pools create kafka-pool-0 \
 ## Wait for clusters to come up
 echo "Waiting for cluster to become stable before continuing with the installation....."
 gcloud compute instance-groups managed list | grep gke-$CLUSTER_NAME | awk '/'$my_name'/ {print $1}' | while read -r line ; do
-  gcloud compute instance-groups managed wait-until-stable $line
+  gcloud compute instance-groups managed wait-until --stable $line
 done
 
 # Switch to new cluster

@@ -60,6 +60,7 @@ init_helm
 # helm repos.
 helm repo add lightbend-helm-charts https://repo.lightbend.com/helm-charts/ > /dev/null 2>&1
 helm repo add strimzi http://strimzi.io/charts/ > /dev/null 2>&1
+helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator > /dev/null 2>&1
 helm repo add stable https://kubernetes-charts.storage.googleapis.com/ > /dev/null 2>&1
 helm repo update > /dev/null 2>&1
 

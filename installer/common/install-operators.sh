@@ -38,6 +38,7 @@ if [ "$installFlinkOperator" = true ]; then
     --install \
     --namespace "$flinkOperatorNamespace" \
     --version "$flinkOperatorChartVersion" \
+    --set flinkJobNamespace="" \
     --set serviceAccounts.flink.create=false \
     --set serviceAccounts.flink.name=cloudflow-app-serviceaccount \
     https://github.com/lightbend/flink-operator/releases/download/v${flinkOperatorChartVersion}/flink-operator-${flinkOperatorChartVersion}.tgz)
@@ -80,8 +81,9 @@ if [ "$installSparkOperator" = true ]; then
     --values="$currentDirectory"/spark-operator-values.yaml \
     --version "$sparkOperatorChartVersion" \
     --set sparkJobNamespace="" \
+    --set operatorImageName="$sparkOperatorImageName" \
     --set operatorVersion="$sparkOperatorImageVersion" \
-    lightbend-helm-charts/fdp-sparkoperator)
+    incubator/sparkoperator)
 
     if [ $? -ne 0 ]; then 
         print_error_message "$result"
@@ -90,5 +92,5 @@ if [ "$installSparkOperator" = true ]; then
     fi
 
     # Label the deployment so we can detect if we installed it later
-    kubectl label deployment -n "$sparkOperatorNamespace" "$sparkOperatorReleaseName"-fdp-sparkoperator installed-by=cloudflow --overwrite
+    kubectl label deployment -n "$sparkOperatorNamespace" "$sparkOperatorReleaseName"-sparkoperator installed-by=cloudflow --overwrite
 fi

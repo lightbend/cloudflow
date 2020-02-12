@@ -1,4 +1,4 @@
-## Akka and Spark based Cloudflow Application
+## Akka and Spark-based Cloudflow Application
 
 
 ### Problem Definition

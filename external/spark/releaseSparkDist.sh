@@ -23,7 +23,7 @@ TAG=v2.4.4
 ORIGIN_TAG=2.4.4-k8s-client-upgrade
 DOCKER_USERNAME=lightbend
 SPARK_IMAGE_TAG=1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12
-SPARK_OPERATOR_TAG=1.3.0-M1-OpenJDK-2.4.4-0.8.2-cloudflow-2.12
+SPARK_OPERATOR_TAG=1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12
 
 hub version > /dev/null 2>&1 || {
   echo "The hub command is not installed. Please install (https://github.com/github/hub) and retry."
@@ -65,9 +65,9 @@ cd $DIR
 rm -rf $DIR/spark-on-k8s-operator
 git clone https://github.com/GoogleCloudPlatform/spark-on-k8s-operator.git
 cd $DIR/spark-on-k8s-operator
-git checkout 4943734b7ad -b spark-operator-0.8.2
+git checkout f78361119976beb7a147df9cd64e1fdd317b9311 -b spark-operator-1.0.1
 # adoptjdk image comes with all packages installed and also is based on ubuntu
-sed -i '/RUN apk add --no-cache openssl curl tini/d' Dockerfile
+sed -i -e '/RUN apk add --no-cache openssl curl tini/d' Dockerfile
 docker build --no-cache --build-arg SPARK_IMAGE=$DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG -t $DOCKER_USERNAME/sparkoperator:$SPARK_OPERATOR_TAG -f Dockerfile .
 
 docker push $DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG

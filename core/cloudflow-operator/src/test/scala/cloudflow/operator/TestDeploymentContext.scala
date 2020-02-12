@@ -42,14 +42,14 @@ trait TestDeploymentContext {
       sparkRunnerSettings =
         SparkRunnerSettings(
           driverSettings = SparkPodSettings(
-            cores = Some("0.2"),
+            cores = Some(1),
             memory = Some("512m"),
             coreLimit = Some("1"),
             memoryOverhead = Some("0.1"),
             javaOptions = Some("-Xmx1024")
           ),
           executorSettings = SparkPodSettings(
-            cores = Some("0.2"),
+            cores = Some(1),
             memory = Some("512m"),
             coreLimit = Some("1"),
             memoryOverhead = Some("1024m"),

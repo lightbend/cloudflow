@@ -21,6 +21,7 @@ import play.api.libs.json._
 import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+import skuber.ResourceSpecification.Subresources
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Spark [[Runner]].
@@ -297,26 +298,6 @@ object FlinkResource {
       restartNonce: String = ""
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount]        = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume]                   = skuber.json.format.volumeFormat
-  implicit val envVarFmt: Format[EnvVar]                   = skuber.json.format.envVarFormat
-  implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
-  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
-
-  implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
-  implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
-  implicit val resourceRequsetsFmt: Format[ResourceRequests]     = Json.format[ResourceRequests]
-  implicit val resourceLimitsFmt: Format[ResourceLimits]         = Json.format[ResourceLimits]
-  implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
-  implicit val envConfigFmt: Format[EnvConfig]                   = Json.format[EnvConfig]
-
-  implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
-  implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
-
-  implicit val specFmt: Format[Spec] = Json.format[Spec]
-
-  final case class EnvConfig(env: List[EnvVar] = Nil)
-
   final case class ApplicationState(state: String, errorMessage: Option[String])
   final case class JobManagerInfo(
       podName: Option[String],
@@ -332,15 +313,40 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
+  implicit val volumeMountFmt: Format[Volume.Mount] = skuber.json.format.volMountFormat
+  implicit val volumeFmt: Format[Volume] = skuber.json.format.volumeFormat
+  implicit val envVarFmt: Format[EnvVar] = skuber.json.format.envVarFormat
+  implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
+  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
+
+  implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
+  implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
+  implicit val resourceRequsetsFmt: Format[ResourceRequests]     = Json.format[ResourceRequests]
+  implicit val resourceLimitsFmt: Format[ResourceLimits]         = Json.format[ResourceLimits]
+  implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
+  implicit val envConfigFmt: Format[EnvConfig]                   = Json.format[EnvConfig]
+
+  implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
+  implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
+
+  implicit val specFmt: Format[Spec] = Json.format[Spec]
+  implicit val statusFmt: Format[Status] = Json.format[Status]
+
+  final case class EnvConfig(env: List[EnvVar] = Nil)
+
   type CR = CustomResource[Spec, Status]
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
-  implicit val statusFmt: Format[Status]                     = Json.format[Status]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "flink.k8s.io",
     version = "v1beta1",
-    kind = "FlinkApplication"
+    kind = "FlinkApplication",
+    subresources = Some(Subresources()
+      .withStatusSubresource
+    )
   )
+
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
 }
