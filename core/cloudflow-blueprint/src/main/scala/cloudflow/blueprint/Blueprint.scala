@@ -239,7 +239,7 @@ final case class Blueprint(
     val invalidPaths = streamletDescriptors.flatMap {
       descriptor ⇒
         descriptor.volumeMounts.map { volumeMount ⇒
-          val invalidPath = volumeMount.path.split(separator).find(_ == "..").map(_ ⇒ BacktrackingVolumeMounthPath(descriptor.className, volumeMount.name, volumeMount.path))
+          val invalidPath: Option[BacktrackingVolumeMounthPath] = volumeMount.path.split(separator).find(_ == "..").map(_ ⇒ BacktrackingVolumeMounthPath(descriptor.className, volumeMount.name, volumeMount.path))
           val emptyPath = if (volumeMount.path.isEmpty())
             Some(EmptyVolumeMountPath(descriptor.className, volumeMount.name)) else None
           val nonAbsolutePath = if (!new File(volumeMount.path).toPath.isAbsolute())

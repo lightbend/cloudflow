@@ -173,6 +173,10 @@ type CloudflowApplicationDescriptorDigestPair struct {
 	ImageDigest   string `json:"imageDigest"`
 }
 
+type CloudflowStreamletDescriptors struct {
+	Descriptors []Descriptor `json:"descriptors"`
+}
+
 // GroupName for our CR
 const GroupName = "cloudflow.lightbend.com"
 
