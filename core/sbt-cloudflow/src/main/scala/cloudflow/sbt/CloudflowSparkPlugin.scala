@@ -25,20 +25,22 @@ import spray.json._
 
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.sbt.CloudflowKeys._
+import CloudflowBasePlugin._
 
-object CloudflowSparkPlugin extends CloudflowBasePlugin {
-  final val sparkVersion                  = "2.4.4"
-  final val cloudflowVersion              = "1.3.1-SNAPSHOT"
-  final val CloudflowSparkDockerBaseImage = s"lightbend/spark:$cloudflowVersion-cloudflow-spark-$sparkVersion-scala-$scalaVersion"
+object CloudflowSparkPlugin extends AutoPlugin {
+  final val SparkVersion                  = "2.4.4"
+  final val CloudflowVersion              = "1.3.1-SNAPSHOT"
+  final val CloudflowSparkDockerBaseImage = s"lightbend/spark:$CloudflowVersion-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+
+  override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" %% "cloudflow-runner" % BuildInfo.version,
       "com.lightbend.cloudflow" %% "cloudflow-spark" % BuildInfo.version,
       "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
     ),
     cloudflowDockerParentImage := CloudflowSparkDockerBaseImage,
-    cloudflowSparkDockerImageName := Def.task {
+    cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
@@ -66,19 +68,6 @@ object CloudflowSparkPlugin extends CloudflowBasePlugin {
             }
           }
         }.value,
-    imageNames in docker := {
-      val registry  = cloudflowDockerRegistry.value
-      val namespace = cloudflowDockerRepository.value
-
-      cloudflowSparkDockerImageName.value.map { imageName ⇒
-        ImageName(
-          registry = registry,
-          namespace = namespace,
-          repository = imageName.name,
-          tag = Some(imageName.tag)
-        )
-      }.toSeq
-    },
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
@@ -87,7 +76,6 @@ object CloudflowSparkPlugin extends CloudflowBasePlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      val streamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
       // pack all streamlet-descriptors into a Json array
       val streamletDescriptorsJson =
         streamletDescriptorsInProject.value.toJson
@@ -100,24 +88,8 @@ object CloudflowSparkPlugin extends CloudflowBasePlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         expose(4040)
-        label(streamletDescriptorsLabelName, streamletDescriptorsLabelValue)
+        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     },
-    build := showResultOfBuild
-          .dependsOn(
-            docker.dependsOn(
-              checkUncommittedChanges
-            )
-          )
-          .value,
-    buildAndPublish := showResultOfBuildAndPublish
-          .dependsOn(
-            dockerBuildAndPush.dependsOn(
-              checkUncommittedChanges,
-              verifyDockerRegistry
-            )
-          )
-          .value,
-    fork in Compile := true
   )
 }

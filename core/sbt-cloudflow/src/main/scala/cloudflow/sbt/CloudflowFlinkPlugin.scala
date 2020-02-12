@@ -25,30 +25,20 @@ import spray.json._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.sbt.CloudflowKeys._
+import CloudflowBasePlugin._
 
-object CloudflowFlinkPlugin extends CloudflowBasePlugin {
-  final val flinkVersion                  = "1.9.2"
-  final val CloudflowFlinkDockerBaseImage = s"lightbend/flink:cloudflow-flink-$flinkVersion-scala-$scalaVersion"
+object CloudflowFlinkPlugin extends AutoPlugin {
+  final val FlinkVersion                  = "1.9.2"
+  final val CloudflowFlinkDockerBaseImage = s"lightbend/flink:cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+
+  override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version,
-          "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
-          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
-        ),
+      "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
+      "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
+    ),
     cloudflowDockerParentImage := CloudflowFlinkDockerBaseImage,
-    cloudflowFlinkDockerImageName := Def.task {
-          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-        }.value,
-    streamletDescriptorsInProject := Def.taskDyn {
-          val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets)
-        }.value,
-    buildOptions in docker := BuildOptions(
-          cache = true,
-          removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-          pullBaseImage = BuildOptions.Pull.IfMissing
-        ),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
             val stagingDir  = stage.value
@@ -67,19 +57,6 @@ object CloudflowFlinkPlugin extends CloudflowBasePlugin {
             }
           }
         }.value,
-    imageNames in docker := {
-      val registry  = cloudflowDockerRegistry.value
-      val namespace = cloudflowDockerRepository.value
-
-      cloudflowFlinkDockerImageName.value.map { imageName ⇒
-        ImageName(
-          registry = registry,
-          namespace = namespace,
-          repository = imageName.name,
-          tag = Some(imageName.tag)
-        )
-      }.toSeq
-    },
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
@@ -88,7 +65,6 @@ object CloudflowFlinkPlugin extends CloudflowBasePlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      val streamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
       // pack all streamlet-descriptors into a Json array
       val streamletDescriptorsJson =
         streamletDescriptorsInProject.value.toJson
@@ -102,24 +78,8 @@ object CloudflowFlinkPlugin extends CloudflowBasePlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
-        label(streamletDescriptorsLabelName, streamletDescriptorsLabelValue)
+        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     },
-    build := showResultOfBuild
-          .dependsOn(
-            docker.dependsOn(
-              checkUncommittedChanges
-            )
-          )
-          .value,
-    buildAndPublish := showResultOfBuildAndPublish
-          .dependsOn(
-            dockerBuildAndPush.dependsOn(
-              checkUncommittedChanges,
-              verifyDockerRegistry
-            )
-          )
-          .value,
-    fork in Compile := true
   )
 }
