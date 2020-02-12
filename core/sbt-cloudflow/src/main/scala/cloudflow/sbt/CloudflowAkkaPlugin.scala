@@ -24,30 +24,17 @@ import com.typesafe.sbt.packager.Keys._
 import spray.json._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
+import CloudflowBasePlugin._
 
-object CloudflowAkkaPlugin extends CloudflowBasePlugin {
+object CloudflowAkkaPlugin extends AutoPlugin {
+
+  override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
       "com.lightbend.cloudflow" %% "cloudflow-akka-util" % BuildInfo.version,
       "com.lightbend.cloudflow" %% "cloudflow-akka" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-runner" % BuildInfo.version,
       "com.lightbend.cloudflow" %% "cloudflow-akka-testkit" % BuildInfo.version % "test"
-    ),
-
-    cloudflowAkkaDockerImageName := Def.task {
-      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-    }.value,
-
-    streamletDescriptorsInProject := Def.taskDyn {
-      val detectedStreamlets = cloudflowStreamletDescriptors.value
-      buildStreamletDescriptors(detectedStreamlets)
-    }.value,
-
-    buildOptions in docker := BuildOptions(
-      cache = true,
-      removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-      pullBaseImage = BuildOptions.Pull.IfMissing
     ),
 
     cloudflowStageAppJars := Def.taskDyn {
@@ -66,22 +53,6 @@ object CloudflowAkkaPlugin extends CloudflowBasePlugin {
         }
       }
     }.value,
-
-    imageNames in docker := {
-      val registry = cloudflowDockerRegistry.value
-      val namespace = cloudflowDockerRepository.value
-
-      cloudflowAkkaDockerImageName.value
-        .map { imageName ⇒
-          ImageName(
-            registry = registry,
-            namespace = namespace,
-            repository = imageName.name,
-            tag = Some(imageName.tag)
-          )
-        }
-        .toSeq
-    },
 
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
@@ -106,20 +77,5 @@ object CloudflowAkkaPlugin extends CloudflowBasePlugin {
         label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     },
-
-    build := showResultOfBuild.dependsOn(
-      docker.dependsOn(
-        checkUncommittedChanges
-      )
-    ).value,
-
-    buildAndPublish := showResultOfBuildAndPublish.dependsOn(
-      dockerBuildAndPush.dependsOn(
-        checkUncommittedChanges,
-        verifyDockerRegistry
-      )
-    ).value,
-
-    fork in Compile := true
   )
 }

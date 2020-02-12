@@ -25,6 +25,7 @@ import com.typesafe.config._
 
 import sbt._
 import sbt.Keys._
+import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.archetypes._
 import spray.json._
@@ -38,14 +39,14 @@ import cloudflow.blueprint.StreamletDescriptor
  * methods which are reused across the runtime plugins, `CloudflowFlinkPlugin`,
  * `CloudflowAkkaPlugin` and `CloudflowSparkPlugin`.
  */
-abstract class CloudflowBasePlugin extends AutoPlugin {
+object CloudflowBasePlugin extends AutoPlugin {
   final val AppHome = "${app_home}"
   final val AppTargetDir: String = "/app"
-  final val appTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
+  final val AppTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
   final val AppJarsDir: String = "app-jars"
   final val DepJarsDir: String = "dep-jars"
   final val OptAppDir = "/opt/cloudflow/"
-  final val scalaVersion = "2.12"
+  final val ScalaVersion = "2.12"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -57,6 +58,61 @@ abstract class CloudflowBasePlugin extends AutoPlugin {
 
   override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
     JavaAppPackaging && sbtdocker.DockerPlugin
+
+  override def projectSettings = Seq(
+    libraryDependencies ++= Vector(
+      // this artifact needs to have `%` and not `%%` as we build the runner jar
+      // without version information. This is required for Flink runtime as a fixed name
+      // jar needs to be uploaded to a specific location for Flink operator to pick up
+      "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version
+    ),
+
+    cloudflowDockerImageName := Def.task {
+      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+    }.value,
+
+    streamletDescriptorsInProject := Def.taskDyn {
+      val detectedStreamlets = cloudflowStreamletDescriptors.value
+      buildStreamletDescriptors(detectedStreamlets)
+    }.value,
+
+    buildOptions in docker := BuildOptions(
+      cache = true,
+      removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
+      pullBaseImage = BuildOptions.Pull.IfMissing
+    ),
+
+    imageNames in docker := {
+      val registry = cloudflowDockerRegistry.value
+      val namespace = cloudflowDockerRepository.value
+
+      cloudflowDockerImageName.value
+        .map { imageName ⇒
+          ImageName(
+            registry = registry,
+            namespace = namespace,
+            repository = imageName.name,
+            tag = Some(imageName.tag)
+          )
+        }
+        .toSeq
+    },
+
+    build := showResultOfBuild.dependsOn(
+      docker.dependsOn(
+        checkUncommittedChanges
+      )
+    ).value,
+
+    buildAndPublish := showResultOfBuildAndPublish.dependsOn(
+      dockerBuildAndPush.dependsOn(
+        checkUncommittedChanges,
+        verifyDockerRegistry
+      )
+    ).value,
+
+    fork in Compile := true
+  )
 
   private[sbt] val verifyDockerRegistry = Def.task {
     cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
