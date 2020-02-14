@@ -100,7 +100,7 @@ NOTE: Because this is a new repo, we currently have the site.yml set to publish 
 
 == For reference
 
-Antora is built on top of Asciidoctor. One of the main differences between Asciidoctor and Antora is that Antora requires a specfic directory structure. If you are new to Antora and asciidoc, the following references might be helpful:
+Antora is built on top of Asciidoctor. One of the main differences between Asciidoctor and Antora is that Antora requires a specific directory structure. If you are new to Antora and asciidoc, the following references might be helpful:
 
 * https://docs.antora.org/antora/2.0/
 * https://asciidoctor.org/docs/

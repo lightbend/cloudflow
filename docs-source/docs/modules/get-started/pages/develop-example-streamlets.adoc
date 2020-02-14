@@ -28,7 +28,7 @@ import SensorDataJsonSupport._
 class SensorDataHttpIngress extends AkkaServerStreamlet {
   // create an outlet that will use the default Kafka partitioning
   val out =
-  // define the streamlet shapte
+  // define the streamlet shape
   AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
   def shape = StreamletShape.withOutlets(out)
   // override createLogic to provide the streamlet behavior
