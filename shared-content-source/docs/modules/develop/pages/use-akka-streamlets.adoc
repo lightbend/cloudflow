@@ -82,10 +82,9 @@ At-most-once message delivery semantics are applied to Akka streamlets that use 
 Akka Streamlets also supports _at-least-once_ semantics for cases where the above mentioned options are not viable.
 In this case, offsets of incoming records are tracked, so that the streamlet can start from a specific offset, per inlet, on restart.
 Once records are written to outlets, the associated incoming record offsets are considered.
-Offsets are committed in batch, and only when the offset changes.
 
-Akka streamlets that want to support at-least-once semantics, must use an Akka Stream `FlowWithContext` that propagates `CommittableOffset`{empty}s through the flow.
-Cloudflow automatically propagates offset details through the flow and commits offset changes in batches.
+Akka streamlets that want to support at-least-once semantics, must use an Akka Stream `FlowWithContext` that propagates `Committable`{empty}s (both offsets and batches of offsets) through the flow.
+Cloudflow automatically propagates `Committable`{empty}s (offset details) through the flow and commits these in batches, acknowledging processed messages. Committed batches are not reread after a restart.
 
 The `FlowWithContext` provides a constrained set of operators compared to the Akka Stream `Flow`. The subset of operators process records in-order.
 

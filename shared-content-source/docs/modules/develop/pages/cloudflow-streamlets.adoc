@@ -244,11 +244,11 @@ object RecordSumFlow extends AkkaStreamlet {
   def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph() = {
       val recordsInWindow = streamletConfig.getInt(recordsInWindowParameter.key)
-      val flow = FlowWithOffsetContext[Metric].grouped(recordsInWindow).map(sumRecords)
+      val flow = FlowWithCommittableContext[Metric].grouped(recordsInWindow).map(sumRecords)
 
       sourceWithOffsetContext(inlet)
         .via(flow)
-        .to(sinkWithOffsetContext(outlet))
+        .to(committableSink(outlet))
     }
   }
 
@@ -312,11 +312,11 @@ object RecordFilterFlow extends AkkaStreamlet {
   def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph() = {
       val filterTime = LocalTime.parse(streamletConfig.getString(purgeRecordsBeforeTime.key))
-      val flow = FlowWithOffsetContext[Metric].filter(record.time.isAfter(filterTime))
+      val flow = FlowWithCommittableContext[Metric].filter(record.time.isAfter(filterTime))
 
       sourceWithOffsetContext(inlet)
         .via(flow)
-        .to(sinkWithOffsetContext(outlet))
+        .to(committableSink(outlet))
     }
   }
 }

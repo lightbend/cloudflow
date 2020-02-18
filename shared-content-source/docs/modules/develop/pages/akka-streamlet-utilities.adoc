@@ -5,8 +5,8 @@
 The `cloudflow.akka.util` library contains some predefined `StreamletLogic`{empty}s:
 
 - `HttpServerLogic`
-- `SplitterLogic`
-- `MergeLogic`
+- `Splitter`
+- `Merger`
 
 The following sections describe how you implement stream processing logic with these utilities.
 
@@ -115,16 +115,16 @@ override def createLogic = new HttpServerLogic(this, outlet) {
 
 The above Scala example creates a route that will handle put requests where the entity contains `Data`, which is written to the outlet using the `WritableSinkRef`.
 
-== SplitterLogic
+== Splitter
 
 === Use case
 
-A `SplitterLogic` can be used to split a stream in two, writing elements to one of two outlets.
-Every element from the outlet will be processed through a `FlowWithOffsetContext`, which provides at-least-once semantics.
+A `Splitter` can be used to split a stream in two, writing elements to one of two outlets.
+Every element from the outlet will be processed through a `FlowWithCommittableContext`, which provides at-least-once semantics.
 
 === Example
 
-The `SplitterLogic` defines an abstract `flow` method for the user to supply a `FlowWithOffsetContext[I, Either[L, R]]`.
+The `Splitter` defines a `sink` method for the user to supply a `FlowWithCommittableContext[I, Either[L, R]]` and a `left` and `right` outlet.
 The Java version of `Splitter` uses an `Either` type that is bundled with cloudflow as `cloudflow.akka.javadsl.util.Either`.
 
 The examples below shows a `Splitter` that validates metrics and splits the stream into valid and invalid metrics, which are written respectively to the `valid` and `invalid` outlets:
@@ -144,17 +144,17 @@ Java::
 include::example$sensor-data-java/src/main/java/sensordata/MetricsValidation.java[]
 ----
 
-== MergeLogic
+== Merger
 
 === Use case
 
-A `MergeLogic` can be used to merge two or more inlets into one outlet.
+A `Merger` can be used to merge two or more inlets into one outlet.
 
 Elements from all inlets will be processed with at-least-once semantics. The elements will be processed in semi-random order and with equal priority for all inlets.
 
 === Example
 
-The examples below shows a `Merge` configured to combine elements from two inlets of the type `Metric` into one outlet of the same type.
+The examples below shows how to use a `Merger.source` to combine elements from two inlets of the type `Metric` into one outlet of the same type.
 
 [.tabset]
 Scala::
@@ -169,7 +169,10 @@ object MetricMerge extends AkkaStreamlet {
 
   final override val shape = StreamletShape.withInlets(in0, in1).withOutlets(out)
 
-  override final def createLogic = new MergeLogic(Vector(in0, in1), out)
+  override final def createLogic = RunnableGraphStreamletLogic() {
+    def runnableGraph =
+      Merger.source(in0, in1).to(committableSink(out))
+  }    
 }
 
 object MetricsMerge extends Merge[Metric](5)
@@ -187,11 +190,12 @@ class TestMerger extends AkkaStreamlet {
     public StreamletShape shape() {
       return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
     }
-    public MergeLogic createLogic() {
-      List<CodecInlet<Data>> inlets = new ArrayList<CodecInlet<Data>>();
-      inlets.add(inlet1);
-      inlets.add(inlet2);
-      return new MergeLogic(inlets, outlet, getStreamletContext());
+    public RunnableGraphStreamletLogic createLogic() {
+      return new RunnableGraphStreamletLogic(getContext()) {
+        public RunnableGraph createRunnableGraph() {
+          return Merger.source(getContext(), inlet1, inlet2).to(getCommittableSink(outlet));
+        }
+      };
     }
 }
 ----

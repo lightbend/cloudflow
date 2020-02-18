@@ -68,3 +68,7 @@ sensor-data-validation-7dd858b6c5-lcp2n       1/1     Running   0          3m1s
 Note that all streamlets run in a namespace that matches the name of the application.
 
 **Congratulations!** You have deployed and started your first Cloudflow application.
+
+== What's next
+
+Now, we are ready to xref:exercise-example.adoc[Exercise the example].

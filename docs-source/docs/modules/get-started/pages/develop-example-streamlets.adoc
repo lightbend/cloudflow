@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name.
+All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name. The complete code is available in the https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala[sensor-data-scala] example.
 
 == Ingress streamlet
 
@@ -13,28 +13,10 @@ Let's start with the ingress, which we implement in a class named `SensorDataHtt
 
 In **SensorDataHttpIngress.scala**, include the following code:
 
-```
-package sensordata
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl._
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import SensorDataJsonSupport._
-
-class SensorDataHttpIngress extends AkkaServerStreamlet {
-  // create an outlet that will use the default Kafka partitioning
-  val out =
-  // define the streamlet shape
-  AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
-  def shape = StreamletShape.withOutlets(out)
-  // override createLogic to provide the streamlet behavior
-  override def createLogic = HttpServerLogic.default(this, out)
-}
-```
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[]
+----
 
 == Convert sensor to metric streamlet
 
@@ -42,37 +24,10 @@ We will have the ingress pass data to another streamlet, `SensorDataToMetrics`. 
 
 In **SensorDataToMetrics.scala**, include the following code:
 
-```
-package sensordata
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-import cloudflow.streamlets.{ RoundRobinPartitioner, StreamletShape }
-import cloudflow.streamlets.avro._
-
-class SensorDataToMetrics extends AkkaStreamlet {
-  // define inlets and outlets
-  val in = AvroInlet[SensorData]("in")
-  val out = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
-  // define the streamlet shape
-  val shape = StreamletShape(in, out)
-  // define a flow that makes it possible for cloudflow to commit reads
-  def flow = {
-    FlowWithOffsetContext[SensorData]
-      .mapConcat { data ⇒
-        List(
-          Metric(data.deviceId, data.timestamp, "power", data.measurements.power),
-          Metric(data.deviceId, data.timestamp, "rotorSpeed", data.measurements.rotorSpeed),
-          Metric(data.deviceId, data.timestamp, "windSpeed", data.measurements.windSpeed)
-        )
-      }
-  }
-  // override createLogic to provide streamlet behavior
-  override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(sinkWithOffsetContext(out))
-  }
-}
-```
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataToMetrics.scala[]
+----
 
 == Validation streamlets
 
@@ -82,45 +37,17 @@ This streamlet has an inlet and 2 outlets for generating valid and invalid metri
 
 In **MetricsValidation.scala**, include the following code:
 
-```
-package sensordata
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl._
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-class MetricsValidation extends AkkaStreamlet {
-  // define inlets and outlets
-  // note that we have 2 outlets corresponding to valid and invalid records
-  val in = AvroInlet[Metric]("in")
-  val invalid = AvroOutlet[InvalidMetric]("invalid").withPartitioner(metric ⇒ metric.metric.deviceId.toString)
-  val valid = AvroOutlet[Metric]("valid").withPartitioner(RoundRobinPartitioner)
-  // define the streamlet shape
-  val shape = StreamletShape(in).withOutlets(invalid, valid)
-
-  // override createLogic to provide streamlet behavior
-  override def createLogic = new SplitterLogic(in, invalid, valid) {
-    def flow = flowWithOffsetContext()
-      .map { metric ⇒
-        if (!SensorDataUtils.isValidMetric(metric)) Left(InvalidMetric(metric, "All measurements must be positive numbers!"))
-        else Right(metric)
-      }
-  }
-}
-```
-
-
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[]
+----
 
 In **SensorDataUtils.scala**, include the following code. A real validator would have more complex business logic, this is just for demonstration:
 
-```
-package sensordata
-
-object SensorDataUtils {
-  def isValidMetric(m: Metric) = m.value >= 0.0
-}
-```
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/package.scala[]
+----
 
 == Logging streamlets
 
@@ -129,133 +56,38 @@ Next, we want to log the valid and invalid metrics separately in 2 streamlets - 
 
 In **ValidMetricLogger.scala**, include the following code:
 
-```
-package sensordata
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[]
+----
 
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-class ValidMetricLogger extends AkkaStreamlet {
-  // define the inlet for the egress
-  val inlet = AvroInlet[Metric]("in")
-  // define the streamlet shape
-  val shape = StreamletShape.withInlets(inlet)
-
-  // override createLogic to provide the streamlet behavior
-  override def createLogic = new RunnableGraphStreamletLogic() {
-
-    // log to output
-    def log(metric: Metric) = {
-      system.log.info(metric.toString)
-    }
-
-    // flow to define the metric to log
-    def flow = {
-      FlowWithOffsetContext[Metric]
-        .map { validMetric ⇒
-          log(validMetric)
-          validMetric
-        }
-    }
-
-    // build the computation graph
-    def runnableGraph = {
-      sourceWithOffsetContext(inlet).via(flow).to(sinkWithOffsetContext)
-    }
-  }
-}
-```
 
 In **InvalidMetricLogger.scala**, include the following code:
 
-```
-package sensordata
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/InvalidMetricLogger.scala[]
+----
 
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-class InvalidMetricLogger extends AkkaStreamlet {
-  // define the inlet
-  val inlet = AvroInlet[InvalidMetric]("in")
-  // define the streamlet shape
-  val shape = StreamletShape.withInlets(inlet)
-
-  // override createLogic to provide the streamlet behavior
-  override def createLogic = new RunnableGraphStreamletLogic() {
-    val flow = FlowWithOffsetContext[InvalidMetric]
-      .map { invalidMetric ⇒
-        system.log.warning(s"Invalid metric detected! $invalidMetric")
-        invalidMetric
-      }
-
-    def runnableGraph = {
-      sourceWithOffsetContext(inlet).via(flow).to(sinkWithOffsetContext)
-    }
-  }
-}
-```
 == Process JSON records
 
 Finally we have some support classes that we need to process JSON records through the Cloudflow pipeline. 
 
 In **JsonFormats.scala**, include the following code:
 
-```
-package sensordata
 
-import java.time.Instant
-import java.util.UUID
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/JsonFormats.scala[]
+----
 
-import scala.util.Try
-
-import spray.json._
-
-trait UUIDJsonSupport extends DefaultJsonProtocol {
-  implicit object UUIDFormat extends JsonFormat[UUID] {
-    def write(uuid: UUID) = JsString(uuid.toString)
-
-    def read(json: JsValue): UUID = json match {
-      case JsString(uuid) ⇒ Try(UUID.fromString(uuid)).getOrElse(deserializationError(s"Expected valid UUID but got '$uuid'."))
-      case other          ⇒ deserializationError(s"Expected UUID as JsString, but got: $other")
-    }
-  }
-}
-
-trait InstantJsonSupport extends DefaultJsonProtocol {
-  implicit object InstantFormat extends JsonFormat[Instant] {
-    def write(instant: Instant) = JsNumber(instant.toEpochMilli)
-
-    def read(json: JsValue): Instant = json match {
-      case JsNumber(value) ⇒ Instant.ofEpochMilli(value.toLong)
-      case other           ⇒ deserializationError(s"Expected Instant as JsNumber, but got: $other")
-    }
-  }
-}
-
-object MeasurementsJsonSupport extends DefaultJsonProtocol {
-  implicit val measurementFormat = jsonFormat3(Measurements.apply)
-}
-
-object SensorDataJsonSupport extends DefaultJsonProtocol with UUIDJsonSupport with InstantJsonSupport {
-  import MeasurementsJsonSupport._
-  implicit val sensorDataFormat = jsonFormat3(SensorData.apply)
-}
-```
 
 In **package.scala**, include the following code:
 
-
-```
-import java.time.Instant
-
-package object sensordata {
-  implicit def toInstant(millis: Long): Instant = Instant.ofEpochMilli(millis)
-}
-```
+[source,scala]
+----
+include::ROOT:example$sensor-data-scala/src/main/scala/package.scala[]
+----
 
 == What's next
 

@@ -20,16 +20,16 @@ Each `Streamlet` represents an independent stream processing component that impl
 The lightweight `Streamlet` API exposes the raw power of the underlying runtime and its libraries while providing a higher-level abstraction for composing `streamlets` and expressing data schemas.
 Your code is written in your familiar Structured Streaming, Flink, or Akka Streams native API.
 
-Streamlets declares inlets and outlets to define the data they consume or produce.
+Streamlets declare inlets and outlets to define the data they consume or produce.
 Inlets and outlets are schema-driven, ensuring that data flows are always consistent and that connections between `Streamlets` are compatible.
 The data sent between `Streamlets` is safely persisted in the underlying pub-sub system, allowing for independent lifecycle management of the different components.
 
 === Streamlet Shapes 
 
 The combination of inlets and outlets give the `Streamlet` its `shape`.
-Some of the commonly used streamlet shapes are the following:
+Some examples of commonly used streamlet shapes are the following:
 
-Ingress
+==== Ingress
 An Ingress is a streamlet with zero inlets and one or more outlets. An ingress could be a server handling requests e.g. using http.
 
 [#ingress-shape]
@@ -38,7 +38,7 @@ An Ingress is a streamlet with zero inlets and one or more outlets. An ingress c
 image::streamlets-ingress.png[]
 
 
-Processor
+==== Processor
 A Processor has one inlet and one outlet. Processors represent common data transformations like map and filter, or any combination of them.
 
 [#processor-shape]
@@ -46,8 +46,8 @@ A Processor has one inlet and one outlet. Processors represent common data trans
 [caption="Fig. 2 - "]
 image::streamlets-processor.png[]
 
-FanOut
-A FanOut (also known as a Splitter) has one inlet and more than one outlets. The FanOut splits the input into multiple data streams depending on some criteria. A typical example can be an implementation of validation where the FanOut splits the input into valid and invalid data streams.
+==== FanOut
+A FanOut has one inlet and more than one outlets. The FanOut splits the input into multiple data streams depending on some criteria. A typical example can be an implementation of validation where the FanOut splits the input into valid and invalid data streams.
 
 
 [#fanout-shape]
@@ -55,7 +55,7 @@ A FanOut (also known as a Splitter) has one inlet and more than one outlets. The
 [caption="Fig. 3 - "]
 image::streamlets-fanout.png[]
 
-Egress
+==== Egress
 An Egress represents data leaving the Cloudflow application. For instance this could be data being persisted to some database, notifications being sent to Slack, files being written to HDFS, etc.
 
 [#egress-shape]
@@ -65,7 +65,7 @@ image::streamlets-egress.png[]
 
 == Blueprint
 
-A Blueprint connects streamlets together. This is what transforms a bunch of streamlets into your application pipeline. A blueprint is written in a file using a declarative language and is part of the project.
+A Blueprint connects streamlets together. This is what transforms a bunch of streamlets into an application. A blueprint is written in a file using a declarative language and is part of the project.
 
 [#blueprint]
 .Blueprint
@@ -75,10 +75,10 @@ image::blueprint.png[]
 
 == Application
 
-A Cloudflow application is a collection of Streamlets and a `blueprint` definition that can be deployed as a unit to a Cloudflow-enabled cluster.
+A Cloudflow application is a `blueprint` that defines a collection of Streamlets that can be deployed as a unit to a Cloudflow-enabled cluster.
 
 A deployed application is the runtime realization of the blueprint. 
-The application pipeline gets formed according to the `Streamlets` included and the connections specified in the blueprint, materialized as data flows between the `Streamlets`.
+The application gets formed according to the `Streamlets` included and the connections specified in the blueprint, materialized as data flows between the `Streamlets`.
 
 [#application-image]
 .Application
