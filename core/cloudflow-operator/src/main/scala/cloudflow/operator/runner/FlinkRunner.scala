@@ -313,10 +313,10 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount] = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume] = skuber.json.format.volumeFormat
-  implicit val envVarFmt: Format[EnvVar] = skuber.json.format.envVarFormat
-  implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
+  implicit val volumeMountFmt: Format[Volume.Mount]        = skuber.json.format.volMountFormat
+  implicit val volumeFmt: Format[Volume]                   = skuber.json.format.volumeFormat
+  implicit val envVarFmt: Format[EnvVar]                   = skuber.json.format.envVarFormat
+  implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
   implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
 
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
@@ -329,7 +329,7 @@ object FlinkResource {
   implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
-  implicit val specFmt: Format[Spec] = Json.format[Spec]
+  implicit val specFmt: Format[Spec]     = Json.format[Spec]
   implicit val statusFmt: Format[Status] = Json.format[Status]
 
   final case class EnvConfig(env: List[EnvVar] = Nil)
@@ -337,15 +337,13 @@ object FlinkResource {
   type CR = CustomResource[Spec, Status]
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "flink.k8s.io",
     version = "v1beta1",
     kind = "FlinkApplication",
-    subresources = Some(Subresources()
-      .withStatusSubresource
-    )
+    subresources = Some(Subresources().withStatusSubresource)
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]

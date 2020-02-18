@@ -28,17 +28,18 @@ import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowSparkPlugin extends AutoPlugin {
-  final val SparkVersion                  = "2.4.4"
-  final val CloudflowVersion              = "1.3.1-SNAPSHOT"
-  final val CloudflowSparkDockerBaseImage = s"lightbend/spark:$CloudflowVersion-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+  final val SparkVersion     = "2.4.4"
+  final val CloudflowVersion = "1.3.1-SNAPSHOT"
+  final val CloudflowSparkDockerBaseImage =
+    s"lightbend/spark:$CloudflowVersion-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" %% "cloudflow-spark" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
-    ),
+          "com.lightbend.cloudflow" %% "cloudflow-spark"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
+        ),
     cloudflowDockerParentImage := CloudflowSparkDockerBaseImage,
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
@@ -90,6 +91,6 @@ object CloudflowSparkPlugin extends AutoPlugin {
         expose(4040)
         label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
-    },
+    }
   )
 }

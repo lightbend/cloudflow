@@ -49,9 +49,9 @@ trait CloudflowSettingKeys {
 
 trait CloudflowTaskKeys {
 
-  val cloudflowDockerImageName      = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
-  val cloudflowDockerRegistry       = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
-  val cloudflowDockerRepository     = taskKey[Option[String]]("The image repository name on the Docker registry.")
+  val cloudflowDockerImageName  = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
+  val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
+  val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
 
   val verifyBlueprint = taskKey[Unit]("Verify Blueprint")
   val build           = taskKey[Unit]("Build the image and app.")

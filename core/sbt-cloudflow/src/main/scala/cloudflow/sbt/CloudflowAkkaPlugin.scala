@@ -32,33 +32,31 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" %% "cloudflow-akka-util" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-akka" % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-akka-testkit" % BuildInfo.version % "test"
-    ),
-
+          "com.lightbend.cloudflow" %% "cloudflow-akka-util"    % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-akka"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-akka-testkit" % BuildInfo.version % "test"
+        ),
     cloudflowStageAppJars := Def.taskDyn {
-      Def.task {
-        val stagingDir = stage.value
-        val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
-        val depJars = (Runtime / externalDependencyClasspath).value.map(_.data)
+          Def.task {
+            val stagingDir  = stage.value
+            val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
+            val depJars     = (Runtime / externalDependencyClasspath).value.map(_.data)
 
-        val appJarDir = new File(stagingDir, AppJarsDir)
-        val depJarDir = new File(stagingDir, DepJarsDir)
-        projectJars.foreach { jar ⇒
-          IO.copyFile(jar, new File(appJarDir, jar.getName))
-        }
-        depJars.foreach { jar ⇒
-          IO.copyFile(jar, new File(depJarDir, jar.getName))
-        }
-      }
-    }.value,
-
+            val appJarDir = new File(stagingDir, AppJarsDir)
+            val depJarDir = new File(stagingDir, DepJarsDir)
+            projectJars.foreach { jar ⇒
+              IO.copyFile(jar, new File(appJarDir, jar.getName))
+            }
+            depJars.foreach { jar ⇒
+              IO.copyFile(jar, new File(depJarDir, jar.getName))
+            }
+          }
+        }.value,
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
-      val appDir: File = stage.value
+      val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
@@ -69,13 +67,15 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
       new Dockerfile {
         from("adoptopenjdk/openjdk8")
-        runRaw("groupadd -r cloudflow -g 185 && useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow -s /sbin/nologin -c CloudflowUser cloudflow")
+        runRaw(
+          "groupadd -r cloudflow -g 185 && useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow -s /sbin/nologin -c CloudflowUser cloudflow"
+        )
         user(UserInImage)
 
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
-    },
+    }
   )
 }

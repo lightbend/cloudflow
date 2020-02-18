@@ -35,9 +35,9 @@ object CloudflowFlinkPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
-      "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
-    ),
+          "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
+        ),
     cloudflowDockerParentImage := CloudflowFlinkDockerBaseImage,
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
@@ -80,6 +80,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
         label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
-    },
+    }
   )
 }

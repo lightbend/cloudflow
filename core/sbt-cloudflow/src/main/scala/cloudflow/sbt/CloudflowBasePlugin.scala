@@ -40,77 +40,73 @@ import cloudflow.blueprint.StreamletDescriptor
  * `CloudflowAkkaPlugin` and `CloudflowSparkPlugin`.
  */
 object CloudflowBasePlugin extends AutoPlugin {
-  final val AppHome = "${app_home}"
-  final val AppTargetDir: String = "/app"
+  final val AppHome                          = "${app_home}"
+  final val AppTargetDir: String             = "/app"
   final val AppTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
-  final val AppJarsDir: String = "app-jars"
-  final val DepJarsDir: String = "dep-jars"
-  final val OptAppDir = "/opt/cloudflow/"
-  final val ScalaVersion = "2.12"
+  final val AppJarsDir: String               = "app-jars"
+  final val DepJarsDir: String               = "dep-jars"
+  final val OptAppDir                        = "/opt/cloudflow/"
+  final val ScalaVersion                     = "2.12"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
   // If you change this, you have to make sure that all references to this value are changed
   // - fsGroups on streamlet pods uses the GID to make volumes readable
-  val UserInImage = "185" // default non-root user in the spark image
-  val userAsOwner: String ⇒ String = usr ⇒ s"$usr:cloudflow"
+  val UserInImage                   = "185" // default non-root user in the spark image
+  val userAsOwner: String ⇒ String  = usr ⇒ s"$usr:cloudflow"
   val StreamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
 
-  override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
-    JavaAppPackaging && sbtdocker.DockerPlugin
+  override def requires =
+    CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
+      JavaAppPackaging && sbtdocker.DockerPlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      // this artifact needs to have `%` and not `%%` as we build the runner jar
-      // without version information. This is required for Flink runtime as a fixed name
-      // jar needs to be uploaded to a specific location for Flink operator to pick up
-      "com.lightbend.cloudflow" % "cloudflow-runner"         % BuildInfo.version
-    ),
-
+          // this artifact needs to have `%` and not `%%` as we build the runner jar
+          // without version information. This is required for Flink runtime as a fixed name
+          // jar needs to be uploaded to a specific location for Flink operator to pick up
+          "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version
+        ),
     cloudflowDockerImageName := Def.task {
-      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-    }.value,
-
+          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+        }.value,
     streamletDescriptorsInProject := Def.taskDyn {
-      val detectedStreamlets = cloudflowStreamletDescriptors.value
-      buildStreamletDescriptors(detectedStreamlets)
-    }.value,
-
+          val detectedStreamlets = cloudflowStreamletDescriptors.value
+          buildStreamletDescriptors(detectedStreamlets)
+        }.value,
     buildOptions in docker := BuildOptions(
-      cache = true,
-      removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-      pullBaseImage = BuildOptions.Pull.IfMissing
-    ),
-
+          cache = true,
+          removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
+          pullBaseImage = BuildOptions.Pull.IfMissing
+        ),
     imageNames in docker := {
-      val registry = cloudflowDockerRegistry.value
+      val registry  = cloudflowDockerRegistry.value
       val namespace = cloudflowDockerRepository.value
 
-      cloudflowDockerImageName.value
-        .map { imageName ⇒
-          ImageName(
-            registry = registry,
-            namespace = namespace,
-            repository = imageName.name,
-            tag = Some(imageName.tag)
-          )
-        }
-        .toSeq
+      cloudflowDockerImageName.value.map { imageName ⇒
+        ImageName(
+          registry = registry,
+          namespace = namespace,
+          repository = imageName.name,
+          tag = Some(imageName.tag)
+        )
+      }.toSeq
     },
-
-    build := showResultOfBuild.dependsOn(
-      docker.dependsOn(
-        checkUncommittedChanges
-      )
-    ).value,
-
-    buildAndPublish := showResultOfBuildAndPublish.dependsOn(
-      dockerBuildAndPush.dependsOn(
-        checkUncommittedChanges,
-        verifyDockerRegistry
-      )
-    ).value,
-
+    build := showResultOfBuild
+          .dependsOn(
+            docker.dependsOn(
+              checkUncommittedChanges
+            )
+          )
+          .value,
+    buildAndPublish := showResultOfBuildAndPublish
+          .dependsOn(
+            dockerBuildAndPush.dependsOn(
+              checkUncommittedChanges,
+              verifyDockerRegistry
+            )
+          )
+          .value,
     fork in Compile := true
   )
 
@@ -121,22 +117,23 @@ object CloudflowBasePlugin extends AutoPlugin {
   private[sbt] val checkUncommittedChanges = Def.task {
     val log = streams.value.log
     if (cloudflowBuildNumber.value.hasUncommittedChanges) {
-      log.warn(s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build.")
+      log.warn(
+        s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build."
+      )
     }
   }
 
   private[sbt] def makeStreamletDescriptorsLabelValue(streamletDescriptorsJson: JsValue) = {
     // create a root object with the array
     val streamletDescriptorsJsonStr =
-      JsObject("streamlet-descriptors" -> streamletDescriptorsJson)
-        .compactPrint
+      JsObject("streamlet-descriptors" -> streamletDescriptorsJson).compactPrint
 
     val compressed = zlibCompression(streamletDescriptorsJsonStr.getBytes(UTF_8))
     Base64.getEncoder.encodeToString(compressed)
   }
 
   private[sbt] val showResultOfBuild = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -150,7 +147,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   }
 
   private[sbt] val showResultOfBuildAndPublish = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -159,7 +156,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   }
 
   private[sbt] def zlibCompression(raw: Array[Byte]): Array[Byte] = {
-    val deflater = new Deflater()
+    val deflater   = new Deflater()
     val compressed = new ByteArrayOutputStream(0)
     deflater.setInput(raw)
     deflater.finish()
@@ -172,13 +169,13 @@ object CloudflowBasePlugin extends AutoPlugin {
     compressed.toByteArray()
   }
 
-  private[sbt] def buildStreamletDescriptors(
-      detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] = Def.task {
-    val detectedStreamletDescriptors = detectedStreamlets.map {
-      case (_, configDescriptor) ⇒
-        val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-        jsonString.parseJson.convertTo[cloudflow.blueprint.StreamletDescriptor]
+  private[sbt] def buildStreamletDescriptors(detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] =
+    Def.task {
+      val detectedStreamletDescriptors = detectedStreamlets.map {
+        case (_, configDescriptor) ⇒
+          val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
+          jsonString.parseJson.convertTo[cloudflow.blueprint.StreamletDescriptor]
+      }
+      detectedStreamletDescriptors
     }
-    detectedStreamletDescriptors
-  }
 }
