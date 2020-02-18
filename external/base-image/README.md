@@ -5,7 +5,7 @@ The included Dockerfile builds a single image that can used in either a Flink st
 #### Building the image
 
 ```bash
-$ docker build -t lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.2-scala-2.12 .
+$ docker build -t lightbend/cloudflow-base:1.3.0-spark-2.4.4-flink-1.9.2-scala-2.12 .
 ```
 
 Which can be pushed to a remote repository.

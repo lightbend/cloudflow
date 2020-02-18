@@ -64,7 +64,7 @@ export zookeeperHosts=""
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
 export sparkOperatorChartVersion="0.6.3"
 export sparkOperatorImageName="lightbend/sparkoperator"
-export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12"
+export sparkOperatorImageVersion="1.3.0-OpenJDK-2.4.4-1.0.1-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
 
 

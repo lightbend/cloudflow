@@ -22,8 +22,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 TAG=v2.4.4
 ORIGIN_TAG=2.4.4-k8s-client-upgrade
 DOCKER_USERNAME=lightbend
-SPARK_IMAGE_TAG=1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12
-SPARK_OPERATOR_TAG=1.3.0-M1-OpenJDK-2.4.4-1.0.1-cloudflow-2.12
+SPARK_IMAGE_TAG=1.3.0-OpenJDK-2.4.4-cloudflow-2.12
+SPARK_OPERATOR_TAG=1.3.0-OpenJDK-2.4.4-1.0.1-cloudflow-2.12
 
 hub version > /dev/null 2>&1 || {
   echo "The hub command is not installed. Please install (https://github.com/github/hub) and retry."
