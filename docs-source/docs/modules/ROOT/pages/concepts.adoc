@@ -47,7 +47,7 @@ A Processor has one inlet and one outlet. Processors represent common data trans
 image::streamlets-processor.png[]
 
 ==== FanOut
-A FanOut has one inlet and more than one outlets. The FanOut splits the input into multiple data streams depending on some criteria. A typical example can be an implementation of validation where the FanOut splits the input into valid and invalid data streams.
+A FanOut has one inlet and more than one outlet. The FanOut splits the input into multiple data streams depending on some criteria. A typical example can be an implementation of validation where the FanOut splits the input into valid and invalid data streams.
 
 
 [#fanout-shape]

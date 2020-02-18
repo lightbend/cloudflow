@@ -19,7 +19,7 @@ As shown in the image, streaming data will pass through the following transforma
 
 * Ingestion by an Ingress streamlet: An Ingress streamlet has zero inlets and one or more outlets. An ingress could be a server handling requests e.g. using http. In this example, it ingests the wind turbine events.
 * Conversion by a Processor streamlet into a domain object: A Processor streamlet has one inlet and one outlet. Processors represent common data transformations like map and filter, or any combination of them. In this example, the Processor converts the event data into metrics that can be further validated. 
-* Validation by a FanOut streamlet: A FanOut (also known as a Splitter) has one inlet and more than one outlets. The FanOut splits the input into multiple data streams depending on some criteria. The example Splitter separates valid and invalid records.
+* Validation by a FanOut streamlet: A FanOut (also known as a Splitter) has one inlet and more than one outlet. The FanOut splits the input into multiple data streams depending on some criteria. The example Splitter separates valid and invalid records.
 * Logging to Egress streamlet: An Egress represents data leaving the application. For instance this could be data being persisted to some database, notifications being sent to Slack, files being written to HDFS, etc. In this case, the streamlet will log data to be checked at output.
 
 == Development overview
