@@ -21,7 +21,7 @@ import java.util.Locale
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 
 import cloudflow.flink.avro._
 
@@ -39,20 +39,21 @@ object TaxiFareOps {
 
     val tokens = fare.split(",")
     if (tokens.length != 8) Failure(new RuntimeException(s"Invalid record: $fare"))
-    else Try {
-      val rideId = tokens(0).toLong
+    else
+      Try {
+        val rideId = tokens(0).toLong
 
-      new TaxiFare(
-        rideId,
-        tokens(1).toLong,
-        tokens(4),
-        tokens(2).toLong,
-        parseDateTime(tokens(3)).getMillis(),
-        parseFloat(tokens(5)),
-        parseFloat(tokens(6)),
-        parseFloat(tokens(7))
-      )
-    }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $fare", e)))
+        new TaxiFare(
+          rideId,
+          tokens(1).toLong,
+          tokens(4),
+          tokens(2).toLong,
+          parseDateTime(tokens(3)).getMillis(),
+          parseFloat(tokens(5)),
+          parseFloat(tokens(6)),
+          parseFloat(tokens(7))
+        )
+      }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $fare", e)))
   }
 
   def getEventTime(fare: TaxiFare): Long = fare.startTime

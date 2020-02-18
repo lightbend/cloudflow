@@ -22,12 +22,13 @@ import play.api.libs.json.Json
 import cloudflow.blueprint._
 import BlueprintBuilder._
 
-class CloudflowApplicationSpec extends WordSpec
-  with MustMatchers
-  with GivenWhenThen
-  with EitherValues
-  with Inspectors
-  with TestDeploymentContext {
+class CloudflowApplicationSpec
+    extends WordSpec
+    with MustMatchers
+    with GivenWhenThen
+    with EitherValues
+    with Inspectors
+    with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
@@ -35,25 +36,27 @@ class CloudflowApplicationSpec extends WordSpec
   "CloudflowApplication.CR" should {
     "convert to Json and back" in {
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.right.value
+        .verified
+        .right
+        .value
 
-      val appId = "def-jux-12345"
+      val appId      = "def-jux-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
       val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
-      val cr = CloudflowApplication(newApp)
+      val newApp         = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val cr             = CloudflowApplication(newApp)
       val customResource = Json.fromJson[CloudflowApplication.CR](Json.toJson(cr)).asEither.right.value
       customResource.spec mustBe cr.spec
     }

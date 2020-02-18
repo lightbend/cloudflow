@@ -29,23 +29,17 @@ import org.mockito.ArgumentMatchersSugar
 import org.mockito.captor.ArgCaptor
 import org.scalatest.concurrent.ScalaFutures
 
-class ErrorEventsSpec extends FreeSpec
-  with MustMatchers
-  with ScalaFutures
-  with OptionValues
-  with MockitoSugar
-  with ArgumentMatchersSugar {
+class ErrorEventsSpec extends FreeSpec with MustMatchers with ScalaFutures with OptionValues with MockitoSugar with ArgumentMatchersSugar {
 
   "ErrorEvents" - {
-    val podName = "test-app-test-streamlet-6d9fd8f44-kgvkp"
+    val podName      = "test-app-test-streamlet-6d9fd8f44-kgvkp"
     val podNamespace = "test-app"
-    val podUid = "9d74877d-d570-11e9-8a34-42010aa80061"
-    val runnerType = "akka"
+    val podUid       = "9d74877d-d570-11e9-8a34-42010aa80061"
+    val runnerType   = "akka"
 
     val exception = new Exception("Runtime Error")
 
-    val runnerConfig = ConfigFactory.parseString(
-      s"""
+    val runnerConfig = ConfigFactory.parseString(s"""
          |cloudflow.runner.pod.metadata: {
          |  name:       "$podName"
          |  namespace:  "$podNamespace"
@@ -57,9 +51,9 @@ class ErrorEventsSpec extends FreeSpec
          |}
          |""".stripMargin)
 
-    val config = ConfigFactory.load("config-map-sample.json")
+    val config       = ConfigFactory.load("config-map-sample.json")
     val streamletDef = StreamletDefinition.read(config).get
-    val streamlet = mock[Streamlet[StreamletContext]]
+    val streamlet    = mock[Streamlet[StreamletContext]]
     when(streamlet.runtime).thenAnswer(new StreamletRuntime { def name = "akka" })
     val loadedStreamlet = LoadedStreamlet(streamlet, streamletDef)
 
@@ -110,7 +104,7 @@ class ErrorEventsSpec extends FreeSpec
         .thenAnswer[String](name ⇒ Future.successful(Some(existingEvent(name))))
 
       val eventCaptor = ArgCaptor[skuber.Event]
-      val nameCaptor = ArgCaptor[String]
+      val nameCaptor  = ArgCaptor[String]
 
       ErrorEvents.report(loadedStreamlet, runnerConfig, exception)
 
@@ -126,7 +120,7 @@ class ErrorEventsSpec extends FreeSpec
     }
 
     "may be disabled" in {
-      val disabled = ConfigFactory.parseString("cloudflow.runner.error-events.enabled: false")
+      val disabled  = ConfigFactory.parseString("cloudflow.runner.error-events.enabled: false")
       val newConfig = disabled.withFallback(runnerConfig)
 
       val client = mockClient()
@@ -139,14 +133,16 @@ class ErrorEventsSpec extends FreeSpec
     }
 
     "include a full stack trace" in {
-      val message = ErrorEvents.newEvent(streamletDef, runnerType, exception, podName, podUid, podNamespace, stacktraceEnabled = true).message.get
+      val message =
+        ErrorEvents.newEvent(streamletDef, runnerType, exception, podName, podUid, podNamespace, stacktraceEnabled = true).message.get
 
       message must startWith("java.lang.Exception: Runtime Error")
       message.split("\n").length > 0
     }
 
     "not include a full stack trace" in {
-      val message = ErrorEvents.newEvent(streamletDef, runnerType, exception, podName, podUid, podNamespace, stacktraceEnabled = false).message.get
+      val message =
+        ErrorEvents.newEvent(streamletDef, runnerType, exception, podName, podUid, podNamespace, stacktraceEnabled = false).message.get
 
       message mustBe "java.lang.Exception: Runtime Error"
     }
@@ -156,7 +152,7 @@ class ErrorEventsSpec extends FreeSpec
     }
 
     "name is 63 characters or less" in {
-      val source = "test-app-test-streamlet-with-a-very-long-name-that-will-get-truncated-6d9fd8f44-kgvkp"
+      val source  = "test-app-test-streamlet-with-a-very-long-name-that-will-get-truncated-6d9fd8f44-kgvkp"
       val message = "An error message with a stack trace\nand\nlots\nof\nlines\n"
       assert(ErrorEvents.name(source, message).length() <= 63)
     }

@@ -38,12 +38,12 @@ class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matche
       configureCheckpoint(env)
 
       object FlinkIngress extends FlinkStreamlet {
-        val out = AvroOutlet[Data]("out", _.id.toString())
+        val out   = AvroOutlet[Data]("out", _.id.toString())
         val shape = StreamletShape(out)
 
         override def createLogic() = new FlinkStreamletLogic {
           override def buildExecutionGraph = {
-            val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+            val data                  = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
             val ins: DataStream[Data] = env.addSource(FlinkSource.CollectionSourceFunction(data))
             writeStream(out, ins)
           }
@@ -51,7 +51,7 @@ class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matche
       }
 
       val streamletDef = StreamletDefinition("appId", "appVersion", "FlinkIngress", "streamletClass", List(), List(), ConfigFactory.empty)
-      val ctx = new FlinkStreamletContextImpl(streamletDef, env, ConfigFactory.empty)
+      val ctx          = new FlinkStreamletContextImpl(streamletDef, env, ConfigFactory.empty)
       FlinkIngress.setContext(ctx)
       FlinkIngress.run(ctx.config)
     }

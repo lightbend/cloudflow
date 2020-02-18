@@ -39,14 +39,14 @@ class SparkIngressSpec extends SparkScalaTestSupport {
 
       // create sparkStreamlet
       object MySparkIngress extends SparkStreamlet {
-        val out = AvroOutlet[Data]("out", d ⇒ d.id.toString)
+        val out   = AvroOutlet[Data]("out", d ⇒ d.id.toString)
         val shape = StreamletShape(out)
 
         override def createLogic() = new SparkStreamletLogic {
           private def process: Dataset[Data] = {
             implicit val sqlCtx = session.sqlContext
-            val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
-            val m = MemoryStream[Data]
+            val data            = (1 to 10).map(i ⇒ Data(i, s"name$i"))
+            val m               = MemoryStream[Data]
             m.addData(data)
             m.toDF.as[Data]
           }
@@ -72,4 +72,3 @@ class SparkIngressSpec extends SparkScalaTestSupport {
     }
   }
 }
-

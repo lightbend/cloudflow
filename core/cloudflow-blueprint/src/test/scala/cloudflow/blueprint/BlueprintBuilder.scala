@@ -27,7 +27,7 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
    * Defines the given streamlets to be used in the blueprint, adds / uses a randomly named reference for every provided streamlet.
    */
   def unconnectedBlueprint(streamletDescriptors: StreamletDescriptor*): Blueprint = {
-    val blueprint = Blueprint()
+    val blueprint   = Blueprint()
     val descriptors = streamletDescriptors.toVector
     // find outlets and inlets of shared schema.
     val defined = blueprint
@@ -47,21 +47,23 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
   def connectedBlueprint(streamletDescriptors: StreamletDescriptor*): Blueprint = {
     val refsAdded = unconnectedBlueprint(streamletDescriptors: _*)
     val connected = streamletDescriptors.sliding(2, 1).foldLeft(refsAdded) { (bp, pair) ⇒
-      val out = pair.head
-      val in = pair.last
+      val out    = pair.head
+      val in     = pair.last
       val outRef = refsAdded.streamlets.find(_.className == out.className).get
-      val inRef = refsAdded.streamlets.find(_.className == in.className).get
+      val inRef  = refsAdded.streamlets.find(_.className == in.className).get
 
-      out.outlets.flatMap { outlet ⇒
-        in.inlets.filter(_.schema == outlet.schema).map { inlet ⇒
-          StreamletConnection(
-            s"${outRef.name}.${outlet.name}",
-            s"${inRef.name}.${inlet.name}"
-          )
+      out.outlets
+        .flatMap { outlet ⇒
+          in.inlets.filter(_.schema == outlet.schema).map { inlet ⇒
+            StreamletConnection(
+              s"${outRef.name}.${outlet.name}",
+              s"${inRef.name}.${inlet.name}"
+            )
+          }
         }
-      }.foldLeft(bp) { (connectingBlueprint, connection) ⇒
-        connectingBlueprint.connect(connection)
-      }
+        .foldLeft(bp) { (connectingBlueprint, connection) ⇒
+          connectingBlueprint.connect(connection)
+        }
     }
     connected.verify
   }
@@ -88,18 +90,19 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
    * as a path to the inlet / outlet which can be used for connecting streamlets instead of manually constructing strings.
    */
   implicit class StreamletRefOps(streamletRef: StreamletRef) {
-    def inlet(name: String) = s"${streamletRef.name}.$name"
+    def inlet(name: String)  = s"${streamletRef.name}.$name"
     def outlet(name: String) = s"${streamletRef.name}.$name"
-    def in = s"${streamletRef.name}.in"
-    def out = s"${streamletRef.name}.out"
-    def in0 = s"${streamletRef.name}.in-0"
-    def in1 = s"${streamletRef.name}.in-1"
+    def in                   = s"${streamletRef.name}.in"
+    def out                  = s"${streamletRef.name}.out"
+    def in0                  = s"${streamletRef.name}.in-0"
+    def in1                  = s"${streamletRef.name}.in-1"
   }
 
   /**
    * Adds methods to a VerifiedBlueprint for ease of testing.
    */
   implicit class VerifiedBlueprintOps(verifiedBlueprint: VerifiedBlueprint) {
+
     /**
      * Returns a [[VerifiedPortPath]] for an outlet path in the verified blueprint. Fails with a scalatest value if the path is incorrect.
      */

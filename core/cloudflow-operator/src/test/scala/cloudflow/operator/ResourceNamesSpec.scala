@@ -24,17 +24,12 @@ import cloudflow.blueprint._
 import BlueprintBuilder._
 import cloudflow.operator.runner._
 
-class ResourceNamesSpec extends WordSpec
-  with MustMatchers
-  with GivenWhenThen
-  with EitherValues
-  with Inspectors
-  with TestDeploymentContext {
+class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
 
-  val namespace = "resourcetest"
+  val namespace  = "resourcetest"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
   val DNS1035regex = "[a-z]([-a-z0-9]*[a-z0-9])"
@@ -43,21 +38,23 @@ class ResourceNamesSpec extends WordSpec
   // appId + ingress name more than 63 characters. Each 40 characters.
   val testApp01 = {
     val appVersion = "001"
-    val appId = "longappid9012345678900123456789001234567890"
-    val image = "image-1"
+    val appId      = "longappid9012345678900123456789001234567890"
+    val image      = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-    val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+    val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
     val ingressRef = ingress.ref("longingressname6789012345678901234567890012345678900123456789001234567890")
-    val egressRef = egress.ref("longegressname56789012345678901234567890012345678900123456789001234567890")
+    val egressRef  = egress.ref("longegressname56789012345678901234567890012345678900123456789001234567890")
 
     val verifiedBlueprint = Blueprint()
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
       .connect(ingressRef.out, egressRef.in)
-      .verified.right.value
+      .verified
+      .right
+      .value
 
     CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
   }
@@ -65,21 +62,23 @@ class ResourceNamesSpec extends WordSpec
   // appId 80 characters.
   val testApp02 = {
     val appVersion = "001"
-    val appId = "longappid9012345678900123456789001234567890012345678900123456789012345678901234567890"
-    val image = "image-1"
+    val appId      = "longappid9012345678900123456789001234567890012345678900123456789012345678901234567890"
+    val image      = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-    val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+    val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
     val ingressRef = ingress.ref("shortingress")
-    val egressRef = egress.ref("shortegress")
+    val egressRef  = egress.ref("shortegress")
 
     val verifiedBlueprint = Blueprint()
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
       .connect(ingressRef.out, egressRef.in)
-      .verified.right.value
+      .verified
+      .right
+      .value
 
     CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
   }
@@ -179,37 +178,37 @@ class ResourceNamesSpec extends WordSpec
 
   "A name" should {
     "keep only relevant letters when DNS-1035 normalized" in {
-      val orig = "This-αêÍ_and that.and"
+      val orig     = "This-αêÍ_and that.and"
       val expected = "this-ei-andthat-and"
       Name.makeDNS1039Compatible(orig) mustEqual expected
     }
 
     "not end or start with '-' after removing illegal characters when DNS-1035 normalized" in {
-      val orig = "α-test-a-α"
+      val orig     = "α-test-a-α"
       val expected = "test-a"
       Name.makeDNS1039Compatible(orig) mustEqual expected
     }
 
     "not end or start with '-' when DNS-1035 normalized, with truncate" in {
-      val orig = "-2345678901234567890123456789012345678901234567890123456789012.456"
+      val orig     = "-2345678901234567890123456789012345678901234567890123456789012.456"
       val expected = "2345678901234567890123456789012345678901234567890123456789012"
       Name.makeDNS1039Compatible(orig) mustEqual expected
     }
 
     "keep only relevant letters when DNS-1123 normalized" in {
-      val orig = "This-αêÍ_and that.and-some_àôô.more"
+      val orig     = "This-αêÍ_and that.and-some_àôô.more"
       val expected = "this-ei-andthat.and-some-aoo.more"
       Name.makeDNS1123Compatible(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' after removing illegal characters when DNS-1123 normalized" in {
-      val orig = "α.test.a-α"
+      val orig     = "α.test.a-α"
       val expected = "test.a"
       Name.makeDNS1123Compatible(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' when DNS-1123 normalized, with truncate" in {
-      val orig = "-2345678901234567890123456789012345678901234567890123456789012.456"
+      val orig     = "-2345678901234567890123456789012345678901234567890123456789012.456"
       val expected = "2345678901234567890123456789012345678901234567890123456789012"
       Name.makeDNS1123Compatible(orig) mustEqual expected
     }
@@ -218,17 +217,19 @@ class ResourceNamesSpec extends WordSpec
   "Blueprint verification" should {
     "fail with non compliant names" in {
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("bad-Ingress")
-      val egressRef = egress.ref("bad-Egress")
+      val egressRef  = egress.ref("bad-Egress")
 
       Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.left.value mustEqual Vector(InvalidStreamletName("bad-Ingress"), InvalidStreamletName("bad-Egress"))
+        .verified
+        .left
+        .value mustEqual Vector(InvalidStreamletName("bad-Ingress"), InvalidStreamletName("bad-Egress"))
 
     }
   }

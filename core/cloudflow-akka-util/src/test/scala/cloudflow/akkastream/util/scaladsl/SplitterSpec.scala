@@ -32,15 +32,14 @@ import cloudflow.akkastream.testdata._
 
 class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
   private implicit val system = ActorSystem("SplitterSpec")
-  private implicit val mat = ActorMaterializer()
+  private implicit val mat    = ActorMaterializer()
 
-  override def afterAll: Unit = {
+  override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
-  }
 
   object MyPartitioner extends AkkaStreamlet {
-    val in = AvroInlet[Data]("in")
-    val left = AvroOutlet[BadData]("out-0", _.name.toString)
+    val in    = AvroInlet[Data]("in")
+    val left  = AvroOutlet[BadData]("out-0", _.name.toString)
     val right = AvroOutlet[Data]("out-1", _.id.toString)
     val shape = StreamletShape(in).withOutlets(left, right)
 
@@ -49,19 +48,18 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
         if (data.id % 2 == 0) Right(data) else Left(BadData(data.name))
       }
 
-      def runnableGraph = {
+      def runnableGraph =
         sourceWithOffsetContext(in).to(Splitter.sink(flow, left, right))
-      }
     }
   }
 
   "A Splitter" should {
     "split incoming data according to a splitter flow" in {
       val testkit = AkkaStreamletTestKit(system, mat)
-      val source = Source(Vector(Data(1, "a"), Data(2, "b")))
+      val source  = Source(Vector(Data(1, "a"), Data(2, "b")))
 
-      val in = testkit.inletFromSource(MyPartitioner.in, source)
-      val left = testkit.outletAsTap(MyPartitioner.left)
+      val in    = testkit.inletFromSource(MyPartitioner.in, source)
+      val left  = testkit.outletAsTap(MyPartitioner.left)
       val right = testkit.outletAsTap(MyPartitioner.right)
 
       testkit.run(MyPartitioner, in, List(left, right), () ⇒ {

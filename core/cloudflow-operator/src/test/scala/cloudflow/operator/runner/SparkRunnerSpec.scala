@@ -25,44 +25,42 @@ import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
 import play.api.libs.json._
 import skuber.Volume
 
-class SparkRunnerSpec extends WordSpecLike
-  with OptionValues
-  with MustMatchers
-  with GivenWhenThen
-  with TestDeploymentContext {
+class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
 
   import BlueprintBuilder._
-  val appId = "some-app-id"
-  val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-  val clusterName = "cloudflow-strimzi"
-  val pvcName = "my-pvc"
-  val namespace = "test-ns"
+  val appId             = "some-app-id"
+  val image             = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
+  val clusterName       = "cloudflow-strimzi"
+  val pvcName           = "my-pvc"
+  val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
-  val prometheusConfig = PrometheusConfig("(prometheus rules)")
+  val prometheusConfig  = PrometheusConfig("(prometheus rules)")
 
   "SparkRunner" should {
 
-    val appId = "some-app-id"
+    val appId      = "some-app-id"
     val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
-    val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-    val namespace = "test-ns"
+    val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
+    val namespace  = "test-ns"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-    val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+    val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
     val ingressRef = ingress.ref("ingress")
-    val egressRef = egress.ref("egress")
+    val egressRef  = egress.ref("egress")
 
     val verifiedBlueprint = Blueprint()
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
       .connect(ingressRef.out, egressRef.in)
-      .verified.right.value
+      .verified
+      .right
+      .value
 
     val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
@@ -125,7 +123,7 @@ class SparkRunnerSpec extends WordSpecLike
       )
 
       val jsonString = Json.toJson(crd).toString()
-      val fromJson = Json.parse(jsonString).validate[CR]
+      val fromJson   = Json.parse(jsonString).validate[CR]
       fromJson match {
         case err: JsError ⇒ fail(err.toString)
         case _            ⇒

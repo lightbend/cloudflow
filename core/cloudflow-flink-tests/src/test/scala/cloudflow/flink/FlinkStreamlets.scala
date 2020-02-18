@@ -31,7 +31,7 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
   //         the partitioner function explicitly
   val inTaxiRide = AvroInlet[TaxiRide]("in-taxiride")
   val inTaxiFare = AvroInlet[TaxiFare]("in-taxifare")
-  val out = AvroOutlet[TaxiRideFare]("out", _.rideId.toString)
+  val out        = AvroOutlet[TaxiRideFare]("out", _.rideId.toString)
 
   // Step 2: Define the shape of the streamlet. In this example the streamlet
   //         has 2 inlets and 1 outlet
@@ -43,7 +43,9 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
     override def buildExecutionGraph = {
       val rides: DataStream[TaxiRide] =
         readStream(inTaxiRide)
-          .filter { ride ⇒ ride.isStart.booleanValue }
+          .filter { ride ⇒
+            ride.isStart.booleanValue
+          }
           .keyBy("rideId")
 
       // rides.print()
@@ -68,10 +70,10 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
   class EnrichmentFunction extends RichCoFlatMapFunction[TaxiRide, TaxiFare, TaxiRideFare] {
 
     // keyed, managed state
-    lazy val rideState: ValueState[TaxiRide] = getRuntimeContext.getState(
-      new ValueStateDescriptor[TaxiRide]("saved ride", classOf[TaxiRide]))
-    lazy val fareState: ValueState[TaxiFare] = getRuntimeContext.getState(
-      new ValueStateDescriptor[TaxiFare]("saved fare", classOf[TaxiFare]))
+    lazy val rideState: ValueState[TaxiRide] =
+      getRuntimeContext.getState(new ValueStateDescriptor[TaxiRide]("saved ride", classOf[TaxiRide]))
+    lazy val fareState: ValueState[TaxiFare] =
+      getRuntimeContext.getState(new ValueStateDescriptor[TaxiFare]("saved fare", classOf[TaxiFare]))
 
     override def flatMap1(ride: TaxiRide, out: Collector[TaxiRideFare]): Unit = {
       val fare = fareState.value

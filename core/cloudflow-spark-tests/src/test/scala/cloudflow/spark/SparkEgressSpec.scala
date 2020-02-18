@@ -18,7 +18,7 @@ package cloudflow.spark
 
 import scala.concurrent.duration._
 
-import org.apache.spark.sql.{ Dataset, SparkSession, Encoder }
+import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import org.apache.spark.sql.streaming.OutputMode
 
 import cloudflow.streamlets.StreamletShape
@@ -38,16 +38,17 @@ class SparkEgressSpec extends SparkScalaTestSupport {
         session.sql(s"select * from $queryName").as[T].collect().toList
 
       object MySparkEgress extends SparkStreamlet {
-        val in = AvroInlet[Data]("in")
+        val in    = AvroInlet[Data]("in")
         val shape = StreamletShape(in)
         override def createLogic() = new SparkStreamletLogic {
-          override def buildStreamingQueries = {
+          override def buildStreamingQueries =
             process(readStream(in))
-          }
 
           private def process(inDataset: Dataset[Data]): StreamletQueryExecution = {
             val q1 = inDataset
-              .map { d ⇒ d.name }
+              .map { d ⇒
+                d.name
+              }
               .writeStream
               .format("memory")
               .option("truncate", false)
@@ -56,7 +57,9 @@ class SparkEgressSpec extends SparkScalaTestSupport {
               .start()
 
             val q2 = inDataset
-              .map { d ⇒ d.name.toUpperCase }
+              .map { d ⇒
+                d.name.toUpperCase
+              }
               .writeStream
               .format("memory")
               .option("truncate", false)
@@ -86,4 +89,3 @@ class SparkEgressSpec extends SparkScalaTestSupport {
     }
   }
 }
-

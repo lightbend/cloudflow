@@ -26,11 +26,10 @@ class StreamletDescriptorSpec extends WordSpec with MustMatchers {
   "StreamletDescriptor" must {
     "produce a descriptor for a valid Streamlet" in {
       val testStreamlet = new CoffeeIngress
-      val jsonStr = StreamletDescriptor.jsonDescriptor(testStreamlet)
-      val json = JsonParser(jsonStr)
+      val jsonStr       = StreamletDescriptor.jsonDescriptor(testStreamlet)
+      val json          = JsonParser(jsonStr)
       json mustBeAStreamletDescriptorFor (testStreamlet)
     }
   }
 
 }
-

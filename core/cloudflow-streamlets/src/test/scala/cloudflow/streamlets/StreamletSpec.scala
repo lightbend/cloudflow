@@ -29,7 +29,7 @@ class StreamletSpec extends WordSpec with MustMatchers {
 
     "produce a valid descriptor" in {
       val jsonStr = simpleStreamlet.jsonDescriptor
-      val json = JsonParser(jsonStr)
+      val json    = JsonParser(jsonStr)
       json mustBeAStreamletDescriptorFor (simpleStreamlet)
     }
 

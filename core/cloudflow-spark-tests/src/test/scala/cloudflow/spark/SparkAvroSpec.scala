@@ -28,7 +28,11 @@ class SparkAvroSpec extends SparkScalaTestSupport {
   "SparkAvroEncoder" should {
     "preserve List structure in objects with nested collections" in {
 
-      val socks = Product("123456789", "Socks", "Warm in winter", Seq("clothing", "sock", "socks"), Seq(Sku("1", "sock-1", Some(1), Some(10)), Sku("2", "sock-2", Some(2), Some(20))))
+      val socks = Product("123456789",
+                          "Socks",
+                          "Warm in winter",
+                          Seq("clothing", "sock", "socks"),
+                          Seq(Sku("1", "sock-1", Some(1), Some(10)), Sku("2", "sock-2", Some(2), Some(20))))
 
       import sqlCtx.implicits._
 

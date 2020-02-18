@@ -37,14 +37,14 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
   /**
    * Creates a random streamlet (descriptor) which can be further modified with the builder methods in [[StreamletDescriptorBuilderOps]].
    */
-  def randomStreamlet(): StreamletDescriptor = buildStreamletDescriptor(randomClassName)
+  def randomStreamlet(): StreamletDescriptor                = buildStreamletDescriptor(randomClassName)
   def randomStreamlet(runtime: String): StreamletDescriptor = buildStreamletDescriptor(randomClassName, runtime)
 
   /**
    * Creates a streamlet (descriptor) which can be further modified with the builder methods in [[StreamletDescriptorBuilderOps]].
    */
   def streamlet(className: String, runtime: String): StreamletDescriptor = buildStreamletDescriptor(className, runtime)
-  def streamlet(className: String): StreamletDescriptor = buildStreamletDescriptor(className)
+  def streamlet(className: String): StreamletDescriptor                  = buildStreamletDescriptor(className)
 
   /**
    * Adds builder methods to [[StreamletDescriptor]] for ease of testing. (In the docs, `StreamletDescriptor` and `streamlet` are used interchangeably.)
@@ -52,6 +52,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
    * can then be easily modified by using `asIngress`, `asProcessor`, ... to a shape that is required for testing.
    */
   implicit class StreamletDescriptorBuilderOps(streamletDescriptor: StreamletDescriptor) {
+
     /** Transforms the descriptor into an ingress */
     def asIngress(outlets: Vector[OutletDescriptor]) = streamletDescriptor.copy(
       outlets = outlets,
@@ -61,11 +62,11 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
     // helpers to quickly get to well known inlets and outlets
     // using `lift` to get optional result, so scalatest value can be used, for more information on failure.
     def outlet = streamletDescriptor.outlets.lift(0).value
-    def inlet = streamletDescriptor.inlets.lift(0).value
-    def in = inlet
-    def out = outlet
-    def in0 = inlet
-    def in1 = streamletDescriptor.inlets.lift(1).value
+    def inlet  = streamletDescriptor.inlets.lift(0).value
+    def in     = inlet
+    def out    = outlet
+    def in0    = inlet
+    def in1    = streamletDescriptor.inlets.lift(1).value
 
     /**
      * Transforms the streamlet into an ingress. A schema is auto generated for `T` and used in the outlet.
@@ -84,7 +85,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
      * Transforms the streamlet into a processor. A schema is auto generated for `I` and `O`, used in the outlet and inlet.
      */
     def asProcessor[I: ClassTag: SchemaFor, O: ClassTag: SchemaFor](inletName: String = "in", outletName: String = "out") = {
-      val inletSchemaName = classTag[I].runtimeClass.getName
+      val inletSchemaName  = classTag[I].runtimeClass.getName
       val outletSchemaName = classTag[O].runtimeClass.getName
       streamletDescriptor.copy(
         outlets = Vector(createOutletDescriptor[O](outletName, outletSchemaName)),
@@ -112,7 +113,9 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
     def asMerge[I0: ClassTag: SchemaFor, I1: ClassTag: SchemaFor, O: ClassTag: SchemaFor]: StreamletDescriptor = asMerge[I0, I1, O]()
 
     def asMerge[I0: ClassTag: SchemaFor, I1: ClassTag: SchemaFor, O: ClassTag: SchemaFor](
-        inletName0: String = "in-0", inletName1: String = "in-1", outletName: String = "out"
+        inletName0: String = "in-0",
+        inletName1: String = "in-1",
+        outletName: String = "out"
     ) = {
       val inletSchemaName0 = classTag[I1].runtimeClass.getName
       val inletSchemaName1 = classTag[I1].runtimeClass.getName
@@ -132,9 +135,11 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
     def asSplitter[I: ClassTag: SchemaFor, O0: ClassTag: SchemaFor, O1: ClassTag: SchemaFor]: StreamletDescriptor = asSplitter[I, O0, O1]()
 
     def asSplitter[I: ClassTag: SchemaFor, O0: ClassTag: SchemaFor, O1: ClassTag: SchemaFor](
-        inletName: String = "in", outletName0: String = "out-0", outletName1: String = "out-1"
+        inletName: String = "in",
+        outletName0: String = "out-0",
+        outletName1: String = "out-1"
     ) = {
-      val inletSchemaName = classTag[I].runtimeClass.getName
+      val inletSchemaName   = classTag[I].runtimeClass.getName
       val outletSchemaName0 = classTag[O0].runtimeClass.getName
       val outletSchemaName1 = classTag[O1].runtimeClass.getName
       streamletDescriptor.copy(
@@ -149,31 +154,29 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
     /**
      * Adds volume mounts to the streamlet.
      */
-    def withVolumeMounts(volumeMounts: VolumeMountDescriptor*): StreamletDescriptor = {
+    def withVolumeMounts(volumeMounts: VolumeMountDescriptor*): StreamletDescriptor =
       streamletDescriptor.copy(volumeMounts = volumeMounts.toVector)
-    }
 
     /**
      * Adds config parameters to the streamlet.
      */
-    def withConfigParameters(descriptors: ConfigParameterDescriptor*): StreamletDescriptor = {
+    def withConfigParameters(descriptors: ConfigParameterDescriptor*): StreamletDescriptor =
       streamletDescriptor.copy(configParameters = descriptors.toVector)
-    }
+
     /**
      * Adds attributes to the streamlet.
      */
-    def withAttributes(attributes: Vector[StreamletAttributeDescriptor]): StreamletDescriptor = {
+    def withAttributes(attributes: Vector[StreamletAttributeDescriptor]): StreamletDescriptor =
       streamletDescriptor.copy(attributes = attributes)
-    }
 
-    def withRuntime(runtime: String): StreamletDescriptor = {
+    def withRuntime(runtime: String): StreamletDescriptor =
       streamletDescriptor.copy(runtime = StreamletRuntimeDescriptor(runtime))
-    }
 
     /**
      * Adds a server attribute to the streamlet.
      */
-    def withServerAttribute: StreamletDescriptor = withAttributes(Vector(StreamletAttributeDescriptor("server", "cloudflow.internal.server.container-port")))
+    def withServerAttribute: StreamletDescriptor =
+      withAttributes(Vector(StreamletAttributeDescriptor("server", "cloudflow.internal.server.container-port")))
 
     /** creates a random reference name*/
     def randomRefName: String = "i" + java.util.UUID.randomUUID.toString // TODO use gen
@@ -196,7 +199,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
   def buildStreamletDescriptor(
       className: String,
       runtime: String
-  ): StreamletDescriptor = {
+  ): StreamletDescriptor =
     StreamletDescriptor(
       className = className,
       runtime = StreamletRuntimeDescriptor(runtime),
@@ -208,7 +211,6 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
       attributes = Vector.empty,
       volumeMounts = Vector.empty
     )
-  }
 
   def buildStreamletDescriptor(
       className: String,
@@ -220,7 +222,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
       configParameters: Vector[ConfigParameterDescriptor],
       attributes: Vector[StreamletAttributeDescriptor],
       volumeMounts: Vector[VolumeMountDescriptor]
-  ): StreamletDescriptor = {
+  ): StreamletDescriptor =
     StreamletDescriptor(
       className = className,
       runtime = runtime,
@@ -232,14 +234,13 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
       attributes = attributes,
       volumeMounts = volumeMounts
     )
-  }
 
   /**
    * Creates a streamlet descriptor from defaults. Use the StreamletDescriptorBuilderOps to modify.
    */
   def buildStreamletDescriptor(
       className: String
-  ): StreamletDescriptor = {
+  ): StreamletDescriptor =
     StreamletDescriptor(
       className = className,
       runtime = StreamletRuntimeDescriptor("akka"),
@@ -251,15 +252,12 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
       attributes = Vector.empty,
       volumeMounts = Vector.empty
     )
-  }
 
-  def createInletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
+  def createInletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) =
     InletDescriptor(name, createSchemaDescriptor(schemaName))
-  }
 
-  def createOutletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
+  def createOutletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) =
     OutletDescriptor(name, createSchemaDescriptor(schemaName))
-  }
 
   def createSchemaDescriptor[T: ClassTag: SchemaFor](schemaName: String) = {
     implicit val schema = implicitly[SchemaFor[T]].schema(DefaultFieldMapper)

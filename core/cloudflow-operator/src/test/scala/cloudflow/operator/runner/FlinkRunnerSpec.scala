@@ -25,44 +25,42 @@ import cloudflow.operator.runner.FlinkResource._
 import play.api.libs.json._
 import skuber.Volume
 
-class FlinkRunnerSpec extends WordSpecLike
-  with OptionValues
-  with MustMatchers
-  with GivenWhenThen
-  with TestDeploymentContext {
+class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
 
   import BlueprintBuilder._
-  val appId = "some-app-id"
-  val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-  val clusterName = "cloudflow-strimzi"
-  val pvcName = "my-pvc"
-  val namespace = "test-ns"
+  val appId             = "some-app-id"
+  val image             = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
+  val clusterName       = "cloudflow-strimzi"
+  val pvcName           = "my-pvc"
+  val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
-  val prometheusConfig = PrometheusConfig("(prometheus rules)")
+  val prometheusConfig  = PrometheusConfig("(prometheus rules)")
 
   "FlinkRunner" should {
 
-    val appId = "some-app-id"
+    val appId      = "some-app-id"
     val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
-    val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-    val namespace = "test-ns"
+    val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
+    val namespace  = "test-ns"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-    val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+    val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
     val ingressRef = ingress.ref("ingress")
-    val egressRef = egress.ref("egress")
+    val egressRef  = egress.ref("egress")
 
     val verifiedBlueprint = Blueprint()
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
       .connect(ingressRef.out, egressRef.in)
-      .verified.right.value
+      .verified
+      .right
+      .value
 
     val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
@@ -115,13 +113,12 @@ class FlinkRunnerSpec extends WordSpecLike
     "create a valid FlinkApplication CR without resource requests" in {
 
       val dc = ctx.copy(
-        flinkRunnerSettings =
-          FlinkRunnerSettings(
-            2,
-            jobManagerSettings = FlinkJobManagerSettings(1, FlinkPodResourceSettings()),
-            taskManagerSettings = FlinkTaskManagerSettings(2, FlinkPodResourceSettings()),
-            prometheusRules = "sample rules"
-          )
+        flinkRunnerSettings = FlinkRunnerSettings(
+          2,
+          jobManagerSettings = FlinkJobManagerSettings(1, FlinkPodResourceSettings()),
+          taskManagerSettings = FlinkTaskManagerSettings(2, FlinkPodResourceSettings()),
+          prometheusRules = "sample rules"
+        )
       )
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -143,7 +140,7 @@ class FlinkRunnerSpec extends WordSpecLike
       )
 
       val jsonString = Json.toJson(cr).toString()
-      val fromJson = Json.parse(jsonString).validate[CR]
+      val fromJson   = Json.parse(jsonString).validate[CR]
       fromJson match {
         case err: JsError ⇒ fail(err.toString)
         case _            ⇒

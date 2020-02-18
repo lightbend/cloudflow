@@ -25,17 +25,17 @@ import cloudflow.spark.sql.SQLImplicits._
 
 class SparkAvroDecoderSuite extends WordSpec with Matchers {
 
-  val simpleCodec: Codec[Simple] = new AvroCodec(Simple.SCHEMA$)
+  val simpleCodec: Codec[Simple]   = new AvroCodec(Simple.SCHEMA$)
   val complexCodec: Codec[Complex] = new AvroCodec(Complex.SCHEMA$)
 
   "SparkAvroDecoder" should {
     "decode a simple case class" in {
 
-      val sample = Simple("sphere")
+      val sample  = Simple("sphere")
       val encoded = simpleCodec.encode(sample)
 
       val decoder = new SparkAvroDecoder[Simple](Simple.SCHEMA$.toString)
-      val result = decoder.decode(encoded)
+      val result  = decoder.decode(encoded)
       result.getAs[String](0) should be(sample.name)
     }
 
@@ -45,7 +45,7 @@ class SparkAvroDecoderSuite extends WordSpec with Matchers {
       val encoded = complexCodec.encode(complex)
 
       val decoder = new SparkAvroDecoder[Complex](Complex.SCHEMA$.toString)
-      val result = decoder.decode(encoded)
+      val result  = decoder.decode(encoded)
       result.getAs[Row](0).getAs[String](0) should be(complex.simple.name)
       result.getAs[Int](1) should be(complex.count)
       result.getAs[Double](2) should be(complex.range)
