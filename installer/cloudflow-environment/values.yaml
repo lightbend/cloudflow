@@ -26,7 +26,7 @@ kafka:
     deletePersistentVolumeClaimsOnDelete: false
     useDedicatedNodes: false
     kafka:
-      version: 2.3.0
+      version: 2.3.1
       config:
         offsets.topic.replication.factor: 3
         transaction.state.log.replication.factor: 3
