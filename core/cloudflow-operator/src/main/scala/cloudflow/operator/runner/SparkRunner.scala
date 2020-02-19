@@ -28,7 +28,7 @@ trait PatchProvider[T <: Patch] {
   def patchFormat: Writes[T]
   def patch(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): T
@@ -53,30 +53,31 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
   def resource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
+    val ownerReferences = CloudflowOwnerReferences(app)
     val _spec = patch(deployment, app, namespace, updateLabels)
     val name  = Name.ofSparkApplication(deployment.name)
     CustomResource[Spec, Status](_spec.spec)
-      .withMetadata(ObjectMeta(name = name, namespace = namespace))
+      .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences.list))
   }
 
   def patch(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
     val appLabels     = CloudflowLabels(app)
-    val appId         = app.appId
-    val agentPaths    = app.agentPaths
+    val appId         = app.spec.appId
+    val agentPaths    = app.spec.agentPaths
     val image         = deployment.image
     val configMapName = Name.ofConfigMap(deployment.name)
     val configMaps    = Seq(NamePath(configMapName, Runner.ConfigMapMountPath))
 
-    val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
     // Streamlet volume mounting
     // Volume mounting

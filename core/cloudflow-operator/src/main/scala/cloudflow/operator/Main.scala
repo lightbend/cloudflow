@@ -23,6 +23,8 @@ import akka.stream._
 import com.typesafe.config.{ Config, ConfigRenderOptions }
 import skuber._
 import skuber.api.Configuration
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import skuber.apiextensions._
 import skuber.json.format._
 
@@ -45,8 +47,9 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
-      val client = connectToKubernetes()
-      installProtocolVersion(client.usingNamespace(settings.podNamespace))
+      val client          = connectToKubernetes()
+      val ownerReferences = getPodOwnerReferences(settings, client)
+      installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
 
       Operator.handleAppEvents(client)
@@ -87,6 +90,11 @@ object Main extends {
       """.stripMargin)
   }
 
+  private def getPodOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
+    CloudflowOwnerReferences(
+      Await.result(client.get[Pod](settings.podName).map(pod => pod.metadata.ownerReferences), 10 seconds)
+    )
+
   private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
     val conf   = Configuration.defaultK8sConfig
     val client = k8sInit(conf).usingNamespace("")
@@ -120,11 +128,12 @@ object Main extends {
     )
   }
 
-  private def installProtocolVersion(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
+  private def installProtocolVersion(client: skuber.api.client.KubernetesClient,
+                                     ownerReferences: CloudflowOwnerReferences)(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
     Await.ready(
       client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {
-        _.fold(client.create(Operator.ProtocolVersionConfigMap)) { configMap ⇒
+        _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap ⇒
           if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
             client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))
           } else {

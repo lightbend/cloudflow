@@ -15,18 +15,12 @@
  */
 
 package cloudflow.operator
-package action
 
-import scala.collection.immutable._
+import skuber.OwnerReference
 
-import skuber._
+case class CloudflowOwnerReferences(list: List[OwnerReference])
 
-import cloudflow.operator.runner._
-
-object SparkRunnerActions extends RunnerActions(SparkRunner) {
-  def apply(
-      newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      namespace: String
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = actions(newApp, currentApp, namespace)
+object CloudflowOwnerReferences {
+  def apply(app: CloudflowApplication.CR): CloudflowOwnerReferences =
+    CloudflowOwnerReferences(List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true))))
 }

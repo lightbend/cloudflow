@@ -39,12 +39,13 @@ object AkkaRunner extends Runner[Deployment] {
 
   def resource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): Deployment = {
     val labels  = CloudflowLabels(app)
-    val appId   = app.appId
+    val ownerReferences = CloudflowOwnerReferences(app)
+    val appId   = app.spec.appId
     val podName = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
@@ -66,7 +67,7 @@ object AkkaRunner extends Runner[Deployment] {
     val volume = Volume(configMapName, ConfigMapVolumeSource(configMapName))
 
     // Streamlet volume mounting
-    val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
     val pvcRefVolumes =
       streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
     val pvcVolumeMounts = streamletToDeploy
@@ -165,7 +166,7 @@ object AkkaRunner extends Runner[Deployment] {
 
     val deploymentResource = Deployment(
       metadata =
-        ObjectMeta(name = podName, namespace = namespace, labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent))
+        ObjectMeta(name = podName, namespace = namespace, labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent), ownerReferences = ownerReferences.list)
     ).withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
       .withTemplate(template)
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))

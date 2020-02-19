@@ -43,13 +43,13 @@ object FlinkRunner extends Runner[CR] {
 
   def resource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): CR = {
 
     val image             = deployment.image
-    val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
     val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy)
@@ -106,7 +106,8 @@ object FlinkRunner extends Runner[CR] {
     val name      = Name.ofFlinkApplication(deployment.name)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.appId)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
+    val ownerReferences = CloudflowOwnerReferences(app)
 
     CustomResource[Spec, Status](jobSpec)
       .withMetadata(
@@ -114,7 +115,8 @@ object FlinkRunner extends Runner[CR] {
           name = name,
           namespace = namespace,
           annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
-          labels = labels
+          labels = labels,
+          ownerReferences = ownerReferences.list
         )
       )
   }
@@ -143,7 +145,7 @@ object FlinkRunner extends Runner[CR] {
    * // ]
    */
   private def makeVolumesSpec(deployment: StreamletDeployment,
-                              app: CloudflowApplication.Spec,
+                              app: CloudflowApplication.CR,
                               streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
     // config map
     val configMapName   = Name.ofConfigMap(deployment.name)
@@ -153,7 +155,7 @@ object FlinkRunner extends Runner[CR] {
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
     // persistent storage
-    val pvcName   = Name.ofPVCInstance(app.appId)
+    val pvcName   = Name.ofPVCInstance(app.spec.appId)
     val pvcVolume = Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef(pvcName))
 
     // Streamlet volume mounting
@@ -194,8 +196,8 @@ object FlinkRunner extends Runner[CR] {
     ) ++ streamletVolumeMount
   }
 
-  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.Spec): String = {
-    val agentPath  = app.agentPaths(CloudflowApplication.PrometheusAgentKey)
+  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.CR): String = {
+    val agentPath  = app.spec.agentPaths(CloudflowApplication.PrometheusAgentKey)
     val port       = PrometheusConfig.PrometheusJmxExporterPort.toString
     val configPath = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     s"-javaagent:$agentPath=$port:$configPath"

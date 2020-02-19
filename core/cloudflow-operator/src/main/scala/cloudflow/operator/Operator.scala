@@ -34,8 +34,11 @@ object Operator {
   val ProtocolVersion              = "1"
   val ProtocolVersionKey           = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
-  val ProtocolVersionConfigMap = ConfigMap(
-    metadata = ObjectMeta(name = ProtocolVersionConfigMapName, labels = Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName)),
+  def ProtocolVersionConfigMap(ownerReferences: CloudflowOwnerReferences) = ConfigMap(
+    // TODO: ownerReference
+    metadata = ObjectMeta(name = ProtocolVersionConfigMapName,
+                          labels = Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName),
+                          ownerReferences = ownerReferences.list),
     data = Map(ProtocolVersionKey -> ProtocolVersion)
   )
 

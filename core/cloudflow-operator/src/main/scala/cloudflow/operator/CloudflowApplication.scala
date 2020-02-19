@@ -107,16 +107,8 @@ object CloudflowApplication {
   val CRD = CustomResourceDefinition[CR]
 
   def apply(applicationSpec: CloudflowApplication.Spec): CR = {
-    import applicationSpec._
     CustomResource(
-      Spec(
-        appId,
-        appVersion,
-        streamlets,
-        connections,
-        deployments,
-        agentPaths
-      )
+      applicationSpec
     )
   }
 

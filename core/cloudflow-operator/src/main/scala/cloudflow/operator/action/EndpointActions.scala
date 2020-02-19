@@ -34,31 +34,32 @@ import cloudflow.blueprint.deployment._
  */
 object EndpointActions {
   def apply(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       namespace: String
   ): Seq[Action[ObjectResource]] = {
     val labels = CloudflowLabels(newApp)
+    val ownerReferences = CloudflowOwnerReferences(newApp)
     def distinctEndpoints(app: CloudflowApplication.Spec) =
       app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
 
-    val currentEndpoints = currentApp.map(distinctEndpoints).getOrElse(Set.empty[Endpoint])
-    val newEndpoints     = distinctEndpoints(newApp)
+    val currentEndpoints = currentApp.map(cr => distinctEndpoints(cr.spec)).getOrElse(Set.empty[Endpoint])
+    val newEndpoints     = distinctEndpoints(newApp.spec)
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
-        Action.delete(serviceResource(endpoint, StreamletDeployment.name(newApp.appId, endpoint.streamlet), namespace, labels))
+        Action.delete(serviceResource(endpoint, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet), namespace, labels, ownerReferences))
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
       Seq(
-        createServiceAction(endpoint, StreamletDeployment.name(newApp.appId, endpoint.streamlet), namespace, labels)
+        createServiceAction(endpoint, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet), namespace, labels, ownerReferences)
       )
     }.toList
     deleteActions ++ createActions
   }
 
-  private def serviceResource(endpoint: Endpoint, streamletDeploymentName: String, namespace: String, labels: CloudflowLabels): Service = {
+  private def serviceResource(endpoint: Endpoint, streamletDeploymentName: String, namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): Service = {
     val servicePort =
       Service.Port(
         name = Name.ofContainerPort(endpoint.containerPort),
@@ -70,7 +71,8 @@ object EndpointActions {
       metadata = ObjectMeta(
         name = Name.ofService(streamletDeploymentName),
         namespace = namespace,
-        labels = labels(Name.ofService(streamletDeploymentName))
+        labels = labels(Name.ofService(streamletDeploymentName)),
+        ownerReferences = ownerReferences.list
       ),
       spec = Some(Service.Spec(ports = List(servicePort)))
     ).withSelector(CloudflowLabels.Name -> Name.ofPod(streamletDeploymentName))
@@ -79,8 +81,9 @@ object EndpointActions {
   private def createServiceAction(endpoint: Endpoint,
                                   streamletDeploymentName: String,
                                   namespace: String,
-                                  labels: CloudflowLabels): CreateServiceAction =
-    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, namespace, labels))
+                                  labels: CloudflowLabels,
+                                  ownerReferences: CloudflowOwnerReferences): CreateServiceAction =
+    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, namespace, labels, ownerReferences))
 
   /**
    * Creates an action for creating a service.
