@@ -6,7 +6,7 @@ on:
     branches:
       - master
   pull_request:
-    
+
 name: Build and Test
 jobs:
   build-and-test-scala:
@@ -16,6 +16,16 @@ jobs:
     - name: Setup environment
       run: |
         make -C .github/workflows/setup setup-local-all
+    - name: Cache SBT ivy cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.ivy2/cache
+        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+    - name: Cache SBT
+      uses: actions/cache@v1
+      with:
+        path: ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
     - name: build-and-test
       env:
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
