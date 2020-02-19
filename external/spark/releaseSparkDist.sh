@@ -52,7 +52,6 @@ $DIR/spark/dev/change-scala-version.sh 2.12
 $DIR/spark/dev/make-distribution.sh --name cloudflow-2.12 --r --tgz -Psparkr -Pscala-2.12 -Phadoop-2.7 -Pkubernetes -Phive
 # remove upstream because hub will use it as the default push repo
 git remote remove upstream
-hub release create -a $DIR/spark/spark-${TAG:1}-bin-cloudflow-2.12.tgz -m "Cloudflow Spark $TAG distribution for K8s" -m "Cloudflow Spark $TAG release." cloudflow-$ORIGIN_BRANCH
 
 # build the Spark image
 tar -zxvf spark-${TAG:1}-bin-cloudflow-2.12.tgz
