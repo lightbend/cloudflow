@@ -1,8 +1,7 @@
-.Cloudflow Guide
+.Using Open Source Cloudflow
 
 * xref:index.adoc[Introducing Cloudflow]
-* xref:streaming-apps-with-cloudflow.adoc[Understanding Streaming Applications with Cloudflow]
-* xref:concepts.adoc[Core Concepts]
+* xref:app-development-process.adoc[The Cloudflow development process]
 
 * xref:get-started:index.adoc[Get started with Cloudflow]
 ** xref:get-started:prepare-development-environment.adoc[Prepare a development environment]

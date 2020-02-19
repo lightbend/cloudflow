@@ -26,8 +26,10 @@ Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. 
 * A CLI, in the form of a `kubectl plugin`, that facilitates manual and scripted management of the application.
 
 == Where To Go Next?
-* link:./docs/current/get-started/index.html[Getting Started with Cloudflow]
-* link:./docs/current/develop/cloudflow-streamlets.html[Developing Applications with Cloudflow]
+* link:./docs/current/index.html[Introducing Cloudflow]
+* link:./docs/current/app-development-process.html[The Cloudflow development process]
+* link:./docs/current/get-started/index.html[Getting started with Cloudflow]
+* link:./docs/current/develop/cloudflow-streamlets.html[Developing applications with Cloudflow]
 * https://github.com/lightbend/cloudflow/blob/master/installer/README.md[Setup Cloudflow on a Kubernetes Cluster]
 * Chat with us on https://gitter.im/lightbend/cloudflow[Gitter]
 * Ask us a question on https://discuss.lightbend.com/c/cloudflow[Discuss]
