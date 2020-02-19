@@ -6,8 +6,8 @@ object Version {
   val AkkaHttp     = "10.1.9"
   val AlpakkaKafka = "2.0.1"
   val Scala        = "2.12.9"
-  val Spark        = "2.4.4"
-  val Flink        = "1.9.2"
+  val Spark        = "2.4.5"
+  val Flink        = "1.10.0"
   val Kafka        = "2.4.0" 
 }
 

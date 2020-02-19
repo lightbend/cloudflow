@@ -250,7 +250,7 @@ object SparkResource {
   final case class Spec(
       `type`: String = "Scala",
       mode: String = "cluster",
-      sparkVersion: String = "2.4.4",
+      sparkVersion: String = "2.4.5",
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
       mainClass: String = "", // required parameter
