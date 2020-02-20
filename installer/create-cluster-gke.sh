@@ -45,8 +45,13 @@ CLUSTER_NAME=$1
 # Versions available for new cluster masters
 # https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#versions_available_for_new_cluster_masters
 # use command `gcloud container get-server-config` to find latest supported master GKE cluster version
+
+CLUSTER_VERSION=`gcloud container get-server-config --format json | jq -r .defaultClusterVersion`
+
+echo "using default cluster version: $CLUSTER_VERSION"
+
 gcloud container clusters create $CLUSTER_NAME \
-  --cluster-version 1.13.11-gke.23  \
+  --cluster-version $CLUSTER_VERSION  \
   --image-type cos \
   --machine-type n1-standard-4 \
   --num-nodes 3 \
