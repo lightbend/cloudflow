@@ -19,11 +19,11 @@
 #
 SCRIPT=`basename ${BASH_SOURCE[0]}`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-TAG=v2.4.4
-ORIGIN_TAG=2.4.4-k8s-client-upgrade
+TAG=v2.4.5
+ORIGIN_TAG=custom-2.4.5
 DOCKER_USERNAME=lightbend
-SPARK_IMAGE_TAG=1.3.0-OpenJDK-2.4.4-cloudflow-2.12
-SPARK_OPERATOR_TAG=1.3.0-OpenJDK-2.4.4-1.0.1-cloudflow-2.12
+SPARK_IMAGE_TAG=1.3.0-OpenJDK-2.4.5-cloudflow-2.12
+SPARK_OPERATOR_TAG=1.3.0-OpenJDK-2.4.5-1.1.0-cloudflow-2.12
 
 hub version > /dev/null 2>&1 || {
   echo "The hub command is not installed. Please install (https://github.com/github/hub) and retry."
@@ -46,6 +46,7 @@ cd $DIR/spark
 git remote add upstream https://github.com/apache/spark.git
 git fetch --tags --all
 git checkout tags/$ORIGIN_TAG -b cloudflow-$ORIGIN_TAG
+
 rm -rf resource-managers/kubernetes/lightbend-build
 $DIR/spark/dev/change-scala-version.sh 2.12
 $DIR/spark/dev/make-distribution.sh --name cloudflow-2.12 --r --tgz -Psparkr -Pscala-2.12 -Phadoop-2.7 -Pkubernetes -Phive
@@ -65,7 +66,7 @@ cd $DIR
 rm -rf $DIR/spark-on-k8s-operator
 git clone https://github.com/GoogleCloudPlatform/spark-on-k8s-operator.git
 cd $DIR/spark-on-k8s-operator
-git checkout f78361119976beb7a147df9cd64e1fdd317b9311 -b spark-operator-1.0.1
+git checkout f78361119976beb7a147df9cd64e1fdd317b9311 -b spark-operator-1.1.0
 # adoptjdk image comes with all packages installed and also is based on ubuntu
 sed -i -e '/RUN apk add --no-cache openssl curl tini/d' Dockerfile
 docker build --no-cache --build-arg SPARK_IMAGE=$DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG -t $DOCKER_USERNAME/sparkoperator:$SPARK_OPERATOR_TAG -f Dockerfile .
