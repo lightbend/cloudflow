@@ -18,6 +18,8 @@ First, make sure that you have the following installed:
 
 Using one of the links below, download the Cloudflow CLI version appropriate for your platform and install it on your local system. Please make sure you have the executable in your path with proper permission settings. For Linux or MacOS, put the executables in `usr/local/bin` with permission settings of `755`.
 
+IMPORTANT: If you have a Lightbend subscription, please use the instructions in the https://developer.lightbend.com/docs/cloudflow/current/install/run-script.html[Enterprise Features] documentation to install Cloudflow instead of the steps on this page.
+
 * https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.0.71-fa7ef6d-darwin-amd64.tar.gz[MacOS]
 
 * https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.0.71-fa7ef6d-linux-amd64.tar.gz[Linux]
