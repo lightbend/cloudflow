@@ -40,22 +40,24 @@ public class SplitterTest extends JUnitSuite {
     // TODO add tests
   }
 
-
   class TestSplitter extends AkkaStreamlet {
     AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
-    AvroOutlet<BadData> badOutlet = AvroOutlet.<BadData>create("bad",  d -> d.name(), BadData.class);
-    AvroOutlet<Data> goodOutlet = AvroOutlet.<Data>create("good",  d -> d.name(), Data.class);
+    AvroOutlet<BadData> badOutlet = AvroOutlet.<BadData>create("bad", d -> d.name(), BadData.class);
+    AvroOutlet<Data> goodOutlet = AvroOutlet.<Data>create("good", d -> d.name(), Data.class);
 
     public StreamletShape shape() {
-     return StreamletShape.createWithInlets(inlet).withOutlets(badOutlet, goodOutlet);
+      return StreamletShape.createWithInlets(inlet).withOutlets(badOutlet, goodOutlet);
     }
 
     public RunnableGraphStreamletLogic createLogic() {
-      return new RunnableGraphStreamletLogic(getContext()){
+      return new RunnableGraphStreamletLogic(getContext()) {
         public RunnableGraph createRunnableGraph() {
-          return getSourceWithCommittableContext(inlet).to(Splitter.sink(createFlow(), badOutlet, goodOutlet, getContext()));
+          return getSourceWithCommittableContext(inlet)
+              .to(Splitter.sink(createFlow(), badOutlet, goodOutlet, getContext()));
         }
-        private FlowWithContext<Data, Committable, Either<BadData, Data>, Committable, NotUsed> createFlow() {
+
+        private FlowWithContext<Data, Committable, Either<BadData, Data>, Committable, NotUsed>
+            createFlow() {
           return FlowWithContext.<Data, Committable>create().map(d -> Either.right(d));
         }
       };

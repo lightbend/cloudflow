@@ -35,9 +35,8 @@ public class HttpServerTest extends JUnitSuite {
     // TODO add tests
   }
 
-
   class TestHttpServer extends AkkaServerStreamlet {
-    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
+    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> d.name(), Data.class);
     Unmarshaller<ByteString, Data> fbu = Jackson.byteStringUnmarshaller(Data.class);
 
     public StreamletShape shape() {
@@ -50,7 +49,7 @@ public class HttpServerTest extends JUnitSuite {
   }
 
   class TestStreamingHttpServer extends AkkaServerStreamlet {
-    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
+    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> d.name(), Data.class);
     Unmarshaller<ByteString, Data> fbu = Jackson.byteStringUnmarshaller(Data.class);
     EntityStreamingSupport entityStreamingSupport = EntityStreamingSupport.json();
 
@@ -59,7 +58,8 @@ public class HttpServerTest extends JUnitSuite {
     }
 
     public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefaultStreaming(this, outlet, fbu, entityStreamingSupport, getContext());
+      return HttpServerLogic.createDefaultStreaming(
+          this, outlet, fbu, entityStreamingSupport, getContext());
     }
   }
 }
