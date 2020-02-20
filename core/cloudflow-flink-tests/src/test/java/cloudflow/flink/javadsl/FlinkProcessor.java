@@ -34,20 +34,23 @@ public class FlinkProcessor extends FlinkStreamlet {
 
   // Step 2: Define the shape of the streamlet. In this example the streamlet
   //         has 1 inlet and 1 outlet
-  @Override public StreamletShape shape() {
+  @Override
+  public StreamletShape shape() {
     return StreamletShape.createWithInlets(in).withOutlets(out);
   }
 
   // Step 3: Provide custom implementation of `FlinkStreamletLogic` that defines
   //         the behavior of the streamlet
-  @Override public FlinkStreamletLogic createLogic() {
+  @Override
+  public FlinkStreamletLogic createLogic() {
     return new FlinkStreamletLogic(getContext()) {
-      @Override public void buildExecutionGraph() {
+      @Override
+      public void buildExecutionGraph() {
 
         DataStream<Data> ins =
-          this.<Data>readStream(in, Data.class)
-            .map((Data d) -> d)
-            .returns(new TypeHint<Data>(){}.getTypeInfo());
+            this.<Data>readStream(in, Data.class)
+                .map((Data d) -> d)
+                .returns(new TypeHint<Data>() {}.getTypeInfo());
 
         DataStream<Simple> simples = ins.map((Data d) -> new Simple(d.name()));
         DataStreamSink<Simple> sink = writeStream(out, simples, Simple.class);

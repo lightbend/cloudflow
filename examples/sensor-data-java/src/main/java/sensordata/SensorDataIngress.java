@@ -28,14 +28,16 @@ import cloudflow.streamlets.avro.AvroOutlet;
 import akka.http.javadsl.marshallers.jackson.Jackson;
 
 public class SensorDataIngress extends AkkaServerStreamlet {
-  AvroOutlet<SensorData> out =  AvroOutlet.<SensorData>create("out", SensorData.class)
+  AvroOutlet<SensorData> out =
+      AvroOutlet.<SensorData>create("out", SensorData.class)
           .withPartitioner(RoundRobinPartitioner.getInstance());
 
   public StreamletShape shape() {
-   return StreamletShape.createWithOutlets(out);
+    return StreamletShape.createWithOutlets(out);
   }
 
   public AkkaStreamletLogic createLogic() {
-    return HttpServerLogic.createDefault(this, out, Jackson.byteStringUnmarshaller(SensorData.class), getContext());
+    return HttpServerLogic.createDefault(
+        this, out, Jackson.byteStringUnmarshaller(SensorData.class), getContext());
   }
 }

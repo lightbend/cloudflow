@@ -71,7 +71,7 @@ lazy val events =
 
 lazy val akkastream =
   cloudflowModule("cloudflow-akka")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
     .dependsOn(streamlets)
     .settings(
       libraryDependencies ++= Vector(
@@ -85,7 +85,7 @@ lazy val akkastream =
 
 lazy val akkastreamUtil =
   cloudflowModule("cloudflow-akka-util")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
       libraryDependencies ++= Vector(
@@ -105,7 +105,7 @@ lazy val akkastreamUtil =
 
 lazy val akkastreamTestkit =
   cloudflowModule("cloudflow-akka-testkit")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
     .dependsOn(akkastream)
     .settings(
       libraryDependencies ++= Vector(
@@ -129,6 +129,7 @@ lazy val akkastreamTestkit =
 
 lazy val akkastreamTests =
   cloudflowModule("cloudflow-akka-tests")
+    .enablePlugins(JavaFormatterPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
       libraryDependencies ++= Vector(
@@ -225,6 +226,7 @@ lazy val flinkTestkit =
 
 lazy val flinkTests =
   cloudflowModule("cloudflow-flink-tests")
+    .enablePlugins(JavaFormatterPlugin)
     .dependsOn(flinkTestkit)
     .settings(
       libraryDependencies ++= Vector(

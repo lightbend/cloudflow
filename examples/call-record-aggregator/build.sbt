@@ -61,8 +61,8 @@ lazy val sparkAggregation = appModule("spark-aggregation")
       Test / parallelExecution := false,
       Test / fork := true,
       libraryDependencies ++= Seq(
-	      "ch.qos.logback" %  "logback-classic"    % "1.2.3",
-        "org.scalatest"  %% "scalatest"          % "3.0.8"  % "test"
+        "ch.qos.logback" %  "logback-classic" % "1.2.3",
+        "org.scalatest"  %% "scalatest"       % "3.0.8"  % "test"
       )
     )
   .dependsOn(datamodel)

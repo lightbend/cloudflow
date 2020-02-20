@@ -43,16 +43,19 @@ public class FlinkStreamletTest extends JUnitSuite {
 
     // build data and send to inlet tap
     List<Integer> range = IntStream.rangeClosed(1, 10).boxed().collect(Collectors.toList());
-    List<Data> data = range.stream().map((Integer i) -> new Data(i, "name" + i.toString())).collect(Collectors.toList());
+    List<Data> data =
+        range.stream()
+            .map((Integer i) -> new Data(i, "name" + i.toString()))
+            .collect(Collectors.toList());
 
     // setup inlet tap on inlet port
-    FlinkInletTap<Data> in = testkit.<Data>getInletAsTap(streamlet.in,
-      env.<Data>addSource(
-        FlinkSource.<Data>collectionSourceFunction(data),
-        TypeInformation.<Data>of(Data.class)
-      ),
-      Data.class
-    );
+    FlinkInletTap<Data> in =
+        testkit.<Data>getInletAsTap(
+            streamlet.in,
+            env.<Data>addSource(
+                FlinkSource.<Data>collectionSourceFunction(data),
+                TypeInformation.<Data>of(Data.class)),
+            Data.class);
 
     // setup outlet tap on outlet port
     FlinkOutletTap<Simple> out = testkit.getOutletAsTap(streamlet.out, Simple.class);

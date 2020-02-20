@@ -2,7 +2,10 @@ import sbt._
 import sbt.Keys._
 
 lazy val sensorDataJava =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(
+       CloudflowAkkaStreamsApplicationPlugin, 
+       JavaFormatterPlugin
+    )
     .settings(
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",

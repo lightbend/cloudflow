@@ -61,10 +61,14 @@ public class AkkaStreamletTest extends JUnitSuite {
     in.queue().offer(new Data(1, "a"));
     in.queue().offer(new Data(2, "b"));
 
-    testkit.<Data>run(streamlet, in, out, () -> {
-      out.probe().expectMsg(new Pair<String, Data>("a", new Data(1, "a")));
-      return out.probe().expectMsg(new Pair<String, Data>("b", new Data(2, "b")));
-    });
+    testkit.<Data>run(
+        streamlet,
+        in,
+        out,
+        () -> {
+          out.probe().expectMsg(new Pair<String, Data>("a", new Data(1, "a")));
+          return out.probe().expectMsg(new Pair<String, Data>("b", new Data(2, "b")));
+        });
 
     out.probe().expectMsg(Completed.completed());
   }
@@ -73,9 +77,8 @@ public class AkkaStreamletTest extends JUnitSuite {
   public void anAkkaStreamletShouldBeAbleToDefineAndUseConfigurationParameters() {
     TestConfigParametersProcessor streamlet = new TestConfigParametersProcessor();
     AkkaStreamletTestKit testkit =
-      AkkaStreamletTestKit
-        .create(system, mat)
-        .withConfigParameterValues(ConfigParameterValue.create(nameFilter, "b"));
+        AkkaStreamletTestKit.create(system, mat)
+            .withConfigParameterValues(ConfigParameterValue.create(nameFilter, "b"));
 
     QueueInletTap<Data> in = testkit.makeInletAsTap(streamlet.inlet);
     ProbeOutletTap<Data> out = testkit.makeOutletAsTap(streamlet.outlet);
@@ -83,9 +86,13 @@ public class AkkaStreamletTest extends JUnitSuite {
     in.queue().offer(new Data(1, "a"));
     in.queue().offer(new Data(2, "b"));
 
-    testkit.<Data>run(streamlet, in, out, () -> {
-      return out.probe().expectMsg(new Pair<String, Data>("b", new Data(2, "b")));
-    });
+    testkit.<Data>run(
+        streamlet,
+        in,
+        out,
+        () -> {
+          return out.probe().expectMsg(new Pair<String, Data>("b", new Data(2, "b")));
+        });
 
     out.probe().expectMsg(Completed.completed());
   }
@@ -102,19 +109,17 @@ public class AkkaStreamletTest extends JUnitSuite {
       return new AkkaStreamletLogic(getContext()) {
         public void run() {
           getSourceWithOffsetContext(inlet)
-            .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
-            .to(getSinkWithOffsetContext(outlet))
-            .run(materializer());
+              .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
+              .to(getSinkWithOffsetContext(outlet))
+              .run(materializer());
         }
       };
     }
   }
 
   public static StringConfigParameter nameFilter =
-    StringConfigParameter.create(
-      "name-filter-value",
-      "Filters out the data in the stream that matches this name."
-    );
+      StringConfigParameter.create(
+          "name-filter-value", "Filters out the data in the stream that matches this name.");
 
   class TestConfigParametersProcessor extends AkkaStreamlet {
     AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
@@ -125,7 +130,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     }
 
     public ConfigParameter[] defineConfigParameters() {
-      return new ConfigParameter[]{ nameFilter };
+      return new ConfigParameter[] {nameFilter};
     }
 
     public AkkaStreamletLogic createLogic() {
@@ -134,8 +139,9 @@ public class AkkaStreamletTest extends JUnitSuite {
           String configuredNameToFilterFor = streamletConfig().getString(nameFilter.getKey());
 
           getSourceWithOffsetContext(inlet)
-            .filter(data -> data.name().equals(configuredNameToFilterFor))
-            .to(getSinkWithOffsetContext(outlet)).run(materializer());
+              .filter(data -> data.name().equals(configuredNameToFilterFor))
+              .to(getSinkWithOffsetContext(outlet))
+              .run(materializer());
         }
       };
     }

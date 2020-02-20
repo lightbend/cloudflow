@@ -30,28 +30,42 @@ import cloudflow.akkastream.javadsl.*;
 
 public class SensorDataToMetrics extends AkkaStreamlet {
   AvroInlet<SensorData> in = AvroInlet.<SensorData>create("in", SensorData.class);
-  AvroOutlet<Metric> out = AvroOutlet.<Metric>create("out", Metric.class)
+  AvroOutlet<Metric> out =
+      AvroOutlet.<Metric>create("out", Metric.class)
           .withPartitioner(RoundRobinPartitioner.getInstance());
 
   public StreamletShape shape() {
-   return StreamletShape.createWithInlets(in).withOutlets(out);
+    return StreamletShape.createWithInlets(in).withOutlets(out);
   }
 
-  private FlowWithContext<SensorData,Committable,Metric,Committable,NotUsed> flowWithContext() {
+  private FlowWithContext<SensorData, Committable, Metric, Committable, NotUsed> flowWithContext() {
     return FlowWithCommittableContext.<SensorData>create()
-      .mapConcat(data ->
-        Arrays.asList(
-          new Metric(data.getDeviceId(), data.getTimestamp(), "power", data.getMeasurements().getPower()),
-          new Metric(data.getDeviceId(), data.getTimestamp(), "rotorSpeed", data.getMeasurements().getRotorSpeed()),
-          new Metric(data.getDeviceId(), data.getTimestamp(), "windSpeed", data.getMeasurements().getWindSpeed())
-        )
-      );
+        .mapConcat(
+            data ->
+                Arrays.asList(
+                    new Metric(
+                        data.getDeviceId(),
+                        data.getTimestamp(),
+                        "power",
+                        data.getMeasurements().getPower()),
+                    new Metric(
+                        data.getDeviceId(),
+                        data.getTimestamp(),
+                        "rotorSpeed",
+                        data.getMeasurements().getRotorSpeed()),
+                    new Metric(
+                        data.getDeviceId(),
+                        data.getTimestamp(),
+                        "windSpeed",
+                        data.getMeasurements().getWindSpeed())));
   }
 
   public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
       public RunnableGraph createRunnableGraph() {
-        return getSourceWithCommittableContext(in).via(flowWithContext()).to(getCommittableSink(out));
+        return getSourceWithCommittableContext(in)
+            .via(flowWithContext())
+            .to(getCommittableSink(out));
       }
     };
   }

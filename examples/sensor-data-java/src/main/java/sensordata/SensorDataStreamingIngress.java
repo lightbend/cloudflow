@@ -29,15 +29,17 @@ import cloudflow.streamlets.avro.AvroOutlet;
 
 public class SensorDataStreamingIngress extends AkkaServerStreamlet {
 
-  private AvroOutlet<SensorData> out =  AvroOutlet.create("out", SensorData.class)
+  private AvroOutlet<SensorData> out =
+      AvroOutlet.create("out", SensorData.class)
           .withPartitioner(RoundRobinPartitioner.getInstance());
 
   public StreamletShape shape() {
-   return StreamletShape.createWithOutlets(out);
+    return StreamletShape.createWithOutlets(out);
   }
 
   public AkkaStreamletLogic createLogic() {
     EntityStreamingSupport ess = EntityStreamingSupport.json();
-    return HttpServerLogic.createDefaultStreaming(this, out, Jackson.byteStringUnmarshaller(SensorData.class), ess, getContext());
+    return HttpServerLogic.createDefaultStreaming(
+        this, out, Jackson.byteStringUnmarshaller(SensorData.class), ess, getContext());
   }
 }
