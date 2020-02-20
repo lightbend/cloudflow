@@ -15,7 +15,7 @@ In **SensorDataHttpIngress.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[]
 ----
 
 == Convert sensor to metric streamlet
@@ -26,7 +26,7 @@ In **SensorDataToMetrics.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataToMetrics.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/SensorDataToMetrics.scala[]
 ----
 
 == Validation streamlets
@@ -39,14 +39,14 @@ In **MetricsValidation.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[]
 ----
 
 In **SensorDataUtils.scala**, include the following code. A real validator would have more complex business logic, this is just for demonstration:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/package.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/SensorDataUtils.scala[]
 ----
 
 == Logging streamlets
@@ -58,7 +58,7 @@ In **ValidMetricLogger.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[]
 ----
 
 
@@ -66,7 +66,7 @@ In **InvalidMetricLogger.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/InvalidMetricLogger.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/InvalidMetricLogger.scala[]
 ----
 
 == Process JSON records
@@ -78,7 +78,7 @@ In **JsonFormats.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/sensordata/JsonFormats.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/sensordata/JsonFormats.scala[]
 ----
 
 
@@ -86,7 +86,7 @@ In **package.scala**, include the following code:
 
 [source,scala]
 ----
-include::ROOT:example$sensor-data-scala/src/main/scala/package.scala[]
+include::shared-content:develop:example$sensor-data-scala/src/main/scala/package.scala[]
 ----
 
 == What's next
