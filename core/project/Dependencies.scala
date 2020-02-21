@@ -2,8 +2,8 @@ import sbt._
 
 // format: OFF
 object Version {
-  val Akka         = "2.5.24"
-  val AkkaHttp     = "10.1.9"
+  val Akka         = "2.6.3"
+  val AkkaHttp     = "10.1.11"
   val AlpakkaKafka = "2.0.2"
   val Scala        = "2.12.9"
   val Spark        = "2.4.5"
@@ -18,9 +18,9 @@ object Library {
   val AkkaHttpSprayJson     = "com.typesafe.akka"     %% "akka-http-spray-json"      % Version.AkkaHttp
   val AkkaStream            = "com.typesafe.akka"     %% "akka-stream"               % Version.Akka
   val AkkaSlf4j             = "com.typesafe.akka"     %% "akka-slf4j"                % Version.Akka
-  val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"       % "0.10"
+  val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"       % "0.11"
   val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"         % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
-  val AkkaStreamKafkaTestkit = "com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka exclude("com.typesafe.akka", "akka-stream-testkit")
+  val AkkaStreamKafkaTestkit = "com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka intransitive()
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
