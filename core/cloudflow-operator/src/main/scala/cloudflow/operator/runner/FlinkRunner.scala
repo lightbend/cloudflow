@@ -327,12 +327,12 @@ object FlinkResource {
   implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
 
   implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
-  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val specFmt: Format[Spec]     = Json.format[Spec]
-  implicit val statusFmt: Format[Status] = Json.format[Status]
+  implicit val specFmt: Format[Spec]                         = Json.format[Spec]
+  implicit val statusFmt: Format[Status]                     = Json.format[Status]
 
   final case class EnvConfig(env: List[EnvVar] = Nil)
 

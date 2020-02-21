@@ -44,8 +44,8 @@ private[testkit] case class TestContext(
   private val completionPromise = Promise[Dun]()
   private val completionFuture  = completionPromise.future
   val killSwitch                = KillSwitches.shared(streamletRef)
-  implicit val sys = system
-  
+  implicit val sys              = system
+
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
 

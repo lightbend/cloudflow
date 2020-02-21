@@ -105,7 +105,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
 
           // stop all query execution
           streamletQueryExecution.stop()
-          
+
         }
       }
       val done = system.scheduler.scheduleWithFixedDelay(InitialDelay, MonitorFrequency)(runnable)
