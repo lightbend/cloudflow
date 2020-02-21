@@ -18,7 +18,6 @@ package cloudflow.akkastream.testkit.scaladsl
 
 import akka.NotUsed
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import com.typesafe.config._
 
@@ -27,8 +26,8 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
 object AkkaStreamletTestKit {
-  def apply(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys, Some(mat))
-  def apply(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat), config)
+  def apply(sys: ActorSystem): AkkaStreamletTestKit                 = new AkkaStreamletTestKit(sys)
+  def apply(sys: ActorSystem, config: Config): AkkaStreamletTestKit = new AkkaStreamletTestKit(sys, config)
 }
 
 /**
@@ -71,7 +70,6 @@ object AkkaStreamletTestKit {
  *
  */
 final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
-                                                        mat: Option[ActorMaterializer] = None,
                                                         config: Config = ConfigFactory.empty())
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
@@ -81,7 +79,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    */
   def inletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] =
-    QueueInletTap[T](inlet)(mat.getOrElse(ActorMaterializer()(system)))
+    QueueInletTap[T](inlet)(system)
 
   /**
    *

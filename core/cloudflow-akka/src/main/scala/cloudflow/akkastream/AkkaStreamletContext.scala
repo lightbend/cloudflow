@@ -22,7 +22,6 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 import akka.kafka.CommitterSettings
-import akka.stream._
 import akka.stream.scaladsl._
 import cloudflow.streamlets._
 
@@ -57,11 +56,6 @@ trait AkkaStreamletContext extends StreamletContext {
    * The system in which the AkkaStreamlet will be run.
    */
   implicit def system: ActorSystem
-
-  /**
-   * The Materializer used when the AkkaStreamlet is run.
-   */
-  implicit def materializer: Materializer
 
   private[akkastream] def streamletExecution: StreamletExecution
 

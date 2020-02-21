@@ -313,6 +313,8 @@ object SparkResource {
     }
   }
 
+  implicit val driverInfoFmt: Format[DriverInfo]             = Json.format[DriverInfo]
+  implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
   implicit val specFmt: Format[Spec]     = Json.format[Spec]
   implicit val statusFmt: Format[Status] = Json.format[Status]
 
@@ -320,8 +322,6 @@ object SparkResource {
 
   type CR = CustomResource[Spec, Status]
 
-  implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val driverInfoFmt: Format[DriverInfo]             = Json.format[DriverInfo]
   implicit val specPatchFmt: Format[SpecPatch]               = Json.format[SpecPatch]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](

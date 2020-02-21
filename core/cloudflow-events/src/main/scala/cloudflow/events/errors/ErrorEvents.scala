@@ -25,7 +25,6 @@ import scala.concurrent.duration._
 import cloudflow.streamlets.{ LoadedStreamlet, StreamletDefinition }
 import org.slf4j.LoggerFactory
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import skuber.api.Configuration
@@ -58,7 +57,6 @@ object ErrorEvents {
    * that required all streamlets to include an akka dependency when it might not be required.
    */
   private implicit lazy val system = ActorSystem("error_events")
-  private implicit lazy val mat    = ActorMaterializer()
   private val md5                  = MessageDigest.getInstance("MD5")
 
   private[cloudflow] val OperatorSource = Event.Source(Some("cloudflow-streamlet"))
@@ -76,7 +74,7 @@ object ErrorEvents {
   def report(loadedStreamlet: LoadedStreamlet, config: Config, throwable: Throwable, timeout: Duration = 10 seconds): Unit = {
     val enabled = config.getOrElse[Boolean]("cloudflow.runner.error-events.enabled", ErrorEventsEnabledDefault)
     if (enabled) {
-      implicit val ec: ExecutionContextExecutor = mat.executionContext
+      implicit val ec: ExecutionContextExecutor = system.dispatcher
       val future = Future {
         val streamlet         = loadedStreamlet.config
         val runnerType        = loadedStreamlet.streamlet.runtime.name
@@ -179,7 +177,7 @@ object ErrorEvents {
 
   // visibility for testing
   private[cloudflow] var k8sClient: Option[KubernetesClient] = None
-  private def getK8sClient(implicit system: ActorSystem, mat: ActorMaterializer): KubernetesClient =
+  private def getK8sClient(implicit system: ActorSystem): KubernetesClient =
     k8sClient.getOrElse(k8sInit(Configuration.defaultK8sConfig))
 
   // visibility for testing

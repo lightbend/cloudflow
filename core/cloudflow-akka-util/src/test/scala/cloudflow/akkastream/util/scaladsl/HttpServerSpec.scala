@@ -18,7 +18,6 @@ package cloudflow.akkastream.util.scaladsl
 
 import scala.concurrent.duration._
 import akka.actor._
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl._
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -46,7 +45,6 @@ import cloudflow.akkastream.testkit.scaladsl._
 class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("HttpServerSpec")
-  private implicit val mat    = ActorMaterializer()
 
   import system.dispatcher
 
@@ -142,7 +140,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
   }
 
   def startIngress(ingress: AkkaStreamlet = createDefaultIngress): Unit = {
-    val testkit = AkkaStreamletTestKit(system, mat)
+    val testkit = AkkaStreamletTestKit(system)
 
     out = testkit.outletAsTap(outlet)
     port = getFreePort()

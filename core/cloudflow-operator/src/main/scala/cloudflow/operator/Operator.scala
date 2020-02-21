@@ -52,6 +52,12 @@ object Operator {
 
   val MaxObjectBufSize = 8 * 1024 * 1024
 
+  val decider: Supervision.Decider = {
+    case _ ⇒ Supervision.Stop
+  }
+
+  val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
+
   def handleAppEvents(
       client: KubernetesClient
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
@@ -142,7 +148,7 @@ object Operator {
     val eventsResult = getCurrentEvents[O](client, options)
 
     Source
-      .fromFuture(eventsResult)
+      .future(eventsResult)
       .mapConcat(identity)
       .concat(
         client
@@ -178,7 +184,7 @@ object Operator {
       unexpectedCompletionMsg: String,
       errorMsg: String
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) =
-    graph.run.onComplete {
+    graph.withAttributes(StreamAttributes).run.onComplete {
       case Success(_) ⇒
         system.log.warning(unexpectedCompletionMsg)
         system.registerOnTermination(exitWithFailure)
