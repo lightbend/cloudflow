@@ -6,7 +6,7 @@ import cloudflow.streamlets._
 
 import cloudflow.akkastream.util.scaladsl.MergeLogic
 
-object MetricMerge extends AkkaStreamlet {
+class DataMerge extends AkkaStreamlet {
 
   val in0 = AvroInlet[Data]("in-0")
   val in1 = AvroInlet[Data]("in-1")
