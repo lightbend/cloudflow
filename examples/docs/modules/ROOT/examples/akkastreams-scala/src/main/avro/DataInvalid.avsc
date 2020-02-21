@@ -1,0 +1,20 @@
+{
+  "namespace": "cloudflow.akkastreamsdoc",
+  "type": "record",
+  "name": "DataInvalid",
+  "fields":[
+       {
+            "name": "key",
+            "type": "string"
+       },
+       {
+            "name": "value",
+            "type": "int"
+       },
+       {
+            "name": "reason",
+            "type": "string"
+       }
+  ]
+}
+
