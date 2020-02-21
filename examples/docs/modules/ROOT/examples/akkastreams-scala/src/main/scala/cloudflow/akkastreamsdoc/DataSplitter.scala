@@ -13,7 +13,8 @@ class DataSplitter extends AkkaStreamlet {
   val shape   = StreamletShape(in).withOutlets(invalid, valid)
 
   override def createLogic = new SplitterLogic(in, invalid, valid) {
-    def flow = flowWithOffsetContext()
+    def flow =
+      flowWithOffsetContext()
         .map { data ⇒
           if (data.value < 0) Left(DataInvalid(data.key, data.value, "All measurements must be positive numbers!"))
           else Right(data)
