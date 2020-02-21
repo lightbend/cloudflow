@@ -7,6 +7,7 @@ on:
       - master
   pull_request:
 
+
 name: Build and Test
 jobs:
   build-and-test-scala:
@@ -41,6 +42,7 @@ jobs:
         export PATH="$HOME/opt/sbt/bin:$PATH"
         cd scripts
         ./build-all.sh test
+
 
   build-and-test-cli:
     runs-on: ubuntu-latest
