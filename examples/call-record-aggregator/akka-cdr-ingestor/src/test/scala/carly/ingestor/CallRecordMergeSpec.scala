@@ -32,17 +32,16 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
 
   private implicit val system = ActorSystem("CallRecordMergeSpec")
 
-  override def afterAll: Unit = {
+  override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
-  }
 
   "A CallRecordMerge" should {
     "merge incoming data" in {
-      val testkit = AkkaStreamletTestKit(system)
+      val testkit   = AkkaStreamletTestKit(system)
       val streamlet = new CallRecordMerge
 
       val instant = Instant.now.toEpochMilli / 1000
-      val past = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
+      val past    = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
 
       val cr1 = CallRecord("user-1", "user-2", "f", 10L, instant)
       val cr2 = CallRecord("user-1", "user-2", "f", 15L, instant)
@@ -52,27 +51,32 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
       val source1 = Source(Vector(cr2))
       val source2 = Source(Vector(cr3))
 
-      val in0 = testkit.inletFromSource(streamlet.in0, source0)
-      val in1 = testkit.inletFromSource(streamlet.in1, source1)
-      val in2 = testkit.inletFromSource(streamlet.in2, source2)
-      val left = testkit.outletAsTap(streamlet.left)
+      val in0   = testkit.inletFromSource(streamlet.in0, source0)
+      val in1   = testkit.inletFromSource(streamlet.in1, source1)
+      val in2   = testkit.inletFromSource(streamlet.in2, source2)
+      val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 
-      testkit.run(streamlet, List(in0, in1, in2), List(left, right), () ⇒ {
-        right.probe.expectMsg(("user-1", cr1))
-        right.probe.expectMsg(("user-1", cr2))
-        right.probe.expectMsg(("user-1", cr3))
-      })
+      testkit.run(
+        streamlet,
+        List(in0, in1, in2),
+        List(left, right),
+        () ⇒ {
+          right.probe.expectMsg(("user-1", cr1))
+          right.probe.expectMsg(("user-1", cr2))
+          right.probe.expectMsg(("user-1", cr3))
+        }
+      )
 
       right.probe.expectMsg(Completed)
     }
 
     "split incoming data into valid call records and those outside the time range" in {
-      val testkit = AkkaStreamletTestKit(system)
+      val testkit   = AkkaStreamletTestKit(system)
       val streamlet = new CallRecordMerge()
 
       val instant = Instant.now.toEpochMilli / 1000
-      val past = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
+      val past    = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
 
       val cr1 = CallRecord("user-1", "user-2", "f", 10L, instant)
       val cr2 = CallRecord("user-1", "user-2", "f", 15L, instant)
@@ -88,20 +92,24 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
       val in1 = testkit.inletFromSource(streamlet.in1, source1)
       val in2 = testkit.inletFromSource(streamlet.in2, source2)
 
-      val left = testkit.outletAsTap(streamlet.left)
+      val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 
-      testkit.run(streamlet, List(in0, in1, in2), List(left, right), () ⇒ {
-        right.probe.expectMsg(("user-1", cr1))
-        right.probe.expectMsg(("user-1", cr2))
-        right.probe.expectMsg(("user-1", cr3))
-        left.probe.expectMsg((cr4.toString, InvalidRecord(cr4.toString, "Timestamp outside range!")))
-        left.probe.expectMsg((cr5.toString, InvalidRecord(cr5.toString, "Timestamp outside range!")))
-      })
+      testkit.run(
+        streamlet,
+        List(in0, in1, in2),
+        List(left, right),
+        () ⇒ {
+          right.probe.expectMsg(("user-1", cr1))
+          right.probe.expectMsg(("user-1", cr2))
+          right.probe.expectMsg(("user-1", cr3))
+          left.probe.expectMsg((cr4.toString, InvalidRecord(cr4.toString, "Timestamp outside range!")))
+          left.probe.expectMsg((cr5.toString, InvalidRecord(cr5.toString, "Timestamp outside range!")))
+        }
+      )
 
       left.probe.expectMsg(Completed)
       right.probe.expectMsg(Completed)
     }
   }
 }
-
