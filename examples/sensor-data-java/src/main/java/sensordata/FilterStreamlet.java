@@ -19,7 +19,6 @@ package sensordata;
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
-import akka.stream.ActorMaterializer;
 import akka.stream.alpakka.file.DirectoryChange;
 import akka.stream.alpakka.file.javadsl.DirectoryChangesSource;
 import akka.stream.javadsl.*;
@@ -30,13 +29,12 @@ import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.AvroInlet;
 import cloudflow.streamlets.avro.AvroOutlet;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class FilterStreamlet extends AkkaStreamlet {
 
@@ -94,9 +92,8 @@ public class FilterStreamlet extends AkkaStreamlet {
               referenceFilesPath.toString(),
               streamletConfig.getString(filterFilenameConfig.getKey()));
 
-      final FiniteDuration pollingInterval =
-          FiniteDuration.create(
-              streamletConfig.getInt(filterPollingInterval.getKey()), TimeUnit.SECONDS);
+      final java.time.Duration pollingInterval =
+          java.time.Duration.ofSeconds(streamletConfig.getInt(filterPollingInterval.getKey()));
 
       final Source<ArrayList<String>, NotUsed> filterFileContent =
           DirectoryChangesSource.create(referenceFilesPath, pollingInterval, Integer.MAX_VALUE)
@@ -116,7 +113,7 @@ public class FilterStreamlet extends AkkaStreamlet {
                                 acc.addAll(Collections.singletonList(entry.utf8String()));
                                 return acc;
                               },
-                              getMaterializer()));
+                              getSystem()));
 
       public RunnableGraph createRunnableGraph() {
         return getPlainSource(inlet)

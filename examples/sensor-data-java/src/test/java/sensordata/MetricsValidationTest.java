@@ -8,7 +8,6 @@ import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
 import akka.kafka.ConsumerMessage.CommittableOffset;
-import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.*;
 import akka.stream.javadsl.Flow;
 import akka.testkit.TestKit;
@@ -22,18 +21,16 @@ import cloudflow.streamlets.avro.*;
 import cloudflow.streamlets.descriptors.*;
 
 import org.apache.avro.Schema;
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 import org.junit.*;
 import static org.junit.Assert.*;
 
 public class MetricsValidationTest extends JUnitSuite {
-  static ActorMaterializer mat;
   static ActorSystem system;
 
   @BeforeClass
   public static void setUp() throws Exception {
     system = ActorSystem.create();
-    mat = ActorMaterializer.create(system);
   }
 
   @AfterClass
@@ -45,7 +42,7 @@ public class MetricsValidationTest extends JUnitSuite {
   @Test
   public void shouldProcessInvalidMetric() {
     MetricsValidation streamlet = new MetricsValidation();
-    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
 
     QueueInletTap<Metric> in = testkit.makeInletAsTap(streamlet.inlet);
     ProbeOutletTap<Metric> valid = testkit.makeOutletAsTap(streamlet.validOutlet);

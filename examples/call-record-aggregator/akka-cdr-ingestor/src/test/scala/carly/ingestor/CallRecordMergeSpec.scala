@@ -20,7 +20,6 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
@@ -32,7 +31,6 @@ import carly.data._
 class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("CallRecordMergeSpec")
-  private implicit val mat = ActorMaterializer()
 
   override def afterAll: Unit = {
     TestKit.shutdownActorSystem(system)
@@ -40,7 +38,7 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
 
   "A CallRecordMerge" should {
     "merge incoming data" in {
-      val testkit = AkkaStreamletTestKit(system, mat)
+      val testkit = AkkaStreamletTestKit(system)
       val streamlet = new CallRecordMerge
 
       val instant = Instant.now.toEpochMilli / 1000
@@ -70,7 +68,7 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
     }
 
     "split incoming data into valid call records and those outside the time range" in {
-      val testkit = AkkaStreamletTestKit(system, mat)
+      val testkit = AkkaStreamletTestKit(system)
       val streamlet = new CallRecordMerge()
 
       val instant = Instant.now.toEpochMilli / 1000

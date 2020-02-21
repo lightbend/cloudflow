@@ -9,7 +9,7 @@ lazy val sensorDataJava =  (project in file("."))
     .settings(
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
-        "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.10",
+        "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.11",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
         "junit"                  % "junit"                      % "4.12"     % "test"
