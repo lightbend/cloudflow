@@ -19,7 +19,8 @@ package sensordata
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl.MergeLogic
+import cloudflow.akkastream.scaladsl._
+import cloudflow.akkastream.util.scaladsl.Merger
 
 class SensorDataMerge extends AkkaStreamlet {
   val in0 = AvroInlet[SensorData]("in-0")
@@ -27,5 +28,7 @@ class SensorDataMerge extends AkkaStreamlet {
   val out = AvroOutlet[SensorData]("out", _.deviceId.toString)
 
   final override val shape       = StreamletShape.withInlets(in0, in1).withOutlets(out)
-  final override def createLogic = new MergeLogic(Vector(in0, in1), out)
+  final override def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = Merger.source(in0, in1).to(committableSink(out))
+  }
 }

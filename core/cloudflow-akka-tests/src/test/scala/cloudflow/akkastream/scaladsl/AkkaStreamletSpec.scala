@@ -21,7 +21,6 @@ import scala.concurrent.duration._
 
 import akka.NotUsed
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 
@@ -37,13 +36,12 @@ import cloudflow.akkastream.testkit.scaladsl._
 class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
-  private implicit val mat    = ActorMaterializer()
   val timeout                 = 10.seconds.dilated
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
 
   "An AkkaStreamlet" should {
-    val testkit = AkkaStreamletTestKit(system, mat)
+    val testkit = AkkaStreamletTestKit(system)
 
     "Allow for querying of configuration parameters" in {
       object ConfigTestProcessor extends AkkaStreamlet {
@@ -64,7 +62,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       }
 
       val configTestKit =
-        AkkaStreamletTestKit(system, mat)
+        AkkaStreamletTestKit(system)
           .withConfigParameterValues(ConfigParameterValue(ConfigTestProcessor.NameFilter, "b"))
 
       val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
@@ -93,7 +91,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
         }
       }
 
-      val configTestKit = AkkaStreamletTestKit(system, mat)
+      val configTestKit = AkkaStreamletTestKit(system)
 
       val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
       val source = Source(data)

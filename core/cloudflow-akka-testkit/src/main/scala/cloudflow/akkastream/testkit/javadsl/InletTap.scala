@@ -17,6 +17,7 @@
 package cloudflow.akkastream.testkit.javadsl
 
 import akka.NotUsed
+import akka.actor.ActorSystem
 import akka.kafka.ConsumerMessage._
 import akka.stream._
 import akka.stream.scaladsl._
@@ -33,7 +34,7 @@ case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.s
   private[testkit] val source = src.asScala
 }
 
-case class QueueInletTap[T](inlet: CodecInlet[T])(implicit mat: ActorMaterializer) extends InletTap[T] {
+case class QueueInletTap[T](inlet: CodecInlet[T])(implicit system: ActorSystem) extends InletTap[T] {
   private val bufferSize = 1024
   private val hub        = BroadcastHub.sink[T](bufferSize)
 

@@ -27,7 +27,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class CallRecordGeneratorIngressSpec extends SparkScalaTestSupport {
 
   val streamlet = new CallRecordGeneratorIngress()
-  val testKit = SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(streamlet.RecordsPerSecond, "50"))
+  val testKit   = SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(streamlet.RecordsPerSecond, "50"))
 
   "CallRecordGeneratorIngress" should {
     "produce elements to its outlet" in {
@@ -46,4 +46,3 @@ class CallRecordGeneratorIngressSpec extends SparkScalaTestSupport {
     }
   }
 }
-
