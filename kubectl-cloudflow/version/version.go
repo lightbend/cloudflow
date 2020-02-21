@@ -43,9 +43,13 @@ func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(
 		metav1.ListOptions{LabelSelector: labels.Set(labelSelector.MatchLabels).String()})
+
 	if err == nil {
 		if len(configMaps.Items) > 1 {
 			return nil, errors.New("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting")
+		}
+		if len(configMaps.Items) < 1 {
+			return nil, errors.New("No Cloudflow operators detected in the cluster. Exiting")
 		}
 		return &configMaps.Items[0], nil
 	}
