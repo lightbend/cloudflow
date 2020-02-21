@@ -24,17 +24,14 @@ import org.scalatest.junit.JUnitSuite;
 import scala.concurrent.duration.Duration;
 
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
 import akka.testkit.TestKit;
 
 public abstract class JavaDslTest extends JUnitSuite {
-  static ActorMaterializer mat;
   static ActorSystem system;
 
   @BeforeClass
   public static void setUp() throws Exception {
     system = ActorSystem.create();
-    mat = ActorMaterializer.create(system);
   }
 
   @AfterClass

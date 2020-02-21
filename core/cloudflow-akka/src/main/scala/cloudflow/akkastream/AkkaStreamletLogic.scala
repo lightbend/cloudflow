@@ -20,7 +20,6 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream._
 import akka.stream.scaladsl._
 
 import akka.kafka._
@@ -60,7 +59,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    * Launch the execution of the graph.
    */
-  final def runGraph[T](graph: akka.stream.javadsl.RunnableGraph[T]): T = graph.run(materializer)
+  final def runGraph[T](graph: akka.stream.javadsl.RunnableGraph[T]): T = graph.run(system)
 
   /**
    * Signals that the streamlet is ready to process data.
@@ -79,16 +78,6 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   def getSystem() = system
-
-  /**
-   * The Materializer that will be used for materializing akka stream graphs.
-   */
-  implicit final val materializer: Materializer = context.materializer
-
-  /**
-   * Java API
-   */
-  def getMaterializer() = materializer
 
   /**
    * The default ExecutionContext of the ActorSystem (the system dispatcher).

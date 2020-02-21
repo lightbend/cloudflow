@@ -320,10 +320,11 @@ object FlinkResource {
   implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
   implicit val resourceRequsetsFmt: Format[ResourceRequests]     = Json.format[ResourceRequests]
   implicit val resourceLimitsFmt: Format[ResourceLimits]         = Json.format[ResourceLimits]
-  implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
   implicit val envConfigFmt: Format[EnvConfig]                   = Json.format[EnvConfig]
+  implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
 
   implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
   implicit val specFmt: Format[Spec]                         = Json.format[Spec]

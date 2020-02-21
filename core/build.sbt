@@ -365,17 +365,17 @@ lazy val operator =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
-            AkkaSlf4j,
-            AkkaStream,
-            Ficus,
-            Logback,
-            Skuber,
-            AkkaStreamTestkit,
-            JacksonDatabind,
-            ScalaTest,
-            ScalaCheck % "test",
-            Avro4sJson % "test"
-          )
+        AkkaSlf4j,
+        AkkaStream,
+        Ficus,
+        Logback,
+        Skuber,
+	      JacksonDatabind,
+        ScalaTest,
+        AkkaStreamTestkit % "test",
+        ScalaCheck        % "test",
+        Avro4sJson        % "test",
+      )
     )
     .settings(
       scalaVersion := "2.12.9",
@@ -385,6 +385,10 @@ lazy val operator =
       mainClass in Compile := Some("cloudflow.operator.Main"),
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
+      // skuber version 2.4.0 depends on akka-http 10.1.9 : hence overriding
+      // with akka-http 10.1.11 to use akka 2.6
+      // remove this override once skuber is updated
+      dependencyOverrides += AkkaHttp,
       buildOptions in docker := BuildOptions(
             cache = true,
             removeIntermediateContainers = BuildOptions.Remove.OnSuccess,

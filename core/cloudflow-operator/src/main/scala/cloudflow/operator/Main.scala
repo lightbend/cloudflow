@@ -39,7 +39,6 @@ object Main extends {
     implicit val system = ActorSystem()
 
     try {
-      implicit val mat = createMaterializer()
       implicit val ec  = system.dispatcher
       val settings     = Settings(system)
       implicit val ctx = settings.deploymentContext
@@ -105,13 +104,6 @@ object Main extends {
   }
 
   private def exitWithFailure() = System.exit(-1)
-
-  private def createMaterializer()(implicit system: ActorSystem) = {
-    val decider: Supervision.Decider = {
-      case _ ⇒ Supervision.Stop
-    }
-    ActorMaterializer(ActorMaterializerSettings(system).withSupervisionStrategy(decider))
-  }
 
   private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
     val crdTimeout = 20.seconds

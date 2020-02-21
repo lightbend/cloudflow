@@ -17,7 +17,6 @@
 package cloudflow.akkastream.util.scaladsl
 
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
@@ -32,7 +31,6 @@ import cloudflow.akkastream.testdata._
 
 class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
   private implicit val system = ActorSystem("SplitterSpec")
-  private implicit val mat    = ActorMaterializer()
 
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
@@ -55,7 +53,7 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
 
   "A Splitter" should {
     "split incoming data according to a splitter flow" in {
-      val testkit = AkkaStreamletTestKit(system, mat)
+      val testkit = AkkaStreamletTestKit(system)
       val source  = Source(Vector(Data(1, "a"), Data(2, "b")))
 
       val in    = testkit.inletFromSource(MyPartitioner.in, source)

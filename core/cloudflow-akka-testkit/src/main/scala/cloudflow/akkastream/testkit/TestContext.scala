@@ -41,12 +41,11 @@ private[testkit] case class TestContext(
     volumeMounts: List[VolumeMount],
     override val config: Config = ConfigFactory.empty()
 ) extends AkkaStreamletContext {
-  //TODO reuse more from StreamletContextImpl
-  implicit def materializer     = ActorMaterializer()(system)
   private val readyPromise      = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
   private val completionFuture  = completionPromise.future
   val killSwitch                = KillSwitches.shared(streamletRef)
+  implicit val sys              = system
 
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)

@@ -22,7 +22,6 @@ import collection.JavaConverters._
 import akka.NotUsed
 import akka.actor._
 import akka.japi.Pair
-import akka.stream._
 import akka.stream.javadsl._
 import com.typesafe.config._
 import cloudflow.akkastream._
@@ -32,9 +31,8 @@ import cloudflow.akkastream.testkit._
 import scala.annotation.varargs
 
 object AkkaStreamletTestKit {
-  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
-  def create(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit =
-    AkkaStreamletTestKit(sys, Some(mat), List.empty, config)
+  def create(sys: ActorSystem): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys)
+  def create(sys: ActorSystem, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, config)
 }
 
 /**
@@ -78,8 +76,7 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
-                                                        mat: Option[ActorMaterializer] = None,
+final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem, 
                                                         volumeMounts: List[VolumeMount] = List.empty,
                                                         config: Config = ConfigFactory.empty())
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
@@ -94,7 +91,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    */
   def makeInletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] =
-    QueueInletTap[T](inlet)(mat.getOrElse(ActorMaterializer()(system)))
+    QueueInletTap[T](inlet)(system)
 
   /**
    *
