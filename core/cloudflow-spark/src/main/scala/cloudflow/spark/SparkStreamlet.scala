@@ -96,7 +96,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
 
       // schedule a function to check periodically if any of the queries
       // raised an exception
-      val done = system.scheduler.schedule(InitialDelay, MonitorFrequency) {
+      val runnable: Runnable = () => {
         val failed = streamletQueryExecution.queries.filter(_.exception.nonEmpty)
         if (failed.nonEmpty) {
           // if any of the queries has an exception, stop them all
@@ -106,8 +106,9 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           // stop all query execution
           streamletQueryExecution.stop()
 
-        } else ()
+        }
       }
+      val done = system.scheduler.scheduleWithFixedDelay(InitialDelay, MonitorFrequency)(runnable)
 
       // this future will be successful when any of the queries face an exception
       // or is stopped. The runner needs to await on this future and exit only when it

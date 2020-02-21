@@ -20,8 +20,6 @@ import com.typesafe.config._
 import org.scalatest._
 
 import cloudflow.blueprint._
-import spray.json._
-import ApplicationDescriptorJsonFormat._
 
 class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherValues with OptionValues with GivenWhenThen {
   case class Foo(name: String)

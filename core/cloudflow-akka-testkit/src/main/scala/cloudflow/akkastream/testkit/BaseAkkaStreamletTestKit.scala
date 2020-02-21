@@ -21,7 +21,6 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 import akka.actor._
-import akka.stream._
 import com.typesafe.config._
 
 import cloudflow.akkastream._
@@ -34,7 +33,6 @@ import cloudflow.streamlets._
 // Thanks to @debasish for the tip about F-bounded types in combination with self-types.
 private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreamletTestKit[Repr]] { this: Repr ⇒
   def system: ActorSystem
-  def mat: Option[ActorMaterializer]
   def config: Config
 
   private val defaultStreamletRefName = "streamlet-under-test"

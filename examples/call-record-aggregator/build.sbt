@@ -35,7 +35,7 @@ lazy val akkaCdrIngestor= appModule("akka-cdr-ingestor")
     .settings(
       commonSettings,
       libraryDependencies ++= Seq(
-        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.10",
+        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.11",
         "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
         "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
       )
@@ -47,7 +47,7 @@ lazy val akkaJavaAggregationOutput= appModule("akka-java-aggregation-output")
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.10",
+      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.11",
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )

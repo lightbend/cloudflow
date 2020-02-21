@@ -31,9 +31,8 @@ import cloudflow.spark.sql.SQLImplicits._
 class CallStatsAggregatorSpec extends SparkScalaTestSupport {
 
   val streamlet = new CallStatsAggregator()
-  val testKit = SparkStreamletTestkit(session).withConfigParameterValues(
-    ConfigParameterValue(streamlet.GroupByWindow, "1 minute"),
-    ConfigParameterValue(streamlet.Watermark, "1 minute"))
+  val testKit = SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(streamlet.GroupByWindow, "1 minute"),
+                                                                         ConfigParameterValue(streamlet.Watermark, "1 minute"))
 
   "CallStatsAggregator" should {
     "produce elements to its outlet" in {
@@ -67,4 +66,3 @@ class CallStatsAggregatorSpec extends SparkScalaTestSupport {
     }
   }
 }
-

@@ -171,7 +171,7 @@ $ cat test-data/04-moderate-breeze.json
 
 $ curl -i -X POST localhost:3003 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
 HTTP/1.1 202 Accepted
-Server: akka-http/10.1.10
+Server: akka-http/10.1.11
 Date: Mon, 25 Nov 2019 11:23:14 GMT
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 88

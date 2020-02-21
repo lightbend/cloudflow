@@ -19,7 +19,6 @@ package cloudflow.akkastream.util.scaladsl
 import scala.collection.JavaConverters._
 
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
@@ -31,17 +30,17 @@ import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testdata._
 import cloudflow.akkastream.testkit.scaladsl._
+
 class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("MergeSpec")
-  private implicit val mat    = ActorMaterializer()
 
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
 
   "An MergeStreamlet" should {
 
-    val testkit = AkkaStreamletTestKit(system, mat)
+    val testkit = AkkaStreamletTestKit(system)
     def createScalaMergeStreamlet(inletCount: Int): TestMerge =
       new ScalaTestMerge(inletCount)
 
