@@ -1,12 +1,4 @@
 examples:
-  - id: "sensor-data-scala"
-    path: "sensor-data-scala"
-    description: |
-      This example shows how sensor data can be consumed and transformed into metrics using the Akka streams Scala DSL.
-  - id: "sensor-data-java"
-    path: "sensor-data-java"
-    description: |
-      This example shows how sensor data can be consumed and transformed into metrics using the Akka streams Java DSL.
   - id: "spark-sensors"
     path: "spark-sensors"
     description: |
@@ -21,3 +13,19 @@ examples:
   - id: "tensorflow-akka"
     path: "tensorflow-akka"
     description: This app shows how to serve a Tensorflow model using Akka
+  - id: "sensor-data-scala-snippets"
+    path: "snippets/modules/ROOT/examples/sensor-data-scala"
+    description: |
+      Copy of sensor-data-scala to be able to include the files in the documentation
+  - id: "akkastreams-scala-snippets"
+    path: "snippets/modules/ROOT/examples/akkastreams-scala"
+    description: |
+      Set of files containing the Scala Akka streams code snippets used in the documentation
+  - id: "akkastreams-java-snippets"
+    path: "snippets/modules/ROOT/examples/akkastreams-java"
+    description: |
+      Set of files containing the Java Akka streams code snippets used in the documentation
+  - id: "spark-scala-snippets"
+    path: "snippets/modules/ROOT/examples/spark-scala"
+    description: |
+      Set of files containing the Scala Spark code snippets used in the documentation

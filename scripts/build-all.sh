@@ -55,5 +55,5 @@ for prj in $PROJECTS; do
   fi
   RETVAL=$?
   [ $RETVAL -ne 0 ] && echo "Failure in project $prj" && exit -1
-  cd ..
+  cd -
 done
