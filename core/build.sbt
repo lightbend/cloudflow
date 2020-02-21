@@ -114,8 +114,8 @@ lazy val akkastreamTestkit =
         AkkaStreamContrib,
         Ficus,
         Logback % Test,
-        AkkaStreamKafkaTestkit,
         AkkaStreamTestkit,
+        AkkaStreamKafkaTestkit,
         AkkaTestkit,
         ScalaTest,
         Junit
@@ -341,11 +341,11 @@ lazy val operator =
         Ficus,
         Logback,
         Skuber,
-        AkkaStreamTestkit,
-	JacksonDatabind,
+	      JacksonDatabind,
         ScalaTest,
-        ScalaCheck              % "test",
-        Avro4sJson              % "test",
+        AkkaStreamTestkit % "test",
+        ScalaCheck        % "test",
+        Avro4sJson        % "test",
       )
     )
     .settings(
