@@ -1,5 +1,6 @@
 package cloudflow.akkastreamsdoc
 
+// tag::merge[]
 import cloudflow.akkastream._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
@@ -16,3 +17,4 @@ class DataMerge extends AkkaStreamlet {
 
   override final def createLogic = new MergeLogic(Vector(in0, in1), out)
 }
+// end::merge[]

@@ -1,5 +1,6 @@
 package cloudflow.akkastreamsdoc
 
+// tag::splitter[]
 import cloudflow.akkastream._
 
 import cloudflow.streamlets._
@@ -21,3 +22,4 @@ class DataSplitter extends AkkaStreamlet {
         }
   }
 }
+// end::splitter[]
