@@ -19,8 +19,8 @@
 #
 SCRIPT=`basename ${BASH_SOURCE[0]}`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-TAG=v2.4.4
-ORIGIN_TAG=2.4.4-k8s-client-upgrade
+TAG=v2.4.5
+ORIGIN_TAG=custom-2.4.5
 DOCKER_USERNAME=lightbend
 CLOUDFLOW_VERSION=1.3.1-SNAPSHOT
 SPARK_IMAGE_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-2.4.5-scala-2.12
