@@ -1,6 +1,6 @@
 package cloudflow.akkastreamsdoc;
 
-// end::merge[]
+// tag::merge[]
 import cloudflow.akkastream.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
