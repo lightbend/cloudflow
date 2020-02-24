@@ -17,7 +17,7 @@ class DataSplitter extends AkkaStreamlet {
     def flow =
       flowWithOffsetContext()
         .map { data ⇒
-          if (data.value < 0) Left(DataInvalid(data.key, data.value, "All measurements must be positive numbers!"))
+          if (data.value < 0) Left(DataInvalid(data.key, data.value, "All data must be positive numbers!"))
           else Right(data)
         }
   }
