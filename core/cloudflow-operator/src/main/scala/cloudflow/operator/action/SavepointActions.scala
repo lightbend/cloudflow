@@ -23,6 +23,7 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 import skuber._
+import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint.deployment._
 
@@ -67,8 +68,11 @@ object SavepointActions {
   private implicit val Definition = ResourceDefinition[CustomResource[Spec, Status]](
     group = "kafka.strimzi.io",
     version = "v1beta1",
-    kind = "KafkaTopic"
+    kind = "KafkaTopic",
+    subresources = Some(Subresources().withStatusSubresource)
   )
+
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
 
   def deleteAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
     Action.delete(resource(savepoint, labels))
