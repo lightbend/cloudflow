@@ -7,9 +7,10 @@ import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
   Project(id = "root", base = file("."))
-    .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin)
+    .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, ScalafmtPlugin)
     .settings(
       name := "root",
+      scalafmtOnCompile := true,
       skip in publish := true,
       commands += InternalReleaseCommand.command,
       unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(

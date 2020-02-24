@@ -4,9 +4,11 @@ import cloudflow.sbt.CommonSettingsAndTasksPlugin._
 
 lazy val root =
   Project(id = "root", base = file("."))
+    .enablePlugins(ScalafmtPlugin)
     .settings(
       name := "root",
       skip in publish := true,
+      scalafmtOnCompile := true,
     )
     .withId("root")
     .settings(commonSettings)

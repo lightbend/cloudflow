@@ -27,7 +27,7 @@ class SensorDataMerge extends AkkaStreamlet {
   val in1 = AvroInlet[SensorData]("in-1")
   val out = AvroOutlet[SensorData]("out", _.deviceId.toString)
 
-  final override val shape       = StreamletShape.withInlets(in0, in1).withOutlets(out)
+  final override val shape = StreamletShape.withInlets(in0, in1).withOutlets(out)
   final override def createLogic = new RunnableGraphStreamletLogic() {
     def runnableGraph = Merger.source(in0, in1).to(committableSink(out))
   }

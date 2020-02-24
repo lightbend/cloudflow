@@ -2,8 +2,9 @@ import sbt._
 import sbt.Keys._
 
 lazy val sparkSensors = (project in file("."))
-    .enablePlugins(CloudflowSparkApplicationPlugin)
+    .enablePlugins(CloudflowSparkApplicationPlugin, ScalafmtPlugin)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
 	      "ch.qos.logback"     %  "logback-classic"        % "1.2.3",
         "org.scalatest"      %% "scalatest"              % "3.0.8" % "test"
