@@ -156,7 +156,7 @@ sensor-data-scala-validation-9c765d79b-rzr97          1/1     Running   0       
 Access the HTTP ingress (no public ingress is available by default):
 
 ```
-kubectl port-forward sensor-data-scala-http-ingress-747895bf7d-drb4x -n sensor-data-scala 3003:3003
+kubectl port-forward sensor-data-scala-http-ingress-747895bf7d-drb4x -n sensor-data-scala 3000:3000
 ```
 
 Post data to the HTTP ingress:
@@ -173,7 +173,7 @@ $ cat test-data/invalid-metric.json
     }
 }
 
-$ curl -i -X POST localhost:3003 -H "Content-Type: application/json" --data '@test-data/invalid-metric.json'
+$ curl -i -X POST localhost:3000 -H "Content-Type: application/json" --data '@test-data/invalid-metric.json'
 HTTP/1.1 202 Accepted
 Server: akka-http/10.1.10
 Date: Mon, 25 Nov 2019 10:29:37 GMT
@@ -217,7 +217,7 @@ cat test-data/04-moderate-breeze.json
    }
 }
 
-$ curl -i -X POST localhost:3003 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
+$ curl -i -X POST localhost:3000 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
 HTTP/1.1 202 Accepted
 Server: akka-http/10.1.10
 Date: Mon, 25 Nov 2019 11:23:14 GMT

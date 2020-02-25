@@ -102,9 +102,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val processorDeployment = descriptor.deployments.find(_.streamletName == processorRef.name).value
       val egressDeployment    = descriptor.deployments.find(_.streamletName == egressRef.name).value
 
-      // FYI: container port numbers are based on the index of the streamlet in the list
-      val ingressContainerPort = StreamletDeployment.MinimumEndpointContainerPort
-      val egressContainerPort  = StreamletDeployment.MinimumEndpointContainerPort + 2
+      val ingressContainerPort = StreamletDeployment.EndpointContainerPort
+      val egressContainerPort  = StreamletDeployment.EndpointContainerPort
 
       ingressDeployment.name mustBe s"${appId}.${ingressRef.name}"
       ingressDeployment.runtime mustBe ingress.runtime.name

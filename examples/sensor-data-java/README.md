@@ -156,7 +156,7 @@ sensor-data-java-validation-59cb8fbb56-rln6l    1/1     Running   0          94s
 Access the HTTP ingress (no public ingress is available by default):
 
 ```
-$ kubectl port-forward sensor-data-java-sensor-data-845f4dcdc4-g9rs9 -n sensor-data-java 3002:3002
+$ kubectl port-forward sensor-data-java-sensor-data-845f4dcdc4-g9rs9 -n sensor-data-java 3000:3000
 
 $ cat test-data/04-moderate-breeze.json
 {
@@ -169,7 +169,7 @@ $ cat test-data/04-moderate-breeze.json
    }
 }
 
-$ curl -i -X POST localhost:3003 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
+$ curl -i -X POST localhost:3000 -H "Content-Type: application/json" --data '@test-data/04-moderate-breeze.json'
 HTTP/1.1 202 Accepted
 Server: akka-http/10.1.10
 Date: Mon, 25 Nov 2019 11:23:14 GMT

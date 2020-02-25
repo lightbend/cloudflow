@@ -58,16 +58,16 @@ taxi-ride-fare-taxi-ride-84b454c56f-hr9h4               1/1     Running   0     
 Then port-forward to the correct pods:
 
 ```bash
-$ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3000:3000
-$ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3001:3001
+$ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-ride 3000:3000
+$ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3000:3000
 ```
 
-Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3001`.
+Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3000`.
 
 ```
 $ ./send-data-rides.sh -p 3000
 ...
-$ ./send-data-fares.sh -p 3001
+$ ./send-data-fares.sh -p 3000
 ```
 
 > **Note:** Just make sure that the port numbers passed in to the scripts match the ones where you port forwarded to.
@@ -191,17 +191,17 @@ For running this application in the local sandbox, follow the instructions in [R
 logger [taxiride.logger.FarePerRideLogger]
 processor [taxiride.processor.TaxiRideProcessor]
 taxi-fare [taxiride.ingestor.TaxiFareIngress]
-    - HTTP port [3002]
+    - HTTP port [3000]
 taxi-ride [taxiride.ingestor.TaxiRideIngress]
-    - HTTP port [3003]
+    - HTTP port [3001]
 ```
 
 The port numbers indicate the ports for the two ingresses. In order to feed data to the application, you need to run the 2 bash scripts in folder `test-data`, named `send-data-rides.sh` and `send-data-fares.sh`. 
 
 ```
-$ ./send-data-rides.sh -p 3003
+$ ./send-data-rides.sh -p 3001
 ...
-$ ./send-data-fares.sh -p 3002
+$ ./send-data-fares.sh -p 3000
 ```
 
 > **Note:** Before running the bash scripts, change the port numbers in the scripts to the ones displayed above by the `runLocal` command.
