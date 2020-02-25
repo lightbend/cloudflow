@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// BlueprintProblem - generic interface for all blueprint related problems
 type BlueprintProblem interface {
 	ToMessage() string
 }
