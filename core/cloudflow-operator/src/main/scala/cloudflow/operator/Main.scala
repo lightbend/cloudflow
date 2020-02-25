@@ -31,6 +31,7 @@ import skuber.json.format._
 import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
+import skuber.apps.v1.Deployment
 
 object Main extends {
 
@@ -47,8 +48,8 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
-      val client          = connectToKubernetes(settings)
-      val ownerReferences = getPodOwnerReferences(settings, client)
+      val client          = connectToKubernetes()
+      val ownerReferences = getDeploymentOwnerReference(settings, client.usingNamespace(settings.podNamespace))
       installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
 
@@ -90,14 +91,17 @@ object Main extends {
       """.stripMargin)
   }
 
-  private def getPodOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
+  private def getDeploymentOwnerReference(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
     CloudflowOwnerReferences(
-      Await.result(client.get[Pod](settings.podName).map(pod => pod.metadata.ownerReferences), 10 seconds)
+      Await.result(client
+                     .getInNamespace[Deployment](Name.ofCloudflowOperatorDeployment, settings.podNamespace)
+                     .map(_.metadata.ownerReferences),
+                   10 seconds)
     )
 
-  private def connectToKubernetes(settings: Settings)(implicit system: ActorSystem, mat: Materializer) = {
+  private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
     val conf   = Configuration.defaultK8sConfig
-    val client = k8sInit(conf).usingNamespace(settings.podNamespace)
+    val client = k8sInit(conf).usingNamespace("")
     system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")
     client
   }
