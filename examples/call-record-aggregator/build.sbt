@@ -3,8 +3,10 @@ import sbt.Keys._
 
 lazy val root =
   Project(id = "root", base = file("."))
+    .enablePlugins(ScalafmtPlugin)
     .settings(
       name := "root",
+      scalafmtOnCompile := true,
       skip in publish := true,
     )
     .withId("root")

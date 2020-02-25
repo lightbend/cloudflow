@@ -7,10 +7,11 @@ import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
   Project(id = "root", base = file("."))
-    .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin)
+    .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, ScalafmtPlugin)
     .settings(
       name := "root",
       skip in publish := true,
+      scalafmtOnCompile := true,
       commands += InternalReleaseCommand.command,
       unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
         streamlets,
@@ -435,7 +436,7 @@ def cloudflowModule(moduleID: String): Project = {
 }
 
 // These settings are made active only when we use bintray for internal release
-// It is important that when we do final releases we need to invoke sbt as 
+// It is important that when we do final releases we need to invoke sbt as
 // `sbt -Dsbt.sbtbintray=false`
 lazy val bintraySettings =
   if (BintrayPlugin.isEnabledViaProp) {

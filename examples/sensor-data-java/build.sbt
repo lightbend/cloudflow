@@ -3,7 +3,7 @@ import sbt.Keys._
 
 lazy val sensorDataJava =  (project in file("."))
     .enablePlugins(
-       CloudflowAkkaStreamsApplicationPlugin, 
+       CloudflowAkkaStreamsApplicationPlugin,
        JavaFormatterPlugin
     )
     .settings(

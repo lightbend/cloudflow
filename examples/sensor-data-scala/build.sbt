@@ -3,9 +3,10 @@ import sbt._
 import sbt.Keys._
 
 lazy val sensorData =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
     .settings(
 //end::docs-projectSetup-example[]
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.10",
