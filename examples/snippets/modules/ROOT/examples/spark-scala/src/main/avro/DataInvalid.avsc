@@ -1,5 +1,5 @@
 {
-  "namespace": "cloudflow.akkastreamsdoc",
+  "namespace": "cloudflow.sparkdoc",
   "type": "record",
   "name": "DataInvalid",
   "fields":[
