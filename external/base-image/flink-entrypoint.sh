@@ -40,6 +40,8 @@ envsubst < /usr/local/flink-conf.yaml > $FLINK_HOME/conf/flink-conf.yaml
 echo "web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
 echo "jobmanager.web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
+echo "taskmanager.memory.flink.size: 1024mb" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
 # Add JMX metric reporter to config
 echo "metrics.reporters: jmx" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
