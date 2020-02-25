@@ -81,10 +81,9 @@ object ApplicationDescriptor {
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
     val connections               = blueprint.connections.map(toConnection)
     val deployments =
-      namedStreamletDescriptors.zipWithIndex
-        .map {
-          case (streamlet, index) ⇒
-            StreamletDeployment(sanitizedApplicationId, streamlet, image, index, connections)
+      namedStreamletDescriptors
+        .map { streamlet ⇒
+          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
@@ -152,18 +151,18 @@ final case class StreamletDeployment(
 )
 
 object StreamletDeployment {
-  val ServerAttributeName          = "server"
-  val MinimumEndpointContainerPort = 3000
+  val ServerAttributeName   = "server"
+  val EndpointContainerPort = 3000
 
   def name(appId: String, streamlet: String) = s"${appId}.${streamlet}"
 
   def apply(appId: String,
             streamlet: StreamletInstance,
             image: String,
-            index: Int,
             allConnections: Vector[Connection],
+            containerPort: Int = EndpointContainerPort,
             replicas: Option[Int] = None): StreamletDeployment = {
-    val (config, endpoint) = configAndEndpoint(appId, streamlet, index)
+    val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
     StreamletDeployment(
       name(appId, streamlet.name),
       streamlet.descriptor.runtime.name,
@@ -201,12 +200,10 @@ object StreamletDeployment {
     outletMappings ++ inletMappings
   }
 
-  private def configAndEndpoint(appId: String, streamlet: StreamletInstance, index: Int): Tuple2[Config, Option[Endpoint]] =
+  private def configAndEndpoint(appId: String, streamlet: StreamletInstance, containerPort: Int): Tuple2[Config, Option[Endpoint]] =
     streamlet.descriptor
       .getAttribute(ServerAttributeName)
       .map { serverAttribute ⇒
-        val containerPort = MinimumEndpointContainerPort + index
-
         (
           ConfigFactory.parseString(s"${serverAttribute.configPath} = ${containerPort}"),
           Some(Endpoint(appId, streamlet.name, containerPort))

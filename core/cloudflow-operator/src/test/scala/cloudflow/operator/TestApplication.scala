@@ -34,10 +34,9 @@ object CloudflowApplicationSpecBuilder {
     val streamlets             = blueprint.streamlets.map(toStreamlet)
     val connections            = blueprint.connections.map(toConnection)
     val deployments =
-      streamlets.zipWithIndex
-        .map {
-          case (streamlet, index) ⇒
-            StreamletDeployment(sanitizedApplicationId, streamlet, image, index, connections)
+      streamlets
+        .map { streamlet ⇒
+          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
         }
 
     CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, connections, deployments, agentPaths)

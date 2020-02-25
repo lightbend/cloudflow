@@ -112,25 +112,31 @@ object LocalRunner extends StreamletLoader {
 
     val streamlets = appDescriptor.streamlets.sortBy(_.name)
 
-    val streamletsWithConf = streamlets.zipWithIndex.map {
-      case (streamletDescriptor, idx) ⇒
-        val streamletName = streamletDescriptor.name
-        // Make sure that we convert any backslash in the path to a forward slash since we want to store this in a JSON value
-        val localStorageDirectory =
-          Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
-        log.info(s"Using local storage directory: $localStorageDirectory")
-        val deployment: StreamletDeployment =
-          StreamletDeployment(appDescriptor.appId, streamletDescriptor, "", idx, appDescriptor.connections)
-        val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, "localhost:" + kafkaPort)
-        val runnerConfig         = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
-        val streamletParamConfig = streamletParameterConfig.atPath("cloudflow.streamlets")
+    var endpointIdx = 0
+    val streamletsWithConf = streamlets.map { streamletInstance ⇒
+      val streamletName = streamletInstance.name
+      // Make sure that we convert any backslash in the path to a forward slash since we want to store this in a JSON value
+      val localStorageDirectory =
+        Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
+      log.info(s"Using local storage directory: $localStorageDirectory")
+      val deployment: StreamletDeployment =
+        StreamletDeployment(appDescriptor.appId,
+                            streamletInstance,
+                            "",
+                            appDescriptor.connections,
+                            StreamletDeployment.EndpointContainerPort + endpointIdx)
+      deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-        val patchedRunnerConfig = runnerConfig
-          .withFallback(streamletParamConfig)
-          .withFallback(baseConfig)
-          .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
+      val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, "localhost:" + kafkaPort)
+      val runnerConfig         = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
+      val streamletParamConfig = streamletParameterConfig.atPath("cloudflow.streamlets")
 
-        (streamletDescriptor, patchedRunnerConfig)
+      val patchedRunnerConfig = runnerConfig
+        .withFallback(streamletParamConfig)
+        .withFallback(baseConfig)
+        .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
+
+      (streamletInstance, patchedRunnerConfig)
     }
 
     val launchedStreamlets = streamletsWithConf.map {

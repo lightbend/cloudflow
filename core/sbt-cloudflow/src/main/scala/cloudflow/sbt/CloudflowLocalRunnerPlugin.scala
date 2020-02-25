@@ -223,28 +223,34 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def printInfo(appDescriptor: ApplicationDescriptor, outputFile: File): Unit = {
-    val connections                                  = appDescriptor.connections
-    val streamletDescriptors: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
-    val streamletInfo = streamletDescriptors.zipWithIndex.map {
-      case (streamlet, idx) ⇒
-        val deployment = StreamletDeployment(appDescriptor.appId, streamlet, "", idx, appDescriptor.connections)
-        val serverPort: Option[Int] = if (deployment.config.hasPath(ServerAttribute.configPath)) {
-          Some(ServerAttribute.containerPort(deployment.config))
-        } else {
-          None
+    val connections                                = appDescriptor.connections
+    val streamletInstances: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
+    var endpointIdx                                = 0
+    val streamletInfo = streamletInstances.map { streamlet ⇒
+      val deployment = StreamletDeployment(appDescriptor.appId,
+                                           streamlet,
+                                           "",
+                                           appDescriptor.connections,
+                                           StreamletDeployment.EndpointContainerPort + endpointIdx)
+      deployment.endpoint.foreach(_ => endpointIdx += 1)
+
+      val serverPort: Option[Int] = if (deployment.config.hasPath(ServerAttribute.configPath)) {
+        Some(ServerAttribute.containerPort(deployment.config))
+      } else {
+        None
+      }
+
+      def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
+
+      val volumeMounts = streamlet.descriptor.volumeMounts
+        .map { mount ⇒
+          s"\t- mount [${mount.name}] available at [${mount.path}]"
         }
-
-        def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
-
-        val volumeMounts = streamlet.descriptor.volumeMounts
-          .map { mount ⇒
-            s"\t- mount [${mount.name}] available at [${mount.path}]"
-          }
-          .mkString("\n")
-        val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
-        s"${streamlet.name} [${streamlet.descriptor.className}]" +
-          newLineIfNotEmpty(endpointMessage) +
-          newLineIfNotEmpty(volumeMounts)
+        .mkString("\n")
+      val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
+      s"${streamlet.name} [${streamlet.descriptor.className}]" +
+        newLineIfNotEmpty(endpointMessage) +
+        newLineIfNotEmpty(volumeMounts)
     }
 
     infoBanner("Streamlets")(streamletInfo.mkString("\n"))
