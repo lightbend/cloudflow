@@ -47,7 +47,7 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
-      val client          = connectToKubernetes()
+      val client          = connectToKubernetes(settings)
       val ownerReferences = getPodOwnerReferences(settings, client)
       installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
@@ -95,9 +95,9 @@ object Main extends {
       Await.result(client.get[Pod](settings.podName).map(pod => pod.metadata.ownerReferences), 10 seconds)
     )
 
-  private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
+  private def connectToKubernetes(settings: Settings)(implicit system: ActorSystem, mat: Materializer) = {
     val conf   = Configuration.defaultK8sConfig
-    val client = k8sInit(conf).usingNamespace("")
+    val client = k8sInit(conf).usingNamespace(settings.podNamespace)
     system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")
     client
   }
