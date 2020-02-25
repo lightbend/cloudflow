@@ -1,0 +1,14 @@
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "InvalidMetric",
+    "fields":[
+         {
+            "name": "metric", "type": "sensordata.Metric"
+         },
+         {
+            "name": "error", "type": "string"
+         }
+    ]
+}
+
