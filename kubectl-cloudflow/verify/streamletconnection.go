@@ -6,6 +6,7 @@ import (
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 )
 
+// StreamletConnection models the connections in a blueprint
 type StreamletConnection struct {
 	from string
 	to string
@@ -15,14 +16,14 @@ type StreamletConnection struct {
 	metadata *configuration.Config
 }
 
-const Avro_Format string = "avro"
+const avroFormat string = "avro"
 
 func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) StreamletConnection {
 	_, fromPathError := NewVerifiedPortPath(c.from)
 	_, toPathError := NewVerifiedPortPath(c.to)
 
-	var patternErrors []BlueprintProblem = nil
-	var conErrors []BlueprintProblem = nil
+	var patternErrors []BlueprintProblem 
+	var conErrors []BlueprintProblem 
 
 	if fromPathError != nil {
 		patternErrors = append(patternErrors, fromPathError)
@@ -35,8 +36,8 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 	outletResult, outletError := FindVerifiedOutlet(verifiedStreamlets, c.from)
 	inletResult, inletError := FindVerifiedInlet(verifiedStreamlets, c.to)
 
-	var verifiedFromPath *string = nil
-	var verifiedToPath *string = nil
+	var verifiedFromPath *string 
+	var verifiedToPath *string 
 
 	if outletError != nil {
 		verifiedFromPath = &c.from
@@ -54,7 +55,7 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 		verifiedToPath = &portPath
 	}
 
-	var verConnection *VerifiedStreamletConnection = nil
+	var verConnection *VerifiedStreamletConnection 
     if outletResult != nil && inletResult != nil {
     	var label = ""
     	if c.label == nil {
@@ -81,7 +82,7 @@ func (c StreamletConnection) verifySchema(verifiedOutlet VerifiedOutlet, verifie
 		if verifiedOutlet.schemaDescriptor.Format == verifiedInlet.schemaDescriptor.Format &&
 			verifiedOutlet.schemaDescriptor.Fingerprint == verifiedInlet.schemaDescriptor.Fingerprint {
 			return &VerifiedStreamletConnection{verifiedOutlet: verifiedOutlet, verifiedInlet: verifiedInlet, label: &label}, nil
-	} else if verifiedOutlet.schemaDescriptor.Format == Avro_Format {
+	} else if verifiedOutlet.schemaDescriptor.Format == avroFormat {
 		err := cloudflowavro.CheckSchemaCompatibility(verifiedOutlet.schemaDescriptor.Schema, verifiedInlet.schemaDescriptor.Schema)
 
 		rerr, ok := err.(*cloudflowavro.ReaderSchemaValidationError)

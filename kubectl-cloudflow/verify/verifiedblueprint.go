@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
+// SchemaDescriptor is a domain expressive typedef
 type SchemaDescriptor domain.InOutletSchema
+// OutletDescriptor is a domain expressive typedef
 type OutletDescriptor domain.InOutlet
+// InletDescriptor is a domain expressive typedef
 type InletDescriptor domain.InOutlet
 
 type VerifiedStreamlet struct {
@@ -68,14 +71,15 @@ func (v* VerifiedStreamlet) inlet(inlet InletDescriptor) VerifiedOutlet {
 	}
 }
 
+// ToString string representation of a VerifiedPortPath
 func (v VerifiedPortPath) ToString() string {
 	if v.portName == nil {
 		return v.streamletRef
-	} else {
-		return fmt.Sprintf("%s.%s", v.streamletRef, *v.portName)
-	}
+	} 
+  return fmt.Sprintf("%s.%s", v.streamletRef, *v.portName)
 }
 
+// NewVerifiedPortPath constructs a VerifiedPortPath out of a string
 func NewVerifiedPortPath(portPath string)(*VerifiedPortPath, *InvalidPortPath) {
 	var trimmed = strings.TrimSpace(portPath)
 	var splitF = func(c rune) bool {
@@ -129,144 +133,138 @@ func (v* VerifiedOutlet) matches(outletDescriptor OutletDescriptor) bool {
 	return outletDescriptor.Name == v.portName && outletDescriptor.Schema.Fingerprint == v.schemaDescriptor.Fingerprint
 }
 
+// FindVerifiedOutlet finds the VerifiedOutlet corresponding to the outletPortPath from the list of
+// verifiedStreamlets
 func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath string) (*VerifiedOutlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(outletPortPath)
 
-	if err!= nil {
+	if err != nil {
 		return nil, err
+	} 
+	var found *VerifiedStreamlet 
+	for _, verifiedStreamlet := range verifiedStreamlets {
+		if verifiedStreamlet.name == verifiedPortPath.streamletRef {
+			found = &verifiedStreamlet
+			break
+		}
+	}
+	if found == nil {
+		return nil, PortPathNotFound{
+			path: outletPortPath,
+		}
+	} 
+	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) > 1 {
+		var outletsToMap= found.descriptor.Outlets
+		var suggestions []VerifiedPortPath 
+
+		for _, outletToMap := range outletsToMap {
+			finalNameStr := outletToMap.Name
+			suggestions = append(suggestions, VerifiedPortPath{
+				streamletRef: verifiedPortPath.streamletRef,
+				portName:     &finalNameStr,})
+		}
+		return nil, PortPathNotFound{
+			path:        outletPortPath,
+			suggestions: suggestions,
+		}
+	} 
+	var portPath *VerifiedPortPath 
+	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) == 1 {
+		finalNameStr := found.descriptor.Outlets[0].Name
+		portPath = &VerifiedPortPath{
+			streamletRef: verifiedPortPath.streamletRef,
+			portName:     &finalNameStr,}
+
 	} else {
-		var found *VerifiedStreamlet = nil
-		for _, verifiedStreamlet := range verifiedStreamlets {
-			if verifiedStreamlet.name == verifiedPortPath.streamletRef {
-				found = &verifiedStreamlet
-				break
+		portPath = verifiedPortPath
+	}
+
+	var foundOutlet *VerifiedOutlet 
+	for _, outlet := range found.descriptor.Outlets {
+		if outlet.Name == *portPath.portName {
+			foundOutlet = &VerifiedOutlet{
+				streamlet: *found,
+				VerifiedPort: VerifiedPort{
+					portName:         outlet.Name,
+					schemaDescriptor: outlet.Schema,
+				},
 			}
+			break
 		}
-		if found == nil {
-			return nil, PortPathNotFound{
-				path: outletPortPath,
-			}
-		} else {
-			if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) > 1 {
-				var outletsToMap= found.descriptor.Outlets
-				var suggestions []VerifiedPortPath = nil
+	}
 
-				for _, outletToMap := range outletsToMap {
-					finalNameStr := outletToMap.Name
-					suggestions = append(suggestions, VerifiedPortPath{
-						streamletRef: verifiedPortPath.streamletRef,
-						portName:     &finalNameStr,})
-				}
-				return nil, PortPathNotFound{
-					path:        outletPortPath,
-					suggestions: suggestions,
-				}
-			} else {
-				var portPath *VerifiedPortPath = nil
-				if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) == 1 {
-					finalNameStr := found.descriptor.Outlets[0].Name
-					portPath = &VerifiedPortPath{
-						streamletRef: verifiedPortPath.streamletRef,
-						portName:     &finalNameStr,}
-
-				} else {
-					portPath = verifiedPortPath
-				}
-
-				var foundOutlet *VerifiedOutlet = nil
-				for _, outlet := range found.descriptor.Outlets {
-					if outlet.Name == *portPath.portName {
-						foundOutlet = &VerifiedOutlet{
-							streamlet: *found,
-							VerifiedPort: VerifiedPort{
-								portName:         outlet.Name,
-								schemaDescriptor: outlet.Schema,
-							},
-						}
-						break
-					}
-				}
-
-				if foundOutlet != nil {
-					return foundOutlet, nil
-				} else {
-					return nil, PortPathNotFound{
-						path: outletPortPath,
-					}
-				}
-
-			}
-		}
+	if foundOutlet != nil {
+		return foundOutlet, nil
+	} 
+	return nil, PortPathNotFound{
+		path: outletPortPath,
 	}
 }
 
+// FindVerifiedInlet finds the VerifiedOutlet corresponding to the inletPortPath from the list of
+// verifiedStreamlets
 func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath string) (*VerifiedInlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(inletPortPath)
 
 	if err!= nil {
 		return nil, err
+	} 
+	var found *VerifiedStreamlet 
+	for _, verifiedStreamlet := range verifiedStreamlets {
+		if verifiedStreamlet.name == verifiedPortPath.streamletRef {
+			found = &verifiedStreamlet
+			break
+		}
+	}
+	if found == nil {
+		return nil, PortPathNotFound{
+			path: inletPortPath,
+		}
+	} 
+	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) > 1 {
+		var inletsToMap= found.descriptor.Inlets
+		var suggestions []VerifiedPortPath 
+
+		for _, inletToMap := range inletsToMap {
+			finalNameStr := inletToMap.Name
+			suggestions = append(suggestions, VerifiedPortPath{
+				streamletRef: verifiedPortPath.streamletRef,
+				portName:     &finalNameStr,})
+		}
+		return nil, PortPathNotFound{
+			path:        inletPortPath,
+			suggestions: suggestions,
+		}
+	} 
+	var portPath *VerifiedPortPath 
+	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) == 1 {
+		finalNameStr := found.descriptor.Inlets[0].Name
+		portPath = &VerifiedPortPath{
+			streamletRef: verifiedPortPath.streamletRef,
+			portName:     &finalNameStr,}
+
 	} else {
-		var found *VerifiedStreamlet = nil
-		for _, verifiedStreamlet := range verifiedStreamlets {
-			if verifiedStreamlet.name == verifiedPortPath.streamletRef {
-				found = &verifiedStreamlet
-				break
+		portPath = verifiedPortPath
+	}
+
+	var foundInlet *VerifiedInlet 
+	for _, inlet := range found.descriptor.Inlets {
+		if inlet.Name == *portPath.portName {
+			foundInlet = &VerifiedInlet{
+				streamlet: *found,
+				VerifiedPort: VerifiedPort{
+					portName:         inlet.Name,
+					schemaDescriptor: inlet.Schema,
+				},
 			}
+			break
 		}
-		if found == nil {
-			return nil, PortPathNotFound{
-				path: inletPortPath,
-			}
-		} else {
-			if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) > 1 {
-				var inletsToMap= found.descriptor.Inlets
-				var suggestions []VerifiedPortPath = nil
+	}
 
-				for _, inletToMap := range inletsToMap {
-					finalNameStr := inletToMap.Name
-					suggestions = append(suggestions, VerifiedPortPath{
-						streamletRef: verifiedPortPath.streamletRef,
-						portName:     &finalNameStr,})
-				}
-				return nil, PortPathNotFound{
-					path:        inletPortPath,
-					suggestions: suggestions,
-				}
-			} else {
-				var portPath *VerifiedPortPath = nil
-				if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) == 1 {
-					finalNameStr := found.descriptor.Inlets[0].Name
-					portPath = &VerifiedPortPath{
-						streamletRef: verifiedPortPath.streamletRef,
-						portName:     &finalNameStr,}
-
-				} else {
-					portPath = verifiedPortPath
-				}
-
-				var foundInlet *VerifiedInlet = nil
-				for _, inlet := range found.descriptor.Inlets {
-					if inlet.Name == *portPath.portName {
-						foundInlet = &VerifiedInlet{
-							streamlet: *found,
-							VerifiedPort: VerifiedPort{
-								portName:         inlet.Name,
-								schemaDescriptor: inlet.Schema,
-							},
-						}
-						break
-					}
-				}
-
-				if foundInlet != nil {
-					return foundInlet, nil
-				} else {
-					return nil, PortPathNotFound{
-						path: inletPortPath,
-					}
-				}
-
-			}
-		}
+	if foundInlet != nil {
+		return foundInlet, nil
+	} 
+	return nil, PortPathNotFound{
+		path: inletPortPath,
 	}
 }

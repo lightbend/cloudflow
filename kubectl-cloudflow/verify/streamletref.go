@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// StreamletRef models each element in the streamlets section of a blueprint
 type StreamletRef struct {
 	name string
 	className string
@@ -15,6 +16,7 @@ type StreamletRef struct {
 	imageId *string
 }
 
+// StreamletDescriptor is just a better domain element typedef
 type StreamletDescriptor domain.Descriptor
 
 func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) StreamletRef {
@@ -35,7 +37,7 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		})
 	}
 
-    var found *StreamletDescriptor = nil
+    var found *StreamletDescriptor 
 	for _, desc := range streamletDescriptors {
 
 		if desc.ClassName == s.className {

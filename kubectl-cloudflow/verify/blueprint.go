@@ -327,18 +327,18 @@ type Blueprint struct {
 func (b Blueprint) verify() Blueprint {
 
 	var  illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
-	var emptyStreamletsProblem* EmptyStreamlets = nil
+	var emptyStreamletsProblem* EmptyStreamlets 
 	if len(b.streamlets) == 0 {
 		emptyStreamletsProblem = &EmptyStreamlets{}
 	}
 
-	var emptyStreamletDescriptorsProblem * EmptyStreamletDescriptors = nil
+	var emptyStreamletDescriptorsProblem * EmptyStreamletDescriptors 
 	if len(b.streamletDescriptors) == 0 {
 		emptyStreamletDescriptorsProblem  = &EmptyStreamletDescriptors{}
 	}
 
-	var newStreamlets[] StreamletRef = nil
-	var verifiedStreamlets[] VerifiedStreamlet = nil
+	var newStreamlets[] StreamletRef 
+	var verifiedStreamlets[] VerifiedStreamlet 
 
 	for _, ref := range b.streamlets {
 		newStreamlets = append(newStreamlets, ref.verify(b.streamletDescriptors))
@@ -350,8 +350,8 @@ func (b Blueprint) verify() Blueprint {
 		}
 	}
 
-	var newConnections[] StreamletConnection = nil
-	var verifiedConnections[] VerifiedStreamletConnection = nil
+	var newConnections[] StreamletConnection 
+	var verifiedConnections[] VerifiedStreamletConnection 
 
 	for _, con := range b.connections {
 		newConnections = append(newConnections, con.verify(verifiedStreamlets))
@@ -475,10 +475,10 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 			groupedConnections[key] = GroupedConnections{vInlet:verifiedStreamletConnections[i].verifiedInlet, vCons: values}
 		}
 	}
-	var illegalConnectionProblems []IllegalConnection = nil
+	var illegalConnectionProblems []IllegalConnection 
 	for _, gCon := range groupedConnections {
 		if len(gCon.vCons) > 1 {
-			var mapPortpaths []VerifiedPortPath = nil
+			var mapPortpaths []VerifiedPortPath 
 			for _, vOutlet := range gCon.vCons {
 				mapPortpaths = append(mapPortpaths, vOutlet.verifiedOutlet.portPath())
 			}
@@ -506,10 +506,10 @@ func verifiedConnectionsExists(verifiedStreamletConnections []VerifiedStreamletC
 }
 
 func (b Blueprint) verifyInletsConnected(verifiedStreamlets []VerifiedStreamlet, verifiedStreamletConnections []VerifiedStreamletConnection) ([]VerifiedStreamlet, []UnconnectedInlets) {
-	var unconnectedPortProblems []UnconnectedInlets = nil
+	var unconnectedPortProblems []UnconnectedInlets 
 
 	for _, vStreamlet := range verifiedStreamlets {
-		var unconnectedInlets []UnconnectedInlet = nil
+		var unconnectedInlets []UnconnectedInlet 
 
 		for _, inlet := range vStreamlet.descriptor.Inlets {
 			if !verifiedConnectionsExists(verifiedStreamletConnections, inlet, vStreamlet) {
@@ -551,7 +551,7 @@ func (b Blueprint) verifyNoDuplicateStreamletNames(streamlets []StreamletRef) ([
 		}
 	}
 
-	var duplicateStreamlets []StreamletRef = nil
+	var duplicateStreamlets []StreamletRef 
 	for _, v := range groupedStreamlets {
 		if len(v) > 1 {
 			for _, ref := range v {
@@ -569,8 +569,8 @@ func (b Blueprint) verifyNoDuplicateStreamletNames(streamlets []StreamletRef) ([
 }
 
 func (b Blueprint) verifyPortNames(streamletDescriptors []StreamletDescriptor) []BlueprintProblem {
-	var inletProblems []BlueprintProblem = nil
-	var outletProblems []BlueprintProblem = nil
+	var inletProblems []BlueprintProblem 
+	var outletProblems []BlueprintProblem 
 
 	for _, desc := range streamletDescriptors {
 		for _, inlet := range desc.Inlets {

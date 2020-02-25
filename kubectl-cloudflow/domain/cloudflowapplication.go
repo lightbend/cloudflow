@@ -173,6 +173,7 @@ type CloudflowApplicationDescriptorDigestPair struct {
 	ImageDigest   string `json:"imageDigest"`
 }
 
+// CloudflowStreamletDescriptors is an array of descriptors
 type CloudflowStreamletDescriptors struct {
 	Descriptors []Descriptor `json:"descriptors"`
 }
