@@ -4,7 +4,7 @@ import akka.stream.javadsl.*;
 
 import akka.NotUsed;
 import akka.actor.*;
-import akka.kafka.ConsumerMessage.CommittableOffset;
+import akka.kafka.ConsumerMessage.Committable;
 import akka.stream.*;
 
 import com.typesafe.config.Config;
@@ -31,15 +31,19 @@ public class DataSplitter extends AkkaStreamlet {
   }
 
   public AkkaStreamletLogic createLogic() {
-    return new SplitterLogic<Data, DataInvalid, Data>(inlet, invalidOutlet, validOutlet, getContext()) {
-      public FlowWithContext<Data, CommittableOffset, Either<DataInvalid, Data>, CommittableOffset, NotUsed> createFlow() {
-        return createFlowWithOffsetContext()
-          .map(data -> {	
-            if (data.getValue() < 0) return Either.left(new DataInvalid(data.getKey(), data.getValue(), "All data must be positive numbers!"));	
-            else return Either.right(data);	
-          });	
+    return new RunnableGraphStreamletLogic(getContext()) {
+      public RunnableGraph createRunnableGraph() {
+        return getSourceWithCommittableContext(inlet).to(Splitter.sink(createFlow(), invalidOutlet, validOutlet, getContext()));
       }
     };
+  }
+
+  public FlowWithContext<Data, Committable, Either<DataInvalid, Data>, Committable, NotUsed> createFlow() {
+    return FlowWithContext.<Data, Committable>create()
+      .map(data -> {	
+        if (data.getValue() < 0) return Either.left(new DataInvalid(data.getKey(), data.getValue(), "All data must be positive numbers!"));	
+        else return Either.right(data);	
+      });	
   }
 }
 // end::splitter[]

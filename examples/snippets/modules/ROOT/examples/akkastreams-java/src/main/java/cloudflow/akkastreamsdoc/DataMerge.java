@@ -5,7 +5,8 @@ import cloudflow.akkastream.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 import cloudflow.akkastream.javadsl.*;
-import cloudflow.akkastream.util.javadsl.MergeLogic;
+import cloudflow.akkastream.util.javadsl.*;
+import akka.stream.javadsl.*;
 
 import java.util.*;
 
@@ -17,11 +18,12 @@ class DataMerge extends AkkaStreamlet {
   public StreamletShape shape() {
     return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
   }
-  public MergeLogic createLogic() {
-    List<CodecInlet<Data>> inlets = new ArrayList<CodecInlet<Data>>();
-    inlets.add(inlet1);
-    inlets.add(inlet2);
-    return new MergeLogic(inlets, outlet, getContext());
+  public RunnableGraphStreamletLogic createLogic() {
+    return new RunnableGraphStreamletLogic(getContext()) {
+      public RunnableGraph<?> createRunnableGraph() {
+        return Merger.source(getContext(), inlet1, inlet2).to(getCommittableSink(outlet));
+      }
+    };
   }
 }
 // end::merge[]

@@ -2,10 +2,10 @@ package cloudflow.akkastreamsdoc
 
 // tag::merge[]
 import cloudflow.akkastream._
+import cloudflow.akkastream.scaladsl._
+import cloudflow.akkastream.util.scaladsl._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
-
-import cloudflow.akkastream.util.scaladsl.MergeLogic
 
 class DataMerge extends AkkaStreamlet {
 
@@ -15,6 +15,9 @@ class DataMerge extends AkkaStreamlet {
 
   final override val shape = StreamletShape.withInlets(in0, in1).withOutlets(out)
 
-  override final def createLogic = new MergeLogic(Vector(in0, in1), out)
+  override final def createLogic = new RunnableGraphStreamletLogic {
+    def runnableGraph =
+      Merger.source(in0, in1).to(committableSink(out))
+  }
 }
 // end::merge[]

@@ -2,10 +2,11 @@ package cloudflow.akkastreamsdoc
 
 // tag::splitter[]
 import cloudflow.akkastream._
+import cloudflow.akkastream.scaladsl._
+import cloudflow.akkastream.util.scaladsl._
 
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
-import cloudflow.akkastream.util.scaladsl.SplitterLogic
 
 class DataSplitter extends AkkaStreamlet {
   val in      = AvroInlet[Data]("in")
@@ -13,9 +14,10 @@ class DataSplitter extends AkkaStreamlet {
   val valid   = AvroOutlet[Data]("valid").withPartitioner(RoundRobinPartitioner)
   val shape   = StreamletShape(in).withOutlets(invalid, valid)
 
-  override def createLogic = new SplitterLogic(in, invalid, valid) {
+  override def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = sourceWithOffsetContext(in).to(Splitter.sink(flow, invalid, valid))
     def flow =
-      flowWithOffsetContext()
+      FlowWithCommittableContext[Data]
         .map { data ⇒
           if (data.value < 0) Left(DataInvalid(data.key, data.value, "All data must be positive numbers!"))
           else Right(data)
