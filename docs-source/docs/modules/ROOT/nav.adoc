@@ -28,4 +28,7 @@
 *** xref:develop:build-flink-streamlets.adoc[Building a Flink streamlet]
 *** xref:develop:test-flink-streamlet.adoc[Testing a Flink streamlet]
 
+* xref:administration:index.adoc[Cloudflow administration]
+** xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
+
 * xref:api:index.adoc[Streamlet API Reference]
