@@ -11,3 +11,4 @@ build/
 docs-source/docs/modules/ROOT/examples/
 ##
 view.sh
+/shared-content-source/docs/modules/develop/examples
