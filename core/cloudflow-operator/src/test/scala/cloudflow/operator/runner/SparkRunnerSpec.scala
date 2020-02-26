@@ -62,7 +62,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       .right
       .value
 
-    val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+    val app = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
     val deployment = StreamletDeployment(
       name = appId,

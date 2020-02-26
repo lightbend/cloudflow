@@ -58,7 +58,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val image      = "image-1"
 
       val currentApp = None
-      val newApp     = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("runner actions are created from a new app")
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
@@ -72,16 +72,16 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         case deployment: Deployment ⇒ deployment
       }
 
-      val streamletDeployments = newApp.deployments
+      val streamletDeployments = newApp.spec.deployments
 
       createActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
       akkaDeployments.size mustBe streamletDeployments.size
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, newApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
 
@@ -106,7 +106,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val appVersion = "42-abcdef0"
       val image      = "image-1"
 
-      val newApp     = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -136,12 +136,13 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val appVersion    = "42-abcdef0"
       val image         = "image-1"
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val currentApp    = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
-      val newApp  = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
       val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -156,10 +157,10 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       configMaps.size mustBe 1
       akkaDeployments.size mustBe 1
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, currentApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, currentApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, currentApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, currentApp.spec, appId, ctx)
       }
     }
 
@@ -178,7 +179,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val appId      = "lord-quas-12345"
       val appVersion = "42-abcdef0"
       val image      = "image-1"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app adds a runner, ingress -> egress")
       val egressRef = egress.ref("egress")
@@ -186,7 +187,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val newApp        = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for runner resources should be created for the new endpoint")
       val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
@@ -202,10 +204,10 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       akkaDeployments.size mustBe 1
 
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, newApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
   }

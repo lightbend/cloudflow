@@ -365,7 +365,7 @@ lazy val operator =
       imageNames in docker := Seq(
             ImageName(
               registry = None,
-              namespace = Some("olofwalker"),
+              namespace = Some("lightbend"),
               repository = "cloudflow-operator",
               tag = Some(cloudflowBuildNumber.value.asVersion)
             )

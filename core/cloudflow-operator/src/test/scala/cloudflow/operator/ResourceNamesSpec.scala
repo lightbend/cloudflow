@@ -56,7 +56,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .right
       .value
 
-    CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
   }
 
   // appId 80 characters.
@@ -80,12 +80,12 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .right
       .value
 
-    CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
   }
 
   "Deployments" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -95,7 +95,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   "Pod templates" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
 
-      val deployment = AkkaRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.copySpec.template.metadata.name.length mustEqual 63
 
@@ -104,7 +104,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Containers" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.getPodSpec.get.containers.head.name.length mustEqual 63
 
@@ -113,7 +113,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volumes" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.getPodSpec.get.volumes.foreach { vol ⇒
         assert(vol.name.length <= 63)
@@ -124,7 +124,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volume mounts" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
         assert(mount.name.length <= 63)
@@ -135,14 +135,14 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "ConfigMaps" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val configMap = AkkaRunner.configResource(testApp01.deployments.head, testApp01, namespace)
+      val configMap = AkkaRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
       configMap.metadata.name.length mustEqual 63
 
     }
 
     "have long names truncate to 63 characters when coming from SparkRunner" in {
-      val configMap = SparkRunner.configResource(testApp01.deployments.head, testApp01, namespace)
+      val configMap = SparkRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
       configMap.metadata.name.length mustEqual 63
 
@@ -151,7 +151,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Custom resources" should {
     "have long names truncate to 63 characters when coming from SparkRunner" in {
-      val deployment = SparkRunner.resource(testApp01.deployments.head, testApp01, namespace)
+      val deployment = SparkRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -169,7 +169,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "PersistentVolumeClaim" should {
     "have long names truncate to 63 characters when coming from AppActions" in {
-      val appActions = AppActions(testApp02.appId, namespace, CloudflowLabels(testApp02))
+      val appActions = AppActions(testApp02.spec.appId, namespace, CloudflowLabels(testApp02), testApp02.metadata.ownerReferences)
 
       appActions.find(_.resource.isInstanceOf[PersistentVolumeClaim]).get.resource.metadata.name.length mustEqual 63
 
