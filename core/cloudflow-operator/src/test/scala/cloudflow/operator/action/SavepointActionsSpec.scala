@@ -111,7 +111,7 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       Then("one delete action should be created for the processor outlet savepoint")
       actions.size mustBe 1
       val resource = actions(0).resource.asInstanceOf[SavepointActions.Topic]
-      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp), newApp.metadata.ownerReferences)
+      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp), resource.metadata.ownerReferences)
       actions(0) mustBe a[DeleteAction[_]]
       assertSavepoint(savepoint, resource, appId)
 
@@ -157,7 +157,7 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val actions  = SavepointActions(newApp, Some(currentApp), true)
       val resource = actions(0).resource.asInstanceOf[SavepointActions.Topic]
 
-      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp), newApp.metadata.ownerReferences)
+      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp), resource.metadata.ownerReferences)
       actions(0) mustBe a[CreateAction[_]]
       assertSavepoint(savepoint, resource, appId)
     }
