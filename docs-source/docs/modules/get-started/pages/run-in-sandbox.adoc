@@ -13,7 +13,7 @@ Cloudflow allows you to verify the sanity of the blueprint before you deploy the
 
 To verify the blueprint:
 
-. From the project directory, run `sbt` in interactive mode:
+. From your project's top-level directory, run `sbt` in interactive mode:
 +
 ```
 sbt

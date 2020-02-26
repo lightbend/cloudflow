@@ -28,6 +28,22 @@ blueprint {
   }
 }
 ```
+== Commit your changes
+Next, commit your changes:
+
+. Change directories to the parent directory of your project.
+
+. Use the `git add` command to add all of the files you created.
++
+----
+git add *
+----
+. Use the `git commit` command to commit your changes:
++
+----
+git commit -m "my first Cloudflow app"
+----
+
 
 == What's next
 
