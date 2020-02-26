@@ -51,7 +51,7 @@ spec:
         paths:
         - path: /sensor-data
           backend:
-            servicePort: 3003
+            servicePort: 3000
             serviceName: sensor-data-scala-http-ingress-service
 EOF
 ----

@@ -39,7 +39,7 @@ In the example below, we see the summary output of sensor-data-scala, one of the
 file-ingress [sensordata.SensorDataFileIngress]
   - mount [source-data-mount] available at [/tmp/local-cloudflow2714008686931483476/source-data-mount]
 http-ingress [sensordata.SensorDataHttpIngress]
-  - HTTP port [3001]
+  - HTTP port [3000]
 invalid-logger [sensordata.InvalidMetricLogger]
 merge [sensordata.SensorDataMerge]
 metrics [sensordata.SensorDataToMetrics]
@@ -75,9 +75,9 @@ The streamlets info panel provides a list of the streamlets instantiated in this
 
 file-ingress [sensordata.SensorDataFileIngress]
 - mount [source-data-mount] available at [/tmp/local-cloudflow2714008686931483476/source-data-mount]
-The `http-ingress` is offering an HTTP endpoint on port 3001
+The `http-ingress` is offering an HTTP endpoint on port 3000
 http-ingress [sensordata.SensorDataHttpIngress]
-  - HTTP port [3001]
+  - HTTP port [3000]
 Connections
 The Connections panel shows how the streamlets are connected to one another. It represents the connection schema specified in the blueprint.
 
