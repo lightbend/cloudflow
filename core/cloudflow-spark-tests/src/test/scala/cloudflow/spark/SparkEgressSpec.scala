@@ -17,10 +17,8 @@
 package cloudflow.spark
 
 import scala.concurrent.duration._
-
-import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
-import org.apache.spark.sql.streaming.OutputMode
-
+import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
+import org.apache.spark.sql.streaming.{OutputMode, Trigger}
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
 import cloudflow.spark.avro._
@@ -54,6 +52,7 @@ class SparkEgressSpec extends SparkScalaTestSupport {
               .option("truncate", false)
               .queryName("allNames")
               .outputMode(OutputMode.Append())
+              .trigger(Trigger.Once)
               .start()
 
             val q2 = inDataset
@@ -65,6 +64,7 @@ class SparkEgressSpec extends SparkScalaTestSupport {
               .option("truncate", false)
               .queryName("allNamesUpper")
               .outputMode(OutputMode.Append())
+              .trigger(Trigger.Once)
               .start()
             StreamletQueryExecution(q1, q2)
           }
