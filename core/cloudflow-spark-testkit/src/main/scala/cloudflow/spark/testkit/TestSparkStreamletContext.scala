@@ -20,12 +20,11 @@ package testkit
 import java.nio.file.attribute.FileAttribute
 
 import com.typesafe.config._
+
 import scala.reflect.runtime.universe._
-
-import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
+import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
 import org.apache.spark.sql.execution.streaming.MemoryStream
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
-
+import org.apache.spark.sql.streaming.{OutputMode, StreamingQuery, Trigger}
 import cloudflow.streamlets._
 
 /**
@@ -60,6 +59,7 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
         stream.writeStream
           .outputMode(outputMode)
           .format("memory")
+          .trigger(Trigger.Once)
           .queryName(outletTap.queryName)
           .start()
       }
