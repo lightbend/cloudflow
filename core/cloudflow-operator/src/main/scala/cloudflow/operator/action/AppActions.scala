@@ -28,13 +28,16 @@ import skuber.rbac._
 import skuber._
 import skuber.PersistentVolume.AccessMode
 import skuber.PersistentVolumeClaim.VolumeMode
+import java.security.acl.Owner
 
 /**
  * Creates a sequence of resource actions for preparing the namespace where the application is
  * installed
  */
 object AppActions {
-  def apply(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+  def apply(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] = {
     val roleAkka  = akkaRole(namespace, labels, ownerReferences)
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
@@ -50,13 +53,13 @@ object AppActions {
     )
   }
 
-  private def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): RoleBinding =
+  private def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofRoleBinding(),
         namespace = namespace,
         labels = labels(Name.ofRoleBinding()),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
       roleRef = RoleRef("rbac.authorization.k8s.io", "Role", BasicUserRole),
@@ -70,25 +73,25 @@ object AppActions {
       )
     )
 
-  private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): Role =
+  private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofAkkaRole(),
         namespace = namespace,
         labels = labels(Name.ofAkkaRole),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "Role",
       rules = List(createEventPolicyRule)
     )
 
-  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): RoleBinding =
+  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofAkkaRoleBinding(),
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
       roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
@@ -102,13 +105,13 @@ object AppActions {
       )
     )
 
-  private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): Role =
+  private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofSparkRole(),
         namespace = namespace,
         labels = labels(Name.ofSparkRole),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "Role",
       rules = List(
@@ -124,13 +127,13 @@ object AppActions {
       )
     )
 
-  private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): RoleBinding =
+  private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofSparkRoleBinding(),
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
       roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
@@ -144,13 +147,13 @@ object AppActions {
       )
     )
 
-  private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): Role =
+  private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
         name = Name.ofFlinkRole(),
         namespace = namespace,
         labels = labels(Name.ofFlinkRole),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "Role",
       rules = List(
@@ -166,13 +169,13 @@ object AppActions {
       )
     )
 
-  private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences): RoleBinding =
+  private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
         name = Name.ofFlinkRoleBinding(),
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
-        ownerReferences = ownerReferences.list
+        ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
       roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
@@ -186,14 +189,14 @@ object AppActions {
       )
     )
 
-  private def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences)(
+  private def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
   ): PersistentVolumeClaim = {
     val metadata = ObjectMeta(
       name = Name.ofPVCInstance(appId),
       namespace = namespace,
       labels = labels(Name.ofPVCComponent),
-      ownerReferences = ownerReferences.list
+      ownerReferences = ownerReferences
     )
 
     val pvcSpec = PersistentVolumeClaim.Spec(

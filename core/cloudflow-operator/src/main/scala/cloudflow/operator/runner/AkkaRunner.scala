@@ -43,10 +43,10 @@ object AkkaRunner extends Runner[Deployment] {
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): Deployment = {
-    val labels  = CloudflowLabels(app)
-    val ownerReferences = CloudflowOwnerReferences(app)
-    val appId   = app.spec.appId
-    val podName = Name.ofPod(deployment.name)
+    val labels          = CloudflowLabels(app)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
+    val appId           = app.spec.appId
+    val podName         = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
@@ -165,8 +165,10 @@ object AkkaRunner extends Runner[Deployment] {
         .withPodSpec(podSpec)
 
     val deploymentResource = Deployment(
-      metadata =
-        ObjectMeta(name = podName, namespace = namespace, labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent), ownerReferences = ownerReferences.list)
+      metadata = ObjectMeta(name = podName,
+                            namespace = namespace,
+                            labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
+                            ownerReferences = ownerReferences)
     ).withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
       .withTemplate(template)
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))

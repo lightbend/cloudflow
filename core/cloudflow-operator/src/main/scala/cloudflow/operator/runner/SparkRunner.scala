@@ -57,11 +57,11 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
-    val ownerReferences = CloudflowOwnerReferences(app)
-    val _spec = patch(deployment, app, namespace, updateLabels)
-    val name  = Name.ofSparkApplication(deployment.name)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
+    val _spec           = patch(deployment, app, namespace, updateLabels)
+    val name            = Name.ofSparkApplication(deployment.name)
     CustomResource[Spec, Status](_spec.spec)
-      .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences.list))
+      .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences))
   }
 
   def patch(

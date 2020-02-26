@@ -107,7 +107,7 @@ object FlinkRunner extends Runner[CR] {
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
-    val ownerReferences = CloudflowOwnerReferences(app)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
     CustomResource[Spec, Status](jobSpec)
       .withMetadata(
@@ -116,7 +116,7 @@ object FlinkRunner extends Runner[CR] {
           namespace = namespace,
           annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
           labels = labels,
-          ownerReferences = ownerReferences.list
+          ownerReferences = ownerReferences
         )
       )
   }

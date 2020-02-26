@@ -76,8 +76,8 @@ trait Runner[T <: ObjectResource] {
       app: CloudflowApplication.CR,
       namespace: String
   )(implicit ctx: DeploymentContext): ConfigMap = {
-    val labels = CloudflowLabels(app)
-    val ownerReferences = CloudflowOwnerReferences(app)
+    val labels          = CloudflowLabels(app)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val prometheusConfig = deployment.runtime match {
       case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules)
       case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerSettings.prometheusRules)
@@ -90,7 +90,7 @@ trait Runner[T <: ObjectResource] {
     )
     val name = Name.ofConfigMap(deployment.name)
     ConfigMap(
-      metadata = ObjectMeta(name = name, namespace = namespace, labels = labels(name), ownerReferences = ownerReferences.list),
+      metadata = ObjectMeta(name = name, namespace = namespace, labels = labels(name), ownerReferences = ownerReferences),
       data = configData.map(cd ⇒ cd.filename -> cd.data).toMap
     )
   }
@@ -98,8 +98,7 @@ trait Runner[T <: ObjectResource] {
   /**
    * Creates the runner resource.
    */
-  def resource(deployment: StreamletDeployment,
-               app: CloudflowApplication.CR,
-               namespace: String,
-               updateLabels: Map[String, String] = Map())(implicit ctx: DeploymentContext): T
+  def resource(deployment: StreamletDeployment, app: CloudflowApplication.CR, namespace: String, updateLabels: Map[String, String] = Map())(
+      implicit ctx: DeploymentContext
+  ): T
 }

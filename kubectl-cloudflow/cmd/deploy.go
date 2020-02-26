@@ -156,7 +156,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// Get the Cloudflow operator ownerReference
 	ownerReference := version.GetOwnerReferenceForCloudflowOperator()
 
-	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
+	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace, ownerReference)
 
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
 		util.LogAndExit("%s", err)

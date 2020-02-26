@@ -49,7 +49,7 @@ object Main extends {
       HealthChecks.serve(settings)
 
       val client          = connectToKubernetes()
-      val ownerReferences = getDeploymentOwnerReference(settings, client.usingNamespace(settings.podNamespace))
+      val ownerReferences = getDeploymentOwnerReferences(settings, client.usingNamespace(settings.podNamespace))
       installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
 
@@ -91,13 +91,11 @@ object Main extends {
       """.stripMargin)
   }
 
-  private def getDeploymentOwnerReference(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
-    CloudflowOwnerReferences(
-      Await.result(client
-                     .getInNamespace[Deployment](Name.ofCloudflowOperatorDeployment, settings.podNamespace)
-                     .map(_.metadata.ownerReferences),
-                   10 seconds)
-    )
+  private def getDeploymentOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
+    Await.result(client
+                   .getInNamespace[Deployment](Name.ofCloudflowOperatorDeployment, settings.podNamespace)
+                   .map(_.metadata.ownerReferences),
+                 10 seconds)
 
   private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
     val conf   = Configuration.defaultK8sConfig
@@ -133,7 +131,7 @@ object Main extends {
   }
 
   private def installProtocolVersion(client: skuber.api.client.KubernetesClient,
-                                     ownerReferences: CloudflowOwnerReferences)(implicit ec: ExecutionContext): Unit = {
+                                     ownerReferences: List[OwnerReference])(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
     Await.ready(
       client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {

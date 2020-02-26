@@ -41,7 +41,9 @@ object SavepointActions {
       app.deployments.flatMap(_.portMappings.values).toSet
 
     val labels = CloudflowLabels(newApp)
-    val ownerReferences = CloudflowOwnerReferences(newApp)
+    val ownerReferences = List(
+      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
+    )
 
     val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
     val newSavepoints     = distinctSavepoints(newApp.spec)
@@ -75,12 +77,14 @@ object SavepointActions {
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
 
-  def deleteAction(labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+  def deleteAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
     Action.delete(resource(savepoint, labels, ownerReferences))
-  def createAction(labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+  def createAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
     Action.create(resource(savepoint, labels, ownerReferences), editor)
 
-  def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: CloudflowOwnerReferences)(implicit ctx: DeploymentContext): CustomResource[Spec, Status] = {
+  def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): CustomResource[Spec, Status] = {
     val partitions  = ctx.kafkaContext.partitionsPerTopic
     val replicas    = ctx.kafkaContext.replicationFactor
     val clusterName = ctx.kafkaContext.strimziClusterName
@@ -94,7 +98,7 @@ object SavepointActions {
           name = savepoint.name,
           namespace = ns,
           labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName),
-          ownerReferences = ownerReferences.list
+          ownerReferences = ownerReferences
         )
       )
   }
