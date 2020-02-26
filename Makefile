@@ -65,7 +65,7 @@ list-todos: html
 
 # Generate the ScalaDoc and the JavaDoc, and put it in ${output}/scaladoc and ${output}/javadoc
 javascaladoc: cloudflow-clone
-	(cd ${cloudflow_clone_dir}/core && sbt clean unidoc)
+	-(cd ${cloudflow_clone_dir}/core && sbt clean unidoc)
 
 javascaladoc_staged: ${javascaladoc_dir} javascaladoc
 	cp -r ${cloudflow_clone_dir}/core/target/scala-2.12/unidoc ${javascaladoc_dir}/scaladoc
