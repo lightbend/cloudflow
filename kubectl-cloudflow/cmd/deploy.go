@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/deploy"
@@ -16,6 +15,7 @@ import (
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/scale"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/verify"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -97,14 +97,14 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	version.FailOnProtocolVersionMismatch()
 
 	imageRef := args[0]
-	imageReference, err := parseImageReference(imageRef)
+	imageReference, err := verify.ParseImageReference(imageRef)
 
 	if err != nil {
 		util.LogAndExit("%s", err.Error())
 	}
 
-	dockerRegistryURL := imageReference.registry
-	dockerRepository := imageReference.repository
+	dockerRegistryURL := imageReference.Registry
+	dockerRepository := imageReference.Repository
 	applicationSpec, pulledImage := deploy.GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL, dockerRepository, imageRef)
 
 	namespace := applicationSpec.AppID
@@ -196,72 +196,16 @@ func verifyPasswordOptions(opts *deployOptions) error {
 	return nil
 }
 
+/*
 type imageReference struct {
 	registry   string
 	repository string
 	image      string
 	tag        string
+	fullURI    string
 }
+*/
 
-func parseImageReference(imageURI string) (*imageReference, error) {
-
-	imageRef := strings.TrimSpace(imageURI)
-	msg := "The following docker image path is not valid:\n\n%s\n\nA common error is to prefix the image path with a URI scheme like 'http' or 'https'."
-
-	if strings.HasPrefix(imageRef, ":") ||
-		strings.HasSuffix(imageRef, ":") ||
-		strings.HasPrefix(imageRef, "http://") ||
-		strings.HasPrefix(imageRef, "https://") {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	/*
-	 See https://docs.docker.com/engine/reference/commandline/tag/
-	 A tag name must be valid ASCII and may contain lowercase and uppercase letters, digits, underscores, periods and dashes.
-	 A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
-	 A tag contain lowercase and uppercase letters, digits, underscores, periods and dashes
-	 (It can also contain a : which the docs don't mention, for instance sha256:<hash>)
-	*/
-	imageRefRegex := regexp.MustCompile(`^((?P<reg>([a-zA-Z0-9-.:]{0,253}))/)?(?P<repo>(?:[a-z0-9-_./]+/)?)(?P<image>[a-z0-9-_.]+)(?:[:@](?P<tag>[^.-][a-zA-Z0-9-_.:]{0,127})?)?$`)
-	match := imageRefRegex.FindStringSubmatch(imageRef)
-
-	if match == nil {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	result := make(map[string]string)
-	for i, name := range imageRefRegex.SubexpNames() {
-		if i != 0 && name != "" && i < len(match) {
-			result[name] = match[i]
-		}
-	}
-
-	ir := imageReference{result["reg"], strings.TrimSuffix(result["repo"], "/"), result["image"], result["tag"]}
-
-	if ir.image == "" {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	if strings.HasPrefix(ir.image, ":") || strings.HasSuffix(ir.image, ":") {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	if strings.HasPrefix(ir.tag, ".") || strings.HasPrefix(ir.tag, "-") || strings.HasPrefix(ir.tag, ":") || strings.HasSuffix(ir.tag, ":") {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	if strings.Count(ir.tag, ":") > 1 {
-		return nil, fmt.Errorf(msg, imageRef)
-	}
-
-	// this is a shortcoming in using a regex for this, since it will always eagerly match the first part as the registry.
-	if ir.registry != "" && ir.repository == "" {
-		ir.repository = ir.registry
-		ir.registry = ""
-	}
-
-	return &ir, nil
-}
 
 func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, dockerRegistryURL string) bool {
 	if serviceAccount, nserr := k8sClient.CoreV1().ServiceAccounts(namespace).Get(cloudflowAppServiceAccountName, metav1.GetOptions{}); nserr == nil {

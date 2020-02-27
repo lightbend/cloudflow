@@ -16,6 +16,7 @@ require (
 	github.com/docker/go-units v0.3.3 // indirect
 	github.com/go-akka/configuration v0.0.0-20200115015912-550403a6bd87
 	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gophercloud/gophercloud v0.0.0-20190325182007-873f28e270b0 // indirect
 	github.com/gosuri/uilive v0.0.3

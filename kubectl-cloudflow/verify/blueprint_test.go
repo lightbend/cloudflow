@@ -3,6 +3,7 @@ package verify
 import (
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
@@ -24,6 +25,34 @@ func createBlueprintSample() string {
 	}`
 }
 
+func createBlueprintSample1() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
+	
+		}
+		connections {
+			cdr-generator1.out = [merge.in-0]
+			cdr-generator2.out = [merge.in-1]
+			cdr-ingress.out = [merge.in-2]
+			merge.valid = [cdr-aggregator.in]
+			merge.invalid = [error-egress.in]
+			cdr-aggregator.out = [console-egress.in]
+		}
+	}`
+}
 
 func Test_VerifyConnectionHash(t *testing.T) {
 	vInlet := VerifiedInlet{
@@ -47,7 +76,16 @@ func Test_VerifyConnectionHash(t *testing.T) {
 }
 
 func Test_VerifyFailIfBluperintIsEmpty(t *testing.T) {
-	var blueprint= Blueprint{}.verify()
-	empty := []BlueprintProblem{EmptyStreamlets{}, EmptyStreamletDescriptors{}}
+	var blueprint = Blueprint{}.verify()
+	empty := []BlueprintProblem{EmptyStreamlets{}, EmptyStreamletDescriptors{}, EmptyImages{}}
+	problems := blueprint.UpdateAllProblems()
+	for _, p := range problems {
+		t.Log(reflect.TypeOf(p))
+	}
 	assert.ElementsMatch(t, blueprint.UpdateAllProblems(), empty)
+}
+
+func Test_VerifyValidBlueprint(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintSample1())
+	assert.Empty(t, errors)
 }

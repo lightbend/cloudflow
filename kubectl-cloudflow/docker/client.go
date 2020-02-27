@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -135,4 +136,51 @@ func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bo
 		}
 	}
 	return false
+}
+
+// GetCloudflowStreamletDescriptorsForImage extracts the configuration of a Cloudflow label from a docker image
+// and the image with digest in a struct
+func GetCloudflowStreamletDescriptorsForImage(cli *client.Client, imageName string) (domain.CloudflowStreamletDescriptorsDigestPair, string) {
+	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
+
+	streamletDescriptorsLabelName := "com.lightbend.cloudflow.streamlet-descriptors"
+
+	if err != nil {
+		util.LogAndExit("Failed to list local docker images, %s", err.Error())
+	}
+
+	var descriptorsDigest domain.CloudflowStreamletDescriptorsDigestPair
+	for _, image := range images {
+		if len(image.RepoDigests) == 0 || len(image.RepoTags) == 0 || !imageMatchesNameAndTag(image, imageName) {
+			// not the image we are looking for
+			continue
+		}
+
+		// use the compressed streamlet descriptors base 64 value
+		raw := image.Labels[streamletDescriptorsLabelName]
+
+		// compressed data
+		compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(raw)))
+		reader, err := zlib.NewReader(compressed)
+		if err != nil {
+			util.LogAndExit("Failed to decompress the application descriptor, %s", err.Error())
+		}
+
+		// uncompressed data : []byte
+		uncompressed, err := ioutil.ReadAll(reader)
+		if err != nil {
+			util.LogAndExit("Failed to decompress the application descriptor, %s", err.Error())
+		}
+
+		// unmarshall to struct
+		var descriptors domain.Descriptors
+		json.Unmarshal([]byte(uncompressed), &descriptors)
+
+		descriptorsDigest.StreamletDescriptors = descriptors.StreamletDescriptors
+		reader.Close()
+		_, descriptorsDigest.ImageDigest = path.Split(image.RepoDigests[0])
+		return descriptorsDigest, descriptors.APIVersion
+	}
+	util.LogAndExit("Unable to inspect image '%s'. It could not be found locally.", imageName)
+	return domain.CloudflowStreamletDescriptorsDigestPair{}, "" // never reached
 }

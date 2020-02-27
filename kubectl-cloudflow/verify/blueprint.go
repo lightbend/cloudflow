@@ -19,15 +19,15 @@ type BlueprintProblem interface {
 
 type AmbiguousStreamletRef struct {
 	BlueprintProblem
-	streamletRef string
+	streamletRef       string
 	streamletClassName string
 }
 
 type BacktrackingVolumeMounthPath struct {
 	BlueprintProblem
 	className string
-	name string
-	path string
+	name      string
+	path      string
 }
 
 type InletProblem interface {
@@ -46,35 +46,39 @@ type InvalidStreamletName struct {
 
 type InvalidStreamletClassName struct {
 	BlueprintProblem
-	streamletRef string
+	streamletRef       string
 	streamletClassName string
 }
 
 type StreamletDescriptorNotFound struct {
 	BlueprintProblem
-	streamletRef string
+	streamletRef       string
 	streamletClassName string
 }
 
 type DuplicateStreamletNamesFound struct {
 	BlueprintProblem
-	streamlets[] StreamletRef
+	streamlets []StreamletRef
 }
 
 type InvalidConfigParameterKeyName struct {
 	BlueprintProblem
 	className string
-	keyName string
+	keyName   string
 }
 
 type InvalidValidationPatternConfigParameter struct {
 	BlueprintProblem
-	className string
-	keyName string
+	className         string
+	keyName           string
 	validationPattern string
 }
 
 type EmptyStreamlets struct {
+	BlueprintProblem
+}
+
+type EmptyImages struct {
 	BlueprintProblem
 }
 
@@ -85,19 +89,19 @@ type EmptyStreamletDescriptors struct {
 type DuplicateConfigParameterKeyFound struct {
 	BlueprintProblem
 	className string
-	keyName string
+	keyName   string
 }
 
-type  DuplicateVolumeMountName struct {
+type DuplicateVolumeMountName struct {
 	BlueprintProblem
 	className string
-	name string
+	name      string
 }
 
 type DuplicateVolumeMountPath struct {
 	BlueprintProblem
 	className string
-	path string
+	path      string
 }
 
 type EmptyVolumeMountPath struct {
@@ -108,26 +112,26 @@ type EmptyVolumeMountPath struct {
 
 type InvalidDefaultValueInConfigParameter struct {
 	BlueprintProblem
-	className string
-	keyName string
+	className    string
+	keyName      string
 	defaultValue string
 }
 
 type IllegalConnection struct {
 	InletProblem
 	outletPaths []VerifiedPortPath
-	inletPath VerifiedPortPath
+	inletPath   VerifiedPortPath
 }
 
 type UnconnectedInlet struct {
 	streamletRef string
-	inlet domain.InOutlet
+	inlet        domain.InOutlet
 }
 
 type InvalidInletName struct {
 	BlueprintProblem
 	className string
-	name string
+	name      string
 }
 
 type InvalidOutletName struct {
@@ -139,7 +143,7 @@ type InvalidOutletName struct {
 type IncompatibleSchema struct {
 	InletProblem
 	outletPortPath VerifiedPortPath
-	inletPath VerifiedPortPath
+	inletPath      VerifiedPortPath
 }
 
 type InvalidPortPath struct {
@@ -150,19 +154,19 @@ type InvalidPortPath struct {
 type InvalidVolumeMountName struct {
 	BlueprintProblem
 	className string
-	name string
+	name      string
 }
 
 type NonAbsoluteVolumeMountPath struct {
 	BlueprintProblem
 	className string
-	name string
-	path string
+	name      string
+	path      string
 }
 
 type PortPathNotFound struct {
 	PortPathError
-	path string
+	path        string
 	suggestions []VerifiedPortPath
 }
 
@@ -171,8 +175,28 @@ type UnconnectedInlets struct {
 	unconnectedInlets []UnconnectedInlet
 }
 
+type ImageInStreamletNotInImages struct {
+	BlueprintProblem
+	imageInStreamlet string
+	streamlet        string
+}
+
+type StreamletNotInImageLabel struct {
+	BlueprintProblem
+	imageID   string
+	streamlet string
+}
+
+func (b StreamletNotInImageLabel) ToMessage() string {
+	return fmt.Sprintf("Streamlet %s not present in label of image %s", b.streamlet, b.imageID)
+}
+
+func (b ImageInStreamletNotInImages) ToMessage() string {
+	return fmt.Sprintf("The image id %s referred to in streamlet %s does not appear in images section", b.imageInStreamlet, b.streamlet)
+}
+
 func (b AmbiguousStreamletRef) ToMessage() string {
-	return fmt.Sprintf("ClassName matching %s is ambiguous for streamlet name %s.", b.streamletClassName, b.streamletRef )
+	return fmt.Sprintf("ClassName matching %s is ambiguous for streamlet name %s.", b.streamletClassName, b.streamletRef)
 }
 
 func (b BacktrackingVolumeMounthPath) ToMessage() string {
@@ -198,7 +222,7 @@ func (b DuplicateStreamletNamesFound) ToMessage() string {
 		if duplicates == "" {
 			duplicates = fmt.Sprintf("(name: %s, className: %s)", dup.name, dup.className)
 		} else {
-			duplicates =  duplicates +  ", " + fmt.Sprintf("(name: %s, className: %s)", dup.name, dup.className)
+			duplicates = duplicates + ", " + fmt.Sprintf("(name: %s, className: %s)", dup.name, dup.className)
 		}
 	}
 	return fmt.Sprintf("Duplicate streamlet names detected: %s.", duplicates)
@@ -209,7 +233,7 @@ func (b InvalidConfigParameterKeyName) ToMessage() string {
 }
 
 func (b InvalidValidationPatternConfigParameter) ToMessage() string {
-	return fmt.Sprintf("`%s` contains a configuration parameter `%s` with an invalid validation pattern `%s`.",  b.className, b.keyName, b.validationPattern)
+	return fmt.Sprintf("`%s` contains a configuration parameter `%s` with an invalid validation pattern `%s`.", b.className, b.keyName, b.validationPattern)
 }
 
 func (b EmptyStreamletDescriptors) ToMessage() string {
@@ -217,7 +241,11 @@ func (b EmptyStreamletDescriptors) ToMessage() string {
 }
 
 func (b EmptyStreamlets) ToMessage() string {
-	return fmt.Sprintf("The application blueprint is empty.")
+	return fmt.Sprintf("The streamlets list is empty.")
+}
+
+func (b EmptyImages) ToMessage() string {
+	return fmt.Sprintf("The images section is empty.")
 }
 
 func (b DuplicateConfigParameterKeyFound) ToMessage() string {
@@ -246,7 +274,7 @@ func (b IllegalConnection) ToMessage() string {
 		if outletPathsFormatted == "" {
 			outletPathsFormatted = outlet.ToString()
 		} else {
-			outletPathsFormatted =  outletPathsFormatted +  "," + outlet.ToString()
+			outletPathsFormatted = outletPathsFormatted + "," + outlet.ToString()
 		}
 	}
 	return fmt.Sprintf("Illegal connection, too many outlet paths (%s) are connected to inlet %s.", outletPathsFormatted, b.inletPath.ToString())
@@ -296,7 +324,7 @@ func (b PortPathNotFound) ToMessage() string {
 			if suggestionsFormatted == "" {
 				suggestionsFormatted = suggestion.ToString()
 			} else {
-				suggestionsFormatted  =  suggestionsFormatted  +  " or " + suggestion.ToString()
+				suggestionsFormatted = suggestionsFormatted + " or " + suggestion.ToString()
 			}
 		}
 		end = fmt.Sprintf(", please try %s.", suggestionsFormatted)
@@ -308,40 +336,85 @@ func (b UnconnectedInlets) ToMessage() string {
 	var listFormatted = ""
 	for _, in := range b.unconnectedInlets {
 		if listFormatted == "" {
-			listFormatted = fmt.Sprintf("%s,%s",in.streamletRef,in.inlet.Name)
+			listFormatted = fmt.Sprintf("%s,%s", in.streamletRef, in.inlet.Name)
 		} else {
-			listFormatted  =  listFormatted  +  "," + fmt.Sprintf("%s,%s",in.streamletRef,in.inlet.Name)
+			listFormatted = listFormatted + "," + fmt.Sprintf("%s,%s", in.streamletRef, in.inlet.Name)
 		}
 	}
 	return fmt.Sprintf("Inlets (%s) are not connected.", listFormatted)
 }
 
 type Blueprint struct {
-	streamlets []StreamletRef
-	connections []StreamletConnection
-	streamletDescriptors []StreamletDescriptor
-	globalProblems []BlueprintProblem
-	allProblems []BlueprintProblem
+	images               map[string]domain.ImageReference
+	streamlets           []StreamletRef
+	connections          []StreamletConnection
+	streamletDescriptorsPerImage map[string][]StreamletDescriptor
+	globalProblems       []BlueprintProblem
+	allProblems          []BlueprintProblem
+}
+
+// check for consistency between the image id mentioned in streamlets and the
+// image ids present in images section of the blueprint
+func checkStreamletImageConsistency(blueprint Blueprint) []BlueprintProblem {
+	var problems []BlueprintProblem
+	// check if the image ids in streamlets are present in the images section
+	for _, streamlet := range blueprint.streamlets {
+		img := *streamlet.imageId
+		if _, ok := blueprint.images[img]; !ok {
+			problems = append(problems, ImageInStreamletNotInImages{imageInStreamlet: img, streamlet: streamlet.name})
+		}
+	}
+	return problems
+}
+
+// check if the streamlet is really in the label of the image that prefixes it in the blueprint
+func checkStreamletImageLabelConsistency(blueprint Blueprint) []BlueprintProblem {
+	var problems []BlueprintProblem
+	for _, streamlet := range blueprint.streamlets {
+		imageID := *streamlet.imageId
+		if _, ok := blueprint.streamletDescriptorsPerImage[imageID]; !ok {
+			problems = append(problems, StreamletNotInImageLabel{imageID: imageID, streamlet: streamlet.name})
+		}
+	}
+	return problems
 }
 
 func (b Blueprint) verify() Blueprint {
 
-	var  illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
-	var emptyStreamletsProblem* EmptyStreamlets 
+	var illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
+
+	var emptyImagesProblem *EmptyImages
+	if len(b.images) == 0 {
+		emptyImagesProblem = &EmptyImages{}
+	}
+
+	var emptyStreamletsProblem *EmptyStreamlets
 	if len(b.streamlets) == 0 {
 		emptyStreamletsProblem = &EmptyStreamlets{}
 	}
 
-	var emptyStreamletDescriptorsProblem * EmptyStreamletDescriptors 
-	if len(b.streamletDescriptors) == 0 {
-		emptyStreamletDescriptorsProblem  = &EmptyStreamletDescriptors{}
+	var imageInStreamletNotInImagesErrors []BlueprintProblem 
+	imageInStreamletNotInImagesErrors = append(imageInStreamletNotInImagesErrors, checkStreamletImageConsistency(b) ...)
+
+	var streamletNotInImageLabelErrors []BlueprintProblem 
+	streamletNotInImageLabelErrors = append(streamletNotInImageLabelErrors, checkStreamletImageLabelConsistency(b) ...)
+
+	// get all streamlet descriptors for all images
+	var streamletDescriptors []StreamletDescriptor
+	for _, desc := range b.streamletDescriptorsPerImage {
+		streamletDescriptors = append(streamletDescriptors, desc ...)
 	}
 
-	var newStreamlets[] StreamletRef 
-	var verifiedStreamlets[] VerifiedStreamlet 
+	var emptyStreamletDescriptorsProblem *EmptyStreamletDescriptors
+	if len(streamletDescriptors) == 0 {
+		emptyStreamletDescriptorsProblem = &EmptyStreamletDescriptors{}
+	}
+
+	var newStreamlets []StreamletRef
+	var verifiedStreamlets []VerifiedStreamlet
 
 	for _, ref := range b.streamlets {
-		newStreamlets = append(newStreamlets, ref.verify(b.streamletDescriptors))
+		newStreamlets = append(newStreamlets, ref.verify(streamletDescriptors))
 	}
 
 	for _, streamlet := range newStreamlets {
@@ -350,8 +423,8 @@ func (b Blueprint) verify() Blueprint {
 		}
 	}
 
-	var newConnections[] StreamletConnection 
-	var verifiedConnections[] VerifiedStreamletConnection 
+	var newConnections []StreamletConnection
+	var verifiedConnections []VerifiedStreamletConnection
 
 	for _, con := range b.connections {
 		newConnections = append(newConnections, con.verify(verifiedStreamlets))
@@ -365,9 +438,9 @@ func (b Blueprint) verify() Blueprint {
 
 	_, duplicatesProblem := b.verifyNoDuplicateStreamletNames(newStreamlets)
 
-	portNameProblems = b.verifyPortNames(b.streamletDescriptors)
-	configParameterProblems = b.verifyConfigParameters(b.streamletDescriptors)
-	volumeMountProblems = b.verifyVolumeMounts(b.streamletDescriptors)
+	portNameProblems = b.verifyPortNames(streamletDescriptors)
+	configParameterProblems = b.verifyConfigParameters(streamletDescriptors)
+	volumeMountProblems = b.verifyVolumeMounts(streamletDescriptors)
 
 	verifiedConnections, conProblems := b.verifyUniqueInletConnections(verifiedConnections)
 
@@ -397,12 +470,16 @@ func (b Blueprint) verify() Blueprint {
 		filteredUnconnectedInlets = filterUnconnectedInlets(inletProblems, inletConProblem.unconnectedInlets)
 
 		if len(filteredUnconnectedInlets) > 0 {
-			unconnectedInletProblems = append(unconnectedInletProblems, UnconnectedInlets { unconnectedInlets: filteredUnconnectedInlets})
+			unconnectedInletProblems = append(unconnectedInletProblems, UnconnectedInlets{unconnectedInlets: filteredUnconnectedInlets})
 		}
 	}
 
 	if emptyStreamletsProblem != nil {
 		globalProblems = append(globalProblems, *emptyStreamletsProblem)
+	}
+
+	if emptyImagesProblem != nil {
+		globalProblems = append(globalProblems, *emptyImagesProblem)
 	}
 
 	if emptyStreamletDescriptorsProblem != nil {
@@ -412,12 +489,27 @@ func (b Blueprint) verify() Blueprint {
 	if duplicatesProblem != nil {
 		globalProblems = append(globalProblems, duplicatesProblem)
 	}
+
+	if len(imageInStreamletNotInImagesErrors) > 0 {
+		globalProblems = append(globalProblems, imageInStreamletNotInImagesErrors ...)
+	}
+
+	if len(streamletNotInImageLabelErrors) > 0 {
+		globalProblems = append(globalProblems, streamletNotInImageLabelErrors ...)
+	}
+
 	var problems = [][]BlueprintProblem{illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems}
 	for i := range problems {
 		globalProblems = append(globalProblems, problems[i]...)
 	}
 
-	return Blueprint{streamlets: newStreamlets, connections: newConnections, streamletDescriptors: b.streamletDescriptors, globalProblems: globalProblems}
+	return Blueprint{
+		streamlets: newStreamlets, 
+		connections: newConnections, 
+		streamletDescriptorsPerImage: 
+		b.streamletDescriptorsPerImage, 
+		globalProblems: globalProblems,
+	}
 }
 
 func filterUnconnectedInlets(inletProblems []BlueprintProblem, unconnectedInlets []UnconnectedInlet) []UnconnectedInlet {
@@ -437,7 +529,7 @@ func filterUnconnectedInlets(inletProblems []BlueprintProblem, unconnectedInlets
 
 type GroupedConnections struct {
 	vInlet VerifiedInlet
-	vCons []VerifiedStreamletConnection
+	vCons  []VerifiedStreamletConnection
 }
 
 func (b Blueprint) UpdateAllProblems() []BlueprintProblem {
@@ -472,13 +564,13 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 		} else {
 			values := []VerifiedStreamletConnection{}
 			values = append(values, verifiedStreamletConnections[i])
-			groupedConnections[key] = GroupedConnections{vInlet:verifiedStreamletConnections[i].verifiedInlet, vCons: values}
+			groupedConnections[key] = GroupedConnections{vInlet: verifiedStreamletConnections[i].verifiedInlet, vCons: values}
 		}
 	}
-	var illegalConnectionProblems []IllegalConnection 
+	var illegalConnectionProblems []IllegalConnection
 	for _, gCon := range groupedConnections {
 		if len(gCon.vCons) > 1 {
-			var mapPortpaths []VerifiedPortPath 
+			var mapPortpaths []VerifiedPortPath
 			for _, vOutlet := range gCon.vCons {
 				mapPortpaths = append(mapPortpaths, vOutlet.verifiedOutlet.portPath())
 			}
@@ -497,8 +589,8 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 }
 
 func verifiedConnectionsExists(verifiedStreamletConnections []VerifiedStreamletConnection, inlet domain.InOutlet, streamlet VerifiedStreamlet) bool {
-	for _, con := range  verifiedStreamletConnections {
-		if reflect.DeepEqual(con.verifiedInlet.streamlet,streamlet) && con.verifiedInlet.portName == inlet.Name {
+	for _, con := range verifiedStreamletConnections {
+		if reflect.DeepEqual(con.verifiedInlet.streamlet, streamlet) && con.verifiedInlet.portName == inlet.Name {
 			return true
 		}
 	}
@@ -506,10 +598,10 @@ func verifiedConnectionsExists(verifiedStreamletConnections []VerifiedStreamletC
 }
 
 func (b Blueprint) verifyInletsConnected(verifiedStreamlets []VerifiedStreamlet, verifiedStreamletConnections []VerifiedStreamletConnection) ([]VerifiedStreamlet, []UnconnectedInlets) {
-	var unconnectedPortProblems []UnconnectedInlets 
+	var unconnectedPortProblems []UnconnectedInlets
 
 	for _, vStreamlet := range verifiedStreamlets {
-		var unconnectedInlets []UnconnectedInlet 
+		var unconnectedInlets []UnconnectedInlet
 
 		for _, inlet := range vStreamlet.descriptor.Inlets {
 			if !verifiedConnectionsExists(verifiedStreamletConnections, inlet, vStreamlet) {
@@ -522,7 +614,7 @@ func (b Blueprint) verifyInletsConnected(verifiedStreamlets []VerifiedStreamlet,
 		}
 	}
 
-	if len(unconnectedPortProblems) !=0 {
+	if len(unconnectedPortProblems) != 0 {
 		return verifiedStreamlets, nil
 	} else {
 		return nil, unconnectedPortProblems
@@ -551,7 +643,7 @@ func (b Blueprint) verifyNoDuplicateStreamletNames(streamlets []StreamletRef) ([
 		}
 	}
 
-	var duplicateStreamlets []StreamletRef 
+	var duplicateStreamlets []StreamletRef
 	for _, v := range groupedStreamlets {
 		if len(v) > 1 {
 			for _, ref := range v {
@@ -569,19 +661,19 @@ func (b Blueprint) verifyNoDuplicateStreamletNames(streamlets []StreamletRef) ([
 }
 
 func (b Blueprint) verifyPortNames(streamletDescriptors []StreamletDescriptor) []BlueprintProblem {
-	var inletProblems []BlueprintProblem 
-	var outletProblems []BlueprintProblem 
+	var inletProblems []BlueprintProblem
+	var outletProblems []BlueprintProblem
 
 	for _, desc := range streamletDescriptors {
 		for _, inlet := range desc.Inlets {
 			if !IsDnsLabelCompatible(inlet.Name) {
-				inletProblems = append(inletProblems, InvalidInletName{className:desc.ClassName, name: inlet.Name,})
+				inletProblems = append(inletProblems, InvalidInletName{className: desc.ClassName, name: inlet.Name})
 			}
 		}
 
 		for _, outlet := range desc.Outlets {
 			if !IsDnsLabelCompatible(outlet.Name) {
-				outletProblems = append(outletProblems, InvalidInletName{className:desc.ClassName, name: outlet.Name,})
+				outletProblems = append(outletProblems, InvalidInletName{className: desc.ClassName, name: outlet.Name})
 			}
 		}
 	}
@@ -596,9 +688,9 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 		for _, vMount := range desc.VolumeMounts {
 			names = append(names, vMount.Name)
 			paths = append(paths, vMount.Path)
-			for _,path := range strings.Split(vMount.Path, separator) {
+			for _, path := range strings.Split(vMount.Path, separator) {
 				if path == ".." {
-					invalidPaths = append(invalidPaths, BacktrackingVolumeMounthPath{className:desc.ClassName, name: vMount.Name, path: vMount.Path})
+					invalidPaths = append(invalidPaths, BacktrackingVolumeMounthPath{className: desc.ClassName, name: vMount.Name, path: vMount.Path})
 					break
 				}
 			}
@@ -608,16 +700,16 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 			}
 
 			if !filepath.IsAbs(vMount.Path) {
-				invalidPaths = append(invalidPaths, NonAbsoluteVolumeMountPath{className:desc.ClassName, name: vMount.Name, path: vMount.Path})
+				invalidPaths = append(invalidPaths, NonAbsoluteVolumeMountPath{className: desc.ClassName, name: vMount.Name, path: vMount.Path})
 			}
 
 			if IsDnsLabelCompatible(vMount.Name) {
 				if len(vMount.Name) > DNS1123LabelMaxLength {
-					invalidNames = append(invalidNames, InvalidVolumeMountName{className:desc.ClassName, name: vMount.Name})
+					invalidNames = append(invalidNames, InvalidVolumeMountName{className: desc.ClassName, name: vMount.Name})
 				}
 
 			} else {
-				invalidNames = append(invalidNames, InvalidVolumeMountName{className:desc.ClassName, name: vMount.Name})
+				invalidNames = append(invalidNames, InvalidVolumeMountName{className: desc.ClassName, name: vMount.Name})
 			}
 
 		}
@@ -625,13 +717,13 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 		dupsNames := Distinct(Diff(names, Distinct(names)))
 
 		for _, dupName := range dupsNames {
-			duplicateNames = append(duplicateNames, DuplicateVolumeMountName{className:desc.ClassName, name: dupName} )
+			duplicateNames = append(duplicateNames, DuplicateVolumeMountName{className: desc.ClassName, name: dupName})
 		}
 
 		dupsPaths := Distinct(Diff(paths, Distinct(paths)))
 
 		for _, dupPath := range dupsPaths {
-			duplicatePaths = append(duplicatePaths, DuplicateVolumeMountName{className:desc.ClassName, name: dupPath} )
+			duplicatePaths = append(duplicatePaths, DuplicateVolumeMountName{className: desc.ClassName, name: dupPath})
 		}
 	}
 
@@ -678,16 +770,15 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 		for _, configParam := range desc.ConfigParameters {
 			keys = append(keys, configParam.Key)
 
-
 			if !CheckFullPatternMatch(configParam.Key, ConfigParameterKeyPattern) {
-				invalidConfigParametersKeyProblems = append(invalidConfigParametersKeyProblems, InvalidConfigParameterKeyName{className:desc.ClassName, keyName:configParam.Key})
+				invalidConfigParametersKeyProblems = append(invalidConfigParametersKeyProblems, InvalidConfigParameterKeyName{className: desc.ClassName, keyName: configParam.Key})
 			}
 
 			switch configParam.Type {
 			case "string":
 				reg, err := regexp.Compile(configParam.Pattern)
 				if err != nil {
-					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className:desc.ClassName, keyName: configParam.Key, validationPattern: configParam.Pattern})
+					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className: desc.ClassName, keyName: configParam.Key, validationPattern: configParam.Pattern})
 				} else {
 					if !CheckFullPatternMatch(configParam.DefaultValue, reg) {
 						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: configParam.DefaultValue})
@@ -710,7 +801,7 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 		}
 		dupKeys := Distinct(Diff(keys, Distinct(keys)))
 		for _, dupKey := range dupKeys {
-			duplicateConfigParametersKeysFound = append(duplicateConfigParametersKeysFound, DuplicateConfigParameterKeyFound{className:desc.ClassName, keyName: dupKey})
+			duplicateConfigParametersKeysFound = append(duplicateConfigParametersKeysFound, DuplicateConfigParameterKeyFound{className: desc.ClassName, keyName: dupKey})
 		}
 	}
 

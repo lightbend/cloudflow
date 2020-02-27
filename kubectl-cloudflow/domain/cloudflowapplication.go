@@ -9,6 +9,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type Pair struct {
+	a, b interface{}
+}
+
+type ImageReference struct {
+	Registry   string
+	Repository string
+	Image      string
+	Tag        string
+	FullURI    string
+}
+
 // Connection is one inlet/outlet connection
 type Connection struct {
 	InletName           string `json:"inlet_name"`
@@ -102,6 +114,12 @@ type Descriptor struct {
 	Description      string                      `json:"description"`
 }
 
+// Descriptors label value with streamlet descriptors
+type Descriptors struct {
+	StreamletDescriptors []Descriptor `json:"streamlet-descriptors"`
+	APIVersion           string       `json:"api-version"`
+}
+
 // Streamlet TBD
 type Streamlet struct {
 	Descriptor Descriptor `json:"descriptor"`
@@ -171,6 +189,12 @@ type CloudflowApplicationList struct {
 type CloudflowApplicationDescriptorDigestPair struct {
 	AppDescriptor string `json:"appDescriptor"`
 	ImageDigest   string `json:"imageDigest"`
+}
+
+// CloudflowStreamletDescriptorsDigestPair is a pair of streamlet descriptors and image digest
+type CloudflowStreamletDescriptorsDigestPair struct {
+	StreamletDescriptors []Descriptor `json:"streamletDescriptors"`
+	ImageDigest          string       `json:"imageDigest"`
 }
 
 // CloudflowStreamletDescriptors is an array of descriptors

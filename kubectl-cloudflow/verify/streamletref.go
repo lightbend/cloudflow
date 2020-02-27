@@ -37,7 +37,7 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		})
 	}
 
-    var found *StreamletDescriptor 
+  var found *StreamletDescriptor 
 	for _, desc := range streamletDescriptors {
 
 		if desc.ClassName == s.className {
