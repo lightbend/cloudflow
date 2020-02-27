@@ -30,16 +30,16 @@ import cloudflow.operator.runner._
  */
 abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
   protected def actions(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     implicit val format             = runner.format
     implicit val resourceDefinition = runner.resourceDefinition
 
-    val newDeployments = newApp.deployments.filter(_.runtime == runner.runtime)
+    val newDeployments = newApp.spec.deployments.filter(_.runtime == runner.runtime)
 
-    val currentDeployments     = currentApp.map(_.deployments.filter(_.runtime == runner.runtime)).getOrElse(Vector())
+    val currentDeployments     = currentApp.map(_.spec.deployments.filter(_.runtime == runner.runtime)).getOrElse(Vector())
     val currentDeploymentNames = currentDeployments.map(_.name)
     val newDeploymentNames     = newDeployments.map(_.name)
 

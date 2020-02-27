@@ -298,13 +298,15 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 			return fmt.Errorf("Value `%s` is not a valid double.", value)
 		}
 	case "string":
-		r, err := regexp.Compile(descriptor.Pattern)
-		if err != nil {
-			return fmt.Errorf("The regular expression pattern failed to compile: %s", err.Error())
-		}
+		if len(descriptor.Pattern) != 0 {
+			r, err := regexp.Compile(descriptor.Pattern)
+			if err != nil {
+				return fmt.Errorf("The regular expression pattern failed to compile: %s", err.Error())
+			}
 
-		if !r.MatchString(value) {
-			return fmt.Errorf("Value `%s` does not match the regular expression `%s`.", value, descriptor.Pattern)
+			if !r.MatchString(value) {
+				return fmt.Errorf("Value `%s` does not match the regular expression `%s`.", value, descriptor.Pattern)
+			}
 		}
 	case "duration":
 		if err := util.ValidateDuration(value); err != nil {
@@ -323,7 +325,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 
 // CreateSecretsData creates a map of streamlet names and K8s Secrets for those streamlets with configuration parameters,
 // the secrets contain a single key/value where the key is the name of the hocon configuration file
-func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]*corev1.Secret {
+func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string, cloudflowOperatorOwnerReference metav1.OwnerReference) map[string]*corev1.Secret {
 	streamletSecretNameMap := make(map[string]*corev1.Secret)
 	for _, streamlet := range spec.Streamlets {
 		var str strings.Builder
@@ -334,7 +336,7 @@ func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyVa
 		secretMap := make(map[string]string)
 		secretMap["secret.conf"] = str.String()
 		secretName := findSecretName(spec, streamlet.Name)
-		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
+		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap, cloudflowOperatorOwnerReference)
 	}
 	return streamletSecretNameMap
 }
@@ -348,15 +350,16 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 	panic(fmt.Errorf("Could not find secret name for streamlet %s", streamletName))
 }
 
-func createSecret(appID string, name string, data map[string]string) *corev1.Secret {
+func createSecret(appID string, name string, data map[string]string, cloudflowOperatorOwnerReference metav1.OwnerReference) *corev1.Secret {
 	labels := domain.CreateLabels(appID)
 	labels["com.lightbend.cloudflow/streamlet-name"] = name
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: appID,
-			Labels:    labels,
+			Name:            name,
+			Namespace:       appID,
+			Labels:          labels,
+			OwnerReferences: []metav1.OwnerReference{cloudflowOperatorOwnerReference},
 		},
 	}
 	secret.StringData = data

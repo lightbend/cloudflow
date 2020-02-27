@@ -148,22 +148,22 @@ object StreamletChangeEvent {
               val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
               val updateAction = streamletDeployment.runtime match {
                 case AkkaRunner.runtime ⇒
-                  val resource        = AkkaRunner.resource(streamletDeployment, app.spec, app.metadata.namespace, updateLabels)
+                  val resource        = AkkaRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
                   val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
                   Action.update(labeledResource, runner.AkkaRunner.editor)
 
                 case SparkRunner.runtime ⇒
-                  val resource        = SparkRunner.resource(streamletDeployment, app.spec, app.metadata.namespace, updateLabels)
+                  val resource        = SparkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
                   val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
                   val patch           = SpecPatch(labeledResource.spec)
                   Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
                 case FlinkRunner.runtime ⇒
-                  val resource        = FlinkRunner.resource(streamletDeployment, app.spec, app.metadata.namespace, updateLabels)
+                  val resource        = FlinkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
                   val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
                   Action.update(labeledResource, runner.FlinkRunner.editor)
               }
               val streamletChangeEventAction =
-                EventActions.streamletChangeEvent(app.spec, streamletDeployment, namespace, watchEvent._object)
+                EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
 
               List(updateAction, streamletChangeEventAction)
             }

@@ -36,13 +36,13 @@ object EventActions {
     val Normal, Warning, Error = Value
   }
 
-  def deployEvents(app: CloudflowApplication.Spec, currentApp: Option[CloudflowApplication.Spec], namespace: String, cause: ObjectResource)(
+  def deployEvents(app: CloudflowApplication.CR, currentApp: Option[CloudflowApplication.CR], namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
   ): Seq[Action[ObjectResource]] = {
 
     val (reason, message) = currentApp match {
-      case Some(_) ⇒ ("ApplicationUpdated", s"Updated Cloudflow Application ${app.appId} to namespace ${namespace}")
-      case _       ⇒ ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.appId} to namespace ${namespace}")
+      case Some(_) ⇒ ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${namespace}")
+      case _       ⇒ ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.spec.appId} to namespace ${namespace}")
     }
 
     val deployEvent = createEvent(
@@ -60,14 +60,14 @@ object EventActions {
    * [[cloudflow.operator.CloudflowApplication]]. Since it's in the app spec and not the streamlet secret it's not reported as a
    * [[cloudflow.operator.event.StreamletChangeEvent]]
    */
-  private def streamletScaledEvents(app: CloudflowApplication.Spec,
-                                    currentAppOpt: Option[CloudflowApplication.Spec],
+  private def streamletScaledEvents(app: CloudflowApplication.CR,
+                                    currentAppOpt: Option[CloudflowApplication.CR],
                                     namespace: String,
                                     cause: ObjectResource)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     for {
       currentApp       ← currentAppOpt.toVector
-      streamlet        ← app.deployments
-      currentStreamlet ← currentApp.deployments.find(_.name == streamlet.name)
+      streamlet        ← app.spec.deployments
+      currentStreamlet ← currentApp.spec.deployments.find(_.name == streamlet.name)
       if currentStreamlet.replicas != streamlet.replicas
       replicas        = replicasOrRunnerDefault(streamlet)
       currentReplicas = replicasOrRunnerDefault(currentStreamlet)
@@ -76,7 +76,7 @@ object EventActions {
       namespace = namespace,
       reason = "StreamletScaled",
       message =
-        s"Scaled Cloudflow Application ${app.appId} streamlet ${streamlet.name} in namespace ${namespace} from ${currentReplicas} to ${replicas}",
+        s"Scaled Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${namespace} from ${currentReplicas} to ${replicas}",
       objectReference = cause,
       fieldPath = Some(s"spec.deployments{${streamlet.name}}")
     )
@@ -87,18 +87,18 @@ object EventActions {
     case FlinkRunner.runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultParallelism)
   }
 
-  def undeployEvent(app: CloudflowApplication.Spec, namespace: String, cause: ObjectResource)(
+  def undeployEvent(app: CloudflowApplication.CR, namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
   ): Action[ObjectResource] =
     createEvent(
       app = app,
       namespace = namespace,
       reason = "ApplicationUndeployed",
-      message = s"Undeployed Cloudflow Application ${app.appId} from namespace ${namespace}",
+      message = s"Undeployed Cloudflow Application ${app.spec.appId} from namespace ${namespace}",
       objectReference = cause
     )
 
-  def streamletChangeEvent(app: CloudflowApplication.Spec, streamlet: StreamletDeployment, namespace: String, cause: ObjectResource)(
+  def streamletChangeEvent(app: CloudflowApplication.CR, streamlet: StreamletDeployment, namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
   ): Action[ObjectResource] =
     createEvent(
@@ -106,11 +106,11 @@ object EventActions {
       namespace = namespace,
       reason = "StreamletConfigurationChanged",
       message =
-        s"Changed streamlet configuration of Cloudflow Application ${app.appId} streamlet ${streamlet.name} in namespace ${namespace}",
+        s"Changed streamlet configuration of Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${namespace}",
       objectReference = cause
     )
 
-  private[operator] def createEvent(app: CloudflowApplication.Spec,
+  private[operator] def createEvent(app: CloudflowApplication.CR,
                                     namespace: String,
                                     reason: String,
                                     message: String,
@@ -118,7 +118,7 @@ object EventActions {
                                     objectReference: skuber.ObjectReference,
                                     fieldPath: Option[String] = None)(implicit ctx: DeploymentContext): CreateAction[Event] = {
     val eventTime    = ZonedDateTime.now()
-    val metadataName = newEventName(ctx.podName, app.appId)
+    val metadataName = newEventName(ctx.podName, app.spec.appId)
 
     // the object reference fieldPath is irrelevant for application events.
     val refMaybeWithPath = fieldPath.map(path ⇒ objectReference.copy(fieldPath = path)).getOrElse(objectReference)

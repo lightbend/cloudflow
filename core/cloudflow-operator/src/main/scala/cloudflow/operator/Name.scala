@@ -70,6 +70,8 @@ object Name {
   def ofNamespace(appId: String) =
     s"app-$appId"
 
+  def ofCloudflowOperatorDeployment() = "cloudflow-operator"
+
   def ofServiceAccount() =
     "cloudflow-app-serviceaccount"
 

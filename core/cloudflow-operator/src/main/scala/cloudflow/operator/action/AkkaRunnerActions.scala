@@ -25,8 +25,8 @@ import cloudflow.operator.runner._
 
 object AkkaRunnerActions extends RunnerActions(AkkaRunner) {
   def apply(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = actions(newApp, currentApp, namespace)
 }

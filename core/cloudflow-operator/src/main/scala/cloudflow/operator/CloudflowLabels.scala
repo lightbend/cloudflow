@@ -34,8 +34,8 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
 
 object CloudflowLabels {
 
-  def apply(app: CloudflowApplication.Spec): CloudflowLabels =
-    CloudflowLabels(app.appId, app.appVersion)
+  def apply(app: CloudflowApplication.CR): CloudflowLabels =
+    CloudflowLabels(app.spec.appId, app.spec.appVersion)
 
   // The name of the application
   val Name = "app.kubernetes.io/name"

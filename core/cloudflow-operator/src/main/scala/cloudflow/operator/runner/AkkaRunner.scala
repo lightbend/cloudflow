@@ -39,13 +39,14 @@ object AkkaRunner extends Runner[Deployment] {
 
   def resource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): Deployment = {
-    val labels  = CloudflowLabels(app)
-    val appId   = app.appId
-    val podName = Name.ofPod(deployment.name)
+    val labels          = CloudflowLabels(app)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
+    val appId           = app.spec.appId
+    val podName         = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
@@ -66,7 +67,7 @@ object AkkaRunner extends Runner[Deployment] {
     val volume = Volume(configMapName, ConfigMapVolumeSource(configMapName))
 
     // Streamlet volume mounting
-    val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
     val pvcRefVolumes =
       streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
     val pvcVolumeMounts = streamletToDeploy
@@ -164,8 +165,10 @@ object AkkaRunner extends Runner[Deployment] {
         .withPodSpec(podSpec)
 
     val deploymentResource = Deployment(
-      metadata =
-        ObjectMeta(name = podName, namespace = namespace, labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent))
+      metadata = ObjectMeta(name = podName,
+                            namespace = namespace,
+                            labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
+                            ownerReferences = ownerReferences)
     ).withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
       .withTemplate(template)
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))

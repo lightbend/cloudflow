@@ -28,23 +28,23 @@ import cloudflow.operator.action._
  * Indicates that a cloudflow application was deployed or undeployed.
  */
 sealed trait AppEvent {
-  def app: CloudflowApplication.Spec
+  def app: CloudflowApplication.CR
 }
 case class DeployEvent(
-    app: CloudflowApplication.Spec,
-    currentApp: Option[CloudflowApplication.Spec],
+    app: CloudflowApplication.CR,
+    currentApp: Option[CloudflowApplication.CR],
     namespace: String,
     cause: ObjectResource
 ) extends AppEvent {
-  override def toString() = s"DeployEvent for application ${app.appId} in namespace $namespace"
+  override def toString() = s"DeployEvent for application ${app.spec.appId} in namespace $namespace"
 }
 
 case class UndeployEvent(
-    app: CloudflowApplication.Spec,
+    app: CloudflowApplication.CR,
     namespace: String,
     cause: ObjectResource
 ) extends AppEvent {
-  override def toString() = s"UndeployEvent for application ${app.appId} in namespace $namespace"
+  override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace $namespace"
 }
 
 object AppEvent {
@@ -60,12 +60,11 @@ object AppEvent {
           val cr         = watchEvent._object
           val namespace  = cr.metadata.namespace
           val appId      = cr.spec.appId
-          val app        = cr.spec
-          val currentApp = currentApps.get(appId).map(_._object.spec)
+          val currentApp = currentApps.get(appId).map(_._object)
           watchEvent._type match {
             case EventType.DELETED ⇒
               currentApps = currentApps - appId
-              List(UndeployEvent(app, namespace, watchEvent._object))
+              List(UndeployEvent(cr, namespace, watchEvent._object))
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentApps.get(appId).forall { existingEvent ⇒
                     existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
@@ -73,7 +72,7 @@ object AppEvent {
                     existingEvent._object.spec != watchEvent._object.spec
                   }) {
                 currentApps = currentApps + (appId -> watchEvent)
-                List(DeployEvent(app, currentApp, namespace, watchEvent._object))
+                List(DeployEvent(cr, currentApp, namespace, watchEvent._object))
               } else List()
           }
         }

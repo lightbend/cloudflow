@@ -33,29 +33,32 @@ import cloudflow.blueprint.deployment._
  */
 object SavepointActions {
   def apply(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctSavepoints(app: CloudflowApplication.Spec): Set[Savepoint] =
       app.deployments.flatMap(_.portMappings.values).toSet
 
     val labels = CloudflowLabels(newApp)
+    val ownerReferences = List(
+      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
+    )
 
-    val currentSavepoints = currentApp.map(distinctSavepoints).getOrElse(Set.empty[Savepoint])
-    val newSavepoints     = distinctSavepoints(newApp)
+    val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
+    val newSavepoints     = distinctSavepoints(newApp.spec)
 
     val deleteActions =
       if (deleteOutdatedTopics) {
         (currentSavepoints -- newSavepoints).toVector
-          .map(deleteAction(labels))
+          .map(deleteAction(labels, ownerReferences))
       } else {
         Vector.empty[Action[ObjectResource]]
       }
 
     val createActions =
       (newSavepoints -- currentSavepoints).toVector
-        .map(createAction(labels))
+        .map(createAction(labels, ownerReferences))
     deleteActions ++ createActions
   }
 
@@ -74,12 +77,14 @@ object SavepointActions {
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
 
-  def deleteAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.delete(resource(savepoint, labels))
-  def createAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.create(resource(savepoint, labels), editor)
+  def deleteAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+    Action.delete(resource(savepoint, labels, ownerReferences))
+  def createAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+    Action.create(resource(savepoint, labels, ownerReferences), editor)
 
-  def resource(savepoint: Savepoint, labels: CloudflowLabels)(implicit ctx: DeploymentContext): CustomResource[Spec, Status] = {
+  def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): CustomResource[Spec, Status] = {
     val partitions  = ctx.kafkaContext.partitionsPerTopic
     val replicas    = ctx.kafkaContext.replicationFactor
     val clusterName = ctx.kafkaContext.strimziClusterName
@@ -92,7 +97,8 @@ object SavepointActions {
         ObjectMeta(
           name = savepoint.name,
           namespace = ns,
-          labels = labels(savepoint.name) ++ Map("strimzi.io/cluster" -> clusterName)
+          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName),
+          ownerReferences = ownerReferences
         )
       )
   }

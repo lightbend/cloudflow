@@ -518,7 +518,7 @@ func TestApplicationDescriptor() string {
 		            "default_value": "valid-logger",
 		            "description": "Provide a prefix for the log lines",
 		            "key": "msg-prefix",
-		            "validation_pattern": "^.{1,1000}$",
+		            "validation_pattern": "",
 		            "validation_type": "string"
 		          }
 		        ],

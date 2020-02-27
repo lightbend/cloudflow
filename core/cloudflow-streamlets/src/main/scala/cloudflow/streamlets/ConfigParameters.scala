@@ -122,7 +122,7 @@ final case class IntegerConfigParameter(key: String, description: String = "", d
 }
 
 /**
- * Describes a UTF8 string, the string must be larger than one character and less than 1k characters.
+ * Describes a UTF8 string
  *
  * @param key name of the parameter
  * @param description description of the parameter
@@ -135,7 +135,7 @@ object StringConfigParameter {
 }
 final case class StringConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor =
-    ConfigParameterDescriptor(key, description, RegexpValidationType("""^.{1,1000}$"""), defaultValue)
+    ConfigParameterDescriptor(key, description, RegexpValidationType(""), defaultValue)
 
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
