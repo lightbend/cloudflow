@@ -74,7 +74,7 @@ class ConfigParameterSpec extends WordSpec with MustMatchers with OptionValues {
       descriptor.key mustBe "test"
       descriptor.description mustBe "description"
       descriptor.validationType mustBe "string"
-      descriptor.validationPattern.value mustBe "^.{1,1000}$"
+      descriptor.validationPattern.value mustBe ""
       descriptor.defaultValue.value mustBe "test string"
     }
 
