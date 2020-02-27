@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-ARG SPARK_BASE_IMAGE=lightbend/spark:1.3.0-OpenJDK-2.4.5-cloudflow-2.12
+ARG SPARK_BASE_IMAGE=lightbend/spark:1.3.1-OpenJDK-2.4.5-cloudflow-2.12
 
 FROM $SPARK_BASE_IMAGE
 
