@@ -135,7 +135,7 @@ object StringConfigParameter {
 }
 final case class StringConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor =
-    ConfigParameterDescriptor(key, description, RegexpValidationType(""), defaultValue)
+    ConfigParameterDescriptor(key, description, RegexpValidationType(".*"), defaultValue)
 
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
