@@ -106,11 +106,10 @@ object CloudflowApplication {
 
   val CRD = CustomResourceDefinition[CR]
 
-  def apply(applicationSpec: CloudflowApplication.Spec): CR = {
+  def apply(applicationSpec: CloudflowApplication.Spec): CR =
     CustomResource(
       applicationSpec
     )
-  }
 
   def hash(applicationSpec: CloudflowApplication.Spec): String = {
     val jsonString = Json.stringify(Json.toJson(CloudflowApplication(applicationSpec)))
