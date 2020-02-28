@@ -162,8 +162,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("%s", err)
 	}
 
-	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues, ownerReference)
-	createStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues)
+	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
 	applicationSpec, err = copyReplicaConfigurationFromCurrentApplication(cloudflowApplicationClient, applicationSpec)
 	if err != nil {
@@ -171,6 +171,22 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 
 	createOrUpdateCloudflowApplication(cloudflowApplicationClient, applicationSpec, ownerReference)
+
+	// When the CR has been created, create a ownerReference using the uid from the stored CR and
+	// then update secrets and service account with the ownerReference
+	storedCR, err := cloudflowApplicationClient.Get(applicationSpec.AppID)
+	if err != nil {
+		util.LogAndExit("Failed to retrieve the application `%s`, %s", applicationSpec.AppID, err.Error())
+	}
+	ownerReference = storedCR.GenerateOwnerReference()
+
+	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+
+	serviceAccount.ObjectMeta.OwnerReferences = []metav1.OwnerReference{ownerReference}
+	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
+		util.LogAndExit("%s", err)
+	}
 
 	util.PrintSuccess("Deployment of application `%s` has started.\n", namespace)
 }
@@ -318,7 +334,7 @@ func copyReplicaConfigurationFromCurrentApplication(applicationClient *k8s.Cloud
 	return spec, nil
 }
 
-func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
+func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
 	for streamletName, secret := range streamletNameSecretMap {
 		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
 			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {

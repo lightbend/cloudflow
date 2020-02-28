@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -14,20 +14,20 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // KafkaTopic is one kafka topic
 type KafkaTopic struct {
-	meta_v1.TypeMeta
-	meta_v1.ObjectMeta `json:"metadata"`
+	metav1.TypeMeta
+	metav1.ObjectMeta `json:"metadata"`
 }
 
 type kafakTopicList struct {
-	meta_v1.TypeMeta `json:",inline"`
-	meta_v1.ListMeta `json:"metadata"`
-	Items            []KafkaTopic `json:"items"`
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+	Items           []KafkaTopic `json:"items"`
 }
 
 // DeepCopyInto copies all properties of this object into another object of the

@@ -9,7 +9,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
@@ -106,7 +105,7 @@ func createOrUpdateNamespace(k8sClient *kubernetes.Clientset, appID string) {
 
 func newNamespace(appID string) v1.Namespace {
 	return v1.Namespace{
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   appID,
 			Labels: domain.CreateLabels(appID),
 		},
@@ -161,7 +160,7 @@ func createOrUpdateServiceAccount(k8sClient *kubernetes.Clientset, appID string,
 
 func newCloudflowServiceAccount(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {
 	return v1.ServiceAccount{
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:            cloudflowAppServiceAccountName,
 			Namespace:       appID,
 			Labels:          domain.CreateLabels(appID),
