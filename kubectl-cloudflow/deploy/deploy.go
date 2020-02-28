@@ -343,7 +343,6 @@ func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyVa
 
 // UpdateSecretsWithOwnerReference updates the secret with the ownerreference passed in
 func UpdateSecretsWithOwnerReference(cloudflowCROwnerReference metav1.OwnerReference, secrets map[string]*corev1.Secret) map[string]*corev1.Secret {
-
 	for key, value := range secrets {
 		value.ObjectMeta.OwnerReferences = []metav1.OwnerReference{cloudflowCROwnerReference}
 		secrets[key] = value
