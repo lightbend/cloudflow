@@ -325,7 +325,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 
 // CreateSecretsData creates a map of streamlet names and K8s Secrets for those streamlets with configuration parameters,
 // the secrets contain a single key/value where the key is the name of the hocon configuration file
-func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string, cloudflowOperatorOwnerReference metav1.OwnerReference) map[string]*corev1.Secret {
+func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]*corev1.Secret {
 	streamletSecretNameMap := make(map[string]*corev1.Secret)
 	for _, streamlet := range spec.Streamlets {
 		var str strings.Builder
@@ -336,9 +336,19 @@ func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyVa
 		secretMap := make(map[string]string)
 		secretMap["secret.conf"] = str.String()
 		secretName := findSecretName(spec, streamlet.Name)
-		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap, cloudflowOperatorOwnerReference)
+		streamletSecretNameMap[secretName] = createSecret(spec.AppID, secretName, secretMap)
 	}
 	return streamletSecretNameMap
+}
+
+// UpdateSecretsWithOwnerReference updates the secret with the ownerreference passed in
+func UpdateSecretsWithOwnerReference(cloudflowCROwnerReference metav1.OwnerReference, secrets map[string]*corev1.Secret) map[string]*corev1.Secret {
+
+	for key, value := range secrets {
+		value.ObjectMeta.OwnerReferences = []metav1.OwnerReference{cloudflowCROwnerReference}
+		secrets[key] = value
+	}
+	return secrets
 }
 
 func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string) string {
@@ -350,16 +360,15 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 	panic(fmt.Errorf("Could not find secret name for streamlet %s", streamletName))
 }
 
-func createSecret(appID string, name string, data map[string]string, cloudflowOperatorOwnerReference metav1.OwnerReference) *corev1.Secret {
+func createSecret(appID string, name string, data map[string]string) *corev1.Secret {
 	labels := domain.CreateLabels(appID)
 	labels["com.lightbend.cloudflow/streamlet-name"] = name
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			Namespace:       appID,
-			Labels:          labels,
-			OwnerReferences: []metav1.OwnerReference{cloudflowOperatorOwnerReference},
+			Name:      name,
+			Namespace: appID,
+			Labels:    labels,
 		},
 	}
 	secret.StringData = data

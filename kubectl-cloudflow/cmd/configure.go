@@ -66,9 +66,11 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	}
 
 	// Get the Cloudflow operator ownerReference
-	ownerReference := version.GetOwnerReferenceForCloudflowOperator()
+	ownerReference := applicationCR.GenerateOwnerReference()
 
-	streamletNameSecretMap := deploy.CreateSecretsData(&applicationCR.Spec, configurationKeyValues, ownerReference)
+	streamletNameSecretMap := deploy.CreateSecretsData(&applicationCR.Spec, configurationKeyValues)
+	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+
 	for streamletName, secret := range streamletNameSecretMap {
 		if _, err := k8sClient.CoreV1().Secrets(applicationName).Update(secret); err != nil {
 			util.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())

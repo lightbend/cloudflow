@@ -47,6 +47,21 @@ func Test_validateCloudflowApplicationSpec(t *testing.T) {
 	assert.True(t, fileIngressDeployment.VolumeMounts[0].AccessMode == "ReadWriteMany")
 }
 
+func Test_validateOwnerReferenceGeneration(t *testing.T) {
+	applicationConfiguration := TestApplicationDescriptor()
+	var app CloudflowApplicationSpec
+	jsonError := json.Unmarshal([]byte(applicationConfiguration), &app)
+	assert.Empty(t, jsonError)
+
+	cr := NewCloudflowApplication(app)
+
+	ownerReference := cr.GenerateOwnerReference()
+	assert.True(t, ownerReference.Kind == "CloudflowApplication")
+	assert.True(t, ownerReference.APIVersion == "cloudflow.lightbend.com/v1alpha1")
+	assert.True(t, ownerReference.Name == "sensor-data-scala")
+
+}
+
 func findDescriptor(name string, app CloudflowApplicationSpec) (Streamlet, error) {
 	for _, v := range app.Streamlets {
 		if v.Name == name {
