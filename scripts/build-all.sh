@@ -22,7 +22,7 @@ echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
 cd $DIR/../core
-sbt --supershell=false $TARGET publishLocal
+sbt --supershell=false "; scalafmtCheck ; $TARGET  ; publishLocal"
 RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
 
@@ -48,7 +48,11 @@ for prj in $PROJECTS; do
   echo "========================================================================="
 
   cd $prj
-  sbt --supershell=false $TARGET
+  if [ "$prj" = "sensor-data-java" ]; then
+    sbt --supershell=false $TARGET
+  else
+    sbt --supershell=false "; scalafmtCheck ; $TARGET"
+  fi
   RETVAL=$?
   [ $RETVAL -ne 0 ] && echo "Failure in project $prj" && exit -1
   cd ..

@@ -3,9 +3,10 @@ import sbt._
 import sbt.Keys._
 
 lazy val tensorflowAkka =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
     .settings(
 //end::docs-projectSetup-example[]
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.10" % "test",
