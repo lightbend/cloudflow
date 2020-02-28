@@ -59,6 +59,8 @@ func Test_validateOwnerReferenceGeneration(t *testing.T) {
 	assert.True(t, ownerReference.Kind == "CloudflowApplication")
 	assert.True(t, ownerReference.APIVersion == "cloudflow.lightbend.com/v1alpha1")
 	assert.True(t, ownerReference.Name == "sensor-data-scala")
+	assert.True(t, *ownerReference.Controller == true)
+	assert.True(t, *ownerReference.BlockOwnerDeletion == true)
 
 }
 
