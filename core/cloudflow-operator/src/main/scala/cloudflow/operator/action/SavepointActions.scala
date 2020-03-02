@@ -62,11 +62,14 @@ object SavepointActions {
     deleteActions ++ createActions
   }
 
+  final case class Condition(`type`: String, status: String, lastTransitionTime: String, reason: String, message: String)
+
   final case class Spec(partitions: Int, replicas: Int)
-  final case class Status(actualPartitions: Int, actualReplicas: Int)
+  final case class Status(conditions: List[Condition], observedGeneration: Int)
   type Topic = CustomResource[Spec, Status]
-  private implicit val SpecFmt: Format[Spec]     = Json.format[Spec]
-  private implicit val StatusFmt: Format[Status] = Json.format[Status]
+  private implicit val ConditionFmt: Format[Condition]  = Json.format[Condition]
+  private implicit val SpecFmt: Format[Spec]            = Json.format[Spec]
+  private implicit val StatusFmt: Format[Status]        = Json.format[Status]
 
   private implicit val Definition = ResourceDefinition[CustomResource[Spec, Status]](
     group = "kafka.strimzi.io",
