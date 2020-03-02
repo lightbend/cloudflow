@@ -33,10 +33,10 @@ import cloudflow.blueprint.deployment._
  */
 object SavepointActions {
   def apply(
-      newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      deleteOutdatedTopics: Boolean
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+             newApp: CloudflowApplication.CR,
+             currentApp: Option[CloudflowApplication.CR],
+             deleteOutdatedTopics: Boolean
+           )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctSavepoints(app: CloudflowApplication.Spec): Set[Savepoint] =
       app.deployments.flatMap(_.portMappings.values).toSet
 
@@ -46,7 +46,7 @@ object SavepointActions {
     )
 
     val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
-    val newSavepoints     = distinctSavepoints(newApp.spec)
+    val newSavepoints = distinctSavepoints(newApp.spec)
 
     val deleteActions =
       if (deleteOutdatedTopics) {
@@ -65,11 +65,13 @@ object SavepointActions {
   final case class Condition(`type`: String, status: String, lastTransitionTime: String, reason: String, message: String)
 
   final case class Spec(partitions: Int, replicas: Int)
+
   final case class Status(conditions: List[Condition], observedGeneration: Int)
+
   type Topic = CustomResource[Spec, Status]
-  private implicit val ConditionFmt: Format[Condition]  = Json.format[Condition]
-  private implicit val SpecFmt: Format[Spec]            = Json.format[Spec]
-  private implicit val StatusFmt: Format[Status]        = Json.format[Status]
+  private implicit val ConditionFmt: Format[Condition] = Json.format[Condition]
+  private implicit val SpecFmt: Format[Spec] = Json.format[Spec]
+  private implicit val StatusFmt: Format[Status] = Json.format[Status]
 
   private implicit val Definition = ResourceDefinition[CustomResource[Spec, Status]](
     group = "kafka.strimzi.io",
@@ -82,14 +84,15 @@ object SavepointActions {
 
   def deleteAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
     Action.delete(resource(savepoint, labels, ownerReferences))
+
   def createAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
     Action.create(resource(savepoint, labels, ownerReferences), editor)
 
   def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
+    implicit ctx: DeploymentContext
   ): CustomResource[Spec, Status] = {
-    val partitions  = ctx.kafkaContext.partitionsPerTopic
-    val replicas    = ctx.kafkaContext.replicationFactor
+    val partitions = ctx.kafkaContext.partitionsPerTopic
+    val replicas = ctx.kafkaContext.replicationFactor
     val clusterName = ctx.kafkaContext.strimziClusterName
 
     // TODO when strimzi supports it, create in the namespace where the CloudflowApplication resides.
@@ -105,6 +108,7 @@ object SavepointActions {
         )
       )
   }
+
   private val editor = new ObjectEditor[CustomResource[Spec, Status]] {
     override def updateMetadata(obj: CustomResource[Spec, Status], newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
