@@ -221,9 +221,9 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       sparkStreamlet: SparkStreamlet,
       duration: Duration
   ): Unit = {
-    val t0 = System.currentTimeMillis()
+    val t0             = System.currentTimeMillis()
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
-    while (session.streams.active.nonEmpty && (System.currentTimeMillis()-t0)<duration.toMillis ) {
+    while (session.streams.active.nonEmpty && (System.currentTimeMillis() - t0) < duration.toMillis) {
       session.streams.awaitAnyTermination(duration.toMillis)
       session.streams.resetTerminated()
     }
