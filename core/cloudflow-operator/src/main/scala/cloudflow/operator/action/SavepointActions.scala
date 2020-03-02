@@ -33,10 +33,10 @@ import cloudflow.blueprint.deployment._
  */
 object SavepointActions {
   def apply(
-             newApp: CloudflowApplication.CR,
-             currentApp: Option[CloudflowApplication.CR],
-             deleteOutdatedTopics: Boolean
-           )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
+      deleteOutdatedTopics: Boolean
+  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctSavepoints(app: CloudflowApplication.Spec): Set[Savepoint] =
       app.deployments.flatMap(_.portMappings.values).toSet
 
@@ -46,7 +46,7 @@ object SavepointActions {
     )
 
     val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
-    val newSavepoints = distinctSavepoints(newApp.spec)
+    val newSavepoints     = distinctSavepoints(newApp.spec)
 
     val deleteActions =
       if (deleteOutdatedTopics) {
@@ -70,8 +70,8 @@ object SavepointActions {
 
   type Topic = CustomResource[Spec, Status]
   private implicit val ConditionFmt: Format[Condition] = Json.format[Condition]
-  private implicit val SpecFmt: Format[Spec] = Json.format[Spec]
-  private implicit val StatusFmt: Format[Status] = Json.format[Status]
+  private implicit val SpecFmt: Format[Spec]           = Json.format[Spec]
+  private implicit val StatusFmt: Format[Status]       = Json.format[Status]
 
   private implicit val Definition = ResourceDefinition[CustomResource[Spec, Status]](
     group = "kafka.strimzi.io",
@@ -89,10 +89,10 @@ object SavepointActions {
     Action.create(resource(savepoint, labels, ownerReferences), editor)
 
   def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-    implicit ctx: DeploymentContext
+      implicit ctx: DeploymentContext
   ): CustomResource[Spec, Status] = {
-    val partitions = ctx.kafkaContext.partitionsPerTopic
-    val replicas = ctx.kafkaContext.replicationFactor
+    val partitions  = ctx.kafkaContext.partitionsPerTopic
+    val replicas    = ctx.kafkaContext.replicationFactor
     val clusterName = ctx.kafkaContext.strimziClusterName
 
     // TODO when strimzi supports it, create in the namespace where the CloudflowApplication resides.
