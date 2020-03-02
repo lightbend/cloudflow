@@ -55,15 +55,9 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
   override def writeStream[Out](stream: Dataset[Out],
                                 outPort: CodecOutlet[Out],
                                 outputMode: OutputMode)(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = {
-    // RateSource can only work with a microBatch query because it contains no data at time zero, where Trigger.Once works.
-    val trigger = if (isRateSource(stream)) {
-      println("Using Processing Time!")
-      Trigger.ProcessingTime(ProcessingTimeInterval)
-    } else {
-      println("Using Processing Once!")
-      Trigger.Once()
-    }
-
+    // RateSource can only work with a microBatch query because it contains no data at time zero.
+    // Trigger.Once requires data at start to  work.
+    val trigger = if (isRateSource(stream)) Trigger.ProcessingTime(ProcessingTimeInterval) else Trigger.Once()
     outletTaps
       .find(_.portName == outPort.name)
       .map { outletTap ⇒
