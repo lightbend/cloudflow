@@ -23,9 +23,9 @@ import com.typesafe.config._
 
 import scala.reflect.runtime.universe._
 import scala.concurrent.duration._
-import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
+import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import org.apache.spark.sql.execution.streaming.MemoryStream
-import org.apache.spark.sql.streaming.{OutputMode, StreamingQuery, Trigger}
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.streamlets._
 import org.apache.spark.sql.catalyst.InternalRow
 
@@ -77,12 +77,11 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
     tmpDir.toFile.getAbsolutePath
   }
 
-
-  private def isRateSource(stream: Dataset[_]):Boolean = {
+  private def isRateSource(stream: Dataset[_]): Boolean = {
     import org.apache.spark.sql.execution.command.ExplainCommand
     val explain = ExplainCommand(stream.queryExecution.logical, true)
-    val res = session.sessionState.executePlan(explain).executedPlan.executeCollect()
-    res.exists((row:InternalRow) => row.getString(0).contains("org.apache.spark.sql.execution.streaming.sources.RateStreamProvider"))
+    val res     = session.sessionState.executePlan(explain).executedPlan.executeCollect()
+    res.exists((row: InternalRow) => row.getString(0).contains("org.apache.spark.sql.execution.streaming.sources.RateStreamProvider"))
   }
 
 }
