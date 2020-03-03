@@ -59,15 +59,17 @@ Then port-forward to the correct pods:
 
 ```bash
 $ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-ride 3000:3000
-$ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3000:3000
+$ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3001:3000
 ```
 
-Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3000`.
+> Note every streamlet now exposes port 3000 only
+
+Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3001`.
 
 ```
 $ ./send-data-rides.sh -p 3000
 ...
-$ ./send-data-fares.sh -p 3000
+$ ./send-data-fares.sh -p 3001
 ```
 
 > **Note:** Just make sure that the port numbers passed in to the scripts match the ones where you port forwarded to.
