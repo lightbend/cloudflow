@@ -45,8 +45,9 @@ lazy val root =
 
 lazy val streamlets =
   cloudflowModule("cloudflow-streamlets")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             SprayJson,
             Ficus,
@@ -57,9 +58,10 @@ lazy val streamlets =
 
 lazy val events =
   cloudflowModule("cloudflow-events")
-    .enablePlugins(BuildInfoPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaStream,
             Ficus,
@@ -72,9 +74,10 @@ lazy val events =
 
 lazy val akkastream =
   cloudflowModule("cloudflow-akka")
-    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaStream,
             AkkaStreamKafka,
@@ -86,9 +89,10 @@ lazy val akkastream =
 
 lazy val akkastreamUtil =
   cloudflowModule("cloudflow-akka-util")
-    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaHttp,
             AkkaHttpJackson,
@@ -106,9 +110,10 @@ lazy val akkastreamUtil =
 
 lazy val akkastreamTestkit =
   cloudflowModule("cloudflow-akka-testkit")
-    .enablePlugins(GenJavadocPlugin,JavaFormatterPlugin)
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
             AkkaStream,
@@ -130,9 +135,10 @@ lazy val akkastreamTestkit =
 
 lazy val akkastreamTests =
   cloudflowModule("cloudflow-akka-tests")
-    .enablePlugins(JavaFormatterPlugin)
+    .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
@@ -147,9 +153,10 @@ lazy val akkastreamTests =
 
 lazy val spark =
   cloudflowModule("cloudflow-spark")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
             AkkaSlf4j,
             AkkaStream,
@@ -171,9 +178,10 @@ lazy val spark =
 
 lazy val sparkTestkit =
   cloudflowModule("cloudflow-spark-testkit")
-    .enablePlugins(GenJavadocPlugin)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .dependsOn(spark)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             ScalaTestUnscoped,
             Junit
@@ -182,8 +190,10 @@ lazy val sparkTestkit =
 
 lazy val sparkTests =
   cloudflowModule("cloudflow-spark-tests")
+    .enablePlugins(ScalafmtPlugin)
     .dependsOn(sparkTestkit)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             Logback % Test,
             ScalaTest,
@@ -199,8 +209,10 @@ lazy val sparkTests =
 
 lazy val flink =
   cloudflowModule("cloudflow-flink")
+    .enablePlugins(ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
             Flink,
             FlinkStreaming,
@@ -216,8 +228,10 @@ lazy val flink =
 
 lazy val flinkTestkit =
   cloudflowModule("cloudflow-flink-testkit")
+    .enablePlugins(ScalafmtPlugin)
     .dependsOn(flink)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             ScalaTestUnscoped,
             Logback % Test,
@@ -227,9 +241,10 @@ lazy val flinkTestkit =
 
 lazy val flinkTests =
   cloudflowModule("cloudflow-flink-tests")
-    .enablePlugins(JavaFormatterPlugin)
+    .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(flinkTestkit)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             FlinkAvro,
             Logback % Test,
@@ -247,8 +262,9 @@ lazy val flinkTests =
 
 lazy val blueprint =
   cloudflowModule("cloudflow-blueprint")
-    .enablePlugins(BuildInfoPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             SprayJson,
             Config,
@@ -269,8 +285,9 @@ lazy val blueprint =
 lazy val plugin =
   cloudflowModule("sbt-cloudflow")
     .dependsOn(streamlets, blueprint)
-    .enablePlugins(BuildInfoPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(
+      scalafmtOnCompile := true,
       sbtPlugin := true,
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
@@ -293,9 +310,10 @@ lazy val plugin =
 
 lazy val runner =
   cloudflowModule("cloudflow-runner")
-    .enablePlugins(BuildInfoPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .dependsOn(streamlets, blueprint, events)
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             Ficus,
             EmbeddedKafka
@@ -329,10 +347,12 @@ lazy val operator =
       sbtdocker.DockerPlugin,
       JavaAppPackaging,
       BuildNumberPlugin,
-      BuildInfoPlugin
+      BuildInfoPlugin,
+      ScalafmtPlugin
     )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
+      scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
             AkkaStream,
