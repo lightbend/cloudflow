@@ -1,0 +1,1 @@
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "1.3.1-RC3")

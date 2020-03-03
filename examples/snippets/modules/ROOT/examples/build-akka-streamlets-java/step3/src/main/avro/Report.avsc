@@ -1,0 +1,26 @@
+{
+  "namespace": "com.example",
+  "type": "record",
+  "name": "Report",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "keywords",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    }
+  ]
+}
