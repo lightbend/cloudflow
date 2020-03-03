@@ -1,10 +1,12 @@
+// +build integration
+
 package verify
 
 import (
+	"testing"
+
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 func createBlueprintSample() string {
@@ -25,7 +27,7 @@ func createBlueprintSample() string {
 	}`
 }
 
-func createBlueprintSample1() string {
+func createValidBlueprintSample() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
@@ -41,11 +43,167 @@ func createBlueprintSample1() string {
 			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
 			console-egress = outp/carly.output.AggregateRecordEgress
 			error-egress = outp/carly.output.InvalidRecordEgress
+		}
+		connections {
+			cdr-generator1.out = [merge.in-0]
+			cdr-generator2.out = [merge.in-1]
+			cdr-ingress.out = [merge.in-2]
+			merge.valid = [cdr-aggregator.in]
+			merge.invalid = [error-egress.in]
+			cdr-aggregator.out = [console-egress.in]
+		}
+	}`
+}
+
+func createBlueprintWithoutImagesSample() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+		}
+		streamlets {
+			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
 	
 		}
 		connections {
 			cdr-generator1.out = [merge.in-0]
 			cdr-generator2.out = [merge.in-1]
+			cdr-ingress.out = [merge.in-2]
+			merge.valid = [cdr-aggregator.in]
+			merge.invalid = [error-egress.in]
+			cdr-aggregator.out = [console-egress.in]
+		}
+	}`
+}
+
+func createBlueprintWithoutStreamletsSample() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+
+		}
+		connections {
+		}
+	}`
+}
+
+func createBlueprintWithoutConnectionsSample() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
+		}
+		connections {
+		}
+	}`
+}
+
+func createBlueprintSampleWithMissingImage() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
+		}
+		connections {
+			cdr-generator1.out = [merge.in-0]
+			cdr-generator2.out = [merge.in-1]
+			cdr-ingress.out = [merge.in-2]
+			merge.valid = [cdr-aggregator.in]
+			merge.invalid = [error-egress.in]
+			cdr-aggregator.out = [console-egress.in]
+		}
+	}`
+}
+
+func createBlueprintSampleWithImageInStreamletNotPresentInImages() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+			cdr-generator1 = notInImage/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = notInImage/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
+		}
+		connections {
+			cdr-generator1.out = [merge.in-0]
+			cdr-generator2.out = [merge.in-1]
+			cdr-ingress.out = [merge.in-2]
+			merge.valid = [cdr-aggregator.in]
+			merge.invalid = [error-egress.in]
+			cdr-aggregator.out = [console-egress.in]
+		}
+	}`
+}
+
+/*
+cdr-generator1 {
+	out = [
+		{
+			merge { in-0 }
+		}
+  ]
+}
+*/
+
+func createBlueprintSampleWithConnectionsHavingInvalidStreamlets() string {
+	return `blueprint {
+		name = call-record-aggregator
+		images {
+			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
+			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+		}
+		streamlets {
+			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			cdr-generator2 = aggr/carly.aggregator.CallRecordGeneratorIngress
+			merge = ings/carly.ingestor.CallRecordMerge
+			cdr-ingress = ings/carly.ingestor.CallRecordIngress
+			cdr-aggregator = aggr/carly.aggregator.CallStatsAggregator
+			console-egress = outp/carly.output.AggregateRecordEgress
+			error-egress = outp/carly.output.InvalidRecordEgress
+		}
+		connections {
+			generator1.out = [merge.in-0]
+			generator2.out = [merge.in-1]
 			cdr-ingress.out = [merge.in-2]
 			merge.valid = [cdr-aggregator.in]
 			merge.invalid = [error-egress.in]
@@ -75,17 +233,37 @@ func Test_VerifyConnectionHash(t *testing.T) {
 	assert.NotEqual(t, hash1, hash2)
 }
 
-func Test_VerifyFailIfBluperintIsEmpty(t *testing.T) {
-	var blueprint = Blueprint{}.verify()
-	empty := []BlueprintProblem{EmptyStreamlets{}, EmptyStreamletDescriptors{}, EmptyImages{}}
-	problems := blueprint.UpdateAllProblems()
-	for _, p := range problems {
-		t.Log(reflect.TypeOf(p))
-	}
-	assert.ElementsMatch(t, blueprint.UpdateAllProblems(), empty)
+func Test_VerifyValidBlueprint(t *testing.T) {
+	errors := VerifyBlueprint(createValidBlueprintSample())
+	assert.Empty(t, errors)
 }
 
-func Test_VerifyValidBlueprint(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintSample1())
-	assert.Empty(t, errors)
+func Test_VerifyBlueprintWithoutImages(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintWithoutImagesSample())
+	assert.NotEmpty(t, errors)
+}
+
+func Test_VerifyBlueprintWithoutStreamlets(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintWithoutStreamletsSample())
+	assert.NotEmpty(t, errors)
+}
+
+func Test_VerifyBlueprintWithoutConnections(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintWithoutConnectionsSample())
+	assert.NotEmpty(t, errors)
+}
+
+func Test_VerifyBlueprintWithMissingImage(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintSampleWithMissingImage())
+	assert.NotEmpty(t, errors)
+}
+
+func Test_VerifyBlueprintWithImageInStreamletNotPresentInImages(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintSampleWithImageInStreamletNotPresentInImages())
+	assert.NotEmpty(t, errors)
+}
+
+func Test_VerifyBlueprintWithConnectionsHavingInvalidStreamlets(t *testing.T) {
+	errors := VerifyBlueprint(createBlueprintSampleWithConnectionsHavingInvalidStreamlets())
+	assert.NotEmpty(t, errors)
 }

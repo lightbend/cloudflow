@@ -8,9 +8,9 @@ import (
 
 // StreamletConnection models the connections in a blueprint
 type StreamletConnection struct {
-	from string
-	to string
-	label *string
+	from     string
+	to       string
+	label    *string
 	problems []BlueprintProblem
 	verified *VerifiedStreamletConnection
 	metadata *configuration.Config
@@ -22,8 +22,13 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 	_, fromPathError := NewVerifiedPortPath(c.from)
 	_, toPathError := NewVerifiedPortPath(c.to)
 
-	var patternErrors []BlueprintProblem 
-	var conErrors []BlueprintProblem 
+	/*
+		for _, vs := range verifiedStreamlets {
+			fmt.Printf("%s\n", vs.name)
+		}
+	*/
+	var patternErrors []BlueprintProblem
+	var conErrors []BlueprintProblem
 
 	if fromPathError != nil {
 		patternErrors = append(patternErrors, fromPathError)
@@ -36,8 +41,8 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 	outletResult, outletError := FindVerifiedOutlet(verifiedStreamlets, c.from)
 	inletResult, inletError := FindVerifiedInlet(verifiedStreamlets, c.to)
 
-	var verifiedFromPath *string 
-	var verifiedToPath *string 
+	var verifiedFromPath *string
+	var verifiedToPath *string
 
 	if outletError != nil {
 		verifiedFromPath = &c.from
@@ -55,11 +60,11 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 		verifiedToPath = &portPath
 	}
 
-	var verConnection *VerifiedStreamletConnection 
-    if outletResult != nil && inletResult != nil {
-    	var label = ""
-    	if c.label == nil {
-    		label = ""
+	var verConnection *VerifiedStreamletConnection
+	if outletResult != nil && inletResult != nil {
+		var label = ""
+		if c.label == nil {
+			label = ""
 		} else {
 			label = *(c.label)
 		}
@@ -73,15 +78,15 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 	return StreamletConnection{
 		problems: append(patternErrors, conErrors...),
 		verified: verConnection,
-		from: *verifiedFromPath,
-		to: *verifiedToPath,
+		from:     *verifiedFromPath,
+		to:       *verifiedToPath,
 	}
 }
 
 func (c StreamletConnection) verifySchema(verifiedOutlet VerifiedOutlet, verifiedInlet VerifiedInlet, label string) (*VerifiedStreamletConnection, BlueprintProblem) {
-		if verifiedOutlet.schemaDescriptor.Format == verifiedInlet.schemaDescriptor.Format &&
-			verifiedOutlet.schemaDescriptor.Fingerprint == verifiedInlet.schemaDescriptor.Fingerprint {
-			return &VerifiedStreamletConnection{verifiedOutlet: verifiedOutlet, verifiedInlet: verifiedInlet, label: &label}, nil
+	if verifiedOutlet.schemaDescriptor.Format == verifiedInlet.schemaDescriptor.Format &&
+		verifiedOutlet.schemaDescriptor.Fingerprint == verifiedInlet.schemaDescriptor.Fingerprint {
+		return &VerifiedStreamletConnection{verifiedOutlet: verifiedOutlet, verifiedInlet: verifiedInlet, label: &label}, nil
 	} else if verifiedOutlet.schemaDescriptor.Format == avroFormat {
 		err := cloudflowavro.CheckSchemaCompatibility(verifiedOutlet.schemaDescriptor.Schema, verifiedInlet.schemaDescriptor.Schema)
 

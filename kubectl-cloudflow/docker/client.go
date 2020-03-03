@@ -141,6 +141,12 @@ func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bo
 // GetCloudflowStreamletDescriptorsForImage extracts the configuration of a Cloudflow label from a docker image
 // and the image with digest in a struct
 func GetCloudflowStreamletDescriptorsForImage(cli *client.Client, imageName string) (domain.CloudflowStreamletDescriptorsDigestPair, string) {
+
+	_, pullError := PullImage(cli, imageName)
+	if pullError != nil {
+		util.LogAndExit("Failed to pull image %s: %s", imageName, pullError.Error())
+	}
+
 	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
 
 	streamletDescriptorsLabelName := "com.lightbend.cloudflow.streamlet-descriptors"

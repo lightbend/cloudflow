@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/google/uuid"
 	"strings"
@@ -41,7 +42,7 @@ func buildStreamletDescriptorFull(
 }
 
 func getRandomClassName() string {
-	return strings.ReplaceAll(uuid.New().String(), "-", "")
+	return "$" + strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
 func randomStreamlet() StreamletDescriptor {
@@ -61,9 +62,44 @@ func streamletForRuntime(className string, runtime string) StreamletDescriptor {
 }
 
 // Transforms the descriptor into an ingress
-func (s StreamletDescriptor) asIngress(outlets []domain.InOutlet) StreamletDescriptor {
+func (s StreamletDescriptor) asIngress(outletName string, schemaName string, schema string) StreamletDescriptor {
 	desc := StreamletDescriptor(s)
-	desc.Outlets = outlets
+	var outlet = domain.InOutlet{Name:outletName, Schema: domain.InOutletSchema {
+		Fingerprint: GetSHA256Hash(schema),
+		Schema: schema,
+		Name: schemaName,
+		Format: avroFormat,
+	}}
+	desc.Outlets = []domain.InOutlet{outlet}
 	desc.Inlets = nil
 	return desc
+}
+
+// Transforms the descriptor into a Processor
+func (s StreamletDescriptor) asProcessor(outletName string, outletSchemaName string, inletName string, inletSchemaName string, schema string) StreamletDescriptor {
+	desc := StreamletDescriptor(s)
+	var outlet = domain.InOutlet{Name:outletName, Schema: domain.InOutletSchema {
+		Fingerprint: GetSHA256Hash(schema),
+		Schema: schema,
+		Name: outletSchemaName,
+		Format: avroFormat,
+	}}
+
+	var inlet = domain.InOutlet{Name:inletName, Schema: domain.InOutletSchema {
+		Fingerprint: GetSHA256Hash(schema),
+		Schema: schema,
+		Name: inletSchemaName,
+		Format: avroFormat,
+	}}
+	desc.Outlets = []domain.InOutlet{outlet}
+	desc.Inlets = []domain.InOutlet{inlet}
+	return desc
+}
+
+func (s StreamletDescriptor) ref(refName string, metadata *configuration.Config) StreamletRef {
+	return StreamletRef {
+		name: refName,
+		className: s.ClassName,
+		metadata: metadata,
+	}
 }

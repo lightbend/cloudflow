@@ -2,12 +2,13 @@ package verify
 
 import (
 	"fmt"
+	"os/exec"
+	"strings"
+
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
-	"os/exec"
-	"strings"
 )
 
 // VerifyBlueprint TBD
@@ -29,6 +30,9 @@ func VerifyBlueprint(content string) error {
 
 	// all StreamletConnection in the blueprint
 	connections := getConnectionsFromBlueprintConfig(config)
+
+	fmt.Printf("imageRefsFromBlueprint %d imageDescriptorMap %d streamletRefs %d connections %d\n",
+		len(imageRefsFromBlueprint), len(imageDescriptorMap), len(streamletRefs), len(connections))
 
 	blueprint := Blueprint{
 		images:                       imageRefsFromBlueprint,
@@ -72,6 +76,21 @@ func getImageRefsFromConfig(config *configuration.Config) map[string]domain.Imag
 }
 
 func getConnectionsFromBlueprintConfig(config *configuration.Config) []StreamletConnection {
+	connectionMap := config.GetNode("blueprint.connections").GetObject().Items()
+	var conns []StreamletConnection
+
+	for fromStreamlet, rest := range connectionMap {
+		outs := rest.GetObject().Items()
+		for fromPort, ins := range outs {
+			for _, in := range ins.GetArray() {
+			  conns = append(conns, StreamletConnection{from: fmt.Sprintf("%s.%s", fromStreamlet, fromPort), to: in.GetString(), metadata: config})
+			}
+		}
+	}
+	return conns
+}
+
+func getConnectionsFromBlueprintConf(config *configuration.Config) []StreamletConnection {
 	connectionMap := config.GetNode("blueprint.connections").GetObject().Items()
 	var conns []StreamletConnection
 	for from, tos := range connectionMap {

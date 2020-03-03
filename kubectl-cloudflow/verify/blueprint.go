@@ -359,9 +359,11 @@ func checkStreamletImageConsistency(blueprint Blueprint) []BlueprintProblem {
 	var problems []BlueprintProblem
 	// check if the image ids in streamlets are present in the images section
 	for _, streamlet := range blueprint.streamlets {
-		img := *streamlet.imageId
-		if _, ok := blueprint.images[img]; !ok {
-			problems = append(problems, ImageInStreamletNotInImages{imageInStreamlet: img, streamlet: streamlet.name})
+		if streamlet.imageId != nil {
+			img := *streamlet.imageId
+			if _, ok := blueprint.images[img]; !ok {
+				problems = append(problems, ImageInStreamletNotInImages{imageInStreamlet: img, streamlet: streamlet.name})
+			}
 		}
 	}
 	return problems
@@ -371,16 +373,54 @@ func checkStreamletImageConsistency(blueprint Blueprint) []BlueprintProblem {
 func checkStreamletImageLabelConsistency(blueprint Blueprint) []BlueprintProblem {
 	var problems []BlueprintProblem
 	for _, streamlet := range blueprint.streamlets {
-		imageID := *streamlet.imageId
-		if _, ok := blueprint.streamletDescriptorsPerImage[imageID]; !ok {
-			problems = append(problems, StreamletNotInImageLabel{imageID: imageID, streamlet: streamlet.name})
+		if streamlet.imageId != nil {
+			imageID := *streamlet.imageId
+			if _, ok := blueprint.streamletDescriptorsPerImage[imageID]; !ok {
+				problems = append(problems, StreamletNotInImageLabel{imageID: imageID, streamlet: streamlet.name})
+			}
 		}
 	}
 	return problems
 }
 
-func (b Blueprint) verify() Blueprint {
+func (b Blueprint) define(streamletDescriptorsUpdated []StreamletDescriptor) Blueprint {
+	var ret = Blueprint{
+		images : b.images,
+		streamlets: b.streamlets,
+		connections: b.connections,
+		globalProblems: b.globalProblems,
+	}
 
+	ret.streamletDescriptorsPerImage = map[string][]StreamletDescriptor{}
+	ret.images = map[string]domain.ImageReference{}
+	ret.images["default"] = domain.ImageReference{}
+	ret.streamletDescriptorsPerImage["default"] = streamletDescriptorsUpdated
+	ret = ret.verify()
+	ret.UpdateGlobalProblems()
+	return ret
+}
+
+func (b Blueprint) use(streamletRef StreamletRef) Blueprint {
+	var streamlets []StreamletRef
+	for _, streamlet := range b.streamlets {
+		if !(streamlet.name == streamletRef.name) {
+			streamlets = append(streamlets, streamlet)
+		}
+	}
+
+	var ret = Blueprint{
+		images: b.images,
+		streamlets: append(streamlets, streamletRef),
+		connections: b.connections,
+		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
+		globalProblems: b.globalProblems,
+	}
+	ret = ret.verify()
+	ret.UpdateGlobalProblems()
+	return ret
+}
+
+func (b Blueprint) verify() Blueprint {
 	var illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
 
 	var emptyImagesProblem *EmptyImages
@@ -425,9 +465,12 @@ func (b Blueprint) verify() Blueprint {
 
 	var newConnections []StreamletConnection
 	var verifiedConnections []VerifiedStreamletConnection
+	var connectionVerifyProblems []BlueprintProblem
 
 	for _, con := range b.connections {
-		newConnections = append(newConnections, con.verify(verifiedStreamlets))
+		newConnection := con.verify(verifiedStreamlets)
+		connectionVerifyProblems = append(connectionVerifyProblems, newConnection.problems...)
+		newConnections = append(newConnections, newConnection)
 	}
 
 	for _, verCon := range newConnections {
@@ -503,7 +546,12 @@ func (b Blueprint) verify() Blueprint {
 		globalProblems = append(globalProblems, problems[i]...)
 	}
 
+	if len(connectionVerifyProblems) > 0 {
+		globalProblems = append(globalProblems, connectionVerifyProblems...)
+	}
+
 	return Blueprint{
+		images: b.images,
 		streamlets: newStreamlets, 
 		connections: newConnections, 
 		streamletDescriptorsPerImage: 
@@ -515,11 +563,15 @@ func (b Blueprint) verify() Blueprint {
 func filterUnconnectedInlets(inletProblems []BlueprintProblem, unconnectedInlets []UnconnectedInlet) []UnconnectedInlet {
 	var res []UnconnectedInlet
 	for _, unconnectedInlet := range unconnectedInlets {
-		for _, p := range inletProblems {
-			inletProblem, ok := p.(InletProblem)
-			if ok {
-				if !reflect.DeepEqual(inletProblem.InletPath(), VerifiedPortPath{streamletRef: unconnectedInlet.streamletRef, portName: &unconnectedInlet.inlet.Name}) {
-					res = append(res, unconnectedInlet)
+		if len(inletProblems) == 0 {
+			res = append(res, unconnectedInlet)
+		} else {
+			for _, p := range inletProblems {
+				inletProblem, ok := p.(InletProblem)
+				if ok {
+					if !reflect.DeepEqual(inletProblem.InletPath(), VerifiedPortPath{streamletRef: unconnectedInlet.streamletRef, portName: &unconnectedInlet.inlet.Name}) {
+						res = append(res, unconnectedInlet)
+					}
 				}
 			}
 		}
@@ -532,7 +584,7 @@ type GroupedConnections struct {
 	vCons  []VerifiedStreamletConnection
 }
 
-func (b Blueprint) UpdateAllProblems() []BlueprintProblem {
+func (b Blueprint) UpdateGlobalProblems() []BlueprintProblem {
 	var streamletProblems []BlueprintProblem
 	var connectionProblems []BlueprintProblem
 
@@ -614,7 +666,7 @@ func (b Blueprint) verifyInletsConnected(verifiedStreamlets []VerifiedStreamlet,
 		}
 	}
 
-	if len(unconnectedPortProblems) != 0 {
+	if len(unconnectedPortProblems) == 0 {
 		return verifiedStreamlets, nil
 	} else {
 		return nil, unconnectedPortProblems

@@ -2,29 +2,32 @@ package verify
 
 import (
 	"fmt"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"strings"
+
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 )
 
 // SchemaDescriptor is a domain expressive typedef
 type SchemaDescriptor domain.InOutletSchema
+
 // OutletDescriptor is a domain expressive typedef
 type OutletDescriptor domain.InOutlet
+
 // InletDescriptor is a domain expressive typedef
 type InletDescriptor domain.InOutlet
 
 type VerifiedStreamlet struct {
-	name string
+	name       string
 	descriptor domain.Descriptor
 }
 
 type VerifiedPortPath struct {
 	streamletRef string
-	portName *string
+	portName     *string
 }
 
 type VerifiedPort struct {
-	portName string
+	portName         string
 	schemaDescriptor domain.InOutletSchema
 }
 
@@ -40,18 +43,16 @@ type VerifiedOutlet struct {
 
 type VerifiedStreamletConnection struct {
 	verifiedOutlet VerifiedOutlet
-	verifiedInlet VerifiedInlet
-	label* string
+	verifiedInlet  VerifiedInlet
+	label          *string
 }
 
-
 type VerifiedBlueprint struct {
-	streamlets []VerifiedStreamlet
+	streamlets  []VerifiedStreamlet
 	connections []VerifiedStreamletConnection
 }
 
-
-func (v* VerifiedStreamlet) outlet(outlet OutletDescriptor) VerifiedOutlet {
+func (v *VerifiedStreamlet) outlet(outlet OutletDescriptor) VerifiedOutlet {
 	return VerifiedOutlet{
 		VerifiedPort{
 			outlet.Name,
@@ -61,7 +62,7 @@ func (v* VerifiedStreamlet) outlet(outlet OutletDescriptor) VerifiedOutlet {
 	}
 }
 
-func (v* VerifiedStreamlet) inlet(inlet InletDescriptor) VerifiedOutlet {
+func (v *VerifiedStreamlet) inlet(inlet InletDescriptor) VerifiedOutlet {
 	return VerifiedOutlet{
 		VerifiedPort{
 			inlet.Name,
@@ -75,12 +76,12 @@ func (v* VerifiedStreamlet) inlet(inlet InletDescriptor) VerifiedOutlet {
 func (v VerifiedPortPath) ToString() string {
 	if v.portName == nil {
 		return v.streamletRef
-	} 
-  return fmt.Sprintf("%s.%s", v.streamletRef, *v.portName)
+	}
+	return fmt.Sprintf("%s.%s", v.streamletRef, *v.portName)
 }
 
 // NewVerifiedPortPath constructs a VerifiedPortPath out of a string
-func NewVerifiedPortPath(portPath string)(*VerifiedPortPath, *InvalidPortPath) {
+func NewVerifiedPortPath(portPath string) (*VerifiedPortPath, *InvalidPortPath) {
 	var trimmed = strings.TrimSpace(portPath)
 	var splitF = func(c rune) bool {
 		return c == '.'
@@ -90,7 +91,7 @@ func NewVerifiedPortPath(portPath string)(*VerifiedPortPath, *InvalidPortPath) {
 	if strings.HasPrefix(trimmed, ".") {
 		return nil, &InvalidPortPath{
 			PortPathError: PortPathError{},
-			path: portPath}
+			path:          portPath}
 	} else if len(parts) == 1 && !strings.HasSuffix(portPath, ".") {
 		return &VerifiedPortPath{parts[0], nil}, nil
 	} else if len(parts) >= 2 {
@@ -100,36 +101,36 @@ func NewVerifiedPortPath(portPath string)(*VerifiedPortPath, *InvalidPortPath) {
 		if len(streamletRef) == 0. {
 			return nil, &InvalidPortPath{
 				PortPathError: PortPathError{},
-				path: portPath}
+				path:          portPath}
 		} else if len(portName) == 0 {
 			return nil, &InvalidPortPath{
 				PortPathError: PortPathError{},
-				path: portPath}
+				path:          portPath}
 		} else {
-			return &VerifiedPortPath{parts[0], nil}, nil
+			return &VerifiedPortPath{parts[0], &parts[1]}, nil
 		}
 	} else {
 		return nil, &InvalidPortPath{
 			PortPathError: PortPathError{},
-			path: portPath}
+			path:          portPath}
 	}
 }
 
-func (v* VerifiedInlet) portPath() VerifiedPortPath {
-	return VerifiedPortPath {
+func (v *VerifiedInlet) portPath() VerifiedPortPath {
+	return VerifiedPortPath{
 		v.streamlet.name,
 		&v.VerifiedPort.portName,
 	}
 }
 
-func (v* VerifiedOutlet) portPath() VerifiedPortPath {
-	return VerifiedPortPath {
+func (v *VerifiedOutlet) portPath() VerifiedPortPath {
+	return VerifiedPortPath{
 		v.streamlet.name,
 		&v.VerifiedPort.portName,
 	}
 }
 
-func (v* VerifiedOutlet) matches(outletDescriptor OutletDescriptor) bool {
+func (v *VerifiedOutlet) matches(outletDescriptor OutletDescriptor) bool {
 	return outletDescriptor.Name == v.portName && outletDescriptor.Schema.Fingerprint == v.schemaDescriptor.Fingerprint
 }
 
@@ -137,11 +138,13 @@ func (v* VerifiedOutlet) matches(outletDescriptor OutletDescriptor) bool {
 // verifiedStreamlets
 func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath string) (*VerifiedOutlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(outletPortPath)
+	fmt.Printf("verified port path %s\n", *&verifiedPortPath.streamletRef)
 
 	if err != nil {
 		return nil, err
-	} 
-	var found *VerifiedStreamlet 
+	}
+
+	var found *VerifiedStreamlet
 	for _, verifiedStreamlet := range verifiedStreamlets {
 		if verifiedStreamlet.name == verifiedPortPath.streamletRef {
 			found = &verifiedStreamlet
@@ -152,34 +155,34 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 		return nil, PortPathNotFound{
 			path: outletPortPath,
 		}
-	} 
+	}
 	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) > 1 {
-		var outletsToMap= found.descriptor.Outlets
-		var suggestions []VerifiedPortPath 
+		var outletsToMap = found.descriptor.Outlets
+		var suggestions []VerifiedPortPath
 
 		for _, outletToMap := range outletsToMap {
 			finalNameStr := outletToMap.Name
 			suggestions = append(suggestions, VerifiedPortPath{
 				streamletRef: verifiedPortPath.streamletRef,
-				portName:     &finalNameStr,})
+				portName:     &finalNameStr})
 		}
 		return nil, PortPathNotFound{
 			path:        outletPortPath,
 			suggestions: suggestions,
 		}
-	} 
-	var portPath *VerifiedPortPath 
+	}
+	var portPath *VerifiedPortPath
 	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) == 1 {
 		finalNameStr := found.descriptor.Outlets[0].Name
 		portPath = &VerifiedPortPath{
 			streamletRef: verifiedPortPath.streamletRef,
-			portName:     &finalNameStr,}
+			portName:     &finalNameStr}
 
 	} else {
 		portPath = verifiedPortPath
 	}
 
-	var foundOutlet *VerifiedOutlet 
+	var foundOutlet *VerifiedOutlet
 	for _, outlet := range found.descriptor.Outlets {
 		if outlet.Name == *portPath.portName {
 			foundOutlet = &VerifiedOutlet{
@@ -195,7 +198,7 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 
 	if foundOutlet != nil {
 		return foundOutlet, nil
-	} 
+	}
 	return nil, PortPathNotFound{
 		path: outletPortPath,
 	}
@@ -206,10 +209,10 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath string) (*VerifiedInlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(inletPortPath)
 
-	if err!= nil {
+	if err != nil {
 		return nil, err
-	} 
-	var found *VerifiedStreamlet 
+	}
+	var found *VerifiedStreamlet
 	for _, verifiedStreamlet := range verifiedStreamlets {
 		if verifiedStreamlet.name == verifiedPortPath.streamletRef {
 			found = &verifiedStreamlet
@@ -220,34 +223,34 @@ func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath str
 		return nil, PortPathNotFound{
 			path: inletPortPath,
 		}
-	} 
+	}
 	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) > 1 {
-		var inletsToMap= found.descriptor.Inlets
-		var suggestions []VerifiedPortPath 
+		var inletsToMap = found.descriptor.Inlets
+		var suggestions []VerifiedPortPath
 
 		for _, inletToMap := range inletsToMap {
 			finalNameStr := inletToMap.Name
 			suggestions = append(suggestions, VerifiedPortPath{
 				streamletRef: verifiedPortPath.streamletRef,
-				portName:     &finalNameStr,})
+				portName:     &finalNameStr})
 		}
 		return nil, PortPathNotFound{
 			path:        inletPortPath,
 			suggestions: suggestions,
 		}
-	} 
-	var portPath *VerifiedPortPath 
+	}
+	var portPath *VerifiedPortPath
 	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) == 1 {
 		finalNameStr := found.descriptor.Inlets[0].Name
 		portPath = &VerifiedPortPath{
 			streamletRef: verifiedPortPath.streamletRef,
-			portName:     &finalNameStr,}
+			portName:     &finalNameStr}
 
 	} else {
 		portPath = verifiedPortPath
 	}
 
-	var foundInlet *VerifiedInlet 
+	var foundInlet *VerifiedInlet
 	for _, inlet := range found.descriptor.Inlets {
 		if inlet.Name == *portPath.portName {
 			foundInlet = &VerifiedInlet{
@@ -263,7 +266,7 @@ func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath str
 
 	if foundInlet != nil {
 		return foundInlet, nil
-	} 
+	}
 	return nil, PortPathNotFound{
 		path: inletPortPath,
 	}
