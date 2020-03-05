@@ -180,8 +180,12 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 	ownerReference = storedCR.GenerateOwnerReference()
 
-	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
-	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+  // TODO: Temporarily disabled updating ownerReferences on secret
+  // It currently breaks Flink streamlets with config parameters.
+  // Disableling it so Cloudflow works while investigating of the problem.
+
+	//streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	//createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
 	serviceAccount.ObjectMeta.OwnerReferences = []metav1.OwnerReference{ownerReference}
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
