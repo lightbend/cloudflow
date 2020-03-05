@@ -192,9 +192,9 @@ export limitsCpu="2"
 
 # Installs an NFS server: $1: namespace, $2: boolean onOpenShift
 NFS_SERVER_NAME=cloudflow-nfs
-NFS_CHART_NAME=fdp-nfs
+NFS_CHART_NAME=nfs-server-provisioner
 install_nfs_server() {
-helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
+helm upgrade $NFS_SERVER_NAME stable/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
 --timeout $HELM_TIMEOUT \
