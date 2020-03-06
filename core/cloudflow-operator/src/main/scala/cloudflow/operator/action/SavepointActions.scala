@@ -62,11 +62,15 @@ object SavepointActions {
     deleteActions ++ createActions
   }
 
-  final case class Condition(`type`: String, status: String, lastTransitionTime: String, reason: String, message: String)
+  final case class Condition(`type`: Option[String],
+                             status: Option[String],
+                             lastTransitionTime: Option[String],
+                             reason: Option[String],
+                             message: Option[String])
 
   final case class Spec(partitions: Int, replicas: Int)
 
-  final case class Status(conditions: List[Condition], observedGeneration: Int)
+  final case class Status(conditions: Option[List[Condition]], observedGeneration: Option[Int])
 
   type Topic = CustomResource[Spec, Status]
   private implicit val ConditionFmt: Format[Condition] = Json.format[Condition]

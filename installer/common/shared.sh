@@ -198,12 +198,8 @@ helm upgrade $NFS_SERVER_NAME stable/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
 --timeout $HELM_TIMEOUT \
---set createStorage=false \
 --set serviceAccount.create=false \
---set serviceAccount.name=cloudflow-operator \
---set onOpenShift="$2" \
---set storageClassName=nfs-client \
---version 0.2.0
+--set serviceAccount.name=cloudflow-operator
 }
 
 EFS_SERVER_NAME=cloudflow-efs
