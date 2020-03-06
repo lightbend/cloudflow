@@ -19,7 +19,6 @@ package cloudflow.akkastream
 import java.util.concurrent.atomic.AtomicReference
 
 import java.nio.file.{ Files, Paths }
-import java.util.UUID.randomUUID
 
 import scala.concurrent._
 import scala.util._
@@ -39,9 +38,6 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 
 import cloudflow.streamlets._
-
-final case class PortNotFoundException(port: StreamletPort, context: StreamletContext)
-    extends RuntimeException(s"Port ${port.name} not found in context $context.")
 
 object AkkaStreamletContextImpl {
   def apply(streamletDefinition: StreamletDefinition): AkkaStreamletContextImpl =
@@ -74,16 +70,11 @@ final class AkkaStreamletContextImpl(
   }
 
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
-  private def groupId[T](savepointPath: SavepointPath, streamletRef: String, inlet: CodecInlet[T]) = {
-    val base = s"${savepointPath.appId}.${streamletRef}.${inlet.name}"
-    if (inlet.hasUniqueGroupId) base + randomUUID.toString
-    else base
-  }
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = groupId(savepointPath, streamletRef, inlet)
+    val gId           = savepointPath.groupId(inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)
@@ -150,7 +141,7 @@ final class AkkaStreamletContextImpl(
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = groupId(savepointPath, streamletRef, inlet)
+    val gId           = savepointPath.groupId(inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)
@@ -197,11 +188,6 @@ final class AkkaStreamletContextImpl(
   }
 
   private def keyBytes(key: String) = if (key != null) key.getBytes("UTF8") else null
-
-  private def findSavepointPathForPort(port: StreamletPort): SavepointPath =
-    streamletDefinition
-      .resolveSavepoint(port)
-      .getOrElse(throw PortNotFoundException(port, this))
 
   private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
 
