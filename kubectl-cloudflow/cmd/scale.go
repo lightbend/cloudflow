@@ -24,7 +24,7 @@ func init() {
 	scaleCMD.cmd = &cobra.Command{
 		Use:     "scale",
 		Short:   "Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.",
-		Example: "kubectl cloudflow my-app my-streamlet 2",
+		Example: "kubectl cloudflow scale my-app my-streamlet 2",
 		Run:     scaleCMD.scaleImpl,
 		Args:    validateScaleCmdArgs,
 	}
