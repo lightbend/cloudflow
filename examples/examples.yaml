@@ -29,3 +29,19 @@ examples:
     path: "snippets/modules/ROOT/examples/spark-scala"
     description: |
       Set of files containing the Scala Spark code snippets used in the documentation
+  - id: "build-akka-streamlets-java-snippets"
+    path: "snippets/modules/ROOT/examples/build-akka-streamlets-java"
+    description: |
+      Set of files containing the Scala code snippets used in the build-akka-streamlets documentation
+  - id: "spark-build-akka-streamlets-scala-snippets"
+    path: "snippets/modules/ROOT/examples/build-akka-streamlets-scala"
+    description: |
+      Set of files containing the Java code snippets used in the build-akka-streamlets documentation
+  - id: "build-flink-streamlets-java-snippets"
+    path: "snippets/modules/ROOT/examples/build-flink-streamlets-java"
+    description: |
+      Set of files containing the Java code snippets used in the build-flink-streamlets documentation
+  - id: "build-flink-streamlets-scala-snippets"
+    path: "snippets/modules/ROOT/examples/build-flink-streamlets-scala"
+    description: |
+      Set of files containing the Scala code snippets used in the build-flink-streamlets documentation
