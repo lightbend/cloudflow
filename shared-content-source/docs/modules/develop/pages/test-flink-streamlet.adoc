@@ -84,20 +84,20 @@ class FlinkProcessorSpec extends FlinkTestkit
   "FlinkProcessor" should {
     "process streaming data" in {
       @transient lazy val env = StreamExecutionEnvironment.getExecutionEnvironment
-
+      
       // 2. Create the FlinkStreamlet to test
       val processor = new FlinkProcessor
 
-      // 3. Setup inlet taps that tap the inlet ports of the streamlet
+      // 3. Prepare data to be pushed into inlet ports
+      val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+
+      // 4. Setup inlet taps that tap the inlet ports of the streamlet
       val in: FlinkInletTap[Data] = inletAsTap[Data](
-        FlinkProcessor.in,
+        processor.in,
         env.addSource(FlinkSource.CollectionSourceFunction(data)))
 
-      // 4. Setup outlet taps for outlet ports
-      val out: FlinkOutletTap[Simple] = outletAsTap[Simple](FlinkProcessor.out)
-
-      // 5. Push data into inlet ports
-      val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+      // 5. Setup outlet taps for outlet ports
+      val out: FlinkOutletTap[Simple] = outletAsTap[Simple](processor.out)
 
       // 6. Run the streamlet using the `run` method that the testkit offers
       run(processor, Seq(in), Seq(out), env)
@@ -117,9 +117,9 @@ Here's the basic flow that you need to follow in Java when writing tests using t
 . Extend the test class with the `JUnitSuite` trait from ScalaTest. 
 . Instantiate the testkit class
 . Create the Flink streamlet that needs to be tested
+. Prepare data to be pushed into inlet ports
 . Setup inlet taps that tap the inlet ports of the streamlet
 . Setup outlet taps for outlet ports
-. Push data into inlet ports
 . Run the streamlet using the `run` method that the testkit offers
 . Write assertions to ensure that the expected results match the actual ones
 
@@ -226,7 +226,11 @@ public class FlinkStreamletTest extends JUnitSuite {
     // 3. Create the FlinkStreamlet to test
     FlinkProcessor streamlet = new FlinkProcessor();
 
-    // 4. Setup inlet taps that tap the inlet ports of the streamlet
+    // 4. Prepare data to be pushed into inlet ports
+    List<Integer> range = IntStream.rangeClosed(1, 10).boxed().collect(Collectors.toList());
+    List<Data> data = range.stream().map((Integer i) -> new Data(i, "name" + i.toString())).collect(Collectors.toList());
+
+    // 5. Setup inlet taps that tap the inlet ports of the streamlet
     FlinkInletTap<Data> in = testkit.<Data>getInletAsTap(streamlet.in,
       env.<Data>addSource(
         FlinkSource.<Data>collectionSourceFunction(data),
@@ -235,12 +239,8 @@ public class FlinkStreamletTest extends JUnitSuite {
       Data.class
     );
 
-    // 5. Setup outlet taps for outlet ports
+    // 6. Setup outlet taps for outlet ports
     FlinkOutletTap<Simple> out = testkit.getOutletAsTap(streamlet.out, Simple.class);
-
-    // 6. Push data into inlet ports
-    List<Integer> range = IntStream.rangeClosed(1, 10).boxed().collect(Collectors.toList());
-    List<Data> data = range.stream().map((Integer i) -> new Data(i, "name" + i.toString())).collect(Collectors.toList());
 
     // 7. Run the streamlet using the `run` method that the testkit offers
     testkit.run(streamlet, Collections.singletonList(in), Collections.singletonList(out), env);
