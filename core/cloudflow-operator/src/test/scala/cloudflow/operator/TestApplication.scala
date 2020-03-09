@@ -24,11 +24,7 @@ object CloudflowApplicationSpecBuilder {
   /**
    * Creates a CloudflowApplication.Spec from a [[VerifiedBlueprint]].
    */
-  def create(appId: String,
-             appVersion: String,
-             image: String,
-             blueprint: VerifiedBlueprint,
-             agentPaths: Map[String, String]): CloudflowApplication.Spec = {
+  def create(appId: String, image: String, blueprint: VerifiedBlueprint, agentPaths: Map[String, String]): CloudflowApplication.Spec = {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val streamlets             = blueprint.streamlets.map(toStreamlet)
@@ -39,7 +35,7 @@ object CloudflowApplicationSpecBuilder {
           StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
         }
 
-    CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, connections, deployments, agentPaths)
+    CloudflowApplication.Spec(sanitizedApplicationId, streamlets, connections, deployments, agentPaths)
   }
 
   private def toStreamlet(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)

@@ -50,7 +50,7 @@ class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matche
         }
       }
 
-      val streamletDef = StreamletDefinition("appId", "appVersion", "FlinkIngress", "streamletClass", List(), List(), ConfigFactory.empty)
+      val streamletDef = StreamletDefinition("appId", "FlinkIngress", "streamletClass", List(), List(), ConfigFactory.empty)
       val ctx          = new FlinkStreamletContextImpl(streamletDef, env, ConfigFactory.empty)
       FlinkIngress.setContext(ctx)
       FlinkIngress.run(ctx.config)

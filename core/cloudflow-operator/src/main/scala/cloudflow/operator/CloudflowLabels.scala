@@ -16,14 +16,13 @@
 
 package cloudflow.operator
 
-case class CloudflowLabels(partOf: String, appVersion: String) {
+case class CloudflowLabels(partOf: String) {
 
   import CloudflowLabels._
 
   val baseLabels: Map[String, String] = Map(
     PartOf    -> partOf,
-    ManagedBy -> CloudflowLabels.ManagedByCloudflow,
-    Version   -> appVersion
+    ManagedBy -> CloudflowLabels.ManagedByCloudflow
   )
 
   def apply(name: String): Map[String, String] = baseLabels + (Name -> name)
@@ -35,7 +34,7 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
 object CloudflowLabels {
 
   def apply(app: CloudflowApplication.CR): CloudflowLabels =
-    CloudflowLabels(app.spec.appId, app.spec.appVersion)
+    CloudflowLabels(app.spec.appId)
 
   // The name of the application
   val Name = "app.kubernetes.io/name"

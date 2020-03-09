@@ -21,7 +21,6 @@ func Test_validateCloudflowApplicationSpec(t *testing.T) {
 
 	assert.Empty(t, jsonError)
 	assert.Equal(t, app.AppID, "sensor-data-scala")
-	assert.Equal(t, app.AppVersion, "478-c0bd57f")
 
 	assert.NotEmpty(t, app.Connections)
 	assert.NotEmpty(t, app.Deployments)

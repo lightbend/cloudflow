@@ -48,7 +48,7 @@ private[testkit] case class TestContext(
   val killSwitch                = KillSwitches.shared(streamletRef)
 
   override def streamletDefinition: StreamletDefinition =
-    StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
+    StreamletDefinition("appId", streamletRef, "streamletClass", List(), List(), config)
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     inletTaps

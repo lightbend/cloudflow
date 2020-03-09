@@ -69,12 +69,14 @@ func calcAppStatus(applicationCR *cloudflowapplication.CloudflowApplication) str
 	crashing := false
 
 	for _, d := range applicationCR.Spec.Deployments {
-		if d.Replicas == 0 && d.Runtime == "akka" {
+		if d.Replicas == nil && d.Runtime == "akka" {
 			expectedPods = expectedPods + 1 // TODO replica defaults
-		} else if d.Replicas == 0 && d.Runtime == "spark" {
+		} else if d.Replicas == nil && d.Runtime == "spark" {
 			expectedPods = expectedPods + 1 + 2 // TODO replica defaults 1 driver, 2 executors
+		} else if d.Replicas == nil && d.Runtime == "flink" {
+			expectedPods = expectedPods + 1 + 2 // 1 JM + 2 TMs
 		} else {
-			expectedPods = expectedPods + d.Replicas
+			expectedPods = expectedPods + *d.Replicas
 		}
 	}
 
@@ -103,7 +105,6 @@ func calcAppStatus(applicationCR *cloudflowapplication.CloudflowApplication) str
 func printAppStatus(applicationCR *cloudflowapplication.CloudflowApplication, appStatus string) {
 	fmt.Printf("Name:             %s\n", applicationCR.Name)
 	fmt.Printf("Namespace:        %s\n", applicationCR.Namespace)
-	fmt.Printf("Version:          %s\n", applicationCR.Spec.AppVersion)
 	fmt.Printf("Created:          %s\n", applicationCR.ObjectMeta.CreationTimestamp.String())
 	fmt.Printf("Status:           %s\n", appStatus)
 }

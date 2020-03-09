@@ -38,14 +38,12 @@ object RunnerConfig extends DefaultJsonProtocol {
 
   def apply(
       appId: String,
-      appVersion: String,
       deployment: StreamletDeployment,
       kafkaBootstrapServers: String
-  ): RunnerConfig = apply(appId, appVersion, Vector(deployment), kafkaBootstrapServers)
+  ): RunnerConfig = apply(appId, Vector(deployment), kafkaBootstrapServers)
 
   def apply(
       appId: String,
-      appVersion: String,
       deployments: Vector[StreamletDeployment],
       kafkaBootstrapServers: String
   ): RunnerConfig =
@@ -53,12 +51,12 @@ object RunnerConfig extends DefaultJsonProtocol {
       JsObject(
         "cloudflow" -> JsObject(
               "kafka"  -> JsObject("bootstrap-servers" -> JsString(kafkaBootstrapServers)),
-              "runner" -> toRunnerJson(appId, appVersion, deployments)
+              "runner" -> toRunnerJson(appId, deployments)
             )
       ).compactPrint
     )
 
-  private def toRunnerJson(appId: String, appVersion: String, deployments: Vector[StreamletDeployment]) = JsObject(
+  private def toRunnerJson(appId: String, deployments: Vector[StreamletDeployment]) = JsObject(
     "streamlets" -> JsArray(
           deployments.map { deployment ⇒
             JsObject(
@@ -66,7 +64,6 @@ object RunnerConfig extends DefaultJsonProtocol {
               "streamlet_ref" -> JsString(deployment.streamletName),
               "context" -> JsObject(
                     "app_id"          -> appId.toJson,
-                    "app_version"     -> appVersion.toJson,
                     "config"          -> toJson(deployment.config),
                     "volume_mounts"   -> toVolumeMountJson(deployment.volumeMounts),
                     "connected_ports" -> toConnectedPortsJson(deployment.portMappings)

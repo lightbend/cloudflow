@@ -235,7 +235,6 @@ final class AkkaStreamletContextImpl(
   def metricTags(): Map[String, String] =
     Map(
       "app-id"        -> streamletDefinition.appId,
-      "app-version"   -> streamletDefinition.appVersion,
       "streamlet-ref" -> streamletRef
     )
 }

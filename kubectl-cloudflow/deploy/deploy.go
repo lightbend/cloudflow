@@ -4,14 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
+
+	"github.com/docker/docker/client"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/verify"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,26 +25,16 @@ import (
 )
 
 // GetCloudflowApplicationDescriptorFromDockerImage pulls a image and extracts the Cloudflow Application descriptor from a docker label
-func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (cloudflowapplication.CloudflowApplicationSpec, docker.PulledImage) {
+func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (cloudflowapplication.CloudflowApplicationSpec, docker.PulledImage, error) {
 
-	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
-	if apierr != nil {
-		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
-	}
-
-	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
-	client, error := docker.GetClient(trimmedapiversion)
-	if error != nil {
-		client, error = docker.GetClient("1.39")
-		if error != nil {
-			fmt.Printf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
-			panic(error)
-		}
+	client, err := docker.GetVersionedClient()
+	if err != nil {
+		return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{}, err
 	}
 
 	pulledImage, pullError := docker.PullImage(client, dockerImagePath)
 	if pullError != nil {
-		util.LogAndExit("Failed to pull image %s: %s", dockerImagePath, pullError.Error())
+		return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{}, fmt.Errorf("Failed to pull image %s: %s", dockerImagePath, pullError.Error())
 	}
 
 	applicationDescriptorImageDigest := docker.GetCloudflowApplicationDescriptor(client, dockerImagePath)
@@ -48,8 +42,7 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 	var spec cloudflowapplication.CloudflowApplicationSpec
 	marshalError := json.Unmarshal([]byte(applicationDescriptorImageDigest.AppDescriptor), &spec)
 	if marshalError != nil {
-		fmt.Print("\n\nAn unexpected error has occurred, please contact support and include the information below.\n\n")
-		panic(marshalError)
+		return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{}, fmt.Errorf("An unexpected error has occurred, please contact support and include the following information\n %s", marshalError.Error())
 	}
 
 	if spec.Version != cloudflowapplication.SupportedApplicationDescriptorVersion {
@@ -58,22 +51,25 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 			if supportedVersion, err := strconv.Atoi(cloudflowapplication.SupportedApplicationDescriptorVersion); err == nil {
 				if version < supportedVersion {
 					if spec.LibraryVersion != "" {
-						util.LogAndExit("Image %s, built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image.", dockerImagePath, spec.LibraryVersion)
-					} else {
-						util.LogAndExit("Image %s is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image.", dockerImagePath)
+						return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{},
+							fmt.Errorf("Image %s, built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image", dockerImagePath, spec.LibraryVersion)
 					}
+					return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{},
+						fmt.Errorf("Image %s is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image", dockerImagePath)
 				}
 				if version > supportedVersion {
 					if spec.LibraryVersion != "" {
-						util.LogAndExit("Image %s, built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", dockerImagePath, spec.LibraryVersion)
-					} else {
-						util.LogAndExit("Image %s is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", dockerImagePath)
+						return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{},
+							fmt.Errorf("Image %s, built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again", dockerImagePath, spec.LibraryVersion)
 					}
+					return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{},
+						fmt.Errorf("Image %s is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again", dockerImagePath)
 				}
 			}
 		}
 
-		util.LogAndExit("Image %s is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the image.", dockerImagePath)
+		return cloudflowapplication.CloudflowApplicationSpec{}, docker.PulledImage{},
+			fmt.Errorf("Image %s is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the image", dockerImagePath)
 	}
 
 	digest := applicationDescriptorImageDigest.ImageDigest
@@ -89,7 +85,229 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 	for i := range spec.Deployments {
 		spec.Deployments[i].Image = imageRef
 	}
-	return spec, *pulledImage
+	return spec, *pulledImage, nil
+}
+
+// CreateApplicationSpecFromBlueprintAndImages pulls all images necessary to create a Cloudflow Application descriptor
+// from a docker label. The function returns the created application spec and the pulled in images
+func CreateApplicationSpecFromBlueprintAndImages(blueprint verify.Blueprint,
+	replicas map[string]int) (cloudflowapplication.CloudflowApplicationSpec, []*docker.PulledImage, error) {
+
+	client, err := docker.GetVersionedClient()
+	if err != nil {
+		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
+	}
+
+	// get all streamlet descriptors, image digests and pulled images in arrays
+	streamletDescriptors, apiVersion, pulledImages, deployImages, err := getStreamletDescriptorsAndImageInformation(blueprint, client)
+	if err != nil {
+		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
+	}
+
+	// Spec.Streamlets & Spec.Deployments
+	streamlets, deployments, err := getStreamletsAndDeployments(streamletDescriptors, deployImages, replicas, blueprint)
+	if err != nil {
+		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
+	}
+
+	// Spec.Connections
+	conns := blueprint.GetConnections()
+
+	// create the application spec
+	spec := makeApplicationSpec(blueprint, apiVersion, conns, streamlets, deployments)
+
+	return spec, pulledImages, nil
+}
+
+// makeApplicationSpec creates a CloudflowApplicationSpec out of all components
+func makeApplicationSpec(bp verify.Blueprint, apiVersion string, conns []cloudflowapplication.Connection, streamlets []cloudflowapplication.Streamlet,
+	deployments []cloudflowapplication.Deployment) cloudflowapplication.CloudflowApplicationSpec {
+
+	var spec cloudflowapplication.CloudflowApplicationSpec
+	spec.AgentPaths = map[string]string{
+		"prometheus": "/prometheus/jmx_prometheus_javaagent-0.11.0.jar",
+	}
+	spec.AppID = bp.GetName()
+	spec.Version = apiVersion
+	spec.LibraryVersion = cloudflowapplication.LibraryVersion
+	spec.Connections = conns
+	spec.Streamlets = streamlets
+	spec.Deployments = deployments
+	return spec
+}
+
+// getStreamletsAndDeployments gets the list of streamlets and deployments out of the blueprint and
+// streamlet descriptors
+func getStreamletsAndDeployments(streamletDescriptors []verify.StreamletDescriptor, deployImages map[string]string,
+	replicas map[string]int, bp verify.Blueprint) ([]cloudflowapplication.Streamlet, []cloudflowapplication.Deployment, error) {
+
+	var streamlets []cloudflowapplication.Streamlet
+	var deployments []cloudflowapplication.Deployment
+	for _, streamletDescriptor := range streamletDescriptors {
+		streamletIDs := bp.GetStreamletIDsFromClassName(streamletDescriptor.ClassName)
+		if len(streamletIDs) == 0 {
+			continue
+		}
+
+		for _, streamletID := range streamletIDs {
+			streamlet := cloudflowapplication.Streamlet{Descriptor: cloudflowapplication.Descriptor(streamletDescriptor), Name: streamletID}
+			streamlets = append(streamlets, streamlet)
+			deployment, err := makeDeployment(bp, streamletID, streamlet, deployImages, replicas)
+			if err != nil {
+				return nil, nil, err
+			}
+			deployments = append(deployments, deployment)
+		}
+	}
+	return streamlets, deployments, nil
+}
+
+// getStreamletDescriptorsAndImageInformation fetches a bunch ofinformation needed to create an
+// application spec
+func getStreamletDescriptorsAndImageInformation(blueprint verify.Blueprint, client *client.Client) ([]verify.StreamletDescriptor,
+	string, []*docker.PulledImage, map[string]string, error) {
+
+	streamletDescriptors := blueprint.GetAllStreamletDescriptors()
+	pulledImages, deployImages, err := blueprint.GetAllImages(client)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+
+	return streamletDescriptors, cloudflowapplication.SupportedApplicationDescriptorVersion, pulledImages, deployImages, nil
+}
+
+// makeDeployment is a smart constructor for creating a Deployment
+func makeDeployment(bp verify.Blueprint, streamletID string, streamlet cloudflowapplication.Streamlet,
+	deployImages map[string]string, replicas map[string]int) (cloudflowapplication.Deployment, error) {
+
+	var deployment cloudflowapplication.Deployment
+	deployment.StreamletName = streamletID
+	deployment.ClassName = streamlet.Descriptor.ClassName
+	image, err := bp.GetImageFromStreamletID(streamletID)
+	if err != nil {
+		return cloudflowapplication.Deployment{}, err
+	}
+
+	deployment.Image = deployImages[image]
+	deployment.PortMappings = getAllPortMappings(bp.GetName(), streamletID, streamlet.Descriptor, bp)
+	deployment.VolumeMounts = streamlet.Descriptor.VolumeMounts
+	deployment.Runtime = streamlet.Descriptor.Runtime
+	deployment.SecretName = transformToDNS1123SubDomain(streamlet.Name)
+	deployment.Name = fmt.Sprintf("%s.%s", bp.GetName(), streamletID)
+	if scale, ok := replicas[streamletID]; ok {
+		deployment.Replicas = &scale
+	}
+
+	config, endpoint := getServerConfigAndEndpoint(bp.GetName(), streamlet)
+	if config != nil {
+		deployment.Config = config
+	}
+	if endpoint != (cloudflowapplication.Endpoint{}) {
+		deployment.Endpoint = &endpoint
+	}
+	return deployment, nil
+}
+
+// Removes from the leading and trailing positions the specified characters.
+func trim(name string) string {
+	return strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(name, "."), "-"), "."), "-")
+}
+
+// Make a name compatible with DNS 1123 Subdomain
+// Limit the resulting name to 253 characters
+func transformToDNS1123SubDomain(name string) string {
+	splits := strings.Split(name, ".")
+	var normalized []string
+	for _, split := range splits {
+		normalized = append(normalized, trim(normalize(split)))
+	}
+	joined := strings.Join(normalized[:], ".")
+	if len(joined) > subDomainMaxLength {
+		return strings.TrimSuffix(joined[0:subDomainMaxLength], ".")
+	}
+	return strings.TrimSuffix(joined, ".")
+}
+
+func normalize(name string) string {
+	t := transform.Chain(norm.NFKD)
+	normalizedName, _, _ := transform.String(t, name)
+	s := strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(normalizedName), "_", "-"), ".", "-")
+	var re = regexp.MustCompile(`[^-a-z0-9]`)
+	return re.ReplaceAllString(s, "")
+}
+
+func getServerAttribute(descriptor cloudflowapplication.Descriptor) cloudflowapplication.Attribute {
+	var attr cloudflowapplication.Attribute
+	for _, attribute := range descriptor.Attributes {
+		if attribute.AttributeName == "server" {
+			attr = attribute
+			return attribute
+		}
+	}
+	return attr
+}
+
+// MinimumEndpointContainerPort indicates the minimum value of the end point port
+const endpointContainerPort = 3000
+const subDomainMaxLength = 253
+
+type configRoot struct {
+	Cloudflow internal `json:"cloudflow,omitempty"`
+}
+type internal struct {
+	Internal server `json:"internal,omitempty"`
+}
+type server struct {
+	Server containerPort `json:"server,omitempty"`
+}
+type containerPort struct {
+	ContainerPort int `json:"container-port,omitempty"`
+}
+
+func getServerConfigAndEndpoint(appID string, streamlet cloudflowapplication.Streamlet) (json.RawMessage, cloudflowapplication.Endpoint) {
+	var endPoint cloudflowapplication.Endpoint
+	attribute := getServerAttribute(streamlet.Descriptor)
+	if attribute == (cloudflowapplication.Attribute{}) {
+		x, _ := json.Marshal(containerPort{})
+		return x, cloudflowapplication.Endpoint{}
+	}
+	endPoint = cloudflowapplication.Endpoint{AppID: appID, Streamlet: streamlet.Name, ContainerPort: endpointContainerPort}
+	c := containerPort{ContainerPort: endpointContainerPort}
+	s := server{Server: c}
+	i := internal{Internal: s}
+	r := configRoot{Cloudflow: i}
+	bytes, _ := json.Marshal(r)
+	return bytes, endPoint
+}
+
+func getAllPortMappings(appID string, streamletName string, descriptor cloudflowapplication.Descriptor,
+	blueprint verify.Blueprint) map[string]cloudflowapplication.PortMapping {
+	allPortMappings := make(map[string]cloudflowapplication.PortMapping)
+
+	for k, v := range getOutletPortMappings(appID, streamletName, descriptor) {
+		allPortMappings[k] = v
+	}
+	for k, v := range getInletPortMappings(appID, streamletName, blueprint) {
+		allPortMappings[k] = v
+	}
+	return allPortMappings
+}
+
+func getOutletPortMappings(appID string, streamletName string, descriptor cloudflowapplication.Descriptor) map[string]cloudflowapplication.PortMapping {
+	portMappings := make(map[string]cloudflowapplication.PortMapping)
+	for _, outlet := range descriptor.Outlets {
+		portMappings[outlet.Name] = cloudflowapplication.PortMapping{AppID: appID, Streamlet: streamletName, Outlet: outlet.Name}
+	}
+	return portMappings
+}
+
+func getInletPortMappings(appID string, streamletName string, blueprint verify.Blueprint) map[string]cloudflowapplication.PortMapping {
+	portMappings := make(map[string]cloudflowapplication.PortMapping)
+	for _, conn := range blueprint.GetConnections() {
+		portMappings[conn.InletName] = 
+		  cloudflowapplication.PortMapping{AppID: appID, Outlet: conn.OutletName, Streamlet: conn.OutletStreamletName}
+	}
+	return portMappings
 }
 
 func splitOnFirstCharacter(str string, char byte) ([]string, error) {
@@ -160,7 +378,7 @@ func AppendDefaultValuesForMissingConfigurationValues(spec cloudflowapplication.
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
 			if _, ok := configurationKeyValues[fqKey]; !ok {
-				if descriptor.DefaultValue !=nil && len(*descriptor.DefaultValue) > 0 {
+				if descriptor.DefaultValue != nil && len(*descriptor.DefaultValue) > 0 {
 					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", *descriptor.DefaultValue, fqKey)
 					configurationKeyValues[fqKey] = *descriptor.DefaultValue
 				}

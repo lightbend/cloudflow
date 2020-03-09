@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
@@ -47,6 +48,24 @@ type PulledImage struct {
 // GetClient returns a Docker client.Client structure that contains a connection to the docker daemon, note that you need to specify a version number
 func GetClient(version string) (*client.Client, error) {
 	return client.NewClientWithOpts(client.WithVersion(version))
+}
+
+// GetVersionedClient returns a client with the proper version
+func GetVersionedClient() (*client.Client, error) {
+	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
+	if apierr != nil {
+		return nil, fmt.Errorf("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
+	}
+
+	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
+	client, err := GetClient(trimmedapiversion)
+	if err != nil {
+		client, err = GetClient("1.39")
+		if err != nil {
+			return nil, fmt.Errorf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
+		}
+	}
+	return client, nil
 }
 
 // PullImage pulls an image from a remote repository
@@ -128,22 +147,21 @@ func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bo
 	return false
 }
 
-// GetCloudflowStreamletDescriptorsForImage extracts the configuration of a Cloudflow label from a docker image
+// GetStreamletDescriptorsForImage extracts the configuration of a Cloudflow label from a docker image
 // and the image with digest in a struct
-func GetCloudflowStreamletDescriptorsForImage(cli *client.Client, imageName string) (cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string) {
-
-	_, pullError := PullImage(cli, imageName)
-	if pullError != nil {
-		util.LogAndExit("Failed to pull image %s: %s", imageName, pullError.Error())
+func GetStreamletDescriptorsForImage(cli *client.Client, imageName string) (cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string, error) {
+	// need this till we have a way to use docker registry API to check labels
+	_, pullError := PullImage(cli, imageName)	
+	if pullError != nil {	
+		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", fmt.Errorf("Failed to pull image %s: %s", imageName, pullError.Error())
 	}
 
 	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
+	if err != nil {
+		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", fmt.Errorf("Failed to list local docker images, %s", err.Error())
+	}
 
 	streamletDescriptorsLabelName := "com.lightbend.cloudflow.streamlet-descriptors"
-
-	if err != nil {
-		util.LogAndExit("Failed to list local docker images, %s", err.Error())
-	}
 
 	var descriptorsDigest cloudflowapplication.CloudflowStreamletDescriptorsDigestPair
 	for _, image := range images {
@@ -153,23 +171,19 @@ func GetCloudflowStreamletDescriptorsForImage(cli *client.Client, imageName stri
 		}
 
 		// use the compressed streamlet descriptors base 64 value
-		raw , ok := image.Labels[streamletDescriptorsLabelName]
-
-		if !ok {
-			util.LogAndExit("Docker image %s does not have the appropriate Cloudflow streamlet descriptors label.", imageName)
-		}
+		raw := image.Labels[streamletDescriptorsLabelName]
 
 		// compressed data
 		compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(raw)))
 		reader, err := zlib.NewReader(compressed)
 		if err != nil {
-			util.LogAndExit("Failed to decompress the Cloudflow streamlet descriptors label for image %s, %s", imageName, err.Error())
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", fmt.Errorf("Failed to decompress the application descriptor, %s", err.Error())
 		}
 
 		// uncompressed data : []byte
 		uncompressed, err := ioutil.ReadAll(reader)
 		if err != nil {
-			util.LogAndExit("Failed to read the decompressed Cloudflow streamlet descriptors label for image %s, %s", imageName, err.Error())
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", fmt.Errorf("Failed to read contents of the application descriptor, %s", err.Error())
 		}
 
 		// unmarshall to struct
@@ -179,8 +193,7 @@ func GetCloudflowStreamletDescriptorsForImage(cli *client.Client, imageName stri
 		descriptorsDigest.StreamletDescriptors = descriptors.StreamletDescriptors
 		reader.Close()
 		_, descriptorsDigest.ImageDigest = path.Split(image.RepoDigests[0])
-		return descriptorsDigest, descriptors.APIVersion
+		return descriptorsDigest, descriptors.APIVersion, nil
 	}
-	util.LogAndExit("Unable to inspect image '%s'. It could not be found locally.", imageName)
-	return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "" // never reached
+	return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", fmt.Errorf("Unable to inspect image '%s'. It could not be found locally", imageName) 
 }

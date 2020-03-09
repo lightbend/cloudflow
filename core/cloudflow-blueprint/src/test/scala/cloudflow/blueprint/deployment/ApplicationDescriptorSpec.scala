@@ -20,8 +20,6 @@ import com.typesafe.config._
 import org.scalatest._
 
 import cloudflow.blueprint._
-import spray.json._
-import ApplicationDescriptorJsonFormat._
 
 class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherValues with OptionValues with GivenWhenThen {
   case class Foo(name: String)
@@ -53,9 +51,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       When("I create a deployment descriptor from that blueprint with an invalid application id")
       val appId          = "-monstrous-some-very-long-NAME-with-ü-in-the-middle-that-still-needs-more-characters-mite-12345."
       val truncatedAppId = "monstrous-some-very-long-name-with-u-in-the-middle-that-still"
-      val appVersion     = "42-abcdef0"
       val image          = "image-1"
-      val descriptor     = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor     = ApplicationDescriptor(appId, image, verifiedBlueprint, agentPaths)
 
       Then("the resulting descriptor application id and secret name must be valid")
       descriptor.appId mustBe truncatedAppId
@@ -84,13 +81,11 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
 
       When("I create a deployment descriptor from that blueprint")
       val appId      = "monstrous-mite-12345"
-      val appVersion = "42-abcdef0"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
       descriptor.appId mustBe appId
-      descriptor.appVersion mustBe appVersion
       descriptor.deployments.size mustBe 3
       descriptor.deployments.map(_.image).toSet.size mustBe 1
       descriptor.deployments.map(_.image).toSet.head mustBe image
@@ -164,9 +159,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
 
       When("I create a deployment descriptor from that blueprint")
       val appId      = "noisy-nissan-42"
-      val appVersion = "1-2345678"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
       descriptor.deployments.size mustBe 4
@@ -215,9 +209,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
 
       When("I create a deployment descriptor from that blueprint")
       val appId      = "funky-foofighter-9862"
-      val appVersion = "12-3456789"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
       descriptor.deployments.size mustBe 3

@@ -25,7 +25,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
   "a RunnerConfig" should {
     "generate the correct JSON (one streamlet per deployment)" in {
-      val runnerConfig = RunnerConfig(appId, appVersion, ingressDeployment, kafkaBootstrapServers)
+      val runnerConfig = RunnerConfig(appId, ingressDeployment, kafkaBootstrapServers)
       val config       = ConfigFactory.parseString(runnerConfig.data)
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
@@ -38,7 +38,6 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         val streamletContext = streamlet.getConfig("context")
 
         streamletContext.getString("app_id") mustBe appId
-        streamletContext.getString("app_version") mustBe appVersion
 
         val connectedPorts = streamletContext.getConfigList("connected_ports").asScala
         connectedPorts must have size 1
@@ -63,7 +62,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     }
 
     "generate the correct JSON (multiple streamlets per deployment)" in {
-      val runnerConfig = RunnerConfig(appId, appVersion, Vector(ingressDeployment, processorDeployment), kafkaBootstrapServers)
+      val runnerConfig = RunnerConfig(appId, Vector(ingressDeployment, processorDeployment), kafkaBootstrapServers)
       val config       = ConfigFactory.parseString(runnerConfig.data)
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
@@ -76,7 +75,6 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         val streamletContext = streamlet.getConfig("context")
 
         streamletContext.getString("app_id") mustBe appId
-        streamletContext.getString("app_version") mustBe appVersion
 
         val connectedPorts = streamletContext.getConfigList("connected_ports").asScala.toList
         connectedPorts must have size 2
@@ -106,9 +104,8 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
   case class Foo(name: String)
   case class Bar(name: String)
 
-  val appId      = "monstrous-mite-12345"
-  val appVersion = "42-abcdef0"
-  val image      = "image-1"
+  val appId = "monstrous-mite-12345"
+  val image = "image-1"
 
   val agentPaths = Map(ApplicationDescriptor.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
   val kafkaBootstrapServers =
@@ -127,7 +124,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .connect(ingressRef.out, processorRef.in)
 
   val verifiedBlueprint = blueprint.verified.right.get
-  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+  val descriptor        = ApplicationDescriptor(appId, image, verifiedBlueprint, agentPaths)
 
   val allDeployments      = descriptor.deployments
   val ingressDeployment   = allDeployments.find(_.streamletName == ingressRef.name).value

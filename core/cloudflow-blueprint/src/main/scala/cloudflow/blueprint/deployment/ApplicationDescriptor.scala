@@ -28,13 +28,12 @@ import cloudflow.blueprint._
  */
 final case class ApplicationDescriptor(
     appId: String,
-    appVersion: String,
     streamlets: Vector[StreamletInstance],
     connections: Vector[Connection],
     deployments: Vector[StreamletDeployment],
     agentPaths: Map[String, String],
     /* The version of the Application Descriptor format */
-    version: String,
+    apiVersion: String,
     /* The version of the library that has created this Application Descriptor */
     libraryVersion: String
 )
@@ -44,7 +43,7 @@ object ApplicationDescriptor {
    * The version of the Application Descriptor Format.
    * This version is also hardcoded in (versions of) kubectl-cloudflow in `domain.SupportedApplicationDescriptorVersion`.
    */
-  val Version = "1"
+  val APIVersion = "1"
   /*
    * The version of this library when it is built, which is also the version of sbt-cloudflow.
    */
@@ -53,7 +52,6 @@ object ApplicationDescriptor {
 
   def apply(
       appId: String,
-      appVersion: String,
       image: String,
       streamlets: Vector[StreamletInstance],
       connections: Vector[Connection],
@@ -62,20 +60,15 @@ object ApplicationDescriptor {
   ): ApplicationDescriptor =
     ApplicationDescriptor(
       appId,
-      appVersion,
       streamlets,
       connections,
       deployments.map(deployment ⇒ deployment.copy(image = image)),
       agentPaths,
-      Version,
+      APIVersion,
       LibraryVersion
     )
 
-  def apply(appId: String,
-            appVersion: String,
-            image: String,
-            blueprint: VerifiedBlueprint,
-            agentPaths: Map[String, String]): ApplicationDescriptor = {
+  def apply(appId: String, image: String, blueprint: VerifiedBlueprint, agentPaths: Map[String, String]): ApplicationDescriptor = {
 
     val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
@@ -87,12 +80,11 @@ object ApplicationDescriptor {
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
-                          appVersion,
                           namedStreamletDescriptors,
                           connections,
                           deployments,
                           agentPaths,
-                          Version,
+                          APIVersion,
                           LibraryVersion)
   }
 

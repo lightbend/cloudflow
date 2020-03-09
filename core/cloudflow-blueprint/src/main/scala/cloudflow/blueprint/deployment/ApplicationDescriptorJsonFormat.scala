@@ -56,7 +56,6 @@ trait ApplicationDescriptorJsonFormat extends StreamletDescriptorFormat with Con
   implicit val applicationDescriptorFormat = jsonFormat(
     ApplicationDescriptor.apply,
     "app_id",
-    "app_version",
     "streamlets",
     "connections",
     "deployments",

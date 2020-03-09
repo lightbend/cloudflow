@@ -2,12 +2,13 @@ package verify
 
 import (
 	"fmt"
+	"os/exec"
+	"strings"
+
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
-	"os/exec"
-	"strings"
 )
 
 // VerifyBlueprint parses blueprint `images` section and fetch labels from defined images.
@@ -18,12 +19,12 @@ import (
 // logic.
 // TODO: fix performance issues with getting descriptors from image refs.
 //       Investigate using the docker apis instead of inspecting docker images.
-func VerifyBlueprint(content string) error {
+func VerifyBlueprint(content string) (Blueprint, error) {
 	config := configuration.ParseString(content)
 	imageRefsFromBlueprint := getImageRefsFromConfig(config)
 
 	// map imageID -> []StreamletDescriptor
-	imageDescriptorMap := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
+	imageDescriptorMap, fallbackAppID := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
 
 	// all StreamletRefs in the blueprint
 	streamletRefs := getStreamletRefsFromBlueprintConfig(config)
@@ -31,7 +32,11 @@ func VerifyBlueprint(content string) error {
 	// all StreamletConnections in the blueprint
 	connections := getConnectionsFromBlueprintConfig(config)
 
+	// get name
+	appID := config.GetString("blueprint.name", fallbackAppID)
+
 	blueprint := Blueprint{
+		name:                         appID,
 		images:                       imageRefsFromBlueprint,
 		streamlets:                   streamletRefs,
 		streamletDescriptorsPerImage: imageDescriptorMap,
@@ -44,9 +49,9 @@ func VerifyBlueprint(content string) error {
 		errors = errors + p.ToMessage() + "\n"
 	}
 	if len(blueprint.globalProblems) == 0 {
-		return nil
+		return blueprint, nil
 	}
-	return fmt.Errorf("%s", errors)
+	return Blueprint{}, fmt.Errorf("%s", errors)
 }
 
 // this map is constructed entirely from blueprint
@@ -84,7 +89,7 @@ func getConnectionsFromBlueprintConfig(config *configuration.Config) []Streamlet
 		outs := rest.GetObject().Items()
 		for fromPort, ins := range outs {
 			for _, in := range ins.GetArray() {
-			  conns = append(conns, StreamletConnection{from: fmt.Sprintf("%s.%s", fromStreamlet, fromPort), to: in.GetString(), metadata: config})
+				conns = append(conns, StreamletConnection{from: fmt.Sprintf("%s.%s", fromStreamlet, fromPort), to: in.GetString(), metadata: config})
 			}
 		}
 	}
@@ -95,7 +100,7 @@ func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []Streaml
 	streamletsFromConfig := config.GetNode("blueprint.streamlets")
 	var streamletRefs []StreamletRef
 
-	if streamletsFromConfig == nil || streamletsFromConfig.GetObject()  == nil {
+	if streamletsFromConfig == nil || streamletsFromConfig.GetObject() == nil {
 		return streamletRefs
 	}
 	streamlets := streamletsFromConfig.GetObject().Items()
@@ -107,7 +112,7 @@ func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []Streaml
 	return streamletRefs
 }
 
-func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) map[string][]StreamletDescriptor {
+func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) (map[string][]StreamletDescriptor, string) {
 	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
 	if apierr != nil {
 		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
@@ -118,14 +123,18 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 	if err != nil {
 		client, err = docker.GetClient("1.39")
 		if err != nil {
-			util.LogAndExit("No compatible version of the Docker server API found, tried version %s and 1.39. Error is: %s",trimmedapiversion, err.Error())
+			util.LogAndExit("No compatible version of the Docker server API found, tried version %s and 1.39. Error is: %s", trimmedapiversion, err.Error())
 		}
 	}
 
 	// get all streamlet descriptors, image digests and pulled images in arrays
 	var streamletDescriptors = make(map[string][]StreamletDescriptor)
+	var fallbackAppID string
 	for key, imageRef := range imageRefs {
-		streamletsDescriptorsDigestPair, version := docker.GetCloudflowStreamletDescriptorsForImage(client, imageRef.FullURI)
+		streamletsDescriptorsDigestPair, version, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
+		if err != nil {
+			util.LogAndExit(err.Error())
+		}
 		if version != cloudflowapplication.SupportedApplicationDescriptorVersion {
 			util.LogAndExit("Image %s is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the image.", imageRef.FullURI)
 		}
@@ -134,6 +143,9 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 			sdescs = append(sdescs, StreamletDescriptor(desc))
 		}
 		streamletDescriptors[key] = sdescs
+		if fallbackAppID == "" {
+			fallbackAppID = strings.Split(streamletsDescriptorsDigestPair.ImageDigest, "@")[0]
+		}
 	}
-	return streamletDescriptors
+	return streamletDescriptors, fallbackAppID
 }
