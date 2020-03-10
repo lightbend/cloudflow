@@ -45,7 +45,7 @@ export KAFKA="${KAFKA:-CloudflowManaged}"
 
 # Flink
 export flinkReleaseName="cloudflow-flink"
-export flinkOperatorChartVersion="0.8.1"
+export flinkOperatorChartVersion="0.8.2"
 export flinkOperatorNamespace=""
 export installFlinkOperator=false
 
@@ -62,7 +62,7 @@ export zookeeperHosts=""
 
 # Spark Operator
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
-export sparkOperatorChartVersion="0.6.4"
+export sparkOperatorChartVersion="0.6.7"
 export sparkOperatorImageName="lightbend/sparkoperator"
 export sparkOperatorImageVersion="1.3.1-OpenJDK-2.4.5-1.1.0-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
