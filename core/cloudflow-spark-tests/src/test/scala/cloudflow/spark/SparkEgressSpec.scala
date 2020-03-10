@@ -28,7 +28,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class SparkEgressSpec extends SparkScalaTestSupport {
 
   // We are temporarily ignoring this test, a fix is on the way.
-  "SparkEgress" ignore {
+  "SparkEgress" should {
     "materialize streaming data to sink" in {
 
       val testKit = SparkStreamletTestkit(session)
