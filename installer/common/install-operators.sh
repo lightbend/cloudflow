@@ -43,7 +43,7 @@ if [ "$installFlinkOperator" = true ]; then
     --set serviceAccounts.flink.name=cloudflow-app-serviceaccount \
     https://github.com/lightbend/flink-operator/releases/download/v${flinkOperatorChartVersion}/flink-operator-${flinkOperatorChartVersion}.tgz)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1
@@ -53,7 +53,7 @@ if [ "$installFlinkOperator" = true ]; then
     kubectl label deployment -n "$flinkOperatorNamespace" cloudflow-flink-flink-operator installed-by=cloudflow --overwrite
 fi
 
-# Strimzi 
+# Strimzi
 if [ "$installStrimzi" = true ]; then
     echo "Installing Strimzi"
     result=$(helm upgrade "$strimziReleaseName" \
@@ -62,7 +62,7 @@ if [ "$installStrimzi" = true ]; then
     --version "$strimziVersion" \
     strimzi/strimzi-kafka-operator)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1
@@ -85,12 +85,12 @@ if [ "$installSparkOperator" = true ]; then
     --set operatorVersion="$sparkOperatorImageVersion" \
     incubator/sparkoperator)
 
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         print_error_message "$result"
         print_error_message "installation failed"
         exit 1
     fi
 
     # Label the deployment so we can detect if we installed it later
-    kubectl label deployment -n "$sparkOperatorNamespace" "$sparkOperatorReleaseName"-sparkoperator installed-by=cloudflow --overwrite
+    kubectl label deployment -n "$sparkOperatorNamespace" "$sparkOperatorReleaseName" installed-by=cloudflow --overwrite
 fi
