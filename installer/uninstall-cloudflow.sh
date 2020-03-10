@@ -84,7 +84,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
       --ignore-not-found=true
 
     echo "Removing ClusterRoles..."
-    kubectl delete clusterrole cloudflow-nfs-nfs-server-provisioner \
+    kubectl delete clusterrole cloudflow-nfs-fdp-nfs \
       cloudflow-flink-flink-operator \
       cloudflow-sparkoperator-cr \
       strimzi-cluster-operator-global \
@@ -95,7 +95,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
       --ignore-not-found=true
 
     echo "Removing ClusterRoleBindings..."
-    kubectl delete clusterrolebinding cloudflow-nfs-nfs-server-provisioner \
+    kubectl delete clusterrolebinding cloudflow-nfs-fdp-nfs \
       cloudflow-flink-flink-operator \
       cloudflow-sparkoperator-crb \
       cloudflow-operator-bindings \
@@ -104,7 +104,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
       --ignore-not-found=true
 
     echo "Removing StorageClasses..."
-    kubectl delete sc nfs --ignore-not-found=true
+    kubectl delete sc nfs-client --ignore-not-found=true
 
     echo "Done!"
 else

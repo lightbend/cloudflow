@@ -62,7 +62,7 @@ export zookeeperHosts=""
 
 # Spark Operator
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
-export sparkOperatorChartVersion="0.6.4"
+export sparkOperatorChartVersion="0.6.7"
 export sparkOperatorImageName="lightbend/sparkoperator"
 export sparkOperatorImageVersion="1.3.1-OpenJDK-2.4.5-1.1.0-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
@@ -192,14 +192,18 @@ export limitsCpu="2"
 
 # Installs an NFS server: $1: namespace, $2: boolean onOpenShift
 NFS_SERVER_NAME=cloudflow-nfs
-NFS_CHART_NAME=nfs-server-provisioner
+NFS_CHART_NAME=fdp-nfs
 install_nfs_server() {
-helm upgrade $NFS_SERVER_NAME stable/$NFS_CHART_NAME \
+helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
 --timeout $HELM_TIMEOUT \
 --set serviceAccount.create=false \
---set serviceAccount.name=cloudflow-operator
+--set serviceAccount.name=cloudflow-operator \
+--set createStorage=false \
+--set onOpenShift="$2" \
+--set storageClassName=nfs-client \
+--version 0.2.0
 }
 
 EFS_SERVER_NAME=cloudflow-efs
