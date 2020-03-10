@@ -30,12 +30,6 @@ abstract case class FlinkStreamletContext(
     @transient env: StreamExecutionEnvironment
 ) extends StreamletContext {
 
-  def resolvePort(portName: String): String =
-    streamletDefinition
-      .resolveSavepoint(portName)
-      .map(_.value)
-      .getOrElse(throw PortNotFoundException(portName))
-
   /**
    * Read from the underlying external storage through the inlet `inPort` and return a DataStream
    *
@@ -55,5 +49,3 @@ abstract case class FlinkStreamletContext(
    */
   def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out]
 }
-
-case class PortNotFoundException(port: String) extends Exception(s"Streamlet port $port not found")

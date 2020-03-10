@@ -17,6 +17,7 @@
 package cloudflow.streamlets
 
 import java.io.{ File, InvalidObjectException }
+import java.util.UUID.randomUUID
 
 import scala.util.{ Failure, Try }
 
@@ -49,6 +50,11 @@ case class StreamletDefinition(appId: String,
  */
 final case class SavepointPath(appId: String, streamletRef: String, portName: String) {
   def value: String = s"${appId}.${streamletRef}.${portName}"
+  def groupId[T](inlet: CodecInlet[T]) = {
+    val base = s"$appId.$streamletRef.${inlet.name}"
+    if (inlet.hasUniqueGroupId) base + randomUUID.toString
+    else base
+  }
 }
 
 /**

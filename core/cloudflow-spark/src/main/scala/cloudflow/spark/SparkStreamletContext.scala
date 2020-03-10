@@ -27,12 +27,6 @@ abstract case class SparkStreamletContext(
     session: SparkSession
 ) extends StreamletContext {
 
-  def resolvePort(portName: String): String =
-    streamletDefinition
-      .resolveSavepoint(portName)
-      .map(_.value)
-      .getOrElse(throw PortNotFoundException(portName))
-
   /**
    * Returns the absolute path to a mounted shared storage that can be used to store reliable checkpoints.
    * Reliable checkpoints lets the Spark application persist its state across restarts and restart from
@@ -65,5 +59,3 @@ abstract case class SparkStreamletContext(
                                                                                                 typeTag: TypeTag[Out]): StreamingQuery
 
 }
-
-case class PortNotFoundException(port: String) extends Exception(s"Streamlet port $port not found")
