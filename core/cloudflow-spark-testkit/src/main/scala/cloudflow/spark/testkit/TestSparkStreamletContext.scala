@@ -45,7 +45,7 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
                                                  override val config: Config = ConfigFactory.empty)
     extends SparkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
                                   session) {
-  val ProcessingTimeInterval = 1.second
+  val ProcessingTimeInterval = 100.milliseconds
   override def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
     inletTaps
       .find(_.portName == inPort.name)
