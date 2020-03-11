@@ -12,19 +12,20 @@ import org.apache.spark.sql.streaming.OutputMode
 //tag::spark-streamlet-example[]
 class MovingAverageSparklet extends SparkStreamlet { // <1>
 
-  val in = AvroInlet[Data]("in")
-  val out = AvroOutlet[Data]("out", _.key)
+  val in    = AvroInlet[Data]("in")
+  val out   = AvroOutlet[Data]("out", _.key)
   val shape = StreamletShape(in, out) // <2>
 
   override def createLogic() = new SparkStreamletLogic {
-    override def buildStreamingQueries = {  // <3>
-      
-      val groupedData = readStream(in)  // <4>
+    override def buildStreamingQueries = { // <3>
+
+      val groupedData = readStream(in) // <4>
         .withColumn("ts", $"timestamp".cast(TimestampType))
         .withWatermark("ts", "1 minutes")
-        .groupBy(window($"ts", "1 minute", "30 seconds"), $"key").agg(avg($"value") as "avg")
-      val query = groupedData.select($"key", $"avg" as "value").as[Data]
-   
+        .groupBy(window($"ts", "1 minute", "30 seconds"), $"key")
+        .agg(avg($"value").as("avg"))
+      val query = groupedData.select($"key", $"avg".as("value")).as[Data]
+
       writeStream(query, out, OutputMode.Append).toQueryExecution
     }
   }

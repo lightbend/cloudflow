@@ -15,8 +15,8 @@ class ReportIngress extends FlinkStreamlet {
 
   // 3. Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
   override def createLogic() = new FlinkStreamletLogic {
-    override def buildExecutionGraph = {
+    override def buildExecutionGraph =
       writeStream(out, context.env.fromElements(Report("abc", "test", "Just a test", List("ab", "bc"))))
-    } 
+
   }
 }

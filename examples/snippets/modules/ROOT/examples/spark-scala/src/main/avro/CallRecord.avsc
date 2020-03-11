@@ -1,0 +1,28 @@
+{
+    "namespace": "carly.data",
+    "type": "record",
+    "name": "CallRecord",
+    "fields":[
+         {
+            "name": "user",
+            "type": "string"
+         },
+         {
+             "name": "other",
+             "type": "string"
+         },
+         {
+             "name": "direction",
+             "type": "string"
+         },
+         {
+              "name": "duration",
+              "type": "long"
+         },
+         {
+            "name": "timestamp",
+            "type": "long"
+         }
+    ]
+}
+

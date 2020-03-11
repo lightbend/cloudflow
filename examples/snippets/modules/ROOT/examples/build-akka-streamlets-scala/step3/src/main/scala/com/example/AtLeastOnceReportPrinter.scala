@@ -12,7 +12,7 @@ object AtLeastOnceReportPrinater extends AkkaStreamlet {
 
   // 2. Define the shape of the streamlet
   val shape = StreamletShape.withInlets(inlet)
-  
+
   // 3. Override createLogic to provide StreamletLogic
   // tag::atLeastOnce[]
   def createLogic = new RunnableGraphStreamletLogic() {

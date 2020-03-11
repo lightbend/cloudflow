@@ -17,8 +17,8 @@ class ReportPrinter extends FlinkStreamlet {
   override def createLogic() = new FlinkStreamletLogic {
     def format(report: Report) = s"${report.name}\n\n${report.description}"
 
-    override def buildExecutionGraph = {
+    override def buildExecutionGraph =
       readStream(in).map(r => format(r)).print()
-    } 
+
   }
 }

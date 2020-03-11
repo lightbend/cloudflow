@@ -14,7 +14,7 @@ object ReportPrinter extends AkkaStreamlet {
 
   // 2. Define the shape of the streamlet
   val shape = StreamletShape.withInlets(inlet)
-  
+
   // 3. Override createLogic to provide StreamletLogic
   def createLogic = new RunnableGraphStreamletLogic() {
     def format(report: Report) = s"${report.name}\n]n${report.description}"
