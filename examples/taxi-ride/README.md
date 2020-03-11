@@ -58,7 +58,7 @@ taxi-ride-fare-taxi-ride-84b454c56f-hr9h4               1/1     Running   0     
 Then port-forward to the correct pods:
 
 ```bash
-$ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-ride 3000:3000
+$ kubectl port-forward taxi-ride-fare-taxi-ride-84b454c56f-hr9h4 -n taxi-ride-fare 3000:3000
 $ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-fare 3001:3000
 ```
 
