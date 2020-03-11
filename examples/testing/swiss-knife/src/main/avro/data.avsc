@@ -1,0 +1,20 @@
+{
+    "namespace": "swissknife",
+    "type": "record",
+    "name": "Data",
+    "fields":[
+         {
+            "name": "src", 
+            "type": "string"
+         },
+         {
+            "name": "timestamp",
+            "type": "long"
+         },
+         {
+            "name": "count",
+            "type": "long"
+         }
+    ]
+}
+
