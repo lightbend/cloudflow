@@ -74,7 +74,7 @@ final class AkkaStreamletContextImpl(
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(inlet)
+    val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)
@@ -141,7 +141,7 @@ final class AkkaStreamletContextImpl(
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(inlet)
+    val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)

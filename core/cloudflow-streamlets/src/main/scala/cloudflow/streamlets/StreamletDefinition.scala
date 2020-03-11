@@ -50,8 +50,8 @@ case class StreamletDefinition(appId: String,
  */
 final case class SavepointPath(appId: String, streamletRef: String, portName: String) {
   def value: String = s"${appId}.${streamletRef}.${portName}"
-  def groupId[T](inlet: CodecInlet[T]) = {
-    val base = s"$appId.$streamletRef.${inlet.name}"
+  def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
+    val base = s"$appId.$readingStreamletRef.${inlet.name}"
     if (inlet.hasUniqueGroupId) base + randomUUID.toString
     else base
   }
