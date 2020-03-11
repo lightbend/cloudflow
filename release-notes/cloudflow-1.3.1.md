@@ -16,7 +16,7 @@ Cloudflow 1.3.1 contains the following changes:
 
 - The Enterprise edition cannot be installed on K8s version 1.16 or higher due to a compatibility issue with the Lightbend Console.
 - The `kubectl cloudflow status` command does not report a correct rollup status for the entire application when it includes Flink streamlets; e.g. it reports `Pending` even though all individual streamlets are `Running`. This issue will not inpair successful deployment or running of Cloudflow applications.
-- Flink streamlets cannot currently be scaled down to 1. All other sizes are fine.
+- Flink streamlets cannot currently be scaled down to 1.
 
 **Cloudflow 1.3.1 was tested on the following Kubernetes distributions/versions:**
 
@@ -28,7 +28,7 @@ Cloudflow 1.3.1 contains the following changes:
 
 **NOTE**: We are planning on removing the dual-installer architecture in Cloudflow 1.4/1.5, which will enable OSS installation and upgrade support for all platforms currently supported only by the Enterprise installer.
 
-Cloudflow 1.3.1 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. For this release we recommend a clean install instead of an in-place upgrade due to an known issue with upgrading the Strimzi operator in-place. Users who would prefer an in-place upgrade from 1.3.0 are recommended to
+Cloudflow 1.3.1 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. For this release we recommend a clean install instead of an in-place upgrade due to an known issue with upgrading the Strimzi operator in-place. Users who would prefer an in-place upgrade from 1.3.0 are recommended to wait until the 1.3.2 release, which should fix this issue.
 
 **The Cloudflow 1.3.1 `kubectl` plugin can be downloaded using one of the following links:**
 
