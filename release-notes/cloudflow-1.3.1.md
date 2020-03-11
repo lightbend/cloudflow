@@ -1,6 +1,6 @@
 # Cloudflow 1.3.1 Release Notes
 
-Cloudflow 1.3.1 is a minor patch release and contains the following changes:
+Cloudflow 1.3.1 is a patch release and contains the following changes:
 
 - Upgraded to Spark 2.4.5 and Spark Operator 0.6.7
 - Upgraded to Flink 1.10 and Flink Operator 0.8.2
