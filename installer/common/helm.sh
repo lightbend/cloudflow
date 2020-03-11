@@ -106,6 +106,6 @@ helm_delete() {
     helm delete $1 --purge --no-hooks
   elif [[ $HELM_VERSION == "3" ]]
   then
-    helm delete $1 --no-hooks
+    helm delete $1 --no-hooks -n cloudflow
   fi
 }
