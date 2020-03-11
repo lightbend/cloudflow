@@ -1,6 +1,6 @@
 # Cloudflow 1.3.1 Release Notes
 
-Cloudflow 1.3.1 is a patch release and contains the following changes:
+Cloudflow 1.3.1 contains the following changes:
 
 - Upgraded to Spark 2.4.5 and Spark Operator 0.6.7
 - Upgraded to Flink 1.10 and Flink Operator 0.8.2
@@ -15,7 +15,8 @@ Cloudflow 1.3.1 is a patch release and contains the following changes:
 **Known issues with this release:**
 
 - The Enterprise edition cannot be installed on K8s version 1.16 or higher due to a compatibility issue with the Lightbend Console.
-- The `kubectl cloudflow status` command does not report a correct rollup status for the entire application when it includes Flink streamlets; e.g. it reports `Pending` even though all individual streamlets are `Running`.
+- The `kubectl cloudflow status` command does not report a correct rollup status for the entire application when it includes Flink streamlets; e.g. it reports `Pending` even though all individual streamlets are `Running`. This issue will not inpair successful deployment or running of Cloudflow applications.
+- Flink streamlets cannot currently be scaled down to 1. All other sizes are fine.
 
 **Cloudflow 1.3.1 was tested on the following Kubernetes distributions/versions:**
 
@@ -27,13 +28,13 @@ Cloudflow 1.3.1 is a patch release and contains the following changes:
 
 **NOTE**: We are planning on removing the dual-installer architecture in Cloudflow 1.4/1.5, which will enable OSS installation and upgrade support for all platforms currently supported only by the Enterprise installer.
 
-Cloudflow 1.3.1 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. Enterprise installations can be upgraded in-place by running the 1.3.1 installation bootstrap script (and choosing the same storage classes).
+Cloudflow 1.3.1 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. For this release we recommend a clean install instead of an in-place upgrade due to an known issue with upgrading the Strimzi operator in-place. Users who would prefer an in-place upgrade from 1.3.0 are recommended to
 
-**The Cloudflow 1.3.1 CLI can be downloaded using one of the following links:**
+**The Cloudflow 1.3.1 `kubectl` plugin can be downloaded using one of the following links:**
 
-- Linux:
-- MacOS:
-- Windows:
+- Linux: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-linux-amd64.tar.gz
+- MacOS: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-darwin-amd64.tar.gz
+- Windows: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-windows-amd64.tar.gz
 
 **The roadmap for the Cloudflow 1.4 release, scheduled for April/May 2020, currently looks like this:**
 
