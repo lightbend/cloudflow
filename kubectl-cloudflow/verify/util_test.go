@@ -3,6 +3,7 @@ package verify
 import (
 	"github.com/stretchr/testify/assert"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -137,15 +138,20 @@ func Test_ParseImageReferenceNoRegistry(t *testing.T) {
 }
 
 func Test_ParseImageReferenceSha(t *testing.T) {
-	imageRef, _ := ParseImageReference("eu.gcr.io/bubbly-observer-178213/lightbend/rays-sensors@sha256:0840ebe4b207b9ca7eb400e84bf937b64c3809fc275b2e90ba881cbecf56c39a")
+	imageRef, _ := ParseImageReference("eu.gcr.io/dummy/lightbend/rays-sensors@sha256:0840ebe4b207b9ca7eb400e84bf937b64c3809fc275b2e90ba881cbecf56c39a")
 	assert.Equal(t, "eu.gcr.io", imageRef.Registry)
-	assert.Equal(t, "bubbly-observer-178213/lightbend", imageRef.Repository)
+	assert.Equal(t, "dummy/lightbend", imageRef.Repository)
 	assert.Equal(t, "rays-sensors", imageRef.Image)
 	assert.Equal(t, "sha256:0840ebe4b207b9ca7eb400e84bf937b64c3809fc275b2e90ba881cbecf56c39a", imageRef.Tag)
 }
 
 func Test_parseClassName(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("$0000", ClassNamePattern), true)
+	assert.Equal(t, CheckFullPatternMatch("ab-", ClassNamePattern), false)
+	assert.Equal(t, CheckFullPatternMatch("-ab", ClassNamePattern), false)
+	assert.Equal(t, CheckFullPatternMatch("2ab", ClassNamePattern), false)
+	assert.Equal(t, CheckFullPatternMatch("a/b", ClassNamePattern), false)
+	assert.Equal(t, CheckFullPatternMatch("a+b", ClassNamePattern), false)
 	assert.Equal(t, CheckFullPatternMatch("0000", ClassNamePattern), false)
 	assert.Equal(t, CheckFullPatternMatch("$0000.erere_$", ClassNamePattern), true)
 	assert.Equal(t, CheckFullPatternMatch("__2rererere.$", ClassNamePattern), true)
@@ -163,7 +169,13 @@ func Test_parseLabelName(t *testing.T) {
 func Test_parseConfigurationParameter(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("0000", ConfigParameterKeyPattern), false)
 	assert.Equal(t, CheckFullPatternMatch("$0000", ConfigParameterKeyPattern), false)
-	assert.Equal(t, CheckFullPatternMatch("ER12qw", ConfigParameterKeyPattern), true)
+	assert.Equal(t, CheckFullPatternMatch("ER-1qw", ConfigParameterKeyPattern), true)
 	assert.Equal(t, CheckFullPatternMatch("2weee", ConfigParameterKeyPattern), false)
-	assert.Equal(t, CheckFullPatternMatch("configuration.", ConfigParameterKeyPattern), true)
+	assert.Equal(t, CheckFullPatternMatch("configuration.", ConfigParameterKeyPattern), false)
+}
+
+func Test_sliding(t *testing.T) {
+	var descs= []StreamletDescriptor{randomStreamlet(), randomStreamlet(), randomStreamlet()}
+	var expected= [][]StreamletDescriptor{{descs[0], descs[1]}, {descs[1], descs[2]}}
+	assert.Equal(t, reflect.DeepEqual(expected, sliding(descs)), true)
 }

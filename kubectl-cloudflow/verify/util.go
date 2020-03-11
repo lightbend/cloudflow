@@ -21,7 +21,7 @@ func CheckFullPatternMatch(input string, regexp* regexp.Regexp) bool {
 	if match == nil {
 		return false
 	} else {
-		if match[0] != 0 {
+		if match[0] != 0 || (match[0] + match[1]) != len(input) {
 			return false
 		} else {
 			return true
@@ -146,4 +146,12 @@ func ParseImageReference(imageURI string) (*domain.ImageReference, error) {
 	}
 
 	return &ir, nil
+}
+
+func sliding(input []StreamletDescriptor) [][]StreamletDescriptor {
+	var ret [][]StreamletDescriptor
+	for i := 0; i < len(input) - 1; i++ {
+		ret = append(ret,[]StreamletDescriptor{input[i], input[i + 1]})
+	}
+	return ret
 }

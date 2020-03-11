@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"fmt"
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"strings"
@@ -24,20 +25,18 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 
 	if !IsDnsLabelCompatible(s.name) {
 		ret.problems = append(ret.problems, InvalidStreamletName{
-			BlueprintProblem: InvalidStreamletName{},
 				streamletRef: ret.name,
 		})
 	}
 
 	if !CheckFullPatternMatch(ret.className, ClassNamePattern) {
 		ret.problems = append(ret.problems, InvalidStreamletClassName{
-			BlueprintProblem: InvalidStreamletClassName{},
 			streamletRef: ret.name,
 			streamletClassName: ret.className,
 		})
 	}
 
-  var found *StreamletDescriptor 
+	var found *StreamletDescriptor
 	for _, desc := range streamletDescriptors {
 
 		if desc.ClassName == s.className {
@@ -50,7 +49,7 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		if found.ClassName != "" {
 			ret.className = found.ClassName
 		}
-		ret.verified = &VerifiedStreamlet{s.name, domain.Descriptor(*found)}
+		ret.verified = &VerifiedStreamlet{s.name, *found}
 	} else {
 		matchingPartially := 0
 		var partialDesc []StreamletDescriptor
@@ -62,7 +61,7 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		}
 
 		if matchingPartially == 1 && partialDesc != nil {
-			ret.verified = &VerifiedStreamlet{s.name, domain.Descriptor(partialDesc[0])}
+			ret.verified = &VerifiedStreamlet{s.name, partialDesc[0]}
 		} else if matchingPartially > 1 {
 			ret.problems = append(ret.problems, AmbiguousStreamletRef{
 				BlueprintProblem: AmbiguousStreamletRef{},
@@ -78,5 +77,26 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		}
 	}
 
-return ret
+	return ret
 }
+
+func (s StreamletRef) out() string {
+	return fmt.Sprintf("%s.out", s.name)
+}
+
+func (s StreamletRef) in() string {
+	return fmt.Sprintf("%s.in", s.name)
+}
+
+func (s StreamletRef) inlet(name string) string {
+	return fmt.Sprintf("%s.%s", s.name, name)
+}
+
+
+//def createInletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
+//InletDescriptor(name, createSchemaDescriptor(schemaName))
+//}
+//
+//def createOutletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
+//OutletDescriptor(name, createSchemaDescriptor(schemaName))
+//}

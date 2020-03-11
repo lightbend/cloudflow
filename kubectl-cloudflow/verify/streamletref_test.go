@@ -39,9 +39,8 @@ func Test_verifyStreamletRefWithInvalidClassName(t *testing.T) {
 	var descriptors = []StreamletDescriptor{}
 
 	assert.Equal(t, GetProblem(ref.verify(descriptors).problems, InvalidStreamletClassName{
-		InvalidStreamletClassName{},
-		ref.name,
-		ref.className,}), true)
+	streamletRef:	ref.name,
+	streamletClassName: ref.className,}), true)
 }
 
 func Test_verifyStreamletRefWithInvalidName(t *testing.T) {
@@ -50,8 +49,7 @@ func Test_verifyStreamletRefWithInvalidName(t *testing.T) {
 	var descriptors = []StreamletDescriptor{}
 
 	assert.Equal(t, GetProblem(ref.verify(descriptors).problems, InvalidStreamletName{
-		InvalidStreamletName{},
-		ref.name,}), true)
+		streamletRef:ref.name,}), true)
 }
 
 func Test_verifyStreamletRefWithEmptyDescriptors(t *testing.T) {

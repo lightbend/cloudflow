@@ -31,9 +31,9 @@ func createValidBlueprintSample() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			aggr = "lightbend/spark-aggregation:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
@@ -85,9 +85,9 @@ func createBlueprintWithoutStreamletsSample() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			aggr = "lightbend/spark-aggregation:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 
@@ -101,9 +101,9 @@ func createBlueprintWithoutConnectionsSample() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			aggr = "lightbend/spark-aggregation:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
@@ -123,8 +123,8 @@ func createBlueprintSampleWithMissingImage() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress
@@ -150,9 +150,9 @@ func createBlueprintSampleWithImageInStreamletNotPresentInImages() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			aggr = "lightbend/spark-aggregation:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 			cdr-generator1 = notInImage/carly.aggregator.CallRecordGeneratorIngress
@@ -174,23 +174,13 @@ func createBlueprintSampleWithImageInStreamletNotPresentInImages() string {
 	}`
 }
 
-/*
-cdr-generator1 {
-	out = [
-		{
-			merge { in-0 }
-		}
-  ]
-}
-*/
-
 func createBlueprintSampleWithConnectionsHavingInvalidStreamlets() string {
 	return `blueprint {
 		name = call-record-aggregator
 		images {
-			aggr = "eu.gcr.io/bubbly-observer-178213/spark-aggregation:134-d0ec286-dirty"
-			ings = "eu.gcr.io/bubbly-observer-178213/akka-cdr-ingestor:134-d0ec286-dirty"
-			outp = "eu.gcr.io/bubbly-observer-178213/akka-java-aggregation-output:134-d0ec286-dirty"
+			aggr = "lightbend/spark-aggregation:134-d0ec286-dirty"
+			ings = "lightbend/akka-cdr-ingestor:134-d0ec286-dirty"
+			outp = "lightbend/akka-java-aggregation-output:134-d0ec286-dirty"
 		}
 		streamlets {
 			cdr-generator1 = aggr/carly.aggregator.CallRecordGeneratorIngress

@@ -420,6 +420,38 @@ func (b Blueprint) use(streamletRef StreamletRef) Blueprint {
 	return ret
 }
 
+func (b Blueprint) connect(from string, to string) Blueprint {
+	return b.connectWithConnection(StreamletConnection{from: from, to: to})
+}
+
+func (b Blueprint) connectWithConnection(connection StreamletConnection) Blueprint {
+	var verifiedStreamlets []VerifiedStreamlet
+	for _, streamlet := range b.streamlets {
+		if streamlet.verified != nil {
+			verifiedStreamlets = append(verifiedStreamlets, *streamlet.verified)
+		}
+	}
+
+	var verifiedConnection = connection.verify(verifiedStreamlets)
+	var otherConnections []StreamletConnection
+	for _, conn := range b.connections {
+		if conn.from != verifiedConnection.from || conn.to != verifiedConnection.to {
+			otherConnections = append(otherConnections, conn)
+		}
+	}
+
+	var ret = Blueprint{
+		images: b.images,
+		streamlets: b.streamlets,
+		connections: append(otherConnections, verifiedConnection),
+		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
+		globalProblems: b.globalProblems,
+	}
+	ret = ret.verify()
+	ret.UpdateGlobalProblems()
+	return ret
+}
+
 func (b Blueprint) verify() Blueprint {
 	var illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
 
@@ -598,8 +630,15 @@ func (b Blueprint) UpdateGlobalProblems() []BlueprintProblem {
 
 	var problems = [][]BlueprintProblem{b.globalProblems, streamletProblems, connectionProblems}
 	var res []BlueprintProblem
-	for i := range problems {
-		res = append(res, problems[i]...)
+	uniqueProblems := make(map[string]bool)
+	for _, problemList := range problems {
+		for _, problem := range problemList {
+			key := GetSHA256Hash(problem.ToMessage())
+			if _, ok := uniqueProblems[key]; !ok {
+				res = append(res, problem)
+			    uniqueProblems[key] = true
+			}
+		}
 	}
 	b.globalProblems = res
 	return b.globalProblems
@@ -608,7 +647,7 @@ func (b Blueprint) UpdateGlobalProblems() []BlueprintProblem {
 func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []VerifiedStreamletConnection) ([]VerifiedStreamletConnection, []IllegalConnection) {
 	groupedConnections := make(map[string]GroupedConnections)
 	for i := range verifiedStreamletConnections {
-		// cannot use a VerifiedInlet a a map key here
+		// cannot use a VerifiedInlet as a map key here
 		hash := GetSHA256Hash(verifiedStreamletConnections[i].verifiedInlet)
 		key := hash
 		if val, ok := groupedConnections[key]; ok {
@@ -725,7 +764,7 @@ func (b Blueprint) verifyPortNames(streamletDescriptors []StreamletDescriptor) [
 
 		for _, outlet := range desc.Outlets {
 			if !IsDnsLabelCompatible(outlet.Name) {
-				outletProblems = append(outletProblems, InvalidInletName{className: desc.ClassName, name: outlet.Name})
+				outletProblems = append(outletProblems, InvalidOutletName{className: desc.ClassName, name: outlet.Name})
 			}
 		}
 	}
@@ -865,4 +904,42 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 	}
 
 	return res
+}
+
+func unconnectedBlueprint(streamletDescriptors []StreamletDescriptor) Blueprint {
+	var blueprint = Blueprint{}
+	var refsAdded = blueprint.define(streamletDescriptors)
+	for _, desc := range streamletDescriptors {
+		refsAdded = refsAdded.use(desc.randomRef())
+	}
+	return refsAdded.verify()
+}
+
+func findStreamlet(streamletRefs []StreamletRef, className string) *StreamletRef {
+	for _, ref := range streamletRefs{
+		if ref.className == className {
+			return &ref
+		}
+	}
+	return nil
+}
+
+func connectedBlueprint(streamletDescriptors []StreamletDescriptor) Blueprint {
+	var refsAdded = unconnectedBlueprint(streamletDescriptors)
+	var connected = refsAdded
+	for _, descs := range sliding(streamletDescriptors) {
+		out := descs[0]
+		in := descs[1]
+		outRef := findStreamlet(refsAdded.streamlets, out.ClassName)
+		inRef := findStreamlet(refsAdded.streamlets, in.ClassName)
+		for _, outlet := range out.Outlets {
+			for _, inlet := range in.Inlets {
+				if reflect.DeepEqual(inlet.Schema, outlet.Schema) {
+					connected.connect(fmt.Sprintf("%s.%s",outRef.name, outlet.Name),
+						fmt.Sprintf("%s.%s",inRef.name, inlet.Name))
+				}
+			}
+		}
+	}
+	return connected.verify()
 }

@@ -18,7 +18,7 @@ type InletDescriptor domain.InOutlet
 
 type VerifiedStreamlet struct {
 	name       string
-	descriptor domain.Descriptor
+	descriptor StreamletDescriptor
 }
 
 type VerifiedPortPath struct {
@@ -138,7 +138,6 @@ func (v *VerifiedOutlet) matches(outletDescriptor OutletDescriptor) bool {
 // verifiedStreamlets
 func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath string) (*VerifiedOutlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(outletPortPath)
-	fmt.Printf("verified port path %s\n", *&verifiedPortPath.streamletRef)
 
 	if err != nil {
 		return nil, err
@@ -156,7 +155,7 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 			path: outletPortPath,
 		}
 	}
-	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) > 1 {
+	if verifiedPortPath.portName == nil && len(found.descriptor.Outlets) > 1 {
 		var outletsToMap = found.descriptor.Outlets
 		var suggestions []VerifiedPortPath
 
@@ -172,7 +171,7 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 		}
 	}
 	var portPath *VerifiedPortPath
-	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Outlets) == 1 {
+	if verifiedPortPath.portName == nil && len(found.descriptor.Outlets) == 1 {
 		finalNameStr := found.descriptor.Outlets[0].Name
 		portPath = &VerifiedPortPath{
 			streamletRef: verifiedPortPath.streamletRef,
@@ -184,7 +183,7 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 
 	var foundOutlet *VerifiedOutlet
 	for _, outlet := range found.descriptor.Outlets {
-		if outlet.Name == *portPath.portName {
+		if portPath.portName != nil && outlet.Name == *portPath.portName {
 			foundOutlet = &VerifiedOutlet{
 				streamlet: *found,
 				VerifiedPort: VerifiedPort{
@@ -204,7 +203,7 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 	}
 }
 
-// FindVerifiedInlet finds the VerifiedOutlet corresponding to the inletPortPath from the list of
+// FindVerifiedInlet finds the VerifiedInlet corresponding to the inletPortPath from the list of
 // verifiedStreamlets
 func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath string) (*VerifiedInlet, BlueprintProblem) {
 	verifiedPortPath, err := NewVerifiedPortPath(inletPortPath)
@@ -224,7 +223,7 @@ func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath str
 			path: inletPortPath,
 		}
 	}
-	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) > 1 {
+	if verifiedPortPath.portName == nil && len(found.descriptor.Inlets) > 1 {
 		var inletsToMap = found.descriptor.Inlets
 		var suggestions []VerifiedPortPath
 
@@ -240,7 +239,7 @@ func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath str
 		}
 	}
 	var portPath *VerifiedPortPath
-	if len(*verifiedPortPath.portName) == 0 && len(found.descriptor.Inlets) == 1 {
+	if verifiedPortPath.portName == nil && len(found.descriptor.Inlets) == 1 {
 		finalNameStr := found.descriptor.Inlets[0].Name
 		portPath = &VerifiedPortPath{
 			streamletRef: verifiedPortPath.streamletRef,
@@ -252,7 +251,7 @@ func FindVerifiedInlet(verifiedStreamlets []VerifiedStreamlet, inletPortPath str
 
 	var foundInlet *VerifiedInlet
 	for _, inlet := range found.descriptor.Inlets {
-		if inlet.Name == *portPath.portName {
+		if portPath.portName != nil && inlet.Name == *portPath.portName {
 			foundInlet = &VerifiedInlet{
 				streamlet: *found,
 				VerifiedPort: VerifiedPort{
