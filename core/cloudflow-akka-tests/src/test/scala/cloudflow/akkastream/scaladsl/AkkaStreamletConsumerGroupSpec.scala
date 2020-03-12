@@ -66,7 +66,8 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       // Generate some test data
       val dataSize     = 5000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
-      val genExecution = Generator.run(data)
+      val outlet       = mkUniqueGenOutlet()
+      val genExecution = Generator.run(data, outlet)
       // gen auto-completes, the source is finite.
       genExecution.completed.futureValue
 
@@ -79,11 +80,12 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
         val receiver = new TestReceiver(sink, i)
         // when streamlets are scaled in a cluster, they all run with the same streamlet reference.
         // This is why "receiver" is passed as the streamlet reference for all streamlets
-        TestReceiver.run("receiver", receiver)
+        TestReceiver.run("receiver", receiver, outlet)
       }
 
       // verify the data that the test receiver instances have processed.
       val receivedData = probe.receiveN(dataSize, 15.seconds)
+      probe.expectNoMessage()
 
       // verify that all receiver instances together have exactly received all the test data.
       receivedData.size mustBe dataSize
@@ -96,36 +98,48 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
     "consume from an outlet grouped by streamlet reference" in {
       // Generate some test data
-      val dataSize     = 5000
-      val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
-      val genExecution = Generator.run(data)
+      val dataSize = 500
+      val data     = List.range(0, dataSize).map(i => Data(i, s"data"))
+
+      val outlet       = mkUniqueGenOutlet()
+      val genExecution = Generator.run(data, outlet)
       // gen auto-completes, the source is finite.
       genExecution.completed.futureValue
 
       // all test receivers will write their data to a sink which is probed.
-      val probe = akka.testkit.TestProbe()
-      val sink  = Sink.actorRef[Data](probe.ref, Completed)
+      val probe1 = akka.testkit.TestProbe()
+      val sink1  = Sink.actorRef[Data](probe1.ref, Completed)
 
-      val numberOfUniqueStreamlets = 2
-      val instanceIds              = List.range(0, numberOfUniqueStreamlets)
-      val executions = instanceIds.map { i =>
-        val receiver = new TestReceiver(sink, i)
+      val probe2 = akka.testkit.TestProbe()
+      val sink2  = Sink.actorRef[Data](probe2.ref, Completed)
 
-        // unique streamlet references, receivers should all receive all data.
-        TestReceiver.run(s"receiver-$i", receiver)
-      }
-      // every receiver should receive all data, using a unique group.
-      val expectedSize = dataSize * numberOfUniqueStreamlets
+      // unique streamlet references, receivers should all receive all data.
+      val receiver1  = new TestReceiver(sink1, 1)
+      val execution1 = TestReceiver.run(s"receiver-1", receiver1, outlet)
+      val receiver2  = new TestReceiver(sink2, 2)
+      val execution2 = TestReceiver.run(s"receiver-2", receiver2, outlet)
+      val executions = List(execution1, execution2)
+
       // verify the data that the test receiver instances have processed.
-      val receivedData = probe.receiveN(expectedSize, 15.seconds)
+      val receivedData1 = probe1.receiveN(dataSize, 15.seconds)
+      probe1.expectNoMessage()
+      val receivedData2 = probe2.receiveN(dataSize, 15.seconds)
+      probe2.expectNoMessage()
 
       // verify that all receiver instances together have exactly received all the test data.
-      receivedData.size mustBe expectedSize
+      receivedData1.size mustBe dataSize
+      receivedData1.map { case Data(id, _) => id } must contain theSameElementsAs data.map(_.id)
+
+      receivedData2.size mustBe dataSize
+      receivedData2.map { case Data(id, _) => id } must contain theSameElementsAs data.map(_.id)
 
       // verify that all receivers received data. Test receivers set 'name' to the instance id it was created with.
-      receivedData.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs instanceIds
+      receivedData1.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs List(1)
+      receivedData2.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs List(2)
       Future.sequence(executions.map(_.stop())).futureValue
     }
+
+    def mkUniqueGenOutlet() = s"out-${java.util.UUID.randomUUID().toString}"
   }
 
   object Completed
@@ -138,20 +152,20 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
     val Out            = "out"
     val StreamletRef   = "gen"
 
-    def run(testData: List[Data]): StreamletExecution = {
+    def run(testData: List[Data], outlet: String): StreamletExecution = {
       val gen     = new Generator(testData)
-      val context = new AkkaStreamletContextImpl(definition(StreamletRef), system)
+      val context = new AkkaStreamletContextImpl(definition(StreamletRef, outlet), system)
       gen.setContext(context)
       gen.run(context)
     }
 
-    def definition(streamletRef: String) = StreamletDefinition(
+    def definition(streamletRef: String, outlet: String) = StreamletDefinition(
       appId = appId,
       appVersion = appVersion,
       streamletRef = StreamletRef,
       streamletClass = StreamletClass,
       portMapping = List(
-        ConnectedPort("out", SavepointPath(appId, streamletRef, Out))
+        ConnectedPort("out", SavepointPath(appId, streamletRef, outlet))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
@@ -171,19 +185,19 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
     val streamletClass = "TestReceiver"
     val out            = "out"
 
-    def run(streamletRef: String, receiver: TestReceiver): StreamletExecution = {
-      val context = new AkkaStreamletContextImpl(definition(streamletRef), system)
+    def run(streamletRef: String, receiver: TestReceiver, genOutlet: String): StreamletExecution = {
+      val context = new AkkaStreamletContextImpl(definition(streamletRef, genOutlet), system)
       receiver.setContext(context)
       receiver.run(context)
     }
 
-    def definition(streamletRef: String) = StreamletDefinition(
+    def definition(streamletRef: String, genOutlet: String) = StreamletDefinition(
       appId = appId,
       appVersion = appVersion,
       streamletRef = streamletRef,
       streamletClass = "TestReceiver",
       portMapping = List(
-        ConnectedPort("in", SavepointPath(appId, Generator.StreamletRef, Generator.Out))
+        ConnectedPort("in", SavepointPath(appId, Generator.StreamletRef, genOutlet))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
