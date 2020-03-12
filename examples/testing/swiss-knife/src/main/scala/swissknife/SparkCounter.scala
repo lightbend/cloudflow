@@ -27,7 +27,7 @@ import org.apache.spark.sql.types.TimestampType
 import cloudflow.spark.sql.SQLImplicits._
 import org.apache.spark.sql.streaming.OutputMode
 
-class MovingAverageSparklet extends SparkStreamlet {
+class SparkCounter extends SparkStreamlet {
 
   val in    = AvroInlet[Data]("in")
   val out   = AvroOutlet[Data]("out", _.src)
@@ -45,7 +45,7 @@ class MovingAverageSparklet extends SparkStreamlet {
         .withColumn("ts", $"timestamp".cast(TimestampType))
         .withWatermark("ts", "0 seconds")
         .groupBy(window($"ts", "5 seconds"), $"src")
-        .agg(sum($"count").as("count"))
+        .agg(count($"src").as("count"))
       query.select(lit("spark-agg").as("src"), $"window.start".as("timestamp"), $"count").as[Data]
     }
   }
