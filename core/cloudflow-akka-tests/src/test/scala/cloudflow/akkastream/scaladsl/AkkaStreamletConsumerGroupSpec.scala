@@ -64,7 +64,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
   "Akka streamlet instances" should {
     "consume from an outlet as a group for the same streamlet" in {
       // Generate some test data
-      val dataSize     = 10000
+      val dataSize     = 5000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
       val genExecution = Generator.run(data)
       // gen auto-completes, the source is finite.
@@ -126,8 +126,6 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       receivedData.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs instanceIds
       Future.sequence(executions.map(_.stop())).futureValue
     }
-
-    //TODO add consume from outlet using different streamlets
   }
 
   object Completed
