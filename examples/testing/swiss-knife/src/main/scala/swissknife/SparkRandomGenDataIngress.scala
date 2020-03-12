@@ -48,7 +48,7 @@ class SparkRandomGenDataIngress extends SparkStreamlet {
         .format("rate")
         .option("rowsPerSecond", recordsPerSecond)
         .load()
-        .select(lit("spark-gen").as("src"), $"timestamp", $"value".as("count"))
+        .select(lit("origin").as("src"), $"timestamp", $"value".as("count"))
         .as[Data]
     }
   }
