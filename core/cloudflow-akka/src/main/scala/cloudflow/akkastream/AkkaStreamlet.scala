@@ -64,7 +64,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     val streamletConfig = Try {
       context.system.settings.config.getConfig("cloudflow.runner.streamlets")
     }.getOrElse(ConfigFactory.empty())
-    
+
     context.system.log.info(startRunnerMessage(blockingIODispatcherConfig, dispatcherConfig, deploymentConfig, streamletConfig))
 
     val logic = createLogic()

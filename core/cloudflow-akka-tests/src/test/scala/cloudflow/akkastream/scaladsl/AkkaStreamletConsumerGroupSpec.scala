@@ -75,7 +75,7 @@ class AkkaStreamletConsumerGroupSpec
 
   "Akka streamlet instances" should {
     "consume from an outlet as a group" in {
-      val dataSize         = 1000
+      val dataSize     = 1000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
       val genExecution = Generator.run(data)
       // gen auto-completes, the source is finite.
@@ -101,10 +101,10 @@ class AkkaStreamletConsumerGroupSpec
   }
 
   object Completed
-  
+
   val appId      = "my-app"
   val appVersion = "abc"
-  
+
   object Generator {
     val StreamletClass = "Generator"
     val Out            = "out"
