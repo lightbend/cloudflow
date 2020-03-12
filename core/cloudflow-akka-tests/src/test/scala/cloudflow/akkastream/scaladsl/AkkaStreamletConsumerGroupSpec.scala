@@ -63,14 +63,17 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
   "Akka streamlet instances" should {
     "consume from an outlet as a group" in {
+      // Generate some test data
       val dataSize     = 10000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
       val genExecution = Generator.run(data)
       // gen auto-completes, the source is finite.
       genExecution.completed.futureValue
-      val probe = akka.testkit.TestProbe()
 
-      val sink        = Sink.actorRef[Data](probe.ref, Completed)
+      // all test receivers will write their data to a sink which is probed.
+      val probe = akka.testkit.TestProbe()
+      val sink  = Sink.actorRef[Data](probe.ref, Completed)
+
       val instanceIds = List.range(0, 4)
       val executions = instanceIds.map { i =>
         val receiver = new TestReceiver(sink, i)
@@ -79,10 +82,14 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
         TestReceiver.run("receiver", receiver)
       }
 
+      // verify the data that the test receiver instances have processed.
       val receivedData = probe.receiveN(dataSize, 15.seconds)
+
+      // verify that all receiver instances together have exactly received all the test data.
       receivedData.size mustBe dataSize
-      // receiver sets name to the instance id it was created with.
       receivedData.map { case Data(id, _) => id } must contain theSameElementsAs data.map(_.id)
+
+      // verify that all receivers received data. Test receivers set 'name' to the instance id it was created with.
       receivedData.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs instanceIds
       Future.sequence(executions.map(_.stop())).futureValue
     }
@@ -120,7 +127,6 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
   class Generator(testData: List[Data]) extends AkkaStreamlet {
     import Generator._
-    // generate a known set of Data
     val out                  = AvroOutlet[Data](Out)
     final override val shape = StreamletShape.withOutlets(out)
     override final def createLogic = new RunnableGraphStreamletLogic() {
