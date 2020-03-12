@@ -18,6 +18,7 @@ package cloudflow.akkastream
 
 import java.nio.file.{ Files, Paths }
 import java.nio.charset.StandardCharsets
+import akka.actor.ActorSystem
 
 import cloudflow.streamlets._
 import BootstrapInfo._
@@ -41,8 +42,9 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     (for {
       streamletDefinition ← StreamletDefinition.read(config)
     } yield {
-      val updatedConfig = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-      AkkaStreamletContextImpl(updatedConfig)
+      val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
+      val system                     = ActorSystem("akka_streamlet", updatedStreamletDefinition.config)
+      new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
     }.get
@@ -62,7 +64,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     val streamletConfig = Try {
       context.system.settings.config.getConfig("cloudflow.runner.streamlets")
     }.getOrElse(ConfigFactory.empty())
-
+    
     context.system.log.info(startRunnerMessage(blockingIODispatcherConfig, dispatcherConfig, deploymentConfig, streamletConfig))
 
     val logic = createLogic()
