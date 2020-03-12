@@ -62,7 +62,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
                         ))
 
   "Akka streamlet instances" should {
-    "consume from an outlet as a group" in {
+    "consume from an outlet as a group for the same streamlet" in {
       // Generate some test data
       val dataSize     = 10000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
@@ -93,6 +93,41 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       receivedData.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs instanceIds
       Future.sequence(executions.map(_.stop())).futureValue
     }
+
+    "consume from an outlet grouped by streamlet reference" in {
+      // Generate some test data
+      val dataSize     = 5000
+      val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
+      val genExecution = Generator.run(data)
+      // gen auto-completes, the source is finite.
+      genExecution.completed.futureValue
+
+      // all test receivers will write their data to a sink which is probed.
+      val probe = akka.testkit.TestProbe()
+      val sink  = Sink.actorRef[Data](probe.ref, Completed)
+
+      val numberOfUniqueStreamlets = 2
+      val instanceIds              = List.range(0, numberOfUniqueStreamlets)
+      val executions = instanceIds.map { i =>
+        val receiver = new TestReceiver(sink, i)
+
+        // unique streamlet references, receivers should all receive all data.
+        TestReceiver.run(s"receiver-$i", receiver)
+      }
+      // every receiver should receive all data, using a unique group.
+      val expectedSize = dataSize * numberOfUniqueStreamlets
+      // verify the data that the test receiver instances have processed.
+      val receivedData = probe.receiveN(expectedSize, 15.seconds)
+
+      // verify that all receiver instances together have exactly received all the test data.
+      receivedData.size mustBe expectedSize
+
+      // verify that all receivers received data. Test receivers set 'name' to the instance id it was created with.
+      receivedData.map { case Data(_, name) => name.toInt }.distinct.sorted must contain theSameElementsAs instanceIds
+      Future.sequence(executions.map(_.stop())).futureValue
+    }
+
+    //TODO add consume from outlet using different streamlets
   }
 
   object Completed
