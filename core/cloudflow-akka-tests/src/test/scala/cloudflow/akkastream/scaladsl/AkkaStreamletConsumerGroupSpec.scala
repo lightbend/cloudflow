@@ -21,8 +21,6 @@ import scala.concurrent.duration._
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.kafka.testkit.internal.TestFrameworkInterface
-import akka.kafka.testkit.scaladsl._
 import akka.stream.scaladsl._
 
 import com.typesafe.config._
@@ -33,9 +31,6 @@ import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
 import net.manub.embeddedkafka._
-import org.scalatest._
-import org.scalatest.Suite
-import org.scalatest.concurrent._
 import org.scalatest.time._
 
 object AkkaStreamletConsumerGroupSpec {
@@ -52,14 +47,7 @@ object AkkaStreamletConsumerGroupSpec {
 
 import AkkaStreamletConsumerGroupSpec._
 
-class AkkaStreamletConsumerGroupSpec
-    extends KafkaSpec(kafkaPort, zkPort, ActorSystem("test", config))
-    with Suite
-    with WordSpecLike
-    with MustMatchers
-    with EmbeddedKafkaLike
-    with ScalaFutures
-    with TestFrameworkInterface.Scalatest { this: Suite =>
+class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort, ActorSystem("test", config)) {
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(10, Seconds), interval = Span(20, Millis))
 
@@ -75,7 +63,7 @@ class AkkaStreamletConsumerGroupSpec
 
   "Akka streamlet instances" should {
     "consume from an outlet as a group" in {
-      val dataSize     = 1000
+      val dataSize     = 10000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
       val genExecution = Generator.run(data)
       // gen auto-completes, the source is finite.
@@ -91,7 +79,7 @@ class AkkaStreamletConsumerGroupSpec
         TestReceiver.run("receiver", receiver)
       }
 
-      val receivedData = probe.receiveN(dataSize, 10.seconds)
+      val receivedData = probe.receiveN(dataSize, 15.seconds)
       receivedData.size mustBe dataSize
       // receiver sets name to the instance id it was created with.
       receivedData.map { case Data(id, _) => id } must contain theSameElementsAs data.map(_.id)
