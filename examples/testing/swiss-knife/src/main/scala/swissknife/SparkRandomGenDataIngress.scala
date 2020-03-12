@@ -23,6 +23,7 @@ import cloudflow.streamlets.avro._
 import cloudflow.spark.{ SparkStreamlet, SparkStreamletLogic }
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.streaming.OutputMode
+import org.apache.spark.sql.functions._
 
 import cloudflow.spark.sql.SQLImplicits._
 
@@ -42,18 +43,13 @@ class SparkRandomGenDataIngress extends SparkStreamlet {
       writeStream(process, out, OutputMode.Append).toQueryExecution
 
     private def process: Dataset[Data] = {
-
       val recordsPerSecond = context.streamletConfig.getInt(RecordsPerSecond.key)
-
-      val rateStream = session.readStream
+      session.readStream
         .format("rate")
         .option("rowsPerSecond", recordsPerSecond)
         .load()
-        .as[Rate]
-
-      rateStream.map {
-        case Rate(timestamp, value) ⇒ Data(s"spark-gen", timestamp.getTime, value)
-      }
+        .select(lit("spark-gen").as("src"), $"timestamp", $"value".as("count"))
+        .as[Data]
     }
   }
 }
