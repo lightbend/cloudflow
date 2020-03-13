@@ -140,8 +140,10 @@ lazy val akkastreamTests =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
+            AkkaStreamTestkit,
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
+            EmbeddedKafka % Test, 
             Logback % Test,
             ScalaTest,
             Junit

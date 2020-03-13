@@ -39,18 +39,14 @@ import org.apache.kafka.common.serialization._
 
 import cloudflow.streamlets._
 
-object AkkaStreamletContextImpl {
-  def apply(streamletDefinition: StreamletDefinition): AkkaStreamletContextImpl =
-    new AkkaStreamletContextImpl(streamletDefinition)
-}
-
 /**
  * Implementation of the StreamletContext trait.
  */
 final class AkkaStreamletContextImpl(
-    private[cloudflow] override val streamletDefinition: StreamletDefinition
+    private[cloudflow] override val streamletDefinition: StreamletDefinition,
+    sys: ActorSystem
 ) extends AkkaStreamletContext {
-  implicit val system: ActorSystem = ActorSystem("akka_streamlet", config)
+  implicit val system: ActorSystem = sys
 
   implicit def materializer = ActorMaterializer()(system)
 
@@ -74,7 +70,7 @@ final class AkkaStreamletContextImpl(
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(inlet)
+    val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)
@@ -141,7 +137,7 @@ final class AkkaStreamletContextImpl(
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(inlet)
+    val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
       .withGroupId(gId)
@@ -194,17 +190,21 @@ final class AkkaStreamletContextImpl(
   def onStop(f: () ⇒ Future[Dun]): Unit =
     stoppers.getAndUpdate(old ⇒ old :+ f)
 
+  private def streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
+
   private def handleTermination[T]: Flow[T, T, NotUsed] =
     Flow[T]
       .via(killSwitch.flow)
       .alsoTo(
         Sink.onComplete {
           case Success(_) ⇒
-            system.log.error(s"Stream has completed unexpectedly, shutting down streamlet.")
-            completionPromise.success(Dun)
+            system.log.error(
+              s"Stream has completed. Shutting down streamlet $streamletDefinitionMsg."
+            )
+            completionPromise.trySuccess(Dun)
           case Failure(e) ⇒
-            system.log.error(e, "Stream has failed, shutting down streamlet.")
-            completionPromise.failure(e)
+            system.log.error(e, s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.")
+            completionPromise.tryFailure(e)
         }
       )
 

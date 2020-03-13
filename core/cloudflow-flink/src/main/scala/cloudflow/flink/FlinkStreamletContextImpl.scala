@@ -44,7 +44,7 @@ class FlinkStreamletContextImpl(
   override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val srcTopic      = savepointPath.value
-    val groupId       = savepointPath.groupId(inlet)
+    val groupId       = savepointPath.groupId(streamletRef, inlet)
 
     val properties = new ju.Properties
     properties.setProperty("bootstrap.servers", config.getString("cloudflow.kafka.bootstrap-servers"))
