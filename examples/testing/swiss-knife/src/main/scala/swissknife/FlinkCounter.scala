@@ -18,7 +18,7 @@ class FlinkCounter extends FlinkStreamlet {
       val stream: DataStream[Data] =
         readStream(in)
           .map { data ⇒
-            data.copy(src = "flink")
+            data.copy(src = data.src + "-flink")
           }
       writeStream(out, stream)
     }
