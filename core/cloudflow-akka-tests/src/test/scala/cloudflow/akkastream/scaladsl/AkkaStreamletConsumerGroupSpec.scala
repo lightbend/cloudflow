@@ -69,7 +69,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       val outlet       = mkUniqueGenOutlet()
       val genExecution = Generator.run(data, outlet)
       // gen auto-completes, the source is finite.
-      genExecution.completed.futureValue
+      val _ = genExecution.completed.futureValue // assert that the future completed
 
       // all test receivers will write their data to a sink which is probed.
       val probe = akka.testkit.TestProbe()
