@@ -19,3 +19,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
 addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
 
+addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.28")
+
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.0"

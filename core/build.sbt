@@ -52,6 +52,7 @@ lazy val streamlets =
             SprayJson,
             Ficus,
             Bijection,
+            ScalaPbRuntime,
             ScalaTest
           )
     )
@@ -159,6 +160,11 @@ lazy val akkastreamTests =
     )
     .settings(
       javacOptions += "-Xlint:deprecation",
+      inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
+      PB.targets in Compile := Seq(
+        scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
+      ),
+      PB.protoSources in Compile := Seq(baseDirectory.value / "src/test/protobuf"),
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
 
@@ -281,7 +287,8 @@ lazy val blueprint =
             Config,
             Logback % Test,
             Avro4sTest,
-            ScalaTest
+            ScalaTest,
+            ScalaPbRuntime,
           ),
       publishArtifact in Test := true
     )
