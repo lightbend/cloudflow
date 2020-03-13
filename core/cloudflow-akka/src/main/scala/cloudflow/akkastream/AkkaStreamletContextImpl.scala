@@ -199,11 +199,11 @@ final class AkkaStreamletContextImpl(
         Sink.onComplete {
           case Success(_) ⇒
             system.log.error(
-              s"""Stream has completed, shutting down streamlet $streamletDefinitionMsg."""
+              s"Stream has completed, shutting down streamlet $streamletDefinitionMsg."
             )
             completionPromise.trySuccess(Dun)
           case Failure(e) ⇒
-            system.log.error(e, s"""Stream has failed, shutting down streamlet $streamletDefinitionMsg.""")
+            system.log.error(e, s"Stream has failed, shutting down streamlet $streamletDefinitionMsg.")
             completionPromise.tryFailure(e)
         }
       )

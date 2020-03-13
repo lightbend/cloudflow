@@ -62,7 +62,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
                         ))
 
   "Akka streamlet instances" should {
-    "consume from an outlet as a group for the same streamlet" in {
+    "consume from an outlet as a group per streamlet reference" in {
       // Generate some test data
       val dataSize     = 5000
       val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
