@@ -29,7 +29,7 @@ import cloudflow.spark.sql.SQLImplicits._
 
 case class Rate(timestamp: Timestamp, value: Long)
 
-class SparkRandomGenDataIngress extends SparkStreamlet {
+class SparkDataGenerator extends SparkStreamlet {
   val out   = AvroOutlet[Data]("out", d ⇒ d.src)
   val shape = StreamletShape(out)
 
