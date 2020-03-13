@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package cloudflow.akkastream;
+message PData {
+    string name = 1;
+}
