@@ -68,7 +68,7 @@ final class KafkaSinkRef[T](
       .alsoTo(
         Sink.onComplete {
           case Success(_) ⇒
-            system.log.error(s"Stream has completed, shutting down streamlet.")
+            system.log.error(s"Stream has completed. Shutting down streamlet...")
             completionPromise.success(Dun)
           case Failure(e) ⇒
             system.log.error(e, "Stream has failed, shutting down streamlet.")
