@@ -32,7 +32,7 @@ class AkkaTransformation extends AkkaStreamlet {
     def flow =
       FlowWithCommittableContext[Data]
         .map { data ⇒
-          data.copy(src = "akka")
+          data.copy(src = data.src + "-akka")
         }
   }
 }

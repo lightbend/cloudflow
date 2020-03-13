@@ -43,10 +43,11 @@ class SparkCounter extends SparkStreamlet {
     private def process(inDataset: Dataset[Data]): Dataset[Data] = {
       val query = inDataset
         .withColumn("ts", $"timestamp".cast(TimestampType))
+        .withColumn("updated_src", concat($"src", lit("-spark")))
         .withWatermark("ts", "0 seconds")
-        .groupBy(window($"ts", "5 seconds"), $"src")
+        .groupBy(window($"ts", "5 seconds"), $"updated_src")
         .agg(count($"src").as("count"))
-      query.select(lit("spark-agg").as("src"), $"window.start".as("timestamp"), $"count").as[Data]
+      query.select($"updated_src".as("src"), $"window.start".as("timestamp"), $"count").as[Data]
     }
   }
 
