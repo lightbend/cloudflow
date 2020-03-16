@@ -77,11 +77,11 @@ func (c *scaleApplicationCMD) scaleImpl(cmd *cobra.Command, args []string) {
 func validateScaleCmdArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) < 3 {
-		return fmt.Errorf("You need to specify an application name, streamlet and scale factor")
+		return fmt.Errorf("you need to specify an application name, streamlet and scale factor")
 	}
 
 	if value, err := strconv.Atoi(args[2]); err != nil || value < 1 {
-		return fmt.Errorf("The scale factor needs to be expressed as a number greater or equal to one. (%s)", args[2])
+		return fmt.Errorf("the scale factor needs to be expressed as a number greater or equal to one. (%s)", args[2])
 	}
 
 	return nil
