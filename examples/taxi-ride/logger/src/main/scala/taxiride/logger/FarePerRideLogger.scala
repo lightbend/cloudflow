@@ -33,10 +33,7 @@ class FarePerRideLogger extends AkkaStreamlet {
     Some("info")
   )
 
-  val MsgPrefix = StringConfigParameter(
-    "msg-prefix",
-    "Provide a prefix for the log lines",
-    Some("valid-logger"))
+  val MsgPrefix = StringConfigParameter("msg-prefix", "Provide a prefix for the log lines", Some("valid-logger"))
 
   override def configParameters = Vector(LogLevel, MsgPrefix)
 
@@ -50,17 +47,15 @@ class FarePerRideLogger extends AkkaStreamlet {
 
     val msgPrefix = streamletConfig.getString(MsgPrefix.key)
 
-    def log(rideFare: TaxiRideFare) = {
+    def log(rideFare: TaxiRideFare) =
       logF(s"$msgPrefix $rideFare")
-    }
 
-    def flow = {
+    def flow =
       FlowWithCommittableContext[TaxiRideFare]
         .map { taxiRideFare ⇒
           log(taxiRideFare)
           taxiRideFare
         }
-    }
 
     def runnableGraph =
       sourceWithOffsetContext(inlet)

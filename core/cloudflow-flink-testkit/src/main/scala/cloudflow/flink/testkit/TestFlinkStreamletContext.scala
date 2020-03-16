@@ -28,13 +28,12 @@ import cloudflow.streamlets._
 /**
  * An implementation of `FlinkStreamletContext` for unit testing.
  */
-class TestFlinkStreamletContext(
-    override val streamletRef: String,
-    env: StreamExecutionEnvironment,
-    inletTaps: Seq[FlinkInletTap[_]],
-    outletTaps: Seq[FlinkOutletTap[_]],
-    override val config: Config = ConfigFactory.empty)
-  extends FlinkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config), env) {
+class TestFlinkStreamletContext(override val streamletRef: String,
+                                env: StreamExecutionEnvironment,
+                                inletTaps: Seq[FlinkInletTap[_]],
+                                outletTaps: Seq[FlinkOutletTap[_]],
+                                override val config: Config = ConfigFactory.empty)
+    extends FlinkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config), env) {
 
   TestFlinkStreamletContext.result.clear()
 
@@ -42,34 +41,26 @@ class TestFlinkStreamletContext(
    * Returns a `DataStream[In]` from the `inlet` to be added as the data source
    * of the computation graph
    */
-  override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
-    inletTaps.find(_.portName == inlet.name)
+  override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] =
+    inletTaps
+      .find(_.portName == inlet.name)
       .map(_.inStream.asInstanceOf[DataStream[In]])
-      .getOrElse(throw TestContextException(
-        inlet.name,
-        s"Bad test context, could not find source for inlet ${inlet.name}"))
-  }
+      .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
   /**
    * Adds a sink to the `stream`. In the current implementation the sink just adds
    * the data to a concurrent collection for testing
    */
-  override def writeStream[Out: TypeInformation](
-      outlet: CodecOutlet[Out],
-      stream: DataStream[Out]): DataStreamSink[Out] = {
-
-    outletTaps.find(_.portName == outlet.name)
+  override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] =
+    outletTaps
+      .find(_.portName == outlet.name)
       .map { _ ⇒
         stream.addSink(new SinkFunction[Out]() {
-          override def invoke(out: Out) = {
+          override def invoke(out: Out) =
             TestFlinkStreamletContext.result.add(out.toString())
-          }
         })
       }
-      .getOrElse(throw TestContextException(
-        outlet.name,
-        s"Bad test context, could not find destination for outlet ${outlet.name}"))
-  }
+      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find destination for outlet ${outlet.name}"))
 }
 
 object TestFlinkStreamletContext {

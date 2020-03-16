@@ -16,6 +16,4 @@
 
 package cloudflow.runner
 
-class LocalRunnerSpec {
-
-}
+class LocalRunnerSpec {}

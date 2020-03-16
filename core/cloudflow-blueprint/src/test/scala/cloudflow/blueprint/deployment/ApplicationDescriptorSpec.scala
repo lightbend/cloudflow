@@ -37,22 +37,25 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       Given("a verified blueprint with an invalid secret name")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
 
-      val ingressName = "ingressnamethatisverylongmorethan243characters000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-      val validSecretName = "ingressnamethatisverylongmorethan243characters000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      val ingressName =
+        "ingressnamethatisverylongmorethan243characters000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      val validSecretName =
+        "ingressnamethatisverylongmorethan243characters000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
       val ingressRef = ingress.ref(ingressName)
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress))
         .use(ingressRef)
         .verified
-        .right.get
+        .right
+        .get
 
       When("I create a deployment descriptor from that blueprint with an invalid application id")
-      val appId = "-monstrous-some-very-long-NAME-with-ü-in-the-middle-that-still-needs-more-characters-mite-12345."
+      val appId          = "-monstrous-some-very-long-NAME-with-ü-in-the-middle-that-still-needs-more-characters-mite-12345."
       val truncatedAppId = "monstrous-some-very-long-name-with-u-in-the-middle-that-still"
-      val appVersion = "42-abcdef0"
-      val image = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val appVersion     = "42-abcdef0"
+      val image          = "image-1"
+      val descriptor     = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       Then("the resulting descriptor application id and secret name must be valid")
       descriptor.appId mustBe truncatedAppId
@@ -60,13 +63,13 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
     }
     "be built correctly from a verified blueprint" in {
       Given("a verified blueprint")
-      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
+      val ingress   = randomStreamlet().asIngress[Foo].withServerAttribute
       val processor = randomStreamlet().asProcessor[Foo, Bar].withRuntime("spark")
-      val egress = randomStreamlet().asEgress[Bar].withServerAttribute
+      val egress    = randomStreamlet().asEgress[Bar].withServerAttribute
 
-      val ingressRef = ingress.ref("ingress")
+      val ingressRef   = ingress.ref("ingress")
       val processorRef = processor.ref("processor")
-      val egressRef = egress.ref("egress")
+      val egressRef    = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, processor, egress))
@@ -75,12 +78,14 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(egressRef)
         .connect(ingressRef.out, processorRef.in)
         .connect(processorRef.out, egressRef.in)
-        .verified.right.get
+        .verified
+        .right
+        .get
 
       When("I create a deployment descriptor from that blueprint")
-      val appId = "monstrous-mite-12345"
+      val appId      = "monstrous-mite-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
       val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
@@ -93,13 +98,12 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       descriptor.connections.size mustBe 2
 
       And("the embedded streamlet deployments must be valid")
-      val ingressDeployment = descriptor.deployments.find(_.streamletName == ingressRef.name).value
+      val ingressDeployment   = descriptor.deployments.find(_.streamletName == ingressRef.name).value
       val processorDeployment = descriptor.deployments.find(_.streamletName == processorRef.name).value
-      val egressDeployment = descriptor.deployments.find(_.streamletName == egressRef.name).value
+      val egressDeployment    = descriptor.deployments.find(_.streamletName == egressRef.name).value
 
-      // FYI: container port numbers are based on the index of the streamlet in the list
-      val ingressContainerPort = StreamletDeployment.MinimumEndpointContainerPort
-      val egressContainerPort = StreamletDeployment.MinimumEndpointContainerPort + 2
+      val ingressContainerPort = StreamletDeployment.EndpointContainerPort
+      val egressContainerPort  = StreamletDeployment.EndpointContainerPort
 
       ingressDeployment.name mustBe s"${appId}.${ingressRef.name}"
       ingressDeployment.runtime mustBe ingress.runtime.name
@@ -118,7 +122,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       processorDeployment.endpoint mustBe None
       processorDeployment.config mustBe ConfigFactory.empty()
       processorDeployment.portMappings.size mustBe 2
-      processorDeployment.portMappings must contain("in" -> Savepoint(appId, ingressRef.name, "out"))
+      processorDeployment.portMappings must contain("in"  -> Savepoint(appId, ingressRef.name, "out"))
       processorDeployment.portMappings must contain("out" -> Savepoint(appId, processorRef.name, "out"))
       processorDeployment.replicas mustBe None
 
@@ -135,14 +139,14 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
 
     "be built correctly from a verified blueprint (with branch and open outlet)" in {
       Given("a verified blueprint")
-      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val processor = randomStreamlet().asProcessor[Foo, Bar].withRuntime("spark")
-      val egress = randomStreamlet().asEgress[Bar]
+      val ingress    = randomStreamlet().asIngress[Foo].withServerAttribute
+      val processor  = randomStreamlet().asProcessor[Foo, Bar].withRuntime("spark")
+      val egress     = randomStreamlet().asEgress[Bar]
       val processor2 = randomStreamlet().asProcessor[Bar, Foo]
 
-      val ingressRef = ingress.ref("ingress")
-      val processorRef = processor.ref("processor")
-      val egressRef = egress.ref("egress")
+      val ingressRef    = ingress.ref("ingress")
+      val processorRef  = processor.ref("processor")
+      val egressRef     = egress.ref("egress")
       val processor2Ref = processor2.ref("processor2")
 
       val verifiedBlueprint = Blueprint()
@@ -154,35 +158,37 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .connect(ingressRef.out, processorRef.in)
         .connect(processorRef.out, egressRef.in)
         .connect(processorRef.out, processor2Ref.in)
-        .verified.right.get
+        .verified
+        .right
+        .get
 
       When("I create a deployment descriptor from that blueprint")
-      val appId = "noisy-nissan-42"
+      val appId      = "noisy-nissan-42"
       val appVersion = "1-2345678"
-      val image = "image-1"
+      val image      = "image-1"
       val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
       descriptor.deployments.size mustBe 4
 
       And("the embedded streamlet deployments must have the correct port mappings")
-      val ingressDeployment = descriptor.deployments.find(_.streamletName == ingressRef.name).value
-      val processorDeployment = descriptor.deployments.find(_.streamletName == processorRef.name).value
-      val egressDeployment = descriptor.deployments.find(_.streamletName == egressRef.name).value
+      val ingressDeployment    = descriptor.deployments.find(_.streamletName == ingressRef.name).value
+      val processorDeployment  = descriptor.deployments.find(_.streamletName == processorRef.name).value
+      val egressDeployment     = descriptor.deployments.find(_.streamletName == egressRef.name).value
       val processor2Deployment = descriptor.deployments.find(_.streamletName == processor2Ref.name).value
 
       ingressDeployment.portMappings.size mustBe 1
       ingressDeployment.portMappings must contain("out" -> Savepoint(appId, ingressRef.name, "out"))
 
       processorDeployment.portMappings.size mustBe 2
-      processorDeployment.portMappings must contain("in" -> Savepoint(appId, ingressRef.name, "out"))
+      processorDeployment.portMappings must contain("in"  -> Savepoint(appId, ingressRef.name, "out"))
       processorDeployment.portMappings must contain("out" -> Savepoint(appId, processorRef.name, "out"))
 
       egressDeployment.portMappings.size mustBe 1
       egressDeployment.portMappings must contain("in" -> Savepoint(appId, processorRef.name, "out"))
 
       processor2Deployment.portMappings.size mustBe 2
-      processor2Deployment.portMappings must contain("in" -> Savepoint(appId, processorRef.name, "out"))
+      processor2Deployment.portMappings must contain("in"  -> Savepoint(appId, processorRef.name, "out"))
       processor2Deployment.portMappings must contain("out" -> Savepoint(appId, processor2Ref.name, "out"))
     }
 
@@ -190,11 +196,11 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       Given("a verified blueprint")
       val ingress1 = randomStreamlet().asIngress[Foo].withServerAttribute
       val ingress2 = randomStreamlet().asIngress[Foo].withServerAttribute
-      val merge = randomStreamlet().asMerge[Foo, Foo, Bar].withRuntime("spark")
+      val merge    = randomStreamlet().asMerge[Foo, Foo, Bar].withRuntime("spark")
 
       val ingress1Ref = ingress1.ref("ingress1")
       val ingress2Ref = ingress2.ref("ingress2")
-      val mergeRef = merge.ref("merge")
+      val mergeRef    = merge.ref("merge")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress1, ingress2, merge))
@@ -203,12 +209,14 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(mergeRef)
         .connect(ingress1Ref.out, mergeRef.in0)
         .connect(ingress2Ref.out, mergeRef.in1)
-        .verified.right.get
+        .verified
+        .right
+        .get
 
       When("I create a deployment descriptor from that blueprint")
-      val appId = "funky-foofighter-9862"
+      val appId      = "funky-foofighter-9862"
       val appVersion = "12-3456789"
-      val image = "image-1"
+      val image      = "image-1"
       val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       Then("the descriptor must be valid")
@@ -217,7 +225,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       And("the embedded streamlet deployments must have the correct port mappings")
       val ingress1Deployment = descriptor.deployments.find(_.streamletName == ingress1Ref.name).value
       val ingress2Deployment = descriptor.deployments.find(_.streamletName == ingress2Ref.name).value
-      val mergeDeployment = descriptor.deployments.find(_.streamletName == mergeRef.name).value
+      val mergeDeployment    = descriptor.deployments.find(_.streamletName == mergeRef.name).value
 
       ingress1Deployment.portMappings.size mustBe 1
       ingress1Deployment.portMappings must contain("out" -> Savepoint(appId, ingress1Ref.name, "out"))
@@ -228,7 +236,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       mergeDeployment.portMappings.size mustBe 3
       mergeDeployment.portMappings must contain("in-0" -> Savepoint(appId, ingress1Ref.name, "out"))
       mergeDeployment.portMappings must contain("in-1" -> Savepoint(appId, ingress2Ref.name, "out"))
-      mergeDeployment.portMappings must contain("out" -> Savepoint(appId, mergeRef.name, "out"))
+      mergeDeployment.portMappings must contain("out"  -> Savepoint(appId, mergeRef.name, "out"))
     }
   }
 

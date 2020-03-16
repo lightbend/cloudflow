@@ -38,13 +38,13 @@ import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
 
 object ImagePlugin extends AutoPlugin {
-  val AppRunner: String = "akka-entrypoint.sh"
-  val AppHome = "${app_home}"
-  val AppTargetDir: String = "/app"
+  val AppRunner: String                = "akka-entrypoint.sh"
+  val AppHome                          = "${app_home}"
+  val AppTargetDir: String             = "/app"
   val appTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
-  val AppJarsDir: String = "app-jars"
-  val DepJarsDir: String = "dep-jars"
-  val optAppDir = "/opt/cloudflow/"
+  val AppJarsDir: String               = "app-jars"
+  val DepJarsDir: String               = "dep-jars"
+  val optAppDir                        = "/opt/cloudflow/"
 
   override def requires =
     CommonSettingsAndTasksPlugin &&
@@ -52,16 +52,15 @@ object ImagePlugin extends AutoPlugin {
       sbtdocker.DockerPlugin
 
   private def agentMappings = Def.task[Seq[(File, String, String)]] {
-    resolvedJavaAgents.value filter (_.agent.scope.dist) map { resolved ⇒
-      (
-        resolved.artifact,
-        Project.normalizeModuleID(resolved.agent.name) + File.separator + resolved.artifact.name,
-        resolved.agent.arguments)
+    resolvedJavaAgents.value.filter(_.agent.scope.dist).map { resolved ⇒
+      (resolved.artifact,
+       Project.normalizeModuleID(resolved.agent.name) + File.separator + resolved.artifact.name,
+       resolved.agent.arguments)
     }
   }
 
   private def agentJavaOptions = Def.task[Seq[String]] {
-    agentMappings.value map {
+    agentMappings.value.map {
       case (_, path, arguments) ⇒ s"""-javaagent:$AppHome/${path}$arguments"""
     }
   }
@@ -70,63 +69,59 @@ object ImagePlugin extends AutoPlugin {
     // don't create and/or bundle scaladoc or source code since the only artifact we will produce is a docker image
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
-
     buildOptions in docker := BuildOptions(
-      cache = true,
-      removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-      pullBaseImage = BuildOptions.Pull.IfMissing
-    ),
-
+          cache = true,
+          removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
+          pullBaseImage = BuildOptions.Pull.IfMissing
+        ),
     cloudflowStageAppJars := Def.taskDyn {
-      Def.task {
-        val stagingDir = stage.value
-        val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
-        val depJars = (Runtime / externalDependencyClasspath).value.map(_.data)
+          Def.task {
+            val stagingDir  = stage.value
+            val projectJars = (Runtime / internalDependencyAsJars).value.map(_.data)
+            val depJars     = (Runtime / externalDependencyClasspath).value.map(_.data)
 
-        val appJarDir = new File(stagingDir, AppJarsDir)
-        val depJarDir = new File(stagingDir, DepJarsDir)
-        projectJars.foreach { jar ⇒
-          IO.copyFile(jar, new File(appJarDir, jar.getName))
-        }
-        depJars.foreach { jar ⇒
-          if (jar.name startsWith "cloudflow-runner-") {
-            IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
-          } else IO.copyFile(jar, new File(depJarDir, jar.getName))
-        }
-      }
-    }.value,
-
-    cloudflowStageScript := Def.taskDyn {
-      val log = streams.value.log
-      val javaAgents = agentJavaOptions.value
-      Def.task {
-        val stagingDir = stage.value
-        val runScriptTemplateURL = getClass.getResource("/" + AppRunner)
-        val runScriptTemplate = IO.readLinesURL(runScriptTemplateURL).mkString("\n")
-        val runScriptFileContents = runScriptTemplate.replace("AGENT_PLACEHOLDER", javaAgents.mkString(" "))
-        val runScriptFile = new File(new File(stagingDir, "bin"), AppRunner)
-
-        // Optimized to make sure to only re-write the run script when the
-        // contents have actually changed. This prevents unnecessary filesystem
-        // changes that would result in a Docker layer being rewritten.
-        if (runScriptFile.exists()) {
-          // Using the same method for reading the file as we use for reading
-          // the template to make sure we use the same line endings.
-          val oldRunScriptFileContents = IO.readLines(runScriptFile).mkString("\n")
-
-          if (runScriptFileContents != oldRunScriptFileContents) {
-            IO.write(runScriptFile, runScriptFileContents)
-            log.info(s"Successfully regenerated the streamlet runner script at ${runScriptFile}")
-          } else {
-            log.info(s"The streamlet runner script already exists and is up to date.")
+            val appJarDir = new File(stagingDir, AppJarsDir)
+            val depJarDir = new File(stagingDir, DepJarsDir)
+            projectJars.foreach { jar ⇒
+              IO.copyFile(jar, new File(appJarDir, jar.getName))
+            }
+            depJars.foreach { jar ⇒
+              if (jar.name.startsWith("cloudflow-runner-")) {
+                IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
+              } else IO.copyFile(jar, new File(depJarDir, jar.getName))
+            }
           }
-        } else {
-          IO.write(runScriptFile, runScriptFileContents)
-          log.info(s"Successfully generated the streamlet runner script at ${runScriptFile}")
-        }
-      }
-    }.value,
+        }.value,
+    cloudflowStageScript := Def.taskDyn {
+          val log        = streams.value.log
+          val javaAgents = agentJavaOptions.value
+          Def.task {
+            val stagingDir            = stage.value
+            val runScriptTemplateURL  = getClass.getResource("/" + AppRunner)
+            val runScriptTemplate     = IO.readLinesURL(runScriptTemplateURL).mkString("\n")
+            val runScriptFileContents = runScriptTemplate.replace("AGENT_PLACEHOLDER", javaAgents.mkString(" "))
+            val runScriptFile         = new File(new File(stagingDir, "bin"), AppRunner)
 
+            // Optimized to make sure to only re-write the run script when the
+            // contents have actually changed. This prevents unnecessary filesystem
+            // changes that would result in a Docker layer being rewritten.
+            if (runScriptFile.exists()) {
+              // Using the same method for reading the file as we use for reading
+              // the template to make sure we use the same line endings.
+              val oldRunScriptFileContents = IO.readLines(runScriptFile).mkString("\n")
+
+              if (runScriptFileContents != oldRunScriptFileContents) {
+                IO.write(runScriptFile, runScriptFileContents)
+                log.info(s"Successfully regenerated the streamlet runner script at ${runScriptFile}")
+              } else {
+                log.info(s"The streamlet runner script already exists and is up to date.")
+              }
+            } else {
+              IO.write(runScriptFile, runScriptFileContents)
+              log.info(s"Successfully generated the streamlet runner script at ${runScriptFile}")
+            }
+          }
+        }.value,
     imageNames in docker := {
       // NOTE: only use the default repository name ("lightbend") if a registry
       //       has been set but no repository has been set.
@@ -135,34 +130,31 @@ object ImagePlugin extends AutoPlugin {
       //       already exist as a K8s namespace for the fallback to work.
       //       We fall back to "lightbend" because we know that Cloudflow will
       //       be installed in that namespace
-      val registry = cloudflowDockerRegistry.value
+      val registry  = cloudflowDockerRegistry.value
       val namespace = cloudflowDockerRepository.value.orElse(registry.map(_ ⇒ "lightbend"))
 
-      cloudflowDockerImageName.value
-        .map { imageName ⇒
-          ImageName(
-            registry = registry,
-            namespace = namespace,
-            repository = imageName.name,
-            tag = Some(imageName.tag)
-          )
-        }
-        .toSeq
+      cloudflowDockerImageName.value.map { imageName ⇒
+        ImageName(
+          registry = registry,
+          namespace = namespace,
+          repository = imageName.name,
+          tag = Some(imageName.tag)
+        )
+      }.toSeq
     },
-
     dockerfile in docker := {
       // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // The UID and GID of the `jboss` user is used in different parts of Cloudflow
       // If you change this, you have to make sure that all references to this value are changed
       // - fsGroups on streamlet pods uses the GID to make volumes readable
-      val userInImage = "185" // default non-root user in the spark image
+      val userInImage                  = "185" // default non-root user in the spark image
       val userAsOwner: String ⇒ String = usr ⇒ s"$usr:cloudflow"
 
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
       cloudflowStageScript.value
 
-      val appDir: File = stage.value
+      val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
@@ -173,17 +165,14 @@ object ImagePlugin extends AutoPlugin {
       // TODO: make it so we only build docker images when the blueprint is valid
       val applicationDescriptorLabelName = "com.lightbend.cloudflow.application.zlib"
       val applicationDescriptorLabelValue =
-        applicationDescriptor
-          .value
-          .map { dd ⇒
-            // json serialization
-            val json = dd.toJson.compactPrint
-            // compression
-            val compressed = zlibCompression(json.getBytes(UTF_8))
-            // base64 string
-            Base64.getEncoder.encodeToString(compressed)
-          }
-          .get // hard get required, See TODO comment above
+        applicationDescriptor.value.map { dd ⇒
+          // json serialization
+          val json = dd.toJson.compactPrint
+          // compression
+          val compressed = zlibCompression(json.getBytes(UTF_8))
+          // base64 string
+          Base64.getEncoder.encodeToString(compressed)
+        }.get // hard get required, See TODO comment above
 
       new Dockerfile {
         from(dockerParentImage)
@@ -201,21 +190,23 @@ object ImagePlugin extends AutoPlugin {
         label(applicationDescriptorLabelName, applicationDescriptorLabelValue)
       }
     },
-
-    build := showResultOfBuild.dependsOn(
-      docker.dependsOn(
-        checkUncommittedChanges,
-        verifyBlueprint
-      )
-    ).value,
-
-    buildAndPublish := showResultOfBuildAndPublish.dependsOn(
-      dockerBuildAndPush.dependsOn(
-        checkUncommittedChanges,
-        verifyBlueprint,
-        verifyDockerRegistry
-      )
-    ).value
+    build := showResultOfBuild
+          .dependsOn(
+            docker.dependsOn(
+              checkUncommittedChanges,
+              verifyBlueprint
+            )
+          )
+          .value,
+    buildAndPublish := showResultOfBuildAndPublish
+          .dependsOn(
+            dockerBuildAndPush.dependsOn(
+              checkUncommittedChanges,
+              verifyBlueprint,
+              verifyDockerRegistry
+            )
+          )
+          .value
   )
 
   private val verifyDockerRegistry = Def.task {
@@ -225,12 +216,14 @@ object ImagePlugin extends AutoPlugin {
   private val checkUncommittedChanges = Def.task {
     val log = streams.value.log
     if (cloudflowBuildNumber.value.hasUncommittedChanges) {
-      log.warn(s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build.")
+      log.warn(
+        s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build."
+      )
     }
   }
 
   private val showResultOfBuild = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -244,7 +237,7 @@ object ImagePlugin extends AutoPlugin {
   }
 
   private val showResultOfBuildAndPublish = Def.task {
-    val log = streams.value.log
+    val log         = streams.value.log
     val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
@@ -259,7 +252,7 @@ object ImagePlugin extends AutoPlugin {
   }
 
   private def zlibCompression(raw: Array[Byte]): Array[Byte] = {
-    val deflater = new Deflater()
+    val deflater   = new Deflater()
     val compressed = new ByteArrayOutputStream(0)
     deflater.setInput(raw)
     deflater.finish()
@@ -275,7 +268,8 @@ object ImagePlugin extends AutoPlugin {
 
 case object DockerRegistryNotSet extends Exception(DockerRegistryNotSetError.msg) with NoStackTrace with sbt.FeedbackProvidedException
 object DockerRegistryNotSetError {
-  val msg = """
+  val msg =
+    """
               |Please set the `cloudflowDockerRegistry` sbt setting in your build.sbt file to the registry that you want to push the image to. This Docker registry must be configured for image pulling on your target Kubernetes clusters and you should `docker login` to it before building and pushing any images.
               |Example:
               |

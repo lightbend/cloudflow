@@ -52,6 +52,7 @@ trait Outlet extends StreamletPort
  * A handle to read and deserialize data into elements of type `T`.
  */
 trait CodecInlet[T] extends Inlet {
+
   /**
    * The codec is used to deserialize the data that is read from the inlet.
    */
@@ -81,6 +82,7 @@ trait CodecInlet[T] extends Inlet {
  * A handle to serialize elements of type `T` into a partitioned stream.
  */
 trait CodecOutlet[T] extends Outlet {
+
   /**
    * Returns a CodecOutlet with the partitioner set.
    */

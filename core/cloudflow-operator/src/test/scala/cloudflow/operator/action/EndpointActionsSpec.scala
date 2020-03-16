@@ -26,16 +26,17 @@ import cloudflow.blueprint._
 
 import BlueprintBuilder._
 
-class EndpointActionsSpec extends WordSpec
-  with MustMatchers
-  with GivenWhenThen
-  with EitherValues
-  with Inspectors
-  with TestDeploymentContext {
+class EndpointActionsSpec
+    extends WordSpec
+    with MustMatchers
+    with GivenWhenThen
+    with EitherValues
+    with Inspectors
+    with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
-  val namespace = "ns"
+  val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
   "EndpointActions" should {
@@ -43,24 +44,26 @@ class EndpointActionsSpec extends WordSpec
 
       Given("no current app and a new app with an ingress")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.right.value
+        .verified
+        .right
+        .value
 
-      val appId = "def-jux-12345"
+      val appId      = "def-jux-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
 
       val currentApp = None
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("endpoint actions are created from a new app")
       val actions = EndpointActions(newApp, currentApp, namespace)
@@ -71,12 +74,12 @@ class EndpointActionsSpec extends WordSpec
       val services = createActions.map(_.resource).collect {
         case service: Service ⇒ service
       }
-      val endpoints = newApp.deployments.flatMap(_.endpoint).distinct
+      val endpoints = newApp.spec.deployments.flatMap(_.endpoint).distinct
 
       createActions.size mustBe actions.size
       services.size mustBe endpoints.size
       services.foreach { service ⇒
-        assertService(service, newApp)
+        assertService(service, newApp.spec)
       }
     }
 
@@ -84,23 +87,25 @@ class EndpointActionsSpec extends WordSpec
 
       Given("a current app")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.right.value
+        .verified
+        .right
+        .value
 
-      val appId = "def-jux-12345"
+      val appId      = "def-jux-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -113,10 +118,10 @@ class EndpointActionsSpec extends WordSpec
     "delete services when new app removes endpoints" in {
       Given("a current app, ingress -> egress")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
       val bp = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
@@ -125,16 +130,17 @@ class EndpointActionsSpec extends WordSpec
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId = "killer-mike-12345"
-      val appVersion = "42-abcdef0"
+      val appId         = "killer-mike-12345"
+      val appVersion    = "42-abcdef0"
       val newAppVersion = "43-abcdef0"
-      val image = "image-1"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val image         = "image-1"
+      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
       val actions = EndpointActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -147,7 +153,7 @@ class EndpointActionsSpec extends WordSpec
 
       services.size mustBe 1
       services.foreach { service ⇒
-        assertService(service, currentApp)
+        assertService(service, currentApp.spec)
       }
 
     }
@@ -156,7 +162,7 @@ class EndpointActionsSpec extends WordSpec
 
       Given("a current app with just an ingress")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
       val bp = Blueprint()
@@ -165,17 +171,19 @@ class EndpointActionsSpec extends WordSpec
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId = "odd-future-12345"
+      val appId      = "odd-future-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val image      = "image-1"
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app adds an endpoint, ingress -> egress")
       val egressRef = egress.ref("egress")
-      val newBp = bp.use(egressRef)
+      val newBp = bp
+        .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
       val newAppVersion = "43-abcdef0"
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for service should be created for the new endpoint")
       val actions = EndpointActions(newApp, Some(currentApp), namespace)
@@ -188,14 +196,14 @@ class EndpointActionsSpec extends WordSpec
 
       services.size mustBe 1
       services.foreach { service ⇒
-        assertService(service, newApp)
+        assertService(service, newApp.spec)
       }
     }
   }
 
   def assertService(service: Service, app: CloudflowApplication.Spec) = {
     val deployment = app.deployments.find(deployment ⇒ Name.ofService(deployment.name) == service.metadata.name).value
-    val endpoint = deployment.endpoint.value
+    val endpoint   = deployment.endpoint.value
     service.metadata.name mustEqual Name.ofService(deployment.name)
     service.metadata.namespace mustEqual namespace
     val serviceSelector: Option[Map[String, String]] = service.spec.map(spec ⇒ spec.selector)

@@ -2,16 +2,16 @@
 
 The current published artifacts are:
 
-* [Spark distribution file](https://github.com/lightbend/spark/releases/download/cloudflow-2.4.4-k8s-client-upgrade/spark-2.4.4-bin-cloudflow-2.12.tgz).
-* `lightbend/sparkoperator:1.3.0-M1-OpenJDK-2.4.4-0.8.2-cloudflow-2.12`
-* `lightbend/spark:1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12`
-* `lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.1-scala-2.12`
+* [Spark distribution file](https://github.com/lightbend/spark/releases/download/cloudflow-2.4.5-k8s-client-upgrade/spark-2.4.5-bin-cloudflow-2.12.tgz).
+* `lightbend/sparkoperator:1.3.1-OpenJDK-2.4.5-1.1.0-cloudflow-2.12`
+* `lightbend/spark:1.3.1-OpenJDK-2.4.5-cloudflow-2.12`
+* `lightbend/cloudflow-base:1.3.1-spark-2.4.5-flink-1.10.0-scala-2.12`
 * Cloudflow jars in: https://lightbend.bintray.com/cloudflow.
 * Cloudflow cli in: https://bintray.com/lightbend/cloudflow-cli.
 * CLI Download Links:
-  * [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.0-M1.37-1e4b7f3-darwin-amd64.tar.gz)
-  * [Linux (amd64 arch)](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.0-M1.37-1e4b7f3-linux-amd64.tar.gz)
-  * [Win (64 bits)] (https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.0-M1.37-1e4b7f3-windows-amd64.tar.gz)
+  * [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-darwin-amd64.tar.gz)
+  * [Linux (amd64 arch)](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-linux-amd64.tar.gz)
+  * [Win (64 bits)] (https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.1.176-52ef89c-windows-amd64.tar.gz)
 
 #### Cloudflow Runtime Image
 

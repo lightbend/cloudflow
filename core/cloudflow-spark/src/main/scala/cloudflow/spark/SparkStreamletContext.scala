@@ -17,8 +17,8 @@
 package cloudflow.spark
 
 import scala.reflect.runtime.universe._
-import org.apache.spark.sql.{ Dataset, SparkSession, Encoder }
-import org.apache.spark.sql.streaming.{ StreamingQuery, OutputMode }
+import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import cloudflow.streamlets.{ CodecInlet, CodecOutlet }
 import cloudflow.streamlets._
 
@@ -26,13 +26,6 @@ abstract case class SparkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     session: SparkSession
 ) extends StreamletContext {
-
-  def resolvePort(portName: String): String = {
-    streamletDefinition
-      .resolveSavepoint(portName)
-      .map(_.value)
-      .getOrElse(throw PortNotFoundException(portName))
-  }
 
   /**
    * Returns the absolute path to a mounted shared storage that can be used to store reliable checkpoints.
@@ -50,8 +43,7 @@ abstract case class SparkStreamletContext(
    * @param inPort the inlet port to read from
    * @return the data read as `Dataset[In]`
    */
-  def readStream[In](inPort: CodecInlet[In])
-    (implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In]
+  def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In]
 
   /**
    * Start the execution of a StreamingQuery that writes the encodedStream to
@@ -63,9 +55,7 @@ abstract case class SparkStreamletContext(
    *
    * @return the `StreamingQuery` that starts executing
    */
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)
-    (implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery
+  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(implicit encoder: Encoder[Out],
+                                                                                                typeTag: TypeTag[Out]): StreamingQuery
 
 }
-
-case class PortNotFoundException(port: String) extends Exception(s"Streamlet port $port not found")

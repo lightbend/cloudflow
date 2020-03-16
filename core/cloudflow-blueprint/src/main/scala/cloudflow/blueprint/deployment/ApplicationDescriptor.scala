@@ -48,7 +48,7 @@ object ApplicationDescriptor {
   /*
    * The version of this library when it is built, which is also the version of sbt-cloudflow.
    */
-  val LibraryVersion = BuildInfo.version
+  val LibraryVersion     = BuildInfo.version
   val PrometheusAgentKey = "prometheus"
 
   def apply(
@@ -59,7 +59,7 @@ object ApplicationDescriptor {
       connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
       agentPaths: Map[String, String]
-  ): ApplicationDescriptor = {
+  ): ApplicationDescriptor =
     ApplicationDescriptor(
       appId,
       appVersion,
@@ -70,27 +70,30 @@ object ApplicationDescriptor {
       Version,
       LibraryVersion
     )
-  }
 
-  def apply(
-      appId: String,
-      appVersion: String,
-      image: String,
-      blueprint: VerifiedBlueprint,
-      agentPaths: Map[String, String]): ApplicationDescriptor = {
+  def apply(appId: String,
+            appVersion: String,
+            image: String,
+            blueprint: VerifiedBlueprint,
+            agentPaths: Map[String, String]): ApplicationDescriptor = {
 
-    val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
+    val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
-    val connections = blueprint.connections.map(toConnection)
+    val connections               = blueprint.connections.map(toConnection)
     val deployments =
       namedStreamletDescriptors
-        .zipWithIndex
-        .map {
-          case (streamlet, index) ⇒
-            StreamletDeployment(sanitizedApplicationId, streamlet, image, index, connections)
+        .map { streamlet ⇒
+          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
         }
 
-    ApplicationDescriptor(sanitizedApplicationId, appVersion, namedStreamletDescriptors, connections, deployments, agentPaths, Version, LibraryVersion)
+    ApplicationDescriptor(sanitizedApplicationId,
+                          appVersion,
+                          namedStreamletDescriptors,
+                          connections,
+                          deployments,
+                          agentPaths,
+                          Version,
+                          LibraryVersion)
   }
 
   private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)
@@ -148,19 +151,18 @@ final case class StreamletDeployment(
 )
 
 object StreamletDeployment {
-  val ServerAttributeName = "server"
-  val MinimumEndpointContainerPort = 3000
+  val ServerAttributeName   = "server"
+  val EndpointContainerPort = 3000
 
   def name(appId: String, streamlet: String) = s"${appId}.${streamlet}"
 
-  def apply(
-      appId: String,
-      streamlet: StreamletInstance,
-      image: String,
-      index: Int,
-      allConnections: Vector[Connection],
-      replicas: Option[Int] = None): StreamletDeployment = {
-    val (config, endpoint) = configAndEndpoint(appId, streamlet, index)
+  def apply(appId: String,
+            streamlet: StreamletInstance,
+            image: String,
+            allConnections: Vector[Connection],
+            containerPort: Int = EndpointContainerPort,
+            replicas: Option[Int] = None): StreamletDeployment = {
+    val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
     StreamletDeployment(
       name(appId, streamlet.name),
       streamlet.descriptor.runtime.name,
@@ -176,18 +178,14 @@ object StreamletDeployment {
     )
   }
 
-  def preserveEmpty[T](list: List[T]): Option[List[T]] = {
+  def preserveEmpty[T](list: List[T]): Option[List[T]] =
     Option(list).filter(_.nonEmpty)
-  }
 
-  private def createPortMappings(
-      appId: String,
-      streamlet: StreamletInstance,
-      allConnections: Vector[Connection]): Map[String, Savepoint] = {
+  private def createPortMappings(appId: String,
+                                 streamlet: StreamletInstance,
+                                 allConnections: Vector[Connection]): Map[String, Savepoint] = {
     val outletMappings =
-      streamlet
-        .descriptor
-        .outlets
+      streamlet.descriptor.outlets
         .map(outlet ⇒ outlet.name -> Savepoint(appId, streamlet.name, outlet.name))
         .toMap
 
@@ -202,24 +200,19 @@ object StreamletDeployment {
     outletMappings ++ inletMappings
   }
 
-  private def configAndEndpoint(appId: String, streamlet: StreamletInstance, index: Int): Tuple2[Config, Option[Endpoint]] = {
-    streamlet.descriptor.getAttribute(ServerAttributeName)
+  private def configAndEndpoint(appId: String, streamlet: StreamletInstance, containerPort: Int): Tuple2[Config, Option[Endpoint]] =
+    streamlet.descriptor
+      .getAttribute(ServerAttributeName)
       .map { serverAttribute ⇒
-        val containerPort = MinimumEndpointContainerPort + index
-
         (
           ConfigFactory.parseString(s"${serverAttribute.configPath} = ${containerPort}"),
           Some(Endpoint(appId, streamlet.name, containerPort))
         )
       }
       .getOrElse((ConfigFactory.empty(), None))
-  }
 }
 
-final case class Savepoint(
-    appId: String,
-    streamlet: String,
-    outlet: String) {
+final case class Savepoint(appId: String, streamlet: String, outlet: String) {
   def name: String = s"${appId}.${streamlet}.${outlet}"
 }
 
@@ -229,5 +222,5 @@ final case class Endpoint(
     containerPort: Int
 ) {
   val subdomain: String = appId.toLowerCase()
-  val path: String = s"/${streamlet}"
+  val path: String      = s"/${streamlet}"
 }

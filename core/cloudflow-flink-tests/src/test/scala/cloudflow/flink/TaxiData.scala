@@ -23,14 +23,11 @@ import org.joda.time.DateTime
 import cloudflow.flink.avro._
 
 object TaxiData {
-  def testRide(rideId: Long): TaxiRide = {
-    new TaxiRide(rideId, true, 0, 1, rideId,
-      0F, 0F, 0F, 0F, new DateTime(0).getMillis, new DateTime(0).getMillis)
-  }
+  def testRide(rideId: Long): TaxiRide =
+    new TaxiRide(rideId, true, 0, 1, rideId, 0f, 0f, 0f, 0f, new DateTime(0).getMillis, new DateTime(0).getMillis)
 
-  def testFare(rideId: Long): TaxiFare = {
-    new TaxiFare(rideId, 0, "", new DateTime(0).getMillis, 1, 0F, 0F, 0F)
-  }
+  def testFare(rideId: Long): TaxiFare =
+    new TaxiFare(rideId, 0, "", new DateTime(0).getMillis, 1, 0f, 0f, 0f)
 
   val ride1 = testRide(1)
   val ride2 = testRide(2)
@@ -39,5 +36,5 @@ object TaxiData {
 
   val rideFare1 = new TaxiRideFare(ride1.rideId, fare1.totalFare)
   val rideFare2 = new TaxiRideFare(ride2.rideId, fare2.totalFare)
-  val expected = Seq(rideFare1.toString(), rideFare2.toString()).asJava
+  val expected  = Seq(rideFare1.toString(), rideFare2.toString()).asJava
 }

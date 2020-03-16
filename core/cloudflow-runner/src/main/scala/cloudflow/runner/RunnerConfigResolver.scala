@@ -22,15 +22,15 @@ import scala.util.Try
 
 trait RunnerConfigResolver {
 
-  final val ConfigMountPath = "/etc/cloudflow-runner"
-  final val ConfigFile = "application.conf"
+  final val ConfigMountPath       = "/etc/cloudflow-runner"
+  final val ConfigFile            = "application.conf"
   final val ConfigSecretMountPath = "/etc/cloudflow-runner-secret"
-  final val SecretConfigFile = "secret.conf"
+  final val SecretConfigFile      = "secret.conf"
 
   def makeConfig: Try[Config] = Try {
     val configFilePathString = Option(System.getProperty("config.file")).getOrElse(s"$ConfigMountPath/$ConfigFile")
-    val configPath = Paths.get(configFilePathString)
-    val secretPath = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
+    val configPath           = Paths.get(configFilePathString)
+    val secretPath           = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
 
     val config = if (Files.exists(secretPath)) {
       println(s"Loading application.conf from: $configPath, secret config from: $secretPath")
@@ -48,7 +48,6 @@ trait RunnerConfigResolver {
     config
   }
 
-  private def loadConfig(configPath: Path): Config = {
+  private def loadConfig(configPath: Path): Config =
     ConfigFactory.parseFile(configPath.toFile)
-  }
 }

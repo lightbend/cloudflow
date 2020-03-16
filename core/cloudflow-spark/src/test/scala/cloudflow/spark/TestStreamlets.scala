@@ -23,20 +23,30 @@ import cloudflow.streamlets.avro.AvroUtil
 
 case class TestData(name: String, description: String)
 case class TestResult(result: String)
-case class TestInlet(name: String, schemaDefinition: SchemaDefinition) extends Inlet
+case class TestInlet(name: String, schemaDefinition: SchemaDefinition)  extends Inlet
 case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
 
 trait TrivialSparklet extends SparkStreamlet {
 
   val inSchema = SchemaBuilder
-    .record("Input").namespace("cloudflow.runner.spark")
+    .record("Input")
+    .namespace("cloudflow.runner.spark")
     .fields()
-    .name("value").`type`().nullable().intType().noDefault()
+    .name("value")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
   val outSchema = SchemaBuilder
-    .record("Output").namespace("cloudflow.runner.spark")
+    .record("Output")
+    .namespace("cloudflow.runner.spark")
     .fields()
-    .name("value").`type`().nullable().intType().noDefault()
+    .name("value")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
 
   override def shape() = StreamletShape(
@@ -72,7 +82,7 @@ object SparkStreamletWithCompanionObject {
 // This Spark Streamlet should NOT load
 class SparkStreamletWithArgsAndCompanionObject(arg: Int) extends TrivialSparklet {
   import SparkStreamletWithArgsAndCompanionObject._
-  def args = arg
+  def args   = arg
   val x: Int = bar.length
 }
 
@@ -84,7 +94,7 @@ object SparkStreamletWithArgsAndCompanionObject {
 // This Spark Streamlet should load
 class SparkStreamletAsCompanionObject(arg: Int) {
   import SparkStreamletWithArgsAndCompanionObject._
-  def args = arg
+  def args   = arg
   val x: Int = bar.length
 }
 
@@ -97,14 +107,24 @@ object SparkStreamletAsCompanionObject extends TrivialSparklet {
 class ASparkStreamlet extends SparkStreamlet {
 
   val inSchema = SchemaBuilder
-    .record("Input").namespace("cloudflow.runner.spark")
+    .record("Input")
+    .namespace("cloudflow.runner.spark")
     .fields()
-    .name("value").`type`().nullable().intType().noDefault()
+    .name("value")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
   val outSchema = SchemaBuilder
-    .record("Output").namespace("cloudflow.runner.spark")
+    .record("Output")
+    .namespace("cloudflow.runner.spark")
     .fields()
-    .name("value").`type`().nullable().intType().noDefault()
+    .name("value")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
 
   override def shape() = StreamletShape(

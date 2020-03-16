@@ -34,25 +34,22 @@ import cloudflow.akkastream.testkit.scaladsl._
 class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("MergeSpec")
-  private implicit val mat = ActorMaterializer()
+  private implicit val mat    = ActorMaterializer()
 
-  override def afterAll: Unit = {
+  override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
-  }
 
   "An MergeStreamlet" should {
 
     val testkit = AkkaStreamletTestKit(system, mat)
-    def createScalaMergeStreamlet(inletCount: Int): TestMerge = {
+    def createScalaMergeStreamlet(inletCount: Int): TestMerge =
       new ScalaTestMerge(inletCount)
-    }
 
     def createJavaMergeStreamlet(inletCount: Int): TestMerge =
       new JavaTestMerge(inletCount)
 
-    def createMergeStreamletInstances(inletCount: Int) = {
+    def createMergeStreamletInstances(inletCount: Int) =
       Map("Scala MergeN" -> createScalaMergeStreamlet(inletCount), "Java MergeN" -> createJavaMergeStreamlet(inletCount))
-    }
 
     createMergeStreamletInstances(2).foreach {
       case (name, mergeStreamletInstance) ⇒
@@ -64,14 +61,19 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
           val in1 = testkit.inletFromSource(mergeStreamletInstance.inletPorts(1), source1)
           val out = testkit.outletAsTap(mergeStreamletInstance.outlet)
 
-          testkit.run(mergeStreamletInstance, List(in0, in1), out, () ⇒ {
+          testkit.run(
+            mergeStreamletInstance,
+            List(in0, in1),
+            out,
+            () ⇒ {
 
-            out.probe.expectMsg(("1", Data(1, "a")))
-            out.probe.expectMsg(("2", Data(2, "b")))
-            out.probe.expectMsg(("3", Data(3, "c")))
-            out.probe.expectMsg(("4", Data(4, "d")))
-            out.probe.expectMsg(("5", Data(5, "e")))
-          })
+              out.probe.expectMsg(("1", Data(1, "a")))
+              out.probe.expectMsg(("2", Data(2, "b")))
+              out.probe.expectMsg(("3", Data(3, "c")))
+              out.probe.expectMsg(("4", Data(4, "d")))
+              out.probe.expectMsg(("5", Data(5, "e")))
+            }
+          )
 
           out.probe.expectMsg(Completed)
         }
@@ -81,12 +83,13 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
       createMergeStreamletInstances(inletCount).foreach {
         case (name, mergeStreamletInstance) ⇒
           s"merge many streams into one using $name with $inletCount inlets" in {
-            val sources = (0 until inletCount).map(idx ⇒ Source(Vector(Data(idx, idx.toString))))
+            val sources   = (0 until inletCount).map(idx ⇒ Source(Vector(Data(idx, idx.toString))))
             val inletTaps = sources.zip(mergeStreamletInstance.inletPorts).map { case (src, inlet) ⇒ testkit.inletFromSource(inlet, src) }
-            val out = testkit.outletAsTap(mergeStreamletInstance.outlet)
-            testkit.run(mergeStreamletInstance, inletTaps.toList, out, () ⇒ {
-              (0 until inletCount).map(idx ⇒ out.probe.expectMsg((idx.toString, Data(idx, idx.toString))))
-            })
+            val out       = testkit.outletAsTap(mergeStreamletInstance.outlet)
+            testkit.run(mergeStreamletInstance,
+                        inletTaps.toList,
+                        out,
+                        () ⇒ (0 until inletCount).map(idx ⇒ out.probe.expectMsg((idx.toString, Data(idx, idx.toString)))))
 
             out.probe.expectMsg(Completed)
           }
@@ -113,7 +116,7 @@ abstract class TestMerge extends AkkaStreamlet {
 
 class ScalaTestMerge(inletCount: Int) extends TestMerge {
   require(inletCount >= 2)
-  val outlet = AvroOutlet[Data]("out", _.id.toString)
+  val outlet     = AvroOutlet[Data]("out", _.id.toString)
   val inletPorts = (0 until inletCount).map(i ⇒ AvroInlet[Data](s"in-$i")).toIndexedSeq
 
   final override val shape = StreamletShape
@@ -125,15 +128,14 @@ class ScalaTestMerge(inletCount: Int) extends TestMerge {
    * available to the streamlet.
    */
   override final def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = {
+    def runnableGraph =
       Merger.source(inletPorts).to(committableSink(outlet))
-    }
   }
 }
 
 class JavaTestMerge(inletCount: Int) extends TestMerge {
   require(inletCount >= 2)
-  val outlet = AvroOutlet[Data]("out", _.id.toString)
+  val outlet                                   = AvroOutlet[Data]("out", _.id.toString)
   val inletPorts: IndexedSeq[CodecInlet[Data]] = (0 until inletCount).map(i ⇒ AvroInlet[Data](s"in-$i")).toIndexedSeq
 
   final override val shape = StreamletShape
@@ -145,8 +147,7 @@ class JavaTestMerge(inletCount: Int) extends TestMerge {
    * available to the streamlet.
    */
   override final def createLogic = new cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic(context) {
-    def createRunnableGraph = {
+    def createRunnableGraph =
       cloudflow.akkastream.util.javadsl.Merger.source(context, inletPorts.asJava).to(getCommittableSink(outlet))
-    }
   }
 }

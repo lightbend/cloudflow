@@ -1,10 +1,11 @@
 import sbt._
 import sbt.Keys._
 
-import scalariform.formatter.preferences._
-
 lazy val sensorDataJava =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(
+       CloudflowAkkaStreamsApplicationPlugin,
+       JavaFormatterPlugin
+    )
     .settings(
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
@@ -37,16 +38,6 @@ lazy val sensorDataJava =  (project in file("."))
       javacOptions ++= Seq("-Xlint:deprecation"),
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
-      scalariformPreferences := scalariformPreferences.value
-        .setPreference(AlignParameters, false)
-        .setPreference(AlignSingleLineCaseStatements, true)
-        .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-        .setPreference(DoubleIndentConstructorArguments, true)
-        .setPreference(DoubleIndentMethodDeclaration, true)
-        .setPreference(RewriteArrowSymbols, true)
-        .setPreference(DanglingCloseParenthesis, Preserve)
-        .setPreference(NewlineAtEndOfFile, true)
-        .setPreference(AllowParamGroupsOnNewlines, true)
     )

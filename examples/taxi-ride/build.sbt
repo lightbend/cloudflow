@@ -2,13 +2,13 @@ import sbt._
 import sbt.Keys._
 import cloudflow.sbt.CommonSettingsAndTasksPlugin._
 
-import scalariform.formatter.preferences._
-
 lazy val root =
   Project(id = "root", base = file("."))
+    .enablePlugins(ScalafmtPlugin)
     .settings(
       name := "root",
       skip in publish := true,
+      scalafmtOnCompile := true,
     )
     .withId("root")
     .settings(commonSettings)
@@ -102,14 +102,4 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 
-  scalariformPreferences := scalariformPreferences.value
-    .setPreference(AlignParameters, false)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-    .setPreference(DoubleIndentConstructorArguments, true)
-    .setPreference(DoubleIndentMethodDeclaration, true)
-    .setPreference(RewriteArrowSymbols, true)
-    .setPreference(DanglingCloseParenthesis, Preserve)
-    .setPreference(NewlineAtEndOfFile, true)
-    .setPreference(AllowParamGroupsOnNewlines, true)
 )

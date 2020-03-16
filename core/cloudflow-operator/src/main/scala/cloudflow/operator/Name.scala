@@ -44,9 +44,8 @@ object Name {
   /**
    * Removes from the leading and trailing positions the specified characters.
    */
-  private def trim(name: String, characters: List[Char]): String = {
+  private def trim(name: String, characters: List[Char]): String =
     name.dropWhile(characters.contains(_)).reverse.dropWhile(characters.contains(_)).reverse
-  }
 
   /**
    * Make a name compatible with DNS 1039 standard: like a single domain name segment.
@@ -68,63 +67,51 @@ object Name {
     trim(truncateTo63Characters(normalized), List('-', '.'))
   }
 
-  def ofNamespace(appId: String) = {
+  def ofNamespace(appId: String) =
     s"app-$appId"
-  }
 
-  def ofServiceAccount() = {
+  def ofCloudflowOperatorDeployment() = "cloudflow-operator"
+
+  def ofServiceAccount() =
     "cloudflow-app-serviceaccount"
-  }
 
-  def ofAkkaRoleBinding() = {
+  def ofAkkaRoleBinding() =
     "cloudflow-app-akka-rolebinding"
-  }
 
-  def ofAkkaRole() = {
+  def ofAkkaRole() =
     "cloudflow-app-akka-role"
-  }
 
-  def ofSparkRoleBinding() = {
+  def ofSparkRoleBinding() =
     "cloudflow-app-spark-rolebinding"
-  }
 
-  def ofSparkRole() = {
+  def ofSparkRole() =
     "cloudflow-app-spark-role"
-  }
 
-  def ofFlinkRoleBinding() = {
+  def ofFlinkRoleBinding() =
     "cloudflow-app-flink-rolebinding"
-  }
 
-  def ofFlinkRole() = {
+  def ofFlinkRole() =
     "cloudflow-app-flink-role"
-  }
 
-  def ofDockerRegistrySecret = {
+  def ofDockerRegistrySecret =
     "cloudflow-app-docker-registry"
-  }
 
-  def ofRoleBinding() = {
+  def ofRoleBinding() =
     "cloudflow-app-rolebinding"
-  }
 
-  def ofSparkApplication(streamletDeploymentName: String) = {
+  def ofSparkApplication(streamletDeploymentName: String) =
     makeDNS1039Compatible(truncateTo63Characters(fixDots(streamletDeploymentName)))
-  }
 
   def ofFlinkApplication(streamletDeploymentName: String) = ofSparkApplication(streamletDeploymentName)
 
-  def ofPod(streamletDeploymentName: String) = {
+  def ofPod(streamletDeploymentName: String) =
     makeDNS1039Compatible(fixDots(streamletDeploymentName))
-  }
 
-  def ofConfigMap(streamletDeploymentName: String) = {
+  def ofConfigMap(streamletDeploymentName: String) =
     makeDNS1123Compatible(s"configmap-${fixDots(streamletDeploymentName)}")
-  }
 
-  def ofVolume(name: String) = {
+  def ofVolume(name: String) =
     truncateTo63Characters(name)
-  }
 
   private[operator] def fixDots(name: String) = name.replace(".", "-")
 
@@ -134,27 +121,19 @@ object Name {
 
   val ofContainerPrometheusExporterPort = max15Chars("prom-metrics")
 
-  def ofIngress(streamletDeploymentName: String) = {
-    truncateTo63CharactersWithSuffix(makeDNS1123Compatible(streamletDeploymentName), "-ingress")
-  }
-
-  def ofService(streamletDeploymentName: String) = {
+  def ofService(streamletDeploymentName: String) =
     truncateTo63CharactersWithSuffix(makeDNS1039Compatible(ofPod(streamletDeploymentName)), "-service")
-  }
 
-  def ofAdminService(streamletDeploymentName: String) = {
+  def ofAdminService(streamletDeploymentName: String) =
     s"${ofPod(streamletDeploymentName)}-admin-service"
-  }
 
-  def ofServicePort(port: Int) = {
+  def ofServicePort(port: Int) =
     s"s-port-$port"
-  }
 
   val ofPVCComponent = {
     "cloudflow-app-pvc"
   }
 
-  def ofPVCInstance(appId: String): String = {
+  def ofPVCInstance(appId: String): String =
     truncateTo63CharactersWithSuffix(appId, "-pvc")
-  }
 }

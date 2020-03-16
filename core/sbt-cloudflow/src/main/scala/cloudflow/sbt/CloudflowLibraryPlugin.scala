@@ -26,14 +26,15 @@ import sbt.Keys._
  * This library is assumed to not contain any runtime-specific streamlet implementation.
  */
 object CloudflowLibraryPlugin extends AutoPlugin {
+
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = CommonSettingsAndTasksPlugin
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" %% "cloudflow-streamlets" % BuildInfo.version
-    )
+          "com.lightbend.cloudflow" %% "cloudflow-streamlets" % BuildInfo.version
+        )
   )
 
 }

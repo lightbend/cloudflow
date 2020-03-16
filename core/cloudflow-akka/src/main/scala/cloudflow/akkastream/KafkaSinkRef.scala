@@ -51,43 +51,47 @@ final class KafkaSinkRef[T](
     Flow[(T, Committable)]
       .map {
         case (value, offset) ⇒
-          val key = outlet.partitioner(value)
+          val key        = outlet.partitioner(value)
           val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue), offset)
+          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue),
+                                                                         offset)
       }
       .via(Producer.flexiFlow(producerSettings.withProducer(producer)))
       .via(handleTermination)
-      .to(Sink.ignore).mapMaterializedValue(_ ⇒ NotUsed)
+      .to(Sink.ignore)
+      .mapMaterializedValue(_ ⇒ NotUsed)
   }
 
-  private def handleTermination[I]: Flow[I, I, NotUsed] = {
+  private def handleTermination[I]: Flow[I, I, NotUsed] =
     Flow[I]
       .via(killSwitch.flow)
       .alsoTo(
         Sink.onComplete {
           case Success(_) ⇒
-            system.log.error(s"Stream has completed unexpectedly, shutting down streamlet.")
+            system.log.error(s"Stream has completed. Shutting down streamlet...")
             completionPromise.success(Dun)
           case Failure(e) ⇒
-            system.log.error(e, "Stream has failed, shutting down streamlet.")
+            system.log.error(e, "Stream has failed. Shutting down streamlet...")
             completionPromise.failure(e)
         }
       )
-  }
 
   def write(value: T): Future[T] = {
-    val key = outlet.partitioner(value)
-    val bytesKey = keyBytes(key)
+    val key        = outlet.partitioner(value)
+    val bytesKey   = keyBytes(key)
     val bytesValue = outlet.codec.encode(value)
-    val record = new ProducerRecord(topic, bytesKey, bytesValue)
-    val promise = Promise[T]()
+    val record     = new ProducerRecord(topic, bytesKey, bytesValue)
+    val promise    = Promise[T]()
 
-    producer.send(record, new Callback() {
-      def onCompletion(metadata: RecordMetadata, exception: Exception) {
-        if (exception == null) promise.success(value)
-        else promise.failure(exception)
+    producer.send(
+      record,
+      new Callback() {
+        def onCompletion(metadata: RecordMetadata, exception: Exception) {
+          if (exception == null) promise.success(value)
+          else promise.failure(exception)
+        }
       }
-    })
+    )
 
     promise.future
   }

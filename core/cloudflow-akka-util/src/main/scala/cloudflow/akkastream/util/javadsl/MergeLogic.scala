@@ -28,6 +28,7 @@ import cloudflow.streamlets._
  * Merges two or more sources, or inlets, of the same type, into one source.
  */
 object Merger {
+
   /**
    * Java API
    * Merges two or more sources into one source.

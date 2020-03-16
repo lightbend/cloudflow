@@ -29,31 +29,46 @@ case class Bar(karat: Int)
 
 object Ports {
   def outletFor(schema: Schema) = new Outlet() {
-    def name = "out"
+    def name             = "out"
     def schemaDefinition = AvroUtil.createSchemaDefinition(schema)
   }
 
   def inletFor(schema: Schema) = new Inlet() {
-    def name = "in"
+    def name             = "in"
     def schemaDefinition = AvroUtil.createSchemaDefinition(schema)
   }
 }
 
 object Schemas {
   val coffeeSchema = SchemaBuilder
-    .record("Coffee").namespace("cloudflow.sbt")
+    .record("Coffee")
+    .namespace("cloudflow.sbt")
     .fields()
-    .name("expressos").`type`().nullable().intType().noDefault()
+    .name("expressos")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
   val dollarSchema = SchemaBuilder
-    .record("Dollars").namespace("cloudflow.sbt")
+    .record("Dollars")
+    .namespace("cloudflow.sbt")
     .fields()
-    .name("amount").`type`().nullable().doubleType().noDefault()
+    .name("amount")
+    .`type`()
+    .nullable()
+    .doubleType()
+    .noDefault()
     .endRecord()
   val barSchema = SchemaBuilder
-    .record("Bar").namespace("cloudflow.sbt")
+    .record("Bar")
+    .namespace("cloudflow.sbt")
     .fields()
-    .name("karat").`type`().nullable().intType().noDefault()
+    .name("karat")
+    .`type`()
+    .nullable()
+    .intType()
+    .noDefault()
     .endRecord()
 
 }
@@ -63,10 +78,10 @@ case object TestRuntime extends StreamletRuntime {
 }
 
 trait TestStreamlet extends Streamlet[StreamletContext] {
-  override def createContext(config: Config): StreamletContext = ???
+  override def createContext(config: Config): StreamletContext    = ???
   override def run(context: StreamletContext): StreamletExecution = ???
-  override def runtime: StreamletRuntime = TestRuntime
-  def logStartRunnerMessage(buildInfo: String): Unit = ???
+  override def runtime: StreamletRuntime                          = TestRuntime
+  def logStartRunnerMessage(buildInfo: String): Unit              = ???
 }
 
 abstract class AbstractStreamlet() extends TestStreamlet {
@@ -78,8 +93,8 @@ abstract class AbstractStreamlet() extends TestStreamlet {
 // ===============================
 
 class CoffeeIngress extends TestStreamlet {
-  override def shape() = StreamletShape(Ports.outletFor(Schemas.coffeeSchema))
-  override val labels = Vector("test", "coffee")
+  override def shape()     = StreamletShape(Ports.outletFor(Schemas.coffeeSchema))
+  override val labels      = Vector("test", "coffee")
   override val description = "Coffee Ingress Test"
 }
 
@@ -99,14 +114,14 @@ object ClassWithCompanionObject extends TestStreamlet {
 }
 
 class BarFlowWithConfig extends TestStreamlet {
-  override def shape() = StreamletShape(Ports.inletFor(Schemas.dollarSchema), Ports.outletFor(Schemas.barSchema))
-  val GoldPrice = DoubleConfigParameter("gold-price", "the dollar price of gold (1gram)")
+  override def shape()          = StreamletShape(Ports.inletFor(Schemas.dollarSchema), Ports.outletFor(Schemas.barSchema))
+  val GoldPrice                 = DoubleConfigParameter("gold-price", "the dollar price of gold (1gram)")
   override def configParameters = Vector(GoldPrice)
 }
 
 class BarFlowWithJavaConfig extends TestStreamlet {
-  override def shape() = StreamletShape(Ports.inletFor(Schemas.dollarSchema), Ports.outletFor(Schemas.barSchema))
-  val GoldPrice = DoubleConfigParameter("gold-price", "the dollar price of gold (1gram)")
+  override def shape()                = StreamletShape(Ports.inletFor(Schemas.dollarSchema), Ports.outletFor(Schemas.barSchema))
+  val GoldPrice                       = DoubleConfigParameter("gold-price", "the dollar price of gold (1gram)")
   override def defineConfigParameters = Array(GoldPrice)
 }
 

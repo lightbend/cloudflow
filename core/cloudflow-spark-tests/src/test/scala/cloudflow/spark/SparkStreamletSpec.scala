@@ -36,14 +36,11 @@ class SparkStreamletSpec extends SparkScalaTestSupport {
     "validate that a config parameter value can be set in a test" in {
       // create sparkStreamlet
       object MySparkProcessor extends SparkStreamlet {
-        val in = AvroInlet[Data]("in")
-        val out = AvroOutlet[Simple]("out", _.name)
+        val in    = AvroInlet[Data]("in")
+        val out   = AvroOutlet[Simple]("out", _.name)
         val shape = StreamletShape(in, out)
 
-        val NameFilter = StringConfigParameter(
-          "name-filter-value",
-          "Filters out the data in the stream that matches this name.",
-          Some("a"))
+        val NameFilter = StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("a"))
 
         override def configParameters = Vector(NameFilter)
 
@@ -52,13 +49,14 @@ class SparkStreamletSpec extends SparkScalaTestSupport {
 
           override def buildStreamingQueries = {
             val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
-            val query = writeStream(outStream, out, OutputMode.Append)
+            val query     = writeStream(outStream, out, OutputMode.Append)
             query.toQueryExecution
           }
         }
       }
 
-      val configTestKit = SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(MySparkProcessor.NameFilter, "name5"))
+      val configTestKit =
+        SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(MySparkProcessor.NameFilter, "name5"))
 
       // setup inlet tap on inlet port
       val in: SparkInletTap[Data] = configTestKit.inletAsTap[Data](MySparkProcessor.in)

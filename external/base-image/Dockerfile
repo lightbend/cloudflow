@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-ARG SPARK_BASE_IMAGE=lightbend/spark:1.3.0-M1-OpenJDK-2.4.4-cloudflow-2.12
+ARG SPARK_BASE_IMAGE=lightbend/spark:1.3.1-OpenJDK-2.4.5-cloudflow-2.12
 
 FROM $SPARK_BASE_IMAGE
 
 # Prepare environment
-ENV FLINK_VERSION=1.9.1 \
-    SPARK_VERSION=2.4.4 \
+ENV FLINK_VERSION=1.10.0 \
+    SPARK_VERSION=2.4.5 \
     SCALA_VERSION=2.12
 
 ENV FLINK_HOME=/opt/flink

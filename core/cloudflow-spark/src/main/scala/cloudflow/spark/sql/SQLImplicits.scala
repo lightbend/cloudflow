@@ -53,9 +53,8 @@ object SQLImplicits extends LowPrioritySQLImplicits {
    * @since 2.0.0
    */
   implicit class StringToColumn(val sc: StringContext) {
-    def $(args: Any*): ColumnName = {
+    def $(args: Any*): ColumnName =
       new ColumnName(sc.s(args: _*))
-    }
   }
 
   // Primitives
@@ -238,6 +237,7 @@ object SQLImplicits extends LowPrioritySQLImplicits {
  * newProductEncoder - to disambiguate for `List`s which are both `Seq` and `Product`
  */
 trait LowPrioritySQLImplicits {
+
   /** @since 1.6.0 */
   implicit def newProductEncoder[T <: Product: TypeTag]: Encoder[T] = Encoders.product[T]
 

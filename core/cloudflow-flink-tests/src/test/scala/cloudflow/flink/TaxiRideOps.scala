@@ -21,7 +21,7 @@ import java.util.Locale
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 
 import cloudflow.flink.avro._
 
@@ -39,29 +39,30 @@ object TaxiRideOps {
 
     val tokens = ride.split(",")
     if (tokens.length != 11) Failure(new RuntimeException(s"Invalid record: $ride"))
-    else Try {
-      val rideId = tokens(0).toLong
+    else
+      Try {
+        val rideId = tokens(0).toLong
 
-      val (isStart, startTime, endTime) = tokens(1) match {
-        case "START" ⇒ (true, parseDateTime(tokens(2)), parseDateTime(tokens(3)))
-        case "END"   ⇒ (false, parseDateTime(tokens(3)), parseDateTime(tokens(2)))
-        case _       ⇒ throw new RuntimeException(s"Invalid record: $ride")
-      }
+        val (isStart, startTime, endTime) = tokens(1) match {
+          case "START" ⇒ (true, parseDateTime(tokens(2)), parseDateTime(tokens(3)))
+          case "END"   ⇒ (false, parseDateTime(tokens(3)), parseDateTime(tokens(2)))
+          case _       ⇒ throw new RuntimeException(s"Invalid record: $ride")
+        }
 
-      new TaxiRide(
-        rideId,
-        isStart,
-        tokens(9).toLong,
-        tokens(8).toShort,
-        tokens(10).toLong,
-        parseFloat(tokens(4)),
-        parseFloat(tokens(5)),
-        parseFloat(tokens(6)),
-        parseFloat(tokens(7)),
-        startTime.getMillis(),
-        endTime.getMillis()
-      )
-    }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $ride", e)))
+        new TaxiRide(
+          rideId,
+          isStart,
+          tokens(9).toLong,
+          tokens(8).toShort,
+          tokens(10).toLong,
+          parseFloat(tokens(4)),
+          parseFloat(tokens(5)),
+          parseFloat(tokens(6)),
+          parseFloat(tokens(7)),
+          startTime.getMillis(),
+          endTime.getMillis()
+        )
+      }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $ride", e)))
   }
 
   def getEventTime(ride: TaxiRide): Long =

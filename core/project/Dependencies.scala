@@ -2,13 +2,13 @@ import sbt._
 
 // format: OFF
 object Version {
-  val Scala        = "2.12.9"
-  val Akka         = "2.5.24"
-  val Kafka        = "2.4.0"
-  val AlpakkaKafka = "2.0.1"
+  val Akka         = "2.5.29"
   val AkkaHttp     = "10.1.9"
-  val Spark        = "2.4.4"
-  val Flink        = "1.9.1"
+  val AlpakkaKafka = "2.0.2"
+  val Scala        = "2.12.9"
+  val Spark        = "2.4.5"
+  val Flink        = "1.10.0"
+  val Kafka        = "2.4.0" 
 }
 
 object Library {
@@ -22,7 +22,7 @@ object Library {
   val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"         % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val AkkaStreamKafkaTestkit = "com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka exclude("com.typesafe.akka", "akka-stream-testkit")
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
-  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
+  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("org.apache.avro", "avro") exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
   val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
@@ -33,7 +33,7 @@ object Library {
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9"
   val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9"
 
-  val Skuber                = "io.skuber"             %% "skuber"                   % "2.3.0" exclude("com.fasterxml.jackson.core","jackson-databind")
+  val Skuber                = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 
   val Spark                 = "org.apache.spark"      %% "spark-core"               % Version.Spark
   val SparkMllib            = "org.apache.spark"      %% "spark-mllib"              % Version.Spark

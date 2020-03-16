@@ -35,12 +35,26 @@ trait StreamletContext {
    * referring back to the streamlet instance using a name recognizable by the user.
    */
   def streamletRef: String = streamletDefinition.streamletRef
+
+  /**
+   * Get the savepoint path (topic name) from the port
+   *
+   * @param port the StreamletPort
+   * @return the savepoint path
+   * @throws PortNotFoundException if there is no mapping found
+   */
+  def findSavepointPathForPort(port: StreamletPort): SavepointPath =
+    streamletDefinition
+      .resolveSavepoint(port)
+      .getOrElse(throw PortNotFoundException(port, streamletDefinition))
+
   /**
    * The full configuration for the [[Streamlet]], containing all
    * deployment-time configuration parameters on top of the normal
    * configuration
    */
   def config: Config = streamletDefinition.config
+
   /**
    * The subset of configuration specific to a single named instance of a streamlet.
    *
@@ -68,14 +82,18 @@ trait StreamletContext {
    * @return the path where the volume is mounted.
    * @throws MountedPathUnavailableException in the case the path is not available.
    */
-  def getMountedPath(volumeMount: VolumeMount): Path = {
+  def getMountedPath(volumeMount: VolumeMount): Path =
     streamletDefinition.volumeMounts
       .find(vm ⇒ vm.name == volumeMount.name)
       .map(mount ⇒ Paths.get(mount.path))
       .getOrElse(throw MountedPathUnavailableException(volumeMount))
-  }
 
   case class MountedPathUnavailableException(volumeMount: VolumeMount)
-    extends Exception(s"Mount path for Volume Mount named [${volumeMount.name}] is unavailable.")
+      extends Exception(s"Mount path for Volume Mount named [${volumeMount.name}] is unavailable.")
 
 }
+
+case class PortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
+    extends Exception(
+      s"Streamlet port ${port.name} not found for ${streamletDefinition.appId} and streamlet ${streamletDefinition.streamletRef}"
+    )

@@ -26,6 +26,7 @@ import skuber._
  * The [[ActionExecutor]] executes these actions.
  */
 object Actions {
+
   /**
    * Creates the [[Action]]s to deploy the application.
    * the deployment actions are derived from changes between the current application and the new application to deploy.
@@ -33,16 +34,19 @@ object Actions {
    * The application data is kept in 0-S savepoints.
    */
   def deploy(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec] = None,
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR] = None,
       namespace: String,
       cause: ObjectResource,
       // TODO CSP-1108
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
-    require(currentApp.forall(_.appId == newApp.appId))
+    require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels = CloudflowLabels(newApp)
-    prepareNamespace(newApp.appId, namespace, labels) ++
+    val ownerReferences = List(
+      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
+    )
+    prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
       deploySavepoints(newApp, currentApp, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
       EventActions.deployEvents(newApp, currentApp, namespace, cause)
@@ -54,7 +58,7 @@ object Actions {
    * creation of the application.
    */
   def undeploy(
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       cause: ObjectResource,
       // TODO CSP-1108
@@ -76,24 +80,25 @@ object Actions {
   def prepareNamespace(
       appId: String,
       namespace: String,
-      labels: CloudflowLabels
+      labels: CloudflowLabels,
+      ownerReferences: List[OwnerReference]
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    AppActions(appId, namespace, labels)
+    AppActions(appId, namespace, labels, ownerReferences)
 
   private def deploySavepoints(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     SavepointActions(newApp, currentApp, deleteOutdatedTopics)
 
   private def deployRunners(
-      newApp: CloudflowApplication.Spec,
-      currentApp: Option[CloudflowApplication.Spec],
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     EndpointActions(newApp, currentApp, namespace) ++
-      AkkaRunnerActions(newApp, currentApp, namespace) ++
-      SparkRunnerActions(newApp, currentApp, namespace) ++
-      FlinkRunnerActions(newApp, currentApp, namespace)
+        AkkaRunnerActions(newApp, currentApp, namespace) ++
+        SparkRunnerActions(newApp, currentApp, namespace) ++
+        FlinkRunnerActions(newApp, currentApp, namespace)
 }

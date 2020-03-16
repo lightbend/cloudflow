@@ -27,16 +27,11 @@ import BlueprintBuilder._
 import cloudflow.operator.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
 import cloudflow.operator.runner._
 
-class RunnerActionsSpec extends WordSpec
-  with MustMatchers
-  with GivenWhenThen
-  with EitherValues
-  with Inspectors
-  with TestDeploymentContext {
+class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
-  val namespace = "ns"
+  val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
   "RunnerActions" should {
@@ -44,24 +39,26 @@ class RunnerActionsSpec extends WordSpec
 
       Given("no current app and a new app")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.right.value
+        .verified
+        .right
+        .value
 
-      val appId = "def-jux-12345"
+      val appId      = "def-jux-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
 
       val currentApp = None
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("runner actions are created from a new app")
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
@@ -75,39 +72,41 @@ class RunnerActionsSpec extends WordSpec
         case deployment: Deployment ⇒ deployment
       }
 
-      val streamletDeployments = newApp.deployments
+      val streamletDeployments = newApp.spec.deployments
 
       createActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
       akkaDeployments.size mustBe streamletDeployments.size
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, newApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
 
     "update when the new applications requires the same runners as the current one" in {
       Given("a current app")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
 
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-        .verified.right.value
+        .verified
+        .right
+        .value
 
-      val appId = "def-jux-12345"
+      val appId      = "def-jux-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val image      = "image-1"
 
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -121,10 +120,10 @@ class RunnerActionsSpec extends WordSpec
     "delete runner resources when new app removes a runner" in {
       Given("a current app, ingress -> egress")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
-      val egressRef = egress.ref("egress")
+      val egressRef  = egress.ref("egress")
       val bp = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
@@ -133,16 +132,17 @@ class RunnerActionsSpec extends WordSpec
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId = "thundercat-12345"
-      val appVersion = "42-abcdef0"
-      val image = "image-1"
+      val appId         = "thundercat-12345"
+      val appVersion    = "42-abcdef0"
+      val image         = "image-1"
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
       val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -157,17 +157,17 @@ class RunnerActionsSpec extends WordSpec
       configMaps.size mustBe 1
       akkaDeployments.size mustBe 1
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, currentApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, currentApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, currentApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, currentApp.spec, appId, ctx)
       }
     }
 
     "create new runner resources when a runner is added" in {
       Given("a current app with just an ingress")
       val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
 
       val ingressRef = ingress.ref("ingress")
       val bp = Blueprint()
@@ -176,20 +176,22 @@ class RunnerActionsSpec extends WordSpec
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId = "lord-quas-12345"
+      val appId      = "lord-quas-12345"
       val appVersion = "42-abcdef0"
-      val image = "image-1"
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val image      = "image-1"
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("the new app adds a runner, ingress -> egress")
       val egressRef = egress.ref("egress")
-      val newBp = bp.use(egressRef)
+      val newBp = bp
+        .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
       val newAppVersion = appVersion // to compare configmap contents easier.
-      val newApp = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths)
+      val newApp =
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for runner resources should be created for the new endpoint")
-      val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
+      val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
       val createActions = actions.collect { case a: CreateAction[_] ⇒ a }
 
       val configMaps = createActions.map(_.resource).collect {
@@ -202,10 +204,10 @@ class RunnerActionsSpec extends WordSpec
       akkaDeployments.size mustBe 1
 
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, newApp, appId, ctx)
+        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
   }
@@ -213,22 +215,27 @@ class RunnerActionsSpec extends WordSpec
   def assertConfigMap(configMap: ConfigMap, app: CloudflowApplication.Spec, appId: String, appVersion: String, ctx: DeploymentContext) = {
     val deployment = app.deployments.find(deployment ⇒ Name.ofConfigMap(deployment.name) == configMap.name).value
     configMap.metadata.namespace mustEqual namespace
-    configMap.data must contain key RunnerConfig.AppConfigFilename
+    (configMap.data must contain).key(RunnerConfig.AppConfigFilename)
     val mountedAppConfiguration = ConfigFactory.parseString(configMap.data(RunnerConfig.AppConfigFilename))
-    val expectedAppConfiguration = ConfigFactory.parseString(RunnerConfig(appId, appVersion, deployment, ctx.kafkaContext.bootstrapServers).data)
+    val expectedAppConfiguration =
+      ConfigFactory.parseString(RunnerConfig(appId, appVersion, deployment, ctx.kafkaContext.bootstrapServers).data)
     mountedAppConfiguration mustEqual expectedAppConfiguration
-    configMap.data must contain key PrometheusConfig.PrometheusConfigFilename
-    val mountedPromConfiguration = configMap.data(PrometheusConfig.PrometheusConfigFilename)
+    (configMap.data must contain).key(PrometheusConfig.PrometheusConfigFilename)
+    val mountedPromConfiguration  = configMap.data(PrometheusConfig.PrometheusConfigFilename)
     val expectedPromConfiguration = PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules).data
     mountedPromConfiguration mustEqual expectedPromConfiguration
   }
 
-  def assertAkkaDeployment(deployment: Deployment, configMaps: Seq[ConfigMap], app: CloudflowApplication.Spec, appId: String, ctx: DeploymentContext) = {
+  def assertAkkaDeployment(deployment: Deployment,
+                           configMaps: Seq[ConfigMap],
+                           app: CloudflowApplication.Spec,
+                           appId: String,
+                           ctx: DeploymentContext) = {
     val streamletDeployment = app.deployments.find(streamletDeployment ⇒ Name.ofPod(streamletDeployment.name) == deployment.name).value
-    val configMap = configMaps.find(cm ⇒ Name.ofConfigMap(streamletDeployment.name) == cm.name).value
-    val podSpec = deployment.getPodSpec.value
-    val containers = podSpec.containers
-    val volumeMounts = containers.flatMap(_.volumeMounts)
+    val configMap           = configMaps.find(cm ⇒ Name.ofConfigMap(streamletDeployment.name) == cm.name).value
+    val podSpec             = deployment.getPodSpec.value
+    val containers          = podSpec.containers
+    val volumeMounts        = containers.flatMap(_.volumeMounts)
 
     volumeMounts.size mustBe 3
     forExactly(1, volumeMounts) { volumeMount ⇒
@@ -262,9 +269,9 @@ class RunnerActionsSpec extends WordSpec
     podSpec.containers must have size 1
 
     val labels = deployment.spec.value.template.metadata.labels
-    labels must contain(CloudflowLabels.Name -> Name.ofPod(deployment.name))
+    labels must contain(CloudflowLabels.Name      -> Name.ofPod(deployment.name))
     labels must contain(CloudflowLabels.Component -> CloudflowLabels.StreamletComponent.value)
-    labels must contain(CloudflowLabels.PartOf -> appId)
+    labels must contain(CloudflowLabels.PartOf    -> appId)
     labels must contain(CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow)
 
     val container = containers.head
@@ -282,11 +289,11 @@ class RunnerActionsSpec extends WordSpec
 
     val runnerSettings = ctx.akkaRunnerSettings
 
-    val javaOptsEnvVar = EnvVar(AkkaRunner.JavaOptsEnvVar, EnvVar.StringValue(runnerSettings.javaOptions))
-    val promPortEnvVar = EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString)
+    val javaOptsEnvVar      = EnvVar(AkkaRunner.JavaOptsEnvVar, EnvVar.StringValue(runnerSettings.javaOptions))
+    val promPortEnvVar      = EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString)
     val promRulesPathEnvVar = EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
 
-    container.env must contain allOf (javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
+    (container.env must contain).allOf(javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
 
     streamletDeployment.endpoint.map { ep ⇒
       val exposedStreamletPort = container.ports.find(_.containerPort == ep.containerPort).value
@@ -297,8 +304,8 @@ class RunnerActionsSpec extends WordSpec
     container.ports must contain(Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort))
 
     val resourceRequirements = container.resources.value
-    val resourceConstraints = runnerSettings.resourceConstraints
-    resourceRequirements.requests must contain(Resource.cpu -> resourceConstraints.cpuRequests)
+    val resourceConstraints  = runnerSettings.resourceConstraints
+    resourceRequirements.requests must contain(Resource.cpu    -> resourceConstraints.cpuRequests)
     resourceRequirements.requests must contain(Resource.memory -> resourceConstraints.memoryRequests)
 
     resourceRequirements.limits.get(Resource.cpu) mustBe resourceConstraints.cpuLimits

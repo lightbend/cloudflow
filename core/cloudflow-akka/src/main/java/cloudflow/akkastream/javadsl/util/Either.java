@@ -49,8 +49,8 @@ public interface Either<L, R> extends Serializable {
    * Constructs a {@link Right}
    *
    * @param right The value.
-   * @param <L>   Type of left value.
-   * @param <R>   Type of right value.
+   * @param <L> Type of left value.
+   * @param <R> Type of right value.
    * @return A new {@code Right} instance.
    */
   static <L, R> Either<L, R> right(R right) {
@@ -61,8 +61,8 @@ public interface Either<L, R> extends Serializable {
    * Constructs a {@link Left}
    *
    * @param left The value.
-   * @param <L>  Type of left value.
-   * @param <R>  Type of right value.
+   * @param <L> Type of left value.
+   * @param <R> Type of right value.
    * @return A new {@code Left} instance.
    */
   static <L, R> Either<L, R> left(L left) {
@@ -83,9 +83,9 @@ public interface Either<L, R> extends Serializable {
    * </code></pre>
    *
    * Throws NullPointerException if {@code mapper} is null.
-   * 
+   *
    * @param mapper A mapper
-   * @param <U>    Component type of the mapped right value
+   * @param <U> Component type of the mapped right value
    * @return a mapped {@code Monad}
    */
   @SuppressWarnings("unchecked")
@@ -101,7 +101,7 @@ public interface Either<L, R> extends Serializable {
   /**
    * Gets the right value if this is a {@code Right} or throws if this is a {@code Left}.
    *
-   * Throws NoSuchElementException if this is a {@code Left}.
+   * <p>Throws NoSuchElementException if this is a {@code Left}.
    *
    * @return the right value
    */
@@ -110,8 +110,8 @@ public interface Either<L, R> extends Serializable {
   /**
    * Returns the left value.
    *
-   * Throws NoSuchElementException if this is a {@code Right}.
-   * 
+   * <p>Throws NoSuchElementException if this is a {@code Right}.
+   *
    * @return The left value.
    */
   L getLeft();
@@ -129,6 +129,7 @@ public interface Either<L, R> extends Serializable {
    * @return true, if this is a Right, false otherwise
    */
   boolean isRight();
+
   String stringPrefix();
 
   /**
@@ -175,7 +176,8 @@ public interface Either<L, R> extends Serializable {
 
     @Override
     public boolean equals(Object obj) {
-      return (obj == this) || (obj instanceof Left && Objects.equals(value, ((Left<?, ?>) obj).value));
+      return (obj == this)
+          || (obj instanceof Left && Objects.equals(value, ((Left<?, ?>) obj).value));
     }
 
     @Override
@@ -238,7 +240,8 @@ public interface Either<L, R> extends Serializable {
 
     @Override
     public boolean equals(Object obj) {
-      return (obj == this) || (obj instanceof Right && Objects.equals(value, ((Right<?, ?>) obj).value));
+      return (obj == this)
+          || (obj instanceof Right && Objects.equals(value, ((Right<?, ?>) obj).value));
     }
 
     @Override

@@ -42,7 +42,7 @@ object WineModel {
  * Serves wine quality scores.
  */
 final case class WineModel(val loadedModel: LoadedModel) extends TensorFlowModel[WineRecord, WineServingResult] {
-  val session = loadedModel.session
+  val session    = loadedModel.session
   val signatures = loadedModel.signatures
 
   def emptyServingResult = WineModel.EmptyServingResult
@@ -58,25 +58,24 @@ final case class WineModel(val loadedModel: LoadedModel) extends TensorFlowModel
   /**
    * invokes the TensorFlow bundled model for wine scoring.
    */
-  def invokeModel(record: WineRecord): Either[String, WineServingResult] = {
+  def invokeModel(record: WineRecord): Either[String, WineServingResult] =
     try {
       // Create record tensor
       val modelInput = toTensor(record)
 
       // Serve model using TensorFlow APIs
       val signature = signatures.head._2
-      val tinput = signature.inputs.head._2
-      val toutput = signature.outputs.head._2
-      val result = session.runner.feed(tinput.name, modelInput).fetch(toutput.name).run().get(0)
+      val tinput    = signature.inputs.head._2
+      val toutput   = signature.outputs.head._2
+      val result    = session.runner.feed(tinput.name, modelInput).fetch(toutput.name).run().get(0)
       // process result
-      val rshape = result.shape
+      val rshape  = result.shape
       val rMatrix = Array.ofDim[Float](rshape(0).asInstanceOf[Int], rshape(1).asInstanceOf[Int])
       result.copyTo(rMatrix)
       Right(WineServingResult(rMatrix(0).indices.maxBy(rMatrix(0)).toDouble))
     } catch {
       case NonFatal(e) ⇒ Left(e.getMessage)
     }
-  }
 
   /**
    * Converts incoming WineRecord to Tensor.
@@ -93,7 +92,8 @@ final case class WineModel(val loadedModel: LoadedModel) extends TensorFlowModel
       record.density.toFloat,
       record.pH.toFloat,
       record.sulphates.toFloat,
-      record.alcohol.toFloat)
+      record.alcohol.toFloat
+    )
     Tensor.create(Array(data))
   }
 }

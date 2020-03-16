@@ -25,7 +25,7 @@ import java.util.PriorityQueue
 import java.util.Random
 import java.util.zip.GZIPInputStream
 
-import scala.util.{ Try, Success, Failure }
+import scala.util.{ Failure, Success, Try }
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import SourceFunction.SourceContext
@@ -38,12 +38,12 @@ case class TaxiRideSource(
     servingSpeedFactor: Int
 ) extends SourceFunction[TaxiRide] {
 
-  val maxDelayMsecs = maxEventDelaySecs * 1000
+  val maxDelayMsecs       = maxEventDelaySecs * 1000
   val watermarkDelayMSecs = if (maxDelayMsecs < 10000) 10000 else maxDelayMsecs
-  val servingSpeed = servingSpeedFactor
+  val servingSpeed        = servingSpeedFactor
 
   @transient private var gzipStream: InputStream = _
-  @transient private var reader: BufferedReader = _
+  @transient private var reader: BufferedReader  = _
 
   override def run(sourceContext: SourceContext[TaxiRide]): Unit = {
     gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath))
@@ -57,27 +57,26 @@ case class TaxiRideSource(
     this.gzipStream = null
   }
 
-  private def getNextRide(): Try[TaxiRide] = {
+  private def getNextRide(): Try[TaxiRide] =
     if (!reader.ready) Failure(new RuntimeException("Reader not yet ready"))
     else {
       val line = reader.readLine()
       if (line == null) Failure(new RuntimeException("Encountered null record"))
       else TaxiRideOps.fromString(line)
     }
-  }
 
   private def generateUnorderedStream(sourceContext: SourceContext[TaxiRide]): Unit = {
 
-    val rand = new Random(7452)
-    val servingStartTime = Calendar.getInstance().getTimeInMillis()
-    var dataStartTime: Long = 0l
+    val rand                = new Random(7452)
+    val servingStartTime    = Calendar.getInstance().getTimeInMillis()
+    var dataStartTime: Long = 0L
 
     val emitSchedule: PriorityQueue[(Long, Any)] = new PriorityQueue(
       32,
       (o1, o2) ⇒ o1._1.compare(o2._1)
     )
 
-    def readFirstRideAndUpdateEmitSchedule(emitSchedule: PriorityQueue[(Long, Any)], rand: Random): Unit = {
+    def readFirstRideAndUpdateEmitSchedule(emitSchedule: PriorityQueue[(Long, Any)], rand: Random): Unit =
       getNextRide() match {
         case Success(ride) ⇒
           // extract starting timestamp
@@ -95,7 +94,6 @@ case class TaxiRideSource(
 
         case Failure(ex) ⇒ throw ex
       }
-    }
 
     readFirstRideAndUpdateEmitSchedule(emitSchedule, rand)
 
@@ -108,11 +106,11 @@ case class TaxiRideSource(
 
           // insert all events into schedule that might be emitted next
           val curNextDelayedEventTime = if (!emitSchedule.isEmpty()) emitSchedule.peek()._1 else -1
-          var rideEventTime = if (ride != null) getEventTime(ride) else -1
-          while (ride != null && ( // while there is a ride AND
-            emitSchedule.isEmpty() || // and no ride in schedule OR
-            rideEventTime < curNextDelayedEventTime + maxDelayMsecs) // not enough rides in schedule
-            ) {
+          var rideEventTime           = if (ride != null) getEventTime(ride) else -1
+          while (ride != null && (// while there is a ride AND
+                 emitSchedule.isEmpty() ||                                // and no ride in schedule OR
+                 rideEventTime < curNextDelayedEventTime + maxDelayMsecs) // not enough rides in schedule
+                 ) {
             // insert event into emit schedule
             val delayedEventTime = rideEventTime + getNormalDelayMsecs(rand)
             emitSchedule.add((delayedEventTime, ride))
@@ -130,12 +128,12 @@ case class TaxiRideSource(
           }
 
           // emit schedule is updated, emit next element in schedule
-          val head = emitSchedule.poll()
+          val head             = emitSchedule.poll()
           val delayedEventTime = head._1
 
-          val now = Calendar.getInstance().getTimeInMillis()
+          val now         = Calendar.getInstance().getTimeInMillis()
           val servingTime = toServingTime(servingStartTime, dataStartTime, delayedEventTime)
-          val waitTime = servingTime - now
+          val waitTime    = servingTime - now
 
           Thread.sleep(if (waitTime > 0) waitTime else 0)
 
@@ -165,7 +163,7 @@ case class TaxiRideSource(
   def getEventTime(ride: TaxiRide): Long = TaxiRideOps.getEventTime(ride)
 
   def getNormalDelayMsecs(rand: Random): Long = {
-    var delay = -1l
+    var delay   = -1L
     val x: Long = maxDelayMsecs / 2
 
     while (delay < 0 || delay > maxDelayMsecs) {
@@ -174,12 +172,14 @@ case class TaxiRideSource(
     delay
   }
 
-  override def cancel(): Unit = Try {
-    if (reader != null) reader.close()
-    if (gzipStream != null) gzipStream.close()
-  }.transform(
-    s ⇒ Success(s),
-    ioe ⇒ Failure(new RuntimeException("Could not cancel SourceFunction", ioe))
-  ).get
+  override def cancel(): Unit =
+    Try {
+      if (reader != null) reader.close()
+      if (gzipStream != null) gzipStream.close()
+    }.transform(
+        s ⇒ Success(s),
+        ioe ⇒ Failure(new RuntimeException("Could not cancel SourceFunction", ioe))
+      )
+      .get
 
 }

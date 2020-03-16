@@ -33,6 +33,7 @@ import akka.kafka.ConsumerMessage._
  * Merges two or more sources, or inlets, of the same type, into one source.
  */
 object Merger {
+
   /**
    * Creates a graph to merge two or more sources into one source.
    * Elements from all sources will be processed with at-least-once semantics. The elements will be processed
@@ -55,9 +56,8 @@ object Merger {
    */
   def source[T](
       sources: Seq[SourceWithContext[T, Committable, _]]
-  ): SourceWithContext[T, Committable, _] = {
+  ): SourceWithContext[T, Committable, _] =
     Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
-  }
 
   /**
    * Merges two or more inlets into one source.
@@ -66,14 +66,18 @@ object Merger {
    */
   def source[T](
       inlets: Seq[CodecInlet[T]]
-  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {
-    Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
-  }
+  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
+    Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map {
+      case (t, _) ⇒ t
+    }
   def source[T](
-      inlet: CodecInlet[T], inlets: CodecInlet[T]*
-  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] = {
-    Source.fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
-  }
+      inlet: CodecInlet[T],
+      inlets: CodecInlet[T]*
+  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
+    Source
+      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithOffsetContext(_))))
+      .asSourceWithContext { case (_, offset) ⇒ offset }
+      .map { case (t, _) ⇒ t }
 }
 
 /**
@@ -85,7 +89,8 @@ object Merger {
 class MergeLogic[T](
     inletPorts: immutable.IndexedSeq[CodecInlet[T]],
     outlet: CodecOutlet[T]
-)(implicit context: AkkaStreamletContext) extends RunnableGraphStreamletLogic {
+)(implicit context: AkkaStreamletContext)
+    extends RunnableGraphStreamletLogic {
   require(inletPorts.size >= 2)
 
   /**
@@ -94,7 +99,7 @@ class MergeLogic[T](
   override def runnableGraph() = {
 
     val inlets = inletPorts.map(inlet ⇒ sourceWithOffsetContext[T](inlet)).toList
-    val out = committableSink[T](outlet)
+    val out    = committableSink[T](outlet)
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
       import GraphDSL.Implicits._

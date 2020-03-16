@@ -1,10 +1,14 @@
 # Cloudflow Streamlets Library
 
+## Prerequisites
+
+  The Cloudflow streamlet library must be built and tested using JDK8.
+
 ## Building and testing the Cloudflow Operator image
 
 In order to test changes made to the `cloudflow-operator` module on GKE there are several steps involved:
 
-1. [Setup](https://cloud.google.com/container-registry/docs/pushing-and-pulling) your local environment to work with the GCP container registry 
+1. [Set up](https://cloud.google.com/container-registry/docs/pushing-and-pulling) your local environment to work with the GCP container registry 
 2. Update the docker image settings for the `operator` module in [build.sbt](build.sbt):
 
 ```

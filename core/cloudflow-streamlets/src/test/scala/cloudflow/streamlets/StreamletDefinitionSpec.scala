@@ -22,7 +22,7 @@ import org.scalatest.{ MustMatchers, OptionValues, TryValues, WordSpec }
 class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues with OptionValues {
 
   "A valid StreamletConfig" should {
-    val config = ConfigFactory.load("config-map-sample.json")
+    val config          = ConfigFactory.load("config-map-sample.json")
     val streamletConfig = StreamletDefinition.read(config).get
 
     "the loaded instances must contain class, instance and port information" in {

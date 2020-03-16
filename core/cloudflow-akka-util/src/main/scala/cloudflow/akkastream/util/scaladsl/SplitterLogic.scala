@@ -30,6 +30,7 @@ import cloudflow.akkastream.scaladsl._
  * Provides functions to split elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
  */
 object Splitter {
+
   /**
    * A Graph that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    */
@@ -37,7 +38,7 @@ object Splitter {
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
       right: Sink[(R, Committable), NotUsed]
-  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] = {
+  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
     GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
       import GraphDSL.Implicits._
 
@@ -48,7 +49,7 @@ object Splitter {
       }
       val partitioner = builder.add(partitionWith)
 
-        // format: OFF
+      // format: OFF
         toEitherFlow ~> partitioner.in
                         partitioner.out0 ~> il
                         partitioner.out1 ~> ir
@@ -56,7 +57,6 @@ object Splitter {
 
       SinkShape(toEitherFlow.in)
     }
-  }
 
   /**
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
@@ -90,9 +90,8 @@ object Splitter {
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       committerSettings: CommitterSettings
-  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] =
     sink[I, L, R](flow, context.committableSink(leftOutlet, committerSettings), context.committableSink(rightOutlet, committerSettings))
-  }
 }
 
 /**
@@ -103,7 +102,9 @@ abstract class SplitterLogic[I, L, R](
     inlet: CodecInlet[I],
     leftOutlet: CodecOutlet[L],
     rightOutlet: CodecOutlet[R]
-)(implicit context: AkkaStreamletContext) extends RunnableGraphStreamletLogic()(context) {
+)(implicit context: AkkaStreamletContext)
+    extends RunnableGraphStreamletLogic()(context) {
+
   /**
    * Defines the flow that receives elements from the inlet.
    * The offset associated with every output element is automatically committed using at-least-once semantics.
@@ -119,8 +120,8 @@ abstract class SplitterLogic[I, L, R](
    * writing to the outlet
    */
   override def runnableGraph() = {
-    val in = sourceWithOffsetContext[I](inlet)
-    val left = committableSink[L](leftOutlet)
+    val in    = sourceWithOffsetContext[I](inlet)
+    val left  = committableSink[L](leftOutlet)
     val right = committableSink[R](rightOutlet)
 
     val splitterGraph = RunnableGraph.fromGraph(

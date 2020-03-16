@@ -22,20 +22,20 @@ object StreamletDescriptorFormat extends StreamletDescriptorFormat
 
 trait StreamletDescriptorFormat extends DefaultJsonProtocol {
   implicit val attributeFormat = jsonFormat(StreamletAttributeDescriptor.apply, "attribute_name", "config_path")
-  implicit val schemaFormat = jsonFormat4(SchemaDescriptor.apply)
-  implicit val inletFormat = jsonFormat2(InletDescriptor.apply)
-  implicit val outletFormat = jsonFormat2(OutletDescriptor.apply)
-  implicit val configParameterDescriptorFormat = jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
+  implicit val schemaFormat    = jsonFormat4(SchemaDescriptor.apply)
+  implicit val inletFormat     = jsonFormat2(InletDescriptor.apply)
+  implicit val outletFormat    = jsonFormat2(OutletDescriptor.apply)
+  implicit val configParameterDescriptorFormat =
+    jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
   implicit val volumeMountDescriptorFormat = jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
 
   implicit val streamletRuntimeFormat = new JsonFormat[StreamletRuntimeDescriptor] {
     def write(runtime: StreamletRuntimeDescriptor) = JsString(runtime.name)
-    def read(json: JsValue) = {
+    def read(json: JsValue) =
       json match {
         case JsString(name) ⇒ StreamletRuntimeDescriptor(name)
         case str            ⇒ deserializationError("Expected StreamletRuntimeDescriptor as JsString, but got " + str)
       }
-    }
   }
 
   implicit val streamletDescriptorFormat = jsonFormat(

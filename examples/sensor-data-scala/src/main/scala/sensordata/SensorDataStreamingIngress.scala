@@ -26,9 +26,9 @@ import cloudflow.streamlets.{ RoundRobinPartitioner, StreamletShape }
 import cloudflow.streamlets.avro._
 
 class SensorDataStreamingIngress extends AkkaServerStreamlet {
-  val out = AvroOutlet[SensorData]("out", RoundRobinPartitioner)
+  val out   = AvroOutlet[SensorData]("out", RoundRobinPartitioner)
   def shape = StreamletShape.withOutlets(out)
 
   implicit val entityStreamingSupport = EntityStreamingSupport.json()
-  override def createLogic = HttpServerLogic.defaultStreaming(this, out)
+  override def createLogic            = HttpServerLogic.defaultStreaming(this, out)
 }

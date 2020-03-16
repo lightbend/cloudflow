@@ -53,7 +53,7 @@ object InternalReleaseCommand {
       if (Try("git rev-parse --git-dir".!!).isSuccess) {
         val commits = "git rev-list --count HEAD".!!.trim()
         val hash = "git rev-parse --short HEAD".!!.trim()
-        s"-${commits}-${hash}"
+        s"-pre-${commits}-${hash}"
       } else {
         sys.error("The current project is not a valid Git project.")
       }

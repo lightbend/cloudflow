@@ -32,27 +32,28 @@ import org.junit.Test;
 import org.scalatest.junit.JUnitSuite;
 
 public class MergeTest extends JUnitSuite {
-    private int inletCount = 10;
+  private int inletCount = 10;
 
-    @Test
-    public void shouldBeTested() {
-        TestMerger merger = new TestMerger();
+  @Test
+  public void shouldBeTested() {
+    TestMerger merger = new TestMerger();
+  }
+
+  class TestMerger extends AkkaStreamlet {
+    AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
+    AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
+    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> d.name(), Data.class);
+
+    public StreamletShape shape() {
+      return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
     }
 
-    class TestMerger extends AkkaStreamlet {
-        AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
-        AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
-        AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
-
-        public StreamletShape shape() {
-         return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
+    public RunnableGraphStreamletLogic createLogic() {
+      return new RunnableGraphStreamletLogic(getContext()) {
+        public RunnableGraph createRunnableGraph() {
+          return Merger.source(getContext(), inlet1, inlet2).to(getCommittableSink(outlet));
         }
-        public RunnableGraphStreamletLogic createLogic() {
-          return new RunnableGraphStreamletLogic(getContext()) {
-            public RunnableGraph createRunnableGraph() {
-              return Merger.source(getContext(), inlet1, inlet2).to(getCommittableSink(outlet));
-            }
-          };
-        }
+      };
     }
+  }
 }

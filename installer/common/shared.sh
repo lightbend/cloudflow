@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Usage shared.sh <NAMESPACE>
+# Usage shared.sh <NAMESPACE>
 
 if [ $# -eq 0 ]
   then
@@ -37,22 +37,21 @@ set +x
 
 # Cloudflow operator version
 export operatorImageName="lightbend/cloudflow-operator"
-export operatorImageTag="89-f8a4ddc"
+export operatorImageTag="1.3.1"
 export operatorImage="$operatorImageName:$operatorImageTag"
-
 
 # Kafka installation mode CloudflowManaged|ExternalStrimzi|External
 export KAFKA="${KAFKA:-CloudflowManaged}"
 
 # Flink
 export flinkReleaseName="cloudflow-flink"
-export flinkOperatorChartVersion="0.8.0"
+export flinkOperatorChartVersion="0.8.2"
 export flinkOperatorNamespace=""
 export installFlinkOperator=false
 
 # Strimzi
 export strimziReleaseName="cloudflow-strimzi"
-export strimziVersion="0.13.0"
+export strimziVersion="0.16.2"
 export installStrimzi="${installStrimzi:-false}"
 export strimziClusterOperatorNamespace=""
 export strimziTopicOperatorNamespace=""
@@ -63,8 +62,9 @@ export zookeeperHosts=""
 
 # Spark Operator
 export sparkOperatorReleaseName="cloudflow-sparkoperator"
-export sparkOperatorChartVersion="0.4.0"
-export sparkOperatorImageVersion="1.3.0-M1-OpenJDK-2.4.4-0.8.2-cloudflow-2.12"
+export sparkOperatorChartVersion="0.6.7"
+export sparkOperatorImageName="lightbend/sparkoperator"
+export sparkOperatorImageVersion="1.3.1-OpenJDK-2.4.5-1.1.0-cloudflow-2.12"
 export sparkOperatorNamespace="$namespace"
 
 
@@ -135,9 +135,6 @@ elif [ "${KAFKA}" = "ExternalStrimzi" ]; then
         print_error_message "Strimzi topic operator configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_STRIMZI_TOPIC_OPERATOR_NAMESPACE' and set it to a namespace that contains a running strimzi-topic-operator pod."
         print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_existing_strimzi_kafka"
-        print_error_message ""
         exit 1
     fi
     if [ -n "${KAFKA_BOOTSTRAP_SERVERS}" ]; then
@@ -145,23 +142,17 @@ elif [ "${KAFKA}" = "ExternalStrimzi" ]; then
     else
         print_error_message "Kafka bootstrap servers configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_BOOTSTRAP_SERVERS' and set it to the Kafka bootstrap servers hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_existing_strimzi_kafka"
         print_error_message ""
         exit 1
     fi
 elif [ "${KAFKA}" = "External" ]; then
     strimziTopicOperatorNamespace=$namespace
-    echo "Strimzi topic operator will be installed into '${strimziTopicOperatorNamespace}'."https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka
+    echo "Strimzi topic operator will be installed into '${strimziTopicOperatorNamespace}'."
     if [ -n "${KAFKA_BOOTSTRAP_SERVERS}" ]; then
         kafkaBootstrapServers=$KAFKA_BOOTSTRAP_SERVERS
     else
         print_error_message "Kafka bootstrap servers configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_BOOTSTRAP_SERVERS' and set it to the Kafka bootstrap servers hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka"
         print_error_message ""
         exit 1
     fi
@@ -170,9 +161,6 @@ elif [ "${KAFKA}" = "External" ]; then
     else
         print_error_message "ZooKeeper hosts configuration is invalid."
         print_error_message "You must define environment variable 'KAFKA_ZOOKEEPER_HOSTS' and set it to the ZooKeeper hostname and port."
-        print_error_message ""
-        ##TODO FIX_PIPELINES_REF
-        print_error_message "More information can be found here: https://developer.lightbend.com/docs/pipelines/current/index.html#_external_kafka"
         print_error_message ""
         exit 1
     fi
@@ -204,18 +192,14 @@ export limitsCpu="2"
 
 # Installs an NFS server: $1: namespace, $2: boolean onOpenShift
 NFS_SERVER_NAME=cloudflow-nfs
-NFS_CHART_NAME=fdp-nfs
+NFS_CHART_NAME=nfs-server-provisioner
 install_nfs_server() {
-helm upgrade $NFS_SERVER_NAME lightbend-helm-charts/$NFS_CHART_NAME \
+helm upgrade $NFS_SERVER_NAME stable/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
 --timeout $HELM_TIMEOUT \
---set createStorage=false \
 --set serviceAccount.create=false \
---set serviceAccount.name=cloudflow-operator \
---set onOpenShift="$2" \
---set storageClassName=nfs-client \
---version 0.2.0
+--set serviceAccount.name=cloudflow-operator
 }
 
 EFS_SERVER_NAME=cloudflow-efs

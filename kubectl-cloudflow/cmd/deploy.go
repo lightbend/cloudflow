@@ -153,20 +153,41 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
+	// Get the Cloudflow operator ownerReference
+	ownerReference := version.GetOwnerReferenceForCloudflowOperator()
+
+	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace, ownerReference)
 
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
 		util.LogAndExit("%s", err)
 	}
 
+	// Delay the creation of the secret for after the ownerReferences has been added.
+	// Creating then updating the secret generates problem for the Flink streamlets deployment.
 	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues)
-	createStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
 	applicationSpec, err = copyReplicaConfigurationFromCurrentApplication(cloudflowApplicationClient, applicationSpec)
 	if err != nil {
 		util.LogAndExit("The application descriptor is invalid, %s", err.Error())
 	}
-	createOrUpdateCloudflowApplication(cloudflowApplicationClient, applicationSpec)
+
+	createOrUpdateCloudflowApplication(cloudflowApplicationClient, applicationSpec, ownerReference)
+
+	// When the CR has been created, create a ownerReference using the uid from the stored CR and
+	// then update secrets and service account with the ownerReference
+	storedCR, err := cloudflowApplicationClient.Get(applicationSpec.AppID)
+	if err != nil {
+		util.LogAndExit("Failed to retrieve the application `%s`, %s", applicationSpec.AppID, err.Error())
+	}
+	ownerReference = storedCR.GenerateOwnerReference()
+
+	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+
+	serviceAccount.ObjectMeta.OwnerReferences = []metav1.OwnerReference{ownerReference}
+	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
+		util.LogAndExit("%s", err)
+	}
 
 	util.PrintSuccess("Deployment of application `%s` has started.\n", namespace)
 }
@@ -258,7 +279,7 @@ func copyReplicaConfigurationFromCurrentApplication(applicationClient *k8s.Cloud
 	return spec, nil
 }
 
-func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
+func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
 	for streamletName, secret := range streamletNameSecretMap {
 		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
 			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
@@ -266,7 +287,7 @@ func createStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, s
 			}
 		} else {
 			if _, err := k8sClient.CoreV1().Secrets(namespace).Update(secret); err != nil {
-				util.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
+				util.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())
 			}
 		}
 	}
@@ -281,9 +302,10 @@ func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec 
 	}
 }
 
-func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.CloudflowApplicationClient, spec domain.CloudflowApplicationSpec) {
+func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.CloudflowApplicationClient, spec domain.CloudflowApplicationSpec, cloudflowOperatorOwnerReference metav1.OwnerReference) {
 
 	storedCR, errCR := cloudflowApplicationClient.Get(spec.AppID)
+
 	if errCR == nil {
 		cloudflowApplication := domain.UpdateCloudflowApplication(spec, storedCR.ObjectMeta.ResourceVersion)
 		_, err := cloudflowApplicationClient.Update(cloudflowApplication)
@@ -292,6 +314,8 @@ func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.Cloudflo
 		}
 	} else if reflect.DeepEqual(*storedCR, domain.CloudflowApplication{}) {
 		cloudflowApplication := domain.NewCloudflowApplication(spec)
+		cloudflowApplication.SetOwnerReferences([]metav1.OwnerReference{cloudflowOperatorOwnerReference})
+
 		_, err := cloudflowApplicationClient.Create(cloudflowApplication)
 		if err != nil {
 			util.LogAndExit("Failed to create CloudflowApplication `%s`, %s", spec.AppID, err.Error())

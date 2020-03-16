@@ -32,13 +32,15 @@ drop_privs_cmd() {
 }
 
 # Add in extra configs set by the operator
-if [ -n "$OPERATOR_FLINK_CONFIG" ]; then
-    echo "$OPERATOR_FLINK_CONFIG" >> "/usr/local/flink-conf.yaml"
+if [ -n "$FLINK_PROPERTIES" ]; then
+    echo "$FLINK_PROPERTIES" >> "/usr/local/flink-conf.yaml"
 fi
 
 envsubst < /usr/local/flink-conf.yaml > $FLINK_HOME/conf/flink-conf.yaml
 echo "web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
 echo "jobmanager.web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
+echo "taskmanager.memory.flink.size: 1024mb" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
 # Add JMX metric reporter to config
 echo "metrics.reporters: jmx" >> "$FLINK_HOME/conf/flink-conf.yaml"

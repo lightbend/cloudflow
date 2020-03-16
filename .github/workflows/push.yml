@@ -6,16 +6,35 @@ on:
     branches:
       - master
   pull_request:
-    
+
+
 name: Build and Test
 jobs:
   build-and-test-scala:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v2
+
     - name: Setup environment
       run: |
         make -C .github/workflows/setup setup-local-all
+
+    - name: Cache SBT ivy cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.ivy2/cache
+        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-ivy-cache-
+
+    - name: Cache SBT
+      uses: actions/cache@v1
+      with:
+        path: ~/.sbt
+        key: ${{ runner.os }}-sbt-home-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-home-
+
     - name: build-and-test
       env:
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
@@ -24,17 +43,25 @@ jobs:
         cd scripts
         ./build-all.sh test
 
+
   build-and-test-cli:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.12
-      uses: actions/setup-go@v1
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2-beta
       with:
-        go-version: 1.12
+        go-version: 1.13.8
       id: go
 
-    - name: Check out code
-      uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Build
       run: |

@@ -28,6 +28,7 @@ import sbtavrohugger.SbtAvrohugger.autoImport._
  * SBT Plugin that centralizes the use of common keys for Cloudflow projects.
  */
 object CommonSettingsAndTasksPlugin extends AutoPlugin {
+
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
     BuildNumberPlugin &&
@@ -41,52 +42,47 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   // common definitions
   final val CloudflowLocalConfigFile = ".lightbend/cloudflow/pipectl.json"
-  final val CloudflowDockerBaseImage = "lightbend/cloudflow-base:1.3.0-M1-spark-2.4.4-flink-1.9.1-scala-2.12"
+  final val CloudflowDockerBaseImage = "lightbend/cloudflow-base:1.3.1-spark-2.4.5-flink-1.10.0-scala-2.12"
   // used for internal release
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     // TODO: currently required for our custom build of Akka. Remove when our features have been merged.
-    resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/",
+    resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
     // Cloudflow is released with Ivy patterns - bintray is used for internal release
     resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
-
     cloudflowDockerParentImage := CloudflowDockerBaseImage,
-
     cloudflowDockerImageName := Def.task {
-      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-    }.value,
-
+          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+        }.value,
     agentPaths := Def.taskDyn {
-      Def.task {
-        resolvedJavaAgents.value.filter(_.agent.scope.dist).map { resolved ⇒
-          resolved.agent.name -> (
-            ImagePlugin.AppTargetDir + File.separator +
-            Project.normalizeModuleID(resolved.agent.name) +
-            File.separator + resolved.artifact.name
-          )
-        }.toMap
-      }
-    }.value,
-
+          Def.task {
+            resolvedJavaAgents.value
+              .filter(_.agent.scope.dist)
+              .map { resolved ⇒
+                resolved.agent.name -> (
+                  ImagePlugin.AppTargetDir + File.separator +
+                    Project.normalizeModuleID(resolved.agent.name) +
+                    File.separator + resolved.artifact.name
+                )
+              }
+              .toMap
+          }
+        }.value,
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
-
     libraryDependencies += "com.twitter" %% "bijection-avro" % "0.9.6",
-
     schemaFormats := Seq(SchemaFormat.Avro),
     schemaCodeGenerator := SchemaCodeGenerator.Scala,
     schemaPaths := Map(SchemaFormat.Avro -> "src/main/avro"),
-
-    AvroConfig / stringType := "String", // sbt-avro `String` type name
-    AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avro source directory
+    AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
+    AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
     Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
-
     Compile / sourceGenerators := {
       val generators = (sourceGenerators in Compile).value
       val schemaLang = schemaCodeGenerator.value
-      val clean = filterGeneratorTask(generators, generate, AvroConfig)
+      val clean      = filterGeneratorTask(generators, generate, AvroConfig)
 
       schemaLang match {
         case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
@@ -111,5 +107,5 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   }
 }
 
-trait CloudflowKeys extends CloudflowSettingKeys with CloudflowTaskKeys
+trait CloudflowKeys  extends CloudflowSettingKeys with CloudflowTaskKeys
 object CloudflowKeys extends CloudflowKeys

@@ -23,12 +23,15 @@ import akka.stream._
 import com.typesafe.config.{ Config, ConfigRenderOptions }
 import skuber._
 import skuber.api.Configuration
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import skuber.apiextensions._
 import skuber.json.format._
 
 import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
+import skuber.apps.v1.Deployment
 
 object Main extends {
 
@@ -37,16 +40,17 @@ object Main extends {
 
     try {
       implicit val mat = createMaterializer()
-      implicit val ec = system.dispatcher
-      val settings = Settings(system)
+      implicit val ec  = system.dispatcher
+      val settings     = Settings(system)
       implicit val ctx = settings.deploymentContext
 
       logStartOperatorMessage(settings)
 
       HealthChecks.serve(settings)
 
-      val client = connectToKubernetes()
-      installProtocolVersion(client.usingNamespace(settings.podNamespace))
+      val client          = connectToKubernetes()
+      val ownerReferences = getDeploymentOwnerReferences(settings, client.usingNamespace(settings.podNamespace))
+      installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
 
       Operator.handleAppEvents(client)
@@ -63,8 +67,8 @@ object Main extends {
   private def logStartOperatorMessage(settings: Settings)(implicit system: ActorSystem) = {
 
     val blockingIODispatcherConfig = system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
-    val dispatcherConfig = system.settings.config.getConfig("akka.actor.default-dispatcher")
-    val deploymentConfig = system.settings.config.getConfig("akka.actor.deployment")
+    val dispatcherConfig           = system.settings.config.getConfig("akka.actor.default-dispatcher")
+    val deploymentConfig           = system.settings.config.getConfig("akka.actor.deployment")
 
     system.log.info(s"""
       |Started cloudflow operator ..
@@ -84,12 +88,17 @@ object Main extends {
       |${settings.deploymentContext.infoMessage}
       |\n${box("Deployment")}
       |${formatDeploymentInfo(settings)}
-      """.stripMargin
-    )
+      """.stripMargin)
   }
 
+  private def getDeploymentOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
+    Await.result(client
+                   .getInNamespace[Deployment](Name.ofCloudflowOperatorDeployment, settings.podNamespace)
+                   .map(_.metadata.ownerReferences),
+                 10 seconds)
+
   private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
-    val conf = Configuration.defaultK8sConfig
+    val conf   = Configuration.defaultK8sConfig
     val client = k8sInit(conf).usingNamespace("")
     system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")
     client
@@ -121,11 +130,12 @@ object Main extends {
     )
   }
 
-  private def installProtocolVersion(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
+  private def installProtocolVersion(client: skuber.api.client.KubernetesClient,
+                                     ownerReferences: List[OwnerReference])(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
     Await.ready(
       client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {
-        _.fold(client.create(Operator.ProtocolVersionConfigMap)) { configMap ⇒
+        _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap ⇒
           if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
             client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))
           } else {
@@ -142,13 +152,12 @@ object Main extends {
     gcMxBeans.asScala.map(b ⇒ (b.getName, b.getObjectName)).toList
   }
 
-  private def box(str: String): String = {
+  private def box(str: String): String =
     if ((str == null) || (str.isEmpty)) ""
     else {
       val line = s"""+${"-" * 80}+"""
       s"$line\n$str\n$line"
     }
-  }
 
   private def formatBuildInfo: String = {
     import BuildInfo._
@@ -163,13 +172,12 @@ object Main extends {
     """.stripMargin
   }
 
-  private def formatDeploymentInfo(settings: Settings): String = {
+  private def formatDeploymentInfo(settings: Settings): String =
     s"""
     |Release version : ${settings.releaseVersion}
     """.stripMargin
-  }
 
-  private def prettyPrintConfig(c: Config): String = {
+  private def prettyPrintConfig(c: Config): String =
     c.root
       .render(
         ConfigRenderOptions
@@ -177,7 +185,6 @@ object Main extends {
           .setFormatted(true)
           .setJson(false)
       )
-  }
 
   private def getJVMRuntimeParameters: String = {
     val runtime = Runtime.getRuntime

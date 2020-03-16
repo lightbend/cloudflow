@@ -49,7 +49,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     helm_delete cloudflow
     helm_delete cloudflow-sparkoperator
     helm_delete cloudflow-strimzi
-    helm_delete cloudflow_flink
+    helm_delete cloudflow-flink
 
     # The namespace
     # TODO FIX_HARDCODED_NAMESPACE 
@@ -67,15 +67,46 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     kubectl delete crd alertmanagers.monitoring.coreos.com \
       prometheuses.monitoring.coreos.com \
       prometheusrules.monitoring.coreos.com \
-      scheduledsparkapplications.sparkoperator.k8s.io \
-      servicemonitors.monitoring.coreos.com \
       sparkapplications.sparkoperator.k8s.io \
+      scheduledsparkapplications.sparkoperator.k8s.io \
+      kafkausers.kafka.strimzi.io \
+      kafkatopics.kafka.strimzi.io \
+      kafkas.kafka.strimzi.io \
+      kafkamirrormakers.kafka.strimzi.io \
+      kafkaconnects2is.kafka.strimzi.io \
+      kafkaconnects.kafka.strimzi.io \
+      kafkaconnectors.kafka.strimzi.io \
+      kafkabridges.kafka.strimzi.io \
+      servicemonitors.monitoring.coreos.com \
       flinkapplications.flink.k8s.io \
       cloudflowapplications.cloudflow.lightbend.com \
       cloudflowapplications.lightbend.com \
       --ignore-not-found=true
 
-    echo "Done !"
+    echo "Removing ClusterRoles..."
+    kubectl delete clusterrole cloudflow-nfs-nfs-server-provisioner \
+      cloudflow-flink-flink-operator \
+      cloudflow-sparkoperator-cr \
+      strimzi-cluster-operator-global \
+      strimzi-cluster-operator-namespaced \
+      strimzi-entity-operator \
+      strimzi-kafka-broker \
+      strimzi-topic-operator \
+      --ignore-not-found=true
+
+    echo "Removing ClusterRoleBindings..."
+    kubectl delete clusterrolebinding cloudflow-nfs-nfs-server-provisioner \
+      cloudflow-flink-flink-operator \
+      cloudflow-sparkoperator-crb \
+      cloudflow-operator-bindings \
+      strimzi-cluster-operator \
+      strimzi-cluster-operator-kafka-broker-delegation \
+      --ignore-not-found=true
+
+    echo "Removing StorageClasses..."
+    kubectl delete sc nfs --ignore-not-found=true
+
+    echo "Done!"
 else
-    echo "Script cancelled !"
+    echo "Script cancelled!"
 fi

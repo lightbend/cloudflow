@@ -26,7 +26,7 @@ detect_strimzi_crds() {
 
 # Returns the namespace the sparkoperator is installed in or an empty string
 detect_sparkoperator() {
-    kubectl get deployment -l app.kubernetes.io/name=fdp-sparkoperator --all-namespaces --ignore-not-found=true --no-headers | awk -v i=1 -v j=1 'FNR == i {print $j}'
+    kubectl get deployment -l app.kubernetes.io/name=sparkoperator --all-namespaces --ignore-not-found=true --no-headers | awk -v i=1 -v j=1 'FNR == i {print $j}'
 }
 
 # Returns the namespace where the Flink operator is installed or an empty string

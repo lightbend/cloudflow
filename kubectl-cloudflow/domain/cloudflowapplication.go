@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -172,17 +172,17 @@ type CloudflowApplicationStatus struct {
 
 // CloudflowApplication is the complete resource object sent to the API endpoint
 type CloudflowApplication struct {
-	meta_v1.TypeMeta
-	meta_v1.ObjectMeta `json:"metadata"`
-	Spec               CloudflowApplicationSpec   `json:"spec"`
-	Status             CloudflowApplicationStatus `json:"status"`
+	metav1.TypeMeta
+	metav1.ObjectMeta `json:"metadata"`
+	Spec              CloudflowApplicationSpec   `json:"spec"`
+	Status            CloudflowApplicationStatus `json:"status"`
 }
 
 // CloudflowApplicationList is a list of CloudflowApplications
 type CloudflowApplicationList struct {
-	meta_v1.TypeMeta `json:",inline"`
-	meta_v1.ListMeta `json:"metadata"`
-	Items            []CloudflowApplication `json:"items"`
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+	Items           []CloudflowApplication `json:"items"`
 }
 
 // CloudflowApplicationDescriptorDigestPair is a pair of app descriptor and image digest
@@ -214,13 +214,18 @@ const Kind = "CloudflowApplication"
 // ManagedBy label for our CR
 const ManagedBy = "cloudflow"
 
+// ApiVersion formats the correct ApiVersion from group name and version
+func ApiVersion() string {
+	return fmt.Sprintf("%s/%s", GroupName, GroupVersion)
+}
+
 // UpdateCloudflowApplication creates a CloudflowApplication struct that can be used with a Update call
 func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion string) CloudflowApplication {
 
 	app := CloudflowApplication{}
-	app.APIVersion = fmt.Sprintf("%s/%s", GroupName, GroupVersion)
+	app.APIVersion = ApiVersion()
 	app.Kind = "CloudflowApplication"
-	app.ObjectMeta = meta_v1.ObjectMeta{
+	app.ObjectMeta = metav1.ObjectMeta{
 		Name:            spec.AppID,
 		ResourceVersion: resourceVersion,
 		Labels:          CreateLabels(spec.AppID),
@@ -233,9 +238,9 @@ func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion s
 func NewCloudflowApplication(spec CloudflowApplicationSpec) CloudflowApplication {
 
 	app := CloudflowApplication{}
-	app.APIVersion = fmt.Sprintf("%s/%s", GroupName, GroupVersion)
+	app.APIVersion = ApiVersion()
 	app.Kind = Kind
-	app.ObjectMeta = meta_v1.ObjectMeta{
+	app.ObjectMeta = metav1.ObjectMeta{
 		Name:   spec.AppID,
 		Labels: CreateLabels(spec.AppID),
 	}
@@ -246,7 +251,7 @@ func NewCloudflowApplication(spec CloudflowApplicationSpec) CloudflowApplication
 // NewCloudflowApplicationNamespace creates a Namespace struct
 func NewCloudflowApplicationNamespace(spec CloudflowApplicationSpec) v1.Namespace {
 	return v1.Namespace{
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   spec.AppID,
 			Labels: CreateLabels(spec.AppID),
 		},
@@ -299,4 +304,19 @@ func (in *CloudflowApplicationList) DeepCopyObject() runtime.Object {
 	}
 
 	return &out
+}
+
+// GenerateOwnerReference creates an ownerReference pointing towards this CR
+func (in *CloudflowApplication) GenerateOwnerReference() metav1.OwnerReference {
+
+	managingController := true
+	blockOwnerDeletion := true
+	return metav1.OwnerReference{
+		APIVersion:         ApiVersion(),
+		Kind:               Kind,
+		Name:               in.GetName(),
+		UID:                in.GetUID(),
+		Controller:         &managingController,
+		BlockOwnerDeletion: &blockOwnerDeletion}
+
 }

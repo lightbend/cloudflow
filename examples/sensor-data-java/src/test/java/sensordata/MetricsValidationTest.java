@@ -53,14 +53,21 @@ public class MetricsValidationTest extends JUnitSuite {
     long timestamp = System.currentTimeMillis();
     Metric metric = new Metric("dev1", timestamp, "metric-name", -1.0d);
     in.queue().offer(metric);
-    InvalidMetric expectedInvalidMetric = new InvalidMetric(metric, "All measurements must be positive numbers!");
+    InvalidMetric expectedInvalidMetric =
+        new InvalidMetric(metric, "All measurements must be positive numbers!");
 
     String expectedKey = streamlet.invalidOutlet.partitioner().apply(expectedInvalidMetric);
-    List<OutletTap<?>> outlets = Arrays.asList(new OutletTap[] {valid, invalid}); 
+    List<OutletTap<?>> outlets = Arrays.asList(new OutletTap[] {valid, invalid});
 
-    testkit.run(streamlet, in, outlets, () -> {
-      return invalid.probe().expectMsg(new Pair<String, InvalidMetric>(expectedKey, expectedInvalidMetric));
-    });
+    testkit.run(
+        streamlet,
+        in,
+        outlets,
+        () -> {
+          return invalid
+              .probe()
+              .expectMsg(new Pair<String, InvalidMetric>(expectedKey, expectedInvalidMetric));
+        });
 
     invalid.probe().expectMsg(Completed.completed());
   }

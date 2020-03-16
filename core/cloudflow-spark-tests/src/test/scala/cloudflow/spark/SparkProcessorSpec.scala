@@ -36,15 +36,15 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
 
       // create sparkStreamlet
       object MySparkProcessor extends SparkStreamlet {
-        val in = AvroInlet[Data]("in")
-        val out = AvroOutlet[Simple]("out", _.name)
+        val in    = AvroInlet[Data]("in")
+        val out   = AvroOutlet[Simple]("out", _.name)
         val shape = StreamletShape(in, out)
 
         override def createLogic() = new SparkStreamletLogic {
           override def buildStreamingQueries = {
-            val dataset = readStream(in)
+            val dataset   = readStream(in)
             val outStream = dataset.select($"name").as[Simple]
-            val query = writeStream(outStream, out, OutputMode.Append)
+            val query     = writeStream(outStream, out, OutputMode.Append)
             StreamletQueryExecution(query)
           }
         }
@@ -70,4 +70,3 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
     }
   }
 }
-

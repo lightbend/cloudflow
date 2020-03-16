@@ -17,6 +17,7 @@
 package cloudflow.streamlets
 
 import java.io.{ File, InvalidObjectException }
+import java.util.UUID.randomUUID
 
 import scala.util.{ Failure, Try }
 
@@ -25,14 +26,13 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers._
 import spray.json._
 
-case class StreamletDefinition(
-    appId: String,
-    appVersion: String,
-    streamletRef: String,
-    streamletClass: String,
-    portMapping: List[ConnectedPort],
-    volumeMounts: List[VolumeMount],
-    config: Config) {
+case class StreamletDefinition(appId: String,
+                               appVersion: String,
+                               streamletRef: String,
+                               streamletClass: String,
+                               portMapping: List[ConnectedPort],
+                               volumeMounts: List[VolumeMount],
+                               config: Config) {
 
   private val portNameToSavepointPathMap: Map[String, SavepointPath] = {
     portMapping.map {
@@ -41,7 +41,7 @@ case class StreamletDefinition(
   }
 
   def resolveSavepoint(port: StreamletPort): Option[SavepointPath] = portNameToSavepointPathMap.get(port.name)
-  def resolveSavepoint(port: String): Option[SavepointPath] = portNameToSavepointPathMap.get(port)
+  def resolveSavepoint(port: String): Option[SavepointPath]        = portNameToSavepointPathMap.get(port)
 
 }
 
@@ -50,6 +50,11 @@ case class StreamletDefinition(
  */
 final case class SavepointPath(appId: String, streamletRef: String, portName: String) {
   def value: String = s"${appId}.${streamletRef}.${portName}"
+  def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
+    val base = s"$appId.$readingStreamletRef.${inlet.name}"
+    if (inlet.hasUniqueGroupId) s"${base}.${randomUUID.toString}"
+    else base
+  }
 }
 
 /**
@@ -71,7 +76,7 @@ object StreamletDefinition {
         .get
     }
   implicit val configReader: ValueReader[StreamletDefinition] = ValueReader.relative { config ⇒
-    val streamletRef = config.as[String]("streamlet_ref")
+    val streamletRef         = config.as[String]("streamlet_ref")
     val streamletContextData = config.as[StreamletContextData]("context")
     StreamletDefinition(
       appId = streamletContextData.appId,
@@ -114,11 +119,11 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
 
   protected implicit val configFormat = new JsonFormat[Config] {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
-    def read(json: JsValue): Config = ConfigFactory.parseString(json.toString)
+    def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
-    val jsReadOnlyMany = JsString("ReadOnlyMany")
+    val jsReadOnlyMany  = JsString("ReadOnlyMany")
     def write(accessMode: AccessMode): JsValue = accessMode match {
       case ReadWriteMany ⇒ jsReadWriteMany
       case ReadOnlyMany  ⇒ jsReadOnlyMany
@@ -130,9 +135,10 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     }
   }
 
-  protected implicit val volumeMountFormat = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
+  protected implicit val volumeMountFormat    = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
   protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "savepoint_path")
-  protected implicit val contextDataFormat = jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
+  protected implicit val contextDataFormat =
+    jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
 
   /**
    * Converts a json String, that is expected to contain one streamlet
@@ -140,9 +146,8 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
    *
    * @param json the json to deserialize
    */
-  def fromJson(json: String): Try[StreamletContextData] = {
+  def fromJson(json: String): Try[StreamletContextData] =
     Try(json.parseJson.convertTo[StreamletContextData])
-  }
 
   /**
    * Converts a context into a json string.
@@ -150,4 +155,3 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
   def toJson(context: StreamletContextData): String =
     context.toJson.compactPrint
 }
-

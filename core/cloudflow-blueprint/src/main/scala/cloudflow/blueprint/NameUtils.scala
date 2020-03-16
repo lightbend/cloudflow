@@ -17,13 +17,12 @@
 package cloudflow.blueprint
 
 private[blueprint] object NameUtils {
-  private final val DNSLabelPattern = """^[a-z0-9]([-a-z0-9]*[a-z0-9])?$""".r
+  private final val DNSLabelPattern       = """^[a-z0-9]([-a-z0-9]*[a-z0-9])?$""".r
   private final val DNS1123LabelMaxLength = 63
 
-  final def isDnsLabelCompatible(name: String): Boolean = {
+  final def isDnsLabelCompatible(name: String): Boolean =
     name match {
       case DNSLabelPattern(_) ⇒ true
       case _                  ⇒ false
     }
-  }
 }

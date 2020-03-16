@@ -2,12 +2,11 @@
 import sbt._
 import sbt.Keys._
 
-import scalariform.formatter.preferences._
-
 lazy val tensorflowAkka =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
     .settings(
 //end::docs-projectSetup-example[]
+      scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.10" % "test",
@@ -41,14 +40,4 @@ lazy val tensorflowAkka =  (project in file("."))
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 
-      scalariformPreferences := scalariformPreferences.value
-        .setPreference(AlignParameters, false)
-        .setPreference(AlignSingleLineCaseStatements, true)
-        .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-        .setPreference(DoubleIndentConstructorArguments, true)
-        .setPreference(DoubleIndentMethodDeclaration, true)
-        .setPreference(RewriteArrowSymbols, true)
-        .setPreference(DanglingCloseParenthesis, Preserve)
-        .setPreference(NewlineAtEndOfFile, true)
-        .setPreference(AllowParamGroupsOnNewlines, true)
     )

@@ -26,7 +26,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
   "a RunnerConfig" should {
     "generate the correct JSON (one streamlet per deployment)" in {
       val runnerConfig = RunnerConfig(appId, appVersion, ingressDeployment, kafkaBootstrapServers)
-      val config = ConfigFactory.parseString(runnerConfig.data)
+      val config       = ConfigFactory.parseString(runnerConfig.data)
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
       streamlets.size mustBe 1
@@ -46,14 +46,16 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         forExactly(1, connectedPorts) { connectedPort ⇒
           val savepointConfig = connectedPort.getConfig("savepoint_path")
 
-          ingressDeployment.portMappings must contain((
-            connectedPort.getString("port"),
-            Savepoint(
-              savepointConfig.getString("app_id"),
-              savepointConfig.getString("streamlet_ref"),
-              savepointConfig.getString("port_name")
+          ingressDeployment.portMappings must contain(
+            (
+              connectedPort.getString("port"),
+              Savepoint(
+                savepointConfig.getString("app_id"),
+                savepointConfig.getString("streamlet_ref"),
+                savepointConfig.getString("port_name")
+              )
             )
-          ))
+          )
         }
 
         streamletContext.getConfig(s"config") mustBe ingressDeployment.config
@@ -62,7 +64,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
     "generate the correct JSON (multiple streamlets per deployment)" in {
       val runnerConfig = RunnerConfig(appId, appVersion, Vector(ingressDeployment, processorDeployment), kafkaBootstrapServers)
-      val config = ConfigFactory.parseString(runnerConfig.data)
+      val config       = ConfigFactory.parseString(runnerConfig.data)
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
       streamlets.size mustBe 2
@@ -81,7 +83,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
         forExactly(2, connectedPorts) { connectedPort ⇒
           val savepointConfig = connectedPort.getConfig("savepoint_path")
-          val portName = connectedPort.getString("port")
+          val portName        = connectedPort.getString("port")
           val savepoint = Savepoint(
             savepointConfig.getString("app_id"),
             savepointConfig.getString("streamlet_ref"),
@@ -104,17 +106,18 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
   case class Foo(name: String)
   case class Bar(name: String)
 
-  val appId = "monstrous-mite-12345"
+  val appId      = "monstrous-mite-12345"
   val appVersion = "42-abcdef0"
-  val image = "image-1"
+  val image      = "image-1"
 
   val agentPaths = Map(ApplicationDescriptor.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
-  val kafkaBootstrapServers = "kafka-0.broker.kafka.svc.cluster.local:9092,kafka-1.broker.kafka.svc.cluster.local:9092,kafka-2.broker.kafka.svc.cluster.local:9092"
+  val kafkaBootstrapServers =
+    "kafka-0.broker.kafka.svc.cluster.local:9092,kafka-1.broker.kafka.svc.cluster.local:9092,kafka-2.broker.kafka.svc.cluster.local:9092"
 
-  val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
+  val ingress   = randomStreamlet().asIngress[Foo].withServerAttribute
   val processor = randomStreamlet().asProcessor[Foo, Bar].withRuntime("spark")
 
-  val ingressRef = ingress.ref("ingress")
+  val ingressRef   = ingress.ref("ingress")
   val processorRef = processor.ref("processor")
 
   val blueprint = Blueprint()
@@ -124,9 +127,9 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .connect(ingressRef.out, processorRef.in)
 
   val verifiedBlueprint = blueprint.verified.right.get
-  val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
-  val allDeployments = descriptor.deployments
-  val ingressDeployment = allDeployments.find(_.streamletName == ingressRef.name).value
+  val allDeployments      = descriptor.deployments
+  val ingressDeployment   = allDeployments.find(_.streamletName == ingressRef.name).value
   val processorDeployment = allDeployments.find(_.streamletName == processorRef.name).value
 }

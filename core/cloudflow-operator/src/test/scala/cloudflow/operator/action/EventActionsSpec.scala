@@ -21,43 +21,40 @@ import cloudflow.blueprint._
 import BlueprintBuilder._
 import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
 
-class EventActionsSpec extends WordSpec
-  with MustMatchers
-  with GivenWhenThen
-  with EitherValues
-  with Inspectors
-  with TestDeploymentContext {
+class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
-  val namespace = "ns"
+  val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
   val ingress = randomStreamlet().asIngress[Foo]
-  val egress = randomStreamlet().asEgress[Foo]
+  val egress  = randomStreamlet().asEgress[Foo]
 
   val ingressRef = ingress.ref("ingress")
-  val egressRef = egress.ref("egress")
+  val egressRef  = egress.ref("egress")
 
   val verifiedBlueprint = Blueprint()
     .define(Vector(ingress, egress))
     .use(ingressRef)
     .use(egressRef)
     .connect(ingressRef.out, egressRef.in)
-    .verified.right.value
+    .verified
+    .right
+    .value
 
-  val appId = "def-jux-12345"
+  val appId      = "def-jux-12345"
   val appVersion = "42-abcdef0"
-  val image = "image-1"
+  val image      = "image-1"
 
   "EventActions" should {
     "create event resources for a new deployed app" in {
       Given("a new app")
-      val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val app   = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val appCr = CloudflowApplication(app)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(app, None, namespace, appCr)
+      val actions = EventActions.deployEvents(appCr, None, namespace, appCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -68,13 +65,13 @@ class EventActionsSpec extends WordSpec
 
     "create event resources for an updated app that's already been deployed" in {
       Given("a new app")
-      val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val appCr      = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(app, Some(currentApp), namespace, currentAppCr)
+      val actions = EventActions.deployEvents(appCr, Some(currentAppCr), namespace, currentAppCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -86,12 +83,13 @@ class EventActionsSpec extends WordSpec
     "create event resources for an already deployed app with scaled streamlets" in {
       Given("a current app and a new app")
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
-      val app = currentApp.copy(deployments = currentApp.deployments.map(deployment ⇒ deployment.copy(replicas = Some(2))))
+      val app =
+        CloudflowApplication(currentApp.copy(deployments = currentApp.deployments.map(deployment ⇒ deployment.copy(replicas = Some(2)))))
 
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(app, Some(currentApp), namespace, currentAppCr)
+      val actions = EventActions.deployEvents(app, Some(currentAppCr), namespace, currentAppCr)
 
       Then("Three events should be created")
       actions.size mustBe 3
@@ -105,11 +103,11 @@ class EventActionsSpec extends WordSpec
 
     "create event resources when streamlet configuration changes" in {
       Given("a current app")
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val currentApp   = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created for a streamlet")
-      val action = EventActions.streamletChangeEvent(currentApp, currentApp.deployments.head, namespace, currentAppCr)
+      val action = EventActions.streamletChangeEvent(currentAppCr, currentApp.deployments.head, namespace, currentAppCr)
 
       Then("An StreamletConfigurationChanged event should be created")
       action.resource.asInstanceOf[skuber.Event].reason.contains("StreamletConfigurationChanged")
@@ -117,11 +115,11 @@ class EventActionsSpec extends WordSpec
 
     "create event resources for an app that is undeployed" in {
       Given("a current app")
-      val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val currentApp   = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created for a streamlet")
-      val action = EventActions.undeployEvent(currentApp, namespace, currentAppCr)
+      val action = EventActions.undeployEvent(currentAppCr, namespace, currentAppCr)
 
       Then("An ApplicationUndeployed event should be created")
       action.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUndeployed")

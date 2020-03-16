@@ -26,7 +26,8 @@ import cloudflow.akkastream.testkit._
 
 // The use of Tuple here is OK since the creation of the tuple is handled
 // internally by the AkkaStreamletTestKit when creating instances of this class
-case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.stream.javadsl.Source[(T, Committable), NotUsed]) extends InletTap[T] {
+case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.stream.javadsl.Source[(T, Committable), NotUsed])
+    extends InletTap[T] {
   val portName = inlet.name
 
   private[testkit] val source = src.asScala
@@ -34,7 +35,7 @@ case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.s
 
 case class QueueInletTap[T](inlet: CodecInlet[T])(implicit mat: ActorMaterializer) extends InletTap[T] {
   private val bufferSize = 1024
-  private val hub = BroadcastHub.sink[T](bufferSize)
+  private val hub        = BroadcastHub.sink[T](bufferSize)
 
   // Here we map the materialized value of the Scala queue source to materialize
   // to the Javadsl version of `SourceQueueWithComplete` so Java users can use
@@ -51,7 +52,9 @@ case class QueueInletTap[T](inlet: CodecInlet[T])(implicit mat: ActorMaterialize
   private[testkit] val (q, src) = qSource.toMat(hub)(Keep.both).run()
 
   val portName = inlet.name
-  val source = src.map { t ⇒ (t, TestCommittableOffset()) }
+  val source = src.map { t ⇒
+    (t, TestCommittableOffset())
+  }
   val queue: akka.stream.javadsl.SourceQueueWithComplete[T] = q
 }
 
@@ -59,13 +62,13 @@ case class QueueInletTap[T](inlet: CodecInlet[T])(implicit mat: ActorMaterialize
  * Copied over from Akka internals (akka.stream.impl.QueueSource.scala, 2.5.23)
  */
 private[testkit] final class SourceQueueAdapter[T](delegate: SourceQueueWithComplete[T])
-  extends akka.stream.javadsl.SourceQueueWithComplete[T] {
+    extends akka.stream.javadsl.SourceQueueWithComplete[T] {
   import java.util.concurrent.CompletionStage
   import scala.compat.java8.FutureConverters._
   import akka.Done
 
   def offer(elem: T): CompletionStage[QueueOfferResult] = delegate.offer(elem).toJava
-  def watchCompletion(): CompletionStage[Done] = delegate.watchCompletion().toJava
-  def complete(): Unit = delegate.complete()
-  def fail(ex: Throwable): Unit = delegate.fail(ex)
+  def watchCompletion(): CompletionStage[Done]          = delegate.watchCompletion().toJava
+  def complete(): Unit                                  = delegate.complete()
+  def fail(ex: Throwable): Unit                         = delegate.fail(ex)
 }

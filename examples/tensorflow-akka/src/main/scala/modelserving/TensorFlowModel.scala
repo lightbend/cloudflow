@@ -52,7 +52,7 @@ trait TensorFlowModel[Record, ServingResult] {
       case Left(errors)  ⇒ (errors, emptyServingResult)
       case Right(output) ⇒ ("", output)
     }
-    val duration = (System.currentTimeMillis() - start)
+    val duration       = (System.currentTimeMillis() - start)
     val resultMetadata = ModelResultMetadata(errors, loadedModel.modelName, startTime, duration)
     (modelOutput, resultMetadata)
   }
@@ -73,13 +73,12 @@ final case class LoadedModel(
   /**
    * Cleans up used session and graph
    */
-  def cleanup(): Unit = {
+  def cleanup(): Unit =
     try {
       session.close
     } finally {
       graph.close
     }
-  }
 }
 
 /**
@@ -94,10 +93,10 @@ object TensorFlowModelBundle {
       modelName: String,
       createModel: LoadedModel ⇒ Model,
       tags: Path ⇒ Seq[String] = firstTag
-  ): Try[Model] = {
+  ): Try[Model] =
     Try {
       val bundle = SavedModelBundle.load(savedModelBundlePath.toAbsolutePath.toString, tags(savedModelBundlePath): _*)
-      val graph = bundle.graph
+      val graph  = bundle.graph
       // get metatagraph and signature
       val metaGraphDef = MetaGraphDef.parseFrom(bundle.metaGraphDef)
       val signatureMap = metaGraphDef.getSignatureDefMap.asScala
@@ -106,7 +105,6 @@ object TensorFlowModelBundle {
       val session = bundle.session
       createModel(LoadedModel(modelName, graph, session, parseSignatures(signatureMap)))
     }
-  }
 
   /**
    * Parse signatures
@@ -114,10 +112,12 @@ object TensorFlowModelBundle {
    * @param signatures - signatures from metagraph
    * @returns map of names/signatures
    */
-  private def parseSignatures(signatures: MMap[String, SignatureDef]): Map[String, Signature] = {
-    signatures.map(signature ⇒
-      signature._1 -> Signature(parseInputOutput(signature._2.getInputsMap.asScala), parseInputOutput(signature._2.getOutputsMap.asScala))).toMap
-  }
+  private def parseSignatures(signatures: MMap[String, SignatureDef]): Map[String, Signature] =
+    signatures
+      .map(signature ⇒
+        signature._1 -> Signature(parseInputOutput(signature._2.getInputsMap.asScala), parseInputOutput(signature._2.getOutputsMap.asScala))
+      )
+      .toMap
 
   /**
    * Gets all tags in the saved bundle and uses the first one.
@@ -127,14 +127,18 @@ object TensorFlowModelBundle {
   private def firstTag(directory: Path): Seq[String] = {
 
     val directoryFile = directory.toFile
-    val pbfiles = if (directoryFile.exists && directoryFile.isDirectory)
-      directoryFile.listFiles.filter(_.isFile).filter(name ⇒ (name.getName.endsWith("pb") || name.getName.endsWith("pbtxt"))).toList
-    else
-      List[File]()
+    val pbfiles =
+      if (directoryFile.exists && directoryFile.isDirectory)
+        directoryFile.listFiles.filter(_.isFile).filter(name ⇒ (name.getName.endsWith("pb") || name.getName.endsWith("pbtxt"))).toList
+      else
+        List[File]()
     if (pbfiles.length > 0) {
       val byteArray = Files.readAllBytes(pbfiles(0).toPath)
-      SavedModel.parseFrom(byteArray).getMetaGraphsList.asScala.
-        flatMap(graph ⇒ graph.getMetaInfoDef.getTagsList.asByteStringList.asScala.map(_.toStringUtf8))
+      SavedModel
+        .parseFrom(byteArray)
+        .getMetaGraphsList
+        .asScala
+        .flatMap(graph ⇒ graph.getMetaInfoDef.getTagsList.asByteStringList.asScala.map(_.toStringUtf8))
     } else {
       Seq.empty
     }
@@ -146,17 +150,22 @@ object TensorFlowModelBundle {
    * @param inputOutputs - Input/Output definition from metagraph
    * @returns map of names/fields
    */
-  private def parseInputOutput(inputOutputs: MMap[String, TensorInfo]): Map[String, Field] = {
+  private def parseInputOutput(inputOutputs: MMap[String, TensorInfo]): Map[String, Field] =
     inputOutputs.map {
       case (key, info) ⇒
-        var name = ""
+        var name                                   = ""
         var dtype: Descriptors.EnumValueDescriptor = null
-        var shape = Seq.empty[Int]
+        var shape                                  = Seq.empty[Int]
         info.getAllFields.asScala.foreach { descriptor ⇒
           val fieldName = descriptor._1.getName
           if (fieldName.contains("shape")) {
-            descriptor._2.asInstanceOf[TensorShapeProto].getDimList.toArray.map(d ⇒
-              d.asInstanceOf[TensorShapeProto.Dim].getSize).toSeq.foreach(v ⇒ shape = shape :+ v.toInt)
+            descriptor._2
+              .asInstanceOf[TensorShapeProto]
+              .getDimList
+              .toArray
+              .map(d ⇒ d.asInstanceOf[TensorShapeProto.Dim].getSize)
+              .toSeq
+              .foreach(v ⇒ shape = shape :+ v.toInt)
           }
           if (fieldName.contains("name")) {
             name = descriptor._2.toString.split(":")(0)
@@ -167,7 +176,6 @@ object TensorFlowModelBundle {
         }
         key -> Field(name, dtype, shape)
     }.toMap
-  }
 
   /** Definition of the field (input/output) */
   case class Field(name: String, `type`: Descriptors.EnumValueDescriptor, shape: Seq[Int])

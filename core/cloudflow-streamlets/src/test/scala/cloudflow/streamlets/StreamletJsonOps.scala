@@ -32,17 +32,14 @@ object StreamletJsonOps {
       elements
     }
 
-    def field(field: String): Option[JsValue] = {
+    def field(field: String): Option[JsValue] =
       json.asJsObject().fields.get(field)
-    }
 
-    def fields(): Seq[JsValue] = {
+    def fields(): Seq[JsValue] =
       json.asJsObject().fields.values.toSeq
-    }
 
-    def stringField(name: String): Option[String] = {
+    def stringField(name: String): Option[String] =
       json.asJsObject().fields.get(name).collect { case JsString(txt) ⇒ txt }
-    }
 
     def mustBeAStreamletPortDescriptorFor(port: StreamletPort): Unit = {
       val jObj = json.asJsObject
@@ -56,7 +53,8 @@ object StreamletJsonOps {
       schema.field("format").value must haveStringValue(format)
 
       val fls1 = schema.fields.collect { case JsString(s) ⇒ s }.toList
-      val fls2 = List(port.schemaDefinition.fingerprint, port.schemaDefinition.format, port.schemaDefinition.name, port.schemaDefinition.schema)
+      val fls2 =
+        List(port.schemaDefinition.fingerprint, port.schemaDefinition.format, port.schemaDefinition.name, port.schemaDefinition.schema)
       fls1 must equal(fls2)
     }
 
@@ -77,9 +75,8 @@ object StreamletJsonOps {
   }
 
   implicit class JsonSeqOps(val jsonSeq: Seq[JsValue]) extends AnyVal {
-    def findElement(field: String, value: String): Option[JsValue] = {
+    def findElement(field: String, value: String): Option[JsValue] =
       jsonSeq.find(entry ⇒ entry.asJsObject.fields(field) == JsString(value))
-    }
   }
 }
 
@@ -89,22 +86,19 @@ trait DescriptorValidations {
   class HasField(name: String) extends Matcher[JsValue] {
     def apply(left: JsValue): MatchResult = {
       val jsObj = left.asJsObject("Expected a JSON Object")
-      MatchResult(
-        jsObj.fields.contains(name),
-        s"""Descriptor did not contain expected field "$name" """,
-        s"""Descriptor contains field "$name" """)
+      MatchResult(jsObj.fields.contains(name),
+                  s"""Descriptor did not contain expected field "$name" """,
+                  s"""Descriptor contains field "$name" """)
     }
   }
 
   class HasValue(value: JsValue) extends Matcher[JsValue] {
-    def apply(left: JsValue): MatchResult = {
+    def apply(left: JsValue): MatchResult =
       MatchResult(left == value, s"$left did not match expected $value", s"$left matches $value")
-    }
   }
   class HasValues(value: Seq[JsValue]) extends Matcher[Seq[JsValue]] {
-    def apply(left: Seq[JsValue]): MatchResult = {
+    def apply(left: Seq[JsValue]): MatchResult =
       MatchResult(left == value, s"$left did not match expected $value", s"$left matches $value")
-    }
   }
 
   def haveStringValue(value: String): Matcher[JsValue] = new HasValue(JsString(value))

@@ -31,19 +31,19 @@ import scala.concurrent._
 import scala.util._
 
 object Operator {
-  val ProtocolVersion = "1"
-  val ProtocolVersionKey = "protocol-version"
+  val ProtocolVersion              = "1"
+  val ProtocolVersionKey           = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
-  val ProtocolVersionConfigMap = ConfigMap(
-    metadata = ObjectMeta(
-      name = ProtocolVersionConfigMapName,
-      labels = Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName)),
+  def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = ConfigMap(
+    metadata = ObjectMeta(name = ProtocolVersionConfigMapName,
+                          labels = Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName),
+                          ownerReferences = ownerReferences),
     data = Map(ProtocolVersionKey -> ProtocolVersion)
   )
 
-  val AppIdLabel = "com.lightbend.cloudflow/app-id"
+  val AppIdLabel         = "com.lightbend.cloudflow/app-id"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
-  val ConfigUpdateLabel = "com.lightbend.cloudflow/config-update"
+  val ConfigUpdateLabel  = "com.lightbend.cloudflow/config-update"
 
   val DefaultWatchOptions = ListOptions(
     labelSelector = Some(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow))),
@@ -54,9 +54,10 @@ object Operator {
 
   val MaxObjectBufSize = 8 * 1024 * 1024
 
-  def handleAppEvents(client: KubernetesClient)
-    (implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
-    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+  def handleAppEvents(
+      client: KubernetesClient
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
 
     runStream(
@@ -70,9 +71,10 @@ object Operator {
     )
   }
 
-  def handleConfigurationUpdates(client: KubernetesClient)
-    (implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
-    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+  def handleConfigurationUpdates(
+      client: KubernetesClient
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
 
     runStream(
@@ -88,9 +90,8 @@ object Operator {
     )
   }
 
-  def handleStatusUpdates(client: KubernetesClient)
-    (implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+  def handleStatusUpdates(client: KubernetesClient)(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client)
@@ -105,16 +106,22 @@ object Operator {
     )
   }
 
-  private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action[ObjectResource], Action[ObjectResource], NotUsed] = {
-    Flow[Action[ObjectResource]].mapAsync(1)(actionExecutor.execute)
+  private def executeActions(actionExecutor: ActionExecutor,
+                             logAttributes: Attributes): Flow[Action[ObjectResource], Action[ObjectResource], NotUsed] =
+    Flow[Action[ObjectResource]]
+      .mapAsync(1)(actionExecutor.execute)
       .log("action", Action.executed)
       .withAttributes(logAttributes)
-  }
 
   private def watch[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions = DefaultWatchOptions
-  )(implicit system: ActorSystem, fmt: Format[O], lfmt: Format[ListResource[O]], rd: ResourceDefinition[O], lc: LoggingContext, ec: ExecutionContext): Source[WatchEvent[O], NotUsed] = {
+  )(implicit system: ActorSystem,
+    fmt: Format[O],
+    lfmt: Format[ListResource[O]],
+    rd: ResourceDefinition[O],
+    lc: LoggingContext,
+    ec: ExecutionContext): Source[WatchEvent[O], NotUsed] = {
 
     /* =================================================
      * Workaround for issue found on openshift:
@@ -144,31 +151,35 @@ object Operator {
           .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
           .mapMaterializedValue(_ ⇒ NotUsed)
       )
-      .recoverWithRetries(-1, {
-        case _: TcpIdleTimeoutException ⇒
-          watch[O](client)
-        case e: skuber.api.client.K8SException ⇒
-          println(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
-          watch[O](client)
-      })
+      .recoverWithRetries(
+        -1, {
+          case _: TcpIdleTimeoutException ⇒
+            watch[O](client)
+          case e: skuber.api.client.K8SException ⇒
+            println(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
+            watch[O](client)
+        }
+      )
   }
 
   private def getCurrentEvents[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions
-  )(implicit lfmt: Format[ListResource[O]], rd: ResourceDefinition[O], lc: LoggingContext, ec: ExecutionContext): Future[List[WatchEvent[O]]] = {
+  )(implicit lfmt: Format[ListResource[O]],
+    rd: ResourceDefinition[O],
+    lc: LoggingContext,
+    ec: ExecutionContext): Future[List[WatchEvent[O]]] =
     for {
       namespaces ← client.getNamespaceNames
-      lists ← Future.sequence(namespaces.map(ns ⇒ client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
+      lists      ← Future.sequence(namespaces.map(ns ⇒ client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
       watchEvents = lists.flatMap(_.items.map(item ⇒ WatchEvent(EventType.ADDED, item)))
     } yield watchEvents
-  }
 
   private def runStream(
       graph: RunnableGraph[Future[_]],
       unexpectedCompletionMsg: String,
       errorMsg: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) =
     graph.run.onComplete {
       case Success(_) ⇒
         system.log.warning(unexpectedCompletionMsg)
@@ -180,7 +191,6 @@ object Operator {
         system.registerOnTermination(exitWithFailure)
         system.terminate()
     }
-  }
 
   private def exitWithFailure() = System.exit(-1)
 }

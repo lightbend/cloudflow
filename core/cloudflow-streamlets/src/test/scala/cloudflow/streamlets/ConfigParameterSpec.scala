@@ -30,9 +30,12 @@ class ConfigParameterSpec extends WordSpec with MustMatchers with OptionValues {
       val streamletConfiguration = """
         | records-in-window = 10
         """.stripMargin
-      val config = ConfigFactory.parseString(streamletConfiguration)
+      val config                 = ConfigFactory.parseString(streamletConfiguration)
 
-      val recordsInWindowParameter = IntegerConfigParameter("records-in-window", "This value describes how many records of data should be processed together, default 64", Some(64))
+      val recordsInWindowParameter =
+        IntegerConfigParameter("records-in-window",
+                               "This value describes how many records of data should be processed together, default 64",
+                               Some(64))
       config.getInt(recordsInWindowParameter.key) mustBe 10
     }
 
@@ -40,12 +43,12 @@ class ConfigParameterSpec extends WordSpec with MustMatchers with OptionValues {
       val streamletConfiguration = """
         | time-in-day = "20:30"
         """.stripMargin
-      val config = ConfigFactory.parseString(streamletConfiguration)
+      val config                 = ConfigFactory.parseString(streamletConfiguration)
 
       case class MilitaryTimeConfigParameter(key: String, defaultValue: Option[String] = None) extends ConfigParameter {
         val description: String = "This parameter validates that the users enter the time in 24h format."
-        val validation = RegexpValidationType("^(0[0-9]|1[0-9]|2[0-3]|[0-9]):[0-5][0-9]$")
-        def toDescriptor = ConfigParameterDescriptor(key, description, validation, defaultValue)
+        val validation          = RegexpValidationType("^(0[0-9]|1[0-9]|2[0-3]|[0-9]):[0-5][0-9]$")
+        def toDescriptor        = ConfigParameterDescriptor(key, description, validation, defaultValue)
       }
       val timeInDayRequirement = MilitaryTimeConfigParameter("time-in-day")
       config.getString(timeInDayRequirement.key) mustBe "20:30"
@@ -71,7 +74,7 @@ class ConfigParameterSpec extends WordSpec with MustMatchers with OptionValues {
       descriptor.key mustBe "test"
       descriptor.description mustBe "description"
       descriptor.validationType mustBe "string"
-      descriptor.validationPattern.value mustBe "^.{1,1000}$"
+      descriptor.validationPattern.value mustBe ".*"
       descriptor.defaultValue.value mustBe "test string"
     }
 

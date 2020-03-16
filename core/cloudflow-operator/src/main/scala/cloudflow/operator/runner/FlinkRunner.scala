@@ -21,6 +21,7 @@ import play.api.libs.json._
 import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+import skuber.ResourceSpecification.Subresources
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Spark [[Runner]].
@@ -34,35 +35,38 @@ object FlinkRunner extends Runner[CR] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
 
-  def resourceDefinition = implicitly[ResourceDefinition[CR]]
-  final val runtime = "flink"
-  final val PVCMountPath = "/mnt/flink/storage"
+  def resourceDefinition       = implicitly[ResourceDefinition[CR]]
+  final val runtime            = "flink"
+  final val PVCMountPath       = "/mnt/flink/storage"
   final val DefaultParallelism = 2
-  final val JvmArgsEnvVar = "JVM_ARGS"
+  final val JvmArgsEnvVar      = "JVM_ARGS"
 
   def resource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): CR = {
 
-    val image = deployment.image
-    val streamletToDeploy = app.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val image             = deployment.image
+    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    val volumes = makeVolumesSpec(deployment, app, streamletToDeploy)
+    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy)
 
     import ctx.flinkRunnerSettings._
 
-    val envConfig = EnvConfig(List(
-      EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
-    ))
+    val envConfig = EnvConfig(
+      List(
+        EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
+      )
+    )
 
     val jobManagerConfig = JobManagerConfig(
       jobManagerSettings.replicas,
       Resources.make(
-        ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value), jobManagerSettings.resources.cpuRequest.map(_.value)),
+        ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
+                              jobManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
       ),
       envConfig
@@ -73,17 +77,18 @@ object FlinkRunner extends Runner[CR] {
     val taskManagerConfig = TaskManagerConfig(
       taskSlots = taskManagerSettings.taskSlots,
       Resources.make(
-        ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value), taskManagerSettings.resources.cpuRequest.map(_.value)),
+        ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
+                              taskManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
       ),
       envConfig
     )
 
     val flinkConfig: Map[String, String] = Map(
-      "state.backend" -> "filesystem",
+      "state.backend"                  -> "filesystem",
       "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
-      "state.checkpoints.dir" -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
-      "state.savepoints.dir" -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
+      "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
+      "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
     )
 
     val jobSpec = Spec(
@@ -98,18 +103,22 @@ object FlinkRunner extends Runner[CR] {
       taskManagerConfig = taskManagerConfig
     )
 
-    val name = Name.ofFlinkApplication(deployment.name)
+    val name      = Name.ofFlinkApplication(deployment.name)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-      Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.appId)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
     CustomResource[Spec, Status](jobSpec)
-      .withMetadata(ObjectMeta(
-        name = name,
-        namespace = namespace,
-        annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
-        labels = labels
-      ))
+      .withMetadata(
+        ObjectMeta(
+          name = name,
+          namespace = namespace,
+          annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
+          labels = labels,
+          ownerReferences = ownerReferences
+        )
+      )
   }
 
   /**
@@ -135,19 +144,18 @@ object FlinkRunner extends Runner[CR] {
    * //   }
    * // ]
    */
-  private def makeVolumesSpec(
-      deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
-      streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
+  private def makeVolumesSpec(deployment: StreamletDeployment,
+                              app: CloudflowApplication.CR,
+                              streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
     // config map
-    val configMapName = Name.ofConfigMap(deployment.name)
+    val configMapName   = Name.ofConfigMap(deployment.name)
     val configMapVolume = Volume("config-map-vol", Volume.ConfigMapVolumeSource(configMapName))
 
     // secret
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
     // persistent storage
-    val pvcName = Name.ofPVCInstance(app.appId)
+    val pvcName   = Name.ofPVCInstance(app.spec.appId)
     val pvcVolume = Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef(pvcName))
 
     // Streamlet volume mounting
@@ -176,8 +184,8 @@ object FlinkRunner extends Runner[CR] {
    * // ]
    */
   private def makeVolumeMountsSpec(streamletToDeploy: Option[StreamletInstance]): Vector[Volume.Mount] = {
-    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map {
-      mount ⇒ Volume.Mount(mount.name, mount.path)
+    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+      Volume.Mount(mount.name, mount.path)
     })
 
     Vector(
@@ -188,9 +196,9 @@ object FlinkRunner extends Runner[CR] {
     ) ++ streamletVolumeMount
   }
 
-  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.Spec): String = {
-    val agentPath = app.agentPaths(CloudflowApplication.PrometheusAgentKey)
-    val port = PrometheusConfig.PrometheusJmxExporterPort.toString
+  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.CR): String = {
+    val agentPath  = app.spec.agentPaths(CloudflowApplication.PrometheusAgentKey)
+    val port       = PrometheusConfig.PrometheusJmxExporterPort.toString
     val configPath = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     s"-javaagent:$agentPath=$port:$configPath"
   }
@@ -225,12 +233,13 @@ object FlinkResource {
 
   final case class Resources(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None)
   object Resources {
-    def make(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None): Option[Resources] = (requests, limits) match {
-      case (Some(_), Some(_)) ⇒ Some(Resources(requests, limits))
-      case (Some(_), None)    ⇒ Some(Resources(requests, None))
-      case (None, Some(_))    ⇒ Some(Resources(None, limits))
-      case (None, None)       ⇒ None
-    }
+    def make(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None): Option[Resources] =
+      (requests, limits) match {
+        case (Some(_), Some(_)) ⇒ Some(Resources(requests, limits))
+        case (Some(_), None)    ⇒ Some(Resources(requests, None))
+        case (None, Some(_))    ⇒ Some(Resources(None, limits))
+        case (None, None)       ⇒ None
+      }
   }
 
   final case class JobManagerConfig(
@@ -291,26 +300,6 @@ object FlinkResource {
       restartNonce: String = ""
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount] = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume] = skuber.json.format.volumeFormat
-  implicit val envVarFmt: Format[EnvVar] = skuber.json.format.envVarFormat
-  implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
-  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
-
-  implicit val namePathFmt: Format[NamePath] = Json.format[NamePath]
-  implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
-  implicit val resourceRequsetsFmt: Format[ResourceRequests] = Json.format[ResourceRequests]
-  implicit val resourceLimitsFmt: Format[ResourceLimits] = Json.format[ResourceLimits]
-  implicit val resourcesFmt: Format[Resources] = Json.format[Resources]
-  implicit val envConfigFmt: Format[EnvConfig] = Json.format[EnvConfig]
-
-  implicit val jobManagerFmt: Format[JobManagerConfig] = Json.format[JobManagerConfig]
-  implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
-
-  implicit val specFmt: Format[Spec] = Json.format[Spec]
-
-  final case class EnvConfig(env: List[EnvVar] = Nil)
-
   final case class ApplicationState(state: String, errorMessage: Option[String])
   final case class JobManagerInfo(
       podName: Option[String],
@@ -326,15 +315,38 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
+  implicit val volumeMountFmt: Format[Volume.Mount]        = skuber.json.format.volMountFormat
+  implicit val volumeFmt: Format[Volume]                   = skuber.json.format.volumeFormat
+  implicit val envVarFmt: Format[EnvVar]                   = skuber.json.format.envVarFormat
+  implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
+  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
+
+  implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
+  implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
+  implicit val resourceRequsetsFmt: Format[ResourceRequests]     = Json.format[ResourceRequests]
+  implicit val resourceLimitsFmt: Format[ResourceLimits]         = Json.format[ResourceLimits]
+  implicit val resourcesFmt: Format[Resources]                   = Json.format[Resources]
+  implicit val envConfigFmt: Format[EnvConfig]                   = Json.format[EnvConfig]
+
+  implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
+  implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
+
+  implicit val specFmt: Format[Spec]     = Json.format[Spec]
+  implicit val statusFmt: Format[Status] = Json.format[Status]
+
+  final case class EnvConfig(env: List[EnvVar] = Nil)
+
   type CR = CustomResource[Spec, Status]
 
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val jobManagerInfoFmt: Format[JobManagerInfo] = Json.format[JobManagerInfo]
-  implicit val statusFmt: Format[Status] = Json.format[Status]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "flink.k8s.io",
     version = "v1beta1",
-    kind = "FlinkApplication"
+    kind = "FlinkApplication",
+    subresources = Some(Subresources().withStatusSubresource)
   )
+
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
 }

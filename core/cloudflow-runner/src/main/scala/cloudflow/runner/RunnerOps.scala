@@ -23,9 +23,9 @@ import scala.util.{ Failure, Success, Try }
 
 object RunnerOps {
   val StorageMountPathKey = "storage.mountPath"
-  val MetadataName = "metadata.name"
-  val MetadataNamespace = "metadata.namespace"
-  val MetadataUid = "metadata.uid"
+  val MetadataName        = "metadata.name"
+  val MetadataNamespace   = "metadata.namespace"
+  val MetadataUid         = "metadata.uid"
 
   def addStorageConfig(config: Config, pvcVolumeMountPath: String): Config = {
     val storageConfig = ConfigFactory.parseString(s"""$StorageMountPathKey:"$pvcVolumeMountPath"""")
@@ -34,8 +34,7 @@ object RunnerOps {
 
   def addPodRuntimeConfig(config: Config, downwardApiVolumeMountPath: String): Config = {
     val (name, namespace, uid) = getPodMetadata(downwardApiVolumeMountPath)
-    val podRuntimeConfig = ConfigFactory.parseString(
-      s"""
+    val podRuntimeConfig       = ConfigFactory.parseString(s"""
          |cloudflow.runner.pod: {
          |  $MetadataName:"$name"
          |  $MetadataNamespace:"$namespace"
@@ -46,9 +45,9 @@ object RunnerOps {
   }
 
   def getPodMetadata(downwardApiVolumeMountPath: String): (String, String, String) = {
-    val name = readDownwardApi(downwardApiVolumeMountPath, MetadataName)
+    val name      = readDownwardApi(downwardApiVolumeMountPath, MetadataName)
     val namespace = readDownwardApi(downwardApiVolumeMountPath, MetadataNamespace)
-    val uid = readDownwardApi(downwardApiVolumeMountPath, MetadataUid)
+    val uid       = readDownwardApi(downwardApiVolumeMountPath, MetadataUid)
     (name, namespace, uid)
   }
 
@@ -56,7 +55,8 @@ object RunnerOps {
     val path = s"$downwardApiVolumeMountPath/$filename"
     Try(Source.fromFile(path).getLines.mkString) match {
       case Success(contents) ⇒ contents
-      case Failure(ex)       ⇒ throw new Exception(s"An error occurred while attempting to access the downward API volume mount with path '$path'", ex)
+      case Failure(ex) ⇒
+        throw new Exception(s"An error occurred while attempting to access the downward API volume mount with path '$path'", ex)
     }
   }
 }

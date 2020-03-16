@@ -23,7 +23,7 @@ import play.api.libs.json._
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
-  val SecretMountPath = "/etc/cloudflow-runner-secret"
+  val SecretMountPath    = "/etc/cloudflow-runner-secret"
   val DownwardApiVolume = Volume(
     name = "downward-api-volume",
     source = Volume.DownwardApiVolumeSource(items = List(
@@ -42,7 +42,8 @@ object Runner {
         path = "metadata.namespace",
         resourceFieldRef = None
       )
-    ))
+    )
+    )
   )
   val DownwardApiVolumeMount = Volume.Mount(DownwardApiVolume.name, "/mnt/downward-api-volume/")
 
@@ -65,17 +66,18 @@ trait Runner[T <: ObjectResource] {
   def runtime: String
 
   final val RuntimeMainClass = "cloudflow.runner.Runner"
-  final val RunnerJarName = "cloudflow-runner.jar"
+  final val RunnerJarName    = "cloudflow-runner.jar"
 
   /**
    * Creates the configmap for the runner.
    */
   def configResource(
       deployment: StreamletDeployment,
-      app: CloudflowApplication.Spec,
+      app: CloudflowApplication.CR,
       namespace: String
   )(implicit ctx: DeploymentContext): ConfigMap = {
-    val labels = CloudflowLabels(app)
+    val labels          = CloudflowLabels(app)
+    val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val prometheusConfig = deployment.runtime match {
       case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules)
       case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerSettings.prometheusRules)
@@ -83,12 +85,12 @@ trait Runner[T <: ObjectResource] {
     }
 
     val configData = Vector(
-      RunnerConfig(app.appId, app.appVersion, deployment, ctx.kafkaContext.bootstrapServers),
+      RunnerConfig(app.spec.appId, app.spec.appVersion, deployment, ctx.kafkaContext.bootstrapServers),
       prometheusConfig
     )
     val name = Name.ofConfigMap(deployment.name)
     ConfigMap(
-      metadata = ObjectMeta(name = name, namespace = namespace, labels = labels(name)),
+      metadata = ObjectMeta(name = name, namespace = namespace, labels = labels(name), ownerReferences = ownerReferences),
       data = configData.map(cd ⇒ cd.filename -> cd.data).toMap
     )
   }
@@ -96,5 +98,7 @@ trait Runner[T <: ObjectResource] {
   /**
    * Creates the runner resource.
    */
-  def resource(deployment: StreamletDeployment, app: CloudflowApplication.Spec, namespace: String, updateLabels: Map[String, String] = Map())(implicit ctx: DeploymentContext): T
+  def resource(deployment: StreamletDeployment, app: CloudflowApplication.CR, namespace: String, updateLabels: Map[String, String] = Map())(
+      implicit ctx: DeploymentContext
+  ): T
 }

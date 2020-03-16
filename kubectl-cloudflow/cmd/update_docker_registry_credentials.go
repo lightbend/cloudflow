@@ -9,7 +9,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
@@ -106,7 +105,7 @@ func createOrUpdateNamespace(k8sClient *kubernetes.Clientset, appID string) {
 
 func newNamespace(appID string) v1.Namespace {
 	return v1.Namespace{
-		ObjectMeta: meta_v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   appID,
 			Labels: domain.CreateLabels(appID),
 		},
@@ -159,22 +158,23 @@ func createOrUpdateServiceAccount(k8sClient *kubernetes.Clientset, appID string,
 	return nil, fmt.Errorf("Failed to update Cloudflow app service account in `%s`, %s", appID, err)
 }
 
-func newCloudflowServiceAccount(appID string) v1.ServiceAccount {
+func newCloudflowServiceAccount(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {
 	return v1.ServiceAccount{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      cloudflowAppServiceAccountName,
-			Namespace: appID,
-			Labels:    domain.CreateLabels(appID),
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            cloudflowAppServiceAccountName,
+			Namespace:       appID,
+			Labels:          domain.CreateLabels(appID),
+			OwnerReferences: []metav1.OwnerReference{cloudflowOperatorOwnerReference},
 		},
 	}
 }
 
-func newCloudflowServiceAccountWithImagePullSecrets(appID string) v1.ServiceAccount {
+func newCloudflowServiceAccountWithImagePullSecrets(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {
 	secretRef := v1.LocalObjectReference{
 		Name: imagePullSecretName,
 	}
 	imagePullSecrets := []v1.LocalObjectReference{secretRef}
-	serviceAccount := newCloudflowServiceAccount(appID)
+	serviceAccount := newCloudflowServiceAccount(appID, cloudflowOperatorOwnerReference)
 	serviceAccount.ImagePullSecrets = imagePullSecrets
 	auto := true
 	serviceAccount.AutomountServiceAccountToken = &auto

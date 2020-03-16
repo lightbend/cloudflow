@@ -74,7 +74,7 @@ RUN set -ex && \
 
 
 ENV SPARK_HOME=/opt/spark \
-    SPARK_VERSION=2.4.4
+    SPARK_VERSION=2.4.5
 
 WORKDIR /opt/spark/work-dir
 RUN chmod g+w /opt/spark/work-dir

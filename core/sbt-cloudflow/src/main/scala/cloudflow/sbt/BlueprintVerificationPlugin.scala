@@ -33,52 +33,48 @@ object BlueprintVerificationPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     blueprintFile := Def.taskDyn {
-      Def.task {
-        val defaultBlueprint = blueprintConf(baseDirectory.value)
-        blueprint.value.map { bpFilename ⇒
-          baseDirectory.value / "src" / "main" / "blueprint" / bpFilename
-        }.getOrElse(defaultBlueprint)
-      }
-    }.value,
-
+          Def.task {
+            val defaultBlueprint = blueprintConf(baseDirectory.value)
+            blueprint.value
+              .map { bpFilename ⇒
+                baseDirectory.value / "src" / "main" / "blueprint" / bpFilename
+              }
+              .getOrElse(defaultBlueprint)
+          }
+        }.value,
     verifyBlueprint := Def.taskDyn {
-      Def.task {
-        val log = streams.value.log
-        feedbackResults(verificationResult.value, log)
-      }
-    }.value,
-
+          Def.task {
+            val log = streams.value.log
+            feedbackResults(verificationResult.value, log)
+          }
+        }.value,
     verificationResult := Def.taskDyn {
-      val detectedStreamlets = cloudflowStreamletDescriptors.value
-      val dockerImageName = cloudflowDockerImageName.value
-      val bpFile = blueprintFile.value
-      verifiedBlueprints(bpFile, detectedStreamlets, dockerImageName)
-    }.value,
-
+          val detectedStreamlets = cloudflowStreamletDescriptors.value
+          val dockerImageName    = cloudflowDockerImageName.value
+          val bpFile             = blueprintFile.value
+          verifiedBlueprints(bpFile, detectedStreamlets, dockerImageName)
+        }.value,
     verifiedBlueprintFile := Def.taskDyn {
-      val res = verificationResult.value
-      writeVerifiedBlueprintFile(res)
-    }.value,
-
+          val res = verificationResult.value
+          writeVerifiedBlueprintFile(res)
+        }.value,
     mappings in (Compile, packageBin) ++= {
       val _ = verifyBlueprint.value // dependency
       verifiedBlueprintFile.value.map { bpFile ⇒
         bpFile -> bpFile.getName
       }
     },
-
     applicationDescriptor := {
-      val appId = (ThisProject / name).value
-      val appVersion = cloudflowBuildNumber.value.buildNumber
-      val agentPathsMap = agentPaths.value
+      val appId           = (ThisProject / name).value
+      val appVersion      = cloudflowBuildNumber.value.buildNumber
+      val agentPathsMap   = agentPaths.value
       val dockerImageName = cloudflowDockerImageName.value
 
       for {
         BlueprintVerified(bp, _) ← verificationResult.value.toOption
-        verifiedBlueprint ← bp.verified.toOption
+        verifiedBlueprint        ← bp.verified.toOption
       } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap)
     },
-
     fork in Compile := true
   )
 
@@ -103,48 +99,55 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     val streamletDescriptors = detectedStreamletDescriptors
 
     //TODO cleanup: separate into a 'BlueprintConfigFormat.parse'
-    bpFile.allPaths.get().headOption.map { bpFile ⇒
-      val config = ConfigFactory.parseString(IO.read(bpFile))
-      val streamletRefs = config
-        .getConfig("blueprint.streamlets")
-        .entrySet
-        .asScala
-        .map { e ⇒
-          StreamletRef(
-            name = e.getKey,
-            className = config.getString(s"blueprint.streamlets.${e.getKey}")
-          )
-        }.toVector
-
-      val streamletConnections = config
-        .getConfig("blueprint.connections")
-        .entrySet
-        .asScala
-        .flatMap { e ⇒
-          val inlets = config.getStringList(s"blueprint.connections.${e.getKey}").asScala
-          inlets.map { inlet ⇒
-            StreamletConnection(
-              from = e.getKey,
-              to = inlet
+    bpFile.allPaths
+      .get()
+      .headOption
+      .map { bpFile ⇒
+        val config = ConfigFactory.parseString(IO.read(bpFile))
+        val streamletRefs = config
+          .getConfig("blueprint.streamlets")
+          .entrySet
+          .asScala
+          .map { e ⇒
+            StreamletRef(
+              name = e.getKey,
+              className = config.getString(s"blueprint.streamlets.${e.getKey}")
             )
           }
-        }.toVector
+          .toVector
 
-      val blueprint =
-        Blueprint(streamletRefs, streamletConnections, streamletDescriptors.toVector)
-          .verify
+        val streamletConnections = config
+          .getConfig("blueprint.connections")
+          .entrySet
+          .asScala
+          .flatMap { e ⇒
+            val inlets = config.getStringList(s"blueprint.connections.${e.getKey}").asScala
+            inlets.map { inlet ⇒
+              StreamletConnection(
+                from = e.getKey,
+                to = inlet
+              )
+            }
+          }
+          .toVector
 
-      if (blueprint.problems.isEmpty) {
-        Right(BlueprintVerified(blueprint, bpFile))
-      } else {
-        Left(BlueprintRuleViolations(blueprint, bpFile))
+        val blueprint =
+          Blueprint(streamletRefs, streamletConnections, streamletDescriptors.toVector).verify
+
+        if (blueprint.problems.isEmpty) {
+          Right(BlueprintVerified(blueprint, bpFile))
+        } else {
+          Left(BlueprintRuleViolations(blueprint, bpFile))
+        }
       }
-    } getOrElse {
-      Left(BlueprintDoesNotExist(bpFile))
-    }
+      .getOrElse {
+        Left(BlueprintDoesNotExist(bpFile))
+      }
   }
 
-  private def writeVerifiedBlueprintFile(results: Either[BlueprintVerificationFailed, BlueprintVerified]): Def.Initialize[Task[Option[File]]] = Def.task {
+  private def writeVerifiedBlueprintFile(
+      results: Either[BlueprintVerificationFailed, BlueprintVerified]
+  ): Def.Initialize[Task[Option[File]]] = Def.task {
     results.toOption.map { blueprintVerified ⇒
       val file = (target in Compile).value / "blueprint" / blueprintVerified.file.getName
       IO.copyFile(blueprintVerified.file, file)
@@ -152,22 +155,25 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     }
   }
 
-  private def feedbackResults(results: Either[BlueprintVerificationFailed, BlueprintVerified], log: sbt.internal.util.ManagedLogger): Unit = {
+  private def feedbackResults(results: Either[BlueprintVerificationFailed, BlueprintVerified], log: sbt.internal.util.ManagedLogger): Unit =
     results match {
       case Left(BlueprintDoesNotExist(file)) ⇒
         throw new BlueprintVerificationError(s"The blueprint file does not exist:\n${file.toString}")
       case Left(BlueprintRuleViolations(blueprint, file)) ⇒
-        val problemsMsg = blueprint.problems.map { p ⇒ BlueprintProblem.toMessage(p) }.mkString("\n")
+        val problemsMsg = blueprint.problems
+          .map { p ⇒
+            BlueprintProblem.toMessage(p)
+          }
+          .mkString("\n")
         throw new BlueprintVerificationError(s"${file.toString}:\n$problemsMsg")
       case Right(BlueprintVerified(_, file)) ⇒
         log.success(s"${file.toString} verified.")
     }
-  }
 }
 
 sealed trait BlueprintVerificationFailed
 case class BlueprintRuleViolations(blueprint: Blueprint, file: File) extends BlueprintVerificationFailed
-case class BlueprintDoesNotExist(file: File) extends BlueprintVerificationFailed
+case class BlueprintDoesNotExist(file: File)                         extends BlueprintVerificationFailed
 case class BlueprintVerified(blueprint: Blueprint, file: File)
 
 class BlueprintVerificationError(msg: String) extends Exception(s"\n$msg") with NoStackTrace with sbt.FeedbackProvidedException
