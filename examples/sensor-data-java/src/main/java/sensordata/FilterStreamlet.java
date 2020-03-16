@@ -30,13 +30,12 @@ import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.AvroInlet;
 import cloudflow.streamlets.avro.AvroOutlet;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 public class FilterStreamlet extends AkkaStreamlet {
 
@@ -94,9 +93,7 @@ public class FilterStreamlet extends AkkaStreamlet {
               referenceFilesPath.toString(),
               streamletConfig.getString(filterFilenameConfig.getKey()));
 
-      final FiniteDuration pollingInterval =
-          FiniteDuration.create(
-              streamletConfig.getInt(filterPollingInterval.getKey()), TimeUnit.SECONDS);
+      final Duration pollingInterval = Duration.ofSeconds(streamletConfig.getInt(filterPollingInterval.getKey()));
 
       final Source<ArrayList<String>, NotUsed> filterFileContent =
           DirectoryChangesSource.create(referenceFilesPath, pollingInterval, Integer.MAX_VALUE)

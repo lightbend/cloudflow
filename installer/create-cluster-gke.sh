@@ -15,11 +15,11 @@
 # limitations under the License.
 
 # Usage:
-# create-cluster-gke.sh [CLUSTER-NAME]
+# create-cluster-gke.sh [CLUSTER-NAME] [CLUSTER-VERSION]
 if [ $# -eq 0 ]
   then
     echo "No cluster name supplied"
-    echo "Usage: create-cluster-gke.sh [CLUSTER-NAME]"
+    echo "Usage: create-cluster-gke.sh [CLUSTER-NAME] (Optional)[CLUSTER-VERSION]"
     exit 1
 fi
 
@@ -40,15 +40,18 @@ if [ "$gcloudRegion" == "" ]
 fi
 
 CLUSTER_NAME=$1
+CLUSTER_VERSION=$2
+
+if [ -z "$CLUSTER_VERSION" ]
+  then
+    # https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#versions_available_for_new_cluster_masters
+    CLUSTER_VERSION=`gcloud container get-server-config --format json | jq -r .defaultClusterVersion`
+    echo "No cluster version specified. Using the default: $CLUSTER_VERSION"
+  else
+    echo "Cluster version: $CLUSTER_VERSION"
+fi
 
 # Create cluster
-# Versions available for new cluster masters
-# https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#versions_available_for_new_cluster_masters
-# use command `gcloud container get-server-config` to find latest supported master GKE cluster version
-
-CLUSTER_VERSION=`gcloud container get-server-config --format json | jq -r .defaultClusterVersion`
-
-echo "using default cluster version: $CLUSTER_VERSION"
 
 gcloud container clusters create $CLUSTER_NAME \
   --cluster-version $CLUSTER_VERSION  \

@@ -387,7 +387,7 @@ func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.Cloudflo
 func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) < 1 || args[0] == "" {
-		return fmt.Errorf("Please specify the full path to the Docker image containing the application. For example: 'docker-registry.mydomain.com/cloudflow/awesome-app:37-172e856'")
+		return fmt.Errorf("please specify the full path to the Docker image containing the application. For example: 'docker-registry.mydomain.com/cloudflow/awesome-app:37-172e856'")
 	}
 
 	return nil

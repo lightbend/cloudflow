@@ -57,7 +57,7 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) < 1 {
-		return fmt.Errorf("You need to specify an application name")
+		return fmt.Errorf("you need to specify an application name")
 	}
 	return nil
 }
