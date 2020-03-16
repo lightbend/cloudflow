@@ -14,6 +14,7 @@ import (
 
 // BlueprintProblem - generic interface for all blueprint related problems
 type BlueprintProblem interface {
+	// used for hashing and describing problem information
 	ToMessage() string
 }
 
@@ -871,21 +872,31 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 				if err != nil {
 					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className: desc.ClassName, keyName: configParam.Key, validationPattern: configParam.Pattern})
 				} else {
-					if !CheckFullPatternMatch(configParam.DefaultValue, reg) {
-						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: configParam.DefaultValue})
+					if configParam.DefaultValue != nil && !CheckFullPatternMatch(*configParam.DefaultValue, reg) {
+						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
 					}
 				}
 			case "duration":
-				_, err := getDurationFromConfig(configParam.DefaultValue)
 
-				if err != nil {
-					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: configParam.DefaultValue})
+				if configParam.DefaultValue != nil {
+					_, err := getDurationFromConfig(*configParam.DefaultValue)
+					if err != nil {
+						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
+					}
+				} else {
+					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
 				}
 			case "memorysize":
-				_, err := getMemorySizeFromConfig(configParam.DefaultValue)
 
-				if err != nil {
-					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: configParam.DefaultValue})
+				if configParam.DefaultValue != nil {
+					_, err := getMemorySizeFromConfig(*configParam.DefaultValue)
+
+					if err != nil {
+						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
+					}
+				} else {
+					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
+
 				}
 			}
 
@@ -935,7 +946,7 @@ func connectedBlueprint(streamletDescriptors []StreamletDescriptor) Blueprint {
 		for _, outlet := range out.Outlets {
 			for _, inlet := range in.Inlets {
 				if reflect.DeepEqual(inlet.Schema, outlet.Schema) {
-					connected.connect(fmt.Sprintf("%s.%s",outRef.name, outlet.Name),
+					connected = connected.connect(fmt.Sprintf("%s.%s",outRef.name, outlet.Name),
 						fmt.Sprintf("%s.%s",inRef.name, inlet.Name))
 				}
 			}

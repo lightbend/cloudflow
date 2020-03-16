@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"reflect"
@@ -255,5 +256,63 @@ var _ = Describe("A blueprint", func() {
 			Expect(len(b.UpdateGlobalProblems())).Should(Equal(2))
 		})
 	})
+
+
+	Context("by default", func() {
+		It("should be able to connect to the correct inlet using a full port path when the streamlet has more than one inlet", func() {
+			var ingress = randomStreamlet()
+			var merge = randomStreamlet()
+			ingress = ingress.asIngress("out", "foo", FOO)
+			merge = merge.asMerge(MergeInfo{
+				inletName0: "in-0",
+				inletName1: "in-1",
+				outletName: "out",
+				inletSchemaName0: "foo",
+				inletSchemaName1: "bar",
+				outletSchemaName: "foo",
+				inletSchema0: FOO,
+				inletSchema1: BAR,
+				outletSchema: FOO,
+
+			})
+			var ingressRef = ingress.ref("foo", nil)
+			var mergeRef   = merge.ref("bar", nil)
+			var blueprint = Blueprint{}
+			blueprint = blueprint.define([]StreamletDescriptor{ingress, merge}).use(ingressRef).use(mergeRef)
+			var connected = blueprint.connect(ingressRef.name, mergeRef.in0())
+
+			Expect(len(connected.UpdateGlobalProblems())).Should(Equal(1))
+			Expect(connected.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{
+				UnconnectedInlets{
+					unconnectedInlets: []UnconnectedInlet{{streamletRef: "bar", inlet: merge.Inlets[1]}},
+				},
+			}))
+		})
+	})
+
+	Context("by default", func() {
+		It("fail verification for configuration parameters with invalid validation patterns", func() {
+			var blueprint =  createBlueprintWithConfigurationParameter(
+				[]domain.ConfigParameterDescriptor{{
+					Key: "test-parameter",
+					Description: "",
+					Type: "string",
+					Pattern: `^.{1,65535\K$`,
+					DefaultValue: nil,
+				}})
+
+			var problems = blueprint.UpdateGlobalProblems()
+			Expect(len(problems) > 0 ).Should(Equal(true))
+			_, ok := blueprint.globalProblems[0].(InvalidValidationPatternConfigParameter)
+			Expect(ok).Should(Equal(true))
+		})
+	})
 })
 
+func createBlueprintWithConfigurationParameter(parameters []domain.ConfigParameterDescriptor) Blueprint {
+	var ingress = randomStreamlet()
+	var processor = randomStreamlet()
+	ingress = ingress.asIngress("out", "foo", FOO)
+	processor = processor.asProcessor("out", "foo", "in", "foo", FOO, FOO).withConfigParameters(parameters)
+	return connectedBlueprint([]StreamletDescriptor{ingress, processor})
+}

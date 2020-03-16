@@ -14,29 +14,6 @@ func buildStreamletDescriptor(className string, runtime string) StreamletDescrip
 	}
 }
 
-func buildStreamletDescriptorFull(
-	className string,
-	runtime string,
-	labels []string,
-	description string,
-	inlets []domain.InOutlet,
-	outlets []domain.InOutlet,
-	configParameters []domain.ConfigParameterDescriptor,
-	attributes []domain.Attribute,
-	volumeMounts []domain.VolumeMountDescriptor) StreamletDescriptor {
-	return StreamletDescriptor{
-		ClassName:        className,
-		Runtime:          runtime,
-		Labels:           labels,
-		Description:      description,
-		Inlets:           inlets,
-		Outlets:          outlets,
-		ConfigParameters: configParameters,
-		Attributes:       attributes,
-		VolumeMounts:     volumeMounts,
-	}
-}
-
 func getRandomClassName() string {
 	return "$" + strings.ReplaceAll(uuid.New().String(), "-", "")
 }
@@ -97,6 +74,20 @@ func (s StreamletDescriptor) ref(refName string, metadata *configuration.Config)
 		name: refName,
 		className: s.ClassName,
 		metadata: metadata,
+	}
+}
+
+func (s StreamletDescriptor) withConfigParameters(parameters []domain.ConfigParameterDescriptor) StreamletDescriptor {
+	return StreamletDescriptor{
+		Attributes: s.Attributes,
+		ClassName: s.ClassName,
+		ConfigParameters: parameters,
+		VolumeMounts: s.VolumeMounts,
+		Labels: s.Labels,
+		Runtime: s.Runtime,
+		Description: s.Description,
+		Outlets: s.Outlets,
+		Inlets: s.Inlets,
 	}
 }
 

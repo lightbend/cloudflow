@@ -92,11 +92,6 @@ func (s StreamletRef) inlet(name string) string {
 	return fmt.Sprintf("%s.%s", s.name, name)
 }
 
-
-//def createInletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
-//InletDescriptor(name, createSchemaDescriptor(schemaName))
-//}
-//
-//def createOutletDescriptor[T: ClassTag: SchemaFor](name: String, schemaName: String) = {
-//OutletDescriptor(name, createSchemaDescriptor(schemaName))
-//}
+func (s StreamletRef) in0() string {
+	return fmt.Sprintf("%s.in-0", s.name)
+}

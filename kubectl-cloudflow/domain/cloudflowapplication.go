@@ -84,7 +84,7 @@ type ConfigParameterDescriptor struct {
 	Description  string `json:"description"`
 	Type         string `json:"validation_type"`
 	Pattern      string `json:"validation_pattern"`
-	DefaultValue string `json:"default_value"`
+	DefaultValue *string `json:"default_value,omitempty"`
 }
 
 // ReadWriteMany is a name of a VolumeMount access mode

@@ -31,9 +31,6 @@ func VerifyBlueprint(content string) error {
 	// all StreamletConnection in the blueprint
 	connections := getConnectionsFromBlueprintConfig(config)
 
-	fmt.Printf("imageRefsFromBlueprint %d imageDescriptorMap %d streamletRefs %d connections %d\n",
-		len(imageRefsFromBlueprint), len(imageDescriptorMap), len(streamletRefs), len(connections))
-
 	blueprint := Blueprint{
 		images:                       imageRefsFromBlueprint,
 		streamlets:                   streamletRefs,

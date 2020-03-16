@@ -160,9 +160,9 @@ func AppendDefaultValuesForMissingConfigurationValues(spec domain.CloudflowAppli
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
 			if _, ok := configurationKeyValues[fqKey]; !ok {
-				if len(descriptor.DefaultValue) > 0 {
-					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
-					configurationKeyValues[fqKey] = descriptor.DefaultValue
+				if descriptor.DefaultValue !=nil && len(*descriptor.DefaultValue) > 0 {
+					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", *descriptor.DefaultValue, fqKey)
+					configurationKeyValues[fqKey] = *descriptor.DefaultValue
 				}
 			}
 		}
