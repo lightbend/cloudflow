@@ -99,7 +99,7 @@ func splitOnFirstCharacter(str string, char byte) ([]string, error) {
 		arr = append(arr, strings.Trim(str[idx+1:], "\""))
 		return arr, nil
 	}
-	return arr, fmt.Errorf("The configuration parameters must be formated as space delimited '[streamlet-name[.[property]=[value]' pairs")
+	return arr, fmt.Errorf("the configuration parameters must be formated as space delimited '[streamlet-name[.[property]=[value]' pairs")
 }
 
 // SplitConfigurationParameters maps string representations of a key/value pair into a map
@@ -195,7 +195,7 @@ func ValidateVolumeMounts(k8sClient *kubernetes.Clientset, spec domain.Cloudflow
 
 			pvc, err := k8sClient.CoreV1().PersistentVolumeClaims(spec.AppID).Get(pvcName, metav1.GetOptions{})
 			if err != nil {
-				return spec, fmt.Errorf("Persistent Volume Claim `%s` cannot be found in namespace `%s`", pvcName, spec.AppID)
+				return spec, fmt.Errorf("persistent Volume Claim `%s` cannot be found in namespace `%s`", pvcName, spec.AppID)
 			}
 
 			if accessModeExists(pvc.Spec.AccessModes, mount.AccessMode) == false {
@@ -285,17 +285,17 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 		if value != "true" && value != "false" &&
 			value != "on" && value != "off" &&
 			value != "yes" && value != "no" {
-			return fmt.Errorf("Value `%s`is not a valid boolean. A boolean must be one of the following textual values `true','false',`yes`,`no`,`on` or `off`", value)
+			return fmt.Errorf("value `%s`is not a valid boolean. A boolean must be one of the following textual values `true','false',`yes`,`no`,`on` or `off`", value)
 		}
 	case "int32":
 		_, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			return fmt.Errorf("Value `%s` is not a valid integer.", value)
+			return fmt.Errorf("value `%s` is not a valid integer", value)
 		}
 	case "double":
 		_, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return fmt.Errorf("Value `%s` is not a valid double.", value)
+			return fmt.Errorf("value `%s` is not a valid double", value)
 		}
 	case "string":
 		if descriptor.Pattern == nil {
@@ -303,7 +303,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 		}
 		r, err := regexp.Compile(*descriptor.Pattern)
 		if err != nil {
-			return fmt.Errorf("The regular expression pattern failed to compile: %s", err.Error())
+			return fmt.Errorf("the regular expression pattern failed to compile: %s", err.Error())
 		}
 
 		if !r.MatchString(value) {
@@ -318,7 +318,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 			return err
 		}
 	default:
-		return fmt.Errorf("Encountered an unknown validation type `%s`. Please make sure that the CLI is up-to-date.", descriptor.Type)
+		return fmt.Errorf("encountered an unknown validation type `%s`. Please make sure that the CLI is up-to-date", descriptor.Type)
 	}
 
 	return nil
@@ -357,7 +357,7 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 			return deployment.SecretName
 		}
 	}
-	panic(fmt.Errorf("Could not find secret name for streamlet %s", streamletName))
+	panic(fmt.Errorf("could not find secret name for streamlet %s", streamletName))
 }
 
 func createSecret(appID string, name string, data map[string]string) *corev1.Secret {

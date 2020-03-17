@@ -73,7 +73,7 @@ func (c *updateDockerCredentialsOptions) updateDockerCredentialsImpl(cmd *cobra.
 func validateAddDockerRegistryCredentialsCMDArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) != 2 {
-		return fmt.Errorf("You need to specify the namespace the Cloudflow application is going to be deployed in and the docker registry URL to add credentials for")
+		return fmt.Errorf("you need to specify the namespace the Cloudflow application is going to be deployed in and the docker registry URL to add credentials for")
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func createOrUpdateServiceAccount(k8sClient *kubernetes.Clientset, appID string,
 	if updated, err := k8sClient.CoreV1().ServiceAccounts(appID).Update(&serviceAccount); err == nil {
 		return updated, nil
 	}
-	return nil, fmt.Errorf("Failed to update Cloudflow app service account in `%s`, %s", appID, err)
+	return nil, fmt.Errorf("failed to update Cloudflow app service account in `%s`, %s", appID, err)
 }
 
 func newCloudflowServiceAccount(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {

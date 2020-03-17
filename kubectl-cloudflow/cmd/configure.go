@@ -83,7 +83,7 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 func validateConfigureCMDArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) < 1 {
-		return fmt.Errorf("You need to specify a Cloudflow application name and the required configuration key/value pair(s)")
+		return fmt.Errorf("you need to specify a Cloudflow application name and the required configuration key/value pair(s)")
 	}
 
 	return nil

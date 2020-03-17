@@ -52,7 +52,7 @@ func validateConfigParameterFormat(value string) ([]string, error) {
 		}
 	}
 	if len(split) != 2 {
-		return split, fmt.Errorf("The string '%s' is not a valid", value)
+		return split, fmt.Errorf("the string '%s' is not a valid", value)
 	}
 
 	return split, nil
@@ -66,7 +66,7 @@ func validateConfigParameterUnits(unit string, validUnits []string) error {
 		}
 	}
 
-	return fmt.Errorf("Unit '%s' is not recognized", unit)
+	return fmt.Errorf("unit '%s' is not recognized", unit)
 }
 
 // ValidateDuration validates a Typesafe config duration
@@ -81,7 +81,7 @@ func ValidateDuration(value string) error {
 
 	split, err := validateConfigParameterFormat(value)
 	if err != nil {
-		return fmt.Errorf("Value `%s` is not a valid duration.", value)
+		return fmt.Errorf("value `%s` is not a valid duration.", value)
 	}
 
 	units := []string{
@@ -106,7 +106,7 @@ func ValidateMemorySize(value string) error {
 
 	split, err := validateConfigParameterFormat(value)
 	if err != nil {
-		return fmt.Errorf("Value `%s` is not a valid memory size.", value)
+		return fmt.Errorf("value `%s` is not a valid memory size.", value)
 	}
 
 	units := []string{

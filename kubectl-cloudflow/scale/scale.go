@@ -17,6 +17,6 @@ func UpdateDeploymentWithReplicas(spec domain.CloudflowApplicationSpec, streamle
 		}
 	}
 
-	err := fmt.Errorf("Could not find streamlet %s", streamletName)
+	err := fmt.Errorf("could not find streamlet %s", streamletName)
 	return spec, err
 }

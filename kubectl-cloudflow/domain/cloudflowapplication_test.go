@@ -70,7 +70,7 @@ func findDescriptor(name string, app CloudflowApplicationSpec) (Streamlet, error
 			return v, nil
 		}
 	}
-	err := fmt.Errorf("Could not find streamlet descriptor %s", name)
+	err := fmt.Errorf("could not find streamlet descriptor %s", name)
 	return Streamlet{}, err
 }
 
@@ -80,6 +80,6 @@ func findDeployment(name string, app CloudflowApplicationSpec) (Deployment, erro
 			return v, nil
 		}
 	}
-	err := fmt.Errorf("Could not find streamlet deployment %s", name)
+	err := fmt.Errorf("could not find streamlet deployment %s", name)
 	return Deployment{}, err
 }
