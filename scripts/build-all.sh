@@ -52,10 +52,10 @@ for prj in $PROJECTS; do
   cd $prj
   case "$prj" in
     *-java)
-      sbt --supershell=false $TARGET
+      sbt --supershell=false "; $TARGET ; verifyBlueprint "
       ;;
     *)
-      sbt --supershell=false "; scalafmtCheck ; $TARGET"
+      sbt --supershell=false "; scalafmtCheck ; $TARGET ; verifyBlueprint "
       ;;
   esac
   RETVAL=$?
