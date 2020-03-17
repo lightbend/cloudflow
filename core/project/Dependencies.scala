@@ -50,7 +50,8 @@ object Library {
   val FastClasspathScanner  = "io.github.lukehutch"   %  "fast-classpath-scanner"   % "2.21"
   val ScalaCheck            = "org.scalacheck"        %% "scalacheck"               % "1.14.0"
   val Avro4sJson            = "com.sksamuel.avro4s"   %% "avro4s-json"              % "3.0.0"
-
+  val ScalaPbRuntime        = "com.thesamet.scalapb"  %% "scalapb-runtime"          % "0.10.1"
+  
   // Test Dependencies
   val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test
   val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                            % Test

@@ -52,6 +52,7 @@ lazy val streamlets =
             SprayJson,
             Ficus,
             Bijection,
+            ScalaPbRuntime,
             ScalaTest
           )
     )
