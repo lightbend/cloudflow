@@ -298,13 +298,16 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 			return fmt.Errorf("Value `%s` is not a valid double.", value)
 		}
 	case "string":
-		r, err := regexp.Compile(descriptor.Pattern)
+		if descriptor.Pattern == nil {
+			return fmt.Errorf("The regular expression pattern is empty")
+		}
+		r, err := regexp.Compile(*descriptor.Pattern)
 		if err != nil {
 			return fmt.Errorf("The regular expression pattern failed to compile: %s", err.Error())
 		}
 
 		if !r.MatchString(value) {
-			return fmt.Errorf("Value `%s` does not match the regular expression `%s`.", value, descriptor.Pattern)
+			return fmt.Errorf("Value `%s` does not match the regular expression `%s`.", value, *descriptor.Pattern)
 		}
 	case "duration":
 		if err := util.ValidateDuration(value); err != nil {

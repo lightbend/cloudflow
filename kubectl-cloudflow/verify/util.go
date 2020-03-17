@@ -54,16 +54,28 @@ func GetSHA256Hash (o interface{}) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
+// A Scala like diff method
 func Diff(a, b []string) (diff []string) {
-	m := make(map[string]bool)
-
-	for _, item := range b {
-		m[item] = true
-	}
+	aMap := make(map[string]int)
+	bMap := make(map[string]int)
 
 	for _, item := range a {
-		if _, ok := m[item]; !ok {
+		aMap[item] = aMap[item] + 1
+	}
+
+	for _, item := range b {
+		bMap[item] = bMap[item] + 1
+	}
+
+	for _, item := range Distinct(a) {
+		if _, ok := bMap[item]; !ok {
 			diff = append(diff, item)
+		} else {
+			aValue := aMap[item]
+			bValue := bMap[item]
+			for  i :=1; i <= (aValue - bValue); i++ {
+				diff = append(diff, item)
+			}
 		}
 	}
 	return

@@ -91,6 +91,20 @@ func (s StreamletDescriptor) withConfigParameters(parameters []domain.ConfigPara
 	}
 }
 
+func (s StreamletDescriptor) withVolumeMounts(volumeMounts []domain.VolumeMountDescriptor) StreamletDescriptor {
+	return StreamletDescriptor{
+		Attributes: s.Attributes,
+		ClassName: s.ClassName,
+		ConfigParameters: s.ConfigParameters,
+		VolumeMounts: volumeMounts,
+		Labels: s.Labels,
+		Runtime: s.Runtime,
+		Description: s.Description,
+		Outlets: s.Outlets,
+		Inlets: s.Inlets,
+	}
+}
+
 type MergeInfo struct {
 	inletName0 string
 	inletName1 string

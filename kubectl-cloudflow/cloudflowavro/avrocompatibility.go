@@ -53,7 +53,7 @@ func CheckSchemaCompatibility(reader string, writer string) error {
 		return &WriterSchemaValidationError{msg: err.Error()}
 	}
 
-	// return quickly if schemas have the same canonical form
+	// return quickly if schemas do not have the same canonical form
 	// this is not enough to prove schema compatibility as default
 	// values for example are removed (http://apache-avro.679487.n3.nabble.com/Re-Parsing-canonical-forms-with-schemas-having-default-values-td4037685.html).
 	if *readerCanonical != *writerCanonical {
@@ -68,7 +68,7 @@ func CheckSchemaCompatibility(reader string, writer string) error {
 }
 
 // This code part is copied and modified from https://github.com/hamba/avro
-// TODO: remove this when https://github.com/hamba/avro/issues/29 is done
+// TODO: remove this when https://github.com/hamba/avro/issues/29 and compatibility check is done
 
 // ParseValidatedSchemaWithCache parses a schema string using the given namespace and  schema cache.
 func ParseValidatedSchemaWithCache(schema, namespace string, cache *avro.SchemaCache) (avro.Schema, error) {
@@ -422,4 +422,3 @@ func resolveFullName(m map[string]interface{}) (string, string, error) {
 
 	return name, namespace, nil
 }
-

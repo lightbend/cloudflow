@@ -83,7 +83,7 @@ type ConfigParameterDescriptor struct {
 	Key          string `json:"key"`
 	Description  string `json:"description"`
 	Type         string `json:"validation_type"`
-	Pattern      string `json:"validation_pattern"`
+	Pattern      *string `json:"validation_pattern,omitempty"`
 	DefaultValue *string `json:"default_value,omitempty"`
 }
 

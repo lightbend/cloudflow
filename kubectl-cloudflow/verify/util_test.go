@@ -145,7 +145,7 @@ func Test_ParseImageReferenceSha(t *testing.T) {
 	assert.Equal(t, "sha256:0840ebe4b207b9ca7eb400e84bf937b64c3809fc275b2e90ba881cbecf56c39a", imageRef.Tag)
 }
 
-func Test_parseClassName(t *testing.T) {
+func Test_ParseClassName(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("$0000", ClassNamePattern), true)
 	assert.Equal(t, CheckFullPatternMatch("ab-", ClassNamePattern), false)
 	assert.Equal(t, CheckFullPatternMatch("-ab", ClassNamePattern), false)
@@ -158,7 +158,7 @@ func Test_parseClassName(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("@@@@@@$$$$__", ClassNamePattern), false)
 }
 
-func Test_parseLabelName(t *testing.T) {
+func Test_ParseLabelName(t *testing.T) {
 	assert.Equal(t, IsDnsLabelCompatible("$0000"), false)
 	assert.Equal(t, IsDnsLabelCompatible("0000www"), true)
 	assert.Equal(t, IsDnsLabelCompatible("rfr@3"), false)
@@ -166,7 +166,7 @@ func Test_parseLabelName(t *testing.T) {
 	assert.Equal(t, IsDnsLabelCompatible("2212dwdwee__"), false)
 }
 
-func Test_parseConfigurationParameter(t *testing.T) {
+func Test_ParseConfigurationParameter(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("0000", ConfigParameterKeyPattern), false)
 	assert.Equal(t, CheckFullPatternMatch("$0000", ConfigParameterKeyPattern), false)
 	assert.Equal(t, CheckFullPatternMatch("ER-1qw", ConfigParameterKeyPattern), true)
@@ -174,8 +174,16 @@ func Test_parseConfigurationParameter(t *testing.T) {
 	assert.Equal(t, CheckFullPatternMatch("configuration.", ConfigParameterKeyPattern), false)
 }
 
-func Test_sliding(t *testing.T) {
+func Test_Sliding(t *testing.T) {
 	var descs= []StreamletDescriptor{randomStreamlet(), randomStreamlet(), randomStreamlet()}
 	var expected= [][]StreamletDescriptor{{descs[0], descs[1]}, {descs[1], descs[2]}}
 	assert.Equal(t, reflect.DeepEqual(expected, sliding(descs)), true)
+}
+
+func Test_Diff(t *testing.T) {
+
+	a := []string{"1", "2", "2", "3", "4"}
+	b :=[]string{"1", "2"}
+	ret := Diff(a, b)
+	assert.ElementsMatch(t, ret, []string{"2", "3", "4"})
 }

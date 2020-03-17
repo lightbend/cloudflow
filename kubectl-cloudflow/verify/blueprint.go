@@ -815,7 +815,7 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 		dupsPaths := Distinct(Diff(paths, Distinct(paths)))
 
 		for _, dupPath := range dupsPaths {
-			duplicatePaths = append(duplicatePaths, DuplicateVolumeMountName{className: desc.ClassName, name: dupPath})
+			duplicatePaths = append(duplicatePaths, DuplicateVolumeMountPath{className: desc.ClassName, path: dupPath})
 		}
 	}
 
@@ -868,16 +868,19 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 
 			switch configParam.Type {
 			case "string":
-				reg, err := regexp.Compile(configParam.Pattern)
+				if configParam.Pattern == nil {
+					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className: desc.ClassName, keyName: configParam.Key, validationPattern: *configParam.Pattern})
+					break
+				}
+				reg, err := regexp.Compile(*configParam.Pattern)
 				if err != nil {
-					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className: desc.ClassName, keyName: configParam.Key, validationPattern: configParam.Pattern})
+					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidValidationPatternConfigParameter{className: desc.ClassName, keyName: configParam.Key, validationPattern: *configParam.Pattern})
 				} else {
 					if configParam.DefaultValue != nil && !CheckFullPatternMatch(*configParam.DefaultValue, reg) {
 						invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
 					}
 				}
 			case "duration":
-
 				if configParam.DefaultValue != nil {
 					_, err := getDurationFromConfig(*configParam.DefaultValue)
 					if err != nil {
@@ -887,7 +890,6 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
 				}
 			case "memorysize":
-
 				if configParam.DefaultValue != nil {
 					_, err := getMemorySizeFromConfig(*configParam.DefaultValue)
 
