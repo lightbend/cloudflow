@@ -77,7 +77,7 @@ var _ = Describe("A blueprint", func() {
 				var ingress = randomStreamlet()
 				var blueprint = Blueprint{}
 				blueprint = blueprint.define([]StreamletDescriptor{ingress}).use(ingress.ref(name, nil))
-				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{InvalidStreamletName{streamletRef:name}}))
+				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(InvalidStreamletName{streamletRef:name}))
 			}
 		})
 	})
@@ -89,7 +89,7 @@ var _ = Describe("A blueprint", func() {
 				var ingress = randomStreamlet()
 				var blueprint = Blueprint{}
 				blueprint = blueprint.define([]StreamletDescriptor{ingress}).use(ingress.ref(name, nil))
-				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{InvalidStreamletName{streamletRef:name}}))
+				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(InvalidStreamletName{streamletRef:name}))
 			}
 		})
 	})
@@ -102,7 +102,7 @@ var _ = Describe("A blueprint", func() {
 				var blueprint = Blueprint{}
 				var ref = ingress.randomRef()
 				blueprint = blueprint.define([]StreamletDescriptor{ingress}).use(ref)
-				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{InvalidStreamletClassName{streamletRef:ref.name, streamletClassName:className}}))
+				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(InvalidStreamletClassName{streamletRef:ref.name, streamletClassName:className}))
 			}
 		})
 	})
@@ -128,7 +128,7 @@ var _ = Describe("A blueprint", func() {
 				var blueprint = Blueprint{}
 				var ref = ingress.randomRef()
 				blueprint = blueprint.define([]StreamletDescriptor{ingress}).use(ref)
-				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{InvalidOutletName{className:ingress.ClassName, name: outletName}}))
+				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(InvalidOutletName{className:ingress.ClassName, name: outletName}))
 			}
 		})
 	})
@@ -162,7 +162,7 @@ var _ = Describe("A blueprint", func() {
 				var ingressRef = ingress.ref("foo", nil)
 				var processorRef = processor.ref("bar", nil)
 				blueprint = blueprint.define([]StreamletDescriptor{ingress, processor}).use(ingressRef).use(processorRef).connect(ingressRef.out(), processorRef.inlet(inletName))
-				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{InvalidInletName{className:processor.ClassName, name: inletName}}))
+				Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(InvalidInletName{className:processor.ClassName, name: inletName}))
 			}
 		})
 	})
@@ -283,11 +283,56 @@ var _ = Describe("A blueprint", func() {
 			var connected = blueprint.connect(ingressRef.name, mergeRef.in0())
 
 			Expect(len(connected.UpdateGlobalProblems())).Should(Equal(1))
-			Expect(connected.UpdateGlobalProblems()).Should(ConsistOf([]BlueprintProblem{
+			Expect(connected.UpdateGlobalProblems()).Should(ConsistOf(
 				UnconnectedInlets{
 					unconnectedInlets: []UnconnectedInlet{{streamletRef: "bar", inlet: merge.Inlets[1]}},
 				},
-			}))
+			))
+		})
+	})
+
+	Context("by default", func() {
+		It("not fail verification with UnconnectedInlets for already reported IllegalConnection and IncompatibleSchema problems", func() {
+			var ingress = randomStreamlet()
+			var processor = randomStreamlet()
+			var egress = randomStreamlet()
+			ingress = ingress.asIngress("out", "foo", FOO)
+			processor = processor.asProcessor("out", "bar", "in", "foo", FOO, BAR)
+			pattern := "^1,65535$"
+			egress = egress.asEgress("in", "bar", BAR).withConfigParameters(
+				[]domain.ConfigParameterDescriptor{{
+					Key: "target-uri",
+					Description: "",
+					Type: "string",
+					Pattern: &pattern,
+					DefaultValue: nil,
+				}})
+			var blueprint = Blueprint{}
+			var ingressRef    = ingress.randomRef()
+			var processor1Ref = processor.randomRef()
+			var processor2Ref = processor.randomRef()
+			var egress1Ref    = egress.randomRef()
+			var egress2Ref    = egress.randomRef()
+			blueprint = blueprint.define([]StreamletDescriptor{ingress, processor, egress}).use(ingressRef).use(processor1Ref).use(processor2Ref).use(egress1Ref).use(egress2Ref)
+			blueprint = blueprint.connect(ingressRef.out(), processor1Ref.in()).connect(ingressRef.out(), processor2Ref.in()).connect(processor1Ref.out(), egress1Ref.in())
+			blueprint = blueprint.connect(processor2Ref.out(), egress1Ref.in()).connect(ingressRef.out(), egress2Ref.in())
+			blueprint = blueprint.upsertStreamletRef(egress1Ref.name, nil, nil).upsertStreamletRef(egress2Ref.name, nil, nil)
+			problems := blueprint.UpdateGlobalProblems()
+			outPortPath := "out"
+			inPortPath := "in"
+			Expect(problems).Should(ConsistOf(
+				IllegalConnection{
+					outletPaths: []VerifiedPortPath{
+						{streamletRef:processor1Ref.name,  portName: &outPortPath},
+						{streamletRef:processor2Ref.name, portName: &outPortPath},
+				},
+				inletPath: VerifiedPortPath{streamletRef:egress1Ref.name, portName: &inPortPath},
+				},
+				IncompatibleSchema{
+					outletPortPath: VerifiedPortPath{streamletRef:ingressRef.name,  portName: &outPortPath},
+					inletPath: VerifiedPortPath{streamletRef:egress2Ref.name,  portName: &inPortPath},
+				}))
+
 		})
 	})
 
@@ -577,3 +622,4 @@ func createBlueprintWithVolumeMounts(volumeMounts []domain.VolumeMountDescriptor
 	processor = processor.asProcessor("out", "foo", "in", "foo", FOO, FOO).withVolumeMounts(volumeMounts)
 	return connectedBlueprint([]StreamletDescriptor{ingress, processor})
 }
+

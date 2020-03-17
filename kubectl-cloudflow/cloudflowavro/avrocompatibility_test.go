@@ -19,8 +19,8 @@ func Test_SimpleSchemaCompatibility(t *testing.T) {
        "type": "int"
 }`
 
-	reader, err := ParseValidatedSchemaWithCache(readerSchema, "", avro.DefaultSchemaCache)
-	writer, err := ParseValidatedSchemaWithCache(writerSchema, "", avro.DefaultSchemaCache)
+	reader, err := avro.ParseWithCache(readerSchema, "", avro.DefaultSchemaCache)
+	writer, err := avro.ParseWithCache(writerSchema, "", avro.DefaultSchemaCache)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,24 +30,33 @@ func Test_SimpleSchemaCompatibility(t *testing.T) {
 	assert.Equal(t, CheckSchemaCompatibility(readerSchema, writerSchema), nil)
 }
 func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
+	var readerSchema1 = `{
+		"type" : "record",
+		"name": "test",
+		"fields" : [
+	{
+		"type": {
+			"type": "int",
+			"logicalType": "time-millis"
+		},
+		"name": "simple"
+	}] }`
 
-	readerSchema1 := `{
-	"type": {
-		"type": "int",
-		"logicalType": "time-millis"
-	},
-	"name": "simple"
-}`
-	writerSchema1 := `{
-       "name": "simple", 
-       "type": "int"
-       }`
+	var writerSchema1 = `
+	{
+	"type" : "record",
+	"name": "test",
+	"fields" : [
+	{
+	"name": "simple",
+	"type": "int"
+	}]}`
 
-	reader1, err := ParseValidatedSchemaWithCache(readerSchema1, "", avro.DefaultSchemaCache)
+	reader1, err := avro.ParseWithCache(readerSchema1, "", avro.DefaultSchemaCache)
 
 	assert.Equal(t, err, nil)
 
-	writer1, err := ParseValidatedSchemaWithCache(writerSchema1, "", avro.DefaultSchemaCache)
+	writer1, err := avro.ParseWithCache(writerSchema1, "", avro.DefaultSchemaCache)
 
 	assert.Equal(t, CheckSchemaCompatibility(readerSchema1, writerSchema1), nil)
 
@@ -91,9 +100,9 @@ func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
 		}
 	]
 }`
-	reader2, err := ParseValidatedSchemaWithCache(readerSchema2, "", avro.DefaultSchemaCache)
+	reader2, err := avro.ParseWithCache(readerSchema2, "", avro.DefaultSchemaCache)
 	assert.Equal(t, err, nil)
-	writer2, err := ParseValidatedSchemaWithCache(writerSchema2, "", avro.DefaultSchemaCache)
+	writer2, err := avro.ParseWithCache(writerSchema2, "", avro.DefaultSchemaCache)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, s.Compatible(reader2, writer2), nil)
 	assert.Equal(t, CheckSchemaCompatibility(readerSchema2, writerSchema2), nil)

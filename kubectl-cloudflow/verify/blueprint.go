@@ -351,7 +351,6 @@ type Blueprint struct {
 	connections          []StreamletConnection
 	streamletDescriptorsPerImage map[string][]StreamletDescriptor
 	globalProblems       []BlueprintProblem
-	allProblems          []BlueprintProblem
 }
 
 // check for consistency between the image id mentioned in streamlets and the
@@ -446,7 +445,6 @@ func (b Blueprint) connectWithConnection(connection StreamletConnection) Bluepri
 		streamlets: b.streamlets,
 		connections: append(otherConnections, verifiedConnection),
 		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
-		globalProblems: b.globalProblems,
 	}
 	ret = ret.verify()
 	ret.UpdateGlobalProblems()
@@ -599,13 +597,17 @@ func filterUnconnectedInlets(inletProblems []BlueprintProblem, unconnectedInlets
 		if len(inletProblems) == 0 {
 			res = append(res, unconnectedInlet)
 		} else {
+			var matchFound = false
 			for _, p := range inletProblems {
 				inletProblem, ok := p.(InletProblem)
 				if ok {
-					if !reflect.DeepEqual(inletProblem.InletPath(), VerifiedPortPath{streamletRef: unconnectedInlet.streamletRef, portName: &unconnectedInlet.inlet.Name}) {
-						res = append(res, unconnectedInlet)
+					if reflect.DeepEqual(inletProblem.InletPath(), VerifiedPortPath{streamletRef: unconnectedInlet.streamletRef, portName: &unconnectedInlet.inlet.Name}) {
+						matchFound = true
 					}
 				}
+			}
+			if !matchFound {
+				res = append(res, unconnectedInlet)
 			}
 		}
 	}
@@ -652,9 +654,10 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 		hash := GetSHA256Hash(verifiedStreamletConnections[i].verifiedInlet)
 		key := hash
 		if val, ok := groupedConnections[key]; ok {
-			val.vCons = append(groupedConnections[key].vCons, verifiedStreamletConnections[i])
+			val.vCons = append(val.vCons, verifiedStreamletConnections[i])
+			groupedConnections[key] = val
 		} else {
-			values := []VerifiedStreamletConnection{}
+			var values []VerifiedStreamletConnection
 			values = append(values, verifiedStreamletConnections[i])
 			groupedConnections[key] = GroupedConnections{vInlet: verifiedStreamletConnections[i].verifiedInlet, vCons: values}
 		}
@@ -674,7 +677,7 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 	}
 
 	if len(illegalConnectionProblems) != 0 {
-		return nil, illegalConnectionProblems
+		return verifiedStreamletConnections, illegalConnectionProblems
 	} else {
 		return verifiedStreamletConnections, nil
 	}
@@ -710,14 +713,6 @@ func (b Blueprint) verifyInletsConnected(verifiedStreamlets []VerifiedStreamlet,
 		return verifiedStreamlets, nil
 	} else {
 		return nil, unconnectedPortProblems
-	}
-}
-
-func (b Blueprint) validate() (*Blueprint, []BlueprintProblem) {
-	if len(b.allProblems) == 0 {
-		return &b, nil
-	} else {
-		return nil, b.allProblems
 	}
 }
 
@@ -827,6 +822,60 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 	}
 
 	return res
+}
+
+func (b Blueprint) upsertStreamletRef(streamletRef string, className *string, metadata *configuration.Config) Blueprint {
+	var streamletRefWithClassNameUpdated StreamletRef
+	var streamletRefWithMetadataUpdated StreamletRef
+	for _, streamlRef := range b.streamlets {
+		if streamlRef.name == streamletRef {
+			if className != nil {
+				streamletRefWithClassNameUpdated = StreamletRef{
+					name:      streamlRef.name,
+					className: streamlRef.className,
+					verified:  streamlRef.verified,
+					metadata: streamlRef.metadata,
+					imageId: streamlRef.imageId,
+				}
+			} else {
+				streamletRefWithClassNameUpdated = streamlRef
+			}
+
+			if metadata != nil {
+				streamletRefWithMetadataUpdated = StreamletRef{
+					name:      streamletRefWithClassNameUpdated.name,
+					className: streamletRefWithClassNameUpdated.className,
+					verified:  streamletRefWithClassNameUpdated.verified,
+					metadata: metadata,
+					imageId: streamletRefWithClassNameUpdated.imageId,
+				}
+			} else {
+				streamletRefWithMetadataUpdated = streamletRefWithClassNameUpdated
+			}
+
+			ret := Blueprint(b)
+
+			streamletsToAppend := []StreamletRef{}
+			for _, streamlet := range b.streamlets {
+			 if streamlet.name != streamlRef.name {
+			 	streamletsToAppend = append(streamletsToAppend, streamlet)
+			 }
+			}
+			ret.streamlets = streamletsToAppend
+			ret.streamlets = append(ret.streamlets, streamletRefWithMetadataUpdated)
+			return ret.verify()
+		}
+	}
+
+	if className != nil {
+		return b.use(StreamletRef{
+			name: streamletRef,
+			className: *className,
+			metadata: metadata,
+		})
+	} else{
+		return b
+	}
 }
 
 func getDurationFromConfig(config string) (duration time.Duration, err error) {

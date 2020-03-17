@@ -48,6 +48,21 @@ func (s StreamletDescriptor) asIngress(outletName string, schemaName string, sch
 	return desc
 }
 
+
+// Transforms the descriptor into an Egreess
+func (s StreamletDescriptor) asEgress(inletName string, schemaName string, schema string) StreamletDescriptor {
+	desc := StreamletDescriptor(s)
+	var inlet = domain.InOutlet{Name:inletName, Schema: domain.InOutletSchema {
+		Fingerprint: GetSHA256Hash(schema),
+		Schema:      schema,
+		Name:        schemaName,
+		Format:      avroFormat,
+	}}
+	desc.Outlets = []domain.InOutlet{}
+	desc.Inlets = []domain.InOutlet{inlet}
+	return desc
+}
+
 // Transforms the descriptor into a Processor
 func (s StreamletDescriptor) asProcessor(outletName string, outletSchemaName string, inletName string, inletSchemaName string, inletSchema string, outletSchema string) StreamletDescriptor {
 	desc := StreamletDescriptor(s)

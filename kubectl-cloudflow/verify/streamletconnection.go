@@ -22,11 +22,6 @@ func (c StreamletConnection) verify(verifiedStreamlets []VerifiedStreamlet) Stre
 	_, fromPathError := NewVerifiedPortPath(c.from)
 	_, toPathError := NewVerifiedPortPath(c.to)
 
-	/*
-		for _, vs := range verifiedStreamlets {
-			fmt.Printf("%s\n", vs.name)
-		}
-	*/
 	var patternErrors []BlueprintProblem
 	var conErrors []BlueprintProblem
 
@@ -103,12 +98,12 @@ func (c StreamletConnection) verifySchema(verifiedOutlet VerifiedOutlet, verifie
 		}
 
 		if err != nil {
-			return nil, &IncompatibleSchema{outletPortPath: verifiedOutlet.portPath(), inletPath: verifiedInlet.portPath()}
+			return nil, IncompatibleSchema{outletPortPath: verifiedOutlet.portPath(), inletPath: verifiedInlet.portPath()}
 		} else {
 			return &VerifiedStreamletConnection{verifiedOutlet: verifiedOutlet, verifiedInlet: verifiedInlet, label: &label}, nil
 		}
 
 	} else {
-		return nil, &IncompatibleSchema{outletPortPath: verifiedOutlet.portPath(), inletPath: verifiedInlet.portPath()}
+		return nil, IncompatibleSchema{outletPortPath: verifiedOutlet.portPath(), inletPath: verifiedInlet.portPath()}
 	}
 }

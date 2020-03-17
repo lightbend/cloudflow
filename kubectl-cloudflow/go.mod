@@ -22,11 +22,10 @@ require (
 	github.com/gophercloud/gophercloud v0.0.0-20190325182007-873f28e270b0 // indirect
 	github.com/gosuri/uilive v0.0.3
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
-	github.com/hamba/avro v0.7.0
+	github.com/hamba/avro v1.0.0
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.7
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/linkedin/goavro/v2 v2.9.7
 	github.com/logrusorgru/aurora v0.0.0-20190803045625-94edacc10f9b
@@ -41,7 +40,7 @@ require (
 	github.com/sirupsen/logrus v1.4.0 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914 // indirect
