@@ -44,7 +44,7 @@ To build the documentation, use `make` with the following commands:
 
 ### Updating a current version of the documentation
 
-TBW
+T B W
 
 ### Adding a new version of the documentation
 
