@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"time"
 
 	"log"
 	"os/exec"
@@ -34,34 +35,32 @@ var swissKnifeApp = app{
 	name:  "swiss-knife",
 }
 
-var _ = Describe("Application Deployment", func() {
-	Context("when I deploy an application that uses akka, spark, and flink", func() {
-		jsonToken := getToken()
-
-		ensureAppNotDeployed(swissKnifeApp)
-
-		output, err := fakeDeploy(swissKnifeApp, jsonToken)
-		if err != nil {
-			log.Fatal("Error executing command" + string(output))
-		} else {
-			log.Printf("Command said: %s", output)
-		}
-
-		It("should start a deployment", func() {
-			fmt.Println("result is:" + output)
-			// Expect(output).Should(Equal("Deployment of application `" + AppName + "` has started."))
+var _ = Describe("Application execution", func() {
+	Context("the cluster is clean for testing", func() {
+		It("should not have the test app", func() {
+			err := ensureAppNotDeployed(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
 		})
-		It("should contain a spark-process", func() {
+	})
+	Context("when I deploy an application that uses akka, spark, and flink", func() {
+		It("should start  a deployment", func() {
+			jsonToken := getToken()
+			output, err := deploy(swissKnifeApp, jsonToken)
+			fmt.Println("Error received: " + output)
+			Expect(err).NotTo(HaveOccurred())
+			expected := "Deployment of application `" + swissKnifeApp.name + "` has started."
+			Expect(output).To(ContainSubstring(expected))
+		})
+
+		It("should complete the deployment", func() {
+			// check status
+			// Expect(output).Should(Equal("Deployment of application `" + AppName + "` has started."))
 			Expect(true).To(BeTrue())
 		})
-		It("should have pods", func() {
-			pods, err := getPods(swissKnifeApp)
-			if err != nil {
-				log.Fatal("couldn't retrieve pods.", err)
-			}
-			for _, pod := range pods {
-				fmt.Println(pod)
-			}
+
+		It("should contain a spark-process", func() {
+			// check status
+			Expect(true).To(BeTrue())
 		})
 	})
 })
@@ -132,6 +131,7 @@ func listApps() (entries []appListEntry, err error) {
 }
 
 func ensureAppNotDeployed(app app) error {
+	fmt.Printf("Ensuring app [%s] is not deployed", app.name)
 	apps, err := listApps()
 	if err != nil {
 		return err
@@ -147,19 +147,47 @@ func ensureAppNotDeployed(app app) error {
 	}
 	if found {
 		fmt.Printf("Application %s found in target cluster. Undeploying...", app.name)
-		return nil // undeploy(app)
+		err := undeploy(app)
+		if err != nil {
+			return err
+		}
+		err = ensureNoPods(app)
+		return err
 	}
 	return nil
 }
 
 func undeploy(app app) error {
+	fmt.Printf("Issuing Undeploy of app [%s]\n", app.name)
 	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.name)
 	_, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Fatal("could not undeploy app " + app.name)
-		return err
-	}
+	return err
+}
 
+func ensureNoPods(app app) error {
+	fmt.Printf("Ensuring no pods for app [%s]\n", app.name)
+	sleepDuration, err := time.ParseDuration("1s")
+	if err != nil {
+		log.Fatal("duration gives error", err)
+		return err // pfff
+	}
+	time.Sleep(sleepDuration)
+	pods, err := getPods(app)
+	if err != nil {
+		log.Fatal("get Pods gives error", err)
+		return err // pfff^2
+	}
+	fmt.Printf("Initial pod count %d\n", len(pods))
+
+	for len(pods) > 0 {
+		fmt.Print()
+		time.Sleep(sleepDuration)
+		pods, err = getPods(app)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Pod count update %d", len(pods))
+	}
 	return nil
 }
 
