@@ -1,6 +1,7 @@
 :page-partial:
 :page-supergroup-scala-java: Language
 
+include::ROOT:partial$include.adoc[]
 
 The `cloudflow.akka.util` library contains some predefined `StreamletLogic`{empty}s:
 
@@ -47,11 +48,11 @@ In Scala:
 +
 * An `HttpServerLogic` can only be used in combination with an `AkkaServerStreamlet`. The `HttpServerLogic.default` method requires a `Server` argument (this also applies to the `HttpServerLogic.defaultStreaming` method and the `HttpServerLogic` constructor, you cannot construct it without it). The `AkkaServerStreamlet` implements `Server`, so you can just pass `this` to it from inside the streamlet, as you can see in the snippet below.
 +
-* In the example below, the `SensorDataJsonSupport` object defines implicit spray-json JSON formats for the `SensorData` type.
+* In the example below, the `JsonSupport` object defines implicit spray-json JSON formats for the `SensorData` type.
 +
 [source,scala]
 ----
-include::example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngress.scala[tag=httpIngress]
 ----
 
 Java::
@@ -60,7 +61,7 @@ In Java, the `akka.http.javadsl.unmarshalling.Unmarshaller<ByteString, T>` is an
 +
 [source,java]
 ----
-include::example$sensor-data-java/src/main/java/sensordata/SensorDataIngress.java[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataHttpIngress.java[tag=httpIngress]
 ----
 
 
@@ -81,7 +82,7 @@ The Scala example below shows:
 +
 [source,scala]
 ----
-include::example$sensor-data-scala/src/main/scala/sensordata/SensorDataStreamingIngress.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataStreamingIngress.scala[tag=httpStreamingIngress]
 ----
 
 Java::
@@ -90,7 +91,7 @@ The Java example below shows how to use the `defaultStreaming` in a similar mann
 +
 [source,java]
 ----
-include::example$sensor-data-java/src/main/java/sensordata/SensorDataStreamingIngress.java[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataStreamingIngress.java[tag=httpStreamingIngress]
 ----
 
 === Define a custom Route
@@ -100,17 +101,7 @@ The `route` method provides a `sinkRef` argument which you can use to write to t
 
 [source,scala]
 ----
-override def createLogic = new HttpServerLogic(this, outlet) {
-  def route(sinkRef: WritableSinkRef[Out]): Route = {
-    put {
-      entity(as[Data]) { data ⇒
-        onSuccess(sinkRef.write(data)) { _ ⇒
-          complete(StatusCodes.OK)
-        }
-      }
-    }
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngressCustomRoute.scala[tag=customRoute]
 ----
 
 The above Scala example creates a route that will handle put requests where the entity contains `Data`, which is written to the outlet using the `WritableSinkRef`.
@@ -134,14 +125,14 @@ Scala::
 +
 [source,scala]
 ----
-include::example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataSplitter.scala[tag=splitter]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::example$sensor-data-java/src/main/java/sensordata/MetricsValidation.java[]
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataSplitter.java[tag=splitter]
 ----
 
 == Merger
@@ -161,41 +152,12 @@ Scala::
 +
 [source,scala]
 ----
-object MetricMerge extends AkkaStreamlet {
-
-  val in0 = AvroInlet[Metric]("in-0")
-  val in1 = AvroInlet[Metric]("in-1")
-  val out = AvroOutlet[Metric]("out", m ⇒ m.deviceId.toString + m.timestamp.toString)
-
-  final override val shape = StreamletShape.withInlets(in0, in1).withOutlets(out)
-
-  override final def createLogic = RunnableGraphStreamletLogic() {
-    def runnableGraph =
-      Merger.source(in0, in1).to(committableSink(out))
-  }    
-}
-
-object MetricsMerge extends Merge[Metric](5)
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataMerge.scala[tag=merge]
 ----
 
 Java::
 +
 [source,java]
 ----
-class TestMerger extends AkkaStreamlet {
-    AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
-    AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
-    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
-
-    public StreamletShape shape() {
-      return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
-    }
-    public RunnableGraphStreamletLogic createLogic() {
-      return new RunnableGraphStreamletLogic(getContext()) {
-        public RunnableGraph createRunnableGraph() {
-          return Merger.source(getContext(), inlet1, inlet2).to(getCommittableSink(outlet));
-        }
-      };
-    }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataMerge.java[tag=merge]
 ----

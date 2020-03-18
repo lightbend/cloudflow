@@ -1,5 +1,7 @@
 :page-partial:
 
+include::ROOT:partial$include.adoc[]
+
 A Spark streamlet has the following responsibilities:
 
 * It needs to capture your stream processing logic.
@@ -176,7 +178,7 @@ In <<checkpoint-dir-example>>, we can see the use of the `checkpointDir` method 
 =======
 [source, scala]
 ---------------
-include::example$spark-sensors/src/main/scala/sensors/SparkConsoleEgress.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/SparkConsoleEgress.scala[tag=docs-checkpointDir-example]
 ---------------
 =======
 

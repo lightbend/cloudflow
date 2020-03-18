@@ -17,14 +17,14 @@ https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/[Ing
 
 Before creating an ingress resource, there must be an enabled ingress controller in the cluster. 
 
-=== Deploying an ingress controller
+== Deploying an ingress controller
 The Kubernetes project directly supports and maintains two ingress controllers, `Nginx-ingress` and `gce`. In this example, we will use the `Nginx-ingress` ingress controller since it is compatible with all major cloud vendors (GCP, AWS, and Azure). 
 
 The following link shows how to deploy the `Nginx-ingress` ingress controller.
 
 https://kubernetes.github.io/ingress-nginx/deploy/
 
-=== Creating the ingress resource
+== Creating the ingress resource
 The ingress resource defines routes between the outside of the cluster to an application running in the cluster.
 
 In the example below, we create an ingress that exposes the `sensor-data-scala-http-ingress-service` service in the namespace `sensor-data-scala`. 
@@ -35,7 +35,7 @@ The annotation `kubernetes.io/ingress.class` in the ingress resource below is th
 
 After applying the following resource to the cluster, the ingress controller will create the corresponding route from the outside network to the service. 
 
-[source,bash]
+[source,yaml]
 ----
 cat <<EOF | kubectl apply -f - 
 apiVersion: extensions/v1beta1
@@ -67,7 +67,7 @@ sensor-data-http-ingress   *       82.196.11.250       80        59s
 
 The ingress now has an address and data can be sent to the ingress on the address `82.196.11.250/sensor-data`
 
-=== Removing an ingress 
+== Removing an ingress 
 If you want to disable the route to the application created by the ingress, delete the ingress using the following command.
 
 `kubectl delete sensor-data-http-ingress -n sensor-data-scala`

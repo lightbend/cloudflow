@@ -1,5 +1,7 @@
 :page-partial:
 
+include::ROOT:partial$include.adoc[]
+
 A `testkit` is provided to make it easier to write unit tests for Spark streamlets. The unit tests are meant to facilitate local testing of streamlets.
 
 == Basic flow of `testkit` APIs
@@ -131,7 +133,7 @@ There may be situations where the Spark query that you are testing involves aggr
 
 [source,scala]
 ----
-include::example$call-record-aggregator/spark-aggregation/src/main/scala/carly/aggregator/CallStatsAggregator.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/callrecordaggregator/CallStatsAggregator.scala[]
 ----
 
 

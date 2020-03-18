@@ -11,9 +11,6 @@ work_dir := target
 
 cloudflow_clone_dir := ${work_dir}/cloudflow
 
-# The Example code needs to be placed within the shared-content-source to be reachable from the asciidoc structure
-examples_src := shared-content-source/docs/modules/develop/examples
-
 staging_dir := ${work_dir}/staging
 
 javascaladoc_dir := ${staging_dir}/docs/current/api
@@ -21,11 +18,11 @@ javascaladoc_dir := ${staging_dir}/docs/current/api
 all: build
 
 clean:
-	rm -rf ${work_dir} ${examples_src}
+	rm -rf ${work_dir}
 
 build: clean html javascaladoc_staged print-site
 
-html: clean ${examples_src}
+html: clean
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		--privileged \
@@ -37,7 +34,7 @@ html: clean ${examples_src}
 		docs-source/site.yml
 	@echo "Done"
 
-html-author-mode: clean ${examples_src}
+html-author-mode: clean
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${ROOT_DIR}:/antora \
@@ -90,10 +87,6 @@ ${staging_dir}:
 ${javascaladoc_dir}: 	
 	mkdir -p ${javascaladoc_dir}/scaladoc
 	mkdir -p ${javascaladoc_dir}/javadoc
-
-${examples_src}: cloudflow-clone
-	mkdir -p ${examples_src}
-	cp -r ${cloudflow_clone_dir}/examples/* ${examples_src}/ 
 
 print-site:
 	# The result directory with the contents of this build:

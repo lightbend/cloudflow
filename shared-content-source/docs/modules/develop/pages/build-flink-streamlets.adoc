@@ -1,6 +1,8 @@
 :page-partial:
 :page-supergroup-scala-java: Language
 
+include::ROOT:partial$include.adoc[]
+
 The following sections describe how you can create a Flink streamlet.
 As mentioned in xref:use-flink-streamlets.adoc[Using Flink streamlets], a Flink streamlet is defined by the following features:
 
@@ -21,16 +23,7 @@ Scala::
 --
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets._
-import cloudflow.flink._
-
-class ReportPrinter extends FlinkStreamlet {
-  // 1. TODO Create inlets and outlets
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -38,16 +31,7 @@ Java::
 --
 [source,java]
 ----
-package com.example;
-
-import cloudflow.streamlets.StreamletShape;
-import cloudflow.flink.*;
-
-public class ReportPrinter extends FlinkStreamlet {
-  // 1. TODO Create inlets and outlets
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -67,18 +51,7 @@ Scala::
 --
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets.avro._
-import cloudflow.flink._
-
-class ReportPrinter extends SparkStreamlet {
-  // 1. Create inlets and outlets
-  @transient val in = AvroInlet[Report]("report-in")
-
-  // 2. TODO Define the shape of the streamlet using inlets and outlets
-  // 3. TODO Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -86,20 +59,7 @@ Java::
 --
 [source,java]
 ----
-package com.example;
-
-import cloudflow.streamlets.StreamletShape;
-import cloudflow.streamlets.avro.*;
-import cloudflow.flink.*;
-
-public class ReportPrinter extends FlinkStreamlet {
-  // 1. Create inlets and outlets
-  transient AvroInlet<Report> in = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -118,32 +78,7 @@ of products from an inventory:
 
 [source,json]
 ----
-{
-  "namespace": "com.example",
-  "type": "record",
-  "name": "Report",
-  "fields": [
-    {
-      "name": "id",
-      "type": "string"
-    },
-    {
-      "name": "name",
-      "type": "string"
-    },
-    {
-      "name": "description",
-      "type": "string"
-    },
-    {
-      "name": "keywords",
-      "type": {
-        "type": "array",
-        "items": "string"
-      }
-    }
-  ]
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. The inlet should have a domain-specific 
@@ -165,21 +100,7 @@ Scala::
 --
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.flink._
-
-class ReportPrinter extends FlinkStreamlet {
-  // 1. Create inlets and outlets
-  @transient val in = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet using inlets and outlets
-  @transient val shape = StreamletShape.withInlets(in)
-
-  // 3. TODO Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -187,24 +108,7 @@ Java::
 --
 [source,java]
 ----
-package com.example;
-
-import cloudflow.streamlets.StreamletShape;
-import cloudflow.streamlets.avro.*;
-import cloudflow.flink.*;
-
-public class ReportPrinter extends FlinkStreamlet {
-  // 1. Create inlets and outlets
-  transient AvroInlet<Report> in = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. Define the shape of the streamlet
-  @Override public StreamletShape shape() {
-    return StreamletShape.createWithInlets(in);
-  }
-
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -224,30 +128,7 @@ Scala::
 --
 [source,scala]
 ----
-package com.example
-
-import org.apache.flink.streaming.api.scala._
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.flink._
-
-class ReportPrinter extends FlinkStreamlet {
-  // 1. Create inlets and outlets
-  @transient val in = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet using inlets and outlets
-  @transient val shape = StreamletShape.withInlets(in)
-
-  // 3. Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-  override def createLogic() = new FlinkStreamletLogic {
-    def format(report: Report) = s"${report.name}\n\n${report.description}"
-
-    override def buildExecutionGraph = {
-      readStream(in).map(r => format(r)).print()
-    } 
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -255,46 +136,7 @@ Java::
 --
 [source,java]
 ----
-package com.example;
-
-import org.apache.flink.streaming.api.datastream.DataStream;
-
-import cloudflow.streamlets.StreamletShape;
-import cloudflow.streamlets.avro.*;
-import cloudflow.flink.*;
-
-public class ReportPrinter extends FlinkStreamlet {
-  // 1. Create inlets and outlets
-  transient AvroInlet<Report> in = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. Define the shape of the streamlet
-  @Override public StreamletShape shape() {
-    return StreamletShape.createWithInlets(in);
-  }
-
-  // 3. Override createLogic to provide StreamletLogic
-  @Override public FlinkStreamletLogic createLogic() {
-    return new FlinkStreamletLogic(getStreamletContext()) {
-      public String format(Report r) {
-        return new StringBuilder()
-	  .append(r.name())
-	  .append("\n\n")
-	  .append(r.description())
-	  .toString();
-      }
-
-      @Override public void buildExecutionGraph() {
-
-        DataStream<Report> ins = 
-          this.<Report>readStream(in, Report.class);
-        ins
-          .map((Report r) -> format(r))
-          .print();
-      }
-    };
-  }
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -323,17 +165,7 @@ An example of a blueprint using the `ReportPrinter` could look like this:
 
 [source,hocon]
 ----
-blueprint {
-  streamlets {
-    ingress = com.example.ReportIngress
-    report-printer = com.example.ReportPrinter
-  }
-
-  connections {
-    ingress.out = [report-printer.report-in]
-  }
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
 ----
 
 The omitted `ReportIngress` could for instance be another `FlinkStreamlet` that writes `Report`{empty}s to its outlet.

@@ -1,6 +1,7 @@
 :page-partial:
 :page-supergroup-scala-java: Language
 
+include::ROOT:partial$include.adoc[]
 
 The following sections describe how you can create an Akka streamlet.
 Akka streamlets are `Streamlet`{empty}s that offer Akka Streams as the user-facing API.
@@ -25,21 +26,7 @@ Scala::
 --
 [source,scala]
 ----
-package com.example
-
-import akka.stream.scaladsl.Sink
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-
-object ReportPrinter extends AkkaStreamlet {
-  // 1. TODO Create inlets and outlets
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -47,22 +34,7 @@ Java::
 --
 [source,java]
 ----
-package com.example;
-
-import akka.NotUsed;
-import akka.stream.*;
-import akka.stream.javadsl.*;
-
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
-import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
-
-public class ReportPrinter extends AkkaStreamlet {
-  // 1. TODO Create inlets and outlets
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -80,47 +52,14 @@ Scala::
 +
 [source,scala]
 ----
-package com.example
-
-import akka.stream.scaladsl.Sink
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-
-object ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  val inlet = AvroInlet[Report]("report-in")
-
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-package com.example;
-
-import akka.NotUsed;
-import akka.stream.*;
-import akka.stream.javadsl.*;
-
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
-import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
-
-public class ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  AvroInlet<Report> inlet = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 Cloudflow supports Avro encoded processing of data. 
@@ -133,32 +72,7 @@ It contains a summary of the attributes of products from an inventory:
 
 [source,json]
 ----
-{
-  "namespace": "com.example",
-  "type": "record",
-  "name": "Report",
-  "fields": [
-    {
-      "name": "id",
-      "type": "string"
-    },
-    {
-      "name": "name",
-      "type": "string"
-    },
-    {
-      "name": "description",
-      "type": "string"
-    },
-    {
-      "name": "keywords",
-      "type": {
-        "type": "array",
-        "items": "string"
-      }
-    }
-  ]
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. 
@@ -182,53 +96,14 @@ Scala::
 +
 [source,scala]
 ----
-package com.example
-
-import akka.stream.scaladsl.Sink
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-
-object ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  val inlet = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet
-  val shape = StreamletShape.withInlets(inlet)
-
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-package com.example;
-
-import akka.NotUsed;
-import akka.stream.*;
-import akka.stream.javadsl.*;
-
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
-import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
-
-public class ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  AvroInlet<Report> inlet = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. Define the shape of the streamlet
-  public StreamletShape shape() {
-   return StreamletShape.createWithInlets(inlet);
-  }
-
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 The above code specifies that this streamlet has a "one inlet, no outlet" shape by overriding the `shape` method with this specific configuration. 
@@ -258,69 +133,14 @@ Scala::
 +
 [source,scala]
 ----
-package com.example
-
-import akka.stream.scaladsl.Sink
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-
-object ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  val inlet = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet
-  val shape = StreamletShape.withInlets(inlet)
-
-  // 3. Override createLogic to provide StreamletLogic
-  def createLogic = new RunnableGraphStreamletLogic() {
-    def format(report: Report) = s"${report.name}\n]n${report.description}"
-    def runnableGraph =
-      plainSource(inlet)
-        .to(Sink.foreach(report ⇒ println(format(report))))
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-package com.example;
-
-import akka.NotUsed;
-import akka.stream.*;
-import akka.stream.javadsl.*;
-
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
-import cloudflow.akkastream.*;
-import cloudflow.akkastream.javadsl.*;
-
-public class ReportPrinter extends AkkaStreamlet {
-  // 1. Create inlets and outlets
-  AvroInlet<Report> inlet = AvroInlet.<Report>create("report-in", Report.class);
-
-  // 2. Define the shape of the streamlet
-  public StreamletShape shape() {
-   return StreamletShape.createWithInlets(inlet);
-  }
-
-  // 3. Override createLogic to provide StreamletLogic
-  public RunnableGraphStreamletLogic createLogic() {
-    return new RunnableGraphStreamletLogic(getStreamletContext()) {
-      public String format(Report report) {
-        return report.getName() + "\n\n" +report.getDescription();
-      }
-      public RunnableGraph<NotUsed> createRunnableGraph() {
-        return plainSource(inlet).to(Sink.foreach(report -> System.out.println(format(report))));
-      }
-    };
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 In the above code, we override `createLogic` to supply the domain logic for the streamlet.
@@ -351,17 +171,7 @@ An example of a blueprint using the `ReportPrinter` could look like this:
 
 [source,hocon]
 ----
-blueprint {
-  streamlets {
-    ingress = com.example.ReportIngress
-    report-printer = com.example.ReportPrinter
-  }
-
-  connections {
-    ingress.out = [report-printer.report-in]
-  }
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
 ----
 
 The omitted `ReportIngress` could, for instance, be another `AkkaStreamlet` that writes `Report`{empty}s to its outlet.
@@ -490,31 +300,14 @@ Scala::
 +
 [source,scala]
 ----
-def createLogic = new RunnableGraphStreamletLogic() {
-  def format(report: Report) = s"${report.name}\n\n${report.description}"
-  def runnableGraph =
-    sourceWithOffsetContext(inlet)
-      .map { report ⇒
-        println(format(report))
-        report
-      }
-      .to(committableSink)
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/AtLeastOnceReportPrinter.scala[tag=atLeastOnce]
 ----
 
 Java::
 +
 [source,java]
 ----
-public RunnableGraph<NotUsed> createRunnableGraph() {
-  return getSourceWithOffsetContext(inlet)
-    .map(report -> {
-        System.out.println(format(report));
-        return report;
-    })
-    .asSource()
-    .to(getCommittableSink());
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/AtLeastOnceReportPrinter.java[tag=atLeastOnce]
 ----
 
 This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:cloudflow-streamlets.adoc#streamlets-blueprints[Composing streamlets using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].

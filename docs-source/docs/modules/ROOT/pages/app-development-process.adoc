@@ -35,25 +35,7 @@ Let's take a look at the parts of a Streamlet in the following example:
 .Spark Streamlet Example
 [source, scala]
 ----
-class MovingAverageSparklet extends SparkStreamlet { // <1>
-
-  val in = AvroInlet[Data]("in")
-  val out = AvroOutlet[Agg]("out", _.src)
-  val shape = StreamletShape(in, out) // <2>
-
-  override def createLogic() = new SparkStreamletLogic {
-    override def buildStreamingQueries = {  // <3>
-      
-      val groupedData = readStream(in)  // <4>
-        .withColumn("ts", $"timestamp".cast(TimestampType))
-        .withWatermark("ts", "1 minutes")
-        .groupBy(window($"ts", "1 minute", "30 seconds"), $"src", $"gauge").agg(avg($"value") as "avg")
-      val query = groupedData.select($"src", $"gauge", $"avg" as "value").as[Agg]
-   
-      writeStream(query, out, OutputMode.Append).toQueryExecution
-    }
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/MovingAverageSparklet.scala[tag=spark-streamlet-example]
 ----
 <1> `SparkStreamlet` is the base class that defines `Streamlet` for the Apache Spark backend.
 <2> The `StreamletShape` defines the inlet(s) and outlet(s) of the `Streamlet`, each inlet/outlet is declared with its corresponding data type.
@@ -71,17 +53,7 @@ The following example shows a simple _Blueprint_ definition:
 .`blueprint` example
 [source, json]
 ----
-blueprint {
-  streamlets { // <1>
-    ingress = sensors.SparkRandomGenDataIngress
-    process = sensors.MovingAverageSparklet 
-    egress = sensors.SparkConsoleEgress
-  }
-  connections { // <2>
-    ingress.out = [process.in] 
-    process.out = [egress.in]
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/blueprint/blueprint.conf[]
 ----
 <1> `streamlets` section: declares instances from the streamlets available in the application (or its dependencies).
 <2> `connections` section: declares how the inlets/outlets of a streamlet should be connected.
