@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -x
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 TARGET=$1
 
@@ -48,12 +50,15 @@ for prj in $PROJECTS; do
   echo "========================================================================="
 
   cd $prj
-  if [ "$prj" = "sensor-data-java" ]; then
-    sbt --supershell=false $TARGET
-  else
-    sbt --supershell=false "; scalafmtCheck ; $TARGET"
-  fi
+  case "$prj" in
+    *-java)
+      sbt --supershell=false $TARGET
+      ;;
+    *)
+      sbt --supershell=false "; scalafmtCheck ; $TARGET"
+      ;;
+  esac
   RETVAL=$?
   [ $RETVAL -ne 0 ] && echo "Failure in project $prj" && exit -1
-  cd ..
+  cd -
 done
