@@ -23,15 +23,9 @@ type WriterSchemaValidationError struct {
 	msg string
 }
 
-type IncompatibleCanonicalError struct {
-	msg string
-}
-
 func (e *ReaderSchemaValidationError) Error() string { return e.msg }
 
 func (e *WriterSchemaValidationError) Error() string { return e.msg }
-
-func (e *IncompatibleCanonicalError) Error() string { return e.msg }
 
 func CheckSchemaCompatibility(reader string, writer string) error {
     _, err := ValidateSchema(reader)
@@ -52,4 +46,3 @@ func CheckSchemaCompatibility(reader string, writer string) error {
 
 	return s.Compatible(readerSchema, writerSchema)
 }
-

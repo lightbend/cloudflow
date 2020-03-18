@@ -217,17 +217,6 @@ func verifyPasswordOptions(opts *deployOptions) error {
 	return nil
 }
 
-/*
-type imageReference struct {
-	registry   string
-	repository string
-	image      string
-	tag        string
-	fullURI    string
-}
-*/
-
-
 func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, dockerRegistryURL string) bool {
 	if serviceAccount, nserr := k8sClient.CoreV1().ServiceAccounts(namespace).Get(cloudflowAppServiceAccountName, metav1.GetOptions{}); nserr == nil {
 		for _, secret := range serviceAccount.ImagePullSecrets {

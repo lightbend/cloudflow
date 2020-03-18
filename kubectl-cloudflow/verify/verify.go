@@ -116,12 +116,12 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]domain.ImageRefer
 	}
 
 	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
-	client, error := docker.GetClient(trimmedapiversion)
-	if error != nil {
-		client, error = docker.GetClient("1.39")
-		if error != nil {
+	client, err := docker.GetClient(trimmedapiversion)
+	if err != nil {
+		client, err = docker.GetClient("1.39")
+		if err != nil {
 			fmt.Printf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
-			panic(error)
+			panic(err)
 		}
 	}
 

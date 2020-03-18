@@ -3,9 +3,9 @@ package verify
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"regexp"
 	"strings"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 )
 
 var DNSLabelPattern = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
