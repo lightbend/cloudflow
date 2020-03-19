@@ -73,6 +73,10 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 
+  libraryDependencies ++= Seq(
+        "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
+        "junit"                  % "junit"                      % "4.12"     % "test"),
+
   schemaCodeGenerator := SchemaCodeGenerator.Java,
   javacOptions ++= Seq("-Xlint:deprecation")
 )

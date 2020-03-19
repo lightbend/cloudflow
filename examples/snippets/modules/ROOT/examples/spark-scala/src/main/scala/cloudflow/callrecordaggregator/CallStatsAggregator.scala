@@ -54,6 +54,7 @@ class CallStatsAggregator extends SparkStreamlet {
       val outStream = process(dataset)
       writeStream(outStream, out, OutputMode.Update).toQueryExecution
     }
+    //end::docs-aggregationQuery-example[]
 
     private def process(inDataset: Dataset[CallRecord]): Dataset[AggregatedCallStats] = {
       val query =
@@ -68,6 +69,5 @@ class CallStatsAggregator extends SparkStreamlet {
         .select($"window.start".cast(LongType).as("startTime"), $"windowDuration", $"avgCallDuration", $"totalCallDuration")
         .as[AggregatedCallStats]
     }
-    //end::docs-aggregationQuery-example[]
   }
 }
