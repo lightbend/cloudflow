@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"log"
@@ -48,7 +48,7 @@ var _ = Describe("Application deployment", func() {
 		})
 	})
 
-	Context("when I deploy an application that uses akka, spark, and flink", func() {
+	Context("when I deploy an application", func() {
 		It("should start a deployment", func() {
 			jsonToken := getToken()
 			output, err := deploy(swissKnifeApp, jsonToken)
@@ -64,13 +64,15 @@ var _ = Describe("Application deployment", func() {
 		})
 
 		It("should get to a 'running' status, eventually", func(done Done) {
-			// TODO: check status flag once it's fixed 
+			// TODO: check status flag once it's fixed
 			status, err := checkStatusIs(swissKnifeApp, "Running")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
 			close(done)
 		}, 10) // timeout in seconds
+	})
 
+	Context("A deployed application that uses akka, spark, and flink", func() {
 		It("should contain a spark process", func() {
 			status, err := getStatus(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
@@ -92,8 +94,48 @@ var _ = Describe("Application deployment", func() {
 			Expect(streamlets).To(ContainElement("akka-process"))
 		})
 
+		It("should produce a counter in the raw output log", func() {
+			logs, err := getLogs(swissKnifeApp, "raw-egress")
+			Expect(err).NotTo(HaveOccurred())
+			lastLine, err := getLastMinOneLine(logs)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(lastLine).To(ContainSubstring("count:"))
+		})
+
+		It("should produce a counter in the raw output log", func() {
+			err := checkCountInLog(swissKnifeApp, "raw-egress")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should produce a counter in the akka output log", func() {
+			err := checkCountInLog(swissKnifeApp, "akka-egress")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should produce a counter in the spark output log", func() {
+			err := checkCountInLog(swissKnifeApp, "spark-egress")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should produce a counter in the flink output log", func() {
+			err := checkCountInLog(swissKnifeApp, "flink-egress")
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 })
+
+func checkCountInLog(app app, streamlet string) error {
+	logs, err := getLogs(swissKnifeApp, streamlet)
+	if err != nil {
+		return err
+	}
+	lastLine, err := getLastMinOneLine(logs)
+	if err != nil {
+		return err
+	}
+	Expect(lastLine).To(ContainSubstring("count:"))
+	return nil
+}
 
 func getToken() string {
 	data, err := ioutil.ReadFile(JsonTokenSrc)
@@ -273,22 +315,22 @@ func getPods(app app) (pods []podEntry, err error) {
 	return res, nil
 }
 
-func checkStatusIs(app app, status string)(res string, err error) {
-	for ;; {
+func checkStatusIs(app app, status string) (res string, err error) {
+	for {
 		appStatus, er := getStatus(app)
-		if (er  != nil) {
+		if er != nil {
 			err = er
 			return
 		}
 		allSame := true
-		for _,entry := range appStatus.streamletPods {
+		for _, entry := range appStatus.streamletPods {
 			allSame = allSame && entry.status == status
-			if (!allSame) {
-				fmt.Printf("Entry [%s, %s] is not compliant with status [%s]", entry.streamlet, entry.status, status)	
+			if !allSame {
+				fmt.Printf("Entry [%s, %s] is not compliant with status [%s]", entry.streamlet, entry.status, status)
 				break
 			}
 		}
-		if (allSame) {
+		if allSame {
 			return status, nil
 		}
 		time.Sleep(time.Second)
@@ -296,7 +338,7 @@ func checkStatusIs(app app, status string)(res string, err error) {
 }
 
 func getStreamlets(appStatus appStatus) []string {
-	var res [] string
+	var res []string
 	for _, entry := range appStatus.streamletPods {
 		res = append(res, entry.streamlet)
 	}
@@ -313,47 +355,49 @@ func getStatus(app app) (status appStatus, err error) {
 	str := string(out)
 	splits := strings.Split(str, "\n")
 
-	names := [5] string {"Name:", "Namespace:","Version:",  "Created:", "Status:"}
-	fields := [5] *string {&status.name, &status.namespace, &status.version, &status.created, &status.status}
-	var streamletPods  []streamletPod
-	
+	names := [5]string{"Name:", "Namespace:", "Version:", "Created:", "Status:"}
+	fields := [5]*string{&status.name, &status.namespace, &status.version, &status.created, &status.status}
+	var streamletPods []streamletPod
+
 	for i, line := range splits {
-		
+
 		switch i {
-		case 0,1,2,3,4: 
-		value, er := parseLineInN(line, 2)
-		if (er != nil){
-			err = er
-			return 
-		}
-		if (value[0] != names[i]) {
-			err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
-			return
-		}
-		*fields[i] = value[1]
-		case 5: continue // separator line 
-		case 6: continue // titles 
+		case 0, 1, 2, 3, 4:
+			value, er := parseLineInN(line, 2)
+			if er != nil {
+				err = er
+				return
+			}
+			if value[0] != names[i] {
+				err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
+				return
+			}
+			*fields[i] = value[1]
+		case 5:
+			continue // separator line
+		case 6:
+			continue // titles
 		default:
 			if len(strings.TrimSpace(line)) == 0 {
 				continue
 			}
 			parts, er := parseLineInN(line, 5)
-			if (er != nil) {
+			if er != nil {
 				err = er
-				return 
+				return
 			}
 			var streamletPod streamletPod
 			streamletPod.streamlet = parts[0]
 			streamletPod.pod = parts[1]
 			streamletPod.status = parts[2]
 			restarts, er := strconv.Atoi(parts[3])
-			if (er != nil) {
+			if er != nil {
 				err = er
-				return 
+				return
 			}
-			streamletPod.restarts =  restarts
+			streamletPod.restarts = restarts
 			ready, er := strconv.ParseBool(parts[4])
-			if (er != nil) {
+			if er != nil {
 				err = er
 				return
 			}
@@ -365,7 +409,7 @@ func getStatus(app app) (status appStatus, err error) {
 	return status, nil
 }
 
-func parseLineInN(str string, segments int)(parsed []string, err error) {
+func parseLineInN(str string, segments int) (parsed []string, err error) {
 	parts := Whitespaces.Split(str, AllSubstrings)
 	if len(parts) >= segments {
 		for i, part := range parts {
@@ -376,4 +420,42 @@ func parseLineInN(str string, segments int)(parsed []string, err error) {
 		err = fmt.Errorf("string didn't contain [%d] separate words: [%s]", segments, str)
 		return
 	}
+}
+
+func getStreamletPod(status *appStatus, streamlet string) *streamletPod {
+	for _, entry := range status.streamletPods {
+		if entry.streamlet == streamlet {
+			return &entry
+		}
+	}
+	return nil
+}
+
+func getLastMinOneLine(str string) (line string, err error) {
+	lines := strings.Split(str, "\n")
+	if len(lines) < 2 {
+		err = fmt.Errorf("input had too few lines")
+		return
+	}
+	return lines[len(lines)-2], nil
+}
+
+func getLogs(app app, streamlet string) (logs string, err error) {
+	status, er := getStatus(app)
+	if er != nil {
+		err = er
+		return
+	}
+	streamletPod := getStreamletPod(&status, streamlet)
+	if streamletPod == nil {
+		err = fmt.Errorf("could not find entry for streamlet [%s]", streamlet)
+	}
+	cmd := exec.Command("kubectl", "logs", streamletPod.pod, "-n", app.name)
+	out, er := cmd.CombinedOutput()
+	if er != nil {
+		err = er
+		return
+	}
+	return string(out), nil
+
 }
