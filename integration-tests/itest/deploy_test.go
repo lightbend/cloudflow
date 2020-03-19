@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"strconv"
 	"time"
 
 	"log"
@@ -28,40 +29,69 @@ type app struct {
 
 const (
 	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
+	// Regex Constants
+	AllSubstrings = -1
 )
+
+var Whitespaces = regexp.MustCompile(`\s+`)
 
 var swissKnifeApp = app{
 	image: "eu.gcr.io/bubbly-observer-178213/swiss-knife:189-277e424",
 	name:  "swiss-knife",
 }
 
-var _ = Describe("Application execution", func() {
+var _ = Describe("Application deployment", func() {
 	Context("the cluster is clean for testing", func() {
 		It("should not have the test app", func() {
 			err := ensureAppNotDeployed(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
 	Context("when I deploy an application that uses akka, spark, and flink", func() {
-		It("should start  a deployment", func() {
+		It("should start a deployment", func() {
 			jsonToken := getToken()
 			output, err := deploy(swissKnifeApp, jsonToken)
-			fmt.Println("Error received: " + output)
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
 		})
 
-		It("should complete the deployment", func() {
-			// check status
-			// Expect(output).Should(Equal("Deployment of application `" + AppName + "` has started."))
-			Expect(true).To(BeTrue())
+		It("should be in the list of applications in the cluster", func() {
+			list, err := listAppNames()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(list).To(ContainElement(swissKnifeApp.name))
 		})
 
-		It("should contain a spark-process", func() {
-			// check status
-			Expect(true).To(BeTrue())
+		It("should get to a 'running' status, eventually", func(done Done) {
+			// TODO: check status flag once it's fixed 
+			status, err := checkStatusIs(swissKnifeApp, "Running")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal("Running"))
+			close(done)
+		}, 10) // timeout in seconds
+
+		It("should contain a spark process", func() {
+			status, err := getStatus(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := getStreamlets(status)
+			Expect(streamlets).To(ContainElement("spark-process"))
 		})
+
+		It("should contain a flink process", func() {
+			status, err := getStatus(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := getStreamlets(status)
+			Expect(streamlets).To(ContainElement("flink-process"))
+		})
+
+		It("should contain an akka process", func() {
+			status, err := getStatus(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := getStreamlets(status)
+			Expect(streamlets).To(ContainElement("akka-process"))
+		})
+
 	})
 })
 
@@ -100,6 +130,38 @@ type podEntry struct {
 	age      string
 }
 
+type streamletPod struct {
+	streamlet string
+	pod       string
+	status    string
+	restarts  int
+	ready     bool
+}
+
+type appStatus struct {
+	name          string
+	namespace     string
+	version       string
+	created       string
+	status        string
+	streamletPods []streamletPod
+}
+
+// func status(app app) (status appStatus, err error )
+
+func listAppNames() (entries []string, err error) {
+	apps, er := listApps()
+	if er != nil {
+		err = er
+		return
+	}
+	list := make([]string, len(apps))
+	for _, entry := range apps {
+		list = append(list, entry.name)
+	}
+	return list, nil
+}
+
 func listApps() (entries []appListEntry, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "list")
 	out, er := cmd.CombinedOutput()
@@ -111,15 +173,13 @@ func listApps() (entries []appListEntry, err error) {
 	str := string(out)
 	splits := strings.Split(str, "\n")
 	whitespaces := regexp.MustCompile(`\s+`)
-	AllSubstrings := -1
 	var res []appListEntry
 	for i, line := range splits {
 		switch i {
-		case 0, 1: // skip line 0,1
+		case 0, 1:
+			continue
 		default:
 			parts := whitespaces.Split(line, AllSubstrings)
-			fmt.Print("found this:")
-			fmt.Println(parts)
 			if len(parts) == 7 {
 				appEntry := appListEntry{parts[0], parts[1], parts[2], parts[3] + parts[4] + parts[5] + parts[6]}
 
@@ -131,22 +191,18 @@ func listApps() (entries []appListEntry, err error) {
 }
 
 func ensureAppNotDeployed(app app) error {
-	fmt.Printf("Ensuring app [%s] is not deployed", app.name)
 	apps, err := listApps()
 	if err != nil {
 		return err
 	}
 	found := false
-	fmt.Printf("Apps in cluster: [%d]", len(apps))
 	for _, entry := range apps {
-		fmt.Printf("App in deployed list: [%s][%s]", entry.name, entry.namespace)
 		if entry.name == app.name {
 			fmt.Printf("This is the app you are looking for: [%s]", entry.name)
 			found = true
 		}
 	}
 	if found {
-		fmt.Printf("Application %s found in target cluster. Undeploying...", app.name)
 		err := undeploy(app)
 		if err != nil {
 			return err
@@ -180,13 +236,13 @@ func ensureNoPods(app app) error {
 	fmt.Printf("Initial pod count %d\n", len(pods))
 
 	for len(pods) > 0 {
-		fmt.Print()
+
 		time.Sleep(sleepDuration)
 		pods, err = getPods(app)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Pod count update %d", len(pods))
+		fmt.Printf("...%d", len(pods))
 	}
 	return nil
 }
@@ -201,15 +257,13 @@ func getPods(app app) (pods []podEntry, err error) {
 	str := string(out)
 	splits := strings.Split(str, "\n")
 	whitespaces := regexp.MustCompile(`\s+`)
-	AllSubstrings := -1
 	var res []podEntry
 	for i, line := range splits {
 		switch i {
-		case 0: // skip line 0
+		case 0:
+			continue
 		default:
 			parts := whitespaces.Split(line, AllSubstrings)
-			fmt.Print("found this:")
-			fmt.Println(parts)
 			if len(parts) == 5 {
 				podEntry := podEntry{parts[0], parts[1], parts[2], parts[3], parts[4]}
 				res = append(res, podEntry)
@@ -217,4 +271,109 @@ func getPods(app app) (pods []podEntry, err error) {
 		}
 	}
 	return res, nil
+}
+
+func checkStatusIs(app app, status string)(res string, err error) {
+	for ;; {
+		appStatus, er := getStatus(app)
+		if (er  != nil) {
+			err = er
+			return
+		}
+		allSame := true
+		for _,entry := range appStatus.streamletPods {
+			allSame = allSame && entry.status == status
+			if (!allSame) {
+				fmt.Printf("Entry [%s, %s] is not compliant with status [%s]", entry.streamlet, entry.status, status)	
+				break
+			}
+		}
+		if (allSame) {
+			return status, nil
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func getStreamlets(appStatus appStatus) []string {
+	var res [] string
+	for _, entry := range appStatus.streamletPods {
+		res = append(res, entry.streamlet)
+	}
+	return res
+}
+
+func getStatus(app app) (status appStatus, err error) {
+	cmd := exec.Command("kubectl", "cloudflow", "status", app.name)
+	out, er := cmd.CombinedOutput()
+	if er != nil {
+		err = er
+		return
+	}
+	str := string(out)
+	splits := strings.Split(str, "\n")
+
+	names := [5] string {"Name:", "Namespace:","Version:",  "Created:", "Status:"}
+	fields := [5] *string {&status.name, &status.namespace, &status.version, &status.created, &status.status}
+	var streamletPods  []streamletPod
+	
+	for i, line := range splits {
+		
+		switch i {
+		case 0,1,2,3,4: 
+		value, er := parseLineInN(line, 2)
+		if (er != nil){
+			err = er
+			return 
+		}
+		if (value[0] != names[i]) {
+			err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
+			return
+		}
+		*fields[i] = value[1]
+		case 5: continue // separator line 
+		case 6: continue // titles 
+		default:
+			if len(strings.TrimSpace(line)) == 0 {
+				continue
+			}
+			parts, er := parseLineInN(line, 5)
+			if (er != nil) {
+				err = er
+				return 
+			}
+			var streamletPod streamletPod
+			streamletPod.streamlet = parts[0]
+			streamletPod.pod = parts[1]
+			streamletPod.status = parts[2]
+			restarts, er := strconv.Atoi(parts[3])
+			if (er != nil) {
+				err = er
+				return 
+			}
+			streamletPod.restarts =  restarts
+			ready, er := strconv.ParseBool(parts[4])
+			if (er != nil) {
+				err = er
+				return
+			}
+			streamletPod.ready = ready
+			streamletPods = append(streamletPods, streamletPod)
+		}
+	}
+	status.streamletPods = streamletPods
+	return status, nil
+}
+
+func parseLineInN(str string, segments int)(parsed []string, err error) {
+	parts := Whitespaces.Split(str, AllSubstrings)
+	if len(parts) >= segments {
+		for i, part := range parts {
+			parts[i] = strings.TrimSpace(part)
+		}
+		return parts, nil
+	} else {
+		err = fmt.Errorf("string didn't contain [%d] separate words: [%s]", segments, str)
+		return
+	}
 }
