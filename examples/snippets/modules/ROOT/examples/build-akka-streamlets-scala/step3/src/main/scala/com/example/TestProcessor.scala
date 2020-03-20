@@ -9,8 +9,8 @@ import akka.stream.scaladsl.Flow
 
 //tag::processor[]
 class TestProcessor extends AkkaStreamlet {
-  val in = AvroInlet[Data]("in")
-  val out = AvroOutlet[Data]("out", _.id.toString)
+  val in                   = AvroInlet[Data]("in")
+  val out                  = AvroOutlet[Data]("out", _.id.toString)
   final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
   val flow = Flow[Data].filter(_.id % 2 == 0)

@@ -1,0 +1,12 @@
+{
+    "namespace": "cloudflow.akkastreamsdoc",
+    "type": "record",
+    "name": "Metric",
+    "fields":[
+         {
+              "name": "value",
+              "type": "string"
+         }
+    ]
+}
+

@@ -43,11 +43,13 @@ public class FilterStreamlet extends AkkaStreamlet {
     // Declare the volume mount
     private final VolumeMount referenceFiles = VolumeMount.createReadWriteMany("configuration", "/mnt/data");
 
+    //tag::definition[]
     // Make the filter filename configurable
     private final StringConfigParameter filterFilenameConfig = StringConfigParameter.create(
                 "filter-filename",
                 "Name of the text file in the volume mount directory that contains the list of keys to filter out."
             ).withDefaultValue("device-ids.txt");
+    //end::definition[]
 
     // Make polling interval configurable
     private final IntegerConfigParameter filterPollingInterval = IntegerConfigParameter.create(
@@ -86,8 +88,10 @@ public class FilterStreamlet extends AkkaStreamlet {
             final Config streamletConfig = getStreamletConfig();
             final Path referenceFilesPath = getMountedPath(referenceFiles);
 
+            //tag::usage[]
             final Path filterFilenamePath = Paths.get(referenceFilesPath.toString(),
                     streamletConfig.getString(filterFilenameConfig.getKey()));
+            //end::usage[]
 
             final Duration pollingInterval = java.time.Duration.ofSeconds(streamletConfig.getInt(filterPollingInterval.getKey()));
 

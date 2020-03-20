@@ -1,16 +1,21 @@
-package cloudflow.akkastreamsdoc;
+package com.example;
 
-// tag::merge[]
-import cloudflow.akkastream.*;
-import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.*;
-import cloudflow.akkastream.javadsl.*;
-import cloudflow.akkastream.util.javadsl.*;
+import akka.NotUsed;
+import akka.stream.*;
 import akka.stream.javadsl.*;
 
-import java.util.*;
+import cloudflow.streamlets.*;
+import cloudflow.streamlets.avro.*;
+import cloudflow.akkastream.*;
+import cloudflow.akkastream.javadsl.*;
+import cloudflow.akkastream.util.javadsl.*;
 
-public class DataMerge extends AkkaStreamlet {
+import cloudflow.akkastreamsdoc.*;
+
+public class RecordSumFlow extends AkkaStreamlet {
+
+  public static IntegerConfigParameter recordsInWindowParameter = IntegerConfigParameter.create("records-in-window","This value describes how many records of data should be processed together, default 64 records").withDefaultValue(64);
+
   AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
   AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
   AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.getKey(), Data.class);
@@ -26,4 +31,3 @@ public class DataMerge extends AkkaStreamlet {
     };
   }
 }
-// end::merge[]

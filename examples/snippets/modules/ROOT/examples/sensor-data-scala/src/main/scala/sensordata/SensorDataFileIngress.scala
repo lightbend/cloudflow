@@ -40,7 +40,7 @@ class SensorDataFileIngress extends AkkaStreamlet {
   def shape = StreamletShape.withOutlets(out)
 
   //tag::volume-mount1[]
-  private val sourceData = VolumeMount("source-data-mount", "/mnt/data", ReadWriteMany)
+  private val sourceData    = VolumeMount("source-data-mount", "/mnt/data", ReadWriteMany)
   override def volumeMounts = Vector(sourceData)
   //end::volume-mount1[]
 
@@ -53,11 +53,11 @@ class SensorDataFileIngress extends AkkaStreamlet {
   // *) Note that reading and deserializing the file content is done in separate steps for readability only, in production they should be merged into one step for performance reasons.
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-  //tag::volume-mount2[]
+    //tag::volume-mount2[]
     val listFiles: NotUsed ⇒ Source[Path, NotUsed] = { _ ⇒
       Directory.ls(getMountedPath(sourceData))
     }
-  //end::volume-mount2[]
+    //end::volume-mount2[]
     val readFile: Path ⇒ Source[ByteString, Future[IOResult]] = { path: Path ⇒
       FileIO.fromPath(path).via(JsonFraming.objectScanner(Int.MaxValue))
     }

@@ -10,7 +10,7 @@ class FlinkProcessor extends FlinkStreamlet {
 
   // Step 1: Define inlets and outlets. Note for the outlet you need to specify
   //         the partitioner function explicitly
-  val in = AvroInlet[Data]("in")
+  val in  = AvroInlet[Data]("in")
   val out = AvroOutlet[Data]("out", _.id.toString)
 
   // Step 2: Define the shape of the streamlet. In this example the streamlet
@@ -21,7 +21,7 @@ class FlinkProcessor extends FlinkStreamlet {
   //         the behavior of the streamlet
   override def createLogic() = new FlinkStreamletLogic {
     override def buildExecutionGraph = {
-      val ins: DataStream[Data] = readStream(in)
+      val ins: DataStream[Data]  = readStream(in)
       val outs: DataStream[Data] = ins.filter(_.id % 2 == 0)
       writeStream(out, outs)
     }
