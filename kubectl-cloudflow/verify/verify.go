@@ -118,8 +118,7 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 	if err != nil {
 		client, err = docker.GetClient("1.39")
 		if err != nil {
-			fmt.Printf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
-			panic(err)
+			util.LogAndExit("No compatible version of the Docker server API found, tried version %s and 1.39. Error is: %s",trimmedapiversion, err.Error())
 		}
 	}
 
