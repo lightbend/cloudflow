@@ -56,7 +56,7 @@ object LocalRunner extends StreamletLoader {
     })
 
   lazy val localConf = Option(this.getClass.getClassLoader.getResource("local.conf"))
-    .map(res ⇒ ConfigFactory.parseURL(res))
+    .map(res ⇒ ConfigFactory.parseURL(res).resolve)
     .getOrElse(ConfigFactory.empty())
 
   /**
