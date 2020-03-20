@@ -2,7 +2,7 @@ package verify
 
 import (
 	"github.com/go-akka/configuration"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowavro"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/schemas"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 )
 
@@ -83,15 +83,15 @@ func (c StreamletConnection) verifySchema(verifiedOutlet VerifiedOutlet, verifie
 		verifiedOutlet.schemaDescriptor.Fingerprint == verifiedInlet.schemaDescriptor.Fingerprint {
 		return &VerifiedStreamletConnection{verifiedOutlet: verifiedOutlet, verifiedInlet: verifiedInlet, label: &label}, nil
 	} else if verifiedOutlet.schemaDescriptor.Format == avroFormat {
-		err := cloudflowavro.CheckSchemaCompatibility(verifiedOutlet.schemaDescriptor.Schema, verifiedInlet.schemaDescriptor.Schema)
+		err := schemas.CheckSchemaCompatibility(verifiedOutlet.schemaDescriptor.Schema, verifiedInlet.schemaDescriptor.Schema)
 
-		rerr, ok := err.(*cloudflowavro.ReaderSchemaValidationError)
+		rerr, ok := err.(*schemas.ReaderSchemaValidationError)
 
 		if ok {
 			util.LogAndExit("Inlet schema %s with fingerprint %s is not valid. Error: %s", verifiedInlet.schemaDescriptor.Name, verifiedOutlet.schemaDescriptor.Fingerprint, rerr.Error())
 		}
 
-		werr, ok := err.(*cloudflowavro.WriterSchemaValidationError)
+		werr, ok := err.(*schemas.WriterSchemaValidationError)
 
 		if ok {
 			util.LogAndExit("Outlet schema %s with fingerprint %s is not valid. Error: %s", verifiedOutlet.schemaDescriptor.Name, verifiedOutlet.schemaDescriptor.Fingerprint, werr.Error())

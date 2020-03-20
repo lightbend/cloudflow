@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
@@ -107,7 +107,7 @@ func newNamespace(appID string) v1.Namespace {
 	return v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   appID,
-			Labels: domain.CreateLabels(appID),
+			Labels: cloudflowapplication.CreateLabels(appID),
 		},
 	}
 }
@@ -163,7 +163,7 @@ func newCloudflowServiceAccount(appID string, cloudflowOperatorOwnerReference me
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            cloudflowAppServiceAccountName,
 			Namespace:       appID,
-			Labels:          domain.CreateLabels(appID),
+			Labels:          cloudflowapplication.CreateLabels(appID),
 			OwnerReferences: []metav1.OwnerReference{cloudflowOperatorOwnerReference},
 		},
 	}
@@ -187,7 +187,7 @@ func createOrUpdateImagePullSecret(k8sClient *kubernetes.Clientset, appID string
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      imagePullSecretName,
 			Namespace: appID,
-			Labels:    domain.CreateLabels(appID),
+			Labels:    cloudflowapplication.CreateLabels(appID),
 		},
 	}
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/deploy"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/scale"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
@@ -242,7 +242,7 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 	return false
 }
 
-func copyReplicaConfigurationFromCurrentApplication(applicationClient *k8s.CloudflowApplicationClient, spec domain.CloudflowApplicationSpec) (domain.CloudflowApplicationSpec, error) {
+func copyReplicaConfigurationFromCurrentApplication(applicationClient *k8s.CloudflowApplicationClient, spec cloudflowapplication.CloudflowApplicationSpec) (cloudflowapplication.CloudflowApplicationSpec, error) {
 
 	app, err := applicationClient.Get(spec.AppID)
 	if err != nil {
@@ -282,8 +282,8 @@ func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace s
 	}
 }
 
-func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec domain.CloudflowApplicationSpec) {
-	ns := domain.NewCloudflowApplicationNamespace(applicationSpec)
+func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec cloudflowapplication.CloudflowApplicationSpec) {
+	ns := cloudflowapplication.NewCloudflowApplicationNamespace(applicationSpec)
 	if _, nserr := k8sClient.CoreV1().Namespaces().Get(ns.ObjectMeta.Name, metav1.GetOptions{}); nserr != nil {
 		if _, nserr := k8sClient.CoreV1().Namespaces().Create(&ns); nserr != nil {
 			util.LogAndExit("Failed to create namespace `%s`, %s", applicationSpec.AppID, nserr.Error())
@@ -291,18 +291,18 @@ func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec 
 	}
 }
 
-func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.CloudflowApplicationClient, spec domain.CloudflowApplicationSpec, cloudflowOperatorOwnerReference metav1.OwnerReference) {
+func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.CloudflowApplicationClient, spec cloudflowapplication.CloudflowApplicationSpec, cloudflowOperatorOwnerReference metav1.OwnerReference) {
 
 	storedCR, errCR := cloudflowApplicationClient.Get(spec.AppID)
 
 	if errCR == nil {
-		cloudflowApplication := domain.UpdateCloudflowApplication(spec, storedCR.ObjectMeta.ResourceVersion)
+		cloudflowApplication := cloudflowapplication.UpdateCloudflowApplication(spec, storedCR.ObjectMeta.ResourceVersion)
 		_, err := cloudflowApplicationClient.Update(cloudflowApplication)
 		if err != nil {
 			util.LogAndExit("Failed to update CloudflowApplication `%s`, %s", spec.AppID, err.Error())
 		}
-	} else if reflect.DeepEqual(*storedCR, domain.CloudflowApplication{}) {
-		cloudflowApplication := domain.NewCloudflowApplication(spec)
+	} else if reflect.DeepEqual(*storedCR, cloudflowapplication.CloudflowApplication{}) {
+		cloudflowApplication := cloudflowapplication.NewCloudflowApplication(spec)
 		cloudflowApplication.SetOwnerReferences([]metav1.OwnerReference{cloudflowOperatorOwnerReference})
 
 		_, err := cloudflowApplicationClient.Create(cloudflowApplication)

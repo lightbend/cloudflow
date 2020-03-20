@@ -1,4 +1,4 @@
-package domain
+package cloudflowapplication
 
 // TestApplicationDescriptor returns a CloudflowApplication descriptor as a string
 func TestApplicationDescriptor() string {

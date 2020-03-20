@@ -3,7 +3,7 @@ package verify
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"regexp"
 	"strings"
 )
@@ -54,46 +54,9 @@ func GetSHA256Hash (o interface{}) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-// A Scala like diff method
-func Diff(a, b []string) (diff []string) {
-	aMap := make(map[string]int)
-	bMap := make(map[string]int)
 
-	for _, item := range a {
-		aMap[item] = aMap[item] + 1
-	}
 
-	for _, item := range b {
-		bMap[item] = bMap[item] + 1
-	}
-
-	for _, item := range Distinct(a) {
-		if _, ok := bMap[item]; !ok {
-			diff = append(diff, item)
-		} else {
-			aValue := aMap[item]
-			bValue := bMap[item]
-			for  i :=1; i <= (aValue - bValue); i++ {
-				diff = append(diff, item)
-			}
-		}
-	}
-	return
-}
-
-func Distinct(input []string) []string {
-	keys := make(map[string]bool)
-	var dist []string
-	for _, entry := range input {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			dist = append(dist, entry)
-		}
-	}
-	return dist
-}
-
-func ParseImageReference(imageURI string) (*domain.ImageReference, error) {
+func ParseImageReference(imageURI string) (*cloudflowapplication.ImageReference, error) {
 
 	imageRef := strings.TrimSpace(imageURI)
 	msg := "The following docker image path is not valid:\n\n%s\n\nA common error is to prefix the image path with a URI scheme like 'http' or 'https'."
@@ -127,7 +90,7 @@ func ParseImageReference(imageURI string) (*domain.ImageReference, error) {
 	}
 	result["uri"] = imageURI
 
-	ir := domain.ImageReference{
+	ir := cloudflowapplication.ImageReference{
 		Registry:   result["reg"],
 		Repository: strings.TrimSuffix(result["repo"], "/"),
 		Image:      result["image"],

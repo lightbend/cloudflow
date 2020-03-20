@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ import (
 )
 
 // GetCloudflowApplicationDescriptorFromDockerImage pulls a image and extracts the Cloudflow Application descriptor from a docker label
-func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (domain.CloudflowApplicationSpec, docker.PulledImage) {
+func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (cloudflowapplication.CloudflowApplicationSpec, docker.PulledImage) {
 
 	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
 	if apierr != nil {
@@ -45,17 +45,17 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 
 	applicationDescriptorImageDigest := docker.GetCloudflowApplicationDescriptor(client, dockerImagePath)
 
-	var spec domain.CloudflowApplicationSpec
+	var spec cloudflowapplication.CloudflowApplicationSpec
 	marshalError := json.Unmarshal([]byte(applicationDescriptorImageDigest.AppDescriptor), &spec)
 	if marshalError != nil {
 		fmt.Print("\n\nAn unexpected error has occurred, please contact support and include the information below.\n\n")
 		panic(marshalError)
 	}
 
-	if spec.Version != domain.SupportedApplicationDescriptorVersion {
+	if spec.Version != cloudflowapplication.SupportedApplicationDescriptorVersion {
 		// If the version is an int, compare them, otherwise provide a more general message.
 		if version, err := strconv.Atoi(spec.Version); err == nil {
-			if supportedVersion, err := strconv.Atoi(domain.SupportedApplicationDescriptorVersion); err == nil {
+			if supportedVersion, err := strconv.Atoi(cloudflowapplication.SupportedApplicationDescriptorVersion); err == nil {
 				if version < supportedVersion {
 					if spec.LibraryVersion != "" {
 						util.LogAndExit("Image %s, built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image.", dockerImagePath, spec.LibraryVersion)
@@ -119,7 +119,7 @@ func SplitConfigurationParameters(configurationParameters []string) map[string]s
 }
 
 // AppendExistingValuesNotConfigured adds values for those keys that are not entered by the user, which do already exist in secrets
-func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
+func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec cloudflowapplication.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
 	existingConfigurationKeyValues := make(map[string]string)
 	for _, deployment := range spec.Deployments {
 		if secret, err := client.CoreV1().Secrets(spec.AppID).Get(deployment.SecretName, metav1.GetOptions{}); err == nil {
@@ -155,7 +155,7 @@ func AppendExistingValuesNotConfigured(client *kubernetes.Clientset, spec domain
 }
 
 // AppendDefaultValuesForMissingConfigurationValues adds default values for those keys that are not entered by the user
-func AppendDefaultValuesForMissingConfigurationValues(spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
+func AppendDefaultValuesForMissingConfigurationValues(spec cloudflowapplication.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]string {
 	for _, streamlet := range spec.Streamlets {
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixWithStreamletName(streamlet.Name, descriptor.Key)
@@ -171,7 +171,7 @@ func AppendDefaultValuesForMissingConfigurationValues(spec domain.CloudflowAppli
 }
 
 // ValidateVolumeMounts validates that volume mounts command line arguments corresponds to a volume mount descriptor in the AD and that the PVC named in the argument exists
-func ValidateVolumeMounts(k8sClient *kubernetes.Clientset, spec domain.CloudflowApplicationSpec, volumeMountPVCNameArray []string) (domain.CloudflowApplicationSpec, error) {
+func ValidateVolumeMounts(k8sClient *kubernetes.Clientset, spec cloudflowapplication.CloudflowApplicationSpec, volumeMountPVCNameArray []string) (cloudflowapplication.CloudflowApplicationSpec, error) {
 	// build a map of all user-specified volume mount arguments where the key
 	// is [streamlet name].[volume mount key] and the value is the name of the
 	// PVC to use for the mount.
@@ -236,7 +236,7 @@ func accessModeExists(accessModes []corev1.PersistentVolumeAccessMode, accessMod
 }
 
 // ValidateConfigurationAgainstDescriptor validates all configuration parameter keys in the descriptor against a set of provided keys
-func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) (map[string]string, error) {
+func ValidateConfigurationAgainstDescriptor(spec cloudflowapplication.CloudflowApplicationSpec, configurationKeyValues map[string]string) (map[string]string, error) {
 
 	type ValidationErrorDescriptor struct {
 		FqKey              string
@@ -278,7 +278,7 @@ func ValidateConfigurationAgainstDescriptor(spec domain.CloudflowApplicationSpec
 	return configurationKeyValues, nil
 }
 
-func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, value string) error {
+func validateStreamletConfigKey(descriptor cloudflowapplication.ConfigParameterDescriptor, value string) error {
 	switch descriptor.Type {
 
 	case "bool":
@@ -326,7 +326,7 @@ func validateStreamletConfigKey(descriptor domain.ConfigParameterDescriptor, val
 
 // CreateSecretsData creates a map of streamlet names and K8s Secrets for those streamlets with configuration parameters,
 // the secrets contain a single key/value where the key is the name of the hocon configuration file
-func CreateSecretsData(spec *domain.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]*corev1.Secret {
+func CreateSecretsData(spec *cloudflowapplication.CloudflowApplicationSpec, configurationKeyValues map[string]string) map[string]*corev1.Secret {
 	streamletSecretNameMap := make(map[string]*corev1.Secret)
 	for _, streamlet := range spec.Streamlets {
 		var str strings.Builder
@@ -351,7 +351,7 @@ func UpdateSecretsWithOwnerReference(cloudflowCROwnerReference metav1.OwnerRefer
 	return secrets
 }
 
-func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string) string {
+func findSecretName(spec *cloudflowapplication.CloudflowApplicationSpec, streamletName string) string {
 	for _, deployment := range spec.Deployments {
 		if deployment.StreamletName == streamletName {
 			return deployment.SecretName
@@ -361,7 +361,7 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 }
 
 func createSecret(appID string, name string, data map[string]string) *corev1.Secret {
-	labels := domain.CreateLabels(appID)
+	labels := cloudflowapplication.CreateLabels(appID)
 	labels["com.lightbend.cloudflow/streamlet-name"] = name
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,

@@ -1,11 +1,11 @@
 package verify
 
 import (
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"
-	"reflect"
+
 )
 
 
@@ -36,10 +36,6 @@ var _ = Describe("A blueprint", func() {
 		It("should fail verification", func() {
 			var blueprint = Blueprint{}.verify()
 			emptyProblems := []BlueprintProblem{EmptyStreamlets{}, EmptyStreamletDescriptors{}, EmptyImages{}}
-			problems := blueprint.UpdateGlobalProblems()
-			for _, p := range problems {
-				println(reflect.TypeOf(p))
-			}
 			Expect(blueprint.UpdateGlobalProblems()).Should(ConsistOf(emptyProblems))
 		})
 	})
@@ -300,7 +296,7 @@ var _ = Describe("A blueprint", func() {
 			processor = processor.asProcessor("out", "bar", "in", "foo", FOO, BAR)
 			pattern := "^1,65535$"
 			egress = egress.asEgress("in", "bar", BAR).withConfigParameters(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "target-uri",
 					Description: "",
 					Type: "string",
@@ -340,7 +336,7 @@ var _ = Describe("A blueprint", func() {
 		It("should fail verification for configuration parameters with invalid validation patterns", func() {
 			pattern := `^.{1,65535\K$`
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "test-parameter",
 					Description: "",
 					Type: "string",
@@ -360,7 +356,7 @@ var _ = Describe("A blueprint", func() {
 			defaultValue := "invalid-default-value"
 			pattern := `^debug|info|warning|error$`
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "log-level",
 					Description: "Provide one of the following log levels, debug,info, warning or error",
 					Type: "string",
@@ -379,7 +375,7 @@ var _ = Describe("A blueprint", func() {
 		It("should fail verification for configuration parameters with invalid default duration", func() {
 			defaultValue := "20 parsec"
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "duration-value",
 					Description: "Provide a duration of time",
 					Type: "duration",
@@ -398,7 +394,7 @@ var _ = Describe("A blueprint", func() {
 		It("should be able to validate a correct duration in a default value", func() {
 			defaultValue := "1 minute"
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "duration-value",
 					Description: "Provide a duration of time",
 					Type: "duration",
@@ -415,7 +411,7 @@ var _ = Describe("A blueprint", func() {
 		It("should be able to validate a correct memory size in a default value", func() {
 			defaultValue := "20 M"
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "memorysize-value",
 					Description: "Provide a memory size",
 					Type: "memorysize",
@@ -432,7 +428,7 @@ var _ = Describe("A blueprint", func() {
 		It("should fail verification for configuration parameters with invalid default memory size", func() {
 			defaultValue := "42 pigeons"
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "memorysize-value",
 					Description: "Provide a memory size",
 					Type: "memorysize",
@@ -452,7 +448,7 @@ var _ = Describe("A blueprint", func() {
 			defaultValue1 := "42m"
 			defaultValue2 := "52m"
 			var blueprint =  createBlueprintWithConfigurationParameter(
-				[]domain.ConfigParameterDescriptor{{
+				[]cloudflowapplication.ConfigParameterDescriptor{{
 					Key: "memorysize-value",
 					Description: "Provide a memory size",
 					Type: "memorysize",
@@ -478,7 +474,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with duplicate names", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					Path: string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -500,7 +496,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with duplicate paths", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					Path: string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -522,7 +518,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with invalid names", func() {
 			var firstBlueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "-ml-data",
 					Path: string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -533,7 +529,7 @@ var _ = Describe("A blueprint", func() {
 			Expect(ok).Should(Equal(true))
 			Expect(value.name).Should(Equal("-ml-data"))
 			var secondBlueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "a-string-longer-than-63-characters---------------------------------------------------------------------------------------",
 					Path: string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -549,7 +545,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with invalid paths", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					Path: ".." + string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -565,7 +561,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with non-absolute paths", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					Path: "some-path" + string(os.PathSeparator) + "testing",
 					AccessMode: "ReadWriteMany",
@@ -581,7 +577,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should fail verification for volume mounts with empty paths", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					AccessMode: "ReadWriteMany",
 				}})
@@ -596,7 +592,7 @@ var _ = Describe("A blueprint", func() {
 	Context("by default", func() {
 		It("should validate correctly a correct volume mount", func() {
 			var blueprint =  createBlueprintWithVolumeMounts(
-				[]domain.VolumeMountDescriptor{{
+				[]cloudflowapplication.VolumeMountDescriptor{{
 					Name: "ml-data",
 					Path: string(os.PathSeparator) + "some-path",
 					AccessMode: "ReadWriteMany",
@@ -607,7 +603,7 @@ var _ = Describe("A blueprint", func() {
 	})
 })
 
-func createBlueprintWithConfigurationParameter(parameters []domain.ConfigParameterDescriptor) Blueprint {
+func createBlueprintWithConfigurationParameter(parameters []cloudflowapplication.ConfigParameterDescriptor) Blueprint {
 	var ingress = randomStreamlet()
 	var processor = randomStreamlet()
 	ingress = ingress.asIngress("out", "foo", FOO)
@@ -615,7 +611,7 @@ func createBlueprintWithConfigurationParameter(parameters []domain.ConfigParamet
 	return connectedBlueprint([]StreamletDescriptor{ingress, processor})
 }
 
-func createBlueprintWithVolumeMounts(volumeMounts []domain.VolumeMountDescriptor) Blueprint {
+func createBlueprintWithVolumeMounts(volumeMounts []cloudflowapplication.VolumeMountDescriptor) Blueprint {
 	var ingress = randomStreamlet()
 	var processor = randomStreamlet()
 	ingress = ingress.asIngress("out", "foo", FOO)

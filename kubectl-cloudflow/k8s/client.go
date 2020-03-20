@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -59,7 +59,7 @@ func GetCloudflowApplicationClient(namespace string) (*CloudflowApplicationClien
 
 func newForConfig(c *rest.Config) (*rest.RESTClient, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: domain.GroupName, Version: domain.GroupVersion}
+	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: cloudflowapplication.GroupName, Version: cloudflowapplication.GroupVersion}
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -79,8 +79,8 @@ type CloudflowApplicationClient struct {
 }
 
 // Create creates a new CloudflowApplication CR
-func (c *CloudflowApplicationClient) Create(app domain.CloudflowApplication) (*domain.CloudflowApplication, error) {
-	result := domain.CloudflowApplication{}
+func (c *CloudflowApplicationClient) Create(app cloudflowapplication.CloudflowApplication) (*cloudflowapplication.CloudflowApplication, error) {
+	result := cloudflowapplication.CloudflowApplication{}
 	err := c.restClient.
 		Post().
 		Namespace(c.ns).
@@ -93,8 +93,8 @@ func (c *CloudflowApplicationClient) Create(app domain.CloudflowApplication) (*d
 }
 
 // Get returns an already created CloudflowApplication, or an error
-func (c *CloudflowApplicationClient) Get(name string) (*domain.CloudflowApplication, error) {
-	result := domain.CloudflowApplication{}
+func (c *CloudflowApplicationClient) Get(name string) (*cloudflowapplication.CloudflowApplication, error) {
+	result := cloudflowapplication.CloudflowApplication{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -121,8 +121,8 @@ func (c *CloudflowApplicationClient) Delete(name string) (*rest.Result, error) {
 }
 
 // List returns a list of CloudflowApplications, or an error
-func (c *CloudflowApplicationClient) List() (*domain.CloudflowApplicationList, error) {
-	result := domain.CloudflowApplicationList{}
+func (c *CloudflowApplicationClient) List() (*cloudflowapplication.CloudflowApplicationList, error) {
+	result := cloudflowapplication.CloudflowApplicationList{}
 	err := c.restClient.
 		Get().
 		Resource("cloudflowapplications").
@@ -133,8 +133,8 @@ func (c *CloudflowApplicationClient) List() (*domain.CloudflowApplicationList, e
 }
 
 // Update updates a CloudflowApplication CR
-func (c *CloudflowApplicationClient) Update(app domain.CloudflowApplication) (*domain.CloudflowApplication, error) {
-	result := domain.CloudflowApplication{}
+func (c *CloudflowApplicationClient) Update(app cloudflowapplication.CloudflowApplication) (*cloudflowapplication.CloudflowApplication, error) {
+	result := cloudflowapplication.CloudflowApplication{}
 	bytes, _ := json.Marshal(app)
 
 	err := c.restClient.

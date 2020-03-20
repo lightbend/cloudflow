@@ -3,7 +3,7 @@ package verify
 import (
 	"fmt"
 	"github.com/go-akka/configuration"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ type StreamletRef struct {
 }
 
 // StreamletDescriptor is just a better domain element typedef
-type StreamletDescriptor domain.Descriptor
+type StreamletDescriptor cloudflowapplication.Descriptor
 
 func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) StreamletRef {
 	ret := *s
@@ -54,9 +54,33 @@ func (s* StreamletRef) verify (streamletDescriptors []StreamletDescriptor) Strea
 		matchingPartially := 0
 		var partialDesc []StreamletDescriptor
 		for _, desc := range streamletDescriptors {
-			if strings.Contains(desc.ClassName, s.className) {
-				matchingPartially = matchingPartially + 1
-				partialDesc =  append(partialDesc, desc)
+
+			var classParts = strings.Split(desc.ClassName, ".")
+			classLastPart := classParts[len(classParts)-1]
+			var sClassParts = strings.Split(s.className, ".")
+			sClassLastPart := sClassParts[len(sClassParts)-1]
+
+			if len(classParts) > 1 {
+				if len(sClassParts) > 1 {
+					classPartsPrefix := strings.Join(classParts[0:len(classParts)-1], ".")
+					sClassPartsPrefix := strings.Join(sClassParts[0:len(sClassParts)-1], ".")
+
+					if strings.Contains(classPartsPrefix, sClassPartsPrefix) && classLastPart == sClassLastPart {
+						matchingPartially = matchingPartially + 1
+						partialDesc =  append(partialDesc, desc)
+					}
+				} else {
+					if  classLastPart == sClassLastPart {
+						matchingPartially = matchingPartially + 1
+						partialDesc =  append(partialDesc, desc)
+					}
+				}
+
+			} else {
+				if  classLastPart == sClassLastPart {
+					matchingPartially = matchingPartially + 1
+					partialDesc =  append(partialDesc, desc)
+				}
 			}
 		}
 

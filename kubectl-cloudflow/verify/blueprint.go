@@ -3,7 +3,8 @@ package verify
 import (
 	"fmt"
 	"github.com/go-akka/configuration"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"math/big"
 	"path/filepath"
 	"reflect"
@@ -126,7 +127,7 @@ type IllegalConnection struct {
 
 type UnconnectedInlet struct {
 	streamletRef string
-	inlet        domain.InOutlet
+	inlet        cloudflowapplication.InOutlet
 }
 
 type InvalidInletName struct {
@@ -346,7 +347,7 @@ func (b UnconnectedInlets) ToMessage() string {
 }
 
 type Blueprint struct {
-	images               map[string]domain.ImageReference
+	images               map[string]cloudflowapplication.ImageReference
 	streamlets           []StreamletRef
 	connections          []StreamletConnection
 	streamletDescriptorsPerImage map[string][]StreamletDescriptor
@@ -369,7 +370,8 @@ func checkStreamletImageConsistency(blueprint Blueprint) []BlueprintProblem {
 	return problems
 }
 
-// check if the streamlet is really in the label of the image that prefixes it in the blueprint
+// check if the streamlet is really in the stored label of the image that prefixes it in the blueprint
+// the label info has already been restored from the real images
 func checkStreamletImageLabelConsistency(blueprint Blueprint) []BlueprintProblem {
 	var problems []BlueprintProblem
 	for _, streamlet := range blueprint.streamlets {
@@ -392,8 +394,8 @@ func (b Blueprint) define(streamletDescriptorsUpdated []StreamletDescriptor) Blu
 	}
 
 	ret.streamletDescriptorsPerImage = map[string][]StreamletDescriptor{}
-	ret.images = map[string]domain.ImageReference{}
-	ret.images["default"] = domain.ImageReference{}
+	ret.images = map[string]cloudflowapplication.ImageReference{}
+	ret.images["default"] = cloudflowapplication.ImageReference{}
 	ret.streamletDescriptorsPerImage["default"] = streamletDescriptorsUpdated
 	ret = ret.verify()
 	ret.UpdateGlobalProblems()
@@ -451,6 +453,14 @@ func (b Blueprint) connectWithConnection(connection StreamletConnection) Bluepri
 	return ret
 }
 
+// verify does the actual blueprint verification. It tries to collect all blueprint
+// problems and report them back to the user. In detail it does the following:
+// a. checks images section
+// b. checks streamlets section
+// c. checks for streamlet descriptors
+// d. checks consistency between images section and image ids referred to in streamlets section
+// e. checks if the image referred to in a streamlet contains the streamlet descriptor in the label present in the image
+// f. checks connection problems
 func (b Blueprint) verify() Blueprint {
 	var illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems []BlueprintProblem
 
@@ -683,7 +693,7 @@ func (b Blueprint) verifyUniqueInletConnections(verifiedStreamletConnections []V
 	}
 }
 
-func verifiedConnectionsExists(verifiedStreamletConnections []VerifiedStreamletConnection, inlet domain.InOutlet, streamlet VerifiedStreamlet) bool {
+func verifiedConnectionsExists(verifiedStreamletConnections []VerifiedStreamletConnection, inlet cloudflowapplication.InOutlet, streamlet VerifiedStreamlet) bool {
 	for _, con := range verifiedStreamletConnections {
 		if reflect.DeepEqual(con.verifiedInlet.streamlet, streamlet) && con.verifiedInlet.portName == inlet.Name {
 			return true
@@ -801,13 +811,13 @@ func (b Blueprint) verifyVolumeMounts(streamletDescriptors []StreamletDescriptor
 
 		}
 
-		dupsNames := Distinct(Diff(names, Distinct(names)))
+		dupsNames := util.Distinct(util.Diff(names, util.Distinct(names)))
 
 		for _, dupName := range dupsNames {
 			duplicateNames = append(duplicateNames, DuplicateVolumeMountName{className: desc.ClassName, name: dupName})
 		}
 
-		dupsPaths := Distinct(Diff(paths, Distinct(paths)))
+		dupsPaths := util.Distinct(util.Diff(paths, util.Distinct(paths)))
 
 		for _, dupPath := range dupsPaths {
 			duplicatePaths = append(duplicatePaths, DuplicateVolumeMountPath{className: desc.ClassName, path: dupPath})
@@ -949,10 +959,11 @@ func (b Blueprint) verifyConfigParameters(streamletDescriptors []StreamletDescri
 					invalidDefaultValueOrPatternProblems = append(invalidDefaultValueOrPatternProblems, InvalidDefaultValueInConfigParameter{className: desc.ClassName, keyName: configParam.Key, defaultValue: *configParam.DefaultValue})
 
 				}
+			default:
 			}
 
 		}
-		dupKeys := Distinct(Diff(keys, Distinct(keys)))
+		dupKeys := util.Distinct(util.Diff(keys, util.Distinct(keys)))
 		for _, dupKey := range dupKeys {
 			duplicateConfigParametersKeysFound = append(duplicateConfigParametersKeysFound, DuplicateConfigParameterKeyFound{className: desc.ClassName, keyName: dupKey})
 		}

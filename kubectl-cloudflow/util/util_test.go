@@ -135,3 +135,30 @@ func Test_ValidationOfMemorySize(t *testing.T) {
 	assert.Error(t, ValidateMemorySize(" "))
 	assert.Error(t, ValidateMemorySize("100 exbi 200"))
 }
+
+func Test_DiffWithDuplicates(t *testing.T) {
+	a := []string{"1", "2", "2", "3", "4"}
+	b :=[]string{"1", "2"}
+	ret := Diff(a, b)
+	assert.ElementsMatch(t, ret, []string{"2", "3", "4"})
+}
+func Test_DiffWithBothEmpty(t *testing.T) {
+	a := []string{}
+	b :=[]string{}
+	ret := Diff(a, b)
+	assert.ElementsMatch(t, ret, []string{})
+}
+
+func Test_DiffWithFirstfEmpty(t *testing.T) {
+	a := []string{}
+	b :=[]string{"1", "2"}
+	ret := Diff(a, b)
+	assert.ElementsMatch(t, ret, a)
+}
+
+func Test_DiffWithSecondfEmpty(t *testing.T) {
+	a := []string{"1", "2", "2", "3", "4"}
+	b :=[]string{}
+	ret := Diff(a, b)
+	assert.ElementsMatch(t, ret, a)
+}

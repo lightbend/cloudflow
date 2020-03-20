@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,9 +51,9 @@ func Test_SplitConfigurationParameters(t *testing.T) {
 
 func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
 
-	applicationConfiguration := domain.TestApplicationDescriptor()
+	applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
 
-	var spec domain.CloudflowApplicationSpec
+	var spec cloudflowapplication.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
 	var config []string
@@ -71,9 +71,9 @@ func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
 }
 
 func Test_CreateSecretsData(t *testing.T) {
-	applicationConfiguration := domain.TestApplicationDescriptor()
+	applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
 
-	var spec domain.CloudflowApplicationSpec
+	var spec cloudflowapplication.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
 	properConfig := SplitConfigurationParameters(commandLineForConfiguration())

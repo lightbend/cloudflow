@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8s"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
@@ -62,7 +62,7 @@ func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func calcAppStatus(applicationCR *domain.CloudflowApplication) string {
+func calcAppStatus(applicationCR *cloudflowapplication.CloudflowApplication) string {
 	expectedPods := 0
 	actualRunningPods := 0
 	appStatus := "Unknown"
@@ -100,7 +100,7 @@ func calcAppStatus(applicationCR *domain.CloudflowApplication) string {
 	return appStatus
 }
 
-func printAppStatus(applicationCR *domain.CloudflowApplication, appStatus string) {
+func printAppStatus(applicationCR *cloudflowapplication.CloudflowApplication, appStatus string) {
 	fmt.Printf("Name:             %s\n", applicationCR.Name)
 	fmt.Printf("Namespace:        %s\n", applicationCR.Namespace)
 	fmt.Printf("Version:          %s\n", applicationCR.Spec.AppVersion)
@@ -108,7 +108,7 @@ func printAppStatus(applicationCR *domain.CloudflowApplication, appStatus string
 	fmt.Printf("Status:           %s\n", appStatus)
 }
 
-func printEndpointStatuses(applicationCR *domain.CloudflowApplication) {
+func printEndpointStatuses(applicationCR *cloudflowapplication.CloudflowApplication) {
 	if len(applicationCR.Status.EndpointStatuses) > 0 {
 		w := new(tabwriter.Writer)
 		w.Init(os.Stdout, 18, 0, 1, ' ', 0)
@@ -121,7 +121,7 @@ func printEndpointStatuses(applicationCR *domain.CloudflowApplication) {
 	}
 }
 
-func printStreamletStatuses(applicationCR *domain.CloudflowApplication) {
+func printStreamletStatuses(applicationCR *cloudflowapplication.CloudflowApplication) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 18, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "STREAMLET\tPOD\tSTATUS\tRESTARTS\tREADY\t")

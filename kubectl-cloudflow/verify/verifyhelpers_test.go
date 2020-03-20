@@ -180,10 +180,3 @@ func Test_Sliding(t *testing.T) {
 	assert.Equal(t, reflect.DeepEqual(expected, sliding(descs)), true)
 }
 
-func Test_Diff(t *testing.T) {
-
-	a := []string{"1", "2", "2", "3", "4"}
-	b :=[]string{"1", "2"}
-	ret := Diff(a, b)
-	assert.ElementsMatch(t, ret, []string{"2", "3", "4"})
-}

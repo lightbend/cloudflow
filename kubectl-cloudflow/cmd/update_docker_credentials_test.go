@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +16,7 @@ func Test_appendCloudflowImagePullSecretName(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cloudflow-app-serviceaccount",
 			Namespace: appID,
-			Labels:    domain.CreateLabels(appID),
+			Labels:    cloudflowapplication.CreateLabels(appID),
 		},
 	}
 

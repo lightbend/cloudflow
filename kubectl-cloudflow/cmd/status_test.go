@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_calcAppStatus_PendingMissing(t *testing.T) {
-	streamletStatuses := []domain.StreamletStatus{
+	streamletStatuses := []cloudflowapplication.StreamletStatus{
 		{
 			StreamletName: "valid-logger",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "valid-logger-pod",
 					Ready:    "False",
@@ -29,10 +29,10 @@ func Test_calcAppStatus_PendingMissing(t *testing.T) {
 }
 
 func Test_calcAppStatus_PendingNotReady(t *testing.T) {
-	streamletStatuses := []domain.StreamletStatus{
+	streamletStatuses := []cloudflowapplication.StreamletStatus{
 		{
 			StreamletName: "ingress",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "ingress-pod",
 					Ready:    "False",
@@ -43,7 +43,7 @@ func Test_calcAppStatus_PendingNotReady(t *testing.T) {
 		},
 		{
 			StreamletName: "egress",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "egress-pod",
 					Ready:    "True",
@@ -59,10 +59,10 @@ func Test_calcAppStatus_PendingNotReady(t *testing.T) {
 }
 
 func Test_calcAppStatus_Running(t *testing.T) {
-	streamletStatuses := []domain.StreamletStatus{
+	streamletStatuses := []cloudflowapplication.StreamletStatus{
 		{
 			StreamletName: "valid-logger",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "valid-logger-pod",
 					Ready:    "True",
@@ -73,7 +73,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "validation",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "validation-pod",
 					Ready:    "True",
@@ -84,7 +84,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "sensor-data",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "sensor-data-pod",
 					Ready:    "True",
@@ -95,7 +95,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "rotor-avg-logger",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "rotor-avg-logger-pod",
 					Ready:    "True",
@@ -106,7 +106,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "metrics",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "metrics-pod",
 					Ready:    "True",
@@ -117,7 +117,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "invalid-logger",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "invalid-logger-pod",
 					Ready:    "True",
@@ -128,7 +128,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "rotorizer",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "rotorizer-pod",
 					Ready:    "True",
@@ -139,7 +139,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "merge",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "merge-pod",
 					Ready:    "True",
@@ -150,7 +150,7 @@ func Test_calcAppStatus_Running(t *testing.T) {
 		},
 		{
 			StreamletName: "file-ingress",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "file-ingress-pod",
 					Ready:    "True",
@@ -167,10 +167,10 @@ func Test_calcAppStatus_Running(t *testing.T) {
 }
 
 func Test_calcAppStatus_Crashing(t *testing.T) {
-	streamletStatuses := []domain.StreamletStatus{
+	streamletStatuses := []cloudflowapplication.StreamletStatus{
 		{
 			StreamletName: "invalid-logger",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "invalid-logger-pod",
 					Ready:    "True",
@@ -181,7 +181,7 @@ func Test_calcAppStatus_Crashing(t *testing.T) {
 		},
 		{
 			StreamletName: "validation",
-			PodStatuses: []domain.PodStatus{
+			PodStatuses: []cloudflowapplication.PodStatus{
 				{
 					Name:     "validation-pod",
 					Ready:    "False",
@@ -197,17 +197,17 @@ func Test_calcAppStatus_Crashing(t *testing.T) {
 	assert.Equal(t, "CrashLoopBackOff", appStatus)
 }
 
-func createTestCloudflowApplication(t *testing.T, streamletStatuses []domain.StreamletStatus) domain.CloudflowApplication {
-	applicationConfiguration := domain.TestApplicationDescriptor()
-	var spec domain.CloudflowApplicationSpec
+func createTestCloudflowApplication(t *testing.T, streamletStatuses []cloudflowapplication.StreamletStatus) cloudflowapplication.CloudflowApplication {
+	applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
+	var spec cloudflowapplication.CloudflowApplicationSpec
 	jsonError := json.Unmarshal([]byte(applicationConfiguration), &spec)
 	assert.Empty(t, jsonError)
-	app := domain.NewCloudflowApplication(spec)
+	app := cloudflowapplication.NewCloudflowApplication(spec)
 
-	status := domain.CloudflowApplicationStatus{
+	status := cloudflowapplication.CloudflowApplicationStatus{
 		AppID:             spec.AppID,
 		AppVersion:        spec.AppVersion,
-		EndpointStatuses:  []domain.EndpointStatus{},
+		EndpointStatuses:  []cloudflowapplication.EndpointStatus{},
 		StreamletStatuses: streamletStatuses,
 	}
 	app.Status = status

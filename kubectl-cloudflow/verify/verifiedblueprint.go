@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 )
 
 // SchemaDescriptor is a domain expressive typedef
-type SchemaDescriptor domain.InOutletSchema
+type SchemaDescriptor cloudflowapplication.InOutletSchema
 
 // OutletDescriptor is a domain expressive typedef
-type OutletDescriptor domain.InOutlet
+type OutletDescriptor cloudflowapplication.InOutlet
 
 // InletDescriptor is a domain expressive typedef
-type InletDescriptor domain.InOutlet
+type InletDescriptor cloudflowapplication.InOutlet
 
 type VerifiedStreamlet struct {
 	name       string
@@ -28,7 +28,7 @@ type VerifiedPortPath struct {
 
 type VerifiedPort struct {
 	portName         string
-	schemaDescriptor domain.InOutletSchema
+	schemaDescriptor cloudflowapplication.InOutletSchema
 }
 
 type VerifiedInlet struct {
@@ -143,20 +143,20 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 		return nil, err
 	}
 
-	var found *VerifiedStreamlet
+	var foundVerifiedStreamlet *VerifiedStreamlet
 	for _, verifiedStreamlet := range verifiedStreamlets {
 		if verifiedStreamlet.name == verifiedPortPath.streamletRef {
-			found = &verifiedStreamlet
+			foundVerifiedStreamlet = &verifiedStreamlet
 			break
 		}
 	}
-	if found == nil {
+	if foundVerifiedStreamlet == nil {
 		return nil, PortPathNotFound{
 			path: outletPortPath,
 		}
 	}
-	if verifiedPortPath.portName == nil && len(found.descriptor.Outlets) > 1 {
-		var outletsToMap = found.descriptor.Outlets
+	if verifiedPortPath.portName == nil && len(foundVerifiedStreamlet.descriptor.Outlets) > 1 {
+		var outletsToMap = foundVerifiedStreamlet.descriptor.Outlets
 		var suggestions []VerifiedPortPath
 
 		for _, outletToMap := range outletsToMap {
@@ -171,8 +171,8 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 		}
 	}
 	var portPath *VerifiedPortPath
-	if verifiedPortPath.portName == nil && len(found.descriptor.Outlets) == 1 {
-		finalNameStr := found.descriptor.Outlets[0].Name
+	if verifiedPortPath.portName == nil && len(foundVerifiedStreamlet.descriptor.Outlets) == 1 {
+		finalNameStr := foundVerifiedStreamlet.descriptor.Outlets[0].Name
 		portPath = &VerifiedPortPath{
 			streamletRef: verifiedPortPath.streamletRef,
 			portName:     &finalNameStr}
@@ -182,10 +182,10 @@ func FindVerifiedOutlet(verifiedStreamlets []VerifiedStreamlet, outletPortPath s
 	}
 
 	var foundOutlet *VerifiedOutlet
-	for _, outlet := range found.descriptor.Outlets {
+	for _, outlet := range foundVerifiedStreamlet.descriptor.Outlets {
 		if portPath.portName != nil && outlet.Name == *portPath.portName {
 			foundOutlet = &VerifiedOutlet{
-				streamlet: *found,
+				streamlet: *foundVerifiedStreamlet,
 				VerifiedPort: VerifiedPort{
 					portName:         outlet.Name,
 					schemaDescriptor: outlet.Schema,

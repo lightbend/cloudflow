@@ -33,6 +33,27 @@ func Test_verifyStreamletRefWithAmbiguityProblem(t *testing.T) {
 		ref.className,}), true)
 }
 
+func Test_verifyStreamletRefForOverlappingClassnames(t *testing.T) {
+	var ref = getTestStreamletRef()
+	var descriptors = []StreamletDescriptor{}
+	descriptors =  append(descriptors, StreamletDescriptor{
+		ClassName: "sensors.MovingAverageSparkletA",
+		Runtime: "spark",
+	})
+
+	descriptors =  append(descriptors, StreamletDescriptor{
+		ClassName: "sensors.MovingAverageSparkletAB",
+		Runtime: "spark",
+	})
+
+	var t1 = ref.verify(descriptors).problems
+    var r = GetProblem(t1,AmbiguousStreamletRef{
+		AmbiguousStreamletRef{},
+			ref.name,
+			ref.className,})
+	assert.Equal(t, r, false)
+}
+
 func Test_verifyStreamletRefWithInvalidClassName(t *testing.T) {
 	var ref = getTestStreamletRef()
 	ref.className = "2sensors.MovingAverageSparklet"

@@ -1,4 +1,4 @@
-package cloudflowavro
+package schemas
 
 import (
 	"github.com/hamba/avro"
@@ -8,16 +8,17 @@ import (
 )
 
 func Test_SimpleSchemaCompatibility(t *testing.T) {
+	readerSchema := `
+    {
+	  "type": "long",
+      "name": "data"
+    }`
 
-	readerSchema := `{
-	"type": "long",
-	"name": "data"
-}`
-
-	writerSchema := `{
+	writerSchema := `
+    {
        "name": "data", 
        "type": "int"
-}`
+    }`
 
 	reader, err := avro.ParseWithCache(readerSchema, "", avro.DefaultSchemaCache)
 	writer, err := avro.ParseWithCache(writerSchema, "", avro.DefaultSchemaCache)
@@ -30,26 +31,27 @@ func Test_SimpleSchemaCompatibility(t *testing.T) {
 	assert.Equal(t, CheckSchemaCompatibility(readerSchema, writerSchema), nil)
 }
 func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
-	var readerSchema1 = `{
+	var readerSchema1 = `
+    {
 		"type" : "record",
 		"name": "test",
 		"fields" : [
-	{
-		"type": {
-			"type": "int",
-			"logicalType": "time-millis"
+        {
+          "type": {
+          "type": "int",
+          "logicalType": "time-millis"
 		},
 		"name": "simple"
-	}] }`
+    }]}`
 
 	var writerSchema1 = `
 	{
 	"type" : "record",
 	"name": "test",
 	"fields" : [
-	{
-	"name": "simple",
-	"type": "int"
+     {
+       "name": "simple",
+       "type": "int"
 	}]}`
 
 	reader1, err := avro.ParseWithCache(readerSchema1, "", avro.DefaultSchemaCache)
@@ -66,11 +68,12 @@ func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
 
 	assert.Equal(t, s.Compatible(reader1, writer1), nil)
 
-	readerSchema2 := `{
-	"type": "record",
-	"name": "simple",
-	"namespace": "org.hamba.avro",
-	"fields": [{
+	readerSchema2 := `
+    {
+	  "type": "record",
+	  "name": "simple",
+	  "namespace": "org.hamba.avro",
+	  "fields": [{
 			"name": "a",
 			"type": {
 				"type": "int",
@@ -83,11 +86,12 @@ func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
 		}
 	]
 }`
-	writerSchema2 := `{
-	"type": "record",
-	"name": "simple",
-	"namespace": "org.hamba.avro",
-	"fields": [{
+	writerSchema2 := `
+    {
+	  "type": "record",
+	  "name": "simple",
+	  "namespace": "org.hamba.avro",
+	  "fields": [{
 			"name": "a",
 
 			"type": "int",
@@ -97,9 +101,7 @@ func Test_SchemaCompatibilityWithLogicalTypes(t *testing.T) {
 		{
 			"name": "b",
 			"type": "string"
-		}
-	]
-}`
+		}]}`
 	reader2, err := avro.ParseWithCache(readerSchema2, "", avro.DefaultSchemaCache)
 	assert.Equal(t, err, nil)
 	writer2, err := avro.ParseWithCache(writerSchema2, "", avro.DefaultSchemaCache)

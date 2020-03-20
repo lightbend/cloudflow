@@ -5,7 +5,7 @@ package verify
 import (
 	"testing"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -206,7 +206,7 @@ func Test_VerifyConnectionHash(t *testing.T) {
 	vInlet := VerifiedInlet{
 		VerifiedPort{
 			"blabla",
-			domain.InOutletSchema{
+			cloudflowapplication.InOutletSchema{
 				"adadasdasda",
 				"{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"sensors\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"gauge\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"double\"}]}",
 				"",
@@ -221,6 +221,11 @@ func Test_VerifyConnectionHash(t *testing.T) {
 	vEmptyInlet := VerifiedInlet{}
 	hash2 := GetSHA256Hash(vEmptyInlet)
 	assert.NotEqual(t, hash1, hash2)
+}
+
+func Test_VerifyEmptyBlueprint(t *testing.T) {
+	errors := VerifyBlueprint("")
+	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyValidBlueprint(t *testing.T) {

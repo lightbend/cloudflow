@@ -3,7 +3,7 @@ package verify
 import (
 	"github.com/go-akka/configuration"
 	"github.com/google/uuid"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"strings"
 )
 
@@ -37,13 +37,13 @@ func streamletForRuntime(className string, runtime string) StreamletDescriptor {
 // Transforms the descriptor into an ingress
 func (s StreamletDescriptor) asIngress(outletName string, schemaName string, schema string) StreamletDescriptor {
 	desc := StreamletDescriptor(s)
-	var outlet = domain.InOutlet{Name:outletName, Schema: domain.InOutletSchema {
+	var outlet = cloudflowapplication.InOutlet{Name: outletName, Schema: cloudflowapplication.InOutletSchema {
 		Fingerprint: GetSHA256Hash(schema),
 		Schema: schema,
 		Name: schemaName,
 		Format: avroFormat,
 	}}
-	desc.Outlets = []domain.InOutlet{outlet}
+	desc.Outlets = []cloudflowapplication.InOutlet{outlet}
 	desc.Inlets = nil
 	return desc
 }
@@ -52,35 +52,35 @@ func (s StreamletDescriptor) asIngress(outletName string, schemaName string, sch
 // Transforms the descriptor into an Egreess
 func (s StreamletDescriptor) asEgress(inletName string, schemaName string, schema string) StreamletDescriptor {
 	desc := StreamletDescriptor(s)
-	var inlet = domain.InOutlet{Name:inletName, Schema: domain.InOutletSchema {
+	var inlet = cloudflowapplication.InOutlet{Name: inletName, Schema: cloudflowapplication.InOutletSchema {
 		Fingerprint: GetSHA256Hash(schema),
 		Schema:      schema,
 		Name:        schemaName,
 		Format:      avroFormat,
 	}}
-	desc.Outlets = []domain.InOutlet{}
-	desc.Inlets = []domain.InOutlet{inlet}
+	desc.Outlets = []cloudflowapplication.InOutlet{}
+	desc.Inlets = []cloudflowapplication.InOutlet{inlet}
 	return desc
 }
 
 // Transforms the descriptor into a Processor
 func (s StreamletDescriptor) asProcessor(outletName string, outletSchemaName string, inletName string, inletSchemaName string, inletSchema string, outletSchema string) StreamletDescriptor {
 	desc := StreamletDescriptor(s)
-	var outlet = domain.InOutlet{Name:outletName, Schema: domain.InOutletSchema {
+	var outlet = cloudflowapplication.InOutlet{Name: outletName, Schema: cloudflowapplication.InOutletSchema {
 		Fingerprint: GetSHA256Hash(inletSchema),
 		Schema:      outletSchema,
 		Name:        outletSchemaName,
 		Format:      avroFormat,
 	}}
 
-	var inlet = domain.InOutlet{Name:inletName, Schema: domain.InOutletSchema {
+	var inlet = cloudflowapplication.InOutlet{Name: inletName, Schema: cloudflowapplication.InOutletSchema {
 		Fingerprint: GetSHA256Hash(inletSchema),
 		Schema:      inletSchema,
 		Name:        inletSchemaName,
 		Format:      avroFormat,
 	}}
-	desc.Outlets = []domain.InOutlet{outlet}
-	desc.Inlets = []domain.InOutlet{inlet}
+	desc.Outlets = []cloudflowapplication.InOutlet{outlet}
+	desc.Inlets = []cloudflowapplication.InOutlet{inlet}
 	return desc
 }
 
@@ -92,7 +92,7 @@ func (s StreamletDescriptor) ref(refName string, metadata *configuration.Config)
 	}
 }
 
-func (s StreamletDescriptor) withConfigParameters(parameters []domain.ConfigParameterDescriptor) StreamletDescriptor {
+func (s StreamletDescriptor) withConfigParameters(parameters []cloudflowapplication.ConfigParameterDescriptor) StreamletDescriptor {
 	return StreamletDescriptor{
 		Attributes: s.Attributes,
 		ClassName: s.ClassName,
@@ -106,7 +106,7 @@ func (s StreamletDescriptor) withConfigParameters(parameters []domain.ConfigPara
 	}
 }
 
-func (s StreamletDescriptor) withVolumeMounts(volumeMounts []domain.VolumeMountDescriptor) StreamletDescriptor {
+func (s StreamletDescriptor) withVolumeMounts(volumeMounts []cloudflowapplication.VolumeMountDescriptor) StreamletDescriptor {
 	return StreamletDescriptor{
 		Attributes: s.Attributes,
 		ClassName: s.ClassName,
@@ -141,22 +141,22 @@ func (s StreamletDescriptor) asMerge(info MergeInfo) StreamletDescriptor {
 		Labels: s.Labels,
 		Runtime: s.Runtime,
 		Description: s.Description,
-		Outlets: []domain.InOutlet{{
-			Name: info.outletName, Schema: domain.InOutletSchema{
+		Outlets: []cloudflowapplication.InOutlet{{
+			Name: info.outletName, Schema: cloudflowapplication.InOutletSchema{
 			Fingerprint: GetSHA256Hash(info.outletSchema),
 			Schema:      info.outletSchema,
 			Name:        info.outletSchema,
 			Format:      avroFormat,
 		}}},
-		Inlets: []domain.InOutlet{{
-			Name: info.inletName0, Schema: domain.InOutletSchema{
+		Inlets: []cloudflowapplication.InOutlet{{
+			Name: info.inletName0, Schema: cloudflowapplication.InOutletSchema{
 				Fingerprint: GetSHA256Hash(info.inletSchema0),
 				Schema:      info.inletSchema0,
 				Name:        info.inletSchemaName0,
 				Format:      avroFormat},
 		},
 		{
-			Name: info.inletName1, Schema: domain.InOutletSchema{
+			Name: info.inletName1, Schema: cloudflowapplication.InOutletSchema{
 			Fingerprint: GetSHA256Hash(info.inletSchema1),
 			Schema:      info.inletSchema1,
 			Name:        info.inletSchemaName1,

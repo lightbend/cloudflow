@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	aurora "github.com/logrusorgru/aurora"
+	"github.com/logrusorgru/aurora"
 )
 
 // PrintError prints a string and prefix it with a red `[Error]` marker
@@ -136,10 +136,46 @@ func ValidateMemorySize(value string) error {
 	return nil
 }
 
-func FileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
+// Diff behaves like a Scala diff method
+func Diff(a, b []string) (result []string) {
+	aMap := make(map[string]int)
+	bMap := make(map[string]int)
+
+	for _, item := range a {
+		aMap[item] = aMap[item] + 1
 	}
-	return !info.IsDir()
+
+	for _, item := range b {
+		bMap[item] = bMap[item] + 1
+	}
+
+	for _, item := range Distinct(a) {
+		if _, ok := bMap[item]; !ok {
+			for  i :=1; i <= aMap[item]; i++ {
+				result = append(result, item)
+			}
+
+		} else {
+			aValue := aMap[item]
+			bValue := bMap[item]
+			for  i :=1; i <= (aValue - bValue); i++ {
+				result = append(result, item)
+			}
+		}
+	}
+	return
+}
+
+
+// Distinct behaves like a Scala distinct method
+func Distinct(input []string) []string {
+	keys := make(map[string]bool)
+	var dist []string
+	for _, entry := range input {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			dist = append(dist, entry)
+		}
+	}
+	return dist
 }

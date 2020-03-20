@@ -2,33 +2,33 @@ package verify
 
 import (
 	"fmt"
+	"github.com/go-akka/configuration"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"os/exec"
 	"strings"
-
-	"github.com/go-akka/configuration"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 )
 
-// VerifyBlueprint TBD
+// VerifyBlueprint parses blueprint `images` section and fetch labels from defined images.
+// It then decode labels and stores streamlet descriptors per image id.
+// It uses aggregated info to parse blueprint `streamlets` and verify that streamlets in streamlets
+// section exist in the relevant image label.
+// It also maps descriptors, streamlets and blueprint connections to a Blueprint struct and runs verify
+// logic.
+// TODO: fix performance issues with getting descriptors from image refs.
+//       Investigate using the docker apis instead of inspecting docker images.
 func VerifyBlueprint(content string) error {
-	// parse blueprint `images` section and fetch labels from defined images.
-	// decode labels and store streamlet descriptors per image id
-	// parse blueprint `streamlets` and verify that streamlets in streamlets
-	// section exist in the relevant image label.
-	// map descriptors, streamlets and blueprint connections to a Blueprint struct and run verify
-
 	config := configuration.ParseString(content)
 	imageRefsFromBlueprint := getImageRefsFromConfig(config)
 
 	// map imageID -> []StreamletDescriptor
 	imageDescriptorMap := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
 
-	// all StreamletRef in the blueprint
+	// all StreamletRefs in the blueprint
 	streamletRefs := getStreamletRefsFromBlueprintConfig(config)
 
-	// all StreamletConnection in the blueprint
+	// all StreamletConnections in the blueprint
 	connections := getConnectionsFromBlueprintConfig(config)
 
 	blueprint := Blueprint{
@@ -38,12 +38,6 @@ func VerifyBlueprint(content string) error {
 		connections:                  connections,
 	}
 
-	// 1. checks images section
-	// 2. checks streamlets section
-	// 3. checks for streamlet descriptors
-	// 4. checks consistency between images section and image ids referred to in streamlets section
-	// 5. checks if the image referred to in a streamlet contains the streamlet descriptor in the label present in the image
-	// 6. checks connection problems
 	blueprint = blueprint.verify()
 	var errors string
 	for _, p := range blueprint.globalProblems {
@@ -56,26 +50,36 @@ func VerifyBlueprint(content string) error {
 }
 
 // this map is constructed entirely from blueprint
-func getImageRefsFromConfig(config *configuration.Config) map[string]domain.ImageReference {
+func getImageRefsFromConfig(config *configuration.Config) map[string]cloudflowapplication.ImageReference {
 	// get the images from the blueprint
-	images := config.GetNode("blueprint.images").GetObject().Items()
+	imagesFromConfig := config.GetNode("blueprint.images")
 
-	var imageKeyVals = make(map[string]domain.ImageReference)
-
+	var imageKeyVals = make(map[string]cloudflowapplication.ImageReference)
+	if imagesFromConfig == nil || imagesFromConfig.GetObject() == nil {
+		return imageKeyVals
+	}
+	var images = imagesFromConfig.GetObject().Items()
 	for imageKey, imageRef := range images {
 		ref, err := ParseImageReference(imageRef.GetString())
 		if err != nil {
 			util.LogAndExit(err.Error())
 		}
-		imageKeyVals[imageKey] = *ref
+		if ref != nil {
+			imageKeyVals[imageKey] = *ref
+		}
+
 	}
 	return imageKeyVals
 }
 
 func getConnectionsFromBlueprintConfig(config *configuration.Config) []StreamletConnection {
-	connectionMap := config.GetNode("blueprint.connections").GetObject().Items()
+	connectionMapFromConfig := config.GetNode("blueprint.connections")
 	var conns []StreamletConnection
 
+	if connectionMapFromConfig == nil || connectionMapFromConfig.GetObject() == nil {
+		return conns
+	}
+	connectionMap := connectionMapFromConfig.GetObject().Items()
 	for fromStreamlet, rest := range connectionMap {
 		outs := rest.GetObject().Items()
 		for fromPort, ins := range outs {
@@ -87,20 +91,14 @@ func getConnectionsFromBlueprintConfig(config *configuration.Config) []Streamlet
 	return conns
 }
 
-func getConnectionsFromBlueprintConf(config *configuration.Config) []StreamletConnection {
-	connectionMap := config.GetNode("blueprint.connections").GetObject().Items()
-	var conns []StreamletConnection
-	for from, tos := range connectionMap {
-		for _, to := range tos.GetArray() {
-			conns = append(conns, StreamletConnection{from: from, to: to.GetString(), metadata: config})
-		}
-	}
-	return conns
-}
-
 func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []StreamletRef {
-	streamlets := config.GetNode("blueprint.streamlets").GetObject().Items()
+	streamletsFromConfig := config.GetNode("blueprint.streamlets")
 	var streamletRefs []StreamletRef
+
+	if streamletsFromConfig == nil || streamletsFromConfig.GetObject()  == nil {
+		return streamletRefs
+	}
+	streamlets := streamletsFromConfig.GetObject().Items()
 	for name, classWithImage := range streamlets {
 		arr := strings.Split(classWithImage.GetString(), "/")
 		streamletRef := StreamletRef{name: name, className: arr[1], imageId: &arr[0], metadata: config}
@@ -109,7 +107,7 @@ func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []Streaml
 	return streamletRefs
 }
 
-func getStreamletDescriptorsFromImageRefs(imageRefs map[string]domain.ImageReference) map[string][]StreamletDescriptor {
+func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) map[string][]StreamletDescriptor {
 	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
 	if apierr != nil {
 		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
@@ -129,7 +127,7 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]domain.ImageRefer
 	var streamletDescriptors = make(map[string][]StreamletDescriptor)
 	for key, imageRef := range imageRefs {
 		streamletsDescriptorsDigestPair, version := docker.GetCloudflowStreamletDescriptorsForImage(client, imageRef.FullURI)
-		if version != domain.SupportedApplicationDescriptorVersion {
+		if version != cloudflowapplication.SupportedApplicationDescriptorVersion {
 			util.LogAndExit("Image %s is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the image.", imageRef.FullURI)
 		}
 		var sdescs = make([]StreamletDescriptor, len(streamletsDescriptorsDigestPair.StreamletDescriptors))
