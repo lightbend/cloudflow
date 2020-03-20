@@ -8,7 +8,7 @@ include::partial$include.adoc[]
 
 Cloudflow enables you to quickly develop distributed streaming applications to deploy on Kubernetes. The rapid advance and adoption of the Kubernetes ecosystem is delivering on the devops promise of giving control and responsibility to dev teams over the lifecycle of their applications. However, use of Kubernetes also increases the complexity of delivering end-to-end applications. Cloudflow alleviates that pain for distributed streaming applications, which are often far more complex than typical front-end or microservice deployments.
 
-video::-9pVwCkkE1I[youtube,width=600,height=400]
+link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
 
 Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and Apache Flink. Using Cloudflow, you can easily break down your streaming application into small composable components and wire them together with schema-based contracts. With its powerful abstractions, Cloudflow enables you to define, build and deploy the most complex streaming applications. 
 

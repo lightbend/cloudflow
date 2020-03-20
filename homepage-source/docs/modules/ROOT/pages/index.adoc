@@ -8,7 +8,7 @@ Cloudflow enables you to quickly develop, orchestrate, and operate distributed s
 With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts. 
 Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours. 
 
-video::-9pVwCkkE1I[youtube,width=800,height=540]
+link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
 
 With its powerful abstractions, Cloudflow allows you to easily define the most complex streaming applications:
 
