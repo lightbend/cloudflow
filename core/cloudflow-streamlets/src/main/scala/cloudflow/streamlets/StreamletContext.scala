@@ -95,5 +95,5 @@ trait StreamletContext {
 
 case class PortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
     extends Exception(
-      s"Streamlet port '${port.name}'' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
+      s"Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
     )
