@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,18 +23,15 @@ import (
 // We also assume that the test is going to be executed manually.
 // Automation will be the next step
 
-type app struct {
-	image string
-	name  string
-}
-
 const (
 	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
+	ShortTimeout = 10  // seconds
+	LongTimeout  = 120 // seconds
 )
 
-var swissKnifeApp = app{
-	image: "eu.gcr.io/bubbly-observer-178213/swiss-knife:189-277e424",
-	name:  "swiss-knife",
+var swissKnifeApp = cli.App{
+	Image: "eu.gcr.io/bubbly-observer-178213/swiss-knife:189-277e424",
+	Name:  "swiss-knife",
 }
 
 var _ = Describe("Application deployment", func() {
@@ -51,14 +47,15 @@ var _ = Describe("Application deployment", func() {
 			jsonToken := getToken()
 			output, err := deploy(swissKnifeApp, jsonToken)
 			Expect(err).NotTo(HaveOccurred())
-			expected := "Deployment of application `" + swissKnifeApp.name + "` has started."
+			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
 		})
 
 		It("should be in the list of applications in the cluster", func() {
-			list, err := listAppNames()
+			list, err := cli.ListApps()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(list).To(ContainElement(swissKnifeApp.name))
+			appNames := listAppNames(list)
+			Expect(appNames).To(ContainElement(swissKnifeApp.Name))
 		})
 
 		It("should get to a 'running' status, eventually", func(done Done) {
@@ -72,67 +69,77 @@ var _ = Describe("Application deployment", func() {
 
 	Context("A deployed application that uses akka, spark, and flink", func() {
 		It("should contain a spark process", func() {
-			status, err := getStatus(swissKnifeApp)
+			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-			streamlets := getStreamlets(status)
+			streamlets := cli.GetStreamlets(&status)
 			Expect(streamlets).To(ContainElement("spark-process"))
 		})
 
 		It("should contain a flink process", func() {
-			status, err := getStatus(swissKnifeApp)
+			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-			streamlets := getStreamlets(status)
+			streamlets := cli.GetStreamlets(&status)
 			Expect(streamlets).To(ContainElement("flink-process"))
 		})
 
 		It("should contain an akka process", func() {
-			status, err := getStatus(swissKnifeApp)
+			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-			streamlets := getStreamlets(status)
+			streamlets := cli.GetStreamlets(&status)
 			Expect(streamlets).To(ContainElement("akka-process"))
 		})
 
 		It("should produce a counter in the raw output log", func() {
-			logs, err := getLogs(swissKnifeApp, "raw-egress")
+			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "raw-egress")
 			Expect(err).NotTo(HaveOccurred())
-			lastLine, err := getLastMinOneLine(logs)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(lastLine).To(ContainSubstring("count:"))
-		})
-
-		It("should produce a counter in the raw output log", func() {
-			err := checkCountInLog(swissKnifeApp, "raw-egress")
+			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should produce a counter in the akka output log", func() {
-			err := checkCountInLog(swissKnifeApp, "akka-egress")
+			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "akka-egress")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should produce a counter in the spark output log", func() {
-			err := checkCountInLog(swissKnifeApp, "spark-egress")
+			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "spark-egress")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should produce a counter in the flink output log", func() {
-			err := checkCountInLog(swissKnifeApp, "flink-egress")
+			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "flink-egress")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+	})
+
+	Context("A deployed application can be undeployed", func() {
+		It("should undeploy the test app", func() {
+			err := ensureAppNotDeployed(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
 
-func checkCountInLog(app app, streamlet string) error {
-	logs, err := getLogs(swissKnifeApp, streamlet)
-	if err != nil {
-		return err
+func checkLastLogsContains(pod string, namespace string, str string) (string, error) {
+	for {
+		logs, err := getLogs(pod, namespace, "1s")
+		if err != nil {
+			return "", err
+		}
+		lastLine := getLastNonEmptyLine(logs)
+
+		if strings.Contains(lastLine, str) == true {
+			return lastLine, err
+		}
+		time.Sleep(time.Second)
 	}
-	lastLine, err := getLastMinOneLine(logs)
-	if err != nil {
-		return err
-	}
-	Expect(lastLine).To(ContainSubstring("count:"))
-	return nil
 }
 
 func getToken() string {
@@ -143,8 +150,8 @@ func getToken() string {
 	return string(data)
 }
 
-func deploy(app app, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.image, "--username", "_json_key", "--password", pwd)
+func deploy(app cli.App, pwd string) (deployRes string, deployErr error) {
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", "_json_key", "--password", pwd)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
@@ -157,52 +164,28 @@ type podEntry struct {
 	age      string
 }
 
-type streamletPod struct {
-	streamlet string
-	pod       string
-	status    string
-	restarts  int
-	ready     bool
-}
-
-type appStatus struct {
-	name          string
-	namespace     string
-	version       string
-	created       string
-	status        string
-	streamletPods []streamletPod
-}
-
-// func status(app app) (status appStatus, err error )
-
-func listAppNames() (entries []string, err error) {
-	apps, er := cli.ListApps()
-	if er != nil {
-		err = er
-		return
-	}
+func listAppNames(apps []cli.AppEntry) []string {
 	list := make([]string, len(apps))
 	for _, entry := range apps {
 		list = append(list, entry.Name)
 	}
-	return list, nil
+	return list
 }
 
-func ensureAppNotDeployed(app app) error {
+func ensureAppNotDeployed(app cli.App) error {
 	apps, err := cli.ListApps()
 	if err != nil {
 		return err
 	}
 	found := false
 	for _, entry := range apps {
-		if entry.Name == app.name {
+		if entry.Name == app.Name {
 			found = true
 			break
 		}
 	}
 	if found {
-		err := cli.Undeploy(app.name)
+		err := cli.Undeploy(app.Name)
 		if err != nil {
 			return err
 		}
@@ -212,8 +195,8 @@ func ensureAppNotDeployed(app app) error {
 	return nil
 }
 
-func ensureNoPods(app app) error {
-	fmt.Printf("Ensuring no pods for app [%s]\n", app.name)
+func ensureNoPods(app cli.App) error {
+	fmt.Printf("Ensuring no pods for app [%s]\n", app.Name)
 	sleepDuration, err := time.ParseDuration("1s")
 	if err != nil {
 		log.Fatal("duration gives error", err)
@@ -239,8 +222,8 @@ func ensureNoPods(app app) error {
 	return nil
 }
 
-func getPods(app app) (pods []podEntry, err error) {
-	cmd := exec.Command("kubectl", "get", "pods", "-n", app.name)
+func getPods(app cli.App) (pods []podEntry, err error) {
+	cmd := exec.Command("kubectl", "get", "pods", "-n", app.Name)
 	out, er := cmd.CombinedOutput()
 	if er != nil {
 		err = er
@@ -265,18 +248,17 @@ func getPods(app app) (pods []podEntry, err error) {
 	return res, nil
 }
 
-func checkStatusIs(app app, status string) (res string, err error) {
+func checkStatusIs(app cli.App, status string) (res string, err error) {
 	for {
-		appStatus, er := getStatus(app)
+		appStatus, er := cli.Status(app)
 		if er != nil {
 			err = er
 			return
 		}
 		allSame := true
-		for _, entry := range appStatus.streamletPods {
-			allSame = allSame && entry.status == status
+		for _, entry := range appStatus.StreamletPods {
+			allSame = allSame && entry.Status == status
 			if !allSame {
-				fmt.Printf("Entry [%s, %s] is not compliant with status [%s]", entry.streamlet, entry.status, status)
 				break
 			}
 		}
@@ -287,126 +269,22 @@ func checkStatusIs(app app, status string) (res string, err error) {
 	}
 }
 
-func getStreamlets(appStatus appStatus) []string {
-	var res []string
-	for _, entry := range appStatus.streamletPods {
-		res = append(res, entry.streamlet)
-	}
-	return res
-}
-
-func getStatus(app app) (status appStatus, err error) {
-	cmd := exec.Command("kubectl", "cloudflow", "status", app.name)
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		err = er
-		return
-	}
-	str := string(out)
-	splits := strings.Split(str, "\n")
-
-	names := [5]string{"Name:", "Namespace:", "Version:", "Created:", "Status:"}
-	fields := [5]*string{&status.name, &status.namespace, &status.version, &status.created, &status.status}
-	var streamletPods []streamletPod
-
-	for i, line := range splits {
-
-		switch i {
-		case 0, 1, 2, 3, 4:
-			value, er := parseLineInN(line, 2)
-			if er != nil {
-				err = er
-				return
-			}
-			if value[0] != names[i] {
-				err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
-				return
-			}
-			*fields[i] = value[1]
-		case 5:
-			continue // separator line
-		case 6:
-			continue // titles
-		default:
-			if len(strings.TrimSpace(line)) == 0 {
-				continue
-			}
-			parts, er := parseLineInN(line, 5)
-			if er != nil {
-				err = er
-				return
-			}
-			var streamletPod streamletPod
-			streamletPod.streamlet = parts[0]
-			streamletPod.pod = parts[1]
-			streamletPod.status = parts[2]
-			restarts, er := strconv.Atoi(parts[3])
-			if er != nil {
-				err = er
-				return
-			}
-			streamletPod.restarts = restarts
-			ready, er := strconv.ParseBool(parts[4])
-			if er != nil {
-				err = er
-				return
-			}
-			streamletPod.ready = ready
-			streamletPods = append(streamletPods, streamletPod)
-		}
-	}
-	status.streamletPods = streamletPods
-	return status, nil
-}
-
-func parseLineInN(str string, segments int) (parsed []string, err error) {
-	whitespaces := regexp.MustCompile(`\s+`)
-	parts := whitespaces.Split(str, -1)
-	if len(parts) >= segments {
-		for i, part := range parts {
-			parts[i] = strings.TrimSpace(part)
-		}
-		return parts, nil
-	} else {
-		err = fmt.Errorf("string didn't contain [%d] separate words: [%s]", segments, str)
-		return
-	}
-}
-
-func getStreamletPod(status *appStatus, streamlet string) *streamletPod {
-	for _, entry := range status.streamletPods {
-		if entry.streamlet == streamlet {
-			return &entry
-		}
-	}
-	return nil
-}
-
-func getLastMinOneLine(str string) (line string, err error) {
+func getLastNonEmptyLine(str string) string {
 	lines := strings.Split(str, "\n")
-	if len(lines) < 2 {
-		err = fmt.Errorf("input had too few lines")
-		return
+	for i := len(lines) - 1; i >= 0; i-- {
+		if len(strings.TrimSpace(lines[i])) > 0 {
+			return lines[i]
+		}
 	}
-	return lines[len(lines)-2], nil
+	return ""
 }
 
-func getLogs(app app, streamlet string) (logs string, err error) {
-	status, er := getStatus(app)
-	if er != nil {
-		err = er
-		return
-	}
-	streamletPod := getStreamletPod(&status, streamlet)
-	if streamletPod == nil {
-		err = fmt.Errorf("could not find entry for streamlet [%s]", streamlet)
-	}
-	cmd := exec.Command("kubectl", "logs", streamletPod.pod, "-n", app.name)
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		err = er
-		return
+func getLogs(pod string, namespace string, since string) (logs string, err error) {
+	sinceParam := "--since=" + since
+	cmd := exec.Command("kubectl", "logs", pod, "-n", namespace, sinceParam)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
 	}
 	return string(out), nil
-
 }
