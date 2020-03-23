@@ -89,7 +89,7 @@ trait StreamletContext {
       .getOrElse(throw MountedPathUnavailableException(volumeMount))
 
   case class MountedPathUnavailableException(volumeMount: VolumeMount)
-      extends Exception(s"Mount path for Volume Mount named '${volumeMount.name}' is unavailable.")
+      extends Exception(s"Mount path for volume mount named '${volumeMount.name}' is unavailable.")
 
 }
 
