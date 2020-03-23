@@ -89,11 +89,11 @@ trait StreamletContext {
       .getOrElse(throw MountedPathUnavailableException(volumeMount))
 
   case class MountedPathUnavailableException(volumeMount: VolumeMount)
-      extends Exception(s"Mount path for Volume Mount named [${volumeMount.name}] is unavailable.")
+      extends Exception(s"Mount path for volume mount named '${volumeMount.name}' is unavailable.")
 
 }
 
 case class PortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
     extends Exception(
-      s"Streamlet port ${port.name} not found for ${streamletDefinition.appId} and streamlet ${streamletDefinition.streamletRef}"
+      s"Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
     )
