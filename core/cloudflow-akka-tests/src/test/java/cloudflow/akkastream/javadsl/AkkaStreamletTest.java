@@ -19,6 +19,7 @@ package cloudflow.akkastream.javadsl;
 import akka.Done;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
+import akka.kafka.ConsumerMessage;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
@@ -181,9 +182,9 @@ public class AkkaStreamletTest extends JUnitSuite {
       Path mountedPath = getContext().getMountedPath(defineVolumeMounts()[0]);
       return new AkkaStreamletLogic(getContext()) {
         public void run() {
-          getSourceWithOffsetContext(inlet)
+          getSourceWithCommittableContext(inlet)
               .via(
-                  Flow.<Pair<Data, CommittableOffset>>create()
+                  Flow.<Pair<Data, ConsumerMessage.Committable>>create()
                       .map(
                           dataIn -> {
                             Files.write(
@@ -192,7 +193,7 @@ public class AkkaStreamletTest extends JUnitSuite {
                                 StandardOpenOption.SYNC);
                             return dataIn;
                           }))
-              .to(getSinkWithOffsetContext(outlet))
+              .to(getCommittableSink(outlet))
               .run(materializer());
         }
       };
