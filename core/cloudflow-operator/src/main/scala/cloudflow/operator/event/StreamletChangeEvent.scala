@@ -108,10 +108,11 @@ object StreamletChangeEvent {
         {
           case (Some(app), streamletChangeEvent) ⇒
             val appId = app.spec.appId
+
             val appStatus = currentStatuses
               .get(appId)
-              .map(_.updateSpec(app.spec))
-              .getOrElse(CloudflowApplication.Status(app))
+              .map(_.updateApp(app))
+              .getOrElse(CloudflowApplication.Status(app.spec))
 
             streamletChangeEvent match {
               case StreamletChangeEvent(appId, streamletName, _, watchEvent) ⇒

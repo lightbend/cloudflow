@@ -47,9 +47,7 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	appStatus := calcAppStatus(applicationCR)
-
-	printAppStatus(applicationCR, appStatus)
+	printAppStatus(applicationCR, applicationCR.Status.AppStatus)
 	printEndpointStatuses(applicationCR)
 	printStreamletStatuses(applicationCR)
 }
@@ -60,44 +58,6 @@ func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("you need to specify an application name")
 	}
 	return nil
-}
-
-func calcAppStatus(applicationCR *domain.CloudflowApplication) string {
-	expectedPods := 0
-	actualRunningPods := 0
-	appStatus := "Unknown"
-	crashing := false
-
-	for _, d := range applicationCR.Spec.Deployments {
-		if d.Replicas == 0 && d.Runtime == "akka" {
-			expectedPods = expectedPods + 1 // TODO replica defaults
-		} else if d.Replicas == 0 && d.Runtime == "spark" {
-			expectedPods = expectedPods + 1 + 2 // TODO replica defaults 1 driver, 2 executors
-		} else {
-			expectedPods = expectedPods + d.Replicas
-		}
-	}
-
-	for _, s := range applicationCR.Status.StreamletStatuses {
-		for _, p := range s.PodStatuses {
-			if p.Status == "Running" && p.Ready == "True" {
-				actualRunningPods = actualRunningPods + 1
-			}
-			// Any one pod crashing: app is crashing
-			if p.Status == "CrashLoopBackOff" {
-				crashing = true
-			}
-		}
-	}
-
-	if expectedPods == actualRunningPods && !crashing {
-		appStatus = "Running"
-	} else if expectedPods != actualRunningPods && !crashing {
-		appStatus = "Pending"
-	} else {
-		appStatus = "CrashLoopBackOff"
-	}
-	return appStatus
 }
 
 func printAppStatus(applicationCR *domain.CloudflowApplication, appStatus string) {
@@ -124,10 +84,10 @@ func printEndpointStatuses(applicationCR *domain.CloudflowApplication) {
 func printStreamletStatuses(applicationCR *domain.CloudflowApplication) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 18, 0, 1, ' ', 0)
-	fmt.Fprintln(w, "STREAMLET\tPOD\tSTATUS\tRESTARTS\tREADY\t")
+	fmt.Fprintln(w, "STREAMLET\tPOD\tREADY\tSTATUS\tRESTARTS\t")
 	for _, s := range applicationCR.Status.StreamletStatuses {
 		for _, p := range s.PodStatuses {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n", s.StreamletName, p.Name, p.Status, p.Restarts, p.Ready)
+			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, p.Name, p.NrOfContainersReady, p.NrOfContainers, p.Status, p.Restarts)
 		}
 	}
 	fmt.Println("")
