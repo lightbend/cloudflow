@@ -42,9 +42,15 @@ type StreamletPod struct {
 	Ready     bool
 }
 
+// Deploy initiates the deployment of an application to the k8s cluster
+func Deploy(app App, pwd string) (deployRes string, deployErr error) {
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", "_json_key", "--password", pwd)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
 // Undeploy initiates an application undeployment on the active cluster
 func Undeploy(appName string) error {
-	fmt.Printf("Issuing Undeploy of app [%s]\n", appName)
 	cmd := exec.Command("kubectl", "cloudflow", "undeploy", appName)
 	_, err := cmd.CombinedOutput()
 	return err
@@ -82,9 +88,9 @@ func ListApps() (entries []AppEntry, err error) {
 // Status retrieves the current status of an application
 func Status(app App) (status AppStatus, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "status", app.Name)
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		err = er
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		//err = er
 		return
 	}
 	str := string(out)
@@ -127,17 +133,10 @@ func Status(app App) (status AppStatus, err error) {
 			streamletPod.Status = parts[2]
 			restarts, er := strconv.Atoi(parts[3])
 			if er != nil {
-				err = er
-				return
+				return AppStatus{}, err
 			}
 			streamletPod.Restarts = restarts
-			ready, er := strconv.ParseBool(parts[4])
-			if er != nil {
-				fmt.Println("Errorful line: " + line)
-				err = er
-				return
-			}
-			streamletPod.Ready = ready
+			streamletPod.Ready = strings.TrimSpace(parts[4]) == "True"
 			streamletPods = append(streamletPods, streamletPod)
 		}
 	}

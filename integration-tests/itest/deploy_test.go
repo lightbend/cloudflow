@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"log"
 	"os/exec"
 
 	"lightbend.com/cloudflow/itest/cli"
@@ -25,7 +24,7 @@ import (
 
 const (
 	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
-	ShortTimeout = 10  // seconds
+	ShortTimeout = 30  // seconds
 	LongTimeout  = 120 // seconds
 )
 
@@ -45,7 +44,7 @@ var _ = Describe("Application deployment", func() {
 	Context("when I deploy an application", func() {
 		It("should start a deployment", func() {
 			jsonToken := getToken()
-			output, err := deploy(swissKnifeApp, jsonToken)
+			output, err := cli.Deploy(swissKnifeApp, jsonToken)
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
@@ -60,14 +59,16 @@ var _ = Describe("Application deployment", func() {
 
 		It("should get to a 'running' status, eventually", func(done Done) {
 			// TODO: check status flag once it's fixed
+			waitTime, _ := time.ParseDuration("20s")
+			time.Sleep(waitTime) // this wait is needed to let the application deploy
 			status, err := checkStatusIs(swissKnifeApp, "Running")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
 			close(done)
-		}, 10) // timeout in seconds
+		}, ShortTimeout)
 	})
 
-	Context("A deployed application that uses akka, spark, and flink", func() {
+	Context("A deployed test application that uses akka, spark, and flink", func() {
 		It("should contain a spark process", func() {
 			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
@@ -89,33 +90,37 @@ var _ = Describe("Application deployment", func() {
 			Expect(streamlets).To(ContainElement("akka-process"))
 		})
 
-		It("should produce a counter in the raw output log", func() {
+		It("should produce a counter in the raw output log", func(done Done) {
 			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "raw-egress")
 			Expect(err).NotTo(HaveOccurred())
 			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
-		})
+			close(done)
+		}, LongTimeout)
 
-		It("should produce a counter in the akka output log", func() {
+		It("should produce a counter in the akka output log", func(done Done) {
 			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "akka-egress")
 			Expect(err).NotTo(HaveOccurred())
 			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
-		})
+			close(done)
+		}, LongTimeout)
 
-		It("should produce a counter in the spark output log", func() {
+		It("should produce a counter in the spark output log", func(done Done) {
 			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "spark-egress")
 			Expect(err).NotTo(HaveOccurred())
 			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
-		})
+			close(done)
+		}, LongTimeout)
 
-		It("should produce a counter in the flink output log", func() {
+		It("should produce a counter in the flink output log", func(done Done) {
 			pod, err := cli.GetSinglePodForStreamlet(swissKnifeApp, "flink-egress")
 			Expect(err).NotTo(HaveOccurred())
 			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
 			Expect(err).NotTo(HaveOccurred())
-		})
+			close(done)
+		}, LongTimeout)
 
 	})
 
@@ -136,7 +141,8 @@ func checkLastLogsContains(pod string, namespace string, str string) (string, er
 		lastLine := getLastNonEmptyLine(logs)
 
 		if strings.Contains(lastLine, str) == true {
-			return lastLine, err
+			println("Found match: " + lastLine)
+			return lastLine, nil
 		}
 		time.Sleep(time.Second)
 	}
@@ -148,12 +154,6 @@ func getToken() string {
 		Fail("Can't read credentials for test")
 	}
 	return string(data)
-}
-
-func deploy(app cli.App, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", "_json_key", "--password", pwd)
-	out, err := cmd.CombinedOutput()
-	return string(out), err
 }
 
 type podEntry struct {
@@ -185,12 +185,10 @@ func ensureAppNotDeployed(app cli.App) error {
 		}
 	}
 	if found {
-		err := cli.Undeploy(app.Name)
-		if err != nil {
+		if err := cli.Undeploy(app.Name); err != nil {
 			return err
 		}
-		err = ensureNoPods(app)
-		return err
+		return ensureNoPods(app)
 	}
 	return nil
 }
@@ -199,19 +197,14 @@ func ensureNoPods(app cli.App) error {
 	fmt.Printf("Ensuring no pods for app [%s]\n", app.Name)
 	sleepDuration, err := time.ParseDuration("1s")
 	if err != nil {
-		log.Fatal("duration gives error", err)
-		return err // pfff
+		return err
 	}
-	time.Sleep(sleepDuration)
-	pods, err := getPods(app)
-	if err != nil {
-		log.Fatal("get Pods gives error", err)
-		return err // pfff^2
-	}
-	fmt.Printf("Initial pod count %d\n", len(pods))
 
-	for len(pods) > 0 {
+	first := true
+	var pods []podEntry
 
+	for first || len(pods) > 0 {
+		first = false
 		time.Sleep(sleepDuration)
 		pods, err = getPods(app)
 		if err != nil {
