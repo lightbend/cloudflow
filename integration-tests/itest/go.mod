@@ -1,4 +1,4 @@
-module lightbend.com/itest
+module lightbend.com/cloudflow/itest
 
 go 1.14
 

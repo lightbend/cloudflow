@@ -11,6 +11,8 @@ import (
 	"log"
 	"os/exec"
 
+	"lightbend.com/cloudflow/itest/cli"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -29,11 +31,7 @@ type app struct {
 
 const (
 	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
-	// Regex Constants
-	AllSubstrings = -1
 )
-
-var Whitespaces = regexp.MustCompile(`\s+`)
 
 var swissKnifeApp = app{
 	image: "eu.gcr.io/bubbly-observer-178213/swiss-knife:189-277e424",
@@ -151,19 +149,6 @@ func deploy(app app, pwd string) (deployRes string, deployErr error) {
 	return string(out), err
 }
 
-func fakeDeploy(app app, pwd string) (deployRes string, deployErr error) {
-	fmt.Println(app.name)
-	fmt.Println(pwd[1:1])
-	return "OK", nil
-}
-
-type appListEntry struct {
-	name         string
-	namespace    string
-	version      string
-	creationtime string
-}
-
 type podEntry struct {
 	name     string
 	ready    string
@@ -192,60 +177,32 @@ type appStatus struct {
 // func status(app app) (status appStatus, err error )
 
 func listAppNames() (entries []string, err error) {
-	apps, er := listApps()
+	apps, er := cli.ListApps()
 	if er != nil {
 		err = er
 		return
 	}
 	list := make([]string, len(apps))
 	for _, entry := range apps {
-		list = append(list, entry.name)
+		list = append(list, entry.Name)
 	}
 	return list, nil
 }
 
-func listApps() (entries []appListEntry, err error) {
-	cmd := exec.Command("kubectl", "cloudflow", "list")
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		log.Fatal("could not check app status")
-		err = er
-		return
-	}
-	str := string(out)
-	splits := strings.Split(str, "\n")
-	whitespaces := regexp.MustCompile(`\s+`)
-	var res []appListEntry
-	for i, line := range splits {
-		switch i {
-		case 0, 1:
-			continue
-		default:
-			parts := whitespaces.Split(line, AllSubstrings)
-			if len(parts) == 7 {
-				appEntry := appListEntry{parts[0], parts[1], parts[2], parts[3] + parts[4] + parts[5] + parts[6]}
-
-				res = append(res, appEntry)
-			}
-		}
-	}
-	return res, nil
-}
-
 func ensureAppNotDeployed(app app) error {
-	apps, err := listApps()
+	apps, err := cli.ListApps()
 	if err != nil {
 		return err
 	}
 	found := false
 	for _, entry := range apps {
-		if entry.name == app.name {
-			fmt.Printf("This is the app you are looking for: [%s]", entry.name)
+		if entry.Name == app.name {
 			found = true
+			break
 		}
 	}
 	if found {
-		err := undeploy(app)
+		err := cli.Undeploy(app.name)
 		if err != nil {
 			return err
 		}
@@ -253,13 +210,6 @@ func ensureAppNotDeployed(app app) error {
 		return err
 	}
 	return nil
-}
-
-func undeploy(app app) error {
-	fmt.Printf("Issuing Undeploy of app [%s]\n", app.name)
-	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.name)
-	_, err := cmd.CombinedOutput()
-	return err
 }
 
 func ensureNoPods(app app) error {
@@ -305,7 +255,7 @@ func getPods(app app) (pods []podEntry, err error) {
 		case 0:
 			continue
 		default:
-			parts := whitespaces.Split(line, AllSubstrings)
+			parts := whitespaces.Split(line, -1)
 			if len(parts) == 5 {
 				podEntry := podEntry{parts[0], parts[1], parts[2], parts[3], parts[4]}
 				res = append(res, podEntry)
@@ -410,7 +360,8 @@ func getStatus(app app) (status appStatus, err error) {
 }
 
 func parseLineInN(str string, segments int) (parsed []string, err error) {
-	parts := Whitespaces.Split(str, AllSubstrings)
+	whitespaces := regexp.MustCompile(`\s+`)
+	parts := whitespaces.Split(str, -1)
 	if len(parts) >= segments {
 		for i, part := range parts {
 			parts[i] = strings.TrimSpace(part)
