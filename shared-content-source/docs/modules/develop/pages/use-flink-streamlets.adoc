@@ -5,7 +5,7 @@ A Flink streamlet has the following responsibilities:
 * It needs to capture your stream processing logic.
 * It needs to publish metadata used by the `sbt-cloudflow` plugin to verify that a blueprint is correct.
   This metadata consists of the _shape_ of the streamlet (`StreamletShape`) defined by the inlets and outlets of the streamlet.
-  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:cloudflow-streamlets.adoc#streamlets-blueprints[Composing streamlets using blueprints].
+  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints].
   Cloudflow automatically extracts the shapes from the streamlets to verify this match.
 * For the Cloudflow runtime, it needs to provide metadata so that it can be configured, scaled, and run as part of an application.
 * The inlets and outlets of a `Streamlet` have two functions:

@@ -376,7 +376,9 @@ The format for specifying configuration parameter values is as follows:
 
     [streamlet name].[configuration parameter name]="[value]"
 
-Deploying an application without specifying values for all required configuration parameters will fail and result in an error message like this:
+Deploying an application without specifying values for all required configuration parameters will fail and result in an error message like the following.
+
+NOTE: Examples in this section show the OpenShift `oc plugin`, however you should substitute the correct command for your K8s distribution.
 
 [source,bash,subs=attributes+]
 ----

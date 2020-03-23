@@ -60,6 +60,6 @@ Choose from the following topics:
 
 * xref:app-development-process.adoc[The Cloudflow development process]
 * xref:get-started:index.adoc[How to get started with an example application]
-* xref:develop:cloudflow-streamlets.adoc[How to create Cloudflow applications using streamlets and blueprints].
+* xref:develop:develop.adoc[How to create Cloudflow applications using streamlets and blueprints].
 
 **This guide last published: {localdate}**

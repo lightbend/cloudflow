@@ -8,7 +8,7 @@ Sharing content requires a source page, an including page, and a directive that 
 
 . The source of a shared content page must include the attribute `:page-partial:` and *not* include a title. You can see an example in `./docs/modules/develop/pages/cloudflow-streamlet.adoc`. 
 
-. To use shared content, you use an `include` directive. For example, in this open source documentation repository, the `docs-source/docs/modules/develop/pages/index.html` file includes this shared file, using this directive: `include::shared-content:develop:page$cloudflow-streamlets.adoc[]`.
+. To use shared content, you use an `include` directive. For example, in this open source documentation repository, the `docs-source/docs/modules/develop/pages/index.html` file includes this shared file, using this directive: `include::shared-content:develop:page$index.adoc[]`.
 
 . In the `site.yml` (and, if you use it, the `author-mode-site.yml`), you must declare the `shared-content-source` as a `source` in the `content` element. The name of the component is set in the `shared-content-source/docs/antora.yml` file. In this repository, that name is `shared-content`, which is referenced in `site.yml` as:
 +

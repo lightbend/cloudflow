@@ -6,6 +6,6 @@
 
 
 include::ROOT:partial$include.adoc[]
-include::shared-content:develop:page$cloudflow-streamlets.adoc[]
+include::shared-content:develop:page$index.adoc[]
 
 // Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.

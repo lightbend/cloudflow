@@ -184,7 +184,7 @@ You can access the inlet and outlet streams through methods on the `StreamletLog
 So far, we've used the `plainSource` method to read from the inlet.
 When the streamlet is started, it will only receive elements that arrive *after* it is started. 
 The same applies when the streamlet is restarted for any reason. 
-In short, the `plainSource` provides at-most-once message delivery semantics, as described in xref:cloudflow-streamlets.adoc#message-delivery-semantics[Message delivery semantics].
+In short, the `plainSource` provides at-most-once message delivery semantics, as described in xref:index.adoc#message-delivery-semantics[Message delivery semantics].
 
 [NOTE]
 ====
@@ -310,4 +310,4 @@ Java::
 include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/AtLeastOnceReportPrinter.java[tag=atLeastOnce]
 ----
 
-This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:cloudflow-streamlets.adoc#streamlets-blueprints[Composing streamlets using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].
+This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].

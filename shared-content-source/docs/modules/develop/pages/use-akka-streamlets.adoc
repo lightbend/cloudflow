@@ -5,7 +5,7 @@ An Akka-based streamlet has the following responsibilities:
 * Capturing your stream processing logic.
 * Publishing metadata which will be used by the `sbt-cloudflow` plugin to verify that a blueprint is correct.
   This metadata consists of the _shape_ of the streamlet (`StreamletShape`) defined by the inlets and outlets of the streamlet.
-  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:cloudflow-streamlets.adoc#streamlets-blueprints[Composing streamlets using blueprints].
+  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints].
   Cloudflow automatically extracts the shapes from the streamlets to verify this match.
 * For the Cloudflow runtime, it needs to provide metadata so that it can be configured, scaled, and run as part of an application.
 * The inlets and outlets of a `Streamlet` have two functions:
@@ -75,7 +75,7 @@ that are available for how to continue processing data after a restart.
 [[message-delivery-semantics-akka]]
 == Message delivery semantics
 
-If you only want to process data that is arriving in real-time—ignoring data from the past—an Akka streamlet can simply start from the most recently arrived record. In this case, an _at-most-once_ semantics is used (see xref:cloudflow-streamlets.adoc#message-delivery-semantics[Message delivery semantics]). The streamlet will process data as it arrives. Data that arrives while the streamlet is not running will not be processed. 
+If you only want to process data that is arriving in real-time—ignoring data from the past—an Akka streamlet can simply start from the most recently arrived record. In this case, an _at-most-once_ semantics is used (see xref:index.adoc#message-delivery-semantics[Message delivery semantics]). The streamlet will process data as it arrives. Data that arrives while the streamlet is not running will not be processed. 
 
 At-most-once message delivery semantics are applied to Akka streamlets that use standard Akka Stream graphs like `Source`, `Sink`, `Flow`.
 
