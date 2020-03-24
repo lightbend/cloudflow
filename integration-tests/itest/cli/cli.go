@@ -50,8 +50,8 @@ func Deploy(app App, pwd string) (deployRes string, deployErr error) {
 }
 
 // Undeploy initiates an application undeployment on the active cluster
-func Undeploy(appName string) error {
-	cmd := exec.Command("kubectl", "cloudflow", "undeploy", appName)
+func Undeploy(app App) error {
+	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.Name)
 	_, err := cmd.CombinedOutput()
 	return err
 }
@@ -178,9 +178,8 @@ func GetStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
 
 // GetSinglePodForStreamlet returns a pod associated to the streamlet runtime
 func GetSinglePodForStreamlet(app App, streamlet string) (pod string, err error) {
-	status, er := Status(app)
-	if er != nil {
-		err = er
+	status, err := Status(app)
+	if err != nil {
 		return
 	}
 	streamletPod := GetStreamletPod(&status, streamlet)

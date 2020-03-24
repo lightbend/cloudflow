@@ -23,9 +23,10 @@ import (
 // Automation will be the next step
 
 const (
-	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
-	ShortTimeout = 60  // seconds
-	LongTimeout  = 240 // seconds
+	JsonTokenSrc    = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
+	ShortTimeout    = 60  // seconds
+	LongTimeout     = 240 // seconds
+	InitialWaitTime = "30s"
 )
 
 var swissKnifeApp = cli.App{
@@ -48,6 +49,8 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
+			waitTime, _ := time.ParseDuration(InitialWaitTime)
+			time.Sleep(waitTime) // this wait is needed to let the application deploy
 		})
 
 		It("should be in the list of applications in the cluster", func() {
@@ -59,13 +62,11 @@ var _ = Describe("Application deployment", func() {
 
 		It("should get to a 'running' status, eventually", func(done Done) {
 			// TODO: check status flag once it's fixed
-			waitTime, _ := time.ParseDuration("20s")
-			time.Sleep(waitTime) // this wait is needed to let the application deploy
 			status, err := checkStatusIs(swissKnifeApp, "Running")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
 			close(done)
-		}, ShortTimeout)
+		}, LongTimeout)
 	})
 
 	Context("A deployed test application that uses akka, spark, and flink", func() {
@@ -125,12 +126,34 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("A deployed application can be undeployed", func() {
-		It("should undeploy the test app", func() {
-			err := ensureAppNotDeployed(swissKnifeApp)
+		It("should undeploy the test app", func(done Done) {
+			err := cli.Undeploy(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-		})
+			err = expectFindApp(swissKnifeApp, false)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, ShortTimeout)
 	})
 })
+
+func expectFindApp(app cli.App, expected bool) error {
+	for {
+		apps, err := cli.ListApps()
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, entry := range apps {
+			if entry.Name == app.Name {
+				found = true
+				break
+			}
+		}
+		if found == expected {
+			return nil
+		}
+	}
+}
 
 func checkLastLogsContains(pod string, namespace string, str string) (string, error) {
 	for {
@@ -185,7 +208,7 @@ func ensureAppNotDeployed(app cli.App) error {
 		}
 	}
 	if found {
-		if err := cli.Undeploy(app.Name); err != nil {
+		if err := cli.Undeploy(app); err != nil {
 			return err
 		}
 		return ensureNoPods(app)
