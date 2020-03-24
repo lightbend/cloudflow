@@ -16,7 +16,7 @@ object ReportIngress extends SparkStreamlet {
 
   val out = AvroOutlet[Report]("out")
 
-  override val shape = StreamletShape.withOutlets(out) 
+  override val shape = StreamletShape.withOutlets(out)
 
   override def createLogic(): SparkStreamletLogic = new SparkStreamletLogic {
     override def buildStreamingQueries = {
@@ -27,7 +27,7 @@ object ReportIngress extends SparkStreamlet {
         .option("rowsPerSecond", 1)
         .load()
         .as[Rate]
-      
+
       val query = writeStream(rateStream.map(_ => report), out, OutputMode.Append())
 
       query.toQueryExecution

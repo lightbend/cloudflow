@@ -12,5 +12,5 @@ object ReportPrinter extends SparkStreamlet {
   override val shape = StreamletShape.withInlets(in)
 
   // 3. TODO Override createLogic to provide StreamletLogic
-  override def createLogic =  ???
+  override def createLogic = ???
 }

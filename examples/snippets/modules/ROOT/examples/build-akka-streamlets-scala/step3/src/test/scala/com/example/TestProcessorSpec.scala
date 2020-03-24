@@ -29,7 +29,7 @@ class TestProcessorSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
   //end::afterAll[]
 
-  "An TestProcessor" should {
+  "A TestProcessor" should {
 
     val testkit = AkkaStreamletTestKit(system, mat)
 

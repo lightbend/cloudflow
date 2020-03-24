@@ -18,7 +18,7 @@ object ReportPrinter extends SparkStreamlet {
   // 3. Override createLogic to provide StreamletLogic
   override def createLogic = new SparkStreamletLogic {
     // Define some formatting attributes
-    val numRows = 50
+    val numRows  = 50
     val truncate = false
 
     override def buildStreamingQueries = {
