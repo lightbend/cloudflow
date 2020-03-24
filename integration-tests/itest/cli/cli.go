@@ -176,8 +176,8 @@ func GetStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
 	return nil
 }
 
-// GetSinglePodForStreamlet returns a pod associated to the streamlet runtime
-func GetSinglePodForStreamlet(app App, streamlet string) (pod string, err error) {
+// GetOneOfThePodsForStreamlet returns a pod associated to the streamlet runtime
+func GetOneOfThePodsForStreamlet(app App, streamlet string) (pod string, err error) {
 	status, err := Status(app)
 	if err != nil {
 		return
