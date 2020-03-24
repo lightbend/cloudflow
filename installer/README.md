@@ -1,6 +1,6 @@
 # Cloudflow installer
 
-This is the installer for the [Cloudflow](https://github.com/lightbend/cloudflow) toolkit. 
+This is the installer for the [Cloudflow](https://github.com/lightbend/cloudflow) toolkit.
 
 This installer deploys all the backend components required to turn your Kubernetes cluster into a Cloudflow-compliant platform.
 
@@ -8,12 +8,13 @@ The Cloudflow installer deploys:
 - The Cloudflow operator, which orchestrates the deployment of Cloudflow applications
 - The [Spark Operator](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator)
 - The [Strimzi Kafka Operator](https://strimzi.io/) used to manage Apache Kafka clusters co-located or pre-existing
+- The [Lyft Flink Operator](https://github.com/lyft/flinkk8soperator)
 - The required service accounts with the minimal permissions needed by the supporting components
 
 Additionally, this installer deploys:
 - NFS - a supporting component that provides a shareable file system to enable storage for stateful applications
 
-Currently, the provided installation scripts are validated for Google Kubernetes Engine (GKE) on the Google Cloud Platform. 
+Currently, the provided installation scripts are validated for Google Kubernetes Engine (GKE) on the Google Cloud Platform.
 Testing on other major cloud providers is in the roadmap.
 
 ## Prerequisites
@@ -65,9 +66,9 @@ In case of a failed installation, or if you simply want to uninstall entirely, r
 
 Notes
 -----
-- `create-cluster-<gke|eks>.sh` is optional. 
+- `create-cluster-<gke|eks>.sh` is optional.
 It creates a cluster on GKE/EKS that's large enough to launch several applications.
-You can also opt to create a cluster customized to your needs by either changing the values in the 
+You can also opt to create a cluster customized to your needs by either changing the values in the
 `create-cluster-gke.sh`, using the [Google Cloud Console](cloud.google.com), or the `gcloud` CLI for GKE.
 Similarly, you can also opt to create a cluster customized to your needs by either changing the values in the
 `create-cluster-eks.sh`, using the [Amazon Web Services Console](aws.amazon.com), or the `ekstl` CLI for EKS.
