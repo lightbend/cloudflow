@@ -131,8 +131,9 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			err = expectFindApp(swissKnifeApp, false)
 			Expect(err).NotTo(HaveOccurred())
+			ensureNoPods(swissKnifeApp)
 			close(done)
-		}, ShortTimeout)
+		}, LongTimeout)
 	})
 })
 
