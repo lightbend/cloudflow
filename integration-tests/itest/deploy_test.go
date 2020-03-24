@@ -24,8 +24,8 @@ import (
 
 const (
 	JsonTokenSrc = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
-	ShortTimeout = 30  // seconds
-	LongTimeout  = 120 // seconds
+	ShortTimeout = 60  // seconds
+	LongTimeout  = 240 // seconds
 )
 
 var swissKnifeApp = cli.App{
