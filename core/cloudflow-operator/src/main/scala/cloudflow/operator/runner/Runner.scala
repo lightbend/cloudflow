@@ -85,7 +85,7 @@ trait Runner[T <: ObjectResource] {
     }
 
     val configData = Vector(
-      RunnerConfig(app.spec.appId, app.spec.appVersion, deployment, ctx.kafkaContext.bootstrapServers),
+      RunnerConfig(app.spec.appId, deployment, ctx.kafkaContext.bootstrapServers),
       prometheusConfig
     )
     val name = Name.ofConfigMap(deployment.name)

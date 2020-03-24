@@ -2,15 +2,18 @@ package verify
 
 import (
 	"fmt"
-	"github.com/go-akka/configuration"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"math/big"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/docker/docker/client"
+	"github.com/go-akka/configuration"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 )
 
 // BlueprintProblem - generic interface for all blueprint related problems
@@ -347,11 +350,12 @@ func (b UnconnectedInlets) ToMessage() string {
 }
 
 type Blueprint struct {
-	images               map[string]cloudflowapplication.ImageReference
-	streamlets           []StreamletRef
-	connections          []StreamletConnection
+	name                         string
+	images                       map[string]cloudflowapplication.ImageReference
+	streamlets                   []StreamletRef
+	connections                  []StreamletConnection
 	streamletDescriptorsPerImage map[string][]StreamletDescriptor
-	globalProblems       []BlueprintProblem
+	globalProblems               []BlueprintProblem
 }
 
 // check for consistency between the image id mentioned in streamlets and the
@@ -387,9 +391,9 @@ func checkStreamletImageLabelConsistency(blueprint Blueprint) []BlueprintProblem
 
 func (b Blueprint) define(streamletDescriptorsUpdated []StreamletDescriptor) Blueprint {
 	var ret = Blueprint{
-		images : b.images,
-		streamlets: b.streamlets,
-		connections: b.connections,
+		images:         b.images,
+		streamlets:     b.streamlets,
+		connections:    b.connections,
 		globalProblems: b.globalProblems,
 	}
 
@@ -411,11 +415,11 @@ func (b Blueprint) use(streamletRef StreamletRef) Blueprint {
 	}
 
 	var ret = Blueprint{
-		images: b.images,
-		streamlets: append(streamlets, streamletRef),
-		connections: b.connections,
+		images:                       b.images,
+		streamlets:                   append(streamlets, streamletRef),
+		connections:                  b.connections,
 		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
-		globalProblems: b.globalProblems,
+		globalProblems:               b.globalProblems,
 	}
 	ret = ret.verify()
 	ret.UpdateGlobalProblems()
@@ -443,9 +447,9 @@ func (b Blueprint) connectWithConnection(connection StreamletConnection) Bluepri
 	}
 
 	var ret = Blueprint{
-		images: b.images,
-		streamlets: b.streamlets,
-		connections: append(otherConnections, verifiedConnection),
+		images:                       b.images,
+		streamlets:                   b.streamlets,
+		connections:                  append(otherConnections, verifiedConnection),
 		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
 	}
 	ret = ret.verify()
@@ -474,17 +478,14 @@ func (b Blueprint) verify() Blueprint {
 		emptyStreamletsProblem = &EmptyStreamlets{}
 	}
 
-	var imageInStreamletNotInImagesErrors []BlueprintProblem 
-	imageInStreamletNotInImagesErrors = append(imageInStreamletNotInImagesErrors, checkStreamletImageConsistency(b) ...)
+	var imageInStreamletNotInImagesErrors []BlueprintProblem
+	imageInStreamletNotInImagesErrors = append(imageInStreamletNotInImagesErrors, checkStreamletImageConsistency(b)...)
 
-	var streamletNotInImageLabelErrors []BlueprintProblem 
-	streamletNotInImageLabelErrors = append(streamletNotInImageLabelErrors, checkStreamletImageLabelConsistency(b) ...)
+	var streamletNotInImageLabelErrors []BlueprintProblem
+	streamletNotInImageLabelErrors = append(streamletNotInImageLabelErrors, checkStreamletImageLabelConsistency(b)...)
 
 	// get all streamlet descriptors for all images
-	var streamletDescriptors []StreamletDescriptor
-	for _, desc := range b.streamletDescriptorsPerImage {
-		streamletDescriptors = append(streamletDescriptors, desc ...)
-	}
+	streamletDescriptors := b.GetAllStreamletDescriptors()
 
 	var emptyStreamletDescriptorsProblem *EmptyStreamletDescriptors
 	if len(streamletDescriptors) == 0 {
@@ -575,11 +576,11 @@ func (b Blueprint) verify() Blueprint {
 	}
 
 	if len(imageInStreamletNotInImagesErrors) > 0 {
-		globalProblems = append(globalProblems, imageInStreamletNotInImagesErrors ...)
+		globalProblems = append(globalProblems, imageInStreamletNotInImagesErrors...)
 	}
 
 	if len(streamletNotInImageLabelErrors) > 0 {
-		globalProblems = append(globalProblems, streamletNotInImageLabelErrors ...)
+		globalProblems = append(globalProblems, streamletNotInImageLabelErrors...)
 	}
 
 	var problems = [][]BlueprintProblem{illegalConnectionProblems, unconnectedInletProblems, portNameProblems, configParameterProblems, volumeMountProblems}
@@ -592,12 +593,12 @@ func (b Blueprint) verify() Blueprint {
 	}
 
 	return Blueprint{
-		images: b.images,
-		streamlets: newStreamlets, 
-		connections: newConnections, 
-		streamletDescriptorsPerImage: 
-		b.streamletDescriptorsPerImage, 
-		globalProblems: globalProblems,
+		name:                         b.name,
+		images:                       b.images,
+		streamlets:                   newStreamlets,
+		connections:                  newConnections,
+		streamletDescriptorsPerImage: b.streamletDescriptorsPerImage,
+		globalProblems:               globalProblems,
 	}
 }
 
@@ -622,6 +623,113 @@ func filterUnconnectedInlets(inletProblems []BlueprintProblem, unconnectedInlets
 		}
 	}
 	return res
+}
+
+// GetDockerRegistryURL fetches the docker registry of the image reference.
+// Assuming we have  single registry for all images: Need to change when we
+// start supporting multiple registries
+func (b Blueprint) GetDockerRegistryURL() string {
+	for _, imageRef := range b.images {
+		return imageRef.Registry
+	}
+	return ""
+}
+
+// GetAllStreamletDescriptors gets all streamlet descriptors for all images
+func (b Blueprint) GetAllStreamletDescriptors() []StreamletDescriptor {
+	var streamletDescriptors []StreamletDescriptor
+	for _, desc := range b.streamletDescriptorsPerImage {
+		streamletDescriptors = append(streamletDescriptors, desc...)
+	}
+	return streamletDescriptors
+}
+
+// GetAllImages pulls all images found in the blueprint and returns them
+func (b Blueprint) GetAllImages(client *client.Client) ([]*docker.PulledImage, map[string]string, error) {
+	var pulledImages []*docker.PulledImage
+	var deployImages = make(map[string]string)
+
+	for _, imageRef := range b.images {
+		pulledImage, pullError := docker.PullImage(client, imageRef.FullURI)
+		if pullError != nil {
+			return nil, nil, fmt.Errorf("Failed to pull image %s: %s", imageRef.FullURI, pullError.Error())
+		}
+		pulledImages = append(pulledImages, pulledImage)
+		streamletsDescriptorsDigestPair, _, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
+		if err != nil {
+			return nil, nil, err
+		}
+		// this format has to be used in Deployment: full-uri@sha
+		deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], strings.Split(streamletsDescriptorsDigestPair.ImageDigest, "@")[1])
+		deployImages[imageRef.FullURI] = deployImage
+	}
+	return pulledImages, deployImages, nil
+}
+
+// GetStreamletIDsFromClassName fetches the streamlet refs from blueprint
+// note there can be multiple refs for a single class e.g.
+// streamlets {
+//	cdr-generator1 = ings/carly.aggregator.CallRecordGeneratorIngress
+//	cdr-generator2 = ings/carly.aggregator.CallRecordGeneratorIngress
+//  ...
+// }
+func (b Blueprint) GetStreamletIDsFromClassName(className string) []string {
+	var streamletIDs []string
+	for _, streamletRef := range b.streamlets {
+		if streamletRef.className == className {
+			streamletIDs = append(streamletIDs, streamletRef.name)
+		}
+	}
+	return streamletIDs
+}
+
+// GetName gets the name of the blueprint, which is also the app id
+func (b Blueprint) GetName() string {
+	return b.name
+}
+
+// GetImages gets the images from the blueprint
+func (b Blueprint) GetImages() map[string]cloudflowapplication.ImageReference {
+	return b.images
+}
+
+// GetImageFromStreamletID gets the image id from the streamlet id using the blueprint
+func (b Blueprint) GetImageFromStreamletID(streamletID string) (string, error) {
+	var imageID string
+	for _, streamletRef := range b.streamlets {
+		if streamletRef.name == streamletID {
+			imageID = *streamletRef.imageId
+			break
+		}
+	}
+
+	if imageID == "" {
+		return "", fmt.Errorf("Image not found for streamlet %s", streamletID)
+	}
+
+	for key, imageRef := range b.images {
+		if key == imageID {
+			return imageRef.FullURI, nil
+		}
+	}
+	return "", fmt.Errorf("Image URI not found for image id [%s] streamlet [%s]", imageID, streamletID)
+}
+
+// GetConnections fetches a list of connections from the blueprint
+func (b Blueprint) GetConnections() []cloudflowapplication.Connection {
+	var conns []cloudflowapplication.Connection
+	for _, connection := range b.connections {
+		inStreamletPort := strings.Split(connection.to, ".")
+		outStreamletPort := strings.Split(connection.from, ".")
+
+		conns = append(conns,
+			cloudflowapplication.Connection{
+				InletName:           inStreamletPort[1],
+				InletStreamletName:  inStreamletPort[0],
+				OutletName:          outStreamletPort[1],
+				OutletStreamletName: outStreamletPort[0]})
+	}
+	return conns
 }
 
 type GroupedConnections struct {
@@ -649,7 +757,7 @@ func (b Blueprint) UpdateGlobalProblems() []BlueprintProblem {
 			key := GetSHA256Hash(problem.ToMessage())
 			if _, ok := uniqueProblems[key]; !ok {
 				res = append(res, problem)
-			    uniqueProblems[key] = true
+				uniqueProblems[key] = true
 			}
 		}
 	}
@@ -844,8 +952,8 @@ func (b Blueprint) upsertStreamletRef(streamletRef string, className *string, me
 					name:      streamlRef.name,
 					className: streamlRef.className,
 					verified:  streamlRef.verified,
-					metadata: streamlRef.metadata,
-					imageId: streamlRef.imageId,
+					metadata:  streamlRef.metadata,
+					imageId:   streamlRef.imageId,
 				}
 			} else {
 				streamletRefWithClassNameUpdated = streamlRef
@@ -856,8 +964,8 @@ func (b Blueprint) upsertStreamletRef(streamletRef string, className *string, me
 					name:      streamletRefWithClassNameUpdated.name,
 					className: streamletRefWithClassNameUpdated.className,
 					verified:  streamletRefWithClassNameUpdated.verified,
-					metadata: metadata,
-					imageId: streamletRefWithClassNameUpdated.imageId,
+					metadata:  metadata,
+					imageId:   streamletRefWithClassNameUpdated.imageId,
 				}
 			} else {
 				streamletRefWithMetadataUpdated = streamletRefWithClassNameUpdated
@@ -867,9 +975,9 @@ func (b Blueprint) upsertStreamletRef(streamletRef string, className *string, me
 
 			streamletsToAppend := []StreamletRef{}
 			for _, streamlet := range b.streamlets {
-			 if streamlet.name != streamlRef.name {
-			 	streamletsToAppend = append(streamletsToAppend, streamlet)
-			 }
+				if streamlet.name != streamlRef.name {
+					streamletsToAppend = append(streamletsToAppend, streamlet)
+				}
 			}
 			ret.streamlets = streamletsToAppend
 			ret.streamlets = append(ret.streamlets, streamletRefWithMetadataUpdated)
@@ -879,11 +987,11 @@ func (b Blueprint) upsertStreamletRef(streamletRef string, className *string, me
 
 	if className != nil {
 		return b.use(StreamletRef{
-			name: streamletRef,
+			name:      streamletRef,
 			className: *className,
-			metadata: metadata,
+			metadata:  metadata,
 		})
-	} else{
+	} else {
 		return b
 	}
 }
@@ -989,7 +1097,7 @@ func unconnectedBlueprint(streamletDescriptors []StreamletDescriptor) Blueprint 
 }
 
 func findStreamlet(streamletRefs []StreamletRef, className string) *StreamletRef {
-	for _, ref := range streamletRefs{
+	for _, ref := range streamletRefs {
 		if ref.className == className {
 			return &ref
 		}
@@ -1008,8 +1116,8 @@ func connectedBlueprint(streamletDescriptors []StreamletDescriptor) Blueprint {
 		for _, outlet := range out.Outlets {
 			for _, inlet := range in.Inlets {
 				if reflect.DeepEqual(inlet.Schema, outlet.Schema) {
-					connected = connected.connect(fmt.Sprintf("%s.%s",outRef.name, outlet.Name),
-						fmt.Sprintf("%s.%s",inRef.name, inlet.Name))
+					connected = connected.connect(fmt.Sprintf("%s.%s", outRef.name, outlet.Name),
+						fmt.Sprintf("%s.%s", inRef.name, inlet.Name))
 				}
 			}
 		}

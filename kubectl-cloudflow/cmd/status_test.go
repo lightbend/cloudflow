@@ -206,7 +206,6 @@ func createTestCloudflowApplication(t *testing.T, streamletStatuses []cloudflowa
 
 	status := cloudflowapplication.CloudflowApplicationStatus{
 		AppID:             spec.AppID,
-		AppVersion:        spec.AppVersion,
 		EndpointStatuses:  []cloudflowapplication.EndpointStatus{},
 		StreamletStatuses: streamletStatuses,
 	}

@@ -43,7 +43,7 @@ func (c *verifyBlueprintCMD) verifyImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("Blueprint is empty. Path is: %s", blueprint)
 	}
 
-	err = verify.VerifyBlueprint(contents)
+	_, err = verify.VerifyBlueprint(contents)
 	if err != nil {
 		util.LogAndExit("Blueprint verification failed. Error: %s", err.Error())
 	} else {

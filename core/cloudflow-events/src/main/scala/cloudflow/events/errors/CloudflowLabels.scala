@@ -19,14 +19,13 @@ package cloudflow.events.errors
 import cloudflow.streamlets.StreamletDefinition
 
 // TODO: This was copied from `cloudflow-operator`.  Does it make sense to move this somewhere common?
-case class CloudflowLabels(partOf: String, appVersion: String) {
+case class CloudflowLabels(partOf: String) {
 
   import CloudflowLabels._
 
   val baseLabels: Map[String, String] = Map(
     PartOf    -> partOf,
-    ManagedBy -> CloudflowLabels.ManagedByCloudflow,
-    Version   -> appVersion
+    ManagedBy -> CloudflowLabels.ManagedByCloudflow
   )
 
   def apply(name: String): Map[String, String] = baseLabels + (Name -> name)
@@ -38,7 +37,7 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
 object CloudflowLabels {
 
   def apply(streamletConfig: StreamletDefinition): CloudflowLabels =
-    CloudflowLabels(streamletConfig.appId, streamletConfig.appVersion)
+    CloudflowLabels(streamletConfig.appId)
 
   // The name of the application
   val Name = "app.kubernetes.io/name"

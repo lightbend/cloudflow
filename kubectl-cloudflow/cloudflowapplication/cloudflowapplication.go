@@ -46,7 +46,7 @@ type Endpoint struct {
 // Deployment contains a streamlet deployment
 type Deployment struct {
 	ClassName     string                  `json:"class_name"`
-	Config        json.RawMessage         `json:"config"`
+	Config        json.RawMessage         `json:"config,omitempty"`
 	Image         string                  `json:"image"`
 	Name          string                  `json:"name"`
 	PortMappings  map[string]PortMapping  `json:"port_mappings"`
@@ -55,7 +55,7 @@ type Deployment struct {
 	StreamletName string                  `json:"streamlet_name"`
 	SecretName    string                  `json:"secret_name"`
 	Endpoint      *Endpoint               `json:"endpoint,omitempty"`
-	Replicas      int                     `json:"replicas,omitempty"`
+	Replicas      *int                    `json:"replicas,omitempty"`
 }
 
 // InOutletSchema contains the schema of a in/out-let
@@ -133,7 +133,6 @@ const SupportedApplicationDescriptorVersion = "1"
 // CloudflowApplicationSpec TBD
 type CloudflowApplicationSpec struct {
 	AppID          string            `json:"app_id"`
-	AppVersion     string            `json:"app_version"`
 	Connections    []Connection      `json:"connections"`
 	Deployments    []Deployment      `json:"deployments"`
 	Streamlets     []Streamlet       `json:"streamlets"`
@@ -141,6 +140,12 @@ type CloudflowApplicationSpec struct {
 	Version        string            `json:"version,omitempty"`
 	LibraryVersion string            `json:"library_version,omitempty"`
 }
+
+// Version of the application descriptor format
+const Version = "1"
+
+// LibraryVersion specifies cloudflow release version
+const LibraryVersion = "1.3.1-SNAPSHOT"
 
 // PodStatus contains the status of the pod
 type PodStatus struct {
@@ -165,7 +170,6 @@ type EndpointStatus struct {
 // CloudflowApplicationStatus contains the status of the application
 type CloudflowApplicationStatus struct {
 	AppID             string            `json:"app_id"`
-	AppVersion        string            `json:"app_version"`
 	EndpointStatuses  []EndpointStatus  `json:"endpoint_statuses"`
 	StreamletStatuses []StreamletStatus `json:"streamlet_statuses"`
 }
@@ -275,7 +279,6 @@ func (in *CloudflowApplication) DeepCopyInto(out *CloudflowApplication) {
 	out.Kind = in.Kind
 	out.Spec = CloudflowApplicationSpec{
 		AppID:       in.Spec.AppID,
-		AppVersion:  in.Spec.AppVersion,
 		Connections: in.Spec.Connections,
 		Deployments: in.Spec.Deployments,
 		Streamlets:  in.Spec.Streamlets,

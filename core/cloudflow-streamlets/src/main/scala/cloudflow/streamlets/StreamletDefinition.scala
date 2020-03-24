@@ -27,7 +27,6 @@ import net.ceedubs.ficus.readers._
 import spray.json._
 
 case class StreamletDefinition(appId: String,
-                               appVersion: String,
                                streamletRef: String,
                                streamletClass: String,
                                portMapping: List[ConnectedPort],
@@ -80,7 +79,6 @@ object StreamletDefinition {
     val streamletContextData = config.as[StreamletContextData]("context")
     StreamletDefinition(
       appId = streamletContextData.appId,
-      appVersion = streamletContextData.appVersion,
       streamletRef = streamletRef,
       streamletClass = config.as[String]("class_name"),
       streamletContextData.connectedPorts,
@@ -105,7 +103,6 @@ object StreamletDefinition {
 
 case class StreamletContextData(
     appId: String,
-    appVersion: String,
     connectedPorts: List[ConnectedPort],
     volumeMounts: Option[List[VolumeMount]] = None,
     config: Config
@@ -138,7 +135,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
   protected implicit val volumeMountFormat    = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
   protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "savepoint_path")
   protected implicit val contextDataFormat =
-    jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
+    jsonFormat(StreamletContextData, "app_id", "connected_ports", "volume_mounts", "config")
 
   /**
    * Converts a json String, that is expected to contain one streamlet

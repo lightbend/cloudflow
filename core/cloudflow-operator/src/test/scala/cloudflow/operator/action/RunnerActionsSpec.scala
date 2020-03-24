@@ -53,12 +53,11 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .right
         .value
 
-      val appId      = "def-jux-12345"
-      val appVersion = "42-abcdef0"
-      val image      = "image-1"
+      val appId = "def-jux-12345"
+      val image = "image-1"
 
       val currentApp = None
-      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
       When("runner actions are created from a new app")
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
@@ -78,7 +77,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       configMaps.size mustBe streamletDeployments.size
       akkaDeployments.size mustBe streamletDeployments.size
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
@@ -102,11 +101,10 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .right
         .value
 
-      val appId      = "def-jux-12345"
-      val appVersion = "42-abcdef0"
-      val image      = "image-1"
+      val appId = "def-jux-12345"
+      val image = "image-1"
 
-      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -132,17 +130,15 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId         = "thundercat-12345"
-      val appVersion    = "42-abcdef0"
-      val image         = "image-1"
-      val newAppVersion = appVersion // to compare configmap contents easier.
-      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val appId      = "thundercat-12345"
+      val image      = "image-1"
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp =
-        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, newBp.verified.right.value, agentPaths))
       val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
@@ -157,7 +153,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       configMaps.size mustBe 1
       akkaDeployments.size mustBe 1
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, currentApp.spec, appId, appVersion, ctx)
+        assertConfigMap(configMap, currentApp.spec, appId, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
         assertAkkaDeployment(deployment, configMaps, currentApp.spec, appId, ctx)
@@ -177,18 +173,16 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val verifiedBlueprint = bp.verified.right.value
 
       val appId      = "lord-quas-12345"
-      val appVersion = "42-abcdef0"
       val image      = "image-1"
-      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
       When("the new app adds a runner, ingress -> egress")
       val egressRef = egress.ref("egress")
       val newBp = bp
         .use(egressRef)
         .connect(ingressRef.out, egressRef.in)
-      val newAppVersion = appVersion // to compare configmap contents easier.
       val newApp =
-        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for runner resources should be created for the new endpoint")
       val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
@@ -204,7 +198,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       akkaDeployments.size mustBe 1
 
       configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
+        assertConfigMap(configMap, newApp.spec, appId, ctx)
       }
       akkaDeployments.foreach { deployment ⇒
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
@@ -212,13 +206,13 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     }
   }
 
-  def assertConfigMap(configMap: ConfigMap, app: CloudflowApplication.Spec, appId: String, appVersion: String, ctx: DeploymentContext) = {
+  def assertConfigMap(configMap: ConfigMap, app: CloudflowApplication.Spec, appId: String, ctx: DeploymentContext) = {
     val deployment = app.deployments.find(deployment ⇒ Name.ofConfigMap(deployment.name) == configMap.name).value
     configMap.metadata.namespace mustEqual namespace
     (configMap.data must contain).key(RunnerConfig.AppConfigFilename)
     val mountedAppConfiguration = ConfigFactory.parseString(configMap.data(RunnerConfig.AppConfigFilename))
     val expectedAppConfiguration =
-      ConfigFactory.parseString(RunnerConfig(appId, appVersion, deployment, ctx.kafkaContext.bootstrapServers).data)
+      ConfigFactory.parseString(RunnerConfig(appId, deployment, ctx.kafkaContext.bootstrapServers).data)
     mountedAppConfiguration mustEqual expectedAppConfiguration
     (configMap.data must contain).key(PrometheusConfig.PrometheusConfigFilename)
     val mountedPromConfiguration  = configMap.data(PrometheusConfig.PrometheusConfigFilename)

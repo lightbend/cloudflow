@@ -100,7 +100,6 @@ object LocalRunner extends StreamletLoader {
     setupKafka(kafkaPort, topics)
 
     val appId      = appDescriptor.appId
-    val appVersion = appDescriptor.appVersion
     val baseConfig = ConfigFactory.load()
 
     val streamletParameterConfig = resolveLocalStreamletConf(appDescriptor.streamlets).recoverWith {
@@ -127,7 +126,7 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, "localhost:" + kafkaPort)
+      val runnerConfigObj      = RunnerConfig(appId, deployment, "localhost:" + kafkaPort)
       val runnerConfig         = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
       val streamletParamConfig = streamletParameterConfig.atPath("cloudflow.streamlets")
 

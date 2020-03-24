@@ -3,18 +3,105 @@ package deploy
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(m *testing.M) {
-	code := m.Run()
-	os.Exit(code)
+
+func unique(stringSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range stringSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
+
+var _ = Describe("Deploy", func() {
+
+	Context("With configuration parameters", func() {
+		It("should split configuration parameters", func() {
+			result := SplitConfigurationParameters([]string{
+				`a="b"`,
+				"key=ddd",
+				`some.key="some, value"`,
+				`some.key2=c29tZSBzdHJpbmc9PQ==`,
+				`some.key3="some text passed to a streamlet"`,
+				`some.key4=post Cobra processed, unquoted string`})
+
+			Expect(result).To(HaveLen(6))
+			Expect(result["a"]).To(Equal("b"))
+			Expect(result["key"]).To(Equal("ddd"))
+			Expect(result["some.key"]).To(Equal("some, value"))
+			Expect(result["some.key2"]).To(Equal("c29tZSBzdHJpbmc9PQ=="))
+			Expect(result["some.key3"]).To(Equal("some text passed to a streamlet"))
+			Expect(result["some.key4"]).To(Equal("post Cobra processed, unquoted string"))
+
+			empty := SplitConfigurationParameters([]string{})
+			Expect(len(empty)).To(Equal(0))
+		})
+
+		It("should validate configuration against descriptor", func() {
+			applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
+
+			var spec cloudflowapplication.CloudflowApplicationSpec
+			json.Unmarshal([]byte(applicationConfiguration), &spec)
+
+			var config []string
+			_, err := ValidateConfigurationAgainstDescriptor(spec, SplitConfigurationParameters(config))
+			Expect(err).To(HaveOccurred())
+
+			properConfig := SplitConfigurationParameters(commandLineForConfiguration())
+
+			_, err = ValidateConfigurationAgainstDescriptor(spec, properConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			half := SplitConfigurationParameters([]string{`valid-logger.log-level="warning"`})
+			_, err = ValidateConfigurationAgainstDescriptor(spec, half)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Context("With secrets data", func() {
+		It("should create secrets data", func() {
+			applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
+
+			var spec cloudflowapplication.CloudflowApplicationSpec
+			json.Unmarshal([]byte(applicationConfiguration), &spec)
+
+			properConfig := SplitConfigurationParameters(commandLineForConfiguration())
+
+			secrets := CreateSecretsData(&spec, properConfig)
+
+			Expect(len(secrets)).To(BeNumerically(">=", 0))
+			Expect(len(secrets["valid-logger"].Name)).To(BeNumerically("<=", 63))
+			Expect(len(secrets["valid-logger"].StringData["secret-conf"])).To(BeNumerically(">=", 0))
+
+			configValues, _ := parseCommandLine(secrets["valid-logger"].StringData["secret.conf"])
+			var values []string
+			var keys []string
+			for i := range configValues {
+				configValue := strings.Trim(configValues[i], " \n\r\t")
+				splitValues := strings.Split(configValue, "=")
+				Expect(splitValues).To(HaveLen(2))
+				keys = append(keys, strings.Trim(splitValues[0], " \t\n\r"))
+				values = append(values, strings.Trim(splitValues[1], " \t\n\r"))
+			}
+			Expect(keys[0]).To(Equal("cloudflow.streamlets.valid-logger.log-level"))
+			Expect(values[0]).To(Equal("warning"))
+
+			Expect(keys[1]).To(Equal("cloudflow.streamlets.valid-logger.msg-prefix"))
+			Expect(values[1]).To(Equal("test"))
+		})
+	})
+})
 
 func commandLineForConfiguration() []string {
 	return []string{
@@ -26,78 +113,6 @@ func commandLineForConfiguration() []string {
 		`valid-logger.msg-prefix-5=true`,
 		`valid-logger.msg-prefix-6="20 minutes"`,
 		`valid-logger.msg-prefix-7="20M"`}
-}
-
-func Test_SplitConfigurationParameters(t *testing.T) {
-	result := SplitConfigurationParameters([]string{
-		`a="b"`,
-		"key=ddd",
-		`some.key="some, value"`,
-		`some.key2=c29tZSBzdHJpbmc9PQ==`,
-		`some.key3="some text passed to a streamlet"`,
-		`some.key4=post Cobra processed, unquoted string`})
-
-	assert.NotEmpty(t, result)
-	assert.Equal(t, result["a"], "b")
-	assert.Equal(t, result["key"], "ddd")
-	assert.Equal(t, result["some.key"], "some, value")
-	assert.Equal(t, result["some.key2"], "c29tZSBzdHJpbmc9PQ==")
-	assert.Equal(t, result["some.key3"], "some text passed to a streamlet")
-	assert.Equal(t, result["some.key4"], "post Cobra processed, unquoted string")
-
-	empty := SplitConfigurationParameters([]string{})
-	assert.Empty(t, empty)
-}
-
-func Test_ValidateConfigurationAgainstDescriptor(t *testing.T) {
-
-	applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
-
-	var spec cloudflowapplication.CloudflowApplicationSpec
-	json.Unmarshal([]byte(applicationConfiguration), &spec)
-
-	var config []string
-	_, err := ValidateConfigurationAgainstDescriptor(spec, SplitConfigurationParameters(config))
-	assert.NotEmpty(t, err)
-
-	properConfig := SplitConfigurationParameters(commandLineForConfiguration())
-
-	_, err = ValidateConfigurationAgainstDescriptor(spec, properConfig)
-	assert.Empty(t, err)
-
-	half := SplitConfigurationParameters([]string{`valid-logger.log-level="warning"`})
-	_, err = ValidateConfigurationAgainstDescriptor(spec, half)
-	assert.NotEmpty(t, err)
-}
-
-func Test_CreateSecretsData(t *testing.T) {
-	applicationConfiguration := cloudflowapplication.TestApplicationDescriptor()
-
-	var spec cloudflowapplication.CloudflowApplicationSpec
-	json.Unmarshal([]byte(applicationConfiguration), &spec)
-
-	properConfig := SplitConfigurationParameters(commandLineForConfiguration())
-
-	secrets := CreateSecretsData(&spec, properConfig)
-
-	assert.NotEmpty(t, secrets)
-	assert.True(t, len(secrets["valid-logger"].Name) <= 63)
-	assert.NotEmpty(t, secrets["valid-logger"].StringData["secret.conf"])
-	configValues, _ := parseCommandLine(secrets["valid-logger"].StringData["secret.conf"])
-	var values []string
-	var keys []string
-	for i := range configValues {
-		configValue := strings.Trim(configValues[i], " \n\r\t")
-		splitValues := strings.Split(configValue, "=")
-		assert.True(t, len(splitValues) == 2)
-		keys = append(keys, strings.Trim(splitValues[0], " \t\n\r"))
-		values = append(values, strings.Trim(splitValues[1], " \t\n\r"))
-	}
-	assert.True(t, keys[0] == "cloudflow.streamlets.valid-logger.log-level")
-	assert.True(t, values[0] == "warning")
-
-	assert.True(t, keys[1] == "cloudflow.streamlets.valid-logger.msg-prefix")
-	assert.True(t, values[1] == "test")
 }
 
 func parseCommandLine(commandLine string) ([]string, error) {

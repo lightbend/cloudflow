@@ -33,6 +33,7 @@ import spray.json._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.blueprint.StreamletDescriptor
+import cloudflow.blueprint.deployment.ApplicationDescriptor
 
 /**
  * Base class for all Cloudflow runtime plugins for multi-image use case. Contains some
@@ -126,7 +127,10 @@ object CloudflowBasePlugin extends AutoPlugin {
   private[sbt] def makeStreamletDescriptorsLabelValue(streamletDescriptorsJson: JsValue) = {
     // create a root object with the array
     val streamletDescriptorsJsonStr =
-      JsObject("streamlet-descriptors" -> streamletDescriptorsJson).compactPrint
+      JsObject(
+        "streamlet-descriptors" -> streamletDescriptorsJson,
+        "api-version"           -> JsString(ApplicationDescriptor.APIVersion)
+      ).compactPrint
 
     val compressed = zlibCompression(streamletDescriptorsJsonStr.getBytes(UTF_8))
     Base64.getEncoder.encodeToString(compressed)

@@ -43,7 +43,6 @@ object CloudflowApplication {
 
   final case class Spec(
       appId: String,
-      appVersion: String,
       streamlets: Vector[StreamletInstance],
       connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
@@ -128,14 +127,12 @@ object CloudflowApplication {
     ): Status =
       Status(
         app.spec.appId,
-        app.spec.appVersion,
         streamletStatuses
       )
   }
 
   case class Status(
       appId: String,
-      appVersion: String,
       streamletStatuses: Vector[StreamletStatus]
   ) {
 
@@ -144,7 +141,6 @@ object CloudflowApplication {
         streamletStatuses.filter(streamletStatus ⇒ spec.deployments.map(_.streamletName).contains(streamletStatus.streamletName))
       copy(
         appId = spec.appId,
-        appVersion = spec.appVersion,
         streamletStatuses = newStreamletStatuses
       )
     }

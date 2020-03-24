@@ -66,14 +66,13 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     },
     applicationDescriptor := {
       val appId           = (ThisProject / name).value
-      val appVersion      = cloudflowBuildNumber.value.buildNumber
       val agentPathsMap   = agentPaths.value
       val dockerImageName = cloudflowDockerImageName.value
 
       for {
         BlueprintVerified(bp, _) ← verificationResult.value.toOption
         verifiedBlueprint        ← bp.verified.toOption
-      } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap)
+      } yield ApplicationDescriptor(appId, dockerImageName.get.name, verifiedBlueprint, agentPathsMap)
     },
     fork in Compile := true
   )

@@ -42,7 +42,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
   "SparkRunner" should {
 
     val appId      = "some-app-id"
-    val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
     val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
     val namespace  = "test-ns"
@@ -62,7 +61,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       .right
       .value
 
-    val app = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+    val app = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
     val deployment = StreamletDeployment(
       name = appId,

@@ -161,7 +161,6 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
     def definition(streamletRef: String, outlet: String) = StreamletDefinition(
       appId = appId,
-      appVersion = appVersion,
       streamletRef = StreamletRef,
       streamletClass = StreamletClass,
       portMapping = List(
@@ -193,7 +192,6 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
     def definition(streamletRef: String, genOutlet: String) = StreamletDefinition(
       appId = appId,
-      appVersion = appVersion,
       streamletRef = streamletRef,
       streamletClass = "TestReceiver",
       portMapping = List(

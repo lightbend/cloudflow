@@ -37,9 +37,8 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   // appId + ingress name more than 63 characters. Each 40 characters.
   val testApp01 = {
-    val appVersion = "001"
-    val appId      = "longappid9012345678900123456789001234567890"
-    val image      = "image-1"
+    val appId = "longappid9012345678900123456789001234567890"
+    val image = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -56,14 +55,13 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .right
       .value
 
-    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
   }
 
   // appId 80 characters.
   val testApp02 = {
-    val appVersion = "001"
-    val appId      = "longappid9012345678900123456789001234567890012345678900123456789012345678901234567890"
-    val image      = "image-1"
+    val appId = "longappid9012345678900123456789001234567890012345678900123456789012345678901234567890"
+    val image = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -80,7 +78,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .right
       .value
 
-    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
   }
 
   "Deployments" should {

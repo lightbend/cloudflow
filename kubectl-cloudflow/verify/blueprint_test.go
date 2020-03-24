@@ -224,41 +224,41 @@ func Test_VerifyConnectionHash(t *testing.T) {
 }
 
 func Test_VerifyEmptyBlueprint(t *testing.T) {
-	errors := VerifyBlueprint("")
+	_, errors := VerifyBlueprint("")
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyValidBlueprint(t *testing.T) {
-	errors := VerifyBlueprint(createValidBlueprintSample())
+	_, errors := VerifyBlueprint(createValidBlueprintSample())
 	assert.Empty(t, errors)
 }
 
 func Test_VerifyBlueprintWithoutImages(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintWithoutImagesSample())
+	_, errors := VerifyBlueprint(createBlueprintWithoutImagesSample())
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyBlueprintWithoutStreamlets(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintWithoutStreamletsSample())
+	_, errors := VerifyBlueprint(createBlueprintWithoutStreamletsSample())
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyBlueprintWithoutConnections(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintWithoutConnectionsSample())
+	_, errors := VerifyBlueprint(createBlueprintWithoutConnectionsSample())
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyBlueprintWithMissingImage(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintSampleWithMissingImage())
+	_, errors := VerifyBlueprint(createBlueprintSampleWithMissingImage())
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyBlueprintWithImageInStreamletNotPresentInImages(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintSampleWithImageInStreamletNotPresentInImages())
+	_, errors := VerifyBlueprint(createBlueprintSampleWithImageInStreamletNotPresentInImages())
 	assert.NotEmpty(t, errors)
 }
 
 func Test_VerifyBlueprintWithConnectionsHavingInvalidStreamlets(t *testing.T) {
-	errors := VerifyBlueprint(createBlueprintSampleWithConnectionsHavingInvalidStreamlets())
+	_, errors := VerifyBlueprint(createBlueprintSampleWithConnectionsHavingInvalidStreamlets())
 	assert.NotEmpty(t, errors)
 }

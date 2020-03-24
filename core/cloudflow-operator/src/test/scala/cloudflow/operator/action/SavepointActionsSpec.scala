@@ -27,7 +27,6 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
   case class Foo(name: String)
   case class Bar(name: String)
   val namespace  = "ns"
-  val appVersion = "0.0.1"
   val image      = "image-1"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
@@ -90,11 +89,9 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
 
       val verifiedBlueprint = bp.verified.right.value
 
-      val appId         = "monstrous-mite-12345"
-      val appVersion    = "42-abcdef0"
-      val newAppVersion = "43-abcdef0"
-      val image         = "image-1"
-      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val appId      = "monstrous-mite-12345"
+      val image      = "image-1"
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
       val savepoint = currentApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
@@ -105,7 +102,7 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
           .disconnect(processorRef.in)
           .remove(processorRef.name)
       val newApp =
-        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, newBp.verified.right.value, agentPaths))
       val actions = SavepointActions(newApp, Some(currentApp), true)
 
       Then("one delete action should be created for the processor outlet savepoint")
@@ -136,9 +133,8 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val verifiedBlueprint = bp.verified.right.value
 
       val appId      = "monstrous-mite-12345"
-      val appVersion = "42-abcdef0"
       val image      = "image-1"
-      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
 
       When("the new app adds a savepoint, ingress -> processor -> egress")
       val processorRef = processor.ref("processor")
@@ -148,9 +144,8 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
         .use(egressRef)
         .connect(ingressRef.out, processorRef.in)
         .connect(processorRef.out, egressRef.in)
-      val newAppVersion = "43-abcdef0"
       val newApp =
-        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
+        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, newBp.verified.right.value, agentPaths))
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("one create action should be created for the new savepoint between processor and egress")
@@ -196,10 +191,9 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       .right
       .value
 
-    val appId      = "monstrous-mite-12345"
-    val appVersion = "42-abcdef0"
-    val image      = "image-1"
+    val appId = "monstrous-mite-12345"
+    val image = "image-1"
 
-    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+    CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, image, verifiedBlueprint, agentPaths))
   }
 }

@@ -12,7 +12,7 @@ import (
 func UpdateDeploymentWithReplicas(spec cloudflowapplication.CloudflowApplicationSpec, streamletName string, replicas int) (cloudflowapplication.CloudflowApplicationSpec, error) {
 	for i := range spec.Deployments {
 		if spec.Deployments[i].StreamletName == streamletName {
-			spec.Deployments[i].Replicas = replicas
+			spec.Deployments[i].Replicas = &replicas
 			return spec, nil
 		}
 	}

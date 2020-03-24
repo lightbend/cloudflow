@@ -33,7 +33,7 @@ class TestFlinkStreamletContext(override val streamletRef: String,
                                 inletTaps: Seq[FlinkInletTap[_]],
                                 outletTaps: Seq[FlinkOutletTap[_]],
                                 override val config: Config = ConfigFactory.empty)
-    extends FlinkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config), env) {
+    extends FlinkStreamletContext(StreamletDefinition("appId", streamletRef, "streamletClass", List(), List(), config), env) {
 
   TestFlinkStreamletContext.result.clear()
 

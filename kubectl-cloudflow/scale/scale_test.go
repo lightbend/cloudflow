@@ -22,6 +22,6 @@ func Test_updateDeploymentWithReplicas(t *testing.T) {
 
 	spec, err := UpdateDeploymentWithReplicas(spec, "invalid-logger", 2)
 	assert.Empty(t, err)
-	assert.Equal(t, spec.Deployments[0].Replicas, 2)
-	assert.Empty(t, spec.Deployments[1].Replicas)
+	assert.Equal(t, *spec.Deployments[0].Replicas, 2)
+	assert.Nil(t, spec.Deployments[1].Replicas)
 }
