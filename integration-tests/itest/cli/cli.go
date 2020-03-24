@@ -89,8 +89,10 @@ func ListApps() (entries []AppEntry, err error) {
 func Status(app App) (status AppStatus, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "status", app.Name)
 	out, err := cmd.CombinedOutput()
+	mkErr := func(err error) (AppStatus, error) {
+		return AppStatus{}, err
+	}
 	if err != nil {
-		//err = er
 		return
 	}
 	str := string(out)
@@ -104,14 +106,13 @@ func Status(app App) (status AppStatus, err error) {
 
 		switch i {
 		case 0, 1, 2, 3, 4:
-			value, er := parseLineInN(line, 2)
-			if er != nil {
-				err = er
-				return
+			value, err := parseLineInN(line, 2)
+			if err != nil {
+				return mkErr(err)
 			}
 			if value[0] != names[i] {
 				err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
-				return
+				return mkErr(err)
 			}
 			*fields[i] = value[1]
 		case 5:
@@ -122,18 +123,17 @@ func Status(app App) (status AppStatus, err error) {
 			if len(strings.TrimSpace(line)) == 0 {
 				continue
 			}
-			parts, er := parseLineInN(line, 5)
-			if er != nil {
-				err = er
-				return
+			parts, err := parseLineInN(line, 5)
+			if err != nil {
+				return mkErr(err)
 			}
 			var streamletPod StreamletPod
 			streamletPod.Streamlet = parts[0]
 			streamletPod.Pod = parts[1]
 			streamletPod.Status = parts[2]
-			restarts, er := strconv.Atoi(parts[3])
-			if er != nil {
-				return AppStatus{}, err
+			restarts, err := strconv.Atoi(parts[3])
+			if err != nil {
+				return mkErr(err)
 			}
 			streamletPod.Restarts = restarts
 			streamletPod.Ready = strings.TrimSpace(parts[4]) == "True"
