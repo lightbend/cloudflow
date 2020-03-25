@@ -190,7 +190,7 @@ func GetFirstStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
 	return nil
 }
 
-// GetPods retrieves the streamletPods from an AppStatus instance
+// GetPods retrieves the pods corresponding to the given streamlet from an AppStatus instance
 func GetPods(status *AppStatus, streamlet string) []string {
 	var res []string
 	for _, entry := range status.StreamletPods {
@@ -215,7 +215,7 @@ func GetOneOfThePodsForStreamlet(app App, streamlet string) (pod string, err err
 	return pods[0], nil
 }
 
-//GetPodsForStreamlet retrieves the pods that correspond to the given streamlet.
+// GetPodsForStreamlet retrieves the pods that correspond to the given streamlet.
 func GetPodsForStreamlet(app App, streamlet string) (pods []string, err error) {
 	status, err := Status(app)
 	if err != nil {
@@ -224,7 +224,7 @@ func GetPodsForStreamlet(app App, streamlet string) (pods []string, err error) {
 	return GetPods(&status, streamlet), nil
 }
 
-//PollUntilExpectedPodsForStreamlet retrieves the pods that correspond to the given streamlet when
+// PollUntilExpectedPodsForStreamlet retrieves the pods that correspond to the given streamlet when
 // the pod count is or becomes equal to the expected count.
 func PollUntilExpectedPodsForStreamlet(app App, streamlet string, expected int) (pods []string, err error) {
 	for {
