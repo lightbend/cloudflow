@@ -16,20 +16,20 @@
 
 package cloudflow.akkastream.testkit.javadsl
 
-import java.util.{ List ⇒ JList }
-import collection.JavaConverters._
+import java.util.{ List => JList }
 
+import collection.JavaConverters._
 import akka.NotUsed
 import akka.actor._
 import akka.japi.Pair
 import akka.stream._
 import akka.stream.javadsl._
 import com.typesafe.config._
-
 import cloudflow.akkastream._
 import cloudflow.streamlets._
-
 import cloudflow.akkastream.testkit._
+
+import scala.annotation.varargs
 
 object AkkaStreamletTestKit {
   def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
@@ -86,12 +86,9 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 
-  def withVolumeMounts(volumeMounts: VolumeMount*): AkkaStreamletTestKit = this.copy(volumeMounts = volumeMounts.toList)
-
-  /**
-   * Java API
-   */
-  def withVolumeMounts(volumeMounts: Array[VolumeMount]): AkkaStreamletTestKit = withVolumeMounts(volumeMounts: _*)
+  @varargs
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): AkkaStreamletTestKit =
+    copy(volumeMounts = volumeMount +: volumeMounts.toList)
 
   /**
    *

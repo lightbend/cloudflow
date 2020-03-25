@@ -79,7 +79,8 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 
-  def withVolumeMounts(volumeMounts: VolumeMount*): AkkaStreamletTestKit = this.copy(volumeMounts = volumeMounts.toList)
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): AkkaStreamletTestKit =
+    copy(volumeMounts = volumeMount +: volumeMounts.toList)
 
   /**
    *

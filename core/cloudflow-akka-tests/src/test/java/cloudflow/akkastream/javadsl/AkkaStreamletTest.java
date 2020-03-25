@@ -110,10 +110,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     FileWritingProcessor streamlet = new FileWritingProcessor(volumeMountName);
     AkkaStreamletTestKit testkit =
         AkkaStreamletTestKit.create(system, mat)
-            .withVolumeMounts(
-                new VolumeMount[] {
-                  VolumeMount.createReadWriteMany(volumeMountName, mountPath.toString())
-                });
+            .withVolumeMounts(VolumeMount.createReadWriteMany(volumeMountName, mountPath.toString()));
 
     QueueInletTap<Data> in = testkit.makeInletAsTap(streamlet.inlet);
     ProbeOutletTap<Data> out = testkit.makeOutletAsTap(streamlet.outlet);

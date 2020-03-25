@@ -49,7 +49,8 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
   /**
    * Returns an instance of this TestKit with the specified VolumeMount available to the streamlets
    */
-  def withVolumeMounts(volumeMount: VolumeMount*): Repr
+  @varargs
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): Repr
 
   /**
    * Adds configuration parameters and their values to the configuration used in the test.
