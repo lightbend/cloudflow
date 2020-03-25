@@ -46,8 +46,6 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
-			waitTime, _ := time.ParseDuration(InitialWaitTime)
-			time.Sleep(waitTime) // this wait is needed to let the application deploy
 		})
 
 		It("should be in the list of applications in the cluster", func() {
@@ -58,8 +56,15 @@ var _ = Describe("Application deployment", func() {
 		})
 
 		It("should get to a 'running' status, eventually", func(done Done) {
-			// TODO: check status flag once it's fixed
+
+			// this wait is needed to let the application deploy and get to a stable state
+			// a bug in the `cloudflow status` call.
+			// see also: https://github.com/lightbend/cloudflow/issues/201
+			waitTime, _ := time.ParseDuration(InitialWaitTime)
+			time.Sleep(waitTime)
+
 			status, err := checkStatusIs(swissKnifeApp, "Running")
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
 			close(done)
