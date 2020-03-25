@@ -156,21 +156,20 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		}
 
-		FIt("should scale an akka streamlet up and down", func(done Done) {
+		It("should scale an akka streamlet up and down", func(done Done) {
 			scaleCheck("akka-process", noCorrection)
 			close(done)
 		}, LongTimeout)
 
-		FIt("should scale a spark streamlet up and down", func(done Done) {
+		It("should scale a spark streamlet up and down", func(done Done) {
 			scaleCheck("spark-process", coordinatorCorrection)
 			close(done)
 		}, LongTimeout)
 
-		FIt("should scale a flink streamlet up and down", func(done Done) {
+		It("should scale a flink streamlet up and down", func(done Done) {
 			scaleCheck("flink-process", coordinatorCorrection)
 			close(done)
 		}, XLongTimeout)
-
 	})
 
 	Context("A deployed application can be undeployed", func() {
