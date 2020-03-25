@@ -146,21 +146,20 @@ func deployBlueprint(cmd *cobra.Command, opts *deployOptions, args []string) {
 	// read blueprint file and load its content
 	blueprintFile := cmd.Flag("blueprint").Value.String()
 	contents, err := fileutils.GetFileContents(blueprintFile)
-	contents = strings.TrimSpace(contents)
 	if err != nil {
-		util.LogAndExit("Failed to fetch blueprint contents from %s", blueprintFile)
+		util.LogAndExit("Failed to read blueprint from %s", blueprintFile)
 	}
 
-	blueprint, err := verify.VerifyBlueprint(contents)
+	blueprint, pulledImages, imageDigests, err := verify.VerifyBlueprint(contents)
 	if err != nil {
 		util.LogAndExit("Blueprint verification failed. Error: %s", err.Error())
 	}
 
 	util.PrintSuccess("Blueprint verified for application %s .. Proceeding with deployment\n", blueprint.GetName())
 
-	applicationSpec, pulledImages, err := deploy.CreateApplicationSpecFromBlueprintAndImages(blueprint, opts.replicasByStreamletName)
+	applicationSpec, err := deploy.CreateApplicationSpecFromBlueprintAndImages(blueprint, pulledImages, imageDigests, opts.replicasByStreamletName)
 	if err != nil {
-		util.LogAndExit("Failed to create cloudflow application spec from blueprint and images: %s", err.Error())
+		util.LogAndExit("Failed to create application deployment information from blueprint and images: %s", err.Error())
 	}
 
 	namespace := applicationSpec.AppID
@@ -171,7 +170,7 @@ func deployBlueprint(cmd *cobra.Command, opts *deployOptions, args []string) {
 
 	cloudflowApplicationClient, err := k8s.GetCloudflowApplicationClient(namespace)
 	if err != nil {
-		util.LogAndExit("Failed to create new kubernetes client with cloudflow config `%s`, %s", namespace, err.Error())
+		util.LogAndExit("Failed to connect to kubernetes cluster `%s`, %s", namespace, err.Error())
 	}
 
 	// Extract volume mounts and update the application spec with the name of the PVC's

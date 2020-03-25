@@ -11,7 +11,6 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/docker/docker/client"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
@@ -90,33 +89,28 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 
 // CreateApplicationSpecFromBlueprintAndImages pulls all images necessary to create a Cloudflow Application descriptor
 // from a docker label. The function returns the created application spec and the pulled in images
-func CreateApplicationSpecFromBlueprintAndImages(blueprint verify.Blueprint,
-	replicas map[string]int) (cloudflowapplication.CloudflowApplicationSpec, []*docker.PulledImage, error) {
-
-	client, err := docker.GetVersionedClient()
-	if err != nil {
-		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
-	}
+func CreateApplicationSpecFromBlueprintAndImages(blueprint verify.Blueprint, pulledImages []*docker.PulledImage,
+	imageDigests []string, replicas map[string]int) (cloudflowapplication.CloudflowApplicationSpec, error) {
 
 	// get all streamlet descriptors, image digests and pulled images in arrays
-	streamletDescriptors, apiVersion, pulledImages, deployImages, err := getStreamletDescriptorsAndImageInformation(blueprint, client)
+	streamletDescriptors, deployImages, err := getStreamletDescriptorsAndImageInformation(blueprint, pulledImages, imageDigests)
 	if err != nil {
-		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
+		return cloudflowapplication.CloudflowApplicationSpec{}, err
 	}
 
 	// Spec.Streamlets & Spec.Deployments
 	streamlets, deployments, err := getStreamletsAndDeployments(streamletDescriptors, deployImages, replicas, blueprint)
 	if err != nil {
-		return cloudflowapplication.CloudflowApplicationSpec{}, nil, err
+		return cloudflowapplication.CloudflowApplicationSpec{}, err
 	}
 
 	// Spec.Connections
 	conns := blueprint.GetConnections()
 
 	// create the application spec
-	spec := makeApplicationSpec(blueprint, apiVersion, conns, streamlets, deployments)
+	spec := makeApplicationSpec(blueprint, cloudflowapplication.SupportedApplicationDescriptorVersion, conns, streamlets, deployments)
 
-	return spec, pulledImages, nil
+	return spec, nil
 }
 
 // makeApplicationSpec creates a CloudflowApplicationSpec out of all components
@@ -162,18 +156,27 @@ func getStreamletsAndDeployments(streamletDescriptors []verify.StreamletDescript
 	return streamlets, deployments, nil
 }
 
-// getStreamletDescriptorsAndImageInformation fetches a bunch ofinformation needed to create an
-// application spec
-func getStreamletDescriptorsAndImageInformation(blueprint verify.Blueprint, client *client.Client) ([]verify.StreamletDescriptor,
-	string, []*docker.PulledImage, map[string]string, error) {
+// getStreamletDescriptorsAndImageInformation fetches a bunch ofinformation needed to create an application spec
+func getStreamletDescriptorsAndImageInformation(blueprint verify.Blueprint, pulledImages []*docker.PulledImage, imageDigests []string) ([]verify.StreamletDescriptor, map[string]string, error) {
 
 	streamletDescriptors := blueprint.GetAllStreamletDescriptors()
-	pulledImages, deployImages, err := blueprint.GetAllImages(client)
+	deployImages, err := getImageInfoNeededForDeployment(pulledImages, imageDigests)
 	if err != nil {
-		return nil, "", nil, nil, err
+		return nil, nil, err
 	}
 
-	return streamletDescriptors, cloudflowapplication.SupportedApplicationDescriptorVersion, pulledImages, deployImages, nil
+	return streamletDescriptors, deployImages, nil
+}
+
+func getImageInfoNeededForDeployment(pulledImages []*docker.PulledImage, imageDigests []string) (map[string]string, error) {
+	var deployImages = make(map[string]string)
+
+	for i, pulledImage := range pulledImages {
+		// this format has to be used in Deployment: full-uri@sha
+		deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], strings.Split(imageDigests[i], "@")[1])
+		deployImages[pulledImage.ImageName] = deployImage
+	}
+	return deployImages, nil
 }
 
 // makeDeployment is a smart constructor for creating a Deployment
@@ -304,8 +307,8 @@ func getOutletPortMappings(appID string, streamletName string, descriptor cloudf
 func getInletPortMappings(appID string, streamletName string, blueprint verify.Blueprint) map[string]cloudflowapplication.PortMapping {
 	portMappings := make(map[string]cloudflowapplication.PortMapping)
 	for _, conn := range blueprint.GetConnections() {
-		portMappings[conn.InletName] = 
-		  cloudflowapplication.PortMapping{AppID: appID, Outlet: conn.OutletName, Streamlet: conn.OutletStreamletName}
+		portMappings[conn.InletName] =
+			cloudflowapplication.PortMapping{AppID: appID, Outlet: conn.OutletName, Streamlet: conn.OutletStreamletName}
 	}
 	return portMappings
 }
