@@ -61,7 +61,7 @@ var _ = Describe("Application deployment", func() {
 			waitTime, _ := time.ParseDuration(InitialWaitTime)
 			time.Sleep(waitTime)
 
-			status, err := checkStatusIs(swissKnifeApp, "Running")
+			status, err := pollUntilPodsStatusIs(swissKnifeApp, "Running")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
@@ -154,12 +154,22 @@ func PollUntilAppPresenceIs(app cli.App, expected bool) error {
 }
 
 func checkLastLogsContains(pod string, namespace string, str string) (string, error) {
+	lastNonEmptyLine := func(str string) string {
+		lines := strings.Split(str, "\n")
+		for i := len(lines) - 1; i >= 0; i-- {
+			if len(strings.TrimSpace(lines[i])) > 0 {
+				return lines[i]
+			}
+		}
+		return ""
+	}
+
 	for {
 		logs, err := kctl.GetLogs(pod, namespace, "1s")
 		if err != nil {
 			return "", err
 		}
-		lastLine := getLastNonEmptyLine(logs)
+		lastLine := lastNonEmptyLine(logs)
 
 		if strings.Contains(lastLine, str) == true {
 			return lastLine, nil
@@ -219,7 +229,9 @@ func ensureNoPods(app cli.App) error {
 	return nil
 }
 
-func checkStatusIs(app cli.App, status string) (res string, err error) {
+// pollUntilPodsStatusIs polls the status of each pod of the application to be the expected status
+// returns when all pods have the expected status.
+func pollUntilPodsStatusIs(app cli.App, expected string) (res string, err error) {
 	for {
 		appStatus, er := cli.Status(app)
 		if er != nil {
@@ -228,24 +240,14 @@ func checkStatusIs(app cli.App, status string) (res string, err error) {
 		}
 		allSame := true
 		for _, entry := range appStatus.StreamletPods {
-			allSame = allSame && entry.Status == status
+			allSame = allSame && entry.Status == expected
 			if !allSame {
 				break
 			}
 		}
 		if allSame {
-			return status, nil
+			return expected, nil
 		}
 		time.Sleep(time.Second)
 	}
-}
-
-func getLastNonEmptyLine(str string) string {
-	lines := strings.Split(str, "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if len(strings.TrimSpace(lines[i])) > 0 {
-			return lines[i]
-		}
-	}
-	return ""
 }
