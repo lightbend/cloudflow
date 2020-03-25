@@ -15,7 +15,8 @@ type PodEntry struct {
 	age      string
 }
 
-// GetLogs retrieves the logs for a given pod in a namespace
+// GetLogs retrieves the most recent logs for a given pod in a namespace for the time speficied.
+// e.g.: is `since` is 1s, GetLogs will retrive the logs of the lastest second.
 func GetLogs(pod string, namespace string, since string) (logs string, err error) {
 	sinceParam := "--since=" + since
 	cmd := exec.Command("kubectl", "logs", pod, "-n", namespace, sinceParam)
