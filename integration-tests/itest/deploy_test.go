@@ -71,60 +71,52 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	Context("A deployed test application that uses akka, spark, and flink", func() {
-		It("should contain a spark process", func() {
+	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
+		checkContainsStreamlet := func(streamlet string) {
 			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
 			streamlets := cli.GetStreamlets(&status)
-			Expect(streamlets).To(ContainElement("spark-process"))
+			Expect(streamlets).To(ContainElement(streamlet))
+		}
+		It("should contain a spark process", func() {
+			checkContainsStreamlet("spark-process")
 		})
 
 		It("should contain a flink process", func() {
-			status, err := cli.Status(swissKnifeApp)
-			Expect(err).NotTo(HaveOccurred())
-			streamlets := cli.GetStreamlets(&status)
-			Expect(streamlets).To(ContainElement("flink-process"))
+			checkContainsStreamlet("flink-process")
 		})
 
 		It("should contain an akka process", func() {
-			status, err := cli.Status(swissKnifeApp)
-			Expect(err).NotTo(HaveOccurred())
-			streamlets := cli.GetStreamlets(&status)
-			Expect(streamlets).To(ContainElement("akka-process"))
+			checkContainsStreamlet("akka-process")
 		})
+	})
 
+	Context("Running streamlets from the sample app should produce counter data", func() {
+		checkLogsForOutput := func(streamlet string, output string) {
+			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, output)
+			Expect(err).NotTo(HaveOccurred())
+		}
 		It("should produce a counter in the raw output log", func(done Done) {
-			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, "raw-egress")
-			Expect(err).NotTo(HaveOccurred())
-			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
-			Expect(err).NotTo(HaveOccurred())
+			checkLogsForOutput("raw-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the akka output log", func(done Done) {
-			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, "akka-egress")
-			Expect(err).NotTo(HaveOccurred())
-			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
-			Expect(err).NotTo(HaveOccurred())
+			checkLogsForOutput("akka-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the spark output log", func(done Done) {
-			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, "spark-egress")
-			Expect(err).NotTo(HaveOccurred())
-			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
-			Expect(err).NotTo(HaveOccurred())
+			checkLogsForOutput("spark-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the flink output log", func(done Done) {
-			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, "flink-egress")
-			Expect(err).NotTo(HaveOccurred())
-			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, "count:")
-			Expect(err).NotTo(HaveOccurred())
+			checkLogsForOutput("flink-egress", "count:")
 			close(done)
 		}, LongTimeout)
-
 	})
 
 	Context("A deployed application can be undeployed", func() {
