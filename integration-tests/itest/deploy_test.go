@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -23,14 +22,13 @@ import (
 // Automation will be the next step
 
 const (
-	JsonTokenSrc    = "/keybase/team/assassins/gcloud/pipelines-serviceaccount-key-container-registry-read-write.json"
 	ShortTimeout    = 60  // seconds
 	LongTimeout     = 240 // seconds
 	InitialWaitTime = "30s"
 )
 
 var swissKnifeApp = cli.App{
-	Image: "eu.gcr.io/bubbly-observer-178213/swiss-knife:189-277e424",
+	Image: "docker.io/lightbend/swiss-knife:210-9478a19",
 	Name:  "swiss-knife",
 }
 
@@ -44,8 +42,7 @@ var _ = Describe("Application deployment", func() {
 
 	Context("when I deploy an application", func() {
 		It("should start a deployment", func() {
-			jsonToken := getToken()
-			output, err := cli.Deploy(swissKnifeApp, jsonToken)
+			output, err := cli.Deploy(swissKnifeApp, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			Expect(output).To(ContainSubstring(expected))
@@ -171,14 +168,6 @@ func checkLastLogsContains(pod string, namespace string, str string) (string, er
 		}
 		time.Sleep(time.Second)
 	}
-}
-
-func getToken() string {
-	data, err := ioutil.ReadFile(JsonTokenSrc)
-	if err != nil {
-		Fail("Can't read credentials for test")
-	}
-	return string(data)
 }
 
 type podEntry struct {

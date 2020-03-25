@@ -43,8 +43,8 @@ type StreamletPod struct {
 }
 
 // Deploy initiates the deployment of an application to the k8s cluster
-func Deploy(app App, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", "_json_key", "--password", pwd)
+func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", user, "--password", pwd)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
