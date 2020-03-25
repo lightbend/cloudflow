@@ -125,6 +125,32 @@ var _ = Describe("Application deployment", func() {
 
 	})
 
+	Context("A deployed Akka streamlet can be scaled", func() {
+		FIt("should scale up and down", func(done Done) {
+			By("Determining initial scale factor")
+
+			pods, err := cli.GetPodsForStreamlet(swissKnifeApp, "akka-process")
+			Expect(err).NotTo(HaveOccurred())
+			initialPodCount := len(pods)
+
+			By("Issuing a +1 scale up")
+
+			newScale := initialPodCount + 1
+			err = cli.Scale(swissKnifeApp, "akka-process", newScale)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = cli.PollUntilExpectedPodsForStreamlet(swissKnifeApp, "akka-process", newScale)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Issuing a scale back to the original value")
+
+			err = cli.Scale(swissKnifeApp, "akka-process", initialPodCount)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = cli.PollUntilExpectedPodsForStreamlet(swissKnifeApp, "akka-process", initialPodCount)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
+	})
+
 	Context("A deployed application can be undeployed", func() {
 		It("should undeploy the test app", func(done Done) {
 			err := cli.Undeploy(swissKnifeApp)
