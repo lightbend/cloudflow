@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // PodEntry describes a pod
@@ -52,4 +53,32 @@ func GetPods(namespace string) (pods []PodEntry, err error) {
 		}
 	}
 	return res, nil
+}
+
+//PollUntilLogsContains polls the most recent logs of the specified pod and checks for
+// the presence of the given string.
+// Returns the line where the string is found.
+func PollUntilLogsContains(pod string, namespace string, str string) (string, error) {
+	lastNonEmptyLine := func(str string) string {
+		lines := strings.Split(str, "\n")
+		for i := len(lines) - 1; i >= 0; i-- {
+			if len(strings.TrimSpace(lines[i])) > 0 {
+				return lines[i]
+			}
+		}
+		return ""
+	}
+
+	for {
+		logs, err := GetLogs(pod, namespace, "1s")
+		if err != nil {
+			return "", err
+		}
+		lastLine := lastNonEmptyLine(logs)
+
+		if strings.Contains(lastLine, str) == true {
+			return lastLine, nil
+		}
+		time.Sleep(time.Second)
+	}
 }

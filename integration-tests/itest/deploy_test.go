@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"lightbend.com/cloudflow/itest/cli"
@@ -93,7 +92,7 @@ var _ = Describe("Application deployment", func() {
 		checkLogsForOutput := func(streamlet string, output string) {
 			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = checkLastLogsContains(pod, swissKnifeApp.Name, output)
+			_, err = kctl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
 			Expect(err).NotTo(HaveOccurred())
 		}
 		It("should produce a counter in the raw output log", func(done Done) {
@@ -148,31 +147,6 @@ func PollUntilAppPresenceIs(app cli.App, expected bool) error {
 		}
 		if found == expected {
 			return nil
-		}
-		time.Sleep(time.Second)
-	}
-}
-
-func checkLastLogsContains(pod string, namespace string, str string) (string, error) {
-	lastNonEmptyLine := func(str string) string {
-		lines := strings.Split(str, "\n")
-		for i := len(lines) - 1; i >= 0; i-- {
-			if len(strings.TrimSpace(lines[i])) > 0 {
-				return lines[i]
-			}
-		}
-		return ""
-	}
-
-	for {
-		logs, err := kctl.GetLogs(pod, namespace, "1s")
-		if err != nil {
-			return "", err
-		}
-		lastLine := lastNonEmptyLine(logs)
-
-		if strings.Contains(lastLine, str) == true {
-			return lastLine, nil
 		}
 		time.Sleep(time.Second)
 	}
