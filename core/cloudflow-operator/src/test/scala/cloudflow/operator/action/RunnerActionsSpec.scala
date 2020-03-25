@@ -264,7 +264,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
     deployment.metadata.namespace mustEqual namespace
 
-    deployment.spec.value.replicas.value mustBe AkkaRunner.NrOfReplicas
+    deployment.spec.value.replicas.value mustBe AkkaRunner.DefaultReplicas
 
     podSpec.containers must have size 1
 

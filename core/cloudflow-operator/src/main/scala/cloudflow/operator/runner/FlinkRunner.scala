@@ -35,11 +35,11 @@ object FlinkRunner extends Runner[CR] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
 
-  def resourceDefinition       = implicitly[ResourceDefinition[CR]]
-  final val runtime            = "flink"
-  final val PVCMountPath       = "/mnt/flink/storage"
-  final val DefaultParallelism = 2
-  final val JvmArgsEnvVar      = "JVM_ARGS"
+  def resourceDefinition    = implicitly[ResourceDefinition[CR]]
+  final val runtime         = "flink"
+  final val PVCMountPath    = "/mnt/flink/storage"
+  final val DefaultReplicas = 2
+  final val JvmArgsEnvVar   = "JVM_ARGS"
 
   def resource(
       deployment: StreamletDeployment,
@@ -331,15 +331,14 @@ object FlinkResource {
   implicit val jobManagerFmt: Format[JobManagerConfig]   = Json.format[JobManagerConfig]
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
-  implicit val specFmt: Format[Spec]     = Json.format[Spec]
-  implicit val statusFmt: Format[Status] = Json.format[Status]
+  implicit val specFmt: Format[Spec]                         = Json.format[Spec]
+  implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
+  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
+  implicit val statusFmt: Format[Status]                     = Json.format[Status]
 
   final case class EnvConfig(env: List[EnvVar] = Nil)
 
   type CR = CustomResource[Spec, Status]
-
-  implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
-  implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
 
   implicit val resourceDefinition: ResourceDefinition[CustomResource[Spec, Status]] = ResourceDefinition[CR](
     group = "flink.k8s.io",
