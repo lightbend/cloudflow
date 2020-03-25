@@ -2,13 +2,11 @@ package main_test
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
-	"os/exec"
-
 	"lightbend.com/cloudflow/itest/cli"
+	"lightbend.com/cloudflow/itest/kctl"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -123,7 +121,7 @@ var _ = Describe("Application deployment", func() {
 		It("should undeploy the test app", func(done Done) {
 			err := cli.Undeploy(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-			err = expectFindApp(swissKnifeApp, false)
+			err = PollUntilAppPresenceIs(swissKnifeApp, false)
 			Expect(err).NotTo(HaveOccurred())
 			ensureNoPods(swissKnifeApp)
 			close(done)
@@ -131,7 +129,11 @@ var _ = Describe("Application deployment", func() {
 	})
 })
 
-func expectFindApp(app cli.App, expected bool) error {
+// PollUntilAppPresenceIs polls the list API for the presence of the app.
+// The end condition depends on the `expected` flag
+// If `expected` is true, this method will poll until the app is found (present)
+// If `expected` is false, this method will poll until the app is not found (absent)
+func PollUntilAppPresenceIs(app cli.App, expected bool) error {
 	for {
 		apps, err := cli.ListApps()
 		if err != nil {
@@ -153,26 +155,17 @@ func expectFindApp(app cli.App, expected bool) error {
 
 func checkLastLogsContains(pod string, namespace string, str string) (string, error) {
 	for {
-		logs, err := getLogs(pod, namespace, "1s")
+		logs, err := kctl.GetLogs(pod, namespace, "1s")
 		if err != nil {
 			return "", err
 		}
 		lastLine := getLastNonEmptyLine(logs)
 
 		if strings.Contains(lastLine, str) == true {
-			println("Found match: " + lastLine)
 			return lastLine, nil
 		}
 		time.Sleep(time.Second)
 	}
-}
-
-type podEntry struct {
-	name     string
-	ready    string
-	status   string
-	restarts string
-	age      string
 }
 
 func listAppNames(apps []cli.AppEntry) []string {
@@ -212,44 +205,18 @@ func ensureNoPods(app cli.App) error {
 	}
 
 	first := true
-	var pods []podEntry
+	var pods []kctl.PodEntry
 
 	for first || len(pods) > 0 {
 		first = false
 		time.Sleep(sleepDuration)
-		pods, err = getPods(app)
+		pods, err = kctl.GetPods(app.Name)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("...%d", len(pods))
 	}
 	return nil
-}
-
-func getPods(app cli.App) (pods []podEntry, err error) {
-	cmd := exec.Command("kubectl", "get", "pods", "-n", app.Name)
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		err = er
-		return
-	}
-	str := string(out)
-	splits := strings.Split(str, "\n")
-	whitespaces := regexp.MustCompile(`\s+`)
-	var res []podEntry
-	for i, line := range splits {
-		switch i {
-		case 0:
-			continue
-		default:
-			parts := whitespaces.Split(line, -1)
-			if len(parts) == 5 {
-				podEntry := podEntry{parts[0], parts[1], parts[2], parts[3], parts[4]}
-				res = append(res, podEntry)
-			}
-		}
-	}
-	return res, nil
 }
 
 func checkStatusIs(app cli.App, status string) (res string, err error) {
@@ -281,14 +248,4 @@ func getLastNonEmptyLine(str string) string {
 		}
 	}
 	return ""
-}
-
-func getLogs(pod string, namespace string, since string) (logs string, err error) {
-	sinceParam := "--since=" + since
-	cmd := exec.Command("kubectl", "logs", pod, "-n", namespace, sinceParam)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
 }
