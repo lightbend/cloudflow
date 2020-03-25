@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutils"
 	"net/url"
 	"strings"
+
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutils"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/verify"
@@ -43,7 +44,7 @@ func (c *verifyBlueprintCMD) verifyImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("Blueprint is empty. Path is: %s", blueprint)
 	}
 
-	_, err = verify.VerifyBlueprint(contents)
+	_, _, _, err = verify.VerifyBlueprint(contents)
 	if err != nil {
 		util.LogAndExit("Blueprint verification failed. Error: %s", err.Error())
 	} else {
@@ -61,12 +62,12 @@ func validateVerifyCmdArgs(cmd *cobra.Command, args []string) error {
 	blueprintURL, err := url.Parse(blueprint)
 
 	if err != nil {
-		return fmt.Errorf("You need to specify the full path to a blueprint file. %s, is malformed.", blueprint)
+		return fmt.Errorf("You need to specify the full path to a blueprint file. '%s', is malformed", blueprint)
 	}
 
 	if blueprintURL.Scheme == "" {
 		if !fileutils.FileExists(blueprint) {
-			return fmt.Errorf("You need to specify the full path to a blueprint file. %s, local file does not exist.", blueprint)
+			return fmt.Errorf("You need to specify the full path to a blueprint file. Local file '%s' does not exist", blueprint)
 		}
 	}
 	return nil

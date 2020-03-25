@@ -19,12 +19,12 @@ import (
 // logic.
 // TODO: fix performance issues with getting descriptors from image refs.
 //       Investigate using the docker apis instead of inspecting docker images.
-func VerifyBlueprint(content string) (Blueprint, error) {
+func VerifyBlueprint(content string) (Blueprint, []*docker.PulledImage, []string, error) {
 	config := configuration.ParseString(content)
 	imageRefsFromBlueprint := getImageRefsFromConfig(config)
 
 	// map imageID -> []StreamletDescriptor
-	imageDescriptorMap, fallbackAppID := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
+	imageDescriptorMap, pulledImages, imageDigests, fallbackAppID := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
 
 	// all StreamletRefs in the blueprint
 	streamletRefs := getStreamletRefsFromBlueprintConfig(config)
@@ -49,9 +49,9 @@ func VerifyBlueprint(content string) (Blueprint, error) {
 		errors = errors + p.ToMessage() + "\n"
 	}
 	if len(blueprint.globalProblems) == 0 {
-		return blueprint, nil
+		return blueprint, pulledImages, imageDigests, nil
 	}
-	return Blueprint{}, fmt.Errorf("%s", errors)
+	return Blueprint{}, nil, nil, fmt.Errorf("%s", errors)
 }
 
 // this map is constructed entirely from blueprint
@@ -112,7 +112,7 @@ func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []Streaml
 	return streamletRefs
 }
 
-func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) (map[string][]StreamletDescriptor, string) {
+func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) (map[string][]StreamletDescriptor, []*docker.PulledImage, []string, string) {
 	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
 	if apierr != nil {
 		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
@@ -130,8 +130,11 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 	// get all streamlet descriptors, image digests and pulled images in arrays
 	var streamletDescriptors = make(map[string][]StreamletDescriptor)
 	var fallbackAppID string
+	var pulledImages []*docker.PulledImage
+	var imageDigests []string
+
 	for key, imageRef := range imageRefs {
-		streamletsDescriptorsDigestPair, version, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
+		streamletsDescriptorsDigestPair, version, pulledImage, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
 		if err != nil {
 			util.LogAndExit(err.Error())
 		}
@@ -146,6 +149,8 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 		if fallbackAppID == "" {
 			fallbackAppID = strings.Split(streamletsDescriptorsDigestPair.ImageDigest, "@")[0]
 		}
+		pulledImages = append(pulledImages, pulledImage)
+		imageDigests = append(imageDigests, streamletsDescriptorsDigestPair.ImageDigest)
 	}
-	return streamletDescriptors, fallbackAppID
+	return streamletDescriptors, pulledImages, imageDigests, fallbackAppID
 }

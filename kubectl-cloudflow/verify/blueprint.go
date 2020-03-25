@@ -9,10 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cloudflowapplication"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 )
 
@@ -642,28 +640,6 @@ func (b Blueprint) GetAllStreamletDescriptors() []StreamletDescriptor {
 		streamletDescriptors = append(streamletDescriptors, desc...)
 	}
 	return streamletDescriptors
-}
-
-// GetAllImages pulls all images found in the blueprint and returns them
-func (b Blueprint) GetAllImages(client *client.Client) ([]*docker.PulledImage, map[string]string, error) {
-	var pulledImages []*docker.PulledImage
-	var deployImages = make(map[string]string)
-
-	for _, imageRef := range b.images {
-		pulledImage, pullError := docker.PullImage(client, imageRef.FullURI)
-		if pullError != nil {
-			return nil, nil, fmt.Errorf("Failed to pull image %s: %s", imageRef.FullURI, pullError.Error())
-		}
-		pulledImages = append(pulledImages, pulledImage)
-		streamletsDescriptorsDigestPair, _, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
-		if err != nil {
-			return nil, nil, err
-		}
-		// this format has to be used in Deployment: full-uri@sha
-		deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], strings.Split(streamletsDescriptorsDigestPair.ImageDigest, "@")[1])
-		deployImages[imageRef.FullURI] = deployImage
-	}
-	return pulledImages, deployImages, nil
 }
 
 // GetStreamletIDsFromClassName fetches the streamlet refs from blueprint
