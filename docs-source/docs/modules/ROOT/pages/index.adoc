@@ -14,31 +14,27 @@ Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and
 
 == Streaming application requirements
 
-Stream processing is a discipline and a set of techniques for extracting information from unbounded data. Streaming applications apply stream processing to provide actionable insights from data as it arrives into the system. The growing popularity of streaming applications is driven by: 
-
-* the increasing availability of data from many sources.
-* the need of enterprises to speed up their reaction time to that data.
-
-We characterize streaming applications as a connected graph of stream-processing components, where each component specializes on a particular task, using the _'right tool for the job'_ premise. The figure below, <<abstract-streaming-app>>, generically illustrates an application that processes data events:
-
-* The first circle on the left represents an initial stage for capturing or accepting data. This could be an HTTP endpoint to accept data from remote clients, a connection to a Kafka topic, or input from an internal system in an enterprise. 
-
-* The next circle to the right represents a processing phase that applies some logic to the data, such as: business rules, statistical data analysis, or a machine learning model that implements the business aspect of the application. This processing component may add additional information to the event and send it as valid data to an external system or flag the data as invalid and report it.
-
-* The final two circles on the right shows the two different data output paths, valid and invalid.
-
-[#abstract-streaming-app]
-.An Abstract Streaming Application
-[caption="Fig. 1 - "]
-image::abstract-streaming-app.png[]
-
-Each component in the illustration presents different application requirements, scalability concerns, and often--different Kubernetes deployment strategies. Such specialized needs make even a simple streaming application non-trivial to develop and deploy. For large enterprises with complex use cases, creating streaming data applications that can extract actionable business value quickly is challenging.
+include::shared-content:ROOT:page$streaming-app-requirements.adoc[]
 
 == The Cloudflow approach 
 
 Cloudflow offers a complete solution for the creation, deployment, and management of streaming applications on Kubernetes. For development, it offers a toolbox that simplifies and accelerates application creation. For deployment, it comes with a set of extensions that makes Cloudflow streaming applications native to Kubernetes. For management, https://developer.lightbend.com/docs/cloudflow/current/index.html[Cloudflow enterprise features]--available with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend subscription]--include a browser-based UI for visualizing and monitoring streaming applications. 
 
 A common challenge when building streaming applications is wiring all of the components together and testing them end-to-end _before_ &nbsp;going into production. Often different teams are responsible for different parts of the application, making coordination difficult. Repeatedly spinning up and deleting Kubernetes pods can be both difficult and costly. Cloudflow addresses this by allowing you to validate the connections between components and to run your application locally during development to avoid surprises during deployment.
+
+Everything in Cloudflow is done in the context of an application, which represents a self-contained distributed system of data processing services connected together by data streams. A Cloudflow application includes: 
+
+* Streamlets, which contain the stream processing logic
+* Blueprints, which define how streamlets are composed and configured.
+
+At deployment time, Cloudflow uses the blueprint to deploy all its streamlets so that data can start streaming as described. Cloudflow tools make it easy to create and manage multiple applications, each one forming a separate self-contained system, as illustrated below.
+
+[#multiple-apps]
+.Multiple Cloudflow Applications
+[caption="Fig. 1 - "]
+image::apps-1.png[]
+
+== Open Source feature set
 
 Open-source Cloudflow includes tools for developing and deploying the most complex streaming applications:
 

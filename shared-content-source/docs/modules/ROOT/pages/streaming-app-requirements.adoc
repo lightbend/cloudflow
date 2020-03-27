@@ -1,0 +1,21 @@
+:page-partial:
+
+Stream processing is a discipline and a set of techniques for extracting information from unbounded data. Streaming applications apply stream processing to provide actionable insights from data as it arrives into the system. The growing popularity of streaming applications is driven by: 
+
+* the increasing availability of data from many sources.
+* the need of enterprises to speed up their reaction time to that data.
+
+We characterize streaming applications as a connected graph of stream-processing components, where each component specializes on a particular task, using the _'right tool for the job'_ premise. The figure below, <<abstract-streaming-app>>, generically illustrates an application that processes data events:
+
+* The first circle on the left represents an initial stage for capturing or accepting data. This could be an HTTP endpoint to accept data from remote clients, a connection to a Kafka topic, or input from an internal system in an enterprise. 
+
+* The next circle to the right represents a processing phase that applies some logic to the data, such as: business rules, statistical data analysis, or a machine learning model that implements the business aspect of the application. This processing component may add additional information to the event and send it as valid data to an external system or flag the data as invalid and report it.
+
+* The final two circles on the right shows the two different data output paths, valid and invalid.
++
+[#abstract-streaming-app]
+.An Abstract Streaming Application
+[caption="Fig. 1 - "]
+image::abstract-streaming-app.png[]
+
+Each component in the illustration presents different application requirements, scalability concerns, and often--different Kubernetes deployment strategies. Such specialized needs make even a simple streaming application non-trivial to develop and deploy. For large enterprises with complex use cases, creating streaming data applications that can extract actionable business value quickly is challenging.
