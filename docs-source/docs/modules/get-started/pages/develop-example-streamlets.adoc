@@ -58,7 +58,7 @@ In **ValidMetricLogger.scala**, include the following code:
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[]
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=all]
 ----
 
 

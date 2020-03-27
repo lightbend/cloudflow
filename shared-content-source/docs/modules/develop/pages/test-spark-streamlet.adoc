@@ -27,37 +27,14 @@ Here is a list of imports needed for writing the test suite.
 
 [source,scala]
 ----
-import scala.collection.immutable.Seq
-import scala.concurrent.duration._
-
-import org.apache.spark.sql.streaming.OutputMode
-
-import cloudflow.streamlets.StreamletShape
-import cloudflow.streamlets.avro._
-import cloudflow.spark.avro._
-import cloudflow.spark.testkit._
-import cloudflow.spark.sql.SQLImplicits._
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=imports]
 ----
 
 `SparkStreamlet` is an abstract class. Let's set up a concrete instance that we would like to test. For more details on how to implement a Spark streamlet, please refer to xref:build-spark-streamlets.adoc[Building a Spark streamlet].
 
 [source,scala]
 ----
-// create Spark Streamlet
-val processor = new SparkStreamlet {
-  val in = AvroInlet[Data]("in")
-  val out = AvroOutlet[Simple]("out", _.name)
-  val shape = StreamletShape(in, out)
-
-  override def createLogic() = new SparkStreamletLogic {
-    override def buildStreamingQueries = {
-      val dataset = readStream(in)
-      val outStream = dataset.select($"name").as[Simple]
-      val query = writeStream(outStream, out, OutputMode.Append)
-      Seq(query)
-    }
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/SparkProcessor.scala[tag=processor]
 ----
 
 === The unit test
@@ -66,52 +43,7 @@ Here's how we would write a unit test using ScalaTest. The various logical steps
 
 [source,scala]
 ----
-class SparkProcessorSpec extends SparkScalaTestSupport { // 1. Extend SparkScalaTestSupport
-
-  "SparkProcessor" should {
-
-    // 2. Initialize the testkit
-    val testkit = SparkStreamletTestkit(session)
-
-    "process streaming data" in {
-
-      // 3. create Spark streamlet
-      val processor = new SparkStreamlet {
-        val in = AvroInlet[Data]("in")
-        val out = AvroOutlet[Simple]("out", _.name)
-        val shape = StreamletShape(in, out)
-
-        override def createLogic() = new SparkStreamletLogic {
-          override def buildStreamingQueries = {
-            val dataset = readStream(in)
-            val outStream = dataset.select($"name").as[Simple]
-            val query = writeStream(outStream, out, OutputMode.Append)
-            Seq(query)
-          }
-        }
-      }
-
-      // 4. setup inlet tap on inlet port
-      val in: SparkInletTap[Data] = testkit.inletAsTap[Data](processor.in)
-
-      // 5. setup outlet tap on outlet port
-      val out: SparkOutletTap[Simple] = testkit.outletAsTap[Simple](processor.out)
-
-      // 6. build data and send to inlet tap
-      val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
-      in.addData(data)
-
-      // 7. Run the streamlet using the testkit and the setup inlet taps and outlet probes
-      testkit.run(processor, Seq(in), Seq(out), 2.seconds)
-
-      // get data from outlet tap
-      val results = out.asCollection(session)
-
-      // 8. Assert that actual matches expectation
-      results should contain(Simple("name1"))
-    }
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=test]
 ----
 
 === The SparkScalaTestSupport trait
@@ -125,38 +57,3 @@ This provides session management and needs to be mixed in with the main test cla
 
 . Provide core APIs like `inletAsTap`, `outletAsTap`, `run`.
 . Support for adding values for configuration parameters.
-
-=== Special note on aggregation query
-
-There may be situations where the Spark query that you are testing involves aggregation operators. The `testkit` gives some special considerations to writing tests for such queries. Here's an example of a Spark Streamlet that involves aggregation operators:
-
-
-[source,scala]
-----
-include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/callrecordaggregator/CallStatsAggregator.scala[]
-----
-
-
-The above query involves aggregation operations like `groupBy` over `window` and subsequent averaging of call durations tracked by the query. Such stateful streaming queries use a `StateStore` and need to be run with `OutputMode.Update` (recommended) or `OutputMode.Complete` when streaming data appears in the incoming `DataSet`. `OutputMode.Update` updates the aggregate with incoming data and hence is recommended for writing tests involving aggregation queries. On the other hand `OutputMode.Complete` does not drop old aggregation state since by definition this mode preserves all data in the Result Table.
-
-For queries that do not involve aggregation, only *new* data need to be written and the query needs to be run with `OutputMode.Append`. This is the default behavior that the `testkit` sets for the user.
-
-In order to have the query run with `OutputMode.Update`, the user needs to pass in this argument explicitly when setting up the outlet probe:
-
-[source,scala]
-----
-// setup outlet tap on outlet port
-val out = testkit.outletAsTap[AggregatedCallStats](aggregator.shape.outlet, OutputMode.Update)
-----
-
-For more details on `OutputMode`, have a look at the https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#output-modes[relevant documentation,window=_blank] on Spark.
-
-Also since the stateful queries use `StateStore`, the latter needs to be explicitly stopped when the test suite ends:
-
-[source,scala]
-----
-override def afterAll(): Unit = {
-  super.afterAll()
-  StateStore.stop() // stop the state store maintenance thread and unload store providers
-}
-----

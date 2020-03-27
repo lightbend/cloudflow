@@ -1,5 +1,7 @@
 :page-partial:
 
+include::ROOT:partial$include.adoc[]
+
 The following sections describe how you can create a Spark streamlet.
 As mentioned in xref:use-spark-streamlets.adoc[Using Spark streamlets], a Spark streamlet is defined by the following features:
 
@@ -16,16 +18,7 @@ The first thing to do is extend the `cloudflow.spark.SparkStreamlet` abstract cl
 
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets._
-import cloudflow.spark._
-
-object ReportPrinter extends SparkStreamlet {
-  // 1. TODO Create inlets and outlets
-  // 2. TODO Define the shape of the streamlet
-  // 3. TODO Override createLogic to provide StreamletLogic
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 The code snippet above shows an abstract class `SparkConsoleEgress` that extends `SparkStreamlet`.
@@ -39,18 +32,7 @@ The streamlet that we are building in this tutorial will have an inlet and no ou
 
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets.avro._
-import cloudflow.spark._
-
-object ReportPrinter extends SparkStreamlet {
-  // 1. Create inlets and outlets
-  val in = AvroInlet[Report]("report-in")
-
-  // 2. TODO Define the shape of the streamlet using inlets and outlets
-  // 3. TODO Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Cloudflow supports Avro encoded processing of data - we make this explicit by defining the inlet as `AvroInlet`. `Report` is the
@@ -62,32 +44,7 @@ of products from an inventory:
 
 [source,json]
 ----
-{
-  "namespace": "com.example",
-  "type": "record",
-  "name": "Report",
-  "fields": [
-    {
-      "name": "id",
-      "type": "string"
-    },
-    {
-      "name": "name",
-      "type": "string"
-    },
-    {
-      "name": "description",
-      "type": "string"
-    },
-    {
-      "name": "keywords",
-      "type": {
-        "type": "array",
-        "items": "string"
-      }
-    }
-  ]
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. It's recommended that you use a
@@ -103,21 +60,7 @@ Lets now define the shape of `ReportPrinter` by using the APIs in `cloudflow.str
 
 [source,scala]
 ----
-package com.example
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.spark._
-
-object ReportPrinter extends SparkStreamlet {
-  // 1. Create inlets and outlets
-  val in = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet using inlets and outlets
-  override val shape = StreamletShape.withInlets(in)
-
-  // 3. TODO Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 The above code overrides the `shape` method with a value that defines the shape of the streamlet. `StreamletShape` offers methods to define shapes, e.g. to define a streamlet with two inlets and two outlets, we could write `StreamletShape.withInlets(in0, in1).withOutlets(valid, invalid)`.
@@ -132,41 +75,7 @@ In this step we need to override `createLogic` from `SparkStreamlet` in our `Rep
 
 [source,scala]
 ----
-package com.example
-
-import org.apache.spark.sql.Dataset
-import org.apache.spark.sql.streaming.StreamingQuery
-import org.apache.spark.sql.streaming.OutputMode
-
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.spark._
-
-object ReportPrinter extends SparkStreamlet {
-  // 1. Create inlets and outlets
-  val in = AvroInlet[Report]("report-in")
-
-  // 2. Define the shape of the streamlet using inlets and outlets
-  override val shape = StreamletShape.withInlets(in)
-
-  // 3. Override createLogic to provide StreamletLogic, where the inlets and outlets are used to read and write streams.
-  override def createLogic = new SparkStreamletlogic {
-    // Define some formatting attributes
-    val numRows = 50
-    val truncate = false
-
-    override def buildStreamingQueries = {
-      val inDataset = readStream(in)
-      val q = inDataset.writeStream
-        .format("console")
-        .option("numRows", numRows)
-        .option("truncate", truncate)
-        .outputMode(OutputMode.Append())
-        .start()
-      Seq(q)
-    }
-  }
-}
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 In the above code we override `createLogic` from `SparkStreamletLogic` with an instance that overrides `buildStreamingQueries` to supply the domain logic for the streamlet. In this case, since we are implementing a printer streamlet for console, all we need to do is read from the inlet that we defined earlier, `val in = AvroInlet[Report]("report-in")`, and do some processing on it.
@@ -198,17 +107,7 @@ An example of a blueprint using the `ReportPrinter` could look like this:
 
 [source,hocon]
 ----
-blueprint {
-  streamlets {
-    ingress = com.example.ReportIngress
-    report-printer = com.example.ReportPrinter
-  }
-
-  connections {
-    ingress.out = [report-printer.report-in]
-  }
-}
-
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
 ----
 
 The omitted `ReportIngress` could for instance be another `SparkStreamlet` that writes `Report`{empty}s to its outlet.

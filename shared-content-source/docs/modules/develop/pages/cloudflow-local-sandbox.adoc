@@ -1,6 +1,7 @@
 :page-partial:
 :allow-uri-read:
 
+include::ROOT:partial$include.adoc[]
 
 One of the most common concerns of every distributed application developer is the fairly long and troublesome cycle of developing and testing their applications on a cluster. End to end testing of a distributed streaming application usually requires the creation of docker images, a lengthy upload of those images to some repository, and available cluster resources to testing.
 
@@ -119,16 +120,12 @@ rotor-avg-logger.<config-key>=value
 
 The Streamlet API lets us declare configuration parameters that can be specified at deployment time. For example, this declaration allows us to provide a custom prefix value as a String:
 
-[source]
+[source,scala]
 ----
-class ValidMetricLogger extends AkkaStreamlet {
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter1]
 //...
 
-  val MsgPrefix = StringConfigParameter(
-    "msg-prefix",
-    "Provide a prefix for the log lines",
-    Some("valid-logger"))
-
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter2]
 //...
 ----
 
@@ -144,10 +141,9 @@ metric-logger {
 === Using Volume Mounts
 In the Streamlet API, Volume Mounts are declared in a similar way to configuration parameters, using a programmatic description of the Volume Mount that includes its desired mount path. In the following example, we declare a Volume Mount with name source-data-mount, requested to be mounted at /mnt/data, and it requires to have a ReadWriteMany access mode:
 
-[source]
+[source,scala]
 ----
-private val sourceData = VolumeMount("source-data-mount", "/mnt/data", ReadWriteMany)
-  override def volumeMounts = Vector(sourceData)
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 ----
 
 In a Kubernetes deployment, that Volume Mount gets mapped to a Permanent Volume Claim. The requested mount path is replaced by a local path when we use the Sandbox to run an application containing one or more streamlets that declare a Volume Mount. The local path assignment can be configured to point to a specific directory. Otherwise, the mount path will be assigned to a temporary directory, created on the fly.
@@ -165,19 +161,22 @@ file-ingress {
 
 Note that for this feature to work properly, it’s important to request the assigned mount path from the StreamletContext, instead of relying on a hardcoded value, like this:
 
-[source]
+[source,scala]
 ----
 // in the streamlet code
 // volume mount declaration
-private val sourceData = VolumeMount("source-data-mount", "/mnt/data", ReadWriteMany)
-override def volumeMounts = Vector(sourceData)
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 
 // use
-val data = FileAccess.getData(getMountedPath(sourceData))
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount2]
+----
+
 In the Streamlet programming, do not assume that the mounted path is the same as the requested path. Do not do this:
 
+[source,scala]
+----
 // Do not access the mount path directly!
-val data = FileAccess.getData(“/mnt/data”)
+include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount-bad]
 ----
 
 == What's next
