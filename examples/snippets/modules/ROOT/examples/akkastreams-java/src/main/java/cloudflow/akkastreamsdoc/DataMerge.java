@@ -10,7 +10,7 @@ import akka.stream.javadsl.*;
 
 import java.util.*;
 
-class DataMerge extends AkkaStreamlet {
+public class DataMerge extends AkkaStreamlet {
   AvroInlet<Data> inlet1 = AvroInlet.<Data>create("in-0", Data.class);
   AvroInlet<Data> inlet2 = AvroInlet.<Data>create("in-1", Data.class);
   AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.getKey(), Data.class);

@@ -1,3 +1,4 @@
+//tag::all[]
 /*
  * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
  *
@@ -21,7 +22,10 @@ import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
+//tag::config-parameter1[]
 class ValidMetricLogger extends AkkaStreamlet {
+//end::config-parameter1[]
+
   val inlet = AvroInlet[Metric]("in")
   val shape = StreamletShape.withInlets(inlet)
 
@@ -32,7 +36,9 @@ class ValidMetricLogger extends AkkaStreamlet {
     Some("debug")
   )
 
+  //tag::config-parameter2[]
   val MsgPrefix = StringConfigParameter("msg-prefix", "Provide a prefix for the log lines", Some("valid-logger"))
+  //end::config-parameter2[]
 
   override def configParameters = Vector(LogLevel, MsgPrefix)
 
@@ -60,3 +66,4 @@ class ValidMetricLogger extends AkkaStreamlet {
       sourceWithOffsetContext(inlet).via(flow).to(committableSink)
   }
 }
+//end::all[]

@@ -5,7 +5,8 @@ lazy val root =
       step1,
       step2,
       step3,
-      app)
+      app,
+      datamodel)
 
 def appModule(moduleID: String): Project = {
   Project(id = moduleID, base = file(moduleID))
@@ -52,6 +53,15 @@ lazy val app = appModule("app")
     )
     .dependsOn(step3)
 
+// not used. Only to show avro configuration
+//tag::avro-config[]
+lazy val datamodel = (project in file("./my-cloudflow-library"))
+  .enablePlugins(CloudflowLibraryPlugin)
+  .settings(
+    schemaCodeGenerator := SchemaCodeGenerator.Java,
+    schemaPaths := Map(SchemaFormat.Avro -> "src/main/resources/avroschemas")
+  )
+//end::avro-config[]
 
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
@@ -72,6 +82,10 @@ lazy val commonSettings = Seq(
 
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+
+  libraryDependencies ++= Seq(
+        "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
+        "junit"                  % "junit"                      % "4.12"     % "test"),
 
   schemaCodeGenerator := SchemaCodeGenerator.Java,
   javacOptions ++= Seq("-Xlint:deprecation")
