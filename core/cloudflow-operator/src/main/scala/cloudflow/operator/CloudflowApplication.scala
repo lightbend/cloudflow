@@ -157,18 +157,17 @@ object CloudflowApplication {
       }
     }
 
-    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String = {
+    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
       if (streamletStatuses.forall { streamletStatus =>
-                      streamletStatus.podStatuses.size == streamletStatus.expectedPodCount &&
-                      streamletStatus.podStatuses.forall(_.isReady)
-                    }) {
+            streamletStatus.podStatuses.size == streamletStatus.expectedPodCount &&
+            streamletStatus.podStatuses.forall(_.isReady)
+          }) {
         Status.Running
       } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
         Status.CrashLoopBackOff
       } else {
         Status.Pending
       }
-    }
   }
 
   // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
@@ -244,8 +243,8 @@ object CloudflowApplication {
     val Unknown          = "Unknown"
     val CrashLoopBackOff = "CrashLoopBackOff"
 
-    private val ReadyTrue  = "True"
-    private val ReadyFalse = "False"
+    val ReadyTrue  = "True"
+    val ReadyFalse = "False"
 
     def apply(name: String): PodStatus = PodStatus(name, Unknown, 0, 0, 0, ReadyFalse)
     def apply(pod: Pod): PodStatus = {

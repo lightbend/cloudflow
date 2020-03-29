@@ -56,7 +56,7 @@ object AppEvent {
     Flow[WatchEvent[CloudflowApplication.CR]]
       .statefulMapConcat { () ⇒
         // TODO make this available in other streams directly through an Actor
-        // to prevent possibility of getting an out of sync CR from the cluster in mapToAppInSameNamespace.
+        // to prevent possibility of getting an out of sync CR from the cluster in mapToAppInSameNamespace (which might be a small chance).
         var currentApps = Map[String, WatchEvent[CloudflowApplication.CR]]()
         watchEvent ⇒ {
           val cr         = watchEvent._object
