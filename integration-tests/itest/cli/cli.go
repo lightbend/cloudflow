@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // App represents an application name and docker image
@@ -42,6 +43,8 @@ type StreamletPod struct {
 	Ready     bool
 }
 
+var pollSleepInterval, _ = time.ParseDuration("5s")
+
 // Deploy initiates the deployment of an application to the k8s cluster
 func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
 	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", user, "--password", pwd)
@@ -52,6 +55,13 @@ func Deploy(app App, user string, pwd string) (deployRes string, deployErr error
 // Undeploy initiates an application undeployment on the active cluster
 func Undeploy(app App) error {
 	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.Name)
+	_, err := cmd.CombinedOutput()
+	return err
+}
+
+// Scale changes the scale factor of a streamlet in an app
+func Scale(app App, streamlet string, scale int) error {
+	cmd := exec.Command("kubectl", "cloudflow", "scale", app.Name, streamlet, strconv.Itoa(scale))
 	_, err := cmd.CombinedOutput()
 	return err
 }
@@ -159,15 +169,19 @@ func parseLineInN(str string, segments int) (parsed []string, err error) {
 
 // GetStreamlets retrieves the streamlets from an AppStatus instance
 func GetStreamlets(appStatus *AppStatus) []string {
-	var res []string
+	streamletMap := make(map[string]bool)
 	for _, entry := range appStatus.StreamletPods {
-		res = append(res, entry.Streamlet)
+		streamletMap[entry.Streamlet] = true
+	}
+	var res []string
+	for key := range streamletMap {
+		res = append(res, key)
 	}
 	return res
 }
 
-// GetStreamletPod retrieves the streamletPods from an AppStatus instance
-func GetStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
+// GetFirstStreamletPod retrieves the streamletPods from an AppStatus instance
+func GetFirstStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
 	for _, entry := range status.StreamletPods {
 		if entry.Streamlet == streamlet {
 			return &entry
@@ -176,16 +190,51 @@ func GetStreamletPod(status *AppStatus, streamlet string) *StreamletPod {
 	return nil
 }
 
+// GetPods retrieves the pods corresponding to the given streamlet from an AppStatus instance
+func GetPods(status *AppStatus, streamlet string) []string {
+	var res []string
+	for _, entry := range status.StreamletPods {
+		if entry.Streamlet == streamlet {
+			res = append(res, entry.Pod)
+		}
+	}
+	return res
+}
+
 // GetOneOfThePodsForStreamlet returns a pod associated to the streamlet runtime
 func GetOneOfThePodsForStreamlet(app App, streamlet string) (pod string, err error) {
 	status, err := Status(app)
 	if err != nil {
 		return
 	}
-	streamletPod := GetStreamletPod(&status, streamlet)
-	if streamletPod == nil {
+	pods := GetPods(&status, streamlet)
+	if pods == nil {
 		err = fmt.Errorf("could not find entry for streamlet [%s]", streamlet)
 		return
 	}
-	return streamletPod.Pod, nil
+	return pods[0], nil
+}
+
+// GetPodsForStreamlet retrieves the pods that correspond to the given streamlet.
+func GetPodsForStreamlet(app App, streamlet string) (pods []string, err error) {
+	status, err := Status(app)
+	if err != nil {
+		return nil, err
+	}
+	return GetPods(&status, streamlet), nil
+}
+
+// PollUntilExpectedPodsForStreamlet retrieves the pods that correspond to the given streamlet when
+// the pod count is or becomes equal to the expected count.
+func PollUntilExpectedPodsForStreamlet(app App, streamlet string, expected int) (pods []string, err error) {
+	for {
+		pods, err = GetPodsForStreamlet(app, streamlet)
+		if err != nil {
+			return
+		}
+		if len(pods) == expected {
+			return
+		}
+		time.Sleep(pollSleepInterval)
+	}
 }

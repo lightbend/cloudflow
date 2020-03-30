@@ -21,6 +21,7 @@ import (
 const (
 	ShortTimeout    = 60  // seconds
 	LongTimeout     = 240 // seconds
+	XLongTimeout    = 600 // seconds
 	InitialWaitTime = "30s"
 )
 
@@ -114,6 +115,52 @@ var _ = Describe("Application deployment", func() {
 			checkLogsForOutput("flink-egress", "count:")
 			close(done)
 		}, LongTimeout)
+	})
+
+	Context("A deployed streamlet can be scaled", func() {
+		// A function that calculates the streamlet scale based on pod count
+		type scalePodCorrection func(scale int) int
+		var noCorrection scalePodCorrection = func(scale int) int { return scale }
+		var coordinatorCorrection scalePodCorrection = func(scale int) int { return scale - 1 }
+		scaleCheck := func(streamlet string, scaleCorrection scalePodCorrection) {
+			By("Determining initial scale factor")
+
+			pods, err := cli.GetPodsForStreamlet(swissKnifeApp, streamlet)
+			Expect(err).NotTo(HaveOccurred())
+			initialPodCount := len(pods)
+			initialScale := scaleCorrection(initialPodCount)
+
+			By("Issuing a +1 scale up")
+
+			newScale := initialScale + 1
+			expectedPodCount := initialPodCount + 1
+			err = cli.Scale(swissKnifeApp, streamlet, newScale)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = cli.PollUntilExpectedPodsForStreamlet(swissKnifeApp, streamlet, expectedPodCount)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Issuing a scale back to the original value")
+
+			err = cli.Scale(swissKnifeApp, streamlet, initialScale)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = cli.PollUntilExpectedPodsForStreamlet(swissKnifeApp, streamlet, initialPodCount)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		It("should scale an akka streamlet up and down", func(done Done) {
+			scaleCheck("akka-process", noCorrection)
+			close(done)
+		}, LongTimeout)
+
+		It("should scale a spark streamlet up and down", func(done Done) {
+			scaleCheck("spark-process", coordinatorCorrection)
+			close(done)
+		}, LongTimeout)
+
+		It("should scale a flink streamlet up and down", func(done Done) {
+			scaleCheck("flink-process", coordinatorCorrection)
+			close(done)
+		}, XLongTimeout)
 	})
 
 	Context("A deployed application can be undeployed", func() {
