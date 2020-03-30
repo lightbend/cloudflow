@@ -64,6 +64,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
         startIngress()
         val request  = HttpRequest(method, Uri(s"http://127.0.0.1:$port"), Nil, HttpEntity.Empty)
         val response = Http().singleRequest(request).futureValue
+        response.discardEntityBytes()
         response.status mustEqual StatusCodes.MethodNotAllowed
         out.probe.expectNoMessage(noMessageDuration)
       }
@@ -75,6 +76,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
       val request  = Post(s"http://127.0.0.1:$port", data)
       val response = Http().singleRequest(request).futureValue
       response.status mustEqual StatusCodes.Accepted
+      response.discardEntityBytes()
       out.probe.expectMsg(("1", data))
       out.probe.expectMsg(Completed)
     }
@@ -83,6 +85,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
       startIngress()
       val request  = Post(s"http://127.0.0.1:$port")
       val response = Http().singleRequest(request).futureValue
+      response.discardEntityBytes()
       response.status mustEqual StatusCodes.BadRequest
     }
 
@@ -92,6 +95,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
       val request  = Put(s"http://127.0.0.1:$port", data)
       val response = Http().singleRequest(request).futureValue
       response.status mustEqual StatusCodes.OK
+      response.discardEntityBytes()
       out.probe.expectMsg(("42", data))
       out.probe.expectMsg(Completed)
 

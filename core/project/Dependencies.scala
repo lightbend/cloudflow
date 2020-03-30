@@ -2,8 +2,8 @@ import sbt._
 
 // format: OFF
 object Version {
-  val Akka         = "2.5.29"
-  val AkkaHttp     = "10.1.9"
+  val Akka         = "2.6.4"
+  val AkkaHttp     = "10.1.11"
   val AlpakkaKafka = "2.0.2"
   val Scala        = "2.12.9"
   val Spark        = "2.4.5"
@@ -54,7 +54,7 @@ object Library {
   // Test Dependencies
   val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test
   val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                            % Test
-  val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka         % Test 
+  val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka          
   val Avro4sTest             = "com.sksamuel.avro4s" %% "avro4s-core"                % "3.0.0"              % Test
   val AkkaTestkit            = "com.typesafe.akka"   %% "akka-testkit"               % Version.Akka
   val ScalaTest              = ScalaTestUnscoped                                                            % Test

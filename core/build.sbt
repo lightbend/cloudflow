@@ -140,7 +140,7 @@ lazy val akkastreamTests =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
-            AkkaStreamTestkit,
+            AkkaStreamTestkit % Test,
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
             EmbeddedKafka % Test, 
@@ -361,7 +361,7 @@ lazy val operator =
             Ficus,
             Logback,
             Skuber,
-            AkkaStreamTestkit,
+            AkkaStreamTestkit % Test,
             JacksonDatabind,
             ScalaTest,
             ScalaCheck % "test",
