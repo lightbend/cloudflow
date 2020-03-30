@@ -3,8 +3,8 @@ package main_test
 import (
 	"time"
 
-	"lightbend.com/cloudflow/itest/cli"
-	"lightbend.com/cloudflow/itest/kubectl"
+	"github.com/lightbend/cloudflow/integration-test/itest/cli"
+	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

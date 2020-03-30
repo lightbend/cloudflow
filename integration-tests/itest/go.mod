@@ -1,4 +1,4 @@
-module lightbend.com/cloudflow/itest
+module github.com/lightbend/cloudflow/integration-test/itest
 
 go 1.14
 
