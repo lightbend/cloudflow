@@ -3,5 +3,5 @@ package main
 import "log"
 
 func main() {
-	log.Print("running")
+	log.Print("noop. Please run this integration test suite with ginkgo")
 }
