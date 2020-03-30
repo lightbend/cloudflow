@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -105,21 +106,11 @@ the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
 `,
-		Example: `kubectl cloudflow deploy -i registry.test-cluster.io/cloudflow/sensor-data-scala:292-c183d80 valid-logger.log-level=info valid-logger.msg-prefix=valid`,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if cmd.Flag("image").Changed == false && cmd.Flag("blueprint").Changed == false {
-				util.LogAndExit("Please specify either the blueprint file or the image path")
-			}
-			if (cmd.Flag("image").Changed == true) && (cmd.Flag("blueprint").Changed == true) {
-				util.LogAndExit("%s", "Cannot specify both blueprint and image in command")
-			}
-			if cmd.Flag("image").Changed == true {
-				fmt.Printf("Deploying image %s\n", cmd.Flag("image").Value.String())
-			} else if cmd.Flag("blueprint").Changed == true {
-				fmt.Printf("Deploying blueprint %s\n", cmd.Flag("blueprint").Value.String())
-			}
-		},
-		Run: deployOpts.deployImpl,
+		Example: `
+> kubectl cloudflow deploy --image registry.test-cluster.io/cloudflow/sensor-data-scala:292-c183d80 valid-logger.log-level=info valid-logger.msg-prefix=valid
+> kubectl cloudflow deploy --blueprint call-record-aggregator-blueprint.conf`,
+		Args: validateDeployCmdArgs,
+		Run:  deployOpts.deployImpl,
 	}
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.blueprintFilePath, "blueprint", "b", "", "blueprint file path.")
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.imagePath, "image", "i", "", "docker image path.")
@@ -130,6 +121,36 @@ You can update the credentials with the "update-docker-credentials" command.
 	deployOpts.cmd.Flags().StringToIntVar(&deployOpts.replicasByStreamletName, "scale", map[string]int{}, "Accepts key/value pairs for replicas per streamlet")
 
 	rootCmd.AddCommand(deployOpts.cmd)
+}
+
+// validateVerifyCmdArgs validates the args for the verify command.
+// we only accept one argument at the moment which is a path to the blueprint.
+func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
+	if cmd.Flag("image").Changed == false && cmd.Flag("blueprint").Changed == false {
+		return fmt.Errorf("Please specify either the blueprint file or the image path")
+	}
+	if (cmd.Flag("image").Changed == true) && (cmd.Flag("blueprint").Changed == true) {
+		return fmt.Errorf("%s", "Cannot specify both blueprint and image in command")
+	}
+	if cmd.Flag("image").Changed == true {
+		util.PrintSuccess("Deploying image %s\n", cmd.Flag("image").Value.String())
+	} else if cmd.Flag("blueprint").Changed == true {
+
+		blueprintFile := cmd.Flag("blueprint").Value.String()
+		blueprintURL, err := url.Parse(blueprintFile)
+
+		if err != nil {
+			return fmt.Errorf("You need to specify the full path to a blueprint file. '%s', is malformed", blueprintFile)
+		}
+
+		if blueprintURL.Scheme == "" {
+			if !fileutils.FileExists(blueprintFile) {
+				return fmt.Errorf("You need to specify the full path to a blueprint file. Local file '%s' does not exist", blueprintFile)
+			}
+		}
+		util.PrintSuccess("Deploying blueprint %s\n", cmd.Flag("blueprint").Value.String())
+	}
+	return nil
 }
 
 func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
