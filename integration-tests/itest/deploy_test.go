@@ -1,11 +1,10 @@
 package main_test
 
 import (
-	"fmt"
 	"time"
 
 	"lightbend.com/cloudflow/itest/cli"
-	"lightbend.com/cloudflow/itest/kctl"
+	"lightbend.com/cloudflow/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -47,9 +46,8 @@ var _ = Describe("Application deployment", func() {
 		})
 
 		It("should be in the list of applications in the cluster", func() {
-			list, err := cli.ListApps()
+			appNames, err := cli.ListAppNames()
 			Expect(err).NotTo(HaveOccurred())
-			appNames := listAppNames(list)
 			Expect(appNames).To(ContainElement(swissKnifeApp.Name))
 		})
 
@@ -61,7 +59,7 @@ var _ = Describe("Application deployment", func() {
 			waitTime, _ := time.ParseDuration(InitialWaitTime)
 			time.Sleep(waitTime)
 
-			status, err := pollUntilPodsStatusIs(swissKnifeApp, "Running")
+			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
@@ -93,7 +91,7 @@ var _ = Describe("Application deployment", func() {
 		checkLogsForOutput := func(streamlet string, output string) {
 			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = kctl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
+			_, err = kubectl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
 			Expect(err).NotTo(HaveOccurred())
 		}
 		It("should produce a counter in the raw output log", func(done Done) {
@@ -167,46 +165,17 @@ var _ = Describe("Application deployment", func() {
 		It("should undeploy the test app", func(done Done) {
 			err := cli.Undeploy(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
-			err = PollUntilAppPresenceIs(swissKnifeApp, false)
+			err = cli.PollUntilAppPresenceIs(swissKnifeApp, false)
 			Expect(err).NotTo(HaveOccurred())
-			ensureNoPods(swissKnifeApp)
+			kubectl.WaitUntilNoPods(swissKnifeApp.Name)
 			close(done)
 		}, LongTimeout)
 	})
 })
 
-// PollUntilAppPresenceIs polls the list API for the presence of the app.
-// The end condition depends on the `expected` flag
-// If `expected` is true, this method will poll until the app is found (present)
-// If `expected` is false, this method will poll until the app is not found (absent)
-func PollUntilAppPresenceIs(app cli.App, expected bool) error {
-	for {
-		apps, err := cli.ListApps()
-		if err != nil {
-			return err
-		}
-		found := false
-		for _, entry := range apps {
-			if entry.Name == app.Name {
-				found = true
-				break
-			}
-		}
-		if found == expected {
-			return nil
-		}
-		time.Sleep(time.Second)
-	}
-}
-
-func listAppNames(apps []cli.AppEntry) []string {
-	list := make([]string, len(apps))
-	for _, entry := range apps {
-		list = append(list, entry.Name)
-	}
-	return list
-}
-
+// ensureAppNotDeployed verifies that the given app is not deployed.
+// In case that the app is deployed in the cluster, it initiates an undeploy
+// and waits until all pods from the app have been removed.
 func ensureAppNotDeployed(app cli.App) error {
 	apps, err := cli.ListApps()
 	if err != nil {
@@ -223,52 +192,7 @@ func ensureAppNotDeployed(app cli.App) error {
 		if err := cli.Undeploy(app); err != nil {
 			return err
 		}
-		return ensureNoPods(app)
+		return kubectl.WaitUntilNoPods(app.Name)
 	}
 	return nil
-}
-
-func ensureNoPods(app cli.App) error {
-	fmt.Printf("Ensuring no pods for app [%s]\n", app.Name)
-	sleepDuration, err := time.ParseDuration("1s")
-	if err != nil {
-		return err
-	}
-
-	first := true
-	var pods []kctl.PodEntry
-
-	for first || len(pods) > 0 {
-		first = false
-		time.Sleep(sleepDuration)
-		pods, err = kctl.GetPods(app.Name)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("...%d", len(pods))
-	}
-	return nil
-}
-
-// pollUntilPodsStatusIs polls the status of each pod of the application to be the expected status
-// returns when all pods have the expected status.
-func pollUntilPodsStatusIs(app cli.App, expected string) (res string, err error) {
-	for {
-		appStatus, er := cli.Status(app)
-		if er != nil {
-			err = er
-			return
-		}
-		allSame := true
-		for _, entry := range appStatus.StreamletPods {
-			allSame = allSame && entry.Status == expected
-			if !allSame {
-				break
-			}
-		}
-		if allSame {
-			return expected, nil
-		}
-		time.Sleep(time.Second)
-	}
 }

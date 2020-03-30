@@ -93,6 +93,20 @@ func ListApps() (entries []AppEntry, err error) {
 	return res, nil
 }
 
+// ListAppNames returns the list of the names of the apps deployed applications on the currently active cluster.
+// This method is similar to ListApps() but returns only the name of the apps for easy use.
+func ListAppNames() (appNames []string, err error) {
+	apps, err := ListApps()
+	if err != nil {
+		return
+	}
+	list := make([]string, len(apps))
+	for _, entry := range apps {
+		list = append(list, entry.Name)
+	}
+	return list, nil
+}
+
 // Status retrieves the current status of an application
 func Status(app App) (status AppStatus, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "status", app.Name)
@@ -232,6 +246,53 @@ func PollUntilExpectedPodsForStreamlet(app App, streamlet string, expected int) 
 		}
 		if len(pods) == expected {
 			return
+		}
+		time.Sleep(pollSleepInterval)
+	}
+}
+
+// PollUntilPodsStatusIs polls the status of each pod of the application to be the expected status
+// returns when all pods have the expected status.
+func PollUntilPodsStatusIs(app App, expected string) (res string, err error) {
+	for {
+		appStatus, er := Status(app)
+		if er != nil {
+			err = er
+			return
+		}
+		allSame := true
+		for _, entry := range appStatus.StreamletPods {
+			allSame = allSame && entry.Status == expected
+			if !allSame {
+				break
+			}
+		}
+		if allSame {
+			return expected, nil
+		}
+		time.Sleep(pollSleepInterval)
+	}
+}
+
+// PollUntilAppPresenceIs polls the list API for the presence of the app.
+// The end condition depends on the `expected` flag
+// If `expected` is true, this method will poll until the app is found (present)
+// If `expected` is false, this method will poll until the app is not found (absent)
+func PollUntilAppPresenceIs(app App, expected bool) error {
+	for {
+		apps, err := ListApps()
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, entry := range apps {
+			if entry.Name == app.Name {
+				found = true
+				break
+			}
+		}
+		if found == expected {
+			return nil
 		}
 		time.Sleep(pollSleepInterval)
 	}
