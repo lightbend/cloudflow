@@ -28,6 +28,16 @@
 *** xref:develop:build-flink-streamlets.adoc[Building a Flink streamlet]
 *** xref:develop:test-flink-streamlet.adoc[Testing a Flink streamlet]
 
+* xref:cli:cloudflow.adoc[kubectl cloudflow - cli commands]
+** xref:cli:cloudflow_configure.adoc[configure]
+** xref:cli:cloudflow_deploy.adoc[deploy]
+** xref:cli:cloudflow_list.adoc[list]
+** xref:cli:cloudflow_scale.adoc[scale]
+** xref:cli:cloudflow_status.adoc[status]
+** xref:cli:cloudflow_undeploy.adoc[undeploy]
+** xref:cli:cloudflow_update-docker-credentials.adoc[update-docker-credentials]
+** xref:cli:cloudflow_version.adoc[version]
+
 * xref:administration:index.adoc[Cloudflow administration]
 ** xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
 

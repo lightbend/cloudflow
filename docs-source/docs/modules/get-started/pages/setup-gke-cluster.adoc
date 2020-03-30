@@ -24,7 +24,7 @@ Examples of these are Spark and Flink checkpointing and savepointing.
 
    NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?
 1. standard             kubernetes.io/gce-pd           Unknown                       -
-2. nfs-client           lightbend.com/nfs              Unknown                       -
+2. nfs                  lightbend.com/nfs              Unknown                       -
 > 2
 
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteOnce'.
@@ -32,7 +32,7 @@ Examples of these are Kafka, Zookeeper, and Prometheus.
 
    NAME                 PROVISIONER                    SUPPORTS RW?                  DEFAULT?
 1. standard             kubernetes.io/gce-pd           Verified                      -
-2. nfs-client           lightbend.com/nfs              Unknown                       -
+2. nfs                  lightbend.com/nfs              Unknown                       -
 > 1
 ```
 
@@ -56,7 +56,7 @@ The complete installtion take a bit of a time and you can follow the progress us
 $ kubectl get pods -n cloudflow
 NAME                                                         READY   STATUS    RESTARTS   AGE
 cloudflow-flink-flink-operator-8588dbd8f4-gsjnm              1/1     Running   0          3m26s
-cloudflow-nfs-fdp-nfs-6f8855d44-vdhhj                        1/1     Running   0          109s
+cloudflow-nfs-nfs-6f8855d44-vdhhj                            1/1     Running   0          109s
 cloudflow-operator-57f47676f7-svbvj                          1/1     Running   0          2m19s
 cloudflow-sparkoperator-sparkoperator-69669fdd54-88brw       1/1     Running   0          2m51s
 cloudflow-strimzi-entity-operator-5bc9695975-584fb           1/2     Running   0          27s
