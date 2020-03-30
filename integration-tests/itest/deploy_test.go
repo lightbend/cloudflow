@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"log"
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
@@ -30,6 +31,16 @@ var swissKnifeApp = cli.App{
 }
 
 var _ = Describe("Application deployment", func() {
+	Context("check that there's a cluster available with cloudflow installed", func() {
+		It("should succeed to list apps", func() {
+			_, err := cli.ListApps()
+			if err != nil {
+				log.Fatal("Error: Cluster not available or Cloudflow is not installed. Terminating tests.", err)
+			}
+
+		})
+	})
+
 	Context("the cluster is clean for testing", func() {
 		It("should not have the test app", func() {
 			err := ensureAppNotDeployed(swissKnifeApp)
