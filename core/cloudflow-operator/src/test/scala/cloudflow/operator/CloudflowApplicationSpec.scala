@@ -190,17 +190,17 @@ class CloudflowApplicationSpec
     "report pod status as Running" in {
       val podStatus = CloudflowApplication.PodStatus(mkRunningReadyPod("s1"))
       podStatus.status mustBe CloudflowApplication.PodStatus.Running
-      podStatus.nrOfContainers mustBe 1
-      podStatus.nrOfContainersReady mustBe 1
-      podStatus.ready mustBe CloudflowApplication.PodStatus.ReadyTrue
+      podStatus.containers mustBe 1
+      podStatus.containersReady mustBe 1
+      podStatus.isReady mustBe true
     }
 
     "report pod status as Running, not ready" in {
       val podStatus = CloudflowApplication.PodStatus(mkRunningNotReadyPod("s1"))
       podStatus.status mustBe CloudflowApplication.PodStatus.Running
-      podStatus.nrOfContainers mustBe 1
-      podStatus.nrOfContainersReady mustBe 0
-      podStatus.ready mustBe CloudflowApplication.PodStatus.ReadyFalse
+      podStatus.containers mustBe 1
+      podStatus.containersReady mustBe 0
+      podStatus.isReady mustBe false
     }
 
     "report pod status as Terminated" in {

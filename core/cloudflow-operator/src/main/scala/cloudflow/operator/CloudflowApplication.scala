@@ -159,7 +159,7 @@ object CloudflowApplication {
 
     def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
       if (streamletStatuses.forall { streamletStatus =>
-            streamletStatus.podStatuses.size == streamletStatus.expectedPodCount &&
+            streamletStatus.hasExpectedPods(streamletStatus.podStatuses.size) &&
             streamletStatus.podStatuses.forall(_.isReady)
           }) {
         Status.Running
@@ -221,11 +221,21 @@ object CloudflowApplication {
   }
 
   object StreamletStatus {
+    def apply(streamletName: String, expectedPodCount: Int): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector())
     def apply(streamletName: String, pod: Pod, expectedPodCount: Int): StreamletStatus =
-      StreamletStatus(streamletName, expectedPodCount, Vector(PodStatus(pod)))
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector(PodStatus(pod)))
+    def apply(streamletName: String, expectedPodCount: Int, podStatuses: Vector[PodStatus]): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), podStatuses)
   }
 
-  case class StreamletStatus(streamletName: String, expectedPodCount: Int, podStatuses: Vector[PodStatus] = Vector()) {
+  case class StreamletStatus(
+      streamletName: String,
+      // Added as Option for backwards compatibility
+      expectedPodCount: Option[Int],
+      podStatuses: Vector[PodStatus]
+  ) {
+    def hasExpectedPods(nrOfPodsDetected: Int) = expectedPodCount.getOrElse(0) == nrOfPodsDetected
     def updatePod(pod: Pod) = {
       val podStatus = PodStatus(pod)
       copy(podStatuses = podStatuses.filterNot(_.name == podStatus.name) :+ podStatus)
@@ -246,14 +256,23 @@ object CloudflowApplication {
     val ReadyTrue  = "True"
     val ReadyFalse = "False"
 
-    def apply(name: String): PodStatus = PodStatus(name, Unknown, 0, 0, 0, ReadyFalse)
+    def apply(
+        name: String,
+        status: String,
+        restarts: Int,
+        nrOfContainersReady: Int,
+        nrOfContainers: Int
+    ): PodStatus = {
+      val ready = if (nrOfContainersReady == nrOfContainers && nrOfContainers != 0) ReadyTrue else ReadyFalse
+      PodStatus(name, status, restarts, Some(nrOfContainersReady), Some(nrOfContainers), Some(ready))
+    }
+    def apply(name: String): PodStatus = PodStatus(name, Unknown)
     def apply(pod: Pod): PodStatus = {
       // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
       val name                = pod.metadata.name
       val status              = pod.status.getOrElse(Pod.Status())
       val nrOfContainers      = pod.spec.map(_.containers.size).getOrElse(status.containerStatuses.size)
       val nrOfContainersReady = status.containerStatuses.filter(_.ready == true).size
-      val ready               = if (nrOfContainersReady == nrOfContainers && nrOfContainers != 0) ReadyTrue else ReadyFalse
       val restarts            = status.containerStatuses.map(_.restartCount).sum
       val containerStates     = status.containerStatuses.flatMap(_.state)
 
@@ -271,7 +290,7 @@ object CloudflowApplication {
           }
           .getOrElse(getStatusFromContainerStates(containerStates, nrOfContainers))
       }
-      PodStatus(name, st, restarts, nrOfContainersReady, nrOfContainers, ready)
+      PodStatus(name, st, restarts, nrOfContainersReady, nrOfContainers)
     }
 
     private def getStatusFromContainerStates(containerStates: List[Container.State], nrOfContainers: Int) =
@@ -295,15 +314,19 @@ object CloudflowApplication {
    * Status of the pod.
    * ready can be "True", "False" or "Unknown"
    */
-  //TODO deprecate 'ready'.
   case class PodStatus(
       name: String,
       status: String,
-      restarts: Int,
-      nrOfContainersReady: Int,
-      nrOfContainers: Int,
-      ready: String
+      restarts: Int = 0,
+      // Optional for backwards compatibility
+      nrOfContainersReady: Option[Int] = None,
+      // Optional for backwards compatibility
+      nrOfContainers: Option[Int] = None,
+      // TODO can this be removed without breaking backwards-compatibility?
+      ready: Option[String] = None
   ) {
-    def isReady = status == PodStatus.Running && nrOfContainersReady == nrOfContainers && nrOfContainers != 0
+    def containers      = nrOfContainers.getOrElse(0)
+    def containersReady = nrOfContainersReady.getOrElse(0)
+    def isReady         = status == PodStatus.Running && containersReady == containers && containers != 0
   }
 }
