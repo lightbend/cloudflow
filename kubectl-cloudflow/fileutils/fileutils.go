@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -32,7 +33,7 @@ func GetFileContents(pathToFile string) (string, error) {
 
 	// fetch url
 	client := http.Client{
-		Timeout: fetchTimeout,
+		Timeout: fetchTimeout * time.Second,
 	}
 
 	// http client handlers redirects

@@ -12,25 +12,33 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type verifyBlueprintCMD struct {
+type verifyOptions struct {
 	cmd *cobra.Command
 }
 
 func init() {
-	verifyBlueprintCMD := &verifyBlueprintCMD{}
-	verifyBlueprintCMD.cmd = &cobra.Command{
+	verifyOpts := &verifyOptions{}
+	verifyOpts.cmd = &cobra.Command{
 		Use:     "verify",
 		Short:   "Verifies the blueprint of a Cloudflow Application.",
-		Example: "kubectl cloudflow verify <blueprint-file-name>",
-		Run:     verifyBlueprintCMD.verifyImpl,
+		Long: `Verifies a Cloudflow blueprint file. This command allows to explicitly verify a blueprint without deploying it.
+Blueprint verification will inspect the images in the "images"" section of the blueprint,
+get the streamlet descriptors from the image labels and will proceed to the verification of the rest of the blueprint
+sections which are "streamlets" and "connections". Note here that it will pull the required images if they are not available locally.
+The command either succeeds or prints a report with issues found during the verification process.
+
+kubectl cloudflow verify ./call-record-aggregator-blueprint.conf`,
+		Example: `> kubectl cloudflow verify call-record-aggregator-blueprint.conf`,
+		Run:     verifyOpts.verifyImpl,
 		Args:    validateVerifyCmdArgs,
 	}
-	rootCmd.AddCommand(verifyBlueprintCMD.cmd)
+
+	rootCmd.AddCommand(verifyOpts.cmd)
 }
 
 // verifyImpl is the entry point for the blueprint verify command
 // if blueprint contents cannot be read we exit immediately.
-func (c *verifyBlueprintCMD) verifyImpl(cmd *cobra.Command, args []string) {
+func (c *verifyOptions) verifyImpl(cmd *cobra.Command, args []string) {
 	// check blueprint contents here
 	blueprint := args[0]
 	contents, err := fileutils.GetFileContents(blueprint)
@@ -56,7 +64,7 @@ func (c *verifyBlueprintCMD) verifyImpl(cmd *cobra.Command, args []string) {
 // we only accept one argument at the moment which is a path to the blueprint.
 func validateVerifyCmdArgs(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("you need to specify the full path to a blueprint file")
+		return fmt.Errorf("Please specify the full path to a blueprint file")
 	}
 	blueprint := args[0]
 	blueprintURL, err := url.Parse(blueprint)
