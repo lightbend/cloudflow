@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -71,7 +70,6 @@ func ListApps() (entries []AppEntry, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "list")
 	out, er := cmd.CombinedOutput()
 	if er != nil {
-		log.Fatal("could not check app status")
 		err = er
 		return
 	}

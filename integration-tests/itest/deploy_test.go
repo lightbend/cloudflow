@@ -122,13 +122,13 @@ var _ = Describe("Application deployment", func() {
 		type scalePodCorrection func(scale int) int
 		var noCorrection scalePodCorrection = func(scale int) int { return scale }
 		var coordinatorCorrection scalePodCorrection = func(scale int) int { return scale - 1 }
-		scaleCheck := func(streamlet string, scaleCorrection scalePodCorrection) {
+		scaleCheck := func(streamlet string, scalePodCorrection scalePodCorrection) {
 			By("Determining initial scale factor")
 
 			pods, err := cli.GetPodsForStreamlet(swissKnifeApp, streamlet)
 			Expect(err).NotTo(HaveOccurred())
 			initialPodCount := len(pods)
-			initialScale := scaleCorrection(initialPodCount)
+			initialScale := scalePodCorrection(initialPodCount)
 
 			By("Issuing a +1 scale up")
 
