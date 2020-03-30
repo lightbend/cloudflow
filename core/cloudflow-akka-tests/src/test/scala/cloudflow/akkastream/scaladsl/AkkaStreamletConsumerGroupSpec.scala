@@ -144,8 +144,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
   object Completed
 
-  val appId      = "my-app"
-  val appVersion = "abc"
+  val appId = "my-app"
 
   object Generator {
     val StreamletClass = "Generator"

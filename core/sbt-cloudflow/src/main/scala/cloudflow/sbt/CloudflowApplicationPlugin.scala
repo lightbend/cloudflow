@@ -18,9 +18,6 @@ package cloudflow.sbt
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.lightbend.sbt.javaagent.JavaAgent
-import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
-import cloudflow.blueprint.deployment.ApplicationDescriptor
 import cloudflow.sbt.CloudflowKeys._
 import sbt.Keys._
 import sbt.{ Def, _ }
@@ -33,8 +30,6 @@ import scala.util.control.NoStackTrace
  * It also verifies the blueprint and publishes it to the platform after a successful build of the docker image.
  */
 object CloudflowApplicationPlugin extends AutoPlugin {
-
-  val PrometheusAgent: ModuleID = "io.prometheus.jmx" % "jmx_prometheus_javaagent" % "0.11.0"
 
   private val cloudflowAppProjects: AtomicInteger = new AtomicInteger()
 
@@ -53,12 +48,6 @@ object CloudflowApplicationPlugin extends AutoPlugin {
     runLocalConfigFile := None,
     packageOptions in (Compile, packageBin) +=
         Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
-    javaAgents += JavaAgent(
-          module = PrometheusAgent,
-          name = ApplicationDescriptor.PrometheusAgentKey,
-          scope = JavaAgent.AgentScope(compile = false, test = false, run = false, dist = true),
-          arguments = "${PROMETHEUS_JMX_AGENT_PORT}:${PROMETHEUS_JMX_AGENT_CONFIG_PATH}"
-        ),
     verifyBlueprint := verifyBlueprint.dependsOn(checkUsageCount()).andFinally(resetCount()).value
   )
 

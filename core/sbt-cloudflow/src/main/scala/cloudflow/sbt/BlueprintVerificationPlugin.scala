@@ -23,7 +23,7 @@ import sbt._
 import sbt.Keys._
 import spray.json._
 import JsonUtils._
-import cloudflow.sbt.CloudflowKeys.{ agentPaths, blueprintFile, _ }
+import cloudflow.sbt.CloudflowKeys.{ blueprintFile, _ }
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.StreamletDescriptorFormat._
@@ -66,7 +66,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     },
     applicationDescriptor := {
       val appId           = (ThisProject / name).value
-      val agentPathsMap   = agentPaths.value
+      val agentPathsMap   = Map[String, String]()
       val dockerImageName = cloudflowDockerImageName.value
 
       for {

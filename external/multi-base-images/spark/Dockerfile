@@ -57,7 +57,7 @@ RUN set -ex && \
     useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow \
     -s /sbin/nologin -c CloudflowUser cloudflow && \
     mkdir -p /prometheus && \
-    curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent-0.11.0.jar && \
+    curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar && \
     chmod ug+rwX /home/cloudflow && \
     mkdir -p /opt/spark/conf && \
     mv /opt/log4j.properties /opt/spark/conf/log4j.properties && \

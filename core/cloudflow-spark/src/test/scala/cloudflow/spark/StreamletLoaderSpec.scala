@@ -32,14 +32,13 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
   val streamletRef                                 = "1"
   val emptyConfig                                  = ConfigFactory.empty()
 
-  def flowConfig(appId: String, appVersion: String, streamletClass: String): StreamletDefinition =
+  def flowConfig(appId: String, streamletClass: String): StreamletDefinition =
     ConfigFactory.parseString(s"""
     streamlet-config = {
       class_name = $streamletClass
       streamlet_ref = $streamletRef
       context = {
         "app_id" = $appId,
-        "app_version": $appVersion,
         "config" : {
           "fake-config-value" : "bla"
         }
@@ -75,45 +74,44 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
   """).as[StreamletDefinition]("streamlet-config")
 
   // val context = StreamletDeploymentContext("appid", "unknown", List.empty[ConnectedPorts], emptyConfig)
-  val appId      = "tipsy-rhinoceros-42"
-  val appVersion = "unknown"
+  val appId = "tipsy-rhinoceros-42"
 
   "StreamletLoader" should {
 
     "successfully load a streamlet from an object implementation" in {
-      val loaded = loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl)).success.value
+      val loaded = loadStreamlet(flowConfig(appId, streamletObjectImpl)).success.value
       loaded.streamlet mustBe a[SparkStreamlet]
     }
 
     "successfully load a streamlet from a class with companion object implementation" in {
-      val loaded = loadStreamlet(flowConfig(appId, appVersion, streamletClassWithCompanionObjectImpl)).success.value
+      val loaded = loadStreamlet(flowConfig(appId, streamletClassWithCompanionObjectImpl)).success.value
       loaded.streamlet mustBe a[SparkStreamlet]
     }
 
     "return a failure with a streamlet from a class with args and companion object implementation" in {
-      val failure = loadStreamlet(flowConfig(appId, appVersion, streamletClassWithArgsAndCompanionObjectImpl)).failure
+      val failure = loadStreamlet(flowConfig(appId, streamletClassWithArgsAndCompanionObjectImpl)).failure
       failure.exception mustBe a[InvalidStreamletClass]
     }
 
     "successfully load a streamlet from a companion object implementation" in {
-      val loaded = loadStreamlet(flowConfig(appId, appVersion, streamletAsCompanionObjectImpl)).success.value
+      val loaded = loadStreamlet(flowConfig(appId, streamletAsCompanionObjectImpl)).success.value
       loaded.streamlet mustBe a[SparkStreamlet]
     }
 
     "successfully load a streamlet from a class implementation" in {
-      val loaded = loadStreamlet(flowConfig(appId, appVersion, streamletClassImpl)).success.value
+      val loaded = loadStreamlet(flowConfig(appId, streamletClassImpl)).success.value
       loaded.streamlet mustBe a[SparkStreamlet]
     }
 
     "create a new streamlet instance on each call" in {
       for {
-        LoadedStreamlet(streamlet1, _) ← loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
-        LoadedStreamlet(streamlet2, _) ← loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
+        LoadedStreamlet(streamlet1, _) ← loadStreamlet(flowConfig(appId, streamletObjectImpl))
+        LoadedStreamlet(streamlet2, _) ← loadStreamlet(flowConfig(appId, streamletObjectImpl))
       } yield (streamlet1 mustNot be(theSameInstanceAs(streamlet2)))
     }
 
     val checkContextForStreamlet: String ⇒ Unit = { streamletImpl ⇒
-      val LoadedStreamlet(_, conf) = loadStreamlet(flowConfig(appId, appVersion, streamletImpl)).success.value
+      val LoadedStreamlet(_, conf) = loadStreamlet(flowConfig(appId, streamletImpl)).success.value
       conf.config.getString("fake-config-value") mustBe "bla"
     }
 
@@ -126,24 +124,24 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
     }
 
     "return a failure if the streamlet class does not have a default no-args constructor" in {
-      val failure = loadStreamlet(flowConfig(appId, appVersion, streamletClassImplWithArgs)).failure
+      val failure = loadStreamlet(flowConfig(appId, streamletClassImplWithArgs)).failure
       failure.exception mustBe a[NoArgsConstructorExpectedException]
     }
 
     "return a failure if the streamlet class cannot be found on the classpath" in {
-      loadStreamlet(flowConfig(appId, appVersion, "notExisting")).failure.exception mustBe a[StreamletClassNotFound]
+      loadStreamlet(flowConfig(appId, "notExisting")).failure.exception mustBe a[StreamletClassNotFound]
     }
 
     "return a failure if the streamlet class configured is not a Streamlet" in {
-      loadStreamlet(flowConfig(appId, appVersion, "java.lang.String")).failure.exception mustBe a[InvalidStreamletClass]
+      loadStreamlet(flowConfig(appId, "java.lang.String")).failure.exception mustBe a[InvalidStreamletClass]
     }
 
     "return a failure if the streamlet is a trait with no class or object" in {
-      loadStreamlet(flowConfig(appId, appVersion, "TrivialSparklet")).failure.exception mustBe a[StreamletClassNotFound]
+      loadStreamlet(flowConfig(appId, "TrivialSparklet")).failure.exception mustBe a[StreamletClassNotFound]
     }
 
     "return a failure if we have a trait that extends a class that extends Sparklet" in {
-      loadStreamlet(flowConfig(appId, appVersion, "MySparklet")).failure.exception mustBe a[StreamletClassNotFound]
+      loadStreamlet(flowConfig(appId, "MySparklet")).failure.exception mustBe a[StreamletClassNotFound]
     }
 
   }

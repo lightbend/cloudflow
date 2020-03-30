@@ -61,14 +61,16 @@ RUN set -ex; \
   mkdir /opt/cloudflow &&\
   mkdir $FLINK_HOME/flink-web-upload; \
   mv $FLINK_HOME/opt/flink-queryable-state-runtime_$SCALA_VERSION-$FLINK_VERSION.jar $FLINK_HOME/lib; \
-  chmod -R 777 $FLINK_HOME &&\
-  chmod -R 777 $SPARK_HOME
+  chmod -R 755 $FLINK_HOME &&\
+  chmod -R 755 $SPARK_HOME && \
+  mkdir -p /prometheus && \
+  curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar 
 
 ADD config.sh $FLINK_HOME/bin/
 
 # Update entrypoint
 # Copy orchestrating entrypoint script to the image
-COPY flink-entrypoint.sh cloudflow-entrypoint.sh /opt/
+COPY flink-entrypoint.sh cloudflow-entrypoint.sh akka-entrypoint.sh /opt/
 
 ENV FLINK_HOME=/opt/flink
 ENV SPARK_HOME=/opt/spark

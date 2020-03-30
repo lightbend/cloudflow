@@ -18,7 +18,7 @@ package cloudflow.sbt
 
 import java.io.File
 
-import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys._
+// import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys._
 import sbt.Keys._
 import sbt._
 import sbtavro.SbtAvro.autoImport._
@@ -42,7 +42,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   // common definitions
   final val CloudflowLocalConfigFile = ".lightbend/cloudflow/pipectl.json"
-  final val CloudflowDockerBaseImage = "lightbend/cloudflow-base:1.3.1-spark-2.4.5-flink-1.10.0-scala-2.12"
+  final val CloudflowDockerBaseImage = "lightbend/cloudflow-base:1.3.2-spark-2.4.5-flink-1.10.0-scala-2.12"
   // used for internal release
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
@@ -55,20 +55,6 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
     cloudflowDockerParentImage := CloudflowDockerBaseImage,
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-        }.value,
-    agentPaths := Def.taskDyn {
-          Def.task {
-            resolvedJavaAgents.value
-              .filter(_.agent.scope.dist)
-              .map { resolved ⇒
-                resolved.agent.name -> (
-                  ImagePlugin.AppTargetDir + File.separator +
-                    Project.normalizeModuleID(resolved.agent.name) +
-                    File.separator + resolved.artifact.name
-                )
-              }
-              .toMap
-          }
         }.value,
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
