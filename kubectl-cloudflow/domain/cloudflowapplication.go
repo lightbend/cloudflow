@@ -126,10 +126,12 @@ type CloudflowApplicationSpec struct {
 
 // PodStatus contains the status of the pod
 type PodStatus struct {
-	Name     string `json:"name"`
-	Ready    string `json:"ready"`
-	Restarts int    `json:"restarts"`
-	Status   string `json:"status"`
+	Name                string `json:"name"`
+	Ready               string `json:"ready"`
+	NrOfContainersReady int    `json:"nr_of_containers_ready"`
+	NrOfContainers      int    `json:"nr_of_containers"`
+	Restarts            int    `json:"restarts"`
+	Status              string `json:"status"`
 }
 
 // StreamletStatus contains the status of the streamlet
@@ -148,6 +150,7 @@ type EndpointStatus struct {
 type CloudflowApplicationStatus struct {
 	AppID             string            `json:"app_id"`
 	AppVersion        string            `json:"app_version"`
+	AppStatus         string            `json:"app_status"`
 	EndpointStatuses  []EndpointStatus  `json:"endpoint_statuses"`
 	StreamletStatuses []StreamletStatus `json:"streamlet_statuses"`
 }

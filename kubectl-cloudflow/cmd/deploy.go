@@ -153,15 +153,6 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Get the Cloudflow operator ownerReference
-	ownerReference := version.GetOwnerReferenceForCloudflowOperator()
-
-	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace, ownerReference)
-
-	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
-		util.LogAndExit("%s", err)
-	}
-
 	// Delay the creation of the secret for after the ownerReferences has been added.
 	// Creating then updating the secret generates problem for the Flink streamlets deployment.
 	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues)
@@ -171,7 +162,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		util.LogAndExit("The application descriptor is invalid, %s", err.Error())
 	}
 
-	createOrUpdateCloudflowApplication(cloudflowApplicationClient, applicationSpec, ownerReference)
+	createOrUpdateCloudflowApplication(cloudflowApplicationClient, applicationSpec)
 
 	// When the CR has been created, create a ownerReference using the uid from the stored CR and
 	// then update secrets and service account with the ownerReference
@@ -179,13 +170,14 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if err != nil {
 		util.LogAndExit("Failed to retrieve the application `%s`, %s", applicationSpec.AppID, err.Error())
 	}
-	ownerReference = storedCR.GenerateOwnerReference()
+	ownerReference := storedCR.GenerateOwnerReference()
 
 	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
 	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
-	serviceAccount.ObjectMeta.OwnerReferences = []metav1.OwnerReference{ownerReference}
-	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount); err != nil {
+	// Delay the creation of the service account for after the ownerReferences has been generated.
+	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
+	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount, ownerReference); err != nil {
 		util.LogAndExit("%s", err)
 	}
 
@@ -358,7 +350,9 @@ func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec 
 	}
 }
 
-func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.CloudflowApplicationClient, spec domain.CloudflowApplicationSpec, cloudflowOperatorOwnerReference metav1.OwnerReference) {
+func createOrUpdateCloudflowApplication(
+	cloudflowApplicationClient *k8s.CloudflowApplicationClient,
+	spec domain.CloudflowApplicationSpec) {
 
 	storedCR, errCR := cloudflowApplicationClient.Get(spec.AppID)
 
@@ -370,7 +364,6 @@ func createOrUpdateCloudflowApplication(cloudflowApplicationClient *k8s.Cloudflo
 		}
 	} else if reflect.DeepEqual(*storedCR, domain.CloudflowApplication{}) {
 		cloudflowApplication := domain.NewCloudflowApplication(spec)
-		cloudflowApplication.SetOwnerReferences([]metav1.OwnerReference{cloudflowOperatorOwnerReference})
 
 		_, err := cloudflowApplicationClient.Create(cloudflowApplication)
 		if err != nil {

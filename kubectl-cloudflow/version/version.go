@@ -35,35 +35,6 @@ const ProtocolVersionConfigMapName = "cloudflow-protocol-version"
 // CloudflowDeploymentName is the name of the Cloudflow operator deployment
 const CloudflowDeploymentName = "cloudflow-operator"
 
-// GetOwnerReferenceForCloudflowOperator returns an `ownerReference` pointing townards the Cloudflow Operator
-func GetOwnerReferenceForCloudflowOperator() metav1.OwnerReference {
-	k8sClient, k8sErr := k8s.GetClient()
-	if k8sErr != nil {
-		util.LogAndExit("Failed to create new kubernetes client, %s", k8sErr.Error())
-	}
-
-	namespace, err := FindCloudflowNamespace()
-	if err != nil {
-		util.LogAndExit("Failed to find namespace where Cloudflow is installed, %s", err.Error())
-	}
-
-	deploymentsClient := k8sClient.AppsV1().Deployments(namespace)
-
-	deployment, depErr := deploymentsClient.Get(CloudflowDeploymentName, metav1.GetOptions{})
-	if depErr != nil {
-		util.LogAndExit("Failed to find the Cloudflow operator deployment, %s", depErr.Error())
-	}
-	managingController := true
-	blockOwnerDeletion := true
-	return metav1.OwnerReference{
-		APIVersion:         "extensions/v1beta1",
-		Kind:               "Deployment",
-		Name:               deployment.GetName(),
-		UID:                deployment.GetUID(),
-		Controller:         &managingController,
-		BlockOwnerDeletion: &blockOwnerDeletion}
-}
-
 // GetProtocolVersionConfigMap Get the protocol version config map set by the operator
 func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
 	k8sClient, k8sErr := k8s.GetClient()

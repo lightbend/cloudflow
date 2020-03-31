@@ -169,7 +169,7 @@ object AkkaRunner extends Runner[Deployment] {
                             namespace = namespace,
                             labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
                             ownerReferences = ownerReferences)
-    ).withReplicas(deployment.replicas.getOrElse(NrOfReplicas))
+    ).withReplicas(deployment.replicas.getOrElse(DefaultReplicas))
       .withTemplate(template)
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))
 
@@ -186,7 +186,7 @@ object AkkaRunner extends Runner[Deployment] {
   val JavaOptsEnvVar                    = "JAVA_OPTS"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
   val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
-  val NrOfReplicas                      = 1
+  val DefaultReplicas                   = 1
   val ImagePullPolicy                   = Container.PullPolicy.Always
 
   val HealthCheckPath = "/checks/healthy"

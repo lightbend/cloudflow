@@ -82,9 +82,9 @@ object EventActions {
     )
 
   private def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.runtime match {
-    case AkkaRunner.runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.NrOfReplicas)
+    case AkkaRunner.runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
     case SparkRunner.runtime ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
-    case FlinkRunner.runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultParallelism)
+    case FlinkRunner.runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
   }
 
   def undeployEvent(app: CloudflowApplication.CR, namespace: String, cause: ObjectResource)(

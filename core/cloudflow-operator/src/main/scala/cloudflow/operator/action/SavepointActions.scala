@@ -41,9 +41,6 @@ object SavepointActions {
       app.deployments.flatMap(_.portMappings.values).toSet
 
     val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(
-      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
-    )
 
     val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
     val newSavepoints     = distinctSavepoints(newApp.spec)
@@ -51,14 +48,14 @@ object SavepointActions {
     val deleteActions =
       if (deleteOutdatedTopics) {
         (currentSavepoints -- newSavepoints).toVector
-          .map(deleteAction(labels, ownerReferences))
+          .map(deleteAction(labels))
       } else {
         Vector.empty[Action[ObjectResource]]
       }
 
     val createActions =
       (newSavepoints -- currentSavepoints).toVector
-        .map(createAction(labels, ownerReferences))
+        .map(createAction(labels))
     deleteActions ++ createActions
   }
 
@@ -86,13 +83,13 @@ object SavepointActions {
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
 
-  def deleteAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.delete(resource(savepoint, labels, ownerReferences))
+  def deleteAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+    Action.delete(resource(savepoint, labels))
 
-  def createAction(labels: CloudflowLabels, ownerReferences: List[OwnerReference])(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.create(resource(savepoint, labels, ownerReferences), editor)
+  def createAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
+    Action.create(resource(savepoint, labels), editor)
 
-  def resource(savepoint: Savepoint, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+  def resource(savepoint: Savepoint, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): CustomResource[Spec, Status] = {
     val partitions  = ctx.kafkaContext.partitionsPerTopic
@@ -107,8 +104,7 @@ object SavepointActions {
         ObjectMeta(
           name = savepoint.name,
           namespace = ns,
-          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName),
-          ownerReferences = ownerReferences
+          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName)
         )
       )
   }

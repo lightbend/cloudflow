@@ -28,7 +28,6 @@ import skuber.rbac._
 import skuber._
 import skuber.PersistentVolume.AccessMode
 import skuber.PersistentVolumeClaim.VolumeMode
-import java.security.acl.Owner
 
 /**
  * Creates a sequence of resource actions for preparing the namespace where the application is
