@@ -153,9 +153,6 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Delay the creation of the service account for after the ownerReferences has been generated.
-	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
-
 	// Delay the creation of the secret for after the ownerReferences has been added.
 	// Creating then updating the secret generates problem for the Flink streamlets deployment.
 	streamletNameSecretMap := deploy.CreateSecretsData(&applicationSpec, configurationKeyValues)
@@ -175,14 +172,11 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 	ownerReference := storedCR.GenerateOwnerReference()
 
-	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount, ownerReference); err != nil {
-		util.LogAndExit("%s", err)
-	}
-
 	streamletNameSecretMap = deploy.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
 	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
 
-	serviceAccount.ObjectMeta.OwnerReferences = []metav1.OwnerReference{ownerReference}
+	// Delay the creation of the service account for after the ownerReferences has been generated.
+	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount, ownerReference); err != nil {
 		util.LogAndExit("%s", err)
 	}
