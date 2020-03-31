@@ -135,7 +135,7 @@ object CloudflowApplication {
         spec.appId,
         spec.appVersion,
         streamletStatuses,
-        Unknown
+        Some(Unknown)
       )
     }
 
@@ -171,7 +171,8 @@ object CloudflowApplication {
   }
 
   // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
-  case class Status private (appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: String) {
+  case class Status private (appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
+    def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
     def updateApp(newApp: CloudflowApplication.CR) = {
       // copy PodStatus lists that already exist
       val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
@@ -186,7 +187,7 @@ object CloudflowApplication {
         appId = newApp.spec.appId,
         appVersion = newApp.spec.appVersion,
         streamletStatuses = newStreamletStatuses,
-        appStatus = Status.calcAppStatus(newStreamletStatuses)
+        appStatus = Some(Status.calcAppStatus(newStreamletStatuses))
       )
     }
 
@@ -199,7 +200,7 @@ object CloudflowApplication {
       val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
       copy(
         streamletStatuses = streamletStatusesUpdated,
-        appStatus = Status.calcAppStatus(streamletStatusesUpdated)
+        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
       )
     }
 
@@ -212,7 +213,7 @@ object CloudflowApplication {
       val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
       copy(
         streamletStatuses = streamletStatusesUpdated,
-        appStatus = Status.calcAppStatus(streamletStatusesUpdated)
+        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
       )
     }
 
