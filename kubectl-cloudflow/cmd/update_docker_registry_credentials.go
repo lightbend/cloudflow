@@ -141,7 +141,14 @@ func appendCloudflowImagePullSecretName(serviceAccount *v1.ServiceAccount, newIm
 	return serviceAccount
 }
 
-func createOrUpdateServiceAccount(k8sClient *kubernetes.Clientset, appID string, serviceAccount v1.ServiceAccount) (*v1.ServiceAccount, error) {
+func createOrUpdateServiceAccount(
+	k8sClient *kubernetes.Clientset,
+	appID string,
+	serviceAccount v1.ServiceAccount,
+	ownerReference metav1.OwnerReference) (*v1.ServiceAccount, error) {
+
+	serviceAccount.OwnerReferences = []metav1.OwnerReference{ownerReference}
+
 	if _, nserr := k8sClient.CoreV1().ServiceAccounts(appID).Get(serviceAccount.ObjectMeta.Name, metav1.GetOptions{}); nserr != nil {
 		if _, nserr := k8sClient.CoreV1().ServiceAccounts(appID).Create(&serviceAccount); nserr != nil {
 			util.LogAndExit("Failed to create Cloudflow app service account in `%s`, %s", appID, nserr.Error())
@@ -158,23 +165,22 @@ func createOrUpdateServiceAccount(k8sClient *kubernetes.Clientset, appID string,
 	return nil, fmt.Errorf("failed to update Cloudflow app service account in `%s`, %s", appID, err)
 }
 
-func newCloudflowServiceAccount(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {
+func newCloudflowServiceAccount(appID string) v1.ServiceAccount {
 	return v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cloudflowAppServiceAccountName,
-			Namespace:       appID,
-			Labels:          domain.CreateLabels(appID),
-			OwnerReferences: []metav1.OwnerReference{cloudflowOperatorOwnerReference},
+			Name:      cloudflowAppServiceAccountName,
+			Namespace: appID,
+			Labels:    domain.CreateLabels(appID),
 		},
 	}
 }
 
-func newCloudflowServiceAccountWithImagePullSecrets(appID string, cloudflowOperatorOwnerReference metav1.OwnerReference) v1.ServiceAccount {
+func newCloudflowServiceAccountWithImagePullSecrets(appID string) v1.ServiceAccount {
 	secretRef := v1.LocalObjectReference{
 		Name: imagePullSecretName,
 	}
 	imagePullSecrets := []v1.LocalObjectReference{secretRef}
-	serviceAccount := newCloudflowServiceAccount(appID, cloudflowOperatorOwnerReference)
+	serviceAccount := newCloudflowServiceAccount(appID)
 	serviceAccount.ImagePullSecrets = imagePullSecrets
 	auto := true
 	serviceAccount.AutomountServiceAccountToken = &auto
