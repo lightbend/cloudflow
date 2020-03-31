@@ -20,7 +20,6 @@ package action
 import org.scalatest._
 
 import skuber._
-import skuber.ext.Ingress
 
 import cloudflow.blueprint._
 

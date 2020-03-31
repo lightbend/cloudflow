@@ -122,30 +122,72 @@ object CloudflowApplication {
   }
 
   object Status {
+    val Unknown          = "Unknown"
+    val Running          = "Running"
+    val Pending          = "Pending"
+    val CrashLoopBackOff = "CrashLoopBackOff"
+
     def apply(
-        app: CloudflowApplication.CR,
-        streamletStatuses: Vector[StreamletStatus] = Vector()
-    ): Status =
+        spec: CloudflowApplication.Spec
+    ): Status = {
+      val streamletStatuses = createStreamletStatuses(spec)
       Status(
-        app.spec.appId,
-        app.spec.appVersion,
-        streamletStatuses
+        spec.appId,
+        spec.appVersion,
+        streamletStatuses,
+        Some(Unknown)
       )
+    }
+
+    def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
+      // TODO not match on runtime, this is not great for extensibility.
+      // There are some plans to make replicas mandatory in the CR
+      // and to indicate extraPods required in the deployment to prevent the code below specific to runtimes
+      import cloudflow.operator.runner._
+      spec.deployments.map { deployment =>
+        val expectedPodCount = deployment.runtime match {
+          case AkkaRunner.runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
+          case SparkRunner.runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
+          case FlinkRunner.runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
+        }
+        StreamletStatus(
+          deployment.streamletName,
+          expectedPodCount
+        )
+      }
+    }
+
+    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
+      if (streamletStatuses.forall { streamletStatus =>
+            streamletStatus.hasExpectedPods(streamletStatus.podStatuses.size) &&
+            streamletStatus.podStatuses.forall(_.isReady)
+          }) {
+        Status.Running
+      } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
+        Status.CrashLoopBackOff
+      } else {
+        Status.Pending
+      }
   }
 
-  case class Status(
-      appId: String,
-      appVersion: String,
-      streamletStatuses: Vector[StreamletStatus]
-  ) {
-
-    def updateSpec(spec: CloudflowApplication.Spec) = {
-      val newStreamletStatuses =
-        streamletStatuses.filter(streamletStatus ⇒ spec.deployments.map(_.streamletName).contains(streamletStatus.streamletName))
+  // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
+  case class Status private (appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
+    def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
+    def updateApp(newApp: CloudflowApplication.CR) = {
+      // copy PodStatus lists that already exist
+      val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
+        streamletStatuses
+          .find(_.streamletName == newStreamletStatus.streamletName)
+          .map { streamletStatus =>
+            newStreamletStatus.copy(podStatuses = streamletStatus.podStatuses)
+          }
+          .getOrElse(newStreamletStatus)
+      }
       copy(
-        appId = spec.appId,
-        appVersion = spec.appVersion,
-        streamletStatuses = newStreamletStatuses
+        appId = newApp.spec.appId,
+        appVersion = newApp.spec.appVersion,
+        streamletStatuses = newStreamletStatuses,
+        appStatus = Some(Status.calcAppStatus(newStreamletStatuses))
       )
     }
 
@@ -154,8 +196,12 @@ object CloudflowApplication {
         streamletStatuses
           .find(_.streamletName == streamletName)
           .map(_.updatePod(pod))
-          .getOrElse(CloudflowApplication.StreamletStatus(streamletName, pod))
-      copy(streamletStatuses = streamletStatuses.filterNot(_.streamletName == streamletStatus.streamletName) :+ streamletStatus)
+          .toList
+      val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
+      copy(
+        streamletStatuses = streamletStatusesUpdated,
+        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
+      )
     }
 
     def deletePod(streamletName: String, pod: Pod) = {
@@ -163,8 +209,12 @@ object CloudflowApplication {
         streamletStatuses
           .find(_.streamletName == streamletName)
           .map(_.deletePod(pod))
-          .getOrElse(CloudflowApplication.StreamletStatus(streamletName, pod))
-      copy(streamletStatuses = streamletStatuses.filterNot(_.streamletName == streamletStatus.streamletName) :+ streamletStatus)
+          .toList
+      val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
+      copy(
+        streamletStatuses = streamletStatusesUpdated,
+        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
+      )
     }
 
     def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
@@ -172,12 +222,21 @@ object CloudflowApplication {
   }
 
   object StreamletStatus {
-    def apply(streamletName: String, pod: Pod): StreamletStatus =
-      StreamletStatus(streamletName, Vector(PodStatus(pod)))
-    def apply(streamletName: String): StreamletStatus = StreamletStatus(streamletName)
+    def apply(streamletName: String, expectedPodCount: Int): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector())
+    def apply(streamletName: String, pod: Pod, expectedPodCount: Int): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector(PodStatus(pod)))
+    def apply(streamletName: String, expectedPodCount: Int, podStatuses: Vector[PodStatus]): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), podStatuses)
   }
 
-  case class StreamletStatus(streamletName: String, podStatuses: Vector[PodStatus] = Vector()) {
+  case class StreamletStatus(
+      streamletName: String,
+      // Added as Option for backwards compatibility
+      expectedPodCount: Option[Int],
+      podStatuses: Vector[PodStatus]
+  ) {
+    def hasExpectedPods(nrOfPodsDetected: Int) = expectedPodCount.getOrElse(0) == nrOfPodsDetected
     def updatePod(pod: Pod) = {
       val podStatus = PodStatus(pod)
       copy(podStatuses = podStatuses.filterNot(_.name == podStatus.name) :+ podStatus)
@@ -186,42 +245,89 @@ object CloudflowApplication {
   }
 
   object PodStatus {
-    def apply(pod: Pod): PodStatus = {
-      val name = pod.metadata.name
-      pod.status
-        .map { status ⇒
-          val ready = status.conditions.find(_._type == "Ready").map(_.status).getOrElse("")
-          // this is on purpose, so that if this changes, it fails instead of silently providing wrong statuses
-          require(status.containerStatuses.size <= 1,
-                  s"Expected one container in a pod created by a runner, not '${status.containerStatuses.size}'.")
-          val containerStatus = status.containerStatuses.headOption
+    val Pending          = "Pending"
+    val Running          = "Running"
+    val Terminating      = "Terminating"
+    val Terminated       = "Terminated"
+    val Succeeded        = "Succeeded"
+    val Failed           = "Failed"
+    val Unknown          = "Unknown"
+    val CrashLoopBackOff = "CrashLoopBackOff"
 
-          val restarts = containerStatus.map(_.restartCount).getOrElse(0)
+    val ReadyTrue  = "True"
+    val ReadyFalse = "False"
 
-          val st = containerStatus
-            .flatMap(_.state match {
-              case Some(Container.Waiting(Some(reason))) if reason == "CrashLoopBackOff" ⇒ Some("CrashLoopBackOff")
-              case _ ⇒
-                status.phase.map {
-                  case Pod.Phase.Pending   ⇒ "ContainerCreating"
-                  case Pod.Phase.Running   ⇒ "Running"
-                  case Pod.Phase.Succeeded ⇒ "Terminated"
-                  case Pod.Phase.Failed    ⇒ "Error"
-                  case Pod.Phase.Unknown   ⇒ "Unknown"
-                }
-            })
-            .getOrElse("Unknown")
-
-          PodStatus(name, st, restarts, ready)
-        }
-        .getOrElse(PodStatus(name, "Unknown", 0, ""))
+    def apply(
+        name: String,
+        status: String,
+        restarts: Int,
+        nrOfContainersReady: Int,
+        nrOfContainers: Int
+    ): PodStatus = {
+      val ready = if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) ReadyTrue else ReadyFalse
+      PodStatus(name, status, restarts, Some(nrOfContainersReady), Some(nrOfContainers), Some(ready))
     }
+    def apply(name: String): PodStatus = PodStatus(name, Unknown)
+    def apply(pod: Pod): PodStatus = {
+      // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+      val name                = pod.metadata.name
+      val status              = pod.status.getOrElse(Pod.Status())
+      val nrOfContainers      = pod.spec.map(_.containers.size).getOrElse(status.containerStatuses.size)
+      val nrOfContainersReady = status.containerStatuses.filter(_.ready).size
+      val restarts            = status.containerStatuses.map(_.restartCount).sum
+      val containerStates     = status.containerStatuses.flatMap(_.state)
+
+      // https://github.com/kubernetes/kubectl/blob/27fa797464ff6684ec591c46c69d5e013998a0d1/pkg/describe/describe.go#L698
+      val st = if (pod.metadata.deletionTimestamp.nonEmpty) {
+        Terminating
+      } else {
+        status.phase
+          .map {
+            case Pod.Phase.Pending   ⇒ getStatusFromContainerStates(containerStates, nrOfContainers)
+            case Pod.Phase.Running   ⇒ Running
+            case Pod.Phase.Succeeded ⇒ Succeeded
+            case Pod.Phase.Failed    ⇒ Failed
+            case Pod.Phase.Unknown   ⇒ Unknown
+          }
+          .getOrElse(getStatusFromContainerStates(containerStates, nrOfContainers))
+      }
+      PodStatus(name, st, restarts, nrOfContainersReady, nrOfContainers)
+    }
+
+    private def getStatusFromContainerStates(containerStates: List[Container.State], nrOfContainers: Int) =
+      if (containerStates.nonEmpty) {
+        // - Running if all containers running;
+        // - Terminated if all containers terminated;
+        // - first Waiting reason found (ContainerCreating, CrashLoopBackOff, ErrImagePull, ...);
+        // - otherwise Pending.
+        if (containerStates.collect { case _: Container.Running => 1 }.sum == nrOfContainers) Running
+        else if (containerStates.collect { case _: Container.Terminated => 1 }.sum == nrOfContainers) Terminated
+        else {
+          containerStates
+            .collect { case Container.Waiting(Some(reason)) => reason }
+            .headOption
+            .getOrElse(Pending)
+        }
+      } else Pending
   }
 
   /**
    * Status of the pod.
    * ready can be "True", "False" or "Unknown"
    */
-  case class PodStatus(name: String, status: String, restarts: Int, ready: String)
-
+  case class PodStatus(
+      name: String,
+      status: String,
+      restarts: Int = 0,
+      // Optional for backwards compatibility
+      nrOfContainersReady: Option[Int] = None,
+      // Optional for backwards compatibility
+      nrOfContainers: Option[Int] = None,
+      // TODO can this be removed without breaking backwards-compatibility?
+      ready: Option[String] = None
+  ) {
+    def containers      = nrOfContainers.getOrElse(0)
+    def containersReady = nrOfContainersReady.getOrElse(0)
+    def isReady         = status == PodStatus.Running && containersReady == containers && containers > 0
+  }
 }

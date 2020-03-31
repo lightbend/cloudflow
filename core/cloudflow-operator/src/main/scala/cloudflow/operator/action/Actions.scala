@@ -49,6 +49,13 @@ object Actions {
     prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
       deploySavepoints(newApp, currentApp, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
+      // If an existing status is there, update status based on app (expected pod counts)
+      // in case pod events do not occur, for instance when a operator delegated to is not responding
+      newApp.status.flatMap { st =>
+        val newStatus = st.updateApp(newApp)
+        if (newStatus != st) Some(newStatus.toAction(newApp))
+        else None
+      }.toList ++
       EventActions.deployEvents(newApp, currentApp, namespace, cause)
   }
 
