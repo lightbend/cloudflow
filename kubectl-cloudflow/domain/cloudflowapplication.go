@@ -243,13 +243,12 @@ func CreatedByCliAnnotation(releaseTag string, buildNumber string) map[string]st
 
 // LastModifiedByCLIAnnotation creates a map for use as an annotation when a resource is updated by the CLI
 func LastModifiedByCLIAnnotation(releaseTag string, buildNumber string, previousAnnotations map[string]string) map[string]string {
-	newAnnotations := map[string]string{
-		"com.lightbend.cloudflow/last-modified-by-cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
-	}
 
+	newAnnotations := make(map[string]string)
 	for k, v := range previousAnnotations {
 		newAnnotations[k] = v
 	}
+	newAnnotations["com.lightbend.cloudflow/last-modified-by-cli-version"] = fmt.Sprintf("%s (%s)", releaseTag, buildNumber)
 	return newAnnotations
 }
 
