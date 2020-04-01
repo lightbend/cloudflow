@@ -357,7 +357,7 @@ func createOrUpdateCloudflowApplication(
 	storedCR, errCR := cloudflowApplicationClient.Get(spec.AppID)
 
 	if errCR == nil {
-		cloudflowApplication := domain.UpdateCloudflowApplication(spec, storedCR.ObjectMeta.ResourceVersion, version.ReleaseTag, version.BuildNumber)
+		cloudflowApplication := domain.UpdateCloudflowApplication(spec, *storedCR, version.ReleaseTag, version.BuildNumber)
 		_, err := cloudflowApplicationClient.Update(cloudflowApplication)
 		if err != nil {
 			util.LogAndExit("Failed to update CloudflowApplication `%s`, %s", spec.AppID, err.Error())

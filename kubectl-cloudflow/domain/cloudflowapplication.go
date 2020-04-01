@@ -194,16 +194,16 @@ func ApiVersion() string {
 }
 
 // UpdateCloudflowApplication creates a CloudflowApplication struct that can be used with a Update call
-func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion string, releaseTag string, buildNumber string) CloudflowApplication {
+func UpdateCloudflowApplication(spec CloudflowApplicationSpec, currentAppCR CloudflowApplication, releaseTag string, buildNumber string) CloudflowApplication {
 
 	app := CloudflowApplication{}
 	app.APIVersion = ApiVersion()
 	app.Kind = "CloudflowApplication"
 	app.ObjectMeta = metav1.ObjectMeta{
 		Name:            spec.AppID,
-		ResourceVersion: resourceVersion,
+		ResourceVersion: currentAppCR.ObjectMeta.ResourceVersion,
 		Labels:          CreateLabels(spec.AppID),
-		Annotations:     CreateAnnotations(releaseTag, buildNumber),
+		Annotations:     LastModifiedByCLIAnnotation(releaseTag, buildNumber, currentAppCR.ObjectMeta.Annotations),
 	}
 	app.Spec = spec
 	return app
@@ -218,7 +218,7 @@ func NewCloudflowApplication(spec CloudflowApplicationSpec, releaseTag string, b
 	app.ObjectMeta = metav1.ObjectMeta{
 		Name:        spec.AppID,
 		Labels:      CreateLabels(spec.AppID),
-		Annotations: CreateAnnotations(releaseTag, buildNumber),
+		Annotations: CreatedByCliAnnotation(releaseTag, buildNumber),
 	}
 	app.Spec = spec
 	return app
@@ -228,17 +228,29 @@ func NewCloudflowApplication(spec CloudflowApplicationSpec, releaseTag string, b
 func NewCloudflowApplicationNamespace(spec CloudflowApplicationSpec, releaseTag string, buildNumber string) v1.Namespace {
 	return v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        spec.AppID,
-			Labels:      CreateLabels(spec.AppID),
-			Annotations: CreateAnnotations(releaseTag, buildNumber),
+			Name:   spec.AppID,
+			Labels: CreateLabels(spec.AppID),
 		},
 	}
 }
 
-func CreateAnnotations(releaseTag string, buildNumber string) map[string]string {
+// CreatedByCliAnnotation creates a map for use as an annotation when a resource is created by the CLI
+func CreatedByCliAnnotation(releaseTag string, buildNumber string) map[string]string {
 	return map[string]string{
-		"com.lightbend.cloudflow/cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
+		"com.lightbend.cloudflow/created-by-cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
 	}
+}
+
+// LastModifiedByCLIAnnotation creates a map for use as an annotation when a resource is updated by the CLI
+func LastModifiedByCLIAnnotation(releaseTag string, buildNumber string, previousAnnotations map[string]string) map[string]string {
+	newAnnotations := map[string]string{
+		"com.lightbend.cloudflow/last-modified-by-cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
+	}
+
+	for k, v := range previousAnnotations {
+		newAnnotations[k] = v
+	}
+	return newAnnotations
 }
 
 // CreateLabels creates cloudflow application labels

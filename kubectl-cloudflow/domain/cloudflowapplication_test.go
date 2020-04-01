@@ -56,7 +56,7 @@ func Test_validateOwnerReferenceGeneration(t *testing.T) {
 	cr := NewCloudflowApplication(app, "v1.3.1", "34ab342")
 
 	ownerReference := cr.GenerateOwnerReference()
-	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/cli-version"] == "v1.3.1 (34ab342)")
+	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/created-by-cli-version"] == "v1.3.1 (34ab342)")
 	assert.True(t, ownerReference.Kind == "CloudflowApplication")
 	assert.True(t, ownerReference.APIVersion == "cloudflow.lightbend.com/v1alpha1")
 	assert.True(t, ownerReference.Name == "sensor-data-scala")

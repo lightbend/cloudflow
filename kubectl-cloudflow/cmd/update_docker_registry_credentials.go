@@ -108,7 +108,7 @@ func newNamespace(appID string) v1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        appID,
 			Labels:      domain.CreateLabels(appID),
-			Annotations: domain.CreateAnnotations(version.ReleaseTag, version.BuildNumber),
+			Annotations: domain.CreatedByCliAnnotation(version.ReleaseTag, version.BuildNumber),
 		},
 	}
 }
@@ -172,7 +172,7 @@ func newCloudflowServiceAccount(appID string) v1.ServiceAccount {
 			Name:        cloudflowAppServiceAccountName,
 			Namespace:   appID,
 			Labels:      domain.CreateLabels(appID),
-			Annotations: domain.CreateAnnotations(version.ReleaseTag, version.BuildNumber),
+			Annotations: domain.CreatedByCliAnnotation(version.ReleaseTag, version.BuildNumber),
 		},
 	}
 }
@@ -196,7 +196,7 @@ func createOrUpdateImagePullSecret(k8sClient *kubernetes.Clientset, appID string
 			Name:        imagePullSecretName,
 			Namespace:   appID,
 			Labels:      domain.CreateLabels(appID),
-			Annotations: domain.CreateAnnotations(version.ReleaseTag, version.BuildNumber),
+			Annotations: domain.CreatedByCliAnnotation(version.ReleaseTag, version.BuildNumber),
 		},
 	}
 
