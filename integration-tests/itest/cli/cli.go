@@ -35,11 +35,12 @@ type AppStatus struct {
 
 // StreamletPod represents an instance of a streamlet's pod
 type StreamletPod struct {
-	Streamlet string
-	Pod       string
-	Status    string
-	Restarts  int
-	Ready     bool
+	Streamlet     string
+	Pod           string
+	ActualReady   int
+	ExpectedReady int
+	Status        string
+	Restarts      int
 }
 
 var pollSleepInterval, _ = time.ParseDuration("5s")
@@ -152,18 +153,35 @@ func Status(app App) (status AppStatus, err error) {
 			var streamletPod StreamletPod
 			streamletPod.Streamlet = parts[0]
 			streamletPod.Pod = parts[1]
-			streamletPod.Status = parts[2]
-			restarts, err := strconv.Atoi(parts[3])
+			streamletPod.ActualReady, streamletPod.ExpectedReady, err = parseReady(parts[2])
 			if err != nil {
 				return mkErr(err)
 			}
-			streamletPod.Restarts = restarts
-			streamletPod.Ready = strings.TrimSpace(parts[4]) == "True"
+			streamletPod.Status = parts[3]
+			streamletPod.Restarts, err = strconv.Atoi(parts[4])
+			if err != nil {
+				return mkErr(err)
+			}
 			streamletPods = append(streamletPods, streamletPod)
 		}
 	}
 	status.StreamletPods = streamletPods
 	return status, nil
+}
+
+func parseReady(str string) (actual int, expected int, err error) {
+	splits := strings.Split(str, "/")
+	if len(splits) != 2 {
+		err = fmt.Errorf("string didn't contain actual/expected counts: [%s]", str)
+		return
+	}
+	if actual, err = strconv.Atoi(splits[0]); err != nil {
+		return
+	}
+	if expected, err = strconv.Atoi(splits[1]); err != nil {
+		return
+	}
+	return actual, expected, nil
 }
 
 func parseLineInN(str string, segments int) (parsed []string, err error) {
@@ -247,6 +265,23 @@ func PollUntilExpectedPodsForStreamlet(app App, streamlet string, expected int) 
 		if len(pods) == expected {
 			return
 		}
+		time.Sleep(pollSleepInterval)
+	}
+}
+
+// PollUntilAppStatusIs polls the status of the application until it matches the expected status
+func PollUntilAppStatusIs(app App, expected string) (res string, err error) {
+	for {
+		appStatus, er := Status(app)
+		if er != nil {
+			err = er
+			return
+		}
+
+		if appStatus.Status == expected {
+			return expected, nil
+		}
+
 		time.Sleep(pollSleepInterval)
 	}
 }

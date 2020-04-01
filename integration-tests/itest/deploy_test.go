@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"log"
-	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
@@ -64,11 +63,14 @@ var _ = Describe("Application deployment", func() {
 
 		It("should get to a 'running' status, eventually", func(done Done) {
 
-			// this wait is needed to let the application deploy and get to a stable state
-			// a bug in the `cloudflow status` call.
-			// see also: https://github.com/lightbend/cloudflow/issues/201
-			waitTime, _ := time.ParseDuration(InitialWaitTime)
-			time.Sleep(waitTime)
+			status, err := cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal("Running"))
+			close(done)
+		}, LongTimeout)
+
+		It("should have all pods in a 'running' status, eventually", func(done Done) {
 
 			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
 
