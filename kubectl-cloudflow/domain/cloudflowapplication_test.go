@@ -63,6 +63,10 @@ func Test_validateOwnerReferenceGeneration(t *testing.T) {
 	assert.True(t, *ownerReference.Controller == true)
 	assert.True(t, *ownerReference.BlockOwnerDeletion == true)
 
+	// Test updating the annotation
+	cr = UpdateCloudflowApplication(cr.Spec, cr, "v1.3.2", "35ac352")
+	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/created-by-cli-version"] == "v1.3.1 (34ab342)")
+	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/last-modified-by-cli-version"] == "v1.3.2 (35ac352)")
 }
 
 func findDescriptor(name string, app CloudflowApplicationSpec) (Streamlet, error) {
