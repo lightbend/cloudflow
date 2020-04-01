@@ -58,6 +58,9 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
     // RateSource can only work with a microBatch query because it contains no data at time zero.
     // Trigger.Once requires data at start to  work.
     val trigger = if (isRateSource(stream)) Trigger.ProcessingTime(ProcessingTimeInterval) else Trigger.Once()
+    println(s"*****************************************")
+    println(s"TestSparkStreamletContext: Using $trigger")
+    println(s"*****************************************")
     outletTaps
       .find(_.portName == outPort.name)
       .map { outletTap ⇒

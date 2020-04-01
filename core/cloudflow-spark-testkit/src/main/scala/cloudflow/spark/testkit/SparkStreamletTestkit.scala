@@ -222,8 +222,17 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       duration: Duration
   ): Unit = {
     val t0             = System.currentTimeMillis()
+    def elapsedMillis  = System.currentTimeMillis() - t0
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
+    println(s"SparkStreamletTestKit: Before time checks *****************************************")
+    val currentMillis = elapsedMillis
+    val expired       = currentMillis < duration.toMillis
+    println(s"SparkStreamletTestKit: elapsed millis after run: $currentMillis")
+    println(s"SparkStreamletTestKit: are we beyond deadline? : $expired")
+    println(s"SparkStreamletTestKit: Active streams:" + session.streams.active.mkString(", "))
+    println(s"*****************************************")
     while (session.streams.active.nonEmpty && (System.currentTimeMillis() - t0) < duration.toMillis) {
+      println(s"Into while loop")
       session.streams.awaitAnyTermination(duration.toMillis)
       session.streams.resetTerminated()
     }

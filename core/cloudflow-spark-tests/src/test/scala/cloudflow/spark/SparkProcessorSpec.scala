@@ -18,9 +18,7 @@ package cloudflow.spark
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
-
 import org.apache.spark.sql.streaming.OutputMode
-
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
 import cloudflow.spark.avro._
@@ -35,7 +33,7 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
       val testKit = SparkStreamletTestkit(session)
 
       // create sparkStreamlet
-      object MySparkProcessor extends SparkStreamlet {
+      class MySparkProcessor extends SparkStreamlet {
         val in    = AvroInlet[Data]("in")
         val out   = AvroOutlet[Simple]("out", _.name)
         val shape = StreamletShape(in, out)
@@ -50,17 +48,20 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
         }
       }
 
+      // create an instance of the streamlet under test
+      val instance = new MySparkProcessor()
+
       // setup inlet tap on inlet port
-      val in: SparkInletTap[Data] = testKit.inletAsTap[Data](MySparkProcessor.in)
+      val in: SparkInletTap[Data] = testKit.inletAsTap[Data](instance.in)
 
       // setup outlet tap on outlet port
-      val out: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](MySparkProcessor.out)
+      val out: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out)
 
       // build data and send to inlet tap
       val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
       in.addData(data)
 
-      testKit.run(MySparkProcessor, Seq(in), Seq(out), 2.seconds)
+      testKit.run(instance, Seq(in), Seq(out), 2.seconds)
 
       // get data from outlet tap
       val results = out.asCollection(session)
