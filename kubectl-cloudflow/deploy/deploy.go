@@ -359,14 +359,16 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 }
 
 func createSecret(appID string, name string, data map[string]string) *corev1.Secret {
-	labels := domain.CreateLabels(appID, version.ReleaseTag, version.BuildNumber)
+	labels := domain.CreateLabels(appID)
+	annotations := domain.CreateAnnotations(version.ReleaseTag, version.BuildNumber)
 	labels["com.lightbend.cloudflow/streamlet-name"] = name
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: appID,
-			Labels:    labels,
+			Name:        name,
+			Namespace:   appID,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 	}
 	secret.StringData = data

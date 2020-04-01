@@ -202,7 +202,8 @@ func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion s
 	app.ObjectMeta = metav1.ObjectMeta{
 		Name:            spec.AppID,
 		ResourceVersion: resourceVersion,
-		Labels:          CreateLabels(spec.AppID, releaseTag, buildNumber),
+		Labels:          CreateLabels(spec.AppID),
+		Annotations:     CreateAnnotations(releaseTag, buildNumber),
 	}
 	app.Spec = spec
 	return app
@@ -215,8 +216,9 @@ func NewCloudflowApplication(spec CloudflowApplicationSpec, releaseTag string, b
 	app.APIVersion = ApiVersion()
 	app.Kind = Kind
 	app.ObjectMeta = metav1.ObjectMeta{
-		Name:   spec.AppID,
-		Labels: CreateLabels(spec.AppID, releaseTag, buildNumber),
+		Name:        spec.AppID,
+		Labels:      CreateLabels(spec.AppID),
+		Annotations: CreateAnnotations(releaseTag, buildNumber),
 	}
 	app.Spec = spec
 	return app
@@ -226,19 +228,25 @@ func NewCloudflowApplication(spec CloudflowApplicationSpec, releaseTag string, b
 func NewCloudflowApplicationNamespace(spec CloudflowApplicationSpec, releaseTag string, buildNumber string) v1.Namespace {
 	return v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   spec.AppID,
-			Labels: CreateLabels(spec.AppID, releaseTag, buildNumber),
+			Name:        spec.AppID,
+			Labels:      CreateLabels(spec.AppID),
+			Annotations: CreateAnnotations(releaseTag, buildNumber),
 		},
 	}
 }
 
-// CreateLabels creates cloudflow application labels
-func CreateLabels(appID string, releaseTag string, buildNumber string) map[string]string {
+func CreateAnnotations(releaseTag string, buildNumber string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/part-of":           appID,
-		"app.kubernetes.io/managed-by":        "cloudflow",
-		"com.lightbend.cloudflow/app-id":      appID,
 		"com.lightbend.cloudflow/cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
+	}
+}
+
+// CreateLabels creates cloudflow application labels
+func CreateLabels(appID string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/part-of":      appID,
+		"app.kubernetes.io/managed-by":   "cloudflow",
+		"com.lightbend.cloudflow/app-id": appID,
 	}
 }
 
