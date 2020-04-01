@@ -29,9 +29,9 @@ Cloudflow 1.3.2 can be installed on a Kubernetes cluster in the usual way using 
 
 **The Cloudflow 1.3.2 `kubectl` plugin can be downloaded using one of the following links:**
 
-- Linux: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.176-52ef89c-linux-amd64.tar.gz
-- MacOS: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.176-52ef89c-darwin-amd64.tar.gz
-- Windows: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.176-52ef89c-windows-amd64.tar.gz
+- Linux: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-linux-amd64.tar.gz
+- MacOS: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-darwin-amd64.tar.gz
+- Windows: https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-windows-amd64.tar.gz
 
 **The roadmap for the Cloudflow 1.4 release, scheduled for April/May 2020, currently looks like this:**
 
