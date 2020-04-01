@@ -6,7 +6,7 @@ Cloudflow 1.3.2 contains the following changes:
 - Fixed another side-effect of the above root cause, which could lead to broken Cloudflow installs on some platforms.
 - Fixed an issue with generated Kafka consumer IDs that could cause incorrect consumption in case a streamlet class was added to a blueprint multiple times. Kafka consumer IDs are once again globally unique.
 - Fixed an issue with the `kubectl cloudflow status` command not reporting the correct rolled up application status for applications that include Flink-based streamlets.
-- Fixed an issue with configuration of streamlet parameters during local running. Internal variable references inside the `local.conf` file were not resolved correctly.
+- Fixed an issue with the configuration of streamlet parameters during local running. Internal variable references inside the `local.conf` file were not resolved correctly.
 - Fixed an incompatibility in the Enterprise installer that would fail to install the Cloudflow console on Kubernetes version 1.16 and higher. Cloudflow should once again be compatible with all versions of Kubernetes 1.11 and higher (verified up to 1.16 as of this release).
 - Fixed an issue with the Enterprise installer that could fail the install if Cloudflow was not installed in the `cloudflow` namespace.
 - Added testkit support for explicitly setting volume mount paths to enable testing of streamlets that include volume mounts. Contributed by @claudio-scandura
