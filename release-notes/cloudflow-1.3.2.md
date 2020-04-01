@@ -19,7 +19,7 @@ No known issues.
 
 - Google Kubernetes Engine (GKE) using Kubernetes 1.13, 1.15, and 1.16
 - Amazon Elastic Kubernetes Service (EKS) using Kubernetes 1.14
-- Azure Kubernetes Service (AKS) using Kubernetes 1.13 (Enterprise edition only)
+- Azure Kubernetes Service (AKS) using Kubernetes 1.13 and 1.15 (Enterprise edition only)
 - Openshift 3.11 using Kubernetes 1.11 (Enterprise edition only)
 - Openshift 4.3 using Kubernetes 1.16 (Enterprise edition only)
 
