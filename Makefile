@@ -7,7 +7,6 @@ ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 antora_docker_image     := lightbend/antora-doc
 antora_docker_image_tag := 0.1.0
 
-
 work_dir := target
 
 cloudflow_clone_dir := ${work_dir}/cloudflow
