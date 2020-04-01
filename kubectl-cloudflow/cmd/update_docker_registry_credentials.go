@@ -107,7 +107,7 @@ func newNamespace(appID string) v1.Namespace {
 	return v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   appID,
-			Labels: domain.CreateLabels(appID),
+			Labels: domain.CreateLabels(appID, version.ReleaseTag, version.BuildNumber),
 		},
 	}
 }
@@ -170,7 +170,7 @@ func newCloudflowServiceAccount(appID string) v1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cloudflowAppServiceAccountName,
 			Namespace: appID,
-			Labels:    domain.CreateLabels(appID),
+			Labels:    domain.CreateLabels(appID, version.ReleaseTag, version.BuildNumber),
 		},
 	}
 }
@@ -193,7 +193,7 @@ func createOrUpdateImagePullSecret(k8sClient *kubernetes.Clientset, appID string
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      imagePullSecretName,
 			Namespace: appID,
-			Labels:    domain.CreateLabels(appID),
+			Labels:    domain.CreateLabels(appID, version.ReleaseTag, version.BuildNumber),
 		},
 	}
 

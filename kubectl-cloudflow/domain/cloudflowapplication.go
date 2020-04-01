@@ -194,7 +194,7 @@ func ApiVersion() string {
 }
 
 // UpdateCloudflowApplication creates a CloudflowApplication struct that can be used with a Update call
-func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion string) CloudflowApplication {
+func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion string, releaseTag string, buildNumber string) CloudflowApplication {
 
 	app := CloudflowApplication{}
 	app.APIVersion = ApiVersion()
@@ -202,42 +202,43 @@ func UpdateCloudflowApplication(spec CloudflowApplicationSpec, resourceVersion s
 	app.ObjectMeta = metav1.ObjectMeta{
 		Name:            spec.AppID,
 		ResourceVersion: resourceVersion,
-		Labels:          CreateLabels(spec.AppID),
+		Labels:          CreateLabels(spec.AppID, releaseTag, buildNumber),
 	}
 	app.Spec = spec
 	return app
 }
 
 // NewCloudflowApplication creates a CloudflowApplication strcut that can be used with a Create call
-func NewCloudflowApplication(spec CloudflowApplicationSpec) CloudflowApplication {
+func NewCloudflowApplication(spec CloudflowApplicationSpec, releaseTag string, buildNumber string) CloudflowApplication {
 
 	app := CloudflowApplication{}
 	app.APIVersion = ApiVersion()
 	app.Kind = Kind
 	app.ObjectMeta = metav1.ObjectMeta{
 		Name:   spec.AppID,
-		Labels: CreateLabels(spec.AppID),
+		Labels: CreateLabels(spec.AppID, releaseTag, buildNumber),
 	}
 	app.Spec = spec
 	return app
 }
 
 // NewCloudflowApplicationNamespace creates a Namespace struct
-func NewCloudflowApplicationNamespace(spec CloudflowApplicationSpec) v1.Namespace {
+func NewCloudflowApplicationNamespace(spec CloudflowApplicationSpec, releaseTag string, buildNumber string) v1.Namespace {
 	return v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   spec.AppID,
-			Labels: CreateLabels(spec.AppID),
+			Labels: CreateLabels(spec.AppID, releaseTag, buildNumber),
 		},
 	}
 }
 
 // CreateLabels creates cloudflow application labels
-func CreateLabels(appID string) map[string]string {
+func CreateLabels(appID string, releaseTag string, buildNumber string) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/part-of":      appID,
-		"app.kubernetes.io/managed-by":   "cloudflow",
-		"com.lightbend.cloudflow/app-id": appID,
+		"app.kubernetes.io/part-of":           appID,
+		"app.kubernetes.io/managed-by":        "cloudflow",
+		"com.lightbend.cloudflow/app-id":      appID,
+		"com.lightbend.cloudflow/cli-version": fmt.Sprintf("%s (%s)", releaseTag, buildNumber),
 	}
 }
 
