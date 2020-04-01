@@ -26,7 +26,7 @@ const (
 )
 
 var swissKnifeApp = cli.App{
-	Image: "docker.io/lightbend/swiss-knife:210-9478a19",
+	Image: "docker.io/lightbend/swiss-knife:196-b6736b1",
 	Name:  "swiss-knife",
 }
 
