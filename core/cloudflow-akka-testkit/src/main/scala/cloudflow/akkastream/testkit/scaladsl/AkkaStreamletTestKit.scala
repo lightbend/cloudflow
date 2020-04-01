@@ -27,8 +27,9 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
 object AkkaStreamletTestKit {
-  def apply(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys, Some(mat))
-  def apply(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat), config)
+  def apply(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
+  def apply(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit =
+    AkkaStreamletTestKit(sys, Some(mat), List.empty, config)
 }
 
 /**
@@ -72,10 +73,14 @@ object AkkaStreamletTestKit {
  */
 final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
                                                         mat: Option[ActorMaterializer] = None,
+                                                        volumeMounts: List[VolumeMount] = List.empty,
                                                         config: Config = ConfigFactory.empty())
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
+
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): AkkaStreamletTestKit =
+    copy(volumeMounts = volumeMount +: volumeMounts.toList)
 
   /**
    *

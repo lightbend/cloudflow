@@ -38,6 +38,7 @@ private[testkit] case class TestContext(
     system: ActorSystem,
     inletTaps: List[InletTap[_]],
     outletTaps: List[OutletTap[_]],
+    volumeMounts: List[VolumeMount],
     override val config: Config = ConfigFactory.empty()
 ) extends AkkaStreamletContext {
   //TODO reuse more from StreamletContextImpl
@@ -48,7 +49,7 @@ private[testkit] case class TestContext(
   val killSwitch                = KillSwitches.shared(streamletRef)
 
   override def streamletDefinition: StreamletDefinition =
-    StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config)
+    StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     inletTaps

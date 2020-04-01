@@ -35,6 +35,7 @@ import cloudflow.streamlets._
 private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreamletTestKit[Repr]] { this: Repr ⇒
   def system: ActorSystem
   def mat: Option[ActorMaterializer]
+  def volumeMounts: List[VolumeMount]
   def config: Config
 
   private val defaultStreamletRefName = "streamlet-under-test"
@@ -44,6 +45,12 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
    * into the Akka `ActorSystem`.
    */
   def withConfig(c: Config): Repr
+
+  /**
+   * Returns an instance of this TestKit with the specified VolumeMount available to the streamlets
+   */
+  @varargs
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): Repr
 
   /**
    * Adds configuration parameters and their values to the configuration used in the test.
@@ -69,49 +76,49 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: InletTap[_], op: OutletTap[T], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List(ip), List(op), config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), List(op), volumeMounts, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using an empty source and `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, op: OutletTap[T], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List.empty, List(op), config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, List.empty, List(op), volumeMounts, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using `ip` as the source and an empty sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: InletTap[T], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List(ip), List.empty, config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), List.empty, volumeMounts, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using a list of `ip` as the source and a list of `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: List[OutletTap[_]], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, ip, op, config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, ip, op, volumeMounts, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using a list of `ip` as the source and an `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: OutletTap[T], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, ip, List(op), config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, ip, List(op), volumeMounts, config), streamlet, assertions)
 
   /**
    * Runs the `streamlet` using an `ip` as the source and a list of `op` as the sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: InletTap[_], op: List[OutletTap[_]], assertions: () ⇒ Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List(ip), op, config), streamlet, assertions)
+    doRun(TestContext(defaultStreamletRefName, system, List(ip), op, volumeMounts, config), streamlet, assertions)
 
   /**
    * This method is used when `testkit.run` and `StreamletExecution#stop` has to be
    * done under different control flows.
    */
   def run[T](streamlet: AkkaStreamlet, ip: List[InletTap[_]], op: List[OutletTap[_]]): StreamletExecution = {
-    val context = TestContext(defaultStreamletRefName, system, ip, op, config)
+    val context = TestContext(defaultStreamletRefName, system, ip, op, volumeMounts, config)
     streamlet.setContext(context).run(context.config)
   }
 

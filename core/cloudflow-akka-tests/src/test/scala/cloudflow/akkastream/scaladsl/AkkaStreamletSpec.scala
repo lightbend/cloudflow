@@ -16,6 +16,9 @@
 
 package cloudflow.akkastream.util.scaladsl
 
+import java.nio.file.Files
+import java.util.UUID
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -104,6 +107,43 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
                         in,
                         out,
                         () ⇒ out.probe.receiveN(1) mustBe Vector(Data(1, "a")).map(d ⇒ ConfigTestProcessor.out.partitioner(d) -> d))
+    }
+
+    "Be able to access VolumeMounts" in {
+
+      val volumeMountName = "data-mount"
+      object VolumeMountTestProcessor extends AkkaStreamlet {
+        val out                  = AvroOutlet[Data]("out")
+        final override val shape = StreamletShape(out)
+
+        override def volumeMounts = Vector(VolumeMount(volumeMountName, "path", ReadOnlyMany))
+
+        override final def createLogic = new RunnableGraphStreamletLogic() {
+          def runnableGraph =
+            Source
+              .single(NotUsed)
+              .map { _ =>
+                val dataInFile = Files.readAllBytes(getMountedPath(volumeMounts(0)))
+                Data(1, new String(dataInFile))
+              }
+              .to(plainSink(out))
+        }
+      }
+
+      val expectedDataOut = Data(1, "VolumeMount test")
+      val filePath        = Files.createTempFile("test-", UUID.randomUUID().toString)
+      Files.write(filePath, expectedDataOut.name.getBytes())
+
+      val volumeMountTestKit =
+        AkkaStreamletTestKit(system, mat).withVolumeMounts(VolumeMount(volumeMountName, filePath.toAbsolutePath.toString, ReadOnlyMany))
+      val out = volumeMountTestKit.outletAsTap(VolumeMountTestProcessor.out)
+
+      volumeMountTestKit.run(
+        VolumeMountTestProcessor,
+        out,
+        () => out.probe.receiveN(1) mustBe Vector(expectedDataOut).map(d ⇒ VolumeMountTestProcessor.out.partitioner(d) -> d)
+      )
+
     }
 
     "Allow for creating an 'ingress'" in {

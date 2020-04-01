@@ -16,24 +16,25 @@
 
 package cloudflow.akkastream.testkit.javadsl
 
-import java.util.{ List ⇒ JList }
-import collection.JavaConverters._
+import java.util.{ List => JList }
 
+import collection.JavaConverters._
 import akka.NotUsed
 import akka.actor._
 import akka.japi.Pair
 import akka.stream._
 import akka.stream.javadsl._
 import com.typesafe.config._
-
 import cloudflow.akkastream._
 import cloudflow.streamlets._
-
 import cloudflow.akkastream.testkit._
 
+import scala.annotation.varargs
+
 object AkkaStreamletTestKit {
-  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys, Some(mat))
-  def create(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat), config)
+  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
+  def create(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit =
+    AkkaStreamletTestKit(sys, Some(mat), List.empty, config)
 }
 
 /**
@@ -79,10 +80,15 @@ object AkkaStreamletTestKit {
  */
 final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
                                                         mat: Option[ActorMaterializer] = None,
+                                                        volumeMounts: List[VolumeMount] = List.empty,
                                                         config: Config = ConfigFactory.empty())
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
+
+  @varargs
+  def withVolumeMounts(volumeMount: VolumeMount, volumeMounts: VolumeMount*): AkkaStreamletTestKit =
+    copy(volumeMounts = volumeMount +: volumeMounts.toList)
 
   /**
    *

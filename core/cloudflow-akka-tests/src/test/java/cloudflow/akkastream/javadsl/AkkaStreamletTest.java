@@ -16,11 +16,10 @@
 
 package cloudflow.akkastream.javadsl;
 
-import scala.concurrent.duration.Duration;
-
+import akka.Done;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
-import akka.kafka.ConsumerMessage.Committable;
+import akka.kafka.ConsumerMessage;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
@@ -33,6 +32,13 @@ import cloudflow.streamlets.avro.*;
 
 import org.scalatest.junit.JUnitSuite;
 import org.junit.*;
+import scala.concurrent.duration.Duration;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.UUID;
 
 public class AkkaStreamletTest extends JUnitSuite {
   static ActorMaterializer mat;
@@ -97,6 +103,38 @@ public class AkkaStreamletTest extends JUnitSuite {
     out.probe().expectMsg(Completed.completed());
   }
 
+  @Test
+  public void anAkkaStreamletShouldWriteToAVolumeWhenItIsRun() throws IOException {
+    String volumeMountName = "data-mount";
+    Path mountPath = Files.createTempFile("test", UUID.randomUUID().toString());
+    FileWritingProcessor streamlet = new FileWritingProcessor(volumeMountName);
+    AkkaStreamletTestKit testkit =
+        AkkaStreamletTestKit.create(system, mat)
+            .withVolumeMounts(VolumeMount.createReadWriteMany(volumeMountName, mountPath.toString()));
+
+    QueueInletTap<Data> in = testkit.makeInletAsTap(streamlet.inlet);
+    ProbeOutletTap<Data> out = testkit.makeOutletAsTap(streamlet.outlet);
+
+    Data dataIn = new Data(1, "a");
+    in.queue().offer(dataIn);
+
+    testkit.<Data>run(
+        streamlet,
+        in,
+        out,
+        () -> {
+          out.probe().receiveN(1);
+          try {
+            Assert.assertArrayEquals(dataIn.toString().getBytes(), Files.readAllBytes(mountPath));
+          } catch (IOException e) {
+            throw new AssertionError("Cannot read file: " + mountPath, e);
+          }
+          return Done.done();
+        });
+
+    out.probe().expectMsg(Completed.completed());
+  }
+
   class TestProcessor extends AkkaStreamlet {
     AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
     AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> d.name(), Data.class);
@@ -111,6 +149,48 @@ public class AkkaStreamletTest extends JUnitSuite {
           getSourceWithOffsetContext(inlet)
               .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
               .to(getSinkWithOffsetContext(outlet))
+              .run(materializer());
+        }
+      };
+    }
+  }
+
+  class FileWritingProcessor extends AkkaStreamlet {
+
+    private final String volumeMountName;
+
+    FileWritingProcessor(String volumeMountName) {
+      this.volumeMountName = volumeMountName;
+    }
+
+    AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
+    AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", Data.class);
+
+    public StreamletShape shape() {
+      return StreamletShape.createWithInlets(inlet).withOutlets(outlet);
+    }
+
+    @Override
+    public VolumeMount[] defineVolumeMounts() {
+      return new VolumeMount[] {VolumeMount.createReadWriteMany(volumeMountName, "path")};
+    }
+
+    public AkkaStreamletLogic createLogic() {
+      Path mountedPath = getContext().getMountedPath(defineVolumeMounts()[0]);
+      return new AkkaStreamletLogic(getContext()) {
+        public void run() {
+          getSourceWithCommittableContext(inlet)
+              .via(
+                  Flow.<Pair<Data, ConsumerMessage.Committable>>create()
+                      .map(
+                          dataIn -> {
+                            Files.write(
+                                mountedPath,
+                                dataIn.first().toString().getBytes(),
+                                StandardOpenOption.SYNC);
+                            return dataIn;
+                          }))
+              .to(getCommittableSink(outlet))
               .run(materializer());
         }
       };
