@@ -32,7 +32,7 @@ class SparkProcessorSpec extends SparkScalaTestSupport { // 1. Extend SparkScala
       in.addData(data)
 
       // 7. Run the streamlet using the testkit and the setup inlet taps and outlet probes
-      testkit.run(processor, Seq(in), Seq(out), 2.seconds)
+      testkit.run(processor, Seq(in), Seq(out), 5.seconds)
 
       // get data from outlet tap
       val results = out.asCollection(session)
