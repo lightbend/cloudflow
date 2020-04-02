@@ -16,16 +16,20 @@
 
 package cloudflow.spark.testkit
 
+import java.util.UUID
+
 import scala.annotation.varargs
 import scala.concurrent.duration.Duration
-
+import scala.concurrent.duration._
 import com.typesafe.config._
 import org.apache.spark.sql.{ Encoder, SparkSession }
 import org.apache.spark.sql.execution.streaming.MemoryStream
-
 import cloudflow.spark.SparkStreamlet
 import cloudflow.streamlets._
-import scala.concurrent.Await
+import org.apache.spark.sql.streaming.StreamingQueryListener
+import org.apache.spark.sql.streaming.StreamingQueryListener.{ QueryProgressEvent, QueryStartedEvent, QueryTerminatedEvent }
+
+import scala.concurrent.{ Await, ExecutionContext, Future }
 
 object ConfigParameterValue {
   def apply(configParameter: ConfigParameter, value: String): ConfigParameterValue =
@@ -94,9 +98,10 @@ final case class ConfigParameterValue private (configParameterKey: String, value
  * Note: Every test is executed against a `SparkSession` which gets created and removed as part of the test
  * lifecycle methods.
  */
-final case class SparkStreamletTestkit(session: SparkSession, config: Config = ConfigFactory.empty) {
+final case class SparkStreamletTestkit(session: SparkSession, config: Config = ConfigFactory.empty, maxDuration: Duration = 30.seconds) {
 
   implicit lazy val sqlCtx = session.sqlContext
+  import ExecutionContext.Implicits.global
 
   /**
    * Adding configuration parameters and their values to the configuration used in the test.
@@ -147,7 +152,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       duration: Duration
   ): Unit = {
     val ctx = new TestSparkStreamletContext("streamlet-under-test", session, inletTaps, outletTaps, config)
-    doRun(ctx, sparkStreamlet, duration)
+    doRun(ctx, sparkStreamlet)
   }
 
   /**
@@ -169,7 +174,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       duration: Duration
   ): Unit = {
     val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Seq(inletTap), Seq(outletTap), config)
-    doRun(ctx, sparkStreamlet, duration)
+    doRun(ctx, sparkStreamlet)
   }
 
   /**
@@ -191,7 +196,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       duration: Duration
   ): Unit = {
     val ctx = new TestSparkStreamletContext("streamlet-under-test", session, inletTaps, Seq(outletTap), config)
-    doRun(ctx, sparkStreamlet, duration)
+    doRun(ctx, sparkStreamlet)
   }
 
   /**
@@ -212,33 +217,25 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
       outletTaps: Seq[SparkOutletTap[_]],
       duration: Duration
   ): Unit = {
+    // TODO: Check streamletRef - change to actual streamlet?
     val ctx = new TestSparkStreamletContext("streamlet-under-test", session, Seq(inletTap), outletTaps, config)
-    doRun(ctx, sparkStreamlet, duration)
+    doRun(ctx, sparkStreamlet)
   }
 
   private[testkit] def doRun(
       ctx: TestSparkStreamletContext,
-      sparkStreamlet: SparkStreamlet,
-      duration: Duration
+      sparkStreamlet: SparkStreamlet
   ): Unit = {
-    val t0             = System.currentTimeMillis()
-    def elapsedMillis  = System.currentTimeMillis() - t0
+    val queryMonitor = new QueryExecutionMonitor()
+    ctx.session.streams.addListener(queryMonitor)
+    println("========= execution start =============")
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
-    println(s"SparkStreamletTestKit: Before time checks *****************************************")
-    val currentMillis = elapsedMillis
-    val expired       = currentMillis < duration.toMillis
-    println(s"SparkStreamletTestKit: elapsed millis after run: $currentMillis")
-    println(s"SparkStreamletTestKit: are we beyond deadline? : $expired")
-    println(s"SparkStreamletTestKit: Active streams:" + session.streams.active.mkString(", "))
-    println(s"*****************************************")
-    while (session.streams.active.nonEmpty && (System.currentTimeMillis() - t0) < duration.toMillis) {
-      println(s"Into while loop")
-      session.streams.awaitAnyTermination(duration.toMillis)
-      session.streams.resetTerminated()
-    }
-    queryExecution.stop()
-    Await.result(queryExecution.completed, duration)
+    println("========= execution count check =============")
+    Await.ready(queryMonitor.waitForData(), maxDuration)
+    println("========= execution stop =============")
+    Await.result(queryExecution.stop(), maxDuration)
   }
+
 }
 
 case class SparkInletTap[T: Encoder](
@@ -255,4 +252,72 @@ case class SparkOutletTap[T: Encoder](
 ) {
   // get results from memory sink
   def asCollection(session: SparkSession): Seq[T] = session.sql(s"select * from $queryName").as[T].collect()
+}
+
+class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQueryListener {
+  @volatile var counts: Map[UUID, Int]        = Map()
+  @volatile var status: Map[UUID, QueryState] = Map()
+  @volatile var dataRows: Map[UUID, Long]     = Map()
+
+  sealed trait QueryState
+  case object Started extends QueryState
+  case class Terminated(exception: Option[String]) extends QueryState {
+    def isFailed = exception.nonEmpty
+  }
+
+  def waitForData(): Future[Long] = {
+    def hasData   = dataRows.nonEmpty && dataRows.forall { case (_, rows) => rows > 0 }
+    def totalRows = dataRows.values.sum
+    Future {
+      while (!hasData) {
+        println("========= has data? " + hasData)
+        println("========= current rows  " + totalRows)
+        Thread.sleep(1.second.toMillis)
+      }
+      println("========= total rows  " + totalRows)
+      totalRows
+    }
+  }
+
+  def waitForExecutionCount(count: Int, maxTime: Duration): Future[Unit] = {
+    val t0 = System.currentTimeMillis()
+    def checkCountReached = {
+      println("Counts: " + counts.map { case (k, v) => s"$k -> $v" }.mkString(" | "))
+      counts.values.forall(_ >= count)
+    }
+    Future {
+      while (!checkCountReached) {
+        if (System.currentTimeMillis() - t0 > maxTime.toMillis) {
+          throw new Exception("Wait for Query Execution timed out")
+        } else {
+          Thread.sleep(1.second.toMillis)
+        }
+      }
+    }
+  }
+
+  def allQueriesTerminated = status.nonEmpty && status.collect { case (id, _: Terminated) => id }.size == status.size
+
+  override def onQueryStarted(queryStarted: QueryStartedEvent): Unit = {
+    counts = counts + (queryStarted.id     -> 0)
+    dataRows = dataRows + (queryStarted.id -> 0L)
+    status = status + (queryStarted.id     -> Started)
+    println("**** Query started: " + queryStarted.id)
+  }
+  override def onQueryTerminated(queryTerminated: QueryTerminatedEvent): Unit = {
+    status = status + (queryTerminated.id -> Terminated(queryTerminated.exception))
+    println("**** Query terminated: " + queryTerminated.id)
+  }
+  override def onQueryProgress(queryProgress: QueryProgressEvent): Unit = {
+    println("***************")
+    println("On Progress" + queryProgress.progress.sources.mkString(", "))
+    val id   = queryProgress.progress.id
+    val rows = queryProgress.progress.numInputRows
+    counts = counts + counts.get(id).map(v => id       -> (v + 1)).getOrElse(id    -> 1)
+    dataRows = dataRows + dataRows.get(id).map(v => id -> (v + rows)).getOrElse(id -> rows)
+    println(s"Query got $rows rows of data ")
+    println("Query made progress: " + queryProgress.progress)
+    println("***************")
+  }
+
 }
