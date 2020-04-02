@@ -64,9 +64,6 @@ private[testkit] class TestSparkStreamletContext(override val streamletRef: Stri
     } else {
       Trigger.Once()
     }
-    println(s"*****************************************")
-    println(s"TestSparkStreamletContext: Using $trigger")
-    println(s"*****************************************")
     val streamingQuery = outletTaps
       .find(_.portName == outPort.name)
       .map { outletTap ⇒
