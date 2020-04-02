@@ -33,7 +33,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class SparkStreamletSpec extends SparkScalaTestSupport {
 
   "SparkStreamletSpec" should {
-    "validate that a config parameter value can be set in a test" ignore {
+    "validate that a config parameter value can be set in a test" in {
       // create sparkStreamlet
       object MySparkProcessor extends SparkStreamlet {
         val in    = AvroInlet[Data]("in")

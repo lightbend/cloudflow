@@ -28,7 +28,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class SparkProcessorSpec extends SparkScalaTestSupport {
 
   "SparkProcessor" should {
-    "process streaming data" ignore {
+    "process streaming data" in {
 
       val testKit = SparkStreamletTestkit(session)
 
