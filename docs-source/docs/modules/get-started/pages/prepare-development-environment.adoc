@@ -20,9 +20,9 @@ Using one of the links below, download the Cloudflow CLI version appropriate for
 
 IMPORTANT: If you have a Lightbend subscription, please use the instructions in the https://developer.lightbend.com/docs/cloudflow/current/install/run-script.html[Enterprise Features] documentation to install Cloudflow instead of the steps on this page.
   
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-darwin-amd64.tar.gz[MacOS]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.3-RC1.207-844aa88-darwin-amd64.tar.gz[MacOS]
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-linux-amd64.tar.gz[Linux]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.3-RC1.207-844aa88-linux-amd64.tar.gz[Linux]
 
 * https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.2.200-0d0f745-windows-amd64.tar.gz[Windows 64-bitLinux]
 
