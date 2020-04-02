@@ -30,7 +30,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class SparkJoin3Spec extends SparkScalaTestSupport {
 
   "SparkJoin3" should {
-    "process streaming data" in {
+    "process streaming data" ignore {
 
       val testKit = SparkStreamletTestkit(session)
 

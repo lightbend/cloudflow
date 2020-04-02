@@ -33,7 +33,7 @@ import cloudflow.spark.sql.SQLImplicits._
 class SparkIngressSpec extends SparkScalaTestSupport {
 
   "SparkIngress" should {
-    "produce elements to its outlet" in {
+    "produce elements to its outlet" ignore {
 
       val testKit = SparkStreamletTestkit(session)
 
