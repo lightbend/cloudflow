@@ -95,7 +95,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
       --ignore-not-found=true
 
     echo "Removing ClusterRoleBindings..."
-    kubectl delete clusterrolebinding cloudflow-nfs-nfs-server-provisioner \
+    kubectl delete clusterrolebinding cluster-admin-binding \
+      cloudflow-nfs-nfs-server-provisioner \
       cloudflow-flink-flink-operator \
       cloudflow-sparkoperator-crb \
       cloudflow-operator-bindings \
