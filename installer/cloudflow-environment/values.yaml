@@ -24,7 +24,6 @@ kafka:
     clusterOperatorNamespace: ""
     topicOperatorNamespace: ""
     deletePersistentVolumeClaimsOnDelete: false
-    useDedicatedNodes: false
     kafka:
       version: 2.4.0
       config:

@@ -52,28 +52,15 @@ if [ -z "$CLUSTER_VERSION" ]
 fi
 
 # Create cluster
-
 gcloud container clusters create $CLUSTER_NAME \
   --cluster-version $CLUSTER_VERSION  \
   --image-type cos \
   --machine-type n1-standard-4 \
-  --num-nodes 3 \
+  --num-nodes 5 \
   --enable-autoscaling \
   --max-nodes=7 \
   --min-nodes=1 \
   --no-enable-legacy-authorization \
-  --no-enable-autoupgrade
-
-# Create node-pool for Strimzi resources.
-# `gcloud beta` required to init taints as of 04/10/18
-# https://cloud.google.com/kubernetes-engine/docs/how-to/node-taints
-gcloud beta container node-pools create kafka-pool-0 \
-  --num-nodes 3 \
-  --image-type cos \
-  --cluster=$CLUSTER_NAME \
-  --machine-type n1-highmem-2  \
-  --node-labels=dedicated=StrimziKafka \
-  --node-taints=dedicated=StrimziKafka:NoSchedule \
   --no-enable-autoupgrade
 
 ## Wait for clusters to come up
