@@ -14,7 +14,6 @@
 
 kafka:
   strimzi:
-    useDedicatedNodes: true
     kafka:
       persistentVolumeClaimSize: 100Gi
       resources:

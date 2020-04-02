@@ -42,22 +42,6 @@ spec:
       {{ if .Values.kafka.strimzi.kafka.persistentStorageClass }}
       class: {{ default .Values.kafka.strimzi.kafka.persistentStorageClass }}
       {{ end }}
-    {{ if .Values.kafka.strimzi.useDedicatedNodes }}
-    tolerations:
-      - key: "dedicated"
-        operator: "Equal"
-        value: "StrimziKafka"
-        effect: "NoSchedule"
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: dedicated
-              operator: In
-              values:
-              - StrimziKafka
-    {{ end }}
     metrics:
       # Inspired by config from Kafka 2.0.0 example rules:
       # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
@@ -172,22 +156,6 @@ spec:
       {{ if .Values.kafka.strimzi.zookeeper.persistentStorageClass }}
       class: {{ .Values.kafka.strimzi.zookeeper.persistentStorageClass }}
       {{ end }}
-    {{ if .Values.kafka.strimzi.useDedicatedNodes }}
-    tolerations:
-      - key: "dedicated"
-        operator: "Equal"
-        value: "StrimziKafka"
-        effect: "NoSchedule"
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: dedicated
-              operator: In
-              values:
-              - StrimziKafka
-    {{ end }}
     metrics:
       # Inspired by Zookeeper rules
       # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
