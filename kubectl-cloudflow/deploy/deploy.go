@@ -12,7 +12,6 @@ import (
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/docker"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -360,15 +359,13 @@ func findSecretName(spec *domain.CloudflowApplicationSpec, streamletName string)
 
 func createSecret(appID string, name string, data map[string]string) *corev1.Secret {
 	labels := domain.CreateLabels(appID)
-	annotations := domain.CreatedByCliAnnotation(version.ReleaseTag, version.BuildNumber)
 	labels["com.lightbend.cloudflow/streamlet-name"] = name
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   appID,
-			Labels:      labels,
-			Annotations: annotations,
+			Name:      name,
+			Namespace: appID,
+			Labels:    labels,
 		},
 	}
 	secret.StringData = data
