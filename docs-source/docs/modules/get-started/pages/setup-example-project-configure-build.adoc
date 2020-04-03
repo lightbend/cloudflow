@@ -6,11 +6,10 @@
 include::ROOT:partial$include.adoc[]
 
 NOTE: Full sources for all Cloudflow example applications can be found in the
-https://github.com/lightbend/cloudflow/tree/master/examples/[examples folder] of the
+https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
 The sources for the example described below can be found in the application called
-https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala[sensor-data-scala]
-and there is also a https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-java[Java version] available.
+https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
 
 A typical Cloudflow application uses the organization shown below. We will implement the example in Scala. 
 

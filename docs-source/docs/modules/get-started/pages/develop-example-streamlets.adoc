@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name. The complete code is available in the https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala[sensor-data-scala] example.
+All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name. The complete code is available in the https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala] example.
 
 == Ingress streamlet
 
@@ -82,7 +82,7 @@ include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/
 ----
 
 
-In **package.scala**, include the following code:
+In **package.scala**, which should live outside of *sensordata* directory at one level above, include the following code:
 
 [source,scala]
 ----
