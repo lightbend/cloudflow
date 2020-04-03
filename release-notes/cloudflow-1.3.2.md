@@ -1,4 +1,4 @@
-# Cloudflow 1.3.2 Release Notes
+# Cloudflow 1.3.2 Release Notes (April 1st 2020)
 
 Cloudflow 1.3.2 contains the following changes:
 
