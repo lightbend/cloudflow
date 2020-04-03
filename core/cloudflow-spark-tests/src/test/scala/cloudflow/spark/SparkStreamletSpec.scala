@@ -20,7 +20,6 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import cloudflow.streamlets._
-import cloudflow.spark.testkit._
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
 import cloudflow.spark.avro._
@@ -64,12 +63,12 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
           }
           val outStream2 = writeStream(mayFailStream, out2, OutputMode.Append)
           queries = Seq(outStream1, outStream2)
-          println("setting up queries")
           StreamletQueryExecution(queries)
         }
       }
     }
-    "stop a streamlet when any managed query stops" in {
+
+    "automatically stop the streamlet execution when a managed query stops" in {
       val instance = new LeakySparkProcessor()
       // setup outlet tap on outlet port
       val testKit                      = SparkStreamletTestkit(session)
@@ -78,31 +77,53 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
       val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
 
       val stopActiveQuery = Future {
-        def stopQuery(): Unit = {
+        def attemptStopQuery(): Unit = {
           Thread.sleep(1000)
           instance.queries.headOption
             .map { query =>
               if (query.isActive) {
-                println("*************************************** Query is active")
                 query.stop
               } else {
-                println("*************************************** Query is not active - attempt again")
-                stopQuery()
+                attemptStopQuery()
               }
             }
-            .getOrElse(stopQuery())
+            .getOrElse(attemptStopQuery())
         }
-        stopQuery()
+        attemptStopQuery()
       }
       val execution       = instance.setContext(ctx).run(ctx)
       val completedStatus = execution.completed
-      Await.result(completedStatus, 30.seconds)
-      Await.result(stopActiveQuery, 30.seconds)
       // sanity check
-      stopActiveQuery.value.value mustBe (Success())
+      Await.result(stopActiveQuery, 30.seconds)
+      Await.ready(completedStatus, 30.seconds)
+
       // execution should have stopped right after one of the queries stopped,
       completedStatus.value.value mustBe (Success(Dun))
+    }
 
+    "automatically stop the streamlet execution when a managed query fails" in {
+      val instance = new LeakySparkProcessor()
+      // setup outlet tap on outlet port
+      val testKit                      = SparkStreamletTestkit(session)
+      val out1: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out1)
+      val out2: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out2)
+      val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
+
+      val execution = instance.setContext(ctx).run(ctx)
+
+      val failActiveQuery = execution.ready.andThen {
+        case _ =>
+          instance.mustFail(true)
+      }
+
+      val completedStatus = execution.completed
+      // sanity check
+      Await.result(failActiveQuery, 30.seconds)
+      // wait for the execution to complete
+      Await.ready(completedStatus, 30.seconds)
+
+      // execution should have stopped right after one of the queries stopped,
+      completedStatus.value.value mustBe ('Failure)
     }
 
   }

@@ -53,12 +53,11 @@ class TestSparkStreamletContext(override val streamletRef: String,
       .map(_.instream.asInstanceOf[MemoryStream[In]].toDF.as[In])
       .getOrElse(throw TestContextException(inPort.name, s"Bad test context, could not find source for inlet ${inPort.name}"))
 
-  // the test write stream implementation is blocking and returns once the query has produced a result.
   override def writeStream[Out](stream: Dataset[Out],
                                 outPort: CodecOutlet[Out],
                                 outputMode: OutputMode)(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = {
     // RateSource can only work with a microBatch query because it contains no data at time zero.
-    // Trigger.Once requires data at start to  work.
+    // Trigger.Once requires data at start to work.
     val trigger = if (isRateSource(stream)) {
       Trigger.ProcessingTime(ProcessingTimeInterval)
     } else {
