@@ -1,4 +1,4 @@
-# Cloudflow 1.3.2 Release Notes
+# Cloudflow 1.3.2 Release Notes (April 1st 2020)
 
 Cloudflow 1.3.2 contains the following changes:
 
@@ -25,7 +25,7 @@ No known issues.
 
 **NOTE**: We are planning on removing the dual-installer architecture in Cloudflow 1.4/1.5, which will enable OSS installation and upgrade support for all platforms currently supported only by the Enterprise installer.
 
-Cloudflow 1.3.2 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. For this release we recommend a clean install instead of an in-place upgrade to make sure everything gets upgraded without issues.
+Cloudflow 1.3.2 can be installed on a Kubernetes cluster in the usual way using either the OSS or Enterprise installers. For this release we recommend a clean install instead of an in-place upgrade to make sure everything gets installed without issues.
 
 **The Cloudflow 1.3.2 `kubectl` plugin can be downloaded using one of the following links:**
 
