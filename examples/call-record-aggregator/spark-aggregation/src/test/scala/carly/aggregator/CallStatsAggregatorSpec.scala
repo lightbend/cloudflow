@@ -17,18 +17,13 @@
 package carly.aggregator
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit
-
-import scala.concurrent.duration._
-
-import scala.util.Random
 
 import carly.data._
-
 import cloudflow.spark.testkit._
 import cloudflow.spark.sql.SQLImplicits._
+import org.scalatest.OptionValues
 
-class CallStatsAggregatorSpec extends SparkScalaTestSupport {
+class CallStatsAggregatorSpec extends SparkScalaTestSupport with OptionValues {
 
   val streamlet = new CallStatsAggregator()
   val testKit = SparkStreamletTestkit(session).withConfigParameterValues(
@@ -44,26 +39,29 @@ class CallStatsAggregatorSpec extends SparkScalaTestSupport {
       // setup outlet tap on outlet port
       val out = testKit.outletAsTap[AggregatedCallStats](streamlet.out)
 
-      val maxUsers = 10
-      val crs = (1 to 30).toList.map { i ⇒
+      val ts = Instant.now.toEpochMilli / 1000
+      val crs = (1 to 10).toList.map { i ⇒
         CallRecord(
-          s"user-${Random.nextInt(maxUsers)}",
-          s"user-${Random.nextInt(maxUsers)}",
+          s"user-1",
+          s"user-2",
           (if (i % 2 == 0) "incoming" else "outgoing"),
-          Random.nextInt(50),
-          Instant.now.minus(Random.nextInt(40), ChronoUnit.MINUTES).toEpochMilli / 1000
+          i*10,
+          ts
         )
       }
 
       in.addData(crs)
 
-      testKit.run(streamlet, Seq(in), Seq(out), 30.seconds)
+      val run = testKit.run(streamlet, Seq(in), Seq(out))
 
       // get data from outlet tap
       val results = out.asCollection(session)
 
       // assert
-      results.size must be > 0
+      val aggregate = results.headOption.value
+      aggregate.totalCallDuration must be (550)
+      aggregate.avgCallDuration must (be > 54.9 and be < 55.1)
+      run.totalRows must be > 0L
     }
   }
 }
