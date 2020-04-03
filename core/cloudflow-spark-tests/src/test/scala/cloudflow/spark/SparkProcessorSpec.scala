@@ -17,7 +17,6 @@
 package cloudflow.spark
 
 import scala.collection.immutable.Seq
-import scala.concurrent.duration._
 import org.apache.spark.sql.streaming.OutputMode
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
@@ -27,26 +26,26 @@ import cloudflow.spark.sql.SQLImplicits._
 
 class SparkProcessorSpec extends SparkScalaTestSupport {
 
+  // create sparkStreamlet
+  class MySparkProcessor extends SparkStreamlet {
+    val in    = AvroInlet[Data]("in")
+    val out   = AvroOutlet[Simple]("out", _.name)
+    val shape = StreamletShape(in, out)
+
+    override def createLogic() = new SparkStreamletLogic {
+      override def buildStreamingQueries = {
+        val dataset   = readStream(in)
+        val outStream = dataset.select($"name").as[Simple]
+        val query     = writeStream(outStream, out, OutputMode.Append)
+        StreamletQueryExecution(query)
+      }
+    }
+  }
+
   "SparkProcessor" should {
     "process streaming data" in {
 
       val testKit = SparkStreamletTestkit(session)
-
-      // create sparkStreamlet
-      class MySparkProcessor extends SparkStreamlet {
-        val in    = AvroInlet[Data]("in")
-        val out   = AvroOutlet[Simple]("out", _.name)
-        val shape = StreamletShape(in, out)
-
-        override def createLogic() = new SparkStreamletLogic {
-          override def buildStreamingQueries = {
-            val dataset   = readStream(in)
-            val outStream = dataset.select($"name").as[Simple]
-            val query     = writeStream(outStream, out, OutputMode.Append)
-            StreamletQueryExecution(query)
-          }
-        }
-      }
 
       // create an instance of the streamlet under test
       val instance = new MySparkProcessor()
@@ -61,7 +60,8 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
       val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
       in.addData(data)
 
-      testKit.run(instance, Seq(in), Seq(out), 2.seconds)
+      val run = testKit.run(instance, Seq(in), Seq(out))
+      run.totalRows must be(10)
 
       // get data from outlet tap
       val results = out.asCollection(session)

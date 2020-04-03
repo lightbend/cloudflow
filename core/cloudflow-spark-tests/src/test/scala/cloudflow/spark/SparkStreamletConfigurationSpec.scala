@@ -16,41 +16,42 @@
 
 package cloudflow.spark
 
+import scala.collection.immutable.Seq
+
+import org.apache.spark.sql.streaming.OutputMode
+import org.scalatest.OptionValues
+
 import cloudflow.spark.avro._
 import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.spark.testkit._
 import cloudflow.streamlets.{ StreamletShape, _ }
 import cloudflow.streamlets.avro._
-import org.apache.spark.sql.streaming.OutputMode
-import org.scalatest.OptionValues
-
-import scala.collection.immutable.Seq
-import scala.concurrent.duration._
 
 class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionValues {
 
-  "SparkStreamlet configuration support" should {
+  class MySparkProcessor extends SparkStreamlet {
+    val in    = AvroInlet[Data]("in")
+    val out   = AvroOutlet[Simple]("out", _.name)
+    val shape = StreamletShape(in, out)
 
-    class MySparkProcessor extends SparkStreamlet {
-      val in    = AvroInlet[Data]("in")
-      val out   = AvroOutlet[Simple]("out", _.name)
-      val shape = StreamletShape(in, out)
+    val NameFilter =
+      StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("initial"))
 
-      val NameFilter =
-        StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("initial"))
+    override def configParameters = Vector(NameFilter)
 
-      override def configParameters = Vector(NameFilter)
+    override def createLogic() = new SparkStreamletLogic {
+      val nameFilter = context.streamletConfig.getString(NameFilter.key)
 
-      override def createLogic() = new SparkStreamletLogic {
-        val nameFilter = context.streamletConfig.getString(NameFilter.key)
-
-        override def buildStreamingQueries = {
-          val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
-          val query     = writeStream(outStream, out, OutputMode.Append)
-          query.toQueryExecution
-        }
+      override def buildStreamingQueries = {
+        val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
+        val query     = writeStream(outStream, out, OutputMode.Append)
+        query.toQueryExecution
       }
     }
+  }
+
+  "SparkStreamlet configuration support" should {
+
     val instance = new MySparkProcessor()
 
     val sampleData = {
@@ -68,10 +69,11 @@ class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionV
       // send to inlet tap
       in.addData(sampleData)
       // run the stream
-      configTestKit.run(instance, in, out, 2.seconds)
+      val run = configTestKit.run(instance, in, out)
       // get data from outlet tap
       val results = out.asCollection(session)
       // assert
+      run.totalRows must be(sampleData.size)
       results mustBe Array.fill(2)(Simple("initial"))
     }
 
@@ -88,12 +90,13 @@ class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionV
       // build data and send to inlet tap
       in.addData(sampleData)
 
-      configTestKit.run(instance, in, out, 2.seconds)
+      val run = configTestKit.run(instance, in, out)
 
       // get data from outlet tap
       val results = out.asCollection(session)
 
       // assert
+      run.totalRows must be(sampleData.size)
       results mustBe Array.fill(3)(Simple("updated"))
     }
   }
