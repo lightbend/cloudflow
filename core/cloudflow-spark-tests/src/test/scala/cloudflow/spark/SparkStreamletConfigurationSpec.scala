@@ -29,30 +29,9 @@ import cloudflow.streamlets.avro._
 
 class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionValues {
 
-  class MySparkProcessor extends SparkStreamlet {
-    val in    = AvroInlet[Data]("in")
-    val out   = AvroOutlet[Simple]("out", _.name)
-    val shape = StreamletShape(in, out)
-
-    val NameFilter =
-      StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("initial"))
-
-    override def configParameters = Vector(NameFilter)
-
-    override def createLogic() = new SparkStreamletLogic {
-      val nameFilter = context.streamletConfig.getString(NameFilter.key)
-
-      override def buildStreamingQueries = {
-        val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
-        val query     = writeStream(outStream, out, OutputMode.Append)
-        query.toQueryExecution
-      }
-    }
-  }
-
   "SparkStreamlet configuration support" should {
 
-    val instance = new MySparkProcessor()
+    val instance = new TestSparkConfigProcessor()
 
     val sampleData = {
       val (i, u, o) = ("initial", "updated", "other")
@@ -98,6 +77,27 @@ class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionV
       // assert
       run.totalRows must be(sampleData.size)
       results mustBe Array.fill(3)(Simple("updated"))
+    }
+  }
+}
+
+class TestSparkConfigProcessor extends SparkStreamlet {
+  val in    = AvroInlet[Data]("in")
+  val out   = AvroOutlet[Simple]("out", _.name)
+  val shape = StreamletShape(in, out)
+
+  val NameFilter =
+    StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("initial"))
+
+  override def configParameters = Vector(NameFilter)
+
+  override def createLogic() = new SparkStreamletLogic {
+    val nameFilter = context.streamletConfig.getString(NameFilter.key)
+
+    override def buildStreamingQueries = {
+      val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
+      val query     = writeStream(outStream, out, OutputMode.Append)
+      query.toQueryExecution
     }
   }
 }

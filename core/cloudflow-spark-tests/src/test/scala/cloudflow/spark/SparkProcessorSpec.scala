@@ -26,29 +26,13 @@ import cloudflow.spark.sql.SQLImplicits._
 
 class SparkProcessorSpec extends SparkScalaTestSupport {
 
-  // create sparkStreamlet
-  class MySparkProcessor extends SparkStreamlet {
-    val in    = AvroInlet[Data]("in")
-    val out   = AvroOutlet[Simple]("out", _.name)
-    val shape = StreamletShape(in, out)
-
-    override def createLogic() = new SparkStreamletLogic {
-      override def buildStreamingQueries = {
-        val dataset   = readStream(in)
-        val outStream = dataset.select($"name").as[Simple]
-        val query     = writeStream(outStream, out, OutputMode.Append)
-        StreamletQueryExecution(query)
-      }
-    }
-  }
-
   "SparkProcessor" should {
     "process streaming data" in {
 
       val testKit = SparkStreamletTestkit(session)
 
       // create an instance of the streamlet under test
-      val instance = new MySparkProcessor()
+      val instance = new TestSparkProcessor()
 
       // setup inlet tap on inlet port
       val in: SparkInletTap[Data] = testKit.inletAsTap[Data](instance.in)
@@ -68,6 +52,21 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
 
       // assert
       results must contain(Simple("name1"))
+    }
+  }
+}
+// Test sparkStreamlet
+class TestSparkProcessor extends SparkStreamlet {
+  val in    = AvroInlet[Data]("in")
+  val out   = AvroOutlet[Simple]("out", _.name)
+  val shape = StreamletShape(in, out)
+
+  override def createLogic() = new SparkStreamletLogic {
+    override def buildStreamingQueries = {
+      val dataset   = readStream(in)
+      val outStream = dataset.select($"name").as[Simple]
+      val query     = writeStream(outStream, out, OutputMode.Append)
+      StreamletQueryExecution(query)
     }
   }
 }

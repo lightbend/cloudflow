@@ -35,38 +35,6 @@ import scala.util.Success
 class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
 
   "SparkStreamlet runtime" should {
-    trait QueryAccess {
-      def queries: Seq[StreamingQuery]
-      def mustFail(fail: Boolean)
-    }
-    class LeakySparkProcessor extends SparkStreamlet with QueryAccess {
-      val out1                                   = AvroOutlet[Simple]("out1")
-      val out2                                   = AvroOutlet[Simple]("out2")
-      val shape                                  = StreamletShape.withOutlets(out1, out2)
-      @volatile var queries: Seq[StreamingQuery] = Seq()
-      @volatile var shouldFail                   = false
-      override def mustFail(fail: Boolean)       = shouldFail = fail
-
-      override def createLogic() = new SparkStreamletLogic {
-
-        override def buildStreamingQueries = {
-          import org.apache.spark.sql.functions._
-          val inStream = session.readStream
-            .format("rate")
-            .load()
-            .select(concat(lit("value-"), $"value").as("name"))
-            .as[Simple]
-          val outStream1 = writeStream(inStream, out1, OutputMode.Append)
-          val mayFailStream = inStream.map { value =>
-            if (shouldFail) throw new RuntimeException("InternalFailure")
-            value
-          }
-          val outStream2 = writeStream(mayFailStream, out2, OutputMode.Append)
-          queries = Seq(outStream1, outStream2)
-          StreamletQueryExecution(queries)
-        }
-      }
-    }
 
     "automatically stop the streamlet execution when a managed query stops" in {
       val instance = new LeakySparkProcessor()
@@ -128,4 +96,37 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
 
   }
 
+}
+
+trait QueryAccess {
+  def queries: Seq[StreamingQuery]
+  def mustFail(fail: Boolean)
+}
+class LeakySparkProcessor extends SparkStreamlet with QueryAccess {
+  val out1                                   = AvroOutlet[Simple]("out1")
+  val out2                                   = AvroOutlet[Simple]("out2")
+  val shape                                  = StreamletShape.withOutlets(out1, out2)
+  @volatile var queries: Seq[StreamingQuery] = Seq()
+  @volatile var shouldFail                   = false
+  override def mustFail(fail: Boolean)       = shouldFail = fail
+
+  override def createLogic() = new SparkStreamletLogic {
+
+    override def buildStreamingQueries = {
+      import org.apache.spark.sql.functions._
+      val inStream = session.readStream
+        .format("rate")
+        .load()
+        .select(concat(lit("value-"), $"value").as("name"))
+        .as[Simple]
+      val outStream1 = writeStream(inStream, out1, OutputMode.Append)
+      val mayFailStream = inStream.map { value =>
+        if (shouldFail) throw new RuntimeException("InternalFailure")
+        value
+      }
+      val outStream2 = writeStream(mayFailStream, out2, OutputMode.Append)
+      queries = Seq(outStream1, outStream2)
+      StreamletQueryExecution(queries)
+    }
+  }
 }

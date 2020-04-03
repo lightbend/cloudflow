@@ -123,7 +123,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
       }
 
-      def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
         val t0 = System.currentTimeMillis()
         def _poll(): Future[Unit] =
           Future {

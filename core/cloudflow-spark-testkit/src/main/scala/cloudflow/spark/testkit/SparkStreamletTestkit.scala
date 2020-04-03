@@ -17,6 +17,9 @@
 package cloudflow.spark.testkit
 
 import java.util.UUID
+import java.util.concurrent.TimeoutException
+
+import akka.actor.Scheduler
 
 import scala.annotation.varargs
 import scala.concurrent.duration.Duration
@@ -29,7 +32,7 @@ import cloudflow.streamlets._
 import org.apache.spark.sql.streaming.StreamingQueryListener
 import org.apache.spark.sql.streaming.StreamingQueryListener.{ QueryProgressEvent, QueryStartedEvent, QueryTerminatedEvent }
 
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
 object ConfigParameterValue {
   def apply(configParameter: ConfigParameter, value: String): ConfigParameterValue =
@@ -275,8 +278,10 @@ class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQu
     dataRows = dataRows + (queryStarted.id -> 0L)
     status = status + (queryStarted.id     -> Started)
   }
+
   override def onQueryTerminated(queryTerminated: QueryTerminatedEvent): Unit =
     status = status + (queryTerminated.id -> Terminated(queryTerminated.exception))
+
   override def onQueryProgress(queryProgress: QueryProgressEvent): Unit = {
     val id   = queryProgress.progress.id
     val rows = queryProgress.progress.numInputRows

@@ -28,28 +28,6 @@ import cloudflow.spark.sql.SQLImplicits._
 
 class SparkIngressSpec extends SparkScalaTestSupport {
 
-  // create sparkStreamlet
-  class MySparkIngress extends SparkStreamlet {
-    val out   = AvroOutlet[Data]("out", d ⇒ d.id.toString)
-    val shape = StreamletShape(out)
-
-    override def createLogic() = new SparkStreamletLogic {
-      private def process: Dataset[Data] = {
-        implicit val sqlCtx = session.sqlContext
-        val data            = (1 to 10).map(i ⇒ Data(i, s"name$i"))
-        val m               = MemoryStream[Data]
-        m.addData(data)
-        m.toDF.as[Data]
-      }
-      override def buildStreamingQueries = {
-        val outStream: Dataset[Data] = process
-        require(outStream.isStreaming, "The Dataset created by an Ingress must be a Streaming Dataset")
-        val query = writeStream(outStream, out, OutputMode.Append)
-        StreamletQueryExecution(query)
-      }
-    }
-  }
-
   "SparkIngress" should {
     "produce elements to its outlet" in {
 
@@ -69,6 +47,27 @@ class SparkIngressSpec extends SparkScalaTestSupport {
 
       // assert
       results must contain(Data(1, "name1"))
+    }
+  }
+}
+// create sparkStreamlet
+class MySparkIngress extends SparkStreamlet {
+  val out   = AvroOutlet[Data]("out", d ⇒ d.id.toString)
+  val shape = StreamletShape(out)
+
+  override def createLogic() = new SparkStreamletLogic {
+    private def process: Dataset[Data] = {
+      implicit val sqlCtx = session.sqlContext
+      val data            = (1 to 10).map(i ⇒ Data(i, s"name$i"))
+      val m               = MemoryStream[Data]
+      m.addData(data)
+      m.toDF.as[Data]
+    }
+    override def buildStreamingQueries = {
+      val outStream: Dataset[Data] = process
+      require(outStream.isStreaming, "The Dataset created by an Ingress must be a Streaming Dataset")
+      val query = writeStream(outStream, out, OutputMode.Append)
+      StreamletQueryExecution(query)
     }
   }
 }

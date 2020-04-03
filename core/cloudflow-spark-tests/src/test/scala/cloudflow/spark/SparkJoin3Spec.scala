@@ -26,31 +26,6 @@ import cloudflow.spark.sql.SQLImplicits._
 
 class SparkJoin3Spec extends SparkScalaTestSupport {
 
-  // create sparkStreamlet
-  class MySparkJoin3 extends SparkStreamlet {
-    // comment: all inlets could be in different formats, one proto, one avro, one csv..
-    val in0 = AvroInlet[Data]("in0")
-    val in1 = AvroInlet[Data]("in1")
-    val in2 = AvroInlet[Data]("in2")
-    val out = AvroOutlet[Simple]("out", _.name)
-
-    val shape = StreamletShape(out).withInlets(in0, in1, in2)
-
-    override def createLogic() = new SparkStreamletLogic {
-      override def buildStreamingQueries = {
-        val dataset0                   = readStream(in0)
-        val dataset1                   = readStream(in1)
-        val dataset2                   = readStream(in2)
-        val outStream: Dataset[Simple] = process(dataset0, dataset1, dataset2)
-        val query                      = writeStream(outStream, out, OutputMode.Append)
-        StreamletQueryExecution(query)
-      }
-
-      private def process(in0: Dataset[Data], in1: Dataset[Data], in2: Dataset[Data]): Dataset[Simple] =
-        in0.union(in1.union(in2)).select($"name").as[Simple]
-    }
-  }
-
   "SparkJoin3" should {
     "process streaming data" in {
 
@@ -84,5 +59,29 @@ class SparkJoin3Spec extends SparkScalaTestSupport {
       results must contain(Simple("name21"))
       (results must have).length(30)
     }
+  }
+}
+// create sparkStreamlet
+class MySparkJoin3 extends SparkStreamlet {
+  // comment: all inlets could be in different formats, one proto, one avro, one csv..
+  val in0 = AvroInlet[Data]("in0")
+  val in1 = AvroInlet[Data]("in1")
+  val in2 = AvroInlet[Data]("in2")
+  val out = AvroOutlet[Simple]("out", _.name)
+
+  val shape = StreamletShape(out).withInlets(in0, in1, in2)
+
+  override def createLogic() = new SparkStreamletLogic {
+    override def buildStreamingQueries = {
+      val dataset0                   = readStream(in0)
+      val dataset1                   = readStream(in1)
+      val dataset2                   = readStream(in2)
+      val outStream: Dataset[Simple] = process(dataset0, dataset1, dataset2)
+      val query                      = writeStream(outStream, out, OutputMode.Append)
+      StreamletQueryExecution(query)
+    }
+
+    private def process(in0: Dataset[Data], in1: Dataset[Data], in2: Dataset[Data]): Dataset[Simple] =
+      in0.union(in1.union(in2)).select($"name").as[Simple]
   }
 }
