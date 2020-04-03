@@ -2,7 +2,7 @@
 
 Cloudflow 1.3.3 contains the following changes:
 
-- During the 1.3.2 release process a PR was accidentily merged that limited the Enterprise installer to the use of `kubectl` version 1.18 or higher.
+- During the 1.3.2 release process a PR was accidentally merged that limited the Enterprise installer to the use of `kubectl` version 1.18 or higher.
 - The Enterprise installer bootstrap script contained references to Kubernetes API versions that were not supported below Kubernetes 1.14 on some distributions. The Enterprise installer is now once again compatible with Kubernetes 1.11 and higher.
 - The OSS installer was dependent on a specific Kubernetes cluster setup with two node pools, e.g. the cluster setup provided by the utility cluster creation script. We have removed this limitation so other, more standard clusters can also be used for Cloudflow installations.
 - The OSS uninstall script left a role binding behind which produced a warning on reinstall.
