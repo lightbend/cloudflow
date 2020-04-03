@@ -150,4 +150,5 @@ trait StreamletRuntime {
  * An exception to return when the runner returns an accumulated list of distinct
  * exceptions.
  */
-final case class ExceptionAcc(exceptions: Vector[Throwable]) extends Exception
+final case class ExceptionAcc(exceptions: Vector[Throwable])
+    extends Exception("Exceptions caught: " + exceptions.map(_.getMessage).mkString(","))

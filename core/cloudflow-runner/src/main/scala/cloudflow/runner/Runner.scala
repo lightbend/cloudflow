@@ -37,7 +37,6 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     case Some(os) if os.startsWith("Win") ⇒
       log.error("cloudflow.runner.Runner is NOT compatible with Windows!!")
     case None ⇒ log.warn("""sys.props.get("os.name") returned None!""")
-    case _    ⇒ // okay
   }
 
   val PVCMountPath: String               = "/mnt/spark/storage"
@@ -68,17 +67,20 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
         val streamletExecution = loadedStreamlet.streamlet.run(withPodRuntimeConfig)
         loadedStreamlet.streamlet.logStartRunnerMessage(formatBuildInfo)
 
-        Try {
-          // the runner waits for the execution to complete
-          // In normal circumstances it will run forever for streaming data source unless
-          // being stopped forcibly or any of the queries faces an exception
-          Await.result(streamletExecution.completed, Duration.Inf)
-        } match {
-          case Success(_) ⇒ System.exit(0)
-          case Failure(ex @ ExceptionAcc(exceptions)) ⇒
+        // the runner waits for the execution to complete
+        // In normal circumstances it will run forever for streaming data source unless
+        // being stopped forcibly or any of the queries faces an exception
+        Await.ready(streamletExecution.completed, Duration.Inf)
+        streamletExecution.completed.value match {
+          case None => // can't happen b/c we wait for it to be ready
+            log.error("Unexpected streamletExecution state: No result after termination. This is most probably a bug.")
+            shutdownWithFailure(loadedStreamlet,
+                                new IllegalStateException("Unexpected streamletExecution state: No result after termination"))
+          case Some(Success(_)) ⇒ System.exit(0)
+          case Some(Failure(ex @ ExceptionAcc(exceptions))) ⇒
             exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdownWithFailure(loadedStreamlet, ex)
-          case Failure(ex) ⇒
+          case Some(Failure(ex)) ⇒
             ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
             shutdownWithFailure(loadedStreamlet, ex)
         }
