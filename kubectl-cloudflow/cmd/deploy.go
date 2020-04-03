@@ -342,7 +342,7 @@ func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace s
 }
 
 func createNamespaceIfNotExist(k8sClient *kubernetes.Clientset, applicationSpec domain.CloudflowApplicationSpec) {
-	ns := domain.NewCloudflowApplicationNamespace(applicationSpec)
+	ns := domain.NewCloudflowApplicationNamespace(applicationSpec, version.ReleaseTag, version.BuildNumber)
 	if _, nserr := k8sClient.CoreV1().Namespaces().Get(ns.ObjectMeta.Name, metav1.GetOptions{}); nserr != nil {
 		if _, nserr := k8sClient.CoreV1().Namespaces().Create(&ns); nserr != nil {
 			util.LogAndExit("Failed to create namespace `%s`, %s", applicationSpec.AppID, nserr.Error())
@@ -357,13 +357,13 @@ func createOrUpdateCloudflowApplication(
 	storedCR, errCR := cloudflowApplicationClient.Get(spec.AppID)
 
 	if errCR == nil {
-		cloudflowApplication := domain.UpdateCloudflowApplication(spec, storedCR.ObjectMeta.ResourceVersion)
+		cloudflowApplication := domain.UpdateCloudflowApplication(spec, *storedCR, version.ReleaseTag, version.BuildNumber)
 		_, err := cloudflowApplicationClient.Update(cloudflowApplication)
 		if err != nil {
 			util.LogAndExit("Failed to update CloudflowApplication `%s`, %s", spec.AppID, err.Error())
 		}
 	} else if reflect.DeepEqual(*storedCR, domain.CloudflowApplication{}) {
-		cloudflowApplication := domain.NewCloudflowApplication(spec)
+		cloudflowApplication := domain.NewCloudflowApplication(spec, version.ReleaseTag, version.BuildNumber)
 
 		_, err := cloudflowApplicationClient.Create(cloudflowApplication)
 		if err != nil {
