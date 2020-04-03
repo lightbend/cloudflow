@@ -72,7 +72,7 @@ javascaladoc_staged: ${javascaladoc_dir} javascaladoc
 cloudflow-clone: ${work_dir} clean-clone-dir
 	git clone https://github.com/lightbend/cloudflow.git ${cloudflow_clone_dir}
 	# need to use the release branch during release
-	# git clone --single-branch --branch v1.3.2 git@github.com:lightbend/cloudflow.git ${cloudflow_clone_dir}
+	# git clone --single-branch --branch v1.3.3 git@github.com:lightbend/cloudflow.git ${cloudflow_clone_dir}
 
 clean-clone-dir: 
 	rm -rf ${cloudflow_clone_dir}

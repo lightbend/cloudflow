@@ -1,5 +1,5 @@
 // global attributes
-:cloudflow-version:            1.3.2
+:cloudflow-version:            1.3.3
 :installer-image-tag:          INSTALLER_IMAGE_TAG
 :kubernetes-platform-name:     Kubernetes
 :kubernetes-platform-version:  1.12
