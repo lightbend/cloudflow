@@ -39,11 +39,11 @@ import org.apache.spark.sql.catalyst.InternalRow
  *              a `MemorySink`.
  *
  */
-private[testkit] class TestSparkStreamletContext(override val streamletRef: String,
-                                                 session: SparkSession,
-                                                 inletTaps: Seq[SparkInletTap[_]],
-                                                 outletTaps: Seq[SparkOutletTap[_]],
-                                                 override val config: Config = ConfigFactory.empty)
+class TestSparkStreamletContext(override val streamletRef: String,
+                                session: SparkSession,
+                                inletTaps: Seq[SparkInletTap[_]],
+                                outletTaps: Seq[SparkOutletTap[_]],
+                                override val config: Config = ConfigFactory.empty)
     extends SparkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
                                   session) {
   val ProcessingTimeInterval = 1500.milliseconds

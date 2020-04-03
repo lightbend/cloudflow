@@ -36,9 +36,9 @@ class SparkProcessorSpec extends SparkScalaTestSupport { // 1. Extend SparkScala
 
       // get data from outlet tap
       val results = out.asCollection(session)
-      println("************")
+      println("**************")
       println("Results from the test:" + results.mkString(","))
-      println("************")
+      println("**************")
 
       // 8. Assert that actual matches expectation
       results must contain(Data(2, "name2"))

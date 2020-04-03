@@ -92,7 +92,9 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
 
       // schedule a function to check periodically if any of the queries stopped
       val scheduledQueryCheck: Cancellable = system.scheduler.schedule(InitialDelay, MonitorFrequency) {
+        println("******************* Checking health...")
         val someQueryStopped = streamletQueryExecution.queries.exists(!_.isActive)
+        println("******************* Checking health... stopped queries? " + someQueryStopped)
         if (someQueryStopped) completionPromise.completeWith(stop())
       }
 
@@ -102,12 +104,15 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
       def completed: Future[Dun] = completionFuture
       val ready: Future[Dun]     = Future.successful(Dun)
       def stop(): Future[Dun] = {
+        println("******************* Stopping Streamlet!")
         streamletQueryExecution.stop()
         scheduledQueryCheck.cancel()
         Future {
           val t0 = System.currentTimeMillis()
           // Step 1: Wait for all queries to stop
+          println("******************* Waiting for active queries!")
           while (streamletQueryExecution.queries.exists(_.isActive)) {
+            println("******************* Checking active queries")
             val elapsedTime = System.currentTimeMillis() - t0
             if (elapsedTime < StopTimeout) {
               Thread.sleep(1.second.toMillis)
@@ -117,6 +122,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
           // Step 2: Check whether any query failed
           val exceptions = streamletQueryExecution.queries.flatMap(_.exception.map(_.cause).toList)
+          println("******************* Checking failed queries" + exceptions)
           if (exceptions.nonEmpty) {
             // fail the future with a list of exceptions returned by the queries
             throw ExceptionAcc(exceptions)
