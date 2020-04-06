@@ -36,7 +36,8 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
   sys.props.get("os.name") match {
     case Some(os) if os.startsWith("Win") ⇒
       log.error("cloudflow.runner.Runner is NOT compatible with Windows!!")
-    case None ⇒ log.warn("""sys.props.get("os.name") returned None!""")
+    case Some(os) => log.info(s"Runner running on $os")
+    case None     ⇒ log.warn("""sys.props.get("os.name") returned None!""")
   }
 
   val PVCMountPath: String               = "/mnt/spark/storage"
