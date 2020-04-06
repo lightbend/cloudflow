@@ -74,28 +74,34 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
         streamletExecution.completed.value match {
           case None => // can't happen b/c we wait for it to be ready
             log.error("Unexpected streamletExecution state: No result after termination. This is most probably a bug.")
-            shutdownWithFailure(loadedStreamlet,
-                                new IllegalStateException("Unexpected streamletExecution state: No result after termination"))
-          case Some(Success(_)) ⇒ System.exit(0)
+            shutdown(loadedStreamlet, Some(new IllegalStateException("Unexpected streamletExecution state: No result after termination")))
+          case Some(Success(_)) ⇒ shutdown(loadedStreamlet)
           case Some(Failure(ex @ ExceptionAcc(exceptions))) ⇒
             exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
-            shutdownWithFailure(loadedStreamlet, ex)
+            shutdown(loadedStreamlet, Some(ex))
           case Some(Failure(ex)) ⇒
             ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
-            shutdownWithFailure(loadedStreamlet, ex)
+            shutdown(loadedStreamlet, Some(ex))
         }
       case Failure(ex) ⇒ throw new Exception(ex)
     }
   }
 
-  private def shutdownWithFailure(loadedStreamlet: LoadedStreamlet, ex: Throwable) = {
+  private def shutdown(loadedStreamlet: LoadedStreamlet, maybeException: Option[Throwable] = None) = {
     // we created this file when the pod started running (see AkkaStreamlet#run)
     Files.deleteIfExists(
       Paths.get(s"/tmp/${loadedStreamlet.config.streamletRef}.txt")
     )
-    log.error("Fatal error has occurred:", ex)
+    maybeException
+      .map { ex =>
+        log.error("Fatal error has occurred:", ex)
+        System.exit(-1)
+      }
+      .getOrElse {
+        log.info("Streamlet terminating due to successful termination of query:")
+        System.exit(0)
+      }
 
-    System.exit(-1)
   }
 
   private def formatBuildInfo: String = {

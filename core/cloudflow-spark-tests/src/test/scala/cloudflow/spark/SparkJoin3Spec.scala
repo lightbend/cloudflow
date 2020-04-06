@@ -42,10 +42,10 @@ class SparkJoin3Spec extends SparkScalaTestSupport {
       val out: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out)
 
       // build data and send to inlet tap
-      val data = (1 to 30).map(i ⇒ Data(i, s"name$i"))
-      in0.addData(data.take(10))
-      in1.addData(data.drop(10).take(10))
-      in2.addData(data.drop(20).take(10))
+      val List(d1, d2, d3) = (1 to 30).map(i ⇒ Data(i, s"name$i")).sliding(10, 10).toList
+      in0.addData(d1)
+      in1.addData(d2)
+      in2.addData(d3)
 
       val run = testKit.run(instance, Seq(in0, in1, in2), Seq(out))
       run.totalRows must be(30)
