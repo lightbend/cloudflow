@@ -49,6 +49,7 @@ class FlinkStreamletContextImpl(
     val properties = new ju.Properties
     properties.setProperty("bootstrap.servers", config.getString("cloudflow.kafka.bootstrap-servers"))
     properties.setProperty("group.id", groupId)
+    properties.setProperty("auto.offset.reset", "earliest")
 
     val consumer = new FlinkKafkaConsumer[In](
       srcTopic,
