@@ -44,23 +44,12 @@ eksctl create cluster \
   --version 1.14 \
   --region "$AWS_DEFAULT_REGION" \
   --nodegroup-name standard-workers \
-  --node-type t3.medium \
+  --node-type t3.xlarge \
   --nodes 3 \
   --nodes-min 1 \
   --nodes-max 7 \
   --managed \
   --zones="$AWS_DEFAULT_REGION$ZONE_1,$AWS_DEFAULT_REGION$ZONE_2,$AWS_DEFAULT_REGION$ZONE_3"
-
-# Create nodegroup for Strimzi resources.
-# https://aws.amazon.com/premiumsupport/knowledge-center/eks-multiple-node-groups-eksctl/
-eksctl create nodegroup \
-  --cluster="$CLUSTER_NAME" \
-  --name=kafka-pool-0 \
-  --region "$AWS_DEFAULT_REGION" \
-  --node-type r5.large \
-  --nodes 3 \
-  --managed \
-  --node-labels=dedicated=StrimziKafka
 
 # Attach EFS policy to Cloudflow roles
 cat <<EOF >describe-file-systems-policy.json
@@ -77,10 +66,7 @@ cat <<EOF >describe-file-systems-policy.json
 }
 EOF
 
-ROLE_NAME_KAFKA=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '1p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
-echo "Role name Kafka: ${ROLE_NAME_KAFKA##*/}"
-
-ROLE_NAME_STANDARD=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '2p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
+ROLE_NAME_STANDARD=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '1p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
 echo "Role name workers: ${ROLE_NAME_STANDARD##*/}"
 
 # Ignore the error if the policy was already created during a previus run
@@ -89,10 +75,6 @@ aws iam create-policy \
   --policy-document file://describe-file-systems-policy.json > /dev/null 2>&1
 
 POLICY_ARN=$(aws iam list-policies | jq -r '.Policies[] | select(.PolicyName=="cloudlfow-describe-file-systems") | .Arn')
-
-aws iam attach-role-policy \
-  --policy-arn "${POLICY_ARN}" \
-  --role-name "${ROLE_NAME_KAFKA##*/}"
 
 aws iam attach-role-policy \
   --policy-arn "${POLICY_ARN}" \
