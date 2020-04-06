@@ -154,26 +154,16 @@ func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bo
 // GetStreamletDescriptorsForImageWithRegistryInspection extracts the configuration of a Cloudflow label from a docker image
 // and the image with digest in a struct
 func GetStreamletDescriptorsForImageWithRegistryInspection(imageName string)(cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string, *PulledImage, error) {
-	ins := InspectOptions{Image: &ImageOptions{}}
-	localInspectOuput, err := ins.InspectLocalDockerImage(imageName)
-	if err != nil {
-		// not found locally, check the remote registry
-		remoteInspectOutput, err := ins.InspectRemoteDockerImage(imageName)
+	ins := NewInspectOptions()
+	remoteInspectOutput, err := ins.InspectRemoteDockerImage(imageName)
 
-		if err !=  nil {
-			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in remote image: %s", streamletDescriptorsLabelName, imageName)
-		} else {
-			if remoteInspectOutput != nil {
-				return  parseImageInspectData(*remoteInspectOutput, imageName)
-			} else {
-				return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in remote image: %s", streamletDescriptorsLabelName, imageName)
-			}
-		}
+	if err !=  nil {
+		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No '%s' label is found in remote image: %s", streamletDescriptorsLabelName, imageName)
 	} else {
-		if localInspectOuput != nil {
-			return parseImageInspectData(*localInspectOuput, imageName)
+		if remoteInspectOutput != nil {
+			return  parseImageInspectData(*remoteInspectOutput, imageName)
 		} else {
-			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in local image: %s", streamletDescriptorsLabelName, imageName)
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No '%s' label is found in remote image: %s", streamletDescriptorsLabelName, imageName)
 		}
 	}
 }
@@ -184,7 +174,7 @@ func parseImageInspectData(outputData InspectOutput, imageName string)(cloudflow
 	if found {
 		descriptors, err := getDescriptorsFromCompressedLabel(label)
 		if err != nil {
-			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to get streamlet descriptors from compressed Labelfor image: %s, %s", imageName, err.Error())
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to get streamlet descriptors from compressed label for image: %s, %s", imageName, err.Error())
 		} else {
 			var descriptorsDigest cloudflowapplication.CloudflowStreamletDescriptorsDigestPair
 			descriptorsDigest.ImageDigest = outputData.Digest.String()
@@ -192,7 +182,7 @@ func parseImageInspectData(outputData InspectOutput, imageName string)(cloudflow
 			return descriptorsDigest, descriptors.APIVersion, &PulledImage{ImageName:imageName, Authenticated:true}, nil
 		}
 	} else {
-		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in local image: %s", streamletDescriptorsLabelName, imageName)
+		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No '%s' label is found in local image: %s", streamletDescriptorsLabelName, imageName)
 	}
 }
 
@@ -210,12 +200,6 @@ func getDescriptorsFromCompressedLabel(label string)(*cloudflowapplication.Descr
 	var descriptors cloudflowapplication.Descriptors
 	err = json.Unmarshal([]byte(uncompressed), &descriptors)
 
-	defer func() {
-		err := reader.Close()
-		if err != nil {
-			// most likely we dont want to fail here, skip the error
-			fmt.Println("Failed to close zlib reader")
-		}
-	}()
+	defer reader.Close()
 	return &descriptors, nil
 }

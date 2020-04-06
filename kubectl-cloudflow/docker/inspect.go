@@ -1,5 +1,22 @@
-// This code part is copied and modified from the skopeo project,
-// https://github.com/containers/skopeo.
+// The code here is copied and modified from this file https://github.com/containers/skopeo/blob/master/cmd/skopeo/inspect.go
+// in the skopeo project (https://github.com/containers/skopeo) which is licensed under the Apache 2.0 license.
+// Project license can be found here: https://github.com/containers/skopeo/blob/master/LICENSE
+
+/*
+ * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package docker
 
 import (
@@ -15,8 +32,6 @@ import (
 	"time"
 )
 
-// This code part is copied and modified from the skopeo project,
-// https://github.com/containers/skopeo.
 type InspectOutput struct {
 	Name          string `json:",omitempty"`
 	Tag           string `json:",omitempty"`
@@ -53,10 +68,13 @@ type optionalString struct {
 	value   string
 }
 
-func (opts *InspectOptions) InspectLocalDockerImage(imageName string)(imageData *InspectOutput, retErr error) {
-	return opts.inspectImage("docker-daemon:" + imageName)
+// NewInspectOptions creates a default set of Option to use for inspection
+func NewInspectOptions() InspectOptions{
+	return InspectOptions{Image: &ImageOptions{}}
 }
 
+// InspectRemoteDockerImage accesses a remote docker registry and fetches an image configuration
+// For Cloudflow we are interested in Labels and image digest
 func (opts *InspectOptions) InspectRemoteDockerImage(imageName string)(imageData *InspectOutput, retErr error) {
 	return opts.inspectImage("docker://" + imageName)
 }
