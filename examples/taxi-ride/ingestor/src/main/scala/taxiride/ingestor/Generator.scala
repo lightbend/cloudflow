@@ -29,10 +29,9 @@ class Generator extends AkkaServerStreamlet {
   val faresOut = AvroOutlet[TaxiFare]("fares", _.rideId.toString)
   val ridesOut = AvroOutlet[TaxiRide]("rides", _.rideId.toString)
 
-  val Throttle = IntegerConfigParameter("throttle", "Throttle the generator to x records per second.", Some(50))
+  val Throttle = IntegerConfigParameter("throttle", "Generate max X records per second.", Some(50))
 
   override def configParameters = Vector(Throttle)
-
 
   final override val shape = StreamletShape.withOutlets(faresOut, ridesOut)
   final override def createLogic = new AkkaStreamletLogic() {
@@ -59,22 +58,22 @@ class Generator extends AkkaServerStreamlet {
   }
 
   def readFares() = {
-    val inFares   = this.getClass.getResourceAsStream("/nycTaxiFares.json")
+    val inFares = this.getClass.getResourceAsStream("/nycTaxiFares.json")
     // 'fixing' JSON issues in input document
     val str       = scala.io.Source.fromInputStream(inFares).mkString
     val faresJson = s"[$str]".replaceAll("\n", ",\n").parseJson
-    val fares = faresJson.convertTo[List[TaxiFare]]
+    val fares     = faresJson.convertTo[List[TaxiFare]]
     println(s"Read ${fares.size} fares")
     fares
   }
 
   def readRides() = {
     import TaxiRideJsonProtocol._
-    val inRides   = this.getClass.getResourceAsStream("/nycTaxiRides.json")
+    val inRides = this.getClass.getResourceAsStream("/nycTaxiRides.json")
     // 'fixing' JSON issues in input document
     val str       = scala.io.Source.fromInputStream(inRides).mkString
     val ridesJson = s"[$str]".replaceAll("\n", ",\n").parseJson
-    val rides = ridesJson.convertTo[List[TaxiRide]]
+    val rides     = ridesJson.convertTo[List[TaxiRide]]
     println(s"Read ${rides.size} rides")
     rides
   }
