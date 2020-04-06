@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, Promise }
 import scala.reflect.runtime.universe._
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 import akka.actor.{ ActorSystem, Cancellable, Scheduler }
 import com.typesafe.config.Config
 import org.apache.spark.SparkConf
@@ -31,6 +31,8 @@ import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
+
+import scala.annotation.tailrec
 
 /**
  * The base class for defining Spark streamlets. Derived classes need to override `createLogic` to
@@ -98,11 +100,18 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
         if (someQueryStopped) completionPromise.completeWith(stop())
       }
 
+      val sysCheck: Cancellable = system.scheduler.schedule(1.minute, 1.minutes) {
+        val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
+        println(s"jvm-total-mem: $totalMem Mb")
+      }
+
       // this future will be successful when any of the queries face an exception
       // or is stopped. The runner needs to await on this future and exit only when it
       // succeeds
       def completed: Future[Dun] = completionFuture
-      val ready: Future[Dun]     = Future.successful(Dun)
+
+      val ready: Future[Dun] = Future.successful(Dun)
+
       def stop(): Future[Dun] = {
         streamletQueryExecution.stop()
         scheduledQueryCheck.cancel()
@@ -123,26 +132,33 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
       }
 
-      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
-        val t0 = System.currentTimeMillis()
-        def _poll(): Future[Unit] =
-          Future {
-            if (predicate) ()
-            else {
-              val elapsedTime = System.currentTimeMillis() - t0
-              if (elapsedTime > deadline.toMillis) {
-                throw new TimeoutException(s"Poll timed out after $elapsedTime millis")
-              } else {
-                val p = Promise[Unit]()
-                s.scheduleOnce(frequency) {
-                  p.completeWith(_poll())
-                }
-              }
-            }
-          }
-        _poll()
+      private def poll2(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+        val p: Promise[Unit] = Promise()
+        val poller = s.schedule(frequency, frequency) {
+          if (predicate) p.complete(Success())
+        }
+        val deadlineCheck = s.scheduleOnce(deadline) {
+          if (!p.isCompleted) p.complete(Failure(new TimeoutException(s"Poll timed out after ${deadline.toMillis} millis")))
+        }
+        p.future.andThen {
+          case _ =>
+            poller.cancel()
+            deadlineCheck.cancel()
+        }
       }
 
+      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+        val times = Math.ceil(deadline / frequency).toInt
+        def _poll(count: Int): Future[Unit] = (predicate, count <= 0) match {
+          case (true, _) => Future.successful(())
+          case (_, true) => Future.failed(new TimeoutException(s"Poll timed out after ${deadline.toMillis} millis"))
+          case _ =>
+            val p = Promise[Unit]()
+            s.scheduleOnce(frequency) { p.completeWith(_poll(count - 1)) }
+            p.future
+        }
+        _poll(times)
+      }
     }
   }
 

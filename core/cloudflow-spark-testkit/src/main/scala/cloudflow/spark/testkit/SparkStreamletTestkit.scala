@@ -224,11 +224,9 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
     val queryMonitor = new QueryExecutionMonitor()
     ctx.session.streams.addListener(queryMonitor)
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
-    val res = for {
-      _    <- queryMonitor.waitForData()
-      done <- queryExecution.stop()
-    } yield done
-    Await.result(res, maxDuration)
+    val gotData        = queryMonitor.waitForData().andThen { case _ => queryExecution.stop() }
+
+    Await.result(gotData, maxDuration)
     queryMonitor.executionReport
   }
 }
@@ -254,25 +252,22 @@ class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQu
   @volatile var status: Map[UUID, QueryState] = Map()
   @volatile var dataRows: Map[UUID, Long]     = Map()
 
+  val dataAvailable: Promise[Long] = Promise()
+
   sealed trait QueryState
   case object Started                              extends QueryState
   case class Terminated(exception: Option[String]) extends QueryState
+
+  def hasData =
+    dataRows.nonEmpty && dataRows.forall { case (_, rows) => rows > 0 }
 
   def executionReport: ExecutionReport = {
     val exceptions = status.values.collect { case Terminated(Some(reason)) => reason }
     ExecutionReport(dataRows.values.sum, dataRows.keys.size, exceptions.toSeq)
   }
 
-  def waitForData(): Future[Long] = {
-    def hasData   = dataRows.nonEmpty && dataRows.forall { case (_, rows) => rows > 0 }
-    def totalRows = dataRows.values.sum
-    Future {
-      while (!hasData) {
-        Thread.sleep(1.second.toMillis)
-      }
-      totalRows
-    }
-  }
+  def waitForData(): Future[Long] =
+    dataAvailable.future
 
   override def onQueryStarted(queryStarted: QueryStartedEvent): Unit = {
     dataRows = dataRows + (queryStarted.id -> 0L)
@@ -286,6 +281,9 @@ class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQu
     val id   = queryProgress.progress.id
     val rows = queryProgress.progress.numInputRows
     dataRows = dataRows + dataRows.get(id).map(v => id -> (v + rows)).getOrElse(id -> rows)
+    if (hasData & !dataAvailable.isCompleted) {
+      dataAvailable.success(dataRows.values.sum)
+    }
   }
 
 }

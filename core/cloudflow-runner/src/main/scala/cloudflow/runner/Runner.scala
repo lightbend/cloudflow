@@ -32,6 +32,7 @@ import cloudflow.events.errors.ErrorEvents
  */
 object Runner extends RunnerConfigResolver with StreamletLoader {
   lazy val log = LoggerFactory.getLogger(getClass.getName)
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   sys.props.get("os.name") match {
     case Some(os) if os.startsWith("Win") ⇒
@@ -71,16 +72,14 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
         // the runner waits for the execution to complete
         // In normal circumstances it will run forever for streaming data source unless
         // being stopped forcibly or any of the queries faces an exception
-        Await.ready(streamletExecution.completed, Duration.Inf)
-        streamletExecution.completed.value match {
-          case None => // can't happen b/c we wait for it to be ready
-            log.error("Unexpected streamletExecution state: No result after termination. This is most probably a bug.")
-            shutdown(loadedStreamlet, Some(new IllegalStateException("Unexpected streamletExecution state: No result after termination")))
-          case Some(Success(_)) ⇒ shutdown(loadedStreamlet)
-          case Some(Failure(ex @ ExceptionAcc(exceptions))) ⇒
+        try {
+          Await.result(streamletExecution.completed, Duration.Inf)
+          shutdown(loadedStreamlet)
+        } catch {
+          case ex @ ExceptionAcc(exceptions) ⇒
             exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdown(loadedStreamlet, Some(ex))
-          case Some(Failure(ex)) ⇒
+          case ex =>
             ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
             shutdown(loadedStreamlet, Some(ex))
         }
@@ -93,16 +92,14 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     Files.deleteIfExists(
       Paths.get(s"/tmp/${loadedStreamlet.config.streamletRef}.txt")
     )
-    maybeException
-      .map { ex =>
+    maybeException match {
+      case Some(ex) =>
         log.error("Fatal error has occurred:", ex)
         System.exit(-1)
-      }
-      .getOrElse {
-        log.info("Streamlet terminating due to successful termination of query:")
+      case None =>
+        log.info("Streamlet terminating without failure")
         System.exit(0)
-      }
-
+    }
   }
 
   private def formatBuildInfo: String = {
