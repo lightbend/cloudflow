@@ -22,6 +22,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
 
+const(
+	streamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
+)
+
 // ConfigJSON contains auths for pulling from image repositories
 type ConfigJSON struct {
 	Auths Config `json:"auths"`
@@ -147,53 +151,71 @@ func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bo
 	return false
 }
 
-// GetStreamletDescriptorsForImage extracts the configuration of a Cloudflow label from a docker image
+// GetStreamletDescriptorsForImageWithRegistryInspection extracts the configuration of a Cloudflow label from a docker image
 // and the image with digest in a struct
-func GetStreamletDescriptorsForImage(cli *client.Client, imageName string) (cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string, *PulledImage, error) {
-	// need this till we have a way to use docker registry API to check labels
-	pulledImage, pullError := PullImage(cli, imageName)	
-	if pullError != nil {	
-		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to pull image %s: %s", imageName, pullError.Error())
-	}
-
-	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
+func GetStreamletDescriptorsForImageWithRegistryInspection(imageName string)(cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string, *PulledImage, error) {
+	ins := InspectOptions{Image: &ImageOptions{}}
+	localInspectOuput, err := ins.InspectLocalDockerImage(imageName)
 	if err != nil {
-		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to list local docker images, %s", err.Error())
+		// not found locally, check the remote registry
+		remoteInspectOutput, err := ins.InspectRemoteDockerImage(imageName)
+
+		if err !=  nil {
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in remote image: %s", streamletDescriptorsLabelName, imageName)
+		} else {
+			if remoteInspectOutput != nil {
+				return  parseImageInspectData(*remoteInspectOutput, imageName)
+			} else {
+				return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in remote image: %s", streamletDescriptorsLabelName, imageName)
+			}
+		}
+	} else {
+		if localInspectOuput != nil {
+			return parseImageInspectData(*localInspectOuput, imageName)
+		} else {
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in local image: %s", streamletDescriptorsLabelName, imageName)
+		}
 	}
+}
 
-	streamletDescriptorsLabelName := "com.lightbend.cloudflow.streamlet-descriptors"
-
-	var descriptorsDigest cloudflowapplication.CloudflowStreamletDescriptorsDigestPair
-	for _, image := range images {
-		if len(image.RepoDigests) == 0 || len(image.RepoTags) == 0 || !imageMatchesNameAndTag(image, imageName) {
-			// not the image we are looking for
-			continue
-		}
-
-		// use the compressed streamlet descriptors base 64 value
-		raw := image.Labels[streamletDescriptorsLabelName]
-
-		// compressed data
-		compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(raw)))
-		reader, err := zlib.NewReader(compressed)
+// parseImageInspectData gets inspection data and the imageName and returns streamlet descriptors and other related info about the inspected image
+func parseImageInspectData(outputData InspectOutput, imageName string)(cloudflowapplication.CloudflowStreamletDescriptorsDigestPair, string, *PulledImage, error) {
+	label, found := outputData.Labels[streamletDescriptorsLabelName]
+	if found {
+		descriptors, err := getDescriptorsFromCompressedLabel(label)
 		if err != nil {
-			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to decompress the application descriptor, %s", err.Error())
+			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to get streamlet descriptors from compressed Labelfor image: %s, %s", imageName, err.Error())
+		} else {
+			var descriptorsDigest cloudflowapplication.CloudflowStreamletDescriptorsDigestPair
+			descriptorsDigest.ImageDigest = outputData.Digest.String()
+			descriptorsDigest.StreamletDescriptors = descriptors.StreamletDescriptors
+			return descriptorsDigest, descriptors.APIVersion, &PulledImage{ImageName:imageName, Authenticated:true}, nil
 		}
-
-		// uncompressed data : []byte
-		uncompressed, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Failed to read contents of the application descriptor, %s", err.Error())
-		}
-
-		// unmarshall to struct
-		var descriptors cloudflowapplication.Descriptors
-		json.Unmarshal([]byte(uncompressed), &descriptors)
-
-		descriptorsDigest.StreamletDescriptors = descriptors.StreamletDescriptors
-		reader.Close()
-		_, descriptorsDigest.ImageDigest = path.Split(image.RepoDigests[0])
-		return descriptorsDigest, descriptors.APIVersion, pulledImage, nil
+	} else {
+		return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("No label %s is found in local image: %s", streamletDescriptorsLabelName, imageName)
 	}
-	return cloudflowapplication.CloudflowStreamletDescriptorsDigestPair{}, "", nil, fmt.Errorf("Unable to inspect image '%s'. It could not be found locally", imageName) 
+}
+
+// getDescriptorsFromCompressedLabel gets the streamlet descriptors out of a compressed label
+func getDescriptorsFromCompressedLabel(label string)(*cloudflowapplication.Descriptors, error) {
+	compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(label)))
+	reader, err := zlib.NewReader(compressed)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to decompress the Cloudflow streamlet descriptors label, %s", err.Error())
+	}
+	uncompressed, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read the decompressed Cloudflow streamlet descriptors label %s", err.Error())
+	}
+	var descriptors cloudflowapplication.Descriptors
+	err = json.Unmarshal([]byte(uncompressed), &descriptors)
+
+	defer func() {
+		err := reader.Close()
+		if err != nil {
+			// most likely we dont want to fail here, skip the error
+			fmt.Println("Failed to close zlib reader")
+		}
+	}()
+	return &descriptors, nil
 }
