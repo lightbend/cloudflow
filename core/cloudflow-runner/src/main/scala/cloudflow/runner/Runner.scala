@@ -94,7 +94,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     )
     maybeException match {
       case Some(ex) =>
-        log.error("Fatal error has occurred:", ex)
+        log.error("A fatal error has occurred. The streamlet is going to shutdown", ex)
         System.exit(-1)
       case None =>
         log.info("Streamlet terminating without failure")
