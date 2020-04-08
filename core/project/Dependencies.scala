@@ -4,6 +4,7 @@ import sbt._
 object Version {
   val Akka         = "2.5.29"
   val AkkaHttp     = "10.1.9"
+  val AkkaMgmt     = "1.0.6"
   val AlpakkaKafka = "2.0.2"
   val Scala        = "2.12.9"
   val Spark        = "2.4.5"
@@ -21,6 +22,11 @@ object Library {
   val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"       % "0.10"
   val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"         % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val AkkaStreamKafkaTestkit = "com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka exclude("com.typesafe.akka", "akka-stream-testkit")
+  val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
+  val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
+  val AkkaClusterBootstrap   = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
+  val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
+  val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("org.apache.avro", "avro") exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
