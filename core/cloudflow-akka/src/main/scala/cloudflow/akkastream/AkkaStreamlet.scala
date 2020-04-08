@@ -42,9 +42,33 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     (for {
       streamletDefinition ← StreamletDefinition.read(config)
     } yield {
-      val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-      val system                     = ActorSystem("akka_streamlet", updatedStreamletDefinition.config)
-      new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+
+      val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+
+      if (activateCluster && localMode) {
+        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
+        val clusterConfig              = ConfigFactory.load("akka-cluster-local.conf")
+        val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
+
+        val system = ActorSystem("akka_streamlet", fullConfig)
+        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+      } else if (activateCluster) {
+        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
+        val clusterConfig = ConfigFactory
+          .parseString(
+            s"""akka.discovery.kubernetes-api.pod-label-selector = "com.lightbend.cloudflow/streamlet-name=${streamletDefinition.streamletRef}""""
+          )
+          .withFallback(ConfigFactory.load("akka-cluster-k8.conf"))
+
+        val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
+
+        val system = ActorSystem("akka_streamlet", fullConfig)
+        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+      } else {
+        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
+        val system                     = ActorSystem("akka_streamlet", updatedStreamletDefinition.config)
+        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+      }
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
     }.get
@@ -100,6 +124,8 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
   protected def createLogic(): AkkaStreamletLogic
 
   private def readyAfterStart(): Boolean = if (attributes.contains(ServerAttribute)) false else true
+
+  private val activateCluster: Boolean = if (attributes.contains(AkkaClusterAttribute)) true else false
 
   private def signalReadyAfterStart(): Unit =
     if (readyAfterStart) context.signalReady
