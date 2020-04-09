@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
+	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
@@ -105,7 +107,7 @@ func GetCloudflowApplicationDescriptor(cli *client.Client, imageName string) dom
 		} else {
 			// use the compressed application descriptor
 			// base 64 value
-			raw = image.Labels["com.lightbend.cloudflow.application.zlib"]
+			raw = getAllLabelValuesJoined(image, "com.lightbend.cloudflow.application.zlib")
 			// compressed data
 			compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(raw)))
 			reader, err := zlib.NewReader(compressed)
@@ -126,6 +128,29 @@ func GetCloudflowApplicationDescriptor(cli *client.Client, imageName string) dom
 	}
 	util.LogAndExit("Unable to inspect image '%s'. It could not be found locally.", imageName)
 	return domain.CloudflowApplicationDescriptorDigestPair{} // never reached
+}
+
+// In case the overall label value exceeded 64K, the scaal side has split into
+// multiple labels. In that case we need to join the values from all labels to 
+// for the final value of the label
+func getAllLabelValuesJoined(image types.ImageSummary, labelBase string) string {
+	var labelNames []string
+	for k := range image.Labels {
+		if strings.Contains(k, labelBase) {
+			labelNames = append(labelNames, k)
+		}
+	}
+	// optimization - makes sense since this will be 
+	// the most frequent path
+	if len(labelNames) == 1 {
+		return image.Labels[labelNames[0]]
+	}
+	labelValues := make([]string, 0, len(labelNames))
+	sort.Strings(labelNames)
+	for _, labelName := range labelNames {
+		labelValues = append(labelValues, image.Labels[labelName])
+	}
+	return strings.Join(labelValues, "")
 }
 
 func imageMatchesNameAndTag(image types.ImageSummary, imageNameAndTag string) bool {
