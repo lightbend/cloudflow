@@ -19,12 +19,16 @@ package cloudflow.akkastream
 import java.nio.file.{ Files, Paths }
 import java.nio.charset.StandardCharsets
 import akka.actor.ActorSystem
+import akka.discovery.Discovery
+import akka.management.cluster.bootstrap.ClusterBootstrap
+import akka.management.scaladsl.AkkaManagement
 
 import cloudflow.streamlets._
 import BootstrapInfo._
 
 import cloudflow.streamlets.StreamletRuntime
 import com.typesafe.config._
+
 import scala.util.{ Failure, Try }
 import net.ceedubs.ficus.Ficus._
 
@@ -63,6 +67,10 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
         val system = ActorSystem("akka_streamlet", fullConfig)
+        AkkaManagement(system).start()
+        ClusterBootstrap(system).start()
+        Discovery(system).loadServiceDiscovery("kubernetes-api")
+
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
