@@ -39,7 +39,6 @@ object FlinkRunner extends Runner[CR] {
   final val runtime            = "flink"
   final val PVCMountPath       = "/mnt/flink/storage"
   final val DefaultParallelism = 2
-  final val JvmArgsEnvVar      = "JVM_ARGS"
 
   def resource(
       deployment: StreamletDeployment,
@@ -56,20 +55,13 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
-    val envConfig = EnvConfig(
-      List(
-        EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
-      )
-    )
-
     val jobManagerConfig = JobManagerConfig(
       jobManagerSettings.replicas,
       Resources.make(
         ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
                               jobManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
-      ),
-      envConfig
+      )
     )
 
     val scale = deployment.replicas
@@ -80,8 +72,7 @@ object FlinkRunner extends Runner[CR] {
         ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
                               taskManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
-      ),
-      envConfig
+      )
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -194,13 +185,6 @@ object FlinkRunner extends Runner[CR] {
       Volume.Mount("config-map-vol", "/etc/cloudflow-runner"),
       Runner.DownwardApiVolumeMount
     ) ++ streamletVolumeMount
-  }
-
-  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.CR): String = {
-    val agentPath  = app.spec.agentPaths(CloudflowApplication.PrometheusAgentKey)
-    val port       = PrometheusConfig.PrometheusJmxExporterPort.toString
-    val configPath = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-    s"-javaagent:$agentPath=$port:$configPath"
   }
 }
 

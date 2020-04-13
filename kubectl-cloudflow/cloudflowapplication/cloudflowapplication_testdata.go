@@ -10,7 +10,6 @@ func TestApplicationDescriptor() string {
 		    "prometheus": "/app/prometheus/jmx_prometheus_javaagent-0.11.0.jar"
 		  },
 		  "app_id": "sensor-data-scala",
-		  "app_version": "478-c0bd57f",
 		  "connections": [
 		    {
 		      "inlet_name": "in",

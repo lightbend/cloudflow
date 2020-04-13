@@ -36,6 +36,9 @@ if [ -n "$FLINK_PROPERTIES" ]; then
     echo "$FLINK_PROPERTIES" >> "/usr/local/flink-conf.yaml"
 fi
 
+export FLINK_PROMETHEUS_JMX_JAVA_OPTS="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
+export FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${FLINK_PROMETHEUS_JMX_JAVA_OPTS}"
+
 envsubst < /usr/local/flink-conf.yaml > $FLINK_HOME/conf/flink-conf.yaml
 echo "web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
 echo "jobmanager.web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"

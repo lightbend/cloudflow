@@ -63,7 +63,11 @@ object RunnerConfig extends DefaultJsonProtocol {
               "class_name"    -> JsString(deployment.className),
               "streamlet_ref" -> JsString(deployment.streamletName),
               "context" -> JsObject(
-                    "app_id"          -> appId.toJson,
+                    "app_id" -> appId.toJson,
+                    // need this set for backwards compatibility
+                    // so that the user can continue to use this new version with older images
+                    // that had this property `app_version`
+                    "app_version"     -> JsString("dummy"),
                     "config"          -> toJson(deployment.config),
                     "volume_mounts"   -> toVolumeMountJson(deployment.volumeMounts),
                     "connected_ports" -> toConnectedPortsJson(deployment.portMappings)

@@ -77,6 +77,5 @@ trait CloudflowTaskKeys {
   private[sbt] val cloudflowBuildNumber =
     taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
-  private[sbt] val agentPaths                    = taskKey[Map[String, String]]("The paths to Java Agents added to Cloudflow application.")
   private[sbt] val streamletDescriptorsInProject = taskKey[Iterable[StreamletDescriptor]]("The streamlet descriptors")
 }

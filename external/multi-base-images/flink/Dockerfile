@@ -52,7 +52,7 @@ RUN set -ex; \
   mkdir $FLINK_HOME/flink-web-upload; \
   mv $FLINK_HOME/opt/flink-queryable-state-runtime_$SCALA_VERSION-$FLINK_VERSION.jar $FLINK_HOME/lib; \
   mkdir -p /prometheus && \
-  curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent-0.11.0.jar && \
+  curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar && \
   chmod -R 777 $FLINK_HOME
 
 ADD config.sh $FLINK_HOME/bin/

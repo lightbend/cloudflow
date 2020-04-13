@@ -87,6 +87,15 @@ func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, 
 	return spec, *pulledImage, nil
 }
 
+func contains(s []cloudflowapplication.Streamlet, e string) bool {
+	for _, a := range s {
+		if a.Name == e {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateApplicationSpecFromBlueprintAndImages pulls all images necessary to create a Cloudflow Application descriptor
 // from a docker label. The function returns the created application spec and the pulled in images
 func CreateApplicationSpecFromBlueprintAndImages(blueprint verify.Blueprint, pulledImages []*docker.PulledImage,
@@ -104,6 +113,18 @@ func CreateApplicationSpecFromBlueprintAndImages(blueprint verify.Blueprint, pul
 		return cloudflowapplication.CloudflowApplicationSpec{}, err
 	}
 
+	// check if the streamlets referred to in --scale are also present in the blueprint
+	var notFound []string
+	for s := range replicas {
+    if !contains(streamlets, s) {
+			notFound = append(notFound, s)
+		}
+	}
+
+	if len(notFound) > 0 {
+		return cloudflowapplication.CloudflowApplicationSpec{}, fmt.Errorf("Streamlet name(s) [%s] specified in --scale cannot be found in list of streamlets in the blueprint", strings.Join(notFound, ","))
+	}
+
 	// Spec.Connections
 	conns := blueprint.GetConnections()
 
@@ -118,9 +139,7 @@ func makeApplicationSpec(bp verify.Blueprint, apiVersion string, conns []cloudfl
 	deployments []cloudflowapplication.Deployment) cloudflowapplication.CloudflowApplicationSpec {
 
 	var spec cloudflowapplication.CloudflowApplicationSpec
-	spec.AgentPaths = map[string]string{
-		"prometheus": "/prometheus/jmx_prometheus_javaagent-0.11.0.jar",
-	}
+	spec.AgentPaths = make(map[string]string)
 	spec.AppID = bp.GetName()
 	spec.Version = apiVersion
 	spec.LibraryVersion = cloudflowapplication.LibraryVersion
