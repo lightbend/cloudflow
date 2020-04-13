@@ -174,6 +174,9 @@ object ImagePlugin extends AutoPlugin {
           Base64.getEncoder.encodeToString(compressed)
         }.get // hard get required, See TODO comment above
 
+      // split values if required
+      val labels = makeLabels(applicationDescriptorLabelName, applicationDescriptorLabelValue)
+
       new Dockerfile {
         from(dockerParentImage)
         user(userInImage)
@@ -187,7 +190,7 @@ object ImagePlugin extends AutoPlugin {
         runRaw(s"cp ${optAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
         run("cp", s"${AppTargetDir}/bin/${AppRunner}", "/opt")
         expose(4040) // used by the Spark UI
-        label(applicationDescriptorLabelName, applicationDescriptorLabelValue)
+        labels.foreach { case (k, v) => label(k, v) }
       }
     },
     build := showResultOfBuild
@@ -263,6 +266,26 @@ object ImagePlugin extends AutoPlugin {
     }
     deflater.end()
     compressed.toByteArray()
+  }
+
+  // The label value can be > 64K - in that case we need to split into multiple labels
+  private def makeLabels(labelBase: String, value: String): Map[String, String] = {
+
+    // Value needs to be less than 64K which is the max allowed limit
+    // for a single line in a Dockerfile. In case our label gets more than this size
+    // we need to split it. We keep the value bound at 60K to leave some room
+    val VALUE_SIZE_LIMIT_PER_LABEL = 61440 // 60K
+
+    if (value.length() <= VALUE_SIZE_LIMIT_PER_LABEL) Map(labelBase -> value)
+    else {
+      val values = value.grouped(VALUE_SIZE_LIMIT_PER_LABEL).toList
+      values.zipWithIndex.foldLeft(Map.empty[String, String]) {
+        case (a, e) =>
+          val (elem, index) = e
+          if (index == 0) a + (labelBase          -> elem)
+          else a + (s"$labelBase-overflow-$index" -> elem)
+      }
+    }
   }
 }
 
