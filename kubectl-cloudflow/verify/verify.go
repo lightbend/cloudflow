@@ -2,7 +2,6 @@ package verify
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/go-akka/configuration"
@@ -113,20 +112,6 @@ func getStreamletRefsFromBlueprintConfig(config *configuration.Config) []Streaml
 }
 
 func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplication.ImageReference) (map[string][]StreamletDescriptor, []*docker.PulledImage, []string, string) {
-	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
-	if apierr != nil {
-		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
-	}
-
-	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
-	client, err := docker.GetClient(trimmedapiversion)
-	if err != nil {
-		client, err = docker.GetClient("1.39")
-		if err != nil {
-			util.LogAndExit("No compatible version of the Docker server API found, tried version %s and 1.39. Error is: %s", trimmedapiversion, err.Error())
-		}
-	}
-
 	// get all streamlet descriptors, image digests and pulled images in arrays
 	var streamletDescriptors = make(map[string][]StreamletDescriptor)
 	var fallbackAppID string
@@ -134,7 +119,7 @@ func getStreamletDescriptorsFromImageRefs(imageRefs map[string]cloudflowapplicat
 	var imageDigests []string
 
 	for key, imageRef := range imageRefs {
-		streamletsDescriptorsDigestPair, version, pulledImage, err := docker.GetStreamletDescriptorsForImage(client, imageRef.FullURI)
+		streamletsDescriptorsDigestPair, version, pulledImage, err := docker.GetStreamletDescriptorsForImageWithRegistryInspection(imageRef.FullURI)
 		if err != nil {
 			util.LogAndExit(err.Error())
 		}

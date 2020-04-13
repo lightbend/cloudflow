@@ -128,15 +128,15 @@ echo ""
 echo "Building binaries for version ${buildNumber}..."
 
 echo "Building MacOS as $darwinTargetPath/$applicationName..."
-cmd="GOOS=darwin GOARCH=amd64 go build -ldflags '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"' -o $darwinTargetPath/$applicationName"
+cmd="GOOS=darwin CGO_ENABLED=0 GOARCH=amd64 go build -ldflags "-extldflags "-static""  '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"'  -tags "exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" -o $darwinTargetPath/$applicationName"
 eval $cmd
 
 echo "Building Linux as $linuxTargetPath/$applicationName..."
-cmd="GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"' -o $linuxTargetPath/$applicationName"
+cmd="GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build -ldflags "-extldflags "-static"" '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"' -tags "exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" -o $linuxTargetPath/$applicationName"
 eval $cmd
 
 echo "Building Windows as $windowsTargetPath/$windowsApplicationName..."
-cmd="GOOS=windows GOARCH=amd64 go build -ldflags '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"' -o $windowsTargetPath/$windowsApplicationName"
+cmd="GOOS=windows CGO_ENABLED=0 GOARCH=amd64 go build -ldflags "-extldflags "-static"" '-X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.BuildNumber=${buildNumber}\" -X \"github.com/lightbend/cloudflow/kubectl-cloudflow/version.ReleaseTag=${releaseTag}\"' -tags "exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" -o $windowsTargetPath/$windowsApplicationName"
 eval $cmd
 
 echo ""

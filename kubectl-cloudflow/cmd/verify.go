@@ -24,7 +24,7 @@ func init() {
 		Long: `Verifies a Cloudflow blueprint file. This command allows to explicitly verify a blueprint without deploying it.
 Blueprint verification will inspect the images in the "images"" section of the blueprint,
 get the streamlet descriptors from the image labels and will proceed to the verification of the rest of the blueprint
-sections which are "streamlets" and "connections". Note here that it will pull the required images if they are not available locally.
+sections which are "streamlets" and "connections". 
 The command either succeeds or prints a report with issues found during the verification process.
 
 kubectl cloudflow verify ./call-record-aggregator-blueprint.conf`,
