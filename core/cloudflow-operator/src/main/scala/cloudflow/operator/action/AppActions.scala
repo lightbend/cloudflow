@@ -82,14 +82,7 @@ object AppActions {
       ),
       kind = "Role",
       rules = List(
-        PolicyRule(
-          apiGroups = List(""),
-          attributeRestrictions = None,
-          nonResourceURLs = List(),
-          resourceNames = List(),
-          resources = List("pods"),
-          verbs = List("get", "list", "watch")
-        ),
+        createAkkaClusterPolicyRule,
         createEventPolicyRule
       )
     )
@@ -231,6 +224,15 @@ object AppActions {
     resourceNames = List(),
     resources = List("events"),
     verbs = List("get", "create", "update")
+  )
+
+  private val createAkkaClusterPolicyRule = PolicyRule(
+    apiGroups = List(""),
+    attributeRestrictions = None,
+    nonResourceURLs = List(),
+    resourceNames = List(),
+    resources = List("pods"),
+    verbs = List("get", "list", "watch")
   )
 
   private def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
