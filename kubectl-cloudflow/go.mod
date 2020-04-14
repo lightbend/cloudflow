@@ -19,7 +19,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gophercloud/gophercloud v0.0.0-20190325182007-873f28e270b0 // indirect
-	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gosuri/uilive v0.0.3
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
 	github.com/hamba/avro v1.0.0
