@@ -26,4 +26,6 @@ This chapter describes how to build, deploy and run a simple "Wind Turbine" Clou
 .. Deal with http ingress and push some data to the application
 .. Undeploy the application
 
+NOTE:: Check the xref:versions.adoc[versions of dependencies] that Cloudflow supports.
+
 Let's get started by xref:prepare-development-environment.adoc[preparing the development environment].
