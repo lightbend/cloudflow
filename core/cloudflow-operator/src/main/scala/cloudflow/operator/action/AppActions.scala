@@ -81,7 +81,17 @@ object AppActions {
         ownerReferences = ownerReferences
       ),
       kind = "Role",
-      rules = List(createEventPolicyRule)
+      rules = List(
+        PolicyRule(
+          apiGroups = List(""),
+          attributeRestrictions = None,
+          nonResourceURLs = List(),
+          resourceNames = List(),
+          resources = List("pods"),
+          verbs = List("get", "list", "watch")
+        ),
+        createEventPolicyRule
+      )
     )
 
   private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
