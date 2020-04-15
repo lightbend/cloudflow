@@ -132,7 +132,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
       }
 
-      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+      private def poll2(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
         val p: Promise[Unit] = Promise()
         val poller = s.schedule(frequency, frequency) {
           if (predicate) p.complete(Success())
@@ -145,6 +145,19 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
             poller.cancel()
             deadlineCheck.cancel()
         }
+      }
+
+      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+        val times = Math.ceil(deadline / frequency).toInt
+        def _poll(count: Int): Future[Unit] = (predicate, count <= 0) match {
+          case (true, _) => Future.successful(())
+          case (_, true) => Future.failed(new TimeoutException(s"Poll timed out after ${deadline.toMillis} millis"))
+          case _ =>
+            val p = Promise[Unit]()
+            s.scheduleOnce(frequency) { p.completeWith(_poll(count - 1)) }
+            p.future
+        }
+        _poll(times)
       }
     }
   }
