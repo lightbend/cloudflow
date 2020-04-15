@@ -226,7 +226,8 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
     val gotData        = queryMonitor.waitForData().andThen { case _ => queryExecution.stop() }
 
-    Await.result(gotData, maxDuration)
+    val dataElements = Await.result(gotData, maxDuration)
+    println("data elements received:" + dataElements)
     queryMonitor.executionReport
   }
 }
@@ -246,7 +247,10 @@ case class SparkOutletTap[T: Encoder](
   // get results from memory sink
   def asCollection(session: SparkSession): Seq[T] = session.sql(s"select * from $queryName").as[T].collect()
 }
-case class ExecutionReport(totalRows: Long, totalQueries: Int, failures: Seq[String])
+case class ExecutionReport(totalRows: Long, totalQueries: Int, failures: Seq[String]) {
+  override def toString: String =
+    s"total rows: [$totalRows], total queries: [$totalQueries], failures: [${failures.mkString(",")}]"
+}
 
 class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQueryListener {
   @volatile var status: Map[UUID, QueryState] = Map()
