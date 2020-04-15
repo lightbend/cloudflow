@@ -54,11 +54,11 @@ At the very end you should see the application image built and instructions for 
 [info]
 [info] Successfully built and published the following Cloudflow application image:
 [info]
-[info]   gcr.io/gsa-pipeliners/lightbend/connected-car-akka-cluster:221-65c1693-dirty
+[info]   eu.gcr.io/my-awesome-project/connected-car-akka-cluster:221-65c1693-dirty
 [info]
 [info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
 [info]
-[info]   kubectl cloudflow deploy gcr.io/gsa-pipeliners/lightbend/connected-car-akka-cluster:221-65c1693-dirty
+[info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/connected-car-akka-cluster:221-65c1693-dirty
 [info]
 [success] Total time: 317 s (05:17), completed Apr 14, 2020 10:30:03 PM
 ```
