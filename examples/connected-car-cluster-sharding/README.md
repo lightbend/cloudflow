@@ -75,12 +75,8 @@ This command line tool can be used to deploy and operate Cloudflow applications.
 
 ```
 $ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/connected-car-akka-cluster:221-65c1693-dirty -p $(gcloud auth print-access-token)"
-Existing value will be used for configuration parameter 'cdr-generator2.records-per-second'
-Existing value will be used for configuration parameter 'cdr-generator1.records-per-second'
-Existing value will be used for configuration parameter 'cdr-aggregator.group-by-window'
-Existing value will be used for configuration parameter 'cdr-aggregator.watermark'
 WARNING! Using --password via the CLI is insecure. Use --password-stdin.
-[Done] Deployment of application `call-record-aggregator` has started.
+[Done] Deployment of application `connected-car-akka-cluster` has started.
 
 ```
 
