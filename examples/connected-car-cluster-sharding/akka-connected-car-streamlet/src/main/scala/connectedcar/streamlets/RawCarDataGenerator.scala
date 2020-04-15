@@ -11,7 +11,7 @@ import connectedcar.data.ConnectedCarERecord
 import scala.util.Random
 import scala.concurrent.duration._
 
-object RawCarDataIngress extends AkkaStreamlet {
+object RawCarDataGenerator extends AkkaStreamlet {
   val out = AvroOutlet[ConnectedCarERecord]("out", m ⇒ m.carId.toString + m.timestamp.toString)
   val shape = StreamletShape.withOutlets(out)
 
