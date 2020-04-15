@@ -33,20 +33,12 @@ lazy val connectedCarExample = (project in file("./akka-connected-car"))
 
 lazy val datamodel = (project in file("./datamodel"))
   .enablePlugins(CloudflowLibraryPlugin)
-  .settings(
-    commonSettings,
-    name := "connected-car-data-model",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "bijection-avro" % "0.9.6"
-    ),
-    (sourceGenerators in Compile) += (avroScalaGenerateSpecific in Compile).taskValue,
-  )
 
 lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
   .enablePlugins(CloudflowAkkaStreamsLibraryPlugin)
   .settings(
     commonSettings,
-    name := "connected-car-akka-streams",
+    name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-cluster-sharding" % AkkaVersion,
       "net.liftweb" %% "lift-json" % "3.3.0"
