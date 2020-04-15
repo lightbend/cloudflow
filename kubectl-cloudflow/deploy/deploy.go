@@ -192,7 +192,8 @@ func getImageInfoNeededForDeployment(pulledImages []*docker.PulledImage, imageDi
 
 	for i, pulledImage := range pulledImages {
 		// this format has to be used in Deployment: full-uri@sha
-		deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], strings.Split(imageDigests[i], "@")[1])
+		// deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], strings.Split(imageDigests[i], "@")[1])
+		deployImage := fmt.Sprintf("%s@%s", strings.Split(pulledImage.ImageName, ":")[0], imageDigests[i])
 		deployImages[pulledImage.ImageName] = deployImage
 	}
 	return deployImages, nil
