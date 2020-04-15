@@ -1,44 +1,23 @@
 import sbt._
 import sbt.Keys._
 
-import scalariform.formatter.preferences._
-
-lazy val root = connectedCarExample
-
 val AkkaVersion         = "2.5.29"
 
-lazy val commonSettings = Seq(
-  organization := "com.lightbend",
-  version := "0.0.4",
-  licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
-
-  scalacOptions ++= Seq(
-    "-encoding", "UTF-8",
-    "-target:jvm-1.8",
-    "-Xlog-reflective-calls",
-    "-Xlint",
-    "-Ywarn-unused",
-    "-Ywarn-unused-import",
-    "-deprecation",
-    "-feature",
-    "-language:_",
-    "-unchecked"
-  ),
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
-  scalaVersion := "2.12.8",
-
-  scalariformPreferences := scalariformPreferences.value
-    .setPreference(AlignParameters, false)
-    .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 90)
-    .setPreference(DoubleIndentConstructorArguments, true)
-    .setPreference(DoubleIndentMethodDeclaration, true)
-    .setPreference(RewriteArrowSymbols, true)
-    .setPreference(DanglingCloseParenthesis, Preserve)
-    .setPreference(NewlineAtEndOfFile, true)
-    .setPreference(AllowParamGroupsOnNewlines, true)
-)
+lazy val root =
+  Project(id = "root", base = file("."))
+    .enablePlugins(ScalafmtPlugin)
+    .settings(
+      name := "root",
+      scalafmtOnCompile := true,
+      skip in publish := true,
+    )
+    .withId("root")
+    .settings(commonSettings)
+    .aggregate(
+      connectedCarExample,
+      datamodel,
+      akkaConnectedCar
+    )
 
 lazy val connectedCarExample = (project in file("./akka-connected-car"))
   .enablePlugins(CloudflowApplicationPlugin)
@@ -74,3 +53,25 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     )
   )
   .dependsOn(datamodel)
+
+lazy val commonSettings = Seq(
+  organization := "com.lightbend.cloudflow",
+  headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
+  scalaVersion := "2.12.10",
+  scalacOptions ++= Seq(
+    "-encoding", "UTF-8",
+    "-target:jvm-1.8",
+    "-Xlog-reflective-calls",
+    "-Xlint",
+    "-Ywarn-unused",
+    "-Ywarn-unused-import",
+    "-deprecation",
+    "-feature",
+    "-language:_",
+    "-unchecked"
+  ),
+
+  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+
+)
