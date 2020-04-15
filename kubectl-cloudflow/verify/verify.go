@@ -21,6 +21,10 @@ import (
 func VerifyBlueprint(content string) (Blueprint, []*docker.PulledImage, []string, error) {
 	config := configuration.ParseString(content)
 	imageRefsFromBlueprint := getImageRefsFromConfig(config)
+	if len(imageRefsFromBlueprint) == 0 {
+		return Blueprint{}, nil, nil, 
+			fmt.Errorf("This blueprint format is unsupported in CLI based verify - the [images] section seems to be missing. If you are using the old-style blueprint format, please try to verify from within Sbt")
+	}
 
 	// map imageID -> []StreamletDescriptor
 	imageDescriptorMap, pulledImages, imageDigests, fallbackAppID := getStreamletDescriptorsFromImageRefs(imageRefsFromBlueprint)
