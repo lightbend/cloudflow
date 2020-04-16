@@ -29,12 +29,12 @@ import cloudflow.akkastream._
 import cloudflow.streamlets._
 
 /**
- * Creates default [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
+ * Creates default [[HttpWriterLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
  */
-object HttpServerLogic {
+object HttpWriterLogic {
 
   /**
-   * Creates a HttpServerLogic that receives POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
+   * Creates a HttpWriterLogic that receives POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
    * writes the data to the providec `outlet`.
    */
   final def createDefault[Out](
@@ -43,13 +43,13 @@ object HttpServerLogic {
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       context: AkkaStreamletContext
   ) =
-    new HttpServerLogic(server, outlet, fromByteStringUnmarshaller, context) {
-      final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
-        RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
+    new HttpWriterLogic(server, outlet, fromByteStringUnmarshaller, context) {
+      final override def createRoute(): akka.http.javadsl.server.Route =
+        RouteAdapter.asJava(akkastream.util.scaladsl.HttpWriterLogic.defaultRoute(getWriter()))
     }
 
   /**
-   * Creates a HttpServerLogic that receives streaming POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
+   * Creates a HttpWriterLogic that receives streaming POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
    * the provided `EntityStreamingSupport` and writes the data to the providec `outlet`.
    */
   final def createDefaultStreaming[Out](
@@ -58,17 +58,17 @@ object HttpServerLogic {
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       ess: EntityStreamingSupport,
       context: AkkaStreamletContext
-  ) = new StreamingHttpServerLogic(server, outlet, fromByteStringUnmarshaller, ess, context) {
+  ) = new StreamingHttpWriterLogic(server, outlet, fromByteStringUnmarshaller, ess, context) {
     implicit val fbs      = fromByteStringUnmarshaller.asScala
     implicit val essScala = EntityStreamingSupportDelegate(ess)
-    final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
-      RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
+    final override def createRoute(): akka.http.javadsl.server.Route =
+      RouteAdapter.asJava(akkastream.util.scaladsl.HttpWriterLogic.defaultRoute(getWriter()))
   }
 }
 
 /**
  * Accepts and transcodes HTTP requests, then writes the transcoded data to the outlet.
- * By default this `HttpServerLogic` accepts PUT or POST requests containing entities that can be unmarshalled using the FromByteStringUnmarshaller.
+ * By default this `HttpWriterLogic` accepts PUT or POST requests containing entities that can be unmarshalled using the FromByteStringUnmarshaller.
  * Requires a `Server` to be passed in when it is created.
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
@@ -81,22 +81,22 @@ object HttpServerLogic {
  *      return StreamletShape.createWithOutlets(outlet);
  *    }
  *
- *    public HttpServerLogic createLogic() {
- *      return HttpServerLogic.createDefault(this, outlet, fbu, getStreamletContext());
+ *    public HttpWriterLogic createLogic() {
+ *      return HttpWriterLogic.createDefault(this, outlet, fbu, getStreamletContext());
  *    }
  *  }
  * }}}
  *
  */
-abstract class HttpServerLogic[Out](
+abstract class HttpWriterLogic[Out](
     server: Server,
     outlet: CodecOutlet[Out],
     fbu: Unmarshaller[ByteString, Out],
     context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.HttpServerLogic(server, outlet)(context, fbu.asScala) {
+) extends akkastream.util.scaladsl.HttpWriterLogic(server, outlet)(context, fbu.asScala) {
 
-  def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route
-  override def route(sinkRef: WritableSinkRef[Out]): Route = createRoute(sinkRef).asScala
+  def createRoute(): akka.http.javadsl.server.Route
+  override def route(): Route = createRoute().asScala
 }
 
 /**
@@ -119,21 +119,21 @@ abstract class HttpServerLogic[Out](
  *      return StreamletShape.createWithOutlets(outlet);
  *    }
  *
- *    public HttpServerLogic createLogic() {
- *      return HttpServerLogic.createDefaultStreaming(this, outlet, fbu, ess, getStreamletContext());
+ *    public HttpWriterLogic createLogic() {
+ *      return HttpWriterLogic.createDefaultStreaming(this, outlet, fbu, ess, getStreamletContext());
  *    }
  *  }
  * }}}
  */
-abstract class StreamingHttpServerLogic[Out](
+abstract class StreamingHttpWriterLogic[Out](
     server: Server,
     outlet: CodecOutlet[Out],
     fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
     val entityStreamingSupport: EntityStreamingSupport,
     context: AkkaStreamletContext
-) extends HttpServerLogic(server, outlet, fromByteStringUnmarshaller, context) {
-  def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route
-  override def route(sinkRef: WritableSinkRef[Out]): Route = createRoute(sinkRef).asScala
+) extends HttpWriterLogic(server, outlet, fromByteStringUnmarshaller, context) {
+  def createRoute(): akka.http.javadsl.server.Route
+  override def route(): Route = createRoute().asScala
 }
 
 case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)

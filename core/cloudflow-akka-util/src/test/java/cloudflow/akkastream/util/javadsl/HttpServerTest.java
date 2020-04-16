@@ -43,8 +43,8 @@ public class HttpServerTest extends JUnitSuite {
       return StreamletShape.createWithOutlets(outlet);
     }
 
-    public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefault(this, outlet, fbu, getContext());
+    public HttpWriterLogic createLogic() {
+      return HttpWriterLogic.createDefault(this, outlet, fbu, getContext());
     }
   }
 
@@ -57,8 +57,8 @@ public class HttpServerTest extends JUnitSuite {
       return StreamletShape.createWithOutlets(outlet);
     }
 
-    public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefaultStreaming(
+    public HttpWriterLogic createLogic() {
+      return HttpWriterLogic.createDefaultStreaming(
           this, outlet, fbu, entityStreamingSupport, getContext());
     }
   }
