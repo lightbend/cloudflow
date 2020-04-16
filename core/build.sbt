@@ -81,6 +81,11 @@ lazy val akkastream =
       libraryDependencies ++= Vector(
             AkkaStream,
             AkkaStreamKafka,
+            AkkaCluster,
+            AkkaManagement,
+            AkkaClusterBootstrap,
+            AkkaDiscovery,
+            AkkaDiscoveryK8,
             SprayJson,
             JacksonScalaModule,
             Ficus

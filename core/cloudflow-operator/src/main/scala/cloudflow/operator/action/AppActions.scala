@@ -81,7 +81,10 @@ object AppActions {
         ownerReferences = ownerReferences
       ),
       kind = "Role",
-      rules = List(createEventPolicyRule)
+      rules = List(
+        createAkkaClusterPolicyRule,
+        createEventPolicyRule
+      )
     )
 
   private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
@@ -221,6 +224,15 @@ object AppActions {
     resourceNames = List(),
     resources = List("events"),
     verbs = List("get", "create", "update")
+  )
+
+  private val createAkkaClusterPolicyRule = PolicyRule(
+    apiGroups = List(""),
+    attributeRestrictions = None,
+    nonResourceURLs = List(),
+    resourceNames = List(),
+    resources = List("pods"),
+    verbs = List("get", "list", "watch")
   )
 
   private def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
