@@ -1,0 +1,35 @@
+{
+    "namespace": "connectedcar.data",
+    "type": "record",
+    "name": "ConnectedCarERecord",
+    "fields":[
+        {
+            "name": "timestamp",
+                "type": {
+                    "type": "long",
+                    "logicalType": "long"
+                }
+        },
+        {
+            "name": "carId", "type": "int"
+        },
+        {
+            "name": "driver", "type": "string"
+        },
+        {
+            "name": "batteryLevel", "type": "int"
+        },
+        {
+            "name": "motorTemp", "type": "int"
+        },
+        {
+            "name": "powerConsumption", "type": "int"
+        },
+        {
+           "name": "speed", "type": "int"
+        },
+        {
+           "name": "status", "type": "string"
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+{
+    "namespace": "connectedcar.data",
+    "type": "record",
+    "name": "ConnectedCarAgg",
+    "fields":[
+        {
+            "name": "carId", "type": "int"
+        },
+        {
+            "name": "driver", "type": "string"
+        },
+        {
+            "name": "speedAvg", "type": "double"
+        },
+        {
+            "name": "numberOfRecords", "type": "int"
+        }
+    ]
+}
