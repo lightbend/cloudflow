@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
 
-val AkkaVersion         = "2.5.29"
+val AkkaVersion = "2.5.29"
 
 lazy val root =
   Project(id = "root", base = file("."))
