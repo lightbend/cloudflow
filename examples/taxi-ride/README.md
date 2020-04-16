@@ -38,6 +38,24 @@ The `buildAndPublish` command, if successful, will publish the exact command to 
 
 ### Feeding data into the application
 
+By default this project is setup with a generator, so you don't have to feed data into the application. If you do want to test the HTTP ingresses, please change the blueprint and use the `taxiride.ingestor.TaxiRideIngress` and `taxiride.ingestor.TaxiFareIngress` instead of the `taxiride.ingestor.Generator`, as shown below:
+
+```
+blueprint {
+  streamlets {
+    rides = taxiride.ingestor.TaxiRideIngress
+    fares = taxiride.ingestor.TaxiFareIngress
+    processor = taxiride.processor.TaxiRideProcessor
+    logger = taxiride.logger.FarePerRideLogger
+  }
+  connections {
+    rides.out = [processor.in-taxiride]
+    fares.out = [processor.in-taxifare]
+    processor.out = [logger.in]
+  }
+}
+```
+
 The project comes with scripts that can be used to feed data into the ingresses using http.
 
 The folder `test-data` contains 2 bash scripts, `send-data-rides.sh` and `send-data-fares.sh` that can be used to feed data through http to the 2 ingresses. Both scripts accept a port number as the argument, which you need to supply when invoking the script (see example below). In order to access the ingresses use port-forwarding to the two pods that are running the ingresses.
