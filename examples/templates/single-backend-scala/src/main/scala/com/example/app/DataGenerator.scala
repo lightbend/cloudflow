@@ -51,10 +51,6 @@ class DataInput extends AkkaStreamlet {
 
   // in `createLogic` we implement the business logic of this Streamlet
   override def createLogic() = new RunnableGraphStreamletLogic() {
-    import scala.collection.JavaConverters._
-    getStreamletConfig.entrySet().asScala.foreach { entry =>
-      println(entry.getKey + " -> " + entry.getValue)
-    }
     val rate = getStreamletConfig.getInt(RateConf.key)
     println(s"Producing elements at $rate/s")
     def runnableGraph = {
