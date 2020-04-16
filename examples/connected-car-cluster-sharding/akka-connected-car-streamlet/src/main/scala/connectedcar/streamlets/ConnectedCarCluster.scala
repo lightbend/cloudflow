@@ -14,8 +14,8 @@ import cloudflow.akkastream.{ AkkaStreamlet, Clustering }
 import connectedcar.data.{ ConnectedCarAgg, ConnectedCarERecord }
 
 object ConnectedCarCluster extends AkkaStreamlet with Clustering {
-  val in = AvroInlet[ConnectedCarERecord]("in")
-  val out = AvroOutlet[ConnectedCarAgg]("out", m ⇒ m.driver.toString)
+  val in    = AvroInlet[ConnectedCarERecord]("in")
+  val out   = AvroOutlet[ConnectedCarAgg]("out", m ⇒ m.driver.toString)
   val shape = StreamletShape(in).withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
@@ -26,10 +26,12 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
       entityProps = Props[ConnectedCarActor],
       settings = ClusterShardingSettings(context.system),
       extractEntityId = ConnectedCarActor.extractEntityId,
-      extractShardId = ConnectedCarActor.extractShardId)
+      extractShardId = ConnectedCarActor.extractShardId
+    )
 
     implicit val timeout: Timeout = 3.seconds
-    def flow = FlowWithCommittableContext[ConnectedCarERecord]
-      .mapAsync(5)(msg ⇒ (carRegion ? msg).mapTo[ConnectedCarAgg])
+    def flow =
+      FlowWithCommittableContext[ConnectedCarERecord]
+        .mapAsync(5)(msg ⇒ (carRegion ? msg).mapTo[ConnectedCarAgg])
   }
 }

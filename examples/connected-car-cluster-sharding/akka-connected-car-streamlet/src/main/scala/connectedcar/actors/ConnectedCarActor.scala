@@ -20,13 +20,13 @@ object ConnectedCarActor {
 
 class ConnectedCarActor extends Actor with ActorLogging {
 
-  val carId: String = "Car-" + self.path.name
+  val carId: String      = "Car-" + self.path.name
   var driverName: String = null
-  var currentSpeed = 0.0
-  var averageSpeed = 0.0
-  var numberOfRecords = 0
+  var currentSpeed       = 0.0
+  var averageSpeed       = 0.0
+  var numberOfRecords    = 0
 
-  var treeActor: ActorRef = null
+  var treeActor: ActorRef           = null
   implicit val ec: ExecutionContext = context.dispatcher
 
   override def receive: Receive = {

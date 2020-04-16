@@ -7,17 +7,16 @@ import cloudflow.streamlets.avro.AvroInlet
 import connectedcar.data.{ ConnectedCarAgg }
 
 object CarDataPrinter extends AkkaStreamlet {
-  val in = AvroInlet[ConnectedCarAgg]("in")
+  val in    = AvroInlet[ConnectedCarAgg]("in")
   val shape = StreamletShape(in)
 
   override def createLogic() = new RunnableGraphStreamletLogic() {
     val flow = FlowWithCommittableContext[ConnectedCarAgg]
-      .map(record ⇒ {
+      .map { record ⇒
         log.info("CarId: " + record.carId)
-      })
+      }
 
-    def runnableGraph = {
+    def runnableGraph =
       sourceWithOffsetContext(in).via(flow).to(committableSink)
-    }
   }
 }
