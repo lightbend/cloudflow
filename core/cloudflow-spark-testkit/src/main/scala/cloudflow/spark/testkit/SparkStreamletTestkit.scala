@@ -17,9 +17,6 @@
 package cloudflow.spark.testkit
 
 import java.util.UUID
-import java.util.concurrent.TimeoutException
-
-import akka.actor.Scheduler
 
 import scala.annotation.varargs
 import scala.concurrent.duration.Duration
