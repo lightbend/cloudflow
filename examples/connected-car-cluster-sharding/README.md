@@ -2,7 +2,7 @@
 
 ### Problem Definition
 
-This project clusters a set of Akka Streamlets to demonstrate how leverage
+This project clusters a set of Akka Streamlets to demonstrate how to leverage
 Akka Cluster Sharding for stateful stream processing in Cloudflow
 
 ![](akka-cluster-streams.png)
