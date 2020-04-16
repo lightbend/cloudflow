@@ -2,7 +2,6 @@ package com.example
 
 //tag::imports[]
 import scala.collection.immutable.Seq
-import scala.concurrent.duration._
 
 import cloudflow.spark.testkit._
 import cloudflow.spark.sql.SQLImplicits._
@@ -32,17 +31,15 @@ class SparkProcessorSpec extends SparkScalaTestSupport { // 1. Extend SparkScala
       in.addData(data)
 
       // 7. Run the streamlet using the testkit and the setup inlet taps and outlet probes
-      testkit.run(processor, Seq(in), Seq(out), 5.seconds)
+      val run = testkit.run(processor, Seq(in), Seq(out))
 
       // get data from outlet tap
       val results = out.asCollection(session)
-      println("**************")
-      println("Results from the test:" + results.mkString(","))
-      println("**************")
 
       // 8. Assert that actual matches expectation
       results must contain(Data(2, "name2"))
       results.size must be(5)
+      run.totalRows must be (10)
     }
   }
 }

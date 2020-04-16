@@ -17,21 +17,22 @@
 package cloudflow.spark
 
 import java.nio.file.Path
+import java.util.concurrent.TimeoutException
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, Promise }
 import scala.reflect.runtime.universe._
-import scala.util.{ Failure, Try }
-
-import akka.actor.ActorSystem
+import scala.util.{ Failure, Success, Try }
+import akka.actor.{ ActorSystem, Cancellable, Scheduler }
 import com.typesafe.config.Config
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
-
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
+
+import scala.annotation.tailrec
 
 /**
  * The base class for defining Spark streamlets. Derived classes need to override `createLogic` to
@@ -65,10 +66,7 @@ import cloudflow.streamlets._
  */
 trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
-
-  private val readyPromise      = Promise[Dun]()
-  private val completionPromise = Promise[Dun]()
-  private val completionFuture  = completionPromise.future
+  val StopTimeout            = 30.seconds
 
   override protected final def createContext(config: Config): SparkStreamletContext =
     (for {
@@ -84,59 +82,67 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
   protected def createLogic(): SparkStreamletLogic
 
   override final def run(context: SparkStreamletContext): StreamletExecution = {
+    val completionPromise = Promise[Dun]()
+    val completionFuture  = completionPromise.future
+
+    // these values are candidates to move to the configuration system
     val InitialDelay                 = 2 seconds
     val MonitorFrequency             = 5 seconds
     implicit val system: ActorSystem = ActorSystem("spark_streamlet", context.config)
 
-    readyPromise.trySuccess(Dun)
     val streamletQueryExecution = createLogic.buildStreamingQueries
 
     new StreamletExecution {
-      val readyFuture = readyPromise.future
 
-      // schedule a function to check periodically if any of the queries
-      // raised an exception
-      val done = system.scheduler.schedule(InitialDelay, MonitorFrequency) {
-        val failed = streamletQueryExecution.queries.filter(_.exception.nonEmpty)
-        if (failed.nonEmpty) {
-          // if any of the queries has an exception, stop them all
-          val errors = failed.map(f ⇒ f.name -> f.status.message).mkString(", ")
-          system.log.error(s"Queries failed. Stopping Process. Reason: $errors")
+      // schedule a function to check periodically if any of the queries stopped
+      val scheduledQueryCheck: Cancellable = system.scheduler.schedule(InitialDelay, MonitorFrequency) {
+        val someQueryStopped = streamletQueryExecution.queries.exists(!_.isActive)
+        if (someQueryStopped) completionPromise.completeWith(stop())
+      }
 
-          // stop all query execution
-          streamletQueryExecution.stop()
-
-        } else ()
+      val sysCheck: Cancellable = system.scheduler.schedule(1.minute, 1.minutes) {
+        val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
+        println(s"jvm-total-mem: $totalMem Mb")
       }
 
       // this future will be successful when any of the queries face an exception
       // or is stopped. The runner needs to await on this future and exit only when it
       // succeeds
-      def completed: Future[Dun] = {
-        if (streamletQueryExecution.queries.forall(!_.isActive)) {
-          // not active means the queries have either been stopped or they faced an exception
-          done.cancel()
+      def completed: Future[Dun] = completionFuture
 
-          val exceptions = streamletQueryExecution.queries.flatMap(_.exception.map(_.cause).toList)
-          if (exceptions.nonEmpty) {
-            // fail the future with a list of exceptions returned by the queries
-            val _ = completionPromise.tryFailure(ExceptionAcc(exceptions))
-          } else {
-            // succeed the future and we can now go and stop the runner
-            // Note: we still now have no way to restart any query
-            val _ = completionPromise.trySuccess(Dun)
-          }
-        }
-
-        completionFuture
-      }
-
-      def ready: Future[Dun] = readyFuture
+      val ready: Future[Dun] = Future.successful(Dun)
 
       def stop(): Future[Dun] = {
         streamletQueryExecution.stop()
-        completionPromise.trySuccess(Dun)
-        completionFuture
+        scheduledQueryCheck.cancel()
+        poll(streamletQueryExecution.queries.forall(!_.isActive), 1.second, StopTimeout, system.scheduler)
+          .recoverWith {
+            case ex: TimeoutException =>
+              val hangingQueries = streamletQueryExecution.queries.map(_.name).mkString(",")
+              Future.failed(new TimeoutException(s"Could not terminate queries [$hangingQueries]. Reason: ${ex.getMessage}"))
+          }
+          .map { _ =>
+            val exceptions = streamletQueryExecution.queries.flatMap(_.exception.map(_.cause))
+            if (exceptions.nonEmpty) {
+              // fail the future with a list of exceptions returned by the queries
+              throw ExceptionAcc(exceptions)
+            } else {
+              Dun
+            }
+          }
+      }
+
+      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+        val times = Math.ceil(deadline / frequency).toInt
+        def _poll(count: Int): Future[Unit] = (predicate, count <= 0) match {
+          case (true, _) => Future.successful(())
+          case (_, true) => Future.failed(new TimeoutException(s"Poll timed out after ${deadline.toMillis} millis"))
+          case _ =>
+            val p = Promise[Unit]()
+            s.scheduleOnce(frequency) { p.completeWith(_poll(count - 1)) }
+            p.future
+        }
+        _poll(times)
       }
     }
   }

@@ -18,63 +18,115 @@ package cloudflow.spark
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
-
-import org.apache.spark.sql.streaming.OutputMode
-
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import cloudflow.streamlets._
-import cloudflow.spark.testkit._
-
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
 import cloudflow.spark.avro._
 import cloudflow.spark.testkit._
 import cloudflow.spark.sql.SQLImplicits._
+import com.typesafe.config.ConfigFactory
+import org.scalatest.OptionValues
 
-class SparkStreamletSpec extends SparkScalaTestSupport {
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Success
 
-  "SparkStreamletSpec" should {
-    "validate that a config parameter value can be set in a test" ignore {
-      // create sparkStreamlet
-      object MySparkProcessor extends SparkStreamlet {
-        val in    = AvroInlet[Data]("in")
-        val out   = AvroOutlet[Simple]("out", _.name)
-        val shape = StreamletShape(in, out)
+class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
 
-        val NameFilter = StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("a"))
+  "SparkStreamlet runtime" should {
 
-        override def configParameters = Vector(NameFilter)
+    "automatically stop the streamlet execution when a managed query stops" in {
+      val instance = new LeakySparkProcessor()
+      // setup outlet tap on outlet port
+      val testKit                      = SparkStreamletTestkit(session)
+      val out1: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out1)
+      val out2: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out2)
+      val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
 
-        override def createLogic() = new SparkStreamletLogic {
-          val nameFilter = context.streamletConfig.getString(NameFilter.key)
-
-          override def buildStreamingQueries = {
-            val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
-            val query     = writeStream(outStream, out, OutputMode.Append)
-            query.toQueryExecution
-          }
+      val stopActiveQuery = Future {
+        def attemptStopQuery(): Unit = {
+          Thread.sleep(1000)
+          instance.queries.headOption
+            .map { query =>
+              if (query.isActive) {
+                query.stop
+              } else {
+                attemptStopQuery()
+              }
+            }
+            .getOrElse(attemptStopQuery())
         }
+        attemptStopQuery()
+      }
+      val execution       = instance.setContext(ctx).run(ctx)
+      val completedStatus = execution.completed
+      // sanity check
+      Await.result(stopActiveQuery, 30.seconds)
+      Await.ready(completedStatus, 30.seconds)
+
+      // execution should have stopped right after one of the queries stopped,
+      completedStatus.value.value mustBe (Success(Dun))
+    }
+
+    "automatically stop the streamlet execution when a managed query fails" in {
+      val instance = new LeakySparkProcessor()
+      // setup outlet tap on outlet port
+      val testKit                      = SparkStreamletTestkit(session)
+      val out1: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out1)
+      val out2: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out2)
+      val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
+
+      val execution = instance.setContext(ctx).run(ctx)
+
+      val failActiveQuery = execution.ready.andThen {
+        case _ =>
+          instance.mustFail(true)
       }
 
-      val configTestKit =
-        SparkStreamletTestkit(session).withConfigParameterValues(ConfigParameterValue(MySparkProcessor.NameFilter, "name5"))
+      val completedStatus = execution.completed
+      // sanity check
+      Await.result(failActiveQuery, 30.seconds)
+      // wait for the execution to complete
+      Await.ready(completedStatus, 30.seconds)
 
-      // setup inlet tap on inlet port
-      val in: SparkInletTap[Data] = configTestKit.inletAsTap[Data](MySparkProcessor.in)
+      // execution should have stopped right after one of the queries stopped,
+      completedStatus.value.value mustBe ('Failure)
+    }
 
-      // setup outlet tap on outlet port
-      val out: SparkOutletTap[Simple] = configTestKit.outletAsTap[Simple](MySparkProcessor.out)
+  }
 
-      // build data and send to inlet tap
-      val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
-      in.addData(data)
+}
 
-      configTestKit.run(MySparkProcessor, Seq(in), Seq(out), 2.seconds)
+trait QueryAccess {
+  def queries: Seq[StreamingQuery]
+  def mustFail(fail: Boolean)
+}
+class LeakySparkProcessor extends SparkStreamlet with QueryAccess {
+  val out1                                   = AvroOutlet[Simple]("out1")
+  val out2                                   = AvroOutlet[Simple]("out2")
+  val shape                                  = StreamletShape.withOutlets(out1, out2)
+  @volatile var queries: Seq[StreamingQuery] = Seq()
+  @volatile var shouldFail                   = false
+  override def mustFail(fail: Boolean)       = shouldFail = fail
 
-      // get data from outlet tap
-      val results = out.asCollection(session)
+  override def createLogic() = new SparkStreamletLogic {
 
-      // assert
-      results mustBe Array(Simple("name5"))
+    override def buildStreamingQueries = {
+      import org.apache.spark.sql.functions._
+      val inStream = session.readStream
+        .format("rate")
+        .load()
+        .select(concat(lit("value-"), $"value").as("name"))
+        .as[Simple]
+      val outStream1 = writeStream(inStream, out1, OutputMode.Append)
+      val mayFailStream = inStream.map { value =>
+        if (shouldFail) throw new RuntimeException("InternalFailure")
+        value
+      }
+      val outStream2 = writeStream(mayFailStream, out2, OutputMode.Append)
+      queries = Seq(outStream1, outStream2)
+      StreamletQueryExecution(queries)
     }
   }
 }

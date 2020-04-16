@@ -32,12 +32,13 @@ import cloudflow.events.errors.ErrorEvents
  */
 object Runner extends RunnerConfigResolver with StreamletLoader {
   lazy val log = LoggerFactory.getLogger(getClass.getName)
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   sys.props.get("os.name") match {
     case Some(os) if os.startsWith("Win") ⇒
       log.error("cloudflow.runner.Runner is NOT compatible with Windows!!")
-    case None ⇒ log.warn("""sys.props.get("os.name") returned None!""")
-    case _    ⇒ // okay
+    case Some(os) => log.info(s"Runner running on $os")
+    case None     ⇒ log.warn("""sys.props.get("os.name") returned None!""")
   }
 
   val PVCMountPath: String               = "/mnt/spark/storage"
@@ -68,32 +69,37 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
         val streamletExecution = loadedStreamlet.streamlet.run(withPodRuntimeConfig)
         loadedStreamlet.streamlet.logStartRunnerMessage(formatBuildInfo)
 
-        Try {
-          // the runner waits for the execution to complete
-          // In normal circumstances it will run forever for streaming data source unless
-          // being stopped forcibly or any of the queries faces an exception
+        // the runner waits for the execution to complete
+        // In normal circumstances it will run forever for streaming data source unless
+        // being stopped forcibly or any of the queries faces an exception
+        try {
           Await.result(streamletExecution.completed, Duration.Inf)
-        } match {
-          case Success(_) ⇒ System.exit(0)
-          case Failure(ex @ ExceptionAcc(exceptions)) ⇒
+          shutdown(loadedStreamlet)
+        } catch {
+          case ex @ ExceptionAcc(exceptions) ⇒
             exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
-            shutdownWithFailure(loadedStreamlet, ex)
-          case Failure(ex) ⇒
+            shutdown(loadedStreamlet, Some(ex))
+          case ex =>
             ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
-            shutdownWithFailure(loadedStreamlet, ex)
+            shutdown(loadedStreamlet, Some(ex))
         }
       case Failure(ex) ⇒ throw new Exception(ex)
     }
   }
 
-  private def shutdownWithFailure(loadedStreamlet: LoadedStreamlet, ex: Throwable) = {
+  private def shutdown(loadedStreamlet: LoadedStreamlet, maybeException: Option[Throwable] = None) = {
     // we created this file when the pod started running (see AkkaStreamlet#run)
     Files.deleteIfExists(
       Paths.get(s"/tmp/${loadedStreamlet.config.streamletRef}.txt")
     )
-    log.error("Fatal error has occurred:", ex)
-
-    System.exit(-1)
+    maybeException match {
+      case Some(ex) =>
+        log.error("A fatal error has occurred. The streamlet is going to shutdown", ex)
+        System.exit(-1)
+      case None =>
+        log.info("Streamlet terminating without failure")
+        System.exit(0)
+    }
   }
 
   private def formatBuildInfo: String = {

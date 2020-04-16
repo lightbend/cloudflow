@@ -16,7 +16,6 @@
 
 package cloudflow.spark
 
-import scala.concurrent.duration._
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import org.apache.spark.sql.streaming.{ OutputMode, Trigger }
 import cloudflow.streamlets.StreamletShape
@@ -26,67 +25,68 @@ import cloudflow.spark.testkit._
 import cloudflow.spark.sql.SQLImplicits._
 
 class SparkEgressSpec extends SparkScalaTestSupport {
-
-  // We are temporarily ignoring this test, a fix is on the way.
   "SparkEgress" should {
-    "materialize streaming data to sink" ignore {
+    "materialize streaming data to sink" in {
 
       val testKit = SparkStreamletTestkit(session)
 
       def asCollection[T: Encoder](session: SparkSession, queryName: String): List[T] =
         session.sql(s"select * from $queryName").as[T].collect().toList
 
-      object MySparkEgress extends SparkStreamlet {
-        val in    = AvroInlet[Data]("in")
-        val shape = StreamletShape(in)
-        override def createLogic() = new SparkStreamletLogic {
-          override def buildStreamingQueries =
-            process(readStream(in))
-
-          private def process(inDataset: Dataset[Data]): StreamletQueryExecution = {
-            val q1 = inDataset
-              .map { d ⇒
-                d.name
-              }
-              .writeStream
-              .format("memory")
-              .option("truncate", false)
-              .queryName("allNames")
-              .outputMode(OutputMode.Append())
-              .trigger(Trigger.Once)
-              .start()
-
-            val q2 = inDataset
-              .map { d ⇒
-                d.name.toUpperCase
-              }
-              .writeStream
-              .format("memory")
-              .option("truncate", false)
-              .queryName("allNamesUpper")
-              .outputMode(OutputMode.Append())
-              .trigger(Trigger.Once)
-              .start()
-            StreamletQueryExecution(q1, q2)
-          }
-        }
-      }
+      val instance = new MySparkEgress()
 
       // setup inlet tap on inlet port
-      val in: SparkInletTap[Data] = testKit.inletAsTap[Data](MySparkEgress.in)
+      val in: SparkInletTap[Data] = testKit.inletAsTap[Data](instance.in)
 
       // build data and send to inlet tap
       val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
       in.addData(data)
 
-      testKit.run(MySparkEgress, Seq(in), Seq.empty, 30.seconds)
-
+      val run = testKit.run(instance, Seq(in), Seq.empty)
+      run.failures mustBe ('empty)
+      run.totalRows mustBe (20)
       val r1 = asCollection[String](session, "allNames")
       val r2 = asCollection[String](session, "allNamesUpper")
 
       // assert
       r1 must contain("name1")
       r2 must contain("NAME1")
+    }
+  }
+}
+
+class MySparkEgress extends SparkStreamlet {
+  val in    = AvroInlet[Data]("in")
+  val shape = StreamletShape(in)
+  override def createLogic() = new SparkStreamletLogic {
+    override def buildStreamingQueries =
+      process(readStream(in))
+
+    private def process(inDataset: Dataset[Data]): StreamletQueryExecution = {
+      val q1 = inDataset
+        .map { d ⇒
+          d.name
+        }
+        .writeStream
+        .format("memory")
+        .option("truncate", false)
+        .queryName("allNames")
+        .outputMode(OutputMode.Append())
+        .trigger(Trigger.Once)
+        .start()
+
+      val q2 = inDataset
+        .map { d ⇒
+          d.name.toUpperCase
+        }
+        .writeStream
+        .format("memory")
+        .option("truncate", false)
+        .queryName("allNamesUpper")
+        .outputMode(OutputMode.Append())
+        .trigger(Trigger.Once)
+        .start()
+      StreamletQueryExecution(q1, q2)
     }
   }
 }

@@ -17,7 +17,6 @@
 package carly.aggregator
 
 import scala.collection.immutable.Seq
-import scala.concurrent.duration._
 
 import carly.data._
 
@@ -35,7 +34,8 @@ class CallRecordGeneratorIngressSpec extends SparkScalaTestSupport {
       // setup outlet tap on outlet port
       val out = testKit.outletAsTap[CallRecord](streamlet.out)
 
-      testKit.run(streamlet, Seq.empty, Seq(out), 4500.milliseconds)
+      val run = testKit.run(streamlet, Seq.empty, Seq(out))
+      run.totalRows must be > 0L
 
       // get data from outlet tap
       val results = out.asCollection(session)
