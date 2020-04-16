@@ -22,7 +22,7 @@ import JsonCallRecord._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl.HttpServerLogic
+import cloudflow.akkastream.util.scaladsl.HttpWriterLogic
 
 class CallRecordIngress extends AkkaServerStreamlet {
 
@@ -31,5 +31,5 @@ class CallRecordIngress extends AkkaServerStreamlet {
   //end::docs-outlet-partitioner-example[]
 
   final override val shape       = StreamletShape.withOutlets(out)
-  final override def createLogic = HttpServerLogic.default(this, out)
+  final override def createLogic = HttpWriterLogic.default(this, out)
 }

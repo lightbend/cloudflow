@@ -13,6 +13,6 @@ import JsonSupport._
 class DataHttpIngress extends AkkaServerStreamlet {
   val out         = AvroOutlet[Data]("out").withPartitioner(RoundRobinPartitioner)
   def shape       = StreamletShape.withOutlets(out)
-  def createLogic = HttpServerLogic.default(this, out)
+  def createLogic = HttpWriterLogic.default(this, out)
 }
 // end::httpIngress[]

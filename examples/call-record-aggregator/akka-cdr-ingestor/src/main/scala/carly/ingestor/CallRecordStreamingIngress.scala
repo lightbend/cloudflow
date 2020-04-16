@@ -24,7 +24,7 @@ import carly.ingestor.JsonCallRecord._
 import carly.data._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl.HttpServerLogic
+import cloudflow.akkastream.util.scaladsl.HttpWriterLogic
 
 class CallRecordStreamingIngress extends AkkaServerStreamlet {
   implicit val entityStreamingSupport = EntityStreamingSupport.json()
@@ -33,5 +33,5 @@ class CallRecordStreamingIngress extends AkkaServerStreamlet {
 
   final override val shape = StreamletShape.withOutlets(out)
 
-  override final def createLogic = HttpServerLogic.defaultStreaming(this, out)
+  override final def createLogic = HttpWriterLogic.defaultStreaming(this, out)
 }

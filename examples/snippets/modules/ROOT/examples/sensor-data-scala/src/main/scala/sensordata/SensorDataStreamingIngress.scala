@@ -30,5 +30,5 @@ class SensorDataStreamingIngress extends AkkaServerStreamlet {
   def shape = StreamletShape.withOutlets(out)
 
   implicit val entityStreamingSupport = EntityStreamingSupport.json()
-  override def createLogic            = HttpServerLogic.defaultStreaming(this, out)
+  override def createLogic            = HttpWriterLogic.defaultStreaming(this, out)
 }

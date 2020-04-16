@@ -17,11 +17,11 @@ import JsonSupport._
 class DataHttpIngressCustomRoute extends AkkaServerStreamlet {
   val out   = AvroOutlet[Data]("out").withPartitioner(RoundRobinPartitioner)
   def shape = StreamletShape.withOutlets(out)
-  def createLogic = new HttpServerLogic(this, out) {
-    override def route(sinkRef: WritableSinkRef[Data]): Route =
+  def createLogic = new HttpWriterLogic(this, out) {
+    override def route(): Route =
       put {
         entity(as[Data]) { data ⇒
-          onSuccess(sinkRef.write(data)) { _ ⇒
+          onSuccess(writer.write(data)) { _ ⇒
             complete(StatusCodes.OK)
           }
         }
