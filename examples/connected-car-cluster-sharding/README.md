@@ -12,7 +12,7 @@ Akka Cluster Sharding for stateful stream processing in Cloudflow
 This application consists of the following sub-projects:
 
 * `akka-connected-car`: Contains the blueprint
-* `akka-connected-car-streamlet`: Akka Streams based ingress, cluster streamlet, and logger
+* `akka-connected-car-streamlet`: Akka Streams based generator, cluster streamlet, and logger
 * `datamodel`: Contains the Avro schema
 
 ### Example Deployment example on GKE
