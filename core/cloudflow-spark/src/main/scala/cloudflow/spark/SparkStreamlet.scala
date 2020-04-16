@@ -132,21 +132,6 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
       }
 
-      private def poll2(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
-        val p: Promise[Unit] = Promise()
-        val poller = s.schedule(frequency, frequency) {
-          if (predicate) p.complete(Success())
-        }
-        val deadlineCheck = s.scheduleOnce(deadline) {
-          if (!p.isCompleted) p.complete(Failure(new TimeoutException(s"Poll timed out after ${deadline.toMillis} millis")))
-        }
-        p.future.andThen {
-          case _ =>
-            poller.cancel()
-            deadlineCheck.cancel()
-        }
-      }
-
       private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
         val times = Math.ceil(deadline / frequency).toInt
         def _poll(count: Int): Future[Unit] = (predicate, count <= 0) match {

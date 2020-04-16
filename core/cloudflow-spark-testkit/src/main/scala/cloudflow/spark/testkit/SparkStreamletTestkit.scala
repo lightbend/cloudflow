@@ -226,8 +226,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
     val queryExecution = sparkStreamlet.setContext(ctx).run(ctx.config)
     val gotData        = queryMonitor.waitForData().andThen { case _ => queryExecution.stop() }
 
-    val dataElements = Await.result(gotData, maxDuration)
-    println("data elements received:" + dataElements)
+    Await.result(gotData, maxDuration)
     queryMonitor.executionReport
   }
 }
@@ -286,7 +285,7 @@ class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQu
     val rows = queryProgress.progress.numInputRows
     dataRows = dataRows + dataRows.get(id).map(v => id -> (v + rows)).getOrElse(id -> rows)
     if (hasData & !dataAvailable.isCompleted) {
-      dataAvailable.success(dataRows.values.sum)
+      dataAvailable.trySuccess(dataRows.values.sum)
     }
   }
 
