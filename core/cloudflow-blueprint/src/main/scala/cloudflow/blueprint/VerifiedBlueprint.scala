@@ -77,19 +77,26 @@ object VerifiedOutlet {
         .find(_.name == verifiedPortPath.streamletRef)
         .toRight(PortPathNotFound(outletPortPath))
         .flatMap { verifiedStreamlet ⇒
-          if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size > 1) {
-            val suggestions = verifiedStreamlet.descriptor.outlets.map(outlet ⇒ verifiedPortPath.copy(portName = Some(outlet.name)))
-            Left(PortPathNotFound(outletPortPath, suggestions))
-          } else {
-            val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size == 1) {
-              verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.outlets.head.name))
-            } else verifiedPortPath
+          verifiedStreamlet.outletRefs
+            .find(_.outletName == verifiedPortPath.portName)
+            .map { outletRef =>
+              Left(PortAlreadyBoundToTopic(outletPortPath, outletRef.topic))
+            }
+            .getOrElse {
+              if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size > 1) {
+                val suggestions = verifiedStreamlet.descriptor.outlets.map(outlet ⇒ verifiedPortPath.copy(portName = Some(outlet.name)))
+                Left(PortPathNotFound(outletPortPath, suggestions))
+              } else {
+                val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size == 1) {
+                  verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.outlets.head.name))
+                } else verifiedPortPath
 
-            verifiedStreamlet.descriptor.outlets
-              .find(outlet ⇒ Some(outlet.name) == portPath.portName)
-              .map(outletDescriptor ⇒ VerifiedOutlet(verifiedStreamlet, outletDescriptor.name, outletDescriptor.schema))
-              .toRight(PortPathNotFound(outletPortPath))
-          }
+                verifiedStreamlet.descriptor.outlets
+                  .find(outlet ⇒ Some(outlet.name) == portPath.portName)
+                  .map(outletDescriptor ⇒ VerifiedOutlet(verifiedStreamlet, outletDescriptor.name, outletDescriptor.schema))
+                  .toRight(PortPathNotFound(outletPortPath))
+              }
+            }
         }
     } yield verifiedOutlet
 }
@@ -105,19 +112,26 @@ object VerifiedInlet {
         .find(_.name == verifiedPortPath.streamletRef)
         .toRight(PortPathNotFound(inletPortPath))
         .flatMap { verifiedStreamlet ⇒
-          if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size > 1) {
-            val suggestions = verifiedStreamlet.descriptor.inlets.map(inlet ⇒ verifiedPortPath.copy(portName = Some(inlet.name)))
-            Left(PortPathNotFound(inletPortPath, suggestions))
-          } else {
-            val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size == 1) {
-              verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.inlets.head.name))
-            } else verifiedPortPath
+          verifiedStreamlet.inletRefs
+            .find(_.inletName == verifiedPortPath.portName)
+            .map { inletRef =>
+              Left(PortAlreadyBoundToTopic(inletPortPath, inletRef.topic))
+            }
+            .getOrElse {
+              if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size > 1) {
+                val suggestions = verifiedStreamlet.descriptor.inlets.map(inlet ⇒ verifiedPortPath.copy(portName = Some(inlet.name)))
+                Left(PortPathNotFound(inletPortPath, suggestions))
+              } else {
+                val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size == 1) {
+                  verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.inlets.head.name))
+                } else verifiedPortPath
 
-            verifiedStreamlet.descriptor.inlets
-              .find(inlet ⇒ Some(inlet.name) == portPath.portName)
-              .map(inletDescriptor ⇒ VerifiedInlet(verifiedStreamlet, inletDescriptor.name, inletDescriptor.schema))
-              .toRight(PortPathNotFound(inletPortPath))
-          }
+                verifiedStreamlet.descriptor.inlets
+                  .find(inlet ⇒ Some(inlet.name) == portPath.portName)
+                  .map(inletDescriptor ⇒ VerifiedInlet(verifiedStreamlet, inletDescriptor.name, inletDescriptor.schema))
+                  .toRight(PortPathNotFound(inletPortPath))
+              }
+            }
         }
     } yield verifiedInlet
 }

@@ -75,6 +75,8 @@ object BlueprintProblem {
         s"Volume mount `$name` in streamlet `$className` is invalid. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case NonAbsoluteVolumeMountPath(className, name, path) ⇒
         s"`$className` contains a volume mount `$name` with a non-absolute path (`$path`)."
+      case PortAlreadyBoundToTopic(path, topic) ⇒
+        s"'$path' is already bound to topic '$topic'."
       case PortPathNotFound(path, suggestions) ⇒
         val end = if (suggestions.nonEmpty) s""", please try ${suggestions.map(_.toString).mkString(" or ")}.""" else "."
         s"'$path' does not point to a known streamlet inlet or outlet$end"
@@ -105,6 +107,7 @@ sealed trait PortPathError                     extends BlueprintProblem
 final case class InvalidPortPath(path: String) extends BlueprintProblem with PortPathError
 final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
     extends PortPathError
+final case class PortAlreadyBoundToTopic(path: String, topic: String) extends PortPathError
 
 final case class InvalidStreamletClassName(streamletRef: String, streamletClassName: String) extends BlueprintProblem
 final case class InvalidStreamletName(streamletRef: String)                                  extends BlueprintProblem
