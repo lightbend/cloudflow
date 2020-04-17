@@ -21,23 +21,12 @@ import scala.collection.immutable
 sealed trait BlueprintProblem
 
 object BlueprintProblem {
-  val AmbiguousStreamletRefType        = "ambiguous-streamlet-ref"
-  val MissingConfigurationType         = "missing-configuration"
-  val DuplicateStreamletNamesFoundType = "duplicate-streamlet-names"
-  val EmptyStreamletsType              = "empty-application-descriptor"
-  val EmptyStreamletDescriptorsType    = "empty-streamlet-descriptors"
-  val InvalidStreamletNameType         = "invalid-streamlet-name"
-  val IncompatibleSchemaType           = "incompatible-schema"
-  val IllegalConnectionType            = "illegal-connection"
-  val InvalidPortPathType              = "invalid-port-path"
-  val InvalidStreamletClassNameType    = "invalid-streamlet-ref"
-  val PortPathNotFoundType             = "port-path-not-found"
-  val StreamletDescriptorNotFoundType  = "streamlet-descriptor-not-found"
-  val UnconnectedInletsType            = "unconnected"
-  val UnknownConfigKeyType             = "unknown-configkey"
-
   def toMessage(problem: BlueprintProblem): String =
     problem match {
+      case BlueprintFormatError(reason) =>
+        s"The blueprint file has an invalid format:\n $reason"
+      case MissingStreamletsSection =>
+        s"The blueprint.streamlets section is missing in the blueprint file."
       case AmbiguousStreamletRef(streamletRef, className) ⇒
         s"ClassName matching `$className` is ambiguous for streamlet name $streamletRef."
       case BacktrackingVolumeMounthPath(className, name, path) ⇒
@@ -97,7 +86,8 @@ final case class AmbiguousStreamletRef(streamletRef: String, streamletClassName:
 final case class DuplicateStreamletNamesFound(streamlets: immutable.IndexedSeq[StreamletRef]) extends BlueprintProblem
 case object EmptyStreamlets                                                                   extends BlueprintProblem
 case object EmptyStreamletDescriptors                                                         extends BlueprintProblem
-
+case object MissingStreamletsSection                                                          extends BlueprintProblem
+case class BlueprintFormatError(reason: String)                                               extends BlueprintProblem
 sealed trait InletProblem extends BlueprintProblem {
   def inletPath: VerifiedPortPath
 }

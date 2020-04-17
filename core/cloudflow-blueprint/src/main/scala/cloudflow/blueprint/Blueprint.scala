@@ -19,9 +19,71 @@ package cloudflow.blueprint
 import java.io._
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
 import scala.util._
 
 import com.typesafe.config._
+
+object Blueprint {
+  val StreamletsSectionKey  = "blueprint.streamlets"
+  val ConnectionsSectionKey = "blueprint.connections"
+
+  /**
+   * Parses the blueprint from a String.
+   * @param blueprintString the blueprint file contents
+   * @param streamletDescriptors the streamlet descriptors
+   */
+  def parseString(blueprintString: String, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+    try {
+      parseConfig(ConfigFactory.parseString(blueprintString).resolve(), streamletDescriptors)
+    } catch {
+      case e: ConfigException => Blueprint(globalProblems = Vector(BlueprintFormatError(e.getMessage)))
+    }
+
+  /**
+   * Parses the blueprint from a String.
+   * @param config a Config containing the blueprint contents
+   * @param streamletDescriptors the streamlet descriptors
+   */
+  def parseConfig(config: Config, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+    if (!config.hasPath(StreamletsSectionKey)) {
+      Blueprint(globalProblems = Vector(MissingStreamletsSection))
+    } else {
+      val streamletRefs = config
+        .getConfig(StreamletsSectionKey)
+        .root()
+        .entrySet()
+        .asScala
+        .map { e ⇒
+          StreamletRef(
+            name = e.getKey,
+            className = {
+              Try(config.getString(s"$StreamletsSectionKey.${e.getKey}"))
+                .getOrElse(config.getString(s"$StreamletsSectionKey.${e.getKey}.class"))
+            }
+          )
+        }
+        .toVector
+      val streamletConnections = if (config.hasPath(ConnectionsSectionKey)) {
+        config
+          .getConfig(ConnectionsSectionKey)
+          .entrySet
+          .asScala
+          .flatMap { e ⇒
+            val inlets = config.getStringList(s"$ConnectionsSectionKey.${e.getKey}").asScala
+            inlets.map { inlet ⇒
+              StreamletConnection(
+                from = e.getKey,
+                to = inlet
+              )
+            }
+          }
+          .toVector
+      } else Vector.empty[StreamletConnection]
+      Blueprint(streamletRefs, streamletConnections, streamletDescriptors).verify
+    }
+
+}
 
 final case class Blueprint(
     streamlets: Vector[StreamletRef] = Vector.empty[StreamletRef],
