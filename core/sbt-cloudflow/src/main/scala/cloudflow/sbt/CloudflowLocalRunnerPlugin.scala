@@ -29,7 +29,7 @@ import sbt._
 import sbt.Keys._
 import spray.json._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, Savepoint, StreamletDeployment, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.streamlets.ServerAttribute
@@ -226,11 +226,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val connections                                = appDescriptor.connections
     val streamletInstances: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
     var endpointIdx                                = 0
+
     val streamletInfo = streamletInstances.map { streamlet ⇒
+      // TODO check this.
+      val existingPortMappings =
+        appDescriptor.deployments.find(_.streamletName == streamlet.name).map(_.portMappings).getOrElse(Map.empty[String, Savepoint])
       val deployment = StreamletDeployment(appDescriptor.appId,
                                            streamlet,
                                            "",
                                            appDescriptor.connections,
+                                           existingPortMappings,
                                            StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
