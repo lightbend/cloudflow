@@ -27,6 +27,8 @@ import com.typesafe.config._
 object Blueprint {
   val StreamletsSectionKey  = "blueprint.streamlets"
   val ConnectionsSectionKey = "blueprint.connections"
+  val TopicKey              = "topic"
+  val BootstrapServersKey   = "bootstrap.servers"
 
   /**
    * Parses the blueprint from a String.
@@ -49,40 +51,88 @@ object Blueprint {
     if (!config.hasPath(StreamletsSectionKey)) {
       Blueprint(globalProblems = Vector(MissingStreamletsSection))
     } else {
-      val streamletRefs = config
-        .getConfig(StreamletsSectionKey)
-        .root()
-        .entrySet()
-        .asScala
-        .map { e ⇒
+      try {
+        val streamletRefs = getKeys(config, StreamletsSectionKey).map { key ⇒
+          val simpleClassKey = s"$StreamletsSectionKey.${key}"
+          val classKey       = s"$StreamletsSectionKey.${key}.class"
+          val className =
+            if (config.hasPath(classKey)) config.getString(classKey)
+            else config.getString(simpleClassKey)
+
+          val inletsKey  = s"$StreamletsSectionKey.${key}.inlets"
+          val outletsKey = s"$StreamletsSectionKey.${key}.outlets"
+          val inletRefs  = parseInletRefs(config, inletsKey, key, className)
+          val outletRefs = parseOutletRefs(config, outletsKey, key, className)
+
           StreamletRef(
-            name = e.getKey,
-            className = {
-              Try(config.getString(s"$StreamletsSectionKey.${e.getKey}"))
-                .getOrElse(config.getString(s"$StreamletsSectionKey.${e.getKey}.class"))
-            }
+            name = key,
+            className = className,
+            inletRefs = inletRefs,
+            outletRefs = outletRefs
           )
-        }
-        .toVector
-      val streamletConnections = if (config.hasPath(ConnectionsSectionKey)) {
-        config
-          .getConfig(ConnectionsSectionKey)
-          .entrySet
-          .asScala
-          .flatMap { e ⇒
-            val inlets = config.getStringList(s"$ConnectionsSectionKey.${e.getKey}").asScala
-            inlets.map { inlet ⇒
-              StreamletConnection(
-                from = e.getKey,
-                to = inlet
-              )
+        }.toVector
+
+        val streamletConnections = if (config.hasPath(ConnectionsSectionKey)) {
+          config
+            .getConfig(ConnectionsSectionKey)
+            .entrySet
+            .asScala
+            .map(_.getKey)
+            .flatMap { key ⇒
+              val inlets = config.getStringList(s"$ConnectionsSectionKey.${key}").asScala
+              inlets.map { inlet ⇒
+                StreamletConnection(
+                  from = key,
+                  to = inlet
+                )
+              }
             }
-          }
-          .toVector
-      } else Vector.empty[StreamletConnection]
-      Blueprint(streamletRefs, streamletConnections, streamletDescriptors).verify
+            .toVector
+        } else Vector.empty[StreamletConnection]
+        Blueprint(streamletRefs, streamletConnections, streamletDescriptors).verify
+      } catch {
+        case e: ConfigException => Blueprint(globalProblems = Vector(BlueprintFormatError(e.getMessage)))
+      }
     }
 
+  private def getKeys(config: Config, key: String): Vector[String] =
+    config
+      .getConfig(key)
+      .root()
+      .entrySet()
+      .asScala
+      .map(_.getKey)
+      .toVector
+
+  private def parseInletRefs(config: Config, inletsKey: String, streamletRefName: String, className: String) =
+    if (config.hasPath(inletsKey)) {
+      val inletsConfig = config.getConfig(inletsKey)
+      val inletNames   = getKeys(config, inletsKey)
+      inletNames.map { inletName =>
+        val inletConfig      = inletsConfig.getConfig(inletName)
+        val bootstrapServers = getStringOrEmpty(inletConfig, BootstrapServersKey)
+        val consumerConfig   = getConfigOrEmpty(inletConfig, "consumer-config")
+        val topic            = getStringOrEmpty(inletConfig, TopicKey)
+        InletRef(inletName, bootstrapServers, topic, streamletRefName, className, consumerConfig)
+      }
+    } else Vector.empty[InletRef]
+
+  private def parseOutletRefs(config: Config, outletsKey: String, streamletRefName: String, className: String) =
+    if (config.hasPath(outletsKey)) {
+      val outletsConfig = config.getConfig(outletsKey)
+      val outletNames   = getKeys(config, outletsKey)
+      outletNames.map { outletName =>
+        val outletConfig     = outletsConfig.getConfig(outletName)
+        val bootstrapServers = getStringOrEmpty(outletConfig, BootstrapServersKey)
+        val producerConfig   = getConfigOrEmpty(outletConfig, "producer-config")
+        val topic            = getStringOrEmpty(outletConfig, TopicKey)
+        OutletRef(outletName, bootstrapServers, topic, streamletRefName, className, producerConfig)
+      }
+    } else Vector.empty[OutletRef]
+
+  private def getStringOrEmpty(config: Config, key: String): String = if (config.hasPath(key)) config.getString(key) else ""
+  private def getConfigOrEmpty(config: Config, key: String): Config =
+    if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
 }
 
 final case class Blueprint(

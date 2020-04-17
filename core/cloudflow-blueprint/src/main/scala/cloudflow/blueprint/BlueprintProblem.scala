@@ -29,6 +29,10 @@ object BlueprintProblem {
         s"The blueprint.streamlets section is missing in the blueprint file."
       case AmbiguousStreamletRef(streamletRef, className) ⇒
         s"ClassName matching `$className` is ambiguous for streamlet name $streamletRef."
+      case InvalidInletRef(streamletRef, className, inletRef, message) ⇒
+        s"Inlet $inletRef defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.inlets.$inletRef for className `$className` is invalid: $message"
+      case InvalidOutletRef(streamletRef, className, outletRef, message) ⇒
+        s"Outlet $outletRef defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.outlets.$outletRef for className `$className` is invalid: $message"
       case BacktrackingVolumeMounthPath(className, name, path) ⇒
         s"`$className` contains a volume mount `$name` with an invalid path `$path`, backtracking in paths are not allowed."
       case DuplicateConfigParameterKeyFound(className, keyName) ⇒
@@ -109,6 +113,10 @@ final case class InvalidValidationPatternConfigParameter(className: String, keyN
 final case class DuplicateConfigParameterKeyFound(className: String, keyName: String)                           extends BlueprintProblem
 final case class InvalidDefaultValueInConfigParameter(className: String, keyName: String, defaultValue: String) extends BlueprintProblem
 final case class StreamletDescriptorNotFound(streamletRef: String, streamletClassName: String)                  extends BlueprintProblem
+final case class InvalidInletRef(streamletRef: String, streamletClassName: String, inletRef: String, message: String)
+    extends BlueprintProblem
+final case class InvalidOutletRef(streamletRef: String, streamletClassName: String, outletRef: String, message: String)
+    extends BlueprintProblem
 final case class UnconnectedInlet(streamletRef: String, inlet: InletDescriptor)
 final case class UnconnectedInlets(unconnectedInlets: immutable.IndexedSeq[UnconnectedInlet]) extends BlueprintProblem
 

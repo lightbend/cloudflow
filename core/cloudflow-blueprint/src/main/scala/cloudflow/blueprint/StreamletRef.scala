@@ -23,7 +23,9 @@ final case class StreamletRef(
     className: String,
     problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
     verified: Option[VerifiedStreamlet] = None,
-    metadata: Option[Config] = None
+    metadata: Option[Config] = None,
+    inletRefs: Vector[InletRef] = Vector.empty[InletRef],
+    outletRefs: Vector[OutletRef] = Vector.empty[OutletRef]
 ) {
   private final val ClassNamePattern = """([\p{L}_$][\p{L}\p{N}_$]*\.)*[\p{L}_$][\p{L}\p{N}_$]*""".r
 
@@ -54,8 +56,84 @@ final case class StreamletRef(
 
     copy(
       className = descriptorFound.toOption.map(_.className).getOrElse(this.className), // use the raw value as found in the blueprint
-      problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq,
+      problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq ++ inletRefs.flatMap(_.problems) ++ outletRefs
+              .flatMap(_.problems),
       verified = descriptorFound.toOption.map(descriptor ⇒ VerifiedStreamlet(name, descriptor))
     )
   }
 }
+object InletRef {
+  def apply(
+      inletName: String,
+      bootstrapServers: String,
+      topic: String,
+      streamletRefName: String,
+      className: String,
+      consumerConfig: Config
+  ): InletRef = {
+    var problems = Vector.empty[BlueprintProblem]
+    if (bootstrapServers.isEmpty) {
+      problems = problems :+ InvalidInletRef(streamletRefName, className, inletName, s"'${Blueprint.BootstrapServersKey}' is missing.")
+    }
+    if (topic.isEmpty) {
+      problems = problems :+ InvalidInletRef(streamletRefName, className, inletName, s"'${Blueprint.TopicKey}' is missing.")
+    }
+
+    InletRef(
+      inletName,
+      bootstrapServers,
+      topic,
+      streamletRefName,
+      className,
+      consumerConfig,
+      problems
+    )
+  }
+}
+final case class InletRef(
+    inletName: String,
+    bootstrapServers: String,
+    topic: String,
+    streamletRefName: String,
+    className: String,
+    consumerConfig: Config,
+    problems: Vector[BlueprintProblem]
+)
+
+object OutletRef {
+  def apply(
+      outletName: String,
+      bootstrapServers: String,
+      topic: String,
+      streamletRefName: String,
+      className: String,
+      producerConfig: Config
+  ): OutletRef = {
+    var problems = Vector.empty[BlueprintProblem]
+    if (bootstrapServers.isEmpty) {
+      problems = problems :+ InvalidOutletRef(streamletRefName, className, outletName, s"'${Blueprint.BootstrapServersKey}' is missing.")
+    }
+    if (topic.isEmpty) {
+      problems = problems :+ InvalidOutletRef(streamletRefName, className, outletName, s"'${Blueprint.TopicKey}' is missing.")
+    }
+    OutletRef(
+      outletName,
+      bootstrapServers,
+      topic,
+      streamletRefName,
+      className,
+      producerConfig,
+      problems
+    )
+  }
+}
+
+final case class OutletRef(
+    outletName: String,
+    bootstrapServers: String,
+    topic: String,
+    streamletRefName: String,
+    className: String,
+    producerConfig: Config,
+    problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem]
+)
