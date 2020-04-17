@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.app
+package com.example.app;
 
 // required to work with the streamlet API
 import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Source;
-import cloudflow.streamlets.ConfigParameter;
-import cloudflow.streamlets.IntegerConfigParameter;
-import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.*;
-import cloudflow.streamlets.avro.AvroOutlet;
 import cloudflow.streamlets.avro.*;
 
 // classes used in this particular example
@@ -41,7 +37,7 @@ import cloudflow.akkastream.javadsl.*;
 
 // Implement the streamlet extending the corresponding base to the chosen backend:
 // AkkaStreamlet, SparkSteamlet, FlinkStreamlet
-class DataInput extends AkkaStreamlet {
+public class DataInput extends AkkaStreamlet {
 
   // declare inputs and outputs
   // outputs may declare a partitioner

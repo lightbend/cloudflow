@@ -1,7 +1,9 @@
 import sbt._
 import sbt.Keys._
 
-lazy val templateScala = (project in file("."))
+lazy val templateJavaProject = (project in file("."))
+     //enable here the backend you want to use in your application:
+     //CloudflowAkkaStreamsApplicationPlugin, CloudflowSparkApplicationPlugin, CloudflowFlinkApplicationPlugin
     .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
@@ -10,7 +12,7 @@ lazy val templateScala = (project in file("."))
         "org.scalatest"      %% "scalatest"              % "3.0.8" % "test"
       ),
 
-      name := "template-scala",
+      name := "template-java",
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
@@ -31,5 +33,4 @@ lazy val templateScala = (project in file("."))
       runLocalConfigFile := Some("src/main/resources/local.conf"),
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
-
     )
