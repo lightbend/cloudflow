@@ -82,7 +82,9 @@ object BlueprintProblem {
         s"ClassName $className for $streamletRef cannot be found."
       case UnconnectedInlets(unconnectedInlets) ⇒
         val list = unconnectedInlets.map(ui ⇒ s"${ui.streamletRef}.${ui.inlet.name}").mkString(",")
-        s"Inlets ($list) are not connected."
+        if (list.size > 1) {
+          s"Inlets ($list) are not connected."
+        } else s"Inlet $list is not connected."
     }
 }
 

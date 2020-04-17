@@ -37,9 +37,9 @@ final case class StreamletRef(
       case ClassNamePattern(_) ⇒ None
       case _                   ⇒ Some(InvalidStreamletClassName(name, className))
     }
-
+    val foundDescriptor = streamletDescriptors.find(_.className == className)
     val descriptorFound: Either[BlueprintProblem, StreamletDescriptor] =
-      streamletDescriptors.find(_.className == className) match {
+      foundDescriptor match {
         case Some(streamlet) ⇒ Right(streamlet)
         case None ⇒ {
           val matchingPartially = streamletDescriptors.filter(_.className.contains(className))
@@ -54,10 +54,35 @@ final case class StreamletRef(
         }
       }
 
+    val inletRefProblems = inletRefs.flatMap { inletRef =>
+        foundDescriptor.flatMap { descriptor =>
+          if (!descriptor.inlets.exists(_.name == inletRef.inletName))
+            Some(
+              InvalidInletRef(inletRef.streamletRefName,
+                              inletRef.className,
+                              inletRef.inletName,
+                              s"streamlet does not have inlet named '${inletRef.inletName}'.")
+            )
+          else None
+        }
+      } ++ inletRefs.flatMap(_.problems)
+
+    val outletRefProblems = outletRefs.flatMap { outletRef =>
+        foundDescriptor.flatMap { descriptor =>
+          if (!descriptor.outlets.exists(_.name == outletRef.outletName))
+            Some(
+              InvalidOutletRef(outletRef.streamletRefName,
+                               outletRef.className,
+                               outletRef.outletName,
+                               s"streamlet does not have outlet named '${outletRef.outletName}'.")
+            )
+          else None
+        }
+      } ++ outletRefs.flatMap(_.problems)
+
     copy(
       className = descriptorFound.toOption.map(_.className).getOrElse(this.className), // use the raw value as found in the blueprint
-      problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq ++ inletRefs.flatMap(_.problems) ++ outletRefs
-              .flatMap(_.problems),
+      problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq ++ inletRefProblems ++ outletRefProblems,
       verified = descriptorFound.toOption.map(descriptor ⇒ VerifiedStreamlet(name, descriptor))
     )
   }
