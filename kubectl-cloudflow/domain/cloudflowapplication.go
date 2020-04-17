@@ -19,9 +19,11 @@ type Connection struct {
 
 // PortMapping maps outlets
 type PortMapping struct {
-	AppID     string `json:"app_id"`
-	Outlet    string `json:"outlet"`
-	Streamlet string `json:"streamlet"`
+	AppID     string          `json:"app_id"`
+	Name      string          `json:"name"`
+	Streamlet string          `json:"streamlet"`
+	Config    json.RawMessage `json:"config"`
+	Create    bool            `json:"create"`
 }
 
 // Endpoint contains deployment endpoint information
@@ -110,13 +112,12 @@ type Streamlet struct {
 
 // SupportedApplicationDescriptorVersion is the Application Descriptor Version that this version of kubectl-cloudflow supports.
 // This version must match up with the version that is added by sbt-cloudflow, which is hardcoded in `cloudflow.blueprint.deployment.ApplicationDescriptor`.
-const SupportedApplicationDescriptorVersion = "1"
+const SupportedApplicationDescriptorVersion = "2"
 
 // CloudflowApplicationSpec TBD
 type CloudflowApplicationSpec struct {
 	AppID          string            `json:"app_id"`
 	AppVersion     string            `json:"app_version"`
-	Connections    []Connection      `json:"connections"`
 	Deployments    []Deployment      `json:"deployments"`
 	Streamlets     []Streamlet       `json:"streamlets"`
 	AgentPaths     map[string]string `json:"agent_paths"`
@@ -270,7 +271,6 @@ func (in *CloudflowApplication) DeepCopyInto(out *CloudflowApplication) {
 	out.Spec = CloudflowApplicationSpec{
 		AppID:       in.Spec.AppID,
 		AppVersion:  in.Spec.AppVersion,
-		Connections: in.Spec.Connections,
 		Deployments: in.Spec.Deployments,
 		Streamlets:  in.Spec.Streamlets,
 	}

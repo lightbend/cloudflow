@@ -69,10 +69,10 @@ final class AkkaStreamletContextImpl(
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
 
@@ -92,10 +92,12 @@ final class AkkaStreamletContextImpl(
   }
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
+    // TODO use savepointPath config (if not empty) to load producerConfig properties.
+    // TODO also in Spark and Flink contexts
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
 
     Flow[(T, Committable)]
       .map {
@@ -114,10 +116,10 @@ final class AkkaStreamletContextImpl(
 
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+    val topic = savepointPath.name
 
     Flow[(T, CommittableOffset)]
       .map {
@@ -136,10 +138,10 @@ final class AkkaStreamletContextImpl(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
 
@@ -153,10 +155,10 @@ final class AkkaStreamletContextImpl(
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+    val topic = savepointPath.name
 
     Flow[T]
       .map { value ⇒
@@ -176,8 +178,8 @@ final class AkkaStreamletContextImpl(
     new KafkaSinkRef(
       system,
       outlet,
-      bootstrapServers,
-      savepointPath.value,
+      savepointPath.bootstrapServers.getOrElse(bootstrapServers),
+      savepointPath.name,
       killSwitch,
       completionPromise
     )

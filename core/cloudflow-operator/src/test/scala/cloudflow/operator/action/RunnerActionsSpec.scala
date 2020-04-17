@@ -48,7 +48,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
         .right
         .value
@@ -97,7 +97,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
         .right
         .value
@@ -128,7 +128,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, egressRef.in)
 
       val verifiedBlueprint = bp.verified.right.value
 
@@ -173,7 +173,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val bp = Blueprint()
         .define(Vector(ingress, egress))
         .use(ingressRef)
-
+        .connect(Topic("foos"), ingressRef.out)
       val verifiedBlueprint = bp.verified.right.value
 
       val appId      = "lord-quas-12345"
@@ -185,7 +185,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val egressRef = egress.ref("egress")
       val newBp = bp
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), egressRef.in)
       val newAppVersion = appVersion // to compare configmap contents easier.
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))

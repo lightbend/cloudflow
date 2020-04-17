@@ -45,11 +45,22 @@ case class StreamletDefinition(appId: String,
 
 }
 
+object SavepointPath {
+  def apply(appId: String, streamletRef: String, outlet: String): SavepointPath =
+    SavepointPath(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
+}
+
 /**
  * The path to a savepoint.
  */
-final case class SavepointPath(appId: String, streamletRef: String, portName: String) {
-  def value: String = s"${appId}.${streamletRef}.${portName}"
+final case class SavepointPath(
+    appId: String,
+    streamletRef: String,
+    name: String,
+    config: Config,
+    bootstrapServers: Option[String]
+) {
+
   def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"$appId.$readingStreamletRef.${inlet.name}"
     if (inlet.hasUniqueGroupId) s"${base}.${randomUUID.toString}"
@@ -115,12 +126,12 @@ case class StreamletContextData(
  * Helper object for creating an instance of StreamletContextData from JSON.
  */
 object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
-  implicit val savepointPathFormat = jsonFormat(SavepointPath.apply, "app_id", "streamlet_ref", "port_name")
 
   protected implicit val configFormat = new JsonFormat[Config] {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
     def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
+  implicit val savepointPathFormat = jsonFormat(SavepointPath.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")

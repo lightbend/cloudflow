@@ -53,19 +53,36 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
       val inRef  = refsAdded.streamlets.find(_.className == in.className).get
 
       out.outlets
-        .flatMap { outlet ⇒
-          in.inlets.filter(_.schema == outlet.schema).map { inlet ⇒
-            StreamletConnection(
-              s"${outRef.name}.${outlet.name}",
-              s"${inRef.name}.${inlet.name}"
-            )
-          }
+        .map { outlet ⇒
+          Topic(
+            s"${outRef.name}.${outlet.name}",
+            in.inlets
+              .filter(_.schema == outlet.schema)
+              .map { inlet ⇒
+                s"${inRef.name}.${inlet.name}"
+              }
+              .toVector :+ s"${outRef.name}.${outlet.name}"
+          )
         }
-        .foldLeft(bp) { (connectingBlueprint, connection) ⇒
-          connectingBlueprint.connect(connection)
+        .foldLeft(bp) { (connectingBlueprint, topic) ⇒
+          connectingBlueprint.connect(topic, topic.connections)
         }
     }
-    connected.verify
+
+    val connectedInlets = connected.verify
+
+    // generate topic named exactly as portPath connect to portPath of unconnected outlets.
+    connectedInlets.problems
+      .collect {
+        case UnconnectedOutlets(unconnectedPorts) => unconnectedPorts
+      }
+      .flatten
+      .foldLeft(connectedInlets) { (connectingBlueprint, unconnectedPort) =>
+        val portPath = s"${unconnectedPort.streamletRef}.${unconnectedPort.port.name}"
+        val topic    = Topic(portPath)
+        connectingBlueprint.connect(topic, portPath)
+      }
+      .verify
   }
 
   /**
@@ -96,16 +113,5 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
     def out                  = s"${streamletRef.name}.out"
     def in0                  = s"${streamletRef.name}.in-0"
     def in1                  = s"${streamletRef.name}.in-1"
-  }
-
-  /**
-   * Adds methods to a VerifiedBlueprint for ease of testing.
-   */
-  implicit class VerifiedBlueprintOps(verifiedBlueprint: VerifiedBlueprint) {
-
-    /**
-     * Returns a [[VerifiedPortPath]] for an outlet path in the verified blueprint. Fails with a scalatest value if the path is incorrect.
-     */
-    def outletPath(path: String): VerifiedPortPath = verifiedBlueprint.findOutlet(path).right.value.portPath
   }
 }

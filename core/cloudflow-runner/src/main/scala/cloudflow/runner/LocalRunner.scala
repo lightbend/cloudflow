@@ -30,7 +30,7 @@ import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, Savepoint, StreamletDeployment, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.runner.RunnerOps._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
@@ -95,7 +95,13 @@ object LocalRunner extends StreamletLoader {
   private def run(appDescriptor: ApplicationDescriptor): Unit = {
 
     val kafkaPort = 9092
-    val topics    = appDescriptor.connections.map(conn ⇒ List(appDescriptor.appId, conn.outletStreamletName, conn.outletName).mkString("."))
+
+    val topics = appDescriptor.deployments
+      .flatMap { deployment =>
+        deployment.portMappings.values.map(_.name)
+      }
+      .distinct
+      .sorted
 
     setupKafka(kafkaPort, topics)
 
@@ -119,11 +125,18 @@ object LocalRunner extends StreamletLoader {
       val localStorageDirectory =
         Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
       log.info(s"Using local storage directory: $localStorageDirectory")
+
+      val existingPortMappings =
+        appDescriptor.deployments
+          .find(_.streamletName == streamletInstance.name)
+          .map(_.portMappings)
+          .getOrElse(Map.empty[String, Savepoint])
+
       val deployment: StreamletDeployment =
         StreamletDeployment(appDescriptor.appId,
                             streamletInstance,
                             "",
-                            appDescriptor.connections,
+                            existingPortMappings,
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 

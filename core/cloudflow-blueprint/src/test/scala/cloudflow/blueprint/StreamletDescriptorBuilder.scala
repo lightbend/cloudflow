@@ -53,6 +53,12 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
    */
   implicit class StreamletDescriptorBuilderOps(streamletDescriptor: StreamletDescriptor) {
 
+    /** Transforms the descriptor into a streamlet that has no connections */
+    def asBox = streamletDescriptor.copy(
+      outlets = Vector.empty,
+      inlets = Vector.empty
+    )
+
     /** Transforms the descriptor into an ingress */
     def asIngress(outlets: Vector[OutletDescriptor]) = streamletDescriptor.copy(
       outlets = outlets,
@@ -117,7 +123,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
         inletName1: String = "in-1",
         outletName: String = "out"
     ) = {
-      val inletSchemaName0 = classTag[I1].runtimeClass.getName
+      val inletSchemaName0 = classTag[I0].runtimeClass.getName
       val inletSchemaName1 = classTag[I1].runtimeClass.getName
       val outletSchemaName = classTag[O].runtimeClass.getName
       streamletDescriptor.copy(

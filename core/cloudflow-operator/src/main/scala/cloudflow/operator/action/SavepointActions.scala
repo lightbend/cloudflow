@@ -37,25 +37,25 @@ object SavepointActions {
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
-    def distinctSavepoints(app: CloudflowApplication.Spec): Set[Savepoint] =
-      app.deployments.flatMap(_.portMappings.values).toSet
+    def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
+      app.deployments.flatMap(_.portMappings.values.map(sp => TopicInfo(sp.name, sp.create))).toSet
 
     val labels = CloudflowLabels(newApp)
 
-    val currentSavepoints = currentApp.map(cr => distinctSavepoints(cr.spec)).getOrElse(Set.empty[Savepoint])
-    val newSavepoints     = distinctSavepoints(newApp.spec)
+    val currentTopics = currentApp.map(cr => distinctTopics(cr.spec)).getOrElse(Set.empty[TopicInfo])
+    val newTopics     = distinctTopics(newApp.spec)
 
     val deleteActions =
       if (deleteOutdatedTopics) {
-        (currentSavepoints -- newSavepoints).toVector
-          .map(deleteAction(labels))
+        (currentTopics -- newTopics).toVector
+          .flatMap(topic => if (topic.create) Some(deleteAction(labels)(topic)) else None)
       } else {
         Vector.empty[Action[ObjectResource]]
       }
 
     val createActions =
-      (newSavepoints -- currentSavepoints).toVector
-        .map(createAction(labels))
+      (newTopics -- currentTopics).toVector
+        .flatMap(topic => if (topic.create) Some(createAction(labels)(topic)) else None)
     deleteActions ++ createActions
   }
 
@@ -83,13 +83,13 @@ object SavepointActions {
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
 
-  def deleteAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.delete(resource(savepoint, labels))
+  def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
+    Action.delete(resource(topic, labels))
 
-  def createAction(labels: CloudflowLabels)(savepoint: Savepoint)(implicit ctx: DeploymentContext) =
-    Action.create(resource(savepoint, labels), editor)
+  def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
+    Action.create(resource(topic, labels), editor)
 
-  def resource(savepoint: Savepoint, labels: CloudflowLabels)(
+  def resource(topic: TopicInfo, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): CustomResource[Spec, Status] = {
     val partitions  = ctx.kafkaContext.partitionsPerTopic
@@ -102,9 +102,9 @@ object SavepointActions {
     CustomResource[Spec, Status](Spec(partitions, replicas))
       .withMetadata(
         ObjectMeta(
-          name = savepoint.name,
+          name = topic.name,
           namespace = ns,
-          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName)
+          labels = labels(topic.name) + ("strimzi.io/cluster" -> clusterName)
         )
       )
   }
@@ -112,4 +112,8 @@ object SavepointActions {
   private val editor = new ObjectEditor[CustomResource[Spec, Status]] {
     override def updateMetadata(obj: CustomResource[Spec, Status], newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
+  object TopicInfo {
+    def apply(sp: Savepoint): TopicInfo = TopicInfo(sp.name, sp.create)
+  }
+  case class TopicInfo(name: String, create: Boolean)
 }

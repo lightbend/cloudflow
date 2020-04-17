@@ -29,7 +29,7 @@ import sbt._
 import sbt.Keys._
 import spray.json._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, Savepoint, StreamletDeployment, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.streamlets.ServerAttribute
@@ -223,14 +223,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def printInfo(appDescriptor: ApplicationDescriptor, outputFile: File): Unit = {
-    val connections                                = appDescriptor.connections
     val streamletInstances: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
     var endpointIdx                                = 0
+
     val streamletInfo = streamletInstances.map { streamlet ⇒
+      val existingPortMappings =
+        appDescriptor.deployments.find(_.streamletName == streamlet.name).map(_.portMappings).getOrElse(Map.empty[String, Savepoint])
       val deployment = StreamletDeployment(appDescriptor.appId,
                                            streamlet,
                                            "",
-                                           appDescriptor.connections,
+                                           existingPortMappings,
                                            StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
@@ -254,8 +256,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
 
     infoBanner("Streamlets")(streamletInfo.mkString("\n"))
+
     infoBanner("Connections")(
-      connections.map(c ⇒ s"${c.outletStreamletName}.${c.outletName} -> ${c.inletStreamletName}.${c.inletName}").mkString("\n")
+      appDescriptor.deployments
+        .flatMap { deployment =>
+          deployment.portMappings.map {
+            case (port, savepoint) =>
+              s"${deployment.streamletName}.${port}" -> savepoint.name
+          }
+        }
+        .mkString("\n")
     )
     infoBanner("Output")(s"Pipeline log output available in file: " + outputFile)
   }

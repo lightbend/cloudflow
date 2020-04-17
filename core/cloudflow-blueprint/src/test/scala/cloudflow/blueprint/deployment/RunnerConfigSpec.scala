@@ -21,7 +21,7 @@ import collection.JavaConverters._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 
-class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with Inspectors {
+class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with EitherValues with Inspectors {
 
   "a RunnerConfig" should {
     "generate the correct JSON (one streamlet per deployment)" in {
@@ -30,7 +30,6 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
       streamlets.size mustBe 1
-
       forExactly(1, streamlets) { streamlet ⇒
         streamlet.getString("class_name") mustBe ingressDeployment.className
         streamlet.getString("streamlet_ref") mustBe ingressDeployment.streamletName
@@ -52,7 +51,9 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
               Savepoint(
                 savepointConfig.getString("app_id"),
                 savepointConfig.getString("streamlet_ref"),
-                savepointConfig.getString("port_name")
+                savepointConfig.getString("name"),
+                savepointConfig.getConfig("config"),
+                true
               )
             )
           )
@@ -87,7 +88,9 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
           val savepoint = Savepoint(
             savepointConfig.getString("app_id"),
             savepointConfig.getString("streamlet_ref"),
-            savepointConfig.getString("port_name")
+            savepointConfig.getString("name"),
+            savepointConfig.getConfig("config"),
+            true
           )
 
           forExactly(1, allDeployments) { deployment ⇒
@@ -124,9 +127,10 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .define(Vector(ingress, processor))
     .use(ingressRef)
     .use(processorRef)
-    .connect(ingressRef.out, processorRef.in)
+    .connect(Topic("foos"), ingressRef.out, processorRef.in)
+    .connect(Topic("bars"), processorRef.out)
 
-  val verifiedBlueprint = blueprint.verified.right.get
+  val verifiedBlueprint = blueprint.verified.right.value
   val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
   val allDeployments      = descriptor.deployments

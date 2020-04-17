@@ -28,7 +28,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
   import BlueprintBuilder._
 
   "A blueprint" should {
-    "fail verification if streamlets, connections and streamlet descriptors are empty" in {
+    "fail verification if streamlets and streamlet descriptors are empty" in {
       val blueprint = Blueprint().verify
 
       blueprint.problems must contain theSameElementsAs Vector(EmptyStreamlets, EmptyStreamletDescriptors)
@@ -44,29 +44,32 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
 
     List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { name ⇒
       s"verify if it uses a streamlet with a valid name ('${name}')" in {
-        val ingress = randomStreamlet().asIngress[Foo]
-
+        val ingress    = randomStreamlet().asIngress[Foo]
+        val ingressRef = ingress.ref(name)
         Blueprint()
           .define(Vector(ingress))
-          .use(ingress.ref(name))
+          .use(ingressRef)
+          .connect(Topic("out"), ingressRef.out)
           .problems mustBe empty
       }
     }
 
     List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { name ⇒
       s"fail verification if it uses a streamlet with an invalid name ('${name}')" in {
-        val ingress = randomStreamlet().asIngress[Foo]
+        val ingress    = randomStreamlet().asIngress[Foo]
+        val ingressRef = ingress.ref(name)
 
         Blueprint()
           .define(Vector(ingress))
-          .use(ingress.ref(name))
+          .use(ingressRef)
+          .connect(Topic("out"), ingressRef.out)
           .problems must contain theSameElementsAs Vector(InvalidStreamletName(name))
       }
     }
 
     List("-ab", "ab-", "1ab", "a/b", "a+b").foreach { className ⇒
       s"fail verification if it uses a streamlet with an invalid class name ('${className}')" in {
-        val ingress = streamlet(className).asIngress[Foo]
+        val ingress = streamlet(className).asBox
         val ref     = ingress.randomRef
 
         Blueprint()
@@ -78,22 +81,25 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
 
     List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { outletName ⇒
       s"verify if it uses a streamlet with a valid outlet name ('${outletName}')" in {
-        val ingress = randomStreamlet().asIngress[Foo](outletName)
-
+        val ingress    = randomStreamlet().asIngress[Foo](outletName)
+        val ingressRef = ingress.randomRef
         Blueprint()
           .define(Vector(ingress))
-          .use(ingress.randomRef)
+          .use(ingressRef)
+          .connect(Topic("out"), ingressRef.outlet(outletName))
           .problems mustBe empty
       }
     }
 
     List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { outletName ⇒
       s"fail verification if it uses a streamlet with an invalid outlet name ('${outletName}')" in {
-        val ingress = randomStreamlet().asIngress[Foo](outletName)
+        val ingress    = randomStreamlet().asIngress[Foo](outletName)
+        val ingressRef = ingress.randomRef
 
         Blueprint()
           .define(Vector(ingress))
-          .use(ingress.randomRef)
+          .use(ingressRef)
+          .connect(Topic("out"), ingressRef.outlet(outletName))
           .problems must contain theSameElementsAs Vector(InvalidOutletName(ingress.className, outletName))
       }
     }
@@ -102,14 +108,15 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       s"verify if it uses a streamlet with a valid inlet name ('${inletName}')" in {
         val ingress      = randomStreamlet().asIngress[Foo]
         val processor    = randomStreamlet().asProcessor[Foo, Foo](inletName = inletName)
-        val ingressRef   = ingress.ref("foo")
-        val processorRef = processor.ref("bar")
+        val ingressRef   = ingress.ref("in")
+        val processorRef = processor.ref("proc")
 
         Blueprint()
           .define(Vector(ingress, processor))
           .use(ingressRef)
           .use(processorRef)
-          .connect(ingressRef.out, processorRef.inlet(inletName))
+          .connect(Topic("foos"), ingressRef.out, processorRef.inlet(inletName))
+          .connect(Topic("foos-processed"), processorRef.out)
           .problems mustBe empty
       }
     }
@@ -118,14 +125,15 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       s"fail verification if it uses a streamlet with an invalid inlet name ('${inletName}')" in {
         val ingress      = randomStreamlet().asIngress[Foo]
         val processor    = randomStreamlet().asProcessor[Foo, Foo](inletName = inletName)
-        val ingressRef   = ingress.ref("foo")
-        val processorRef = processor.ref("bar")
+        val ingressRef   = ingress.ref("in")
+        val processorRef = processor.ref("proc")
 
         Blueprint()
           .define(Vector(ingress, processor))
           .use(ingressRef)
           .use(processorRef)
-          .connect(ingressRef.out, processorRef.inlet(inletName))
+          .connect(Topic("foos"), ingressRef.out, processorRef.inlet(inletName))
+          .connect(Topic("foos-processed"), processorRef.out)
           .problems must contain(InvalidInletName(processor.className, inletName))
       }
     }
@@ -138,6 +146,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       val blueprint = Blueprint()
         .define(Vector(ingress, processor))
         .use(ingressRef)
+        .connect(Topic("foos"), ingressRef.out)
 
       blueprint.problems mustBe empty
       blueprint.streamlets(0) mustBe ingressRef.copy(
@@ -155,7 +164,8 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .define(Vector(ingress, processor))
         .use(ingressRef)
         .use(processorRef)
-        .connect(ingressRef.out, processorRef.in)
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(Topic("foos-processed"), processorRef.out)
 
       blueprint.problems mustBe empty
       blueprint.streamlets(0) mustBe ingressRef.copy(
@@ -183,24 +193,12 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .use(processor1Ref)
         .use(processor2Ref)
         .use(processor3Ref)
-        .connect(ingressRef.out, processor1Ref.in)
-        .connect(processor1Ref.out, processor2Ref.in)
-        .connect(processor2Ref.out, processor3Ref.in)
+        .connect(Topic("foos"), ingressRef.out, processor1Ref.in)
+        .connect(Topic("procfoos"), processor1Ref.out, processor2Ref.in)
+        .connect(Topic("bars"), processor2Ref.out, processor3Ref.in)
+        .connect(Topic("baz"), processor3Ref.out)
 
       blueprint.problems mustBe empty
-    }
-
-    "not allow connecting to a streamlet with more than one inlet using a short name" in {
-      val ingress    = randomStreamlet().asIngress[Foo]
-      val merge      = randomStreamlet().asMerge[Foo, Bar, Foo]
-      val blueprint  = connectedBlueprint(ingress, merge)
-      val ingressRef = blueprint.streamlets(0)
-      val mergeRef   = blueprint.streamlets(1)
-
-      blueprint
-        .connect(StreamletConnection(ingressRef.name, mergeRef.name))
-        .problems
-        .size mustBe 2
     }
 
     "be able to connect to the correct inlet using a full port path when the streamlet has more than one inlet" in {
@@ -216,14 +214,15 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
           .use(mergeRef)
           .verify
 
-      val connected = blueprint.connect(ingressRef.name, mergeRef.in0)
-      connected.problems.size mustBe 1
+      val connected = blueprint.connect(Topic("foos"), ingressRef.out, mergeRef.in0)
+      connected.problems.size mustBe 2
       connected.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet("bar", merge.in1)))
+        UnconnectedOutlets(Vector(UnconnectedPort("bar", merge.out))),
+        UnconnectedInlets(Vector(UnconnectedPort("bar", merge.in1)))
       )
     }
 
-    "not fail verification with UnconnectedInlets for already reported IllegalConnection and IncompatibleSchema problems" in {
+    "not fail verification with UnconnectedInlets for already reported IncompatibleSchema problems" in {
       val ingress   = randomStreamlet().asIngress[Foo]
       val processor = randomStreamlet().asProcessor[Foo, Bar]
       val egress = randomStreamlet()
@@ -242,27 +241,21 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .use(processor2Ref)
         .use(egress1Ref)
         .use(egress2Ref)
-        .connect(ingressRef.out, processor1Ref.in)
-        .connect(ingressRef.out, processor2Ref.in)
-        .connect(processor1Ref.out, egress1Ref.in)
-        .connect(processor2Ref.out, egress1Ref.in)
-        .connect(ingressRef.out, egress2Ref.in)
+        .connect(Topic("foos"), ingressRef.out, processor1Ref.in)
+        .connect(Topic("foos2"), ingressRef.out, processor2Ref.in)
+        .connect(Topic("bars"), processor1Ref.out, egress1Ref.in)
+        .connect(Topic("bars2"), processor2Ref.out, egress1Ref.in)
+        .connect(Topic("foobar"), ingressRef.out, egress2Ref.in)
         .upsertStreamletRef(egress1Ref.name)
         .upsertStreamletRef(egress2Ref.name)
 
       blueprint.problems.collect { case unconnected: UnconnectedInlets ⇒ unconnected }.size mustBe 0
-
+      val paths = Vector(VerifiedPortPath(ingressRef.name, "out"), VerifiedPortPath(egress2Ref.name, "in"))
+        .sortBy(_.toString)
       blueprint.problems mustBe Vector(
-        IllegalConnection(
-          Vector(
-            VerifiedPortPath(processor1Ref.name, Some("out")),
-            VerifiedPortPath(processor2Ref.name, Some("out"))
-          ),
-          VerifiedPortPath(egress1Ref.name, Some("in"))
-        ),
         IncompatibleSchema(
-          VerifiedPortPath(ingressRef.name, Some("out")),
-          VerifiedPortPath(egress2Ref.name, Some("in"))
+          paths(0),
+          paths(1)
         )
       )
     }
@@ -272,7 +265,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         createBlueprintWithConfigurationParameter(ConfigParameterDescriptor("test-parameter", "", "string", Some("^.{1,65535$"), None))
 
       blueprint.problems must not be empty
-      blueprint.problems.head mustBe a[InvalidValidationPatternConfigParameter]
+      exactly(1, blueprint.problems) mustBe a[InvalidValidationPatternConfigParameter]
     }
 
     "fail verification for configuration parameters with invalid default regexp value" in {
@@ -287,7 +280,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       )
 
       blueprint.problems must not be empty
-      blueprint.problems.head mustBe a[InvalidDefaultValueInConfigParameter]
+      exactly(1, blueprint.problems) mustBe a[InvalidDefaultValueInConfigParameter]
     }
 
     "fail verification for configuration parameters with invalid default duration" in {
@@ -296,7 +289,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       )
 
       blueprint.problems must not be empty
-      blueprint.problems.head mustBe a[InvalidDefaultValueInConfigParameter]
+      exactly(1, blueprint.problems) mustBe a[InvalidDefaultValueInConfigParameter]
     }
 
     "be able to validate a correct duration in a default value" in {
@@ -422,7 +415,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       val blueprint = Blueprint()
         .define(Vector(ingress, processor))
         .use(ingressRef)
-        .connect(ingressRef.out, processorRef.in)
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
 
       val updatedRefError = blueprint.upsertStreamletRef(ingressRef.name, Some("NewClassName"))
       updatedRefError.streamlets.find(_.name == ingressRef.name).value mustBe
@@ -474,44 +467,34 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       fooRemoved.streamlets(0) mustBe processorRef
 
       val allRemoved = fooRemoved.remove(processorRef.name)
-      allRemoved.connections mustBe empty
+      allRemoved.topics mustBe empty
       allRemoved.streamlets mustBe empty
       allRemoved.globalProblems mustBe Vector(EmptyStreamlets)
     }
 
-    "remove associated connections when removing a streamlet" in {
+    "remove topic connections when removing a streamlet" in {
       val ingress   = randomStreamlet().asIngress[Foo]
       val processor = randomStreamlet().asProcessor[Foo, Foo]
       val egress    = randomStreamlet().asEgress[Foo]
 
       val blueprint = connectedBlueprint(ingress, processor, egress)
       blueprint.problems mustBe empty
-
-      val processorRef = blueprint.streamlets(1)
-
+      blueprint.topics.size mustBe 2
+      blueprint.topics.flatMap(_.connections).size mustBe 4
+      val ingressRef       = blueprint.streamlets(0)
+      val processorRef     = blueprint.streamlets(1)
+      val egressRef        = blueprint.streamlets(2)
       val processorRemoved = blueprint.remove(processorRef.name)
-      processorRemoved.connections mustBe empty
-      processorRemoved.globalProblems must not be empty
-    }
-
-    "remove associated connections when removing a streamlet, keep other connections" in {
-      val ingress         = randomStreamlet().asIngress[Foo]
-      val processor       = randomStreamlet().asProcessor[Foo, Foo]
-      val filterProcessor = randomStreamlet().asProcessor[Foo, Foo]
-      val egress          = randomStreamlet().asEgress[Foo]
-
-      val blueprint = connectedBlueprint(ingress, processor, filterProcessor, egress)
-
-      blueprint.problems mustBe empty
-      val processorRef       = blueprint.streamlets(1)
-      val filterProcessorRef = blueprint.streamlets(2)
-      val egressRef          = blueprint.streamlets(3)
-
-      val processorRemoved = blueprint.remove(processorRef.name)
-
-      processorRemoved.connections.size mustBe 1
-      processorRemoved.connections.head.from mustBe filterProcessorRef.out
-      processorRemoved.connections.head.to mustBe egressRef.in
+      // removing the processor does not remove the topics ingress and egress are connected to.
+      blueprint.topics.size mustBe 2
+      val streamletNamesConnected = processorRemoved.topics
+        .flatMap(_.verified)
+        .flatMap(_.connections.map(_.streamlet.name))
+      streamletNamesConnected must not contain (processorRef.name)
+      streamletNamesConnected must contain(ingressRef.name)
+      streamletNamesConnected must contain(egressRef.name)
+      // the ingress and egress are still connected to topics.
+      processorRemoved.globalProblems mustBe empty
     }
 
     "be able to disconnect streamlets" in {
@@ -526,130 +509,84 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
 
       fooRemoved.streamlets(0) mustBe processorRef
 
-      val disconnected = fooRemoved.disconnect(processorRef.name)
-
-      disconnected.connections mustBe empty
-      disconnected.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(processorRef.name, processor.inlets(0))))
-      )
+      val disconnected            = fooRemoved.disconnect(processorRef.name)
+      val connectedStreamletNames = disconnected.topics.flatMap(_.verified).flatMap(_.connections.map(_.streamlet.name))
+      connectedStreamletNames must contain(processorRef.name)
+      connectedStreamletNames must not contain (ingressRef.name)
+      disconnected.problems mustBe empty
     }
 
-    "be able to disconnect from streamlet with multiple inlets using a full port path" in {
-      val ingress   = randomStreamlet().asIngress[Foo]
-      val merge     = randomStreamlet().asMerge[Foo, Bar, Foo]
+    "be able to disconnect from streamlet with multiple inlets" in {
+      val ingress   = streamlet("Ingress").asIngress[Foo]
+      val merge     = streamlet("Merge").asMerge[Foo, Bar, Foo]
       val blueprint = connectedBlueprint(ingress, merge)
-      val mergeRef  = blueprint.streamlets(1)
+
+      val mergeRef = blueprint.streamlets(1)
+      // merge inlet Bar cannot be connected, wrong schema type
       blueprint.problems.size mustBe 1
+      blueprint.problems mustBe Vector(
+        UnconnectedInlets(Vector(UnconnectedPort(mergeRef.name, merge.in1)))
+      )
 
       val disconnected = blueprint.disconnect(mergeRef.in0)
-      disconnected.connections mustBe empty
+      disconnected.topics must not be empty
+
       disconnected.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(mergeRef.name, merge.in0), UnconnectedInlet(mergeRef.name, merge.in1)))
+        UnconnectedInlets(Vector(UnconnectedPort(mergeRef.name, merge.in0), UnconnectedPort(mergeRef.name, merge.in1)))
       )
     }
 
-    "be able to disconnect streamlet with one inlet using short name" in {
-      val ingress      = randomStreamlet().asIngress[Foo]
-      val processor    = randomStreamlet().asProcessor[Foo, Bar]
-      val ingressRef   = ingress.ref("foo")
-      val processorRef = processor.ref("bar")
+    "be able to disconnect streamlet with a misspelled or missing path" in {
+      val ingress    = randomStreamlet().asIngress[Foo]
+      val processor  = randomStreamlet().asProcessor[Foo, Foo]
+      val blueprint  = connectedBlueprint(ingress, processor)
+      val ingressRef = blueprint.streamlets(0)
 
-      val blueprint = Blueprint()
-        .define(Vector(ingress, processor))
-        .use(ingressRef)
-        .use(processorRef)
-        .connect(ingressRef.name, processorRef.name)
-      blueprint.problems mustBe empty
-
-      val disconnected = blueprint.disconnect(processorRef.name)
-      disconnected.connections mustBe empty
-      disconnected.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(processorRef.name, processor.in)))
-      )
-    }
-
-    "be able to disconnect streamlet with a short name that is misspelled or missing" in {
-      val ingress             = randomStreamlet().asIngress[Foo]
-      val processor           = randomStreamlet().asProcessor[Foo, Foo]
-      val blueprint           = connectedBlueprint(ingress, processor)
-      val ingressRef          = blueprint.streamlets(0)
-      val existingConnections = blueprint.connections
-
-      val nonExistingBlueprintConnection = blueprint.connect(ingressRef.name, "non-existing-connection")
+      val nonExistingBlueprintConnection = blueprint.connect(Topic("foos"), ingressRef.out, "non-existing-connection")
       nonExistingBlueprintConnection.problems must not be empty
+      val topics = nonExistingBlueprintConnection.topics
 
       val nonExistingConnection = nonExistingBlueprintConnection.disconnect("non-existing-connection")
-      nonExistingConnection.connections mustBe existingConnections
+      nonExistingConnection.topics mustBe topics
     }
 
-    "be able to disconnect streamlet with a full port path" in {
+    "be able to disconnect many streamlets" in {
       val ingress      = randomStreamlet().asIngress[Foo]
       val processor    = randomStreamlet().asProcessor[Foo, Foo]
       val blueprint    = unconnectedBlueprint(ingress, processor)
       val ingressRef   = blueprint.streamlets(0)
       val processorRef = blueprint.streamlets(1)
 
-      val connectedShortOutlet = blueprint.connect(ingressRef.name, processorRef.in)
-      connectedShortOutlet.connections must not be empty
-      connectedShortOutlet.problems mustBe empty
+      val connected = blueprint
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(Topic("processed-foos"), processorRef.out)
+      connected.topics must not be empty
+      connected.problems mustBe empty
 
-      val disconnectedShortOutlet = connectedShortOutlet.disconnect(processorRef.name)
-      disconnectedShortOutlet.connections mustBe empty
-      disconnectedShortOutlet.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(processorRef.name, processor.inlets(0))))
+      val disconnected = connected
+        .disconnect(ingressRef.out)
+        .disconnect(processorRef.in)
+        .disconnect(processorRef.out)
+
+      disconnected.topics mustBe empty
+      println(
+        disconnected.problems
+          .map {
+            case UnconnectedOutlets(unconnected) => "out:" + unconnected.map(un => un.streamletRef + "." + un.port.name)
+            case UnconnectedInlets(unconnected)  => "in: " + unconnected.map(un => un.streamletRef + "." + un.port.name)
+            case _                               => ""
+          }
+          .mkString("\n")
+      )
+      disconnected.problems mustBe Vector(
+        UnconnectedOutlets(
+          Vector(UnconnectedPort(ingressRef.name, ingress.outlets(0)), UnconnectedPort(processorRef.name, processor.outlets(0)))
+        ),
+        UnconnectedInlets(Vector(UnconnectedPort(processorRef.name, processor.inlets(0))))
       )
     }
 
-    "be able to disconnect streamlet that have been connected with a short name for inlet, using a full port part" in {
-      val ingress      = randomStreamlet().asIngress[Foo]
-      val processor    = randomStreamlet().asProcessor[Foo, Foo]
-      val blueprint    = unconnectedBlueprint(ingress, processor)
-      val ingressRef   = blueprint.streamlets(0)
-      val processorRef = blueprint.streamlets(1)
-
-      val connectedShortInlet = blueprint.connect(ingressRef.out, processorRef.name)
-      connectedShortInlet.connections must not be empty
-      connectedShortInlet.problems mustBe empty
-
-      val disconnectedShortInlet = connectedShortInlet.disconnect(processorRef.in)
-      disconnectedShortInlet.connections mustBe empty
-      disconnectedShortInlet.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(processorRef.name, processor.inlets(0))))
-      )
-    }
-
-    "be able to disconnect streamlet that have been connected with the full port path, using the short name" in {
-      val ingress      = randomStreamlet().asIngress[Foo]
-      val processor    = randomStreamlet().asProcessor[Foo, Foo]
-      val blueprint    = unconnectedBlueprint(ingress, processor)
-      val ingressRef   = blueprint.streamlets(0)
-      val processorRef = blueprint.streamlets(1)
-
-      val connectedLong = blueprint.connect(ingressRef.out, processorRef.in)
-      connectedLong.connections must not be empty
-      connectedLong.problems mustBe empty
-
-      val disconnectedLong = connectedLong.disconnect(processorRef.name)
-      disconnectedLong.problems mustBe Vector(
-        UnconnectedInlets(Vector(UnconnectedInlet(processorRef.name, processor.inlets(0))))
-      )
-    }
-
-    "not create duplicate connections mixing short and full port names" in {
-      val ingress   = randomStreamlet().asIngress[Foo]
-      val processor = randomStreamlet().asProcessor[Foo, Foo]
-      val blueprint = connectedBlueprint(ingress, processor)
-      blueprint.problems mustBe empty
-
-      val ingressRef   = blueprint.streamlets(0)
-      val processorRef = blueprint.streamlets(1)
-
-      val shortConnection = StreamletConnection(ingressRef.name, processorRef.name)
-      val noDups          = blueprint.connect(shortConnection)
-      noDups.connections.size mustBe 1
-    }
-
-    "not create duplicate connections mixing short and full port names on incompatible connections" in {
+    "fail with InvalidPortPath and UnconnectedInlets if the inlet/outlet part is missing in connections" in {
       val ingress    = randomStreamlet().asIngress[Foo]
       val ingressRef = ingress.randomRef
       val egress     = randomStreamlet().asEgress[Bar]
@@ -659,10 +596,13 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.name)
-
-      val noDups = blueprint.connect(ingressRef.out, egressRef.in).verify
-      noDups.connections.size mustBe 1
+        .connect(Topic("foobars"), ingressRef.name, egressRef.name)
+      blueprint.problems mustBe Vector(
+        UnconnectedOutlets(Vector(UnconnectedPort(ingressRef.name, ingress.outlets(0)))),
+        UnconnectedInlets(Vector(UnconnectedPort(egressRef.name, egress.inlets(0)))),
+        InvalidPortPath(ingressRef.name),
+        InvalidPortPath(egressRef.name)
+      )
     }
   }
 
