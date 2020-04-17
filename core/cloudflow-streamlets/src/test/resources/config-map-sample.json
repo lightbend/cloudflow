@@ -27,7 +27,9 @@
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
-                    "port_name": "accepted"
+                    "name": "appId.sensor-data.accepted",
+                    "config" : {},
+                    "create" : true
                   }
               },
               {
@@ -36,7 +38,9 @@
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
-                    "port_name": "rejected"
+                    "name": "appId.sensor-data.rejected",
+                    "config" : {},
+                    "create" : true
                   }
               }
             ],

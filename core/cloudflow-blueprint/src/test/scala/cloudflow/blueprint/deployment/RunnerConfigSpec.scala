@@ -52,7 +52,10 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
               Savepoint(
                 savepointConfig.getString("app_id"),
                 savepointConfig.getString("streamlet_ref"),
-                savepointConfig.getString("port_name")
+                savepointConfig.getString("name"),
+                savepointConfig.getConfig("config"),
+                None,
+                true
               )
             )
           )
@@ -87,7 +90,10 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
           val savepoint = Savepoint(
             savepointConfig.getString("app_id"),
             savepointConfig.getString("streamlet_ref"),
-            savepointConfig.getString("port_name")
+            savepointConfig.getString("name"),
+            savepointConfig.getConfig("config"),
+            None,
+            true
           )
 
           forExactly(1, allDeployments) { deployment ⇒

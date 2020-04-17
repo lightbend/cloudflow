@@ -50,7 +50,8 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
               {
                 "app_id": "appId",
                 "streamlet_ref": "to-metrics",
-                "port_name": "in"
+                "name": "appId.to-metrics.in",
+                "config": {}
               }
           },
           {
@@ -59,7 +60,8 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
               {
                 "app_id": "appId",
                 "streamlet_ref": "to-metrics",
-                "port_name": "out"
+                "name": "appId.to-metrics.out",
+                "config": {}
               }
           }
         ],
