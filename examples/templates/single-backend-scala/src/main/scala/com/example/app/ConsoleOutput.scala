@@ -24,7 +24,6 @@ import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
-
 // Implement the streamlet extending the corresponding base to the chosen backend:
 // AkkaStreamlet, SparkSteamlet, FlinkStreamlet
 class ConsoleOutput extends AkkaStreamlet {
@@ -35,7 +34,7 @@ class ConsoleOutput extends AkkaStreamlet {
 
   // in `createLogic` we implement the business logic of this Streamlet
   override def createLogic = new RunnableGraphStreamletLogic() {
-        // for akka-streams streamlets, the entry point of the logic is the runnableGraph.
+    // for akka-streams streamlets, the entry point of the logic is the runnableGraph.
     // check the Streamlet API of your chosen implementation to determine the entry point
     // corresponding to your chosen backend.
     def runnableGraph =
