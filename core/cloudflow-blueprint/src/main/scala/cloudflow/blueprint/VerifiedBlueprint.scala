@@ -82,6 +82,7 @@ object VerifiedOutlet {
             if (verifiedStreamlet.descriptor.outlets.size == 1) Some(verifiedStreamlet.descriptor.outlets.head.name)
             else None
           }
+          // an outlet that is already bound to a topic through outlets definition cannot be connected to.
           verifiedStreamlet.outletRefs
             .find(outletRef => Some(outletRef.outletName) == portNameFound)
             .map { outletRef =>
@@ -122,6 +123,7 @@ object VerifiedInlet {
             if (verifiedStreamlet.descriptor.inlets.size == 1) Some(verifiedStreamlet.descriptor.inlets.head.name)
             else None
           }
+          // an inlet that is already bound to a topic through inlets definition cannot be connected to
           verifiedStreamlet.inletRefs
             .find(inletRef => Some(inletRef.inletName) == portNameFound)
             .map { inletRef =>
