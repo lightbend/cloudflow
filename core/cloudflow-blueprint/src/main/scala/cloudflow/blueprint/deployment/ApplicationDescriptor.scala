@@ -82,13 +82,19 @@ object ApplicationDescriptor {
     val connections               = blueprint.connections.map(toConnection)
     val deployments =
       namedStreamletDescriptors
-        .map { streamlet ⇒
-          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
+        .map {
+          case (streamlet, instance) ⇒
+            val inletRefMappings =
+              streamlet.inletRefs.map(inletRef => inletRef.inletName -> Savepoint.existing(appId, streamlet.name, inletRef.topic))
+            val outletRefMappings =
+              streamlet.outletRefs.map(outletRef => outletRef.outletName -> Savepoint.existing(appId, streamlet.name, outletRef.topic))
+            val existingPortMappings = (inletRefMappings ++ outletRefMappings).toMap
+            StreamletDeployment(sanitizedApplicationId, instance, image, connections, existingPortMappings)
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
                           appVersion,
-                          namedStreamletDescriptors,
+                          namedStreamletDescriptors.map { case (_, instance) => instance },
                           connections,
                           deployments,
                           agentPaths,
@@ -96,7 +102,8 @@ object ApplicationDescriptor {
                           LibraryVersion)
   }
 
-  private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)
+  private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) =
+    (streamlet, StreamletInstance(streamlet.name, streamlet.descriptor))
   private def toConnection(connection: VerifiedStreamletConnection) =
     Connection(
       connection.verifiedOutlet.portName,
@@ -160,6 +167,7 @@ object StreamletDeployment {
             streamlet: StreamletInstance,
             image: String,
             allConnections: Vector[Connection],
+            existingPortMappings: Map[String, Savepoint],
             containerPort: Int = EndpointContainerPort,
             replicas: Option[Int] = None): StreamletDeployment = {
     val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
@@ -172,7 +180,7 @@ object StreamletDeployment {
       endpoint,
       secretName = Dns1123Formatter.transformToDNS1123SubDomain(streamlet.name),
       config,
-      createPortMappings(appId, streamlet, allConnections),
+      createPortMappings(appId, streamlet, allConnections) ++ existingPortMappings,
       preserveEmpty(streamlet.descriptor.volumeMounts.toList),
       replicas
     )
@@ -212,9 +220,18 @@ object StreamletDeployment {
       .getOrElse((ConfigFactory.empty(), None))
 }
 
-final case class Savepoint(appId: String, streamlet: String, outlet: String) {
-  def name: String = s"${appId}.${streamlet}.${outlet}"
+object Savepoint {
+  def existing(appId: String, streamlet: String, topic: String): Savepoint = Savepoint(appId, streamlet, topic, false)
+  def apply(appId: String, streamlet: String, outlet: String): Savepoint =
+    Savepoint(appId, streamlet, s"${appId}.${streamlet}.${outlet}", true)
 }
+
+final case class Savepoint(
+    appId: String,
+    streamlet: String,
+    name: String,
+    create: Boolean
+)
 
 final case class Endpoint(
     appId: String,

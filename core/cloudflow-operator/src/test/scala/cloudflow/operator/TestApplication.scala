@@ -36,7 +36,7 @@ object CloudflowApplicationSpecBuilder {
     val deployments =
       streamlets
         .map { streamlet ⇒
-          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
+          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections, Map.empty[String, Savepoint])
         }
 
     CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, connections, deployments, agentPaths)
