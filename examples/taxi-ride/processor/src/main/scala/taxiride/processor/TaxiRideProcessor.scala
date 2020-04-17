@@ -39,7 +39,7 @@ import org.apache.flink.util.Collector
 
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro._
-import taxiride.flink.avro._
+import taxiride.datamodel._
 import cloudflow.flink._
 
 class TaxiRideProcessor extends FlinkStreamlet {
