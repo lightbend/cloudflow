@@ -42,7 +42,7 @@ class SparkStreamletContextImpl(
     implicit val inRowEncoder: ExpressionEncoder[Row] = RowEncoder(encoder.schema)
     val schema                                        = inPort.schemaAsString
     val savepointPath                                 = findSavepointPathForPort(inPort)
-    val srcTopic                                      = savepointPath.value
+    val srcTopic                                      = savepointPath.name
     val brokers                                       = config.getString("cloudflow.kafka.bootstrap-servers")
 
     val src: DataFrame = session.readStream
@@ -73,7 +73,7 @@ class SparkStreamletContextImpl(
     val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
 
     val savepointPath = findSavepointPathForPort(outPort)
-    val destTopic     = savepointPath.value
+    val destTopic     = savepointPath.name
     val brokers       = config.getString("cloudflow.kafka.bootstrap-servers")
 
     // metadata checkpoint directory on mount

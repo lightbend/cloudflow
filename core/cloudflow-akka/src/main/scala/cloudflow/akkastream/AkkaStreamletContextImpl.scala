@@ -69,7 +69,7 @@ final class AkkaStreamletContextImpl(
 
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
@@ -95,7 +95,7 @@ final class AkkaStreamletContextImpl(
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
 
     Flow[(T, Committable)]
       .map {
@@ -117,7 +117,7 @@ final class AkkaStreamletContextImpl(
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
 
     Flow[(T, CommittableOffset)]
       .map {
@@ -136,7 +136,7 @@ final class AkkaStreamletContextImpl(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(bootstrapServers)
@@ -156,7 +156,7 @@ final class AkkaStreamletContextImpl(
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
 
     Flow[T]
       .map { value ⇒
@@ -177,7 +177,7 @@ final class AkkaStreamletContextImpl(
       system,
       outlet,
       bootstrapServers,
-      savepointPath.value,
+      savepointPath.name,
       killSwitch,
       completionPromise
     )

@@ -85,9 +85,21 @@ object ApplicationDescriptor {
         .map {
           case (streamlet, instance) ⇒
             val inletRefMappings =
-              streamlet.inletRefs.map(inletRef => inletRef.inletName -> Savepoint.existing(appId, streamlet.name, inletRef.topic))
+              streamlet.inletRefs.map(inletRef =>
+                inletRef.inletName -> Savepoint.existing(appId,
+                                                         streamlet.name,
+                                                         inletRef.topic,
+                                                         inletRef.bootstrapServers,
+                                                         inletRef.consumerConfig)
+              )
             val outletRefMappings =
-              streamlet.outletRefs.map(outletRef => outletRef.outletName -> Savepoint.existing(appId, streamlet.name, outletRef.topic))
+              streamlet.outletRefs.map(outletRef =>
+                outletRef.outletName -> Savepoint.existing(appId,
+                                                           streamlet.name,
+                                                           outletRef.topic,
+                                                           outletRef.bootstrapServers,
+                                                           outletRef.producerConfig)
+              )
             val existingPortMappings = (inletRefMappings ++ outletRefMappings).toMap
             StreamletDeployment(sanitizedApplicationId, instance, image, connections, existingPortMappings)
         }
@@ -221,16 +233,19 @@ object StreamletDeployment {
 }
 
 object Savepoint {
-  def existing(appId: String, streamlet: String, topic: String): Savepoint = Savepoint(appId, streamlet, topic, false)
+  def existing(appId: String, streamlet: String, topic: String, bootstrapServers: String, config: Config): Savepoint =
+    Savepoint(appId, streamlet, topic, config, Some(bootstrapServers), false)
   def apply(appId: String, streamlet: String, outlet: String): Savepoint =
-    Savepoint(appId, streamlet, s"${appId}.${streamlet}.${outlet}", true)
+    Savepoint(appId, streamlet, s"${appId}.${streamlet}.${outlet}", ConfigFactory.empty(), None, true)
 }
 
 final case class Savepoint(
     appId: String,
     streamlet: String,
     name: String,
-    create: Boolean
+    config: Config = ConfigFactory.empty(),
+    bootstrapServers: Option[String] = None,
+    create: Boolean = true
 )
 
 final case class Endpoint(
