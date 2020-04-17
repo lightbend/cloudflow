@@ -21,7 +21,7 @@ import akka.stream.scaladsl._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
-import taxiride.flink.avro._
+import taxiride.datamodel._
 import spray.json._
 import TaxiFareJsonProtocol._
 
