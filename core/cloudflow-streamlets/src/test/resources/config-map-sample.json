@@ -23,20 +23,24 @@
             "connected_ports": [
               {
                 "port": "accepted",
-                "savepoint_path": 
+                "topic":
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
-                    "port_name": "accepted"
+                    "name": "appId.sensor-data.accepted",
+                    "config" : {},
+                    "managed" : true
                   }
               },
               {
                 "port": "rejected",
-                "savepoint_path": 
+                "topic":
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
-                    "port_name": "rejected"
+                    "name": "appId.sensor-data.rejected",
+                    "config" : {},
+                    "managed" : true
                   }
               }
             ],

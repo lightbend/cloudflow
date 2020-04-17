@@ -95,7 +95,7 @@ object Actions {
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    SavepointActions(newApp, currentApp, deleteOutdatedTopics)
+    TopicActions(newApp, currentApp, deleteOutdatedTopics)
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,

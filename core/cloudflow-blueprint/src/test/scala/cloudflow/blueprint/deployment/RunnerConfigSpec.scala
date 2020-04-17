@@ -21,7 +21,7 @@ import collection.JavaConverters._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 
-class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with Inspectors {
+class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with EitherValues with Inspectors {
 
   "a RunnerConfig" should {
     "generate the correct JSON (one streamlet per deployment)" in {
@@ -30,7 +30,6 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
       val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
       streamlets.size mustBe 1
-
       forExactly(1, streamlets) { streamlet ⇒
         streamlet.getString("class_name") mustBe ingressDeployment.className
         streamlet.getString("streamlet_ref") mustBe ingressDeployment.streamletName
@@ -44,15 +43,18 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         connectedPorts must have size 1
 
         forExactly(1, connectedPorts) { connectedPort ⇒
-          val savepointConfig = connectedPort.getConfig("savepoint_path")
+          val topicConfig = connectedPort.getConfig("topic")
 
           ingressDeployment.portMappings must contain(
             (
               connectedPort.getString("port"),
-              Savepoint(
-                savepointConfig.getString("app_id"),
-                savepointConfig.getString("streamlet_ref"),
-                savepointConfig.getString("port_name")
+              Topic(
+                topicConfig.getString("app_id"),
+                topicConfig.getString("streamlet_ref"),
+                topicConfig.getString("name"),
+                topicConfig.getConfig("config"),
+                Some(topicConfig.getString("bootstrap_servers")),
+                true
               )
             )
           )
@@ -82,16 +84,19 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         connectedPorts must have size 2
 
         forExactly(2, connectedPorts) { connectedPort ⇒
-          val savepointConfig = connectedPort.getConfig("savepoint_path")
-          val portName        = connectedPort.getString("port")
-          val savepoint = Savepoint(
-            savepointConfig.getString("app_id"),
-            savepointConfig.getString("streamlet_ref"),
-            savepointConfig.getString("port_name")
+          val topicConfig = connectedPort.getConfig("topic")
+          val portName    = connectedPort.getString("port")
+          val topic = Topic(
+            topicConfig.getString("app_id"),
+            topicConfig.getString("streamlet_ref"),
+            topicConfig.getString("name"),
+            topicConfig.getConfig("config"),
+            Some(topicConfig.getString("bootstrap_servers")),
+            true
           )
 
           forExactly(1, allDeployments) { deployment ⇒
-            deployment.portMappings must contain(portName -> savepoint)
+            deployment.portMappings must contain(portName -> topic)
           }
         }
 
@@ -124,9 +129,10 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .define(Vector(ingress, processor))
     .use(ingressRef)
     .use(processorRef)
-    .connect(ingressRef.out, processorRef.in)
+    .connect(Topic(name = "foos", bootstrapServers = Some("localhost:9092")), ingressRef.out, processorRef.in)
+    .connect(Topic(name = "bars", bootstrapServers = Some("localhost:9092")), processorRef.out)
 
-  val verifiedBlueprint = blueprint.verified.right.get
+  val verifiedBlueprint = blueprint.verified.right.value
   val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
   val allDeployments      = descriptor.deployments
