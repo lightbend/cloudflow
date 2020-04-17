@@ -154,7 +154,7 @@ object StreamletDeployment {
   val ServerAttributeName   = "server"
   val EndpointContainerPort = 3000
 
-  def name(appId: String, streamlet: String) = s"${appId}.${streamlet}".take(63)
+  def name(appId: String, streamlet: String) = s"${appId}.${streamlet}"
 
   def apply(appId: String,
             streamlet: StreamletInstance,
@@ -213,7 +213,7 @@ object StreamletDeployment {
 }
 
 final case class Savepoint(appId: String, streamlet: String, outlet: String) {
-  def name: String = s"${appId}.${streamlet}.${outlet}".take(63)
+  def name: String = s"${appId}.${streamlet}.${outlet}"
 }
 
 final case class Endpoint(

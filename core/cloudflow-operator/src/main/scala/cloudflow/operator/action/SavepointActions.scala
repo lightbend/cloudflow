@@ -104,7 +104,7 @@ object SavepointActions {
         ObjectMeta(
           name = savepoint.name,
           namespace = ns,
-          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> clusterName)
+          labels = labels(savepoint.name) + ("strimzi.io/cluster" -> Name.ofLabelValue(clusterName))
         )
       )
   }
