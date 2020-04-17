@@ -57,7 +57,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
-      .connect(ingressRef.out, egressRef.in)
+      .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
       .right
       .value

@@ -32,9 +32,9 @@ case class RunnerConfig(data: String) extends ConfigMapData {
   val filename: String = RunnerConfig.AppConfigFilename
 }
 
-object RunnerConfig extends DefaultJsonProtocol {
+object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
   val AppConfigFilename        = "application.conf"
-  implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet_ref", "port_name")
+  implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers", "create")
 
   def apply(
       appId: String,

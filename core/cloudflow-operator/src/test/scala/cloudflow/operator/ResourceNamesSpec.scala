@@ -51,7 +51,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
-      .connect(ingressRef.out, egressRef.in)
+      .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
       .right
       .value
@@ -75,7 +75,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       .define(Vector(ingress, egress))
       .use(ingressRef)
       .use(egressRef)
-      .connect(ingressRef.out, egressRef.in)
+      .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
       .right
       .value
@@ -226,7 +226,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
         .left
         .value mustEqual Vector(InvalidStreamletName("bad-Ingress"), InvalidStreamletName("bad-Egress"))

@@ -53,7 +53,7 @@ class CloudflowApplicationSpec
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .use(egressRef)
-        .connect(ingressRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
         .right
         .value
@@ -236,8 +236,8 @@ class CloudflowApplicationSpec
       .use(ingressRef)
       .use(egress1Ref)
       .use(egress2Ref)
-      .connect(ingressRef.out, egress1Ref.in)
-      .connect(ingressRef.out, egress2Ref.in)
+      .connect(Topic("foos1"), ingressRef.out, egress1Ref.in)
+      .connect(Topic("foos2"), ingressRef.out, egress2Ref.in)
       .verified
       .right
       .value
@@ -260,8 +260,8 @@ class CloudflowApplicationSpec
       .use(ingressRef)
       .use(sparkEgressRef)
       .use(flinkEgressRef)
-      .connect(ingressRef.out, sparkEgressRef.in)
-      .connect(ingressRef.out, flinkEgressRef.in)
+      .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
+      .connect(Topic("foos2"), ingressRef.out, flinkEgressRef.in)
       .verified
       .right
       .value

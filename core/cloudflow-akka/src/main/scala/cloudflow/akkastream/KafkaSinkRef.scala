@@ -36,13 +36,14 @@ final class KafkaSinkRef[T](
     system: ActorSystem,
     outlet: CodecOutlet[T],
     bootstrapServers: String,
-    topic: String,
+    savepointPath: SavepointPath,
     killSwitch: SharedKillSwitch,
     completionPromise: Promise[Dun]
 ) extends WritableSinkRef[T] {
   private val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-    .withBootstrapServers(bootstrapServers)
-
+    .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+    .withProperties(savepointPath.kafkaProducerProperties)
+  private val topic    = savepointPath.name
   private val producer = producerSettings.createKafkaProducer()
 
   def sink: Sink[(T, Committable), NotUsed] = {

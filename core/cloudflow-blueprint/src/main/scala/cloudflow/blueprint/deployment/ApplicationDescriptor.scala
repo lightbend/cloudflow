@@ -30,7 +30,6 @@ final case class ApplicationDescriptor(
     appId: String,
     appVersion: String,
     streamlets: Vector[StreamletInstance],
-    connections: Vector[Connection],
     deployments: Vector[StreamletDeployment],
     agentPaths: Map[String, String],
     /* The version of the Application Descriptor format */
@@ -44,7 +43,8 @@ object ApplicationDescriptor {
    * The version of the Application Descriptor Format.
    * This version is also hardcoded in (versions of) kubectl-cloudflow in `domain.SupportedApplicationDescriptorVersion`.
    */
-  val Version = "1"
+  val Version = "2"
+
   /*
    * The version of this library when it is built, which is also the version of sbt-cloudflow.
    */
@@ -56,7 +56,6 @@ object ApplicationDescriptor {
       appVersion: String,
       image: String,
       streamlets: Vector[StreamletInstance],
-      connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
       agentPaths: Map[String, String]
   ): ApplicationDescriptor =
@@ -64,7 +63,6 @@ object ApplicationDescriptor {
       appId,
       appVersion,
       streamlets,
-      connections,
       deployments.map(deployment ⇒ deployment.copy(image = image)),
       agentPaths,
       Version,
@@ -79,31 +77,37 @@ object ApplicationDescriptor {
 
     val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
-    val connections               = blueprint.connections.map(toConnection)
     val deployments =
       namedStreamletDescriptors
-        .map { streamlet ⇒
-          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
+        .map {
+          case (streamlet, instance) ⇒
+            StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(appId, streamlet, blueprint))
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
                           appVersion,
-                          namedStreamletDescriptors,
-                          connections,
+                          namedStreamletDescriptors.map { case (_, instance) => instance },
                           deployments,
                           agentPaths,
                           Version,
                           LibraryVersion)
   }
 
-  private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)
-  private def toConnection(connection: VerifiedStreamletConnection) =
-    Connection(
-      connection.verifiedOutlet.portName,
-      connection.verifiedOutlet.streamlet.name,
-      connection.verifiedInlet.portName,
-      connection.verifiedInlet.streamlet.name
-    )
+  def portMappingsForStreamlet(appId: String, streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint) =
+    blueprint.topics.flatMap { topic =>
+      topic.connections.filter(_.streamlet.name == streamlet.name).map { verifiedPort =>
+        verifiedPort.portName -> Savepoint(
+          appId,
+          streamlet.name,
+          topic.name,
+          topic.kafkaConfig,
+          topic.bootstrapServers,
+          topic.create
+        )
+      }
+    }.toMap
+  private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) =
+    (streamlet, StreamletInstance(streamlet.name, streamlet.descriptor))
 }
 
 /**
@@ -114,22 +118,6 @@ object ApplicationDescriptor {
 final case class StreamletInstance(
     name: String,
     descriptor: StreamletDescriptor
-)
-
-/**
- * Describes a connection between the outlet of one namedStreamletDescriptor instance
- * and the inlet of another namedStreamletDescriptor instance.
- *
- * Note: this class contains just enough information to find any remaining
- *       information, such as schema details, streamlet details, etc., in the
- *       master list of named streamlets by using the streamlet name and
- *       inlet/outlet name.
- */
-final case class Connection(
-    outletName: String,
-    outletStreamletName: String,
-    inletName: String,
-    inletStreamletName: String
 )
 
 /**
@@ -159,7 +147,7 @@ object StreamletDeployment {
   def apply(appId: String,
             streamlet: StreamletInstance,
             image: String,
-            allConnections: Vector[Connection],
+            portMappings: Map[String, Savepoint],
             containerPort: Int = EndpointContainerPort,
             replicas: Option[Int] = None): StreamletDeployment = {
     val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
@@ -172,7 +160,7 @@ object StreamletDeployment {
       endpoint,
       secretName = Dns1123Formatter.transformToDNS1123SubDomain(streamlet.name),
       config,
-      createPortMappings(appId, streamlet, allConnections),
+      portMappings,
       preserveEmpty(streamlet.descriptor.volumeMounts.toList),
       replicas
     )
@@ -180,25 +168,6 @@ object StreamletDeployment {
 
   def preserveEmpty[T](list: List[T]): Option[List[T]] =
     Option(list).filter(_.nonEmpty)
-
-  private def createPortMappings(appId: String,
-                                 streamlet: StreamletInstance,
-                                 allConnections: Vector[Connection]): Map[String, Savepoint] = {
-    val outletMappings =
-      streamlet.descriptor.outlets
-        .map(outlet ⇒ outlet.name -> Savepoint(appId, streamlet.name, outlet.name))
-        .toMap
-
-    val inletMappings =
-      allConnections
-        .filter(_.inletStreamletName == streamlet.name)
-        .map { incoming ⇒
-          incoming.inletName -> Savepoint(appId, incoming.outletStreamletName, incoming.outletName)
-        }
-        .toMap
-
-    outletMappings ++ inletMappings
-  }
 
   private def configAndEndpoint(appId: String, streamlet: StreamletInstance, containerPort: Int): Tuple2[Config, Option[Endpoint]] =
     streamlet.descriptor
@@ -212,9 +181,14 @@ object StreamletDeployment {
       .getOrElse((ConfigFactory.empty(), None))
 }
 
-final case class Savepoint(appId: String, streamlet: String, outlet: String) {
-  def name: String = s"${appId}.${streamlet}.${outlet}"
-}
+final case class Savepoint(
+    appId: String,
+    streamlet: String,
+    name: String,
+    config: Config = ConfigFactory.empty(),
+    bootstrapServers: Option[String] = None,
+    create: Boolean = true
+)
 
 final case class Endpoint(
     appId: String,
