@@ -38,7 +38,6 @@ object Actions {
       currentApp: Option[CloudflowApplication.CR] = None,
       namespace: String,
       cause: ObjectResource,
-      // TODO CSP-1108
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
@@ -68,7 +67,6 @@ object Actions {
       app: CloudflowApplication.CR,
       namespace: String,
       cause: ObjectResource,
-      // TODO CSP-1108
       deleteExistingTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     val currentApp = None
