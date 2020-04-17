@@ -21,7 +21,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import cloudflow.streamlets.avro._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
-import taxiride.flink.avro._
+import taxiride.avro._
 import TaxiRideJsonProtocol._
 import cloudflow.akkastream.util.scaladsl.HttpServerLogic
 

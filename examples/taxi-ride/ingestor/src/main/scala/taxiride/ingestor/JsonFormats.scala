@@ -17,7 +17,7 @@
 package taxiride.ingestor
 
 import spray.json._
-import taxiride.flink.avro._
+import taxiride.avro._
 
 object TaxiRideJsonProtocol extends DefaultJsonProtocol {
   implicit object TaxiRideJsonFormat extends RootJsonFormat[TaxiRide] {

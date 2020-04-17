@@ -1,5 +1,5 @@
 {
-    "namespace": "taxiride.flink.avro",
+    "namespace": "taxiride.avro",
     "type": "record",
     "name": "TaxiRide",
     "fields":[

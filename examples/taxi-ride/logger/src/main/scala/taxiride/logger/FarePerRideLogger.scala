@@ -20,7 +20,7 @@ import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
-import taxiride.flink.avro._
+import taxiride.avro._
 
 class FarePerRideLogger extends AkkaStreamlet {
   val inlet = AvroInlet[TaxiRideFare]("in")
