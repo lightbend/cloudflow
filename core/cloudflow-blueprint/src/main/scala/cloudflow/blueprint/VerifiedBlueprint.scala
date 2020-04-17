@@ -16,13 +16,12 @@
 
 package cloudflow.blueprint
 
+import com.typesafe.config.Config
+
 case class VerifiedBlueprint(
     streamlets: Vector[VerifiedStreamlet],
-    connections: Vector[VerifiedStreamletConnection]
-) {
-  def findOutlet(outletPortPath: String): Either[PortPathError, VerifiedOutlet] =
-    VerifiedOutlet.find(streamlets, outletPortPath)
-}
+    topics: Vector[VerifiedTopic]
+)
 
 object VerifiedPortPath {
   def apply(portPath: String): Either[PortPathError, VerifiedPortPath] = {
@@ -30,100 +29,96 @@ object VerifiedPortPath {
     val parts   = trimmed.split("\\.").filterNot(_.isEmpty).toVector
     if (trimmed.startsWith(".")) {
       Left(InvalidPortPath(portPath))
-    } else if (parts.size == 1 && !portPath.endsWith(".")) {
-      Right(VerifiedPortPath(parts.head, None))
-    } else if (parts.size >= 2) {
+    }
+    //
+    // else if (parts.size == 1 && !portPath.endsWith(".")) {
+    //   Right(VerifiedPortPath(parts.head, None))
+    // }
+    else if (parts.size >= 2) {
       val portName          = parts.last
       val streamletNamePart = parts.init
       val streamletRef      = streamletNamePart.mkString(".")
       if (streamletRef.isEmpty) Left(InvalidPortPath(portPath))
       else if (portName.isEmpty) Left(InvalidPortPath(portPath))
-      else Right(VerifiedPortPath(streamletRef, Some(portName)))
+      else Right(VerifiedPortPath(streamletRef, portName))
     } else {
       Left(InvalidPortPath(portPath))
     }
   }
 }
 
-final case class VerifiedPortPath(streamletRef: String, portName: Option[String]) {
-  override def toString = portName.fold(streamletRef)(port ⇒ s"$streamletRef.$port")
+final case class VerifiedPortPath(streamletRef: String, portName: String) {
+  override def toString = s"$streamletRef.$portName"
 }
 
-final case class VerifiedStreamlet(name: String, descriptor: StreamletDescriptor) {
+final case class VerifiedStreamlet(
+    name: String,
+    descriptor: StreamletDescriptor
+) {
   def outlet(outlet: OutletDescriptor) = VerifiedOutlet(this, outlet.name, outlet.schema)
   def inlet(inlet: InletDescriptor)    = VerifiedInlet(this, inlet.name, inlet.schema)
 }
 
+final case class VerifiedTopic(
+    name: String,
+    connections: Vector[VerifiedPort],
+    bootstrapServers: Option[String],
+    create: Boolean,
+    kafkaConfig: Config
+)
 final case class VerifiedStreamletConnection(verifiedOutlet: VerifiedOutlet, verifiedInlet: VerifiedInlet, label: Option[String] = None)
 
 sealed trait VerifiedPort {
+  def streamlet: VerifiedStreamlet
   def portName: String
   def schemaDescriptor: SchemaDescriptor
+  def portPath: VerifiedPortPath
+  def isOutlet: Boolean
 }
 
-object VerifiedOutlet {
-  def find(
-      verifiedStreamlets: Vector[VerifiedStreamlet],
-      outletPortPath: String
-  ): Either[PortPathError, VerifiedOutlet] =
-    for {
-      verifiedPortPath ← VerifiedPortPath(outletPortPath)
-      verifiedOutlet ← verifiedStreamlets
-        .find(_.name == verifiedPortPath.streamletRef)
-        .toRight(PortPathNotFound(outletPortPath))
-        .flatMap { verifiedStreamlet ⇒
-          if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size > 1) {
-            val suggestions = verifiedStreamlet.descriptor.outlets.map(outlet ⇒ verifiedPortPath.copy(portName = Some(outlet.name)))
-            Left(PortPathNotFound(outletPortPath, suggestions))
-          } else {
-            val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.outlets.size == 1) {
-              verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.outlets.head.name))
-            } else verifiedPortPath
+object VerifiedPort {
+  def findPort(verifiedPortPath: VerifiedPortPath, verifiedStreamlets: Vector[VerifiedStreamlet]): Either[PortPathError, VerifiedPort] = {
+    val portPath = verifiedPortPath.toString
+    verifiedStreamlets
+      .find(_.name == verifiedPortPath.streamletRef)
+      .toRight(PortPathNotFound(portPath))
+      .flatMap { verifiedStreamlet ⇒
+        val ports = verifiedStreamlet.descriptor.outlets ++ verifiedStreamlet.descriptor.inlets
 
-            verifiedStreamlet.descriptor.outlets
-              .find(outlet ⇒ Some(outlet.name) == portPath.portName)
-              .map(outletDescriptor ⇒ VerifiedOutlet(verifiedStreamlet, outletDescriptor.name, outletDescriptor.schema))
-              .toRight(PortPathNotFound(outletPortPath))
+        ports
+          .find(port ⇒ port.name == verifiedPortPath.portName)
+          .map { portDescriptor ⇒
+            if (verifiedStreamlet.descriptor.outlets.exists(_.name == portDescriptor.name))
+              VerifiedOutlet(verifiedStreamlet, portDescriptor.name, portDescriptor.schema)
+            else VerifiedInlet(verifiedStreamlet, portDescriptor.name, portDescriptor.schema)
           }
-        }
-    } yield verifiedOutlet
-}
+          .toRight(PortPathNotFound(portPath))
+      }
+  }
 
-object VerifiedInlet {
-  def find(
-      verifiedStreamlets: Vector[VerifiedStreamlet],
-      inletPortPath: String
-  ): Either[BlueprintProblem, VerifiedInlet] =
-    for {
-      verifiedPortPath ← VerifiedPortPath(inletPortPath)
-      verifiedInlet ← verifiedStreamlets
-        .find(_.name == verifiedPortPath.streamletRef)
-        .toRight(PortPathNotFound(inletPortPath))
-        .flatMap { verifiedStreamlet ⇒
-          if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size > 1) {
-            val suggestions = verifiedStreamlet.descriptor.inlets.map(inlet ⇒ verifiedPortPath.copy(portName = Some(inlet.name)))
-            Left(PortPathNotFound(inletPortPath, suggestions))
-          } else {
-            val portPath = if (verifiedPortPath.portName.isEmpty && verifiedStreamlet.descriptor.inlets.size == 1) {
-              verifiedPortPath.copy(portName = Some(verifiedStreamlet.descriptor.inlets.head.name))
-            } else verifiedPortPath
-
-            verifiedStreamlet.descriptor.inlets
-              .find(inlet ⇒ Some(inlet.name) == portPath.portName)
-              .map(inletDescriptor ⇒ VerifiedInlet(verifiedStreamlet, inletDescriptor.name, inletDescriptor.schema))
-              .toRight(PortPathNotFound(inletPortPath))
-          }
-        }
-    } yield verifiedInlet
+  def collectPorts(
+      verifiedPortPaths: Vector[VerifiedPortPath],
+      verifiedStreamlets: Vector[VerifiedStreamlet]
+  ): Either[Vector[PortPathError], Vector[VerifiedPort]] = {
+    val results: Vector[Either[PortPathError, VerifiedPort]] = verifiedPortPaths.map { verifiedPortPath =>
+      VerifiedPort.findPort(verifiedPortPath, verifiedStreamlets)
+    }
+    results.partition(_.isLeft) match {
+      case (errors, ports) if errors.isEmpty => Right((for (Right(p) <- ports) yield p).toVector)
+      case (errors, _)                       => Left((for (Left(e)   <- errors) yield e).toVector)
+    }
+  }
 }
 
 final case class VerifiedInlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor) extends VerifiedPort {
-  def portPath = VerifiedPortPath(streamlet.name, Some(portName))
+  def portPath = VerifiedPortPath(streamlet.name, portName)
+  def isOutlet = false
 }
 
 final case class VerifiedOutlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor) extends VerifiedPort {
   def matches(outletDescriptor: OutletDescriptor) =
     outletDescriptor.name == portName &&
       outletDescriptor.schema.fingerprint == schemaDescriptor.fingerprint
-  def portPath = VerifiedPortPath(streamlet.name, Some(portName))
+  def portPath = VerifiedPortPath(streamlet.name, portName)
+  def isOutlet = true
 }

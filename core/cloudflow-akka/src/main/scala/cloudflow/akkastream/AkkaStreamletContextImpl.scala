@@ -17,7 +17,6 @@
 package cloudflow.akkastream
 
 import java.util.concurrent.atomic.AtomicReference
-
 import java.nio.file.{ Files, Paths }
 
 import scala.concurrent._
@@ -70,12 +69,14 @@ final class AkkaStreamletContextImpl(
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
+
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      .withProperties(savepointPath.kafkaConsumerProperties)
 
     system.log.info(s"Creating committable source for group: $gId topic: $topic")
 
@@ -100,10 +101,13 @@ final class AkkaStreamletContextImpl(
     sourceWithContext[T](inlet)
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
+    // TODO use savepointPath config (if not empty) to load producerConfig properties.
+    // TODO also in Spark and Flink contexts
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(savepointPath.kafkaProducerProperties)
 
     Flow[(T, Committable)]
       .map {
@@ -122,10 +126,12 @@ final class AkkaStreamletContextImpl(
 
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(savepointPath.kafkaProducerProperties)
+
+    val topic = savepointPath.name
 
     Flow[(T, CommittableOffset)]
       .map {
@@ -144,12 +150,13 @@ final class AkkaStreamletContextImpl(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
+    val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
+      .withProperties(savepointPath.kafkaConsumerProperties)
 
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic))
@@ -161,10 +168,11 @@ final class AkkaStreamletContextImpl(
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(savepointPath.kafkaProducerProperties)
+    val topic = savepointPath.name
 
     Flow[T]
       .map { value ⇒
@@ -185,7 +193,7 @@ final class AkkaStreamletContextImpl(
       system,
       outlet,
       bootstrapServers,
-      savepointPath.value,
+      savepointPath,
       killSwitch,
       completionPromise
     )

@@ -43,16 +43,25 @@ final case class StreamletDescriptor(
 case class StreamletRuntimeDescriptor(name: String) {
   override def toString: String = name
 }
+sealed trait PortDescriptor {
+  def name: String
+  def schema: SchemaDescriptor
+  def isOutlet: Boolean
+}
 
 final case class InletDescriptor(
     name: String,
     schema: SchemaDescriptor
-)
+) extends PortDescriptor {
+  def isOutlet = false
+}
 
 final case class OutletDescriptor(
     name: String,
     schema: SchemaDescriptor
-)
+) extends PortDescriptor {
+  def isOutlet = true
+}
 
 final case class SchemaDescriptor(
     name: String,

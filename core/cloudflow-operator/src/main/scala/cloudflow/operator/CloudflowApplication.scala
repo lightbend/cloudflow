@@ -45,7 +45,6 @@ object CloudflowApplication {
       appId: String,
       appVersion: String,
       streamlets: Vector[StreamletInstance],
-      connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
       agentPaths: Map[String, String]
   )
@@ -75,7 +74,6 @@ object CloudflowApplication {
   implicit val volumeMountDescriptorFmt: Format[VolumeMountDescriptor]         = Json.format[VolumeMountDescriptor]
   implicit val streamletDescriptorFormat: Format[StreamletDescriptor]          = Json.format[StreamletDescriptor]
   implicit val streamletFmt: Format[StreamletInstance]                         = Json.format[StreamletInstance]
-  implicit val connectionFmt: Format[Connection]                               = Json.format[Connection]
 
   implicit val configFmt: Format[Config] = Format[Config](
     Reads(jsValue ⇒

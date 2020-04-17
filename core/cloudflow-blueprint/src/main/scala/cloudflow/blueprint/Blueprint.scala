@@ -19,17 +19,129 @@ package cloudflow.blueprint
 import java.io._
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.util._
 
 import com.typesafe.config._
 
+object Blueprint {
+  val StreamletsSectionKey             = "blueprint.streamlets"
+  val TopicsSectionKey                 = "blueprint.topics"
+  val UnsupportedConnectionsSectionKey = "blueprint.connections"
+  val TopicKey                         = "topic.name"
+  val CreateKey                        = "create"
+  val ConnectionsKey                   = "connections"
+
+  // kafka config items
+  val BootstrapServersKey = "bootstrap.servers"
+  val ProducerKey         = "producer"
+  val ConsumerKey         = "consumer"
+  val PartitionsKey       = "partitions"
+  val ReplicasKey         = "replicas"
+  val TopicConfigKey      = "topic"
+
+  /**
+   * Parses the blueprint from a String.
+   * @param blueprintString the blueprint file contents
+   * @param streamletDescriptors the streamlet descriptors
+   */
+  def parseString(blueprintString: String, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+    try {
+      parseConfig(ConfigFactory.parseString(blueprintString).resolve(), streamletDescriptors)
+    } catch {
+      case e: ConfigException => Blueprint(globalProblems = Vector(BlueprintFormatError(e.getMessage)))
+    }
+
+  /**
+   * Parses the blueprint from a String.
+   * @param config a Config containing the blueprint contents
+   * @param streamletDescriptors the streamlet descriptors
+   */
+  def parseConfig(config: Config, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+    if (!config.hasPath(StreamletsSectionKey)) {
+      Blueprint(globalProblems = Vector(MissingStreamletsSection))
+    } else {
+      try {
+        val streamletRefs = getKeys(config, StreamletsSectionKey).map { key ⇒
+          val simpleClassKey = s"$StreamletsSectionKey.${key}"
+          val className      = config.getString(simpleClassKey)
+
+          StreamletRef(
+            name = key,
+            className = className
+          )
+        }.toVector
+
+        val topics = if (config.hasPath(TopicsSectionKey)) {
+          getKeys(config, TopicsSectionKey).map { key ⇒
+            val topicKey            = s"$TopicsSectionKey.${key}.$TopicKey"
+            val bootstrapServersKey = s"$TopicsSectionKey.${key}.$BootstrapServersKey"
+            val createKey           = s"$TopicsSectionKey.${key}.$CreateKey"
+            val connectionsKey      = s"$TopicsSectionKey.${key}.$ConnectionsKey"
+            val configKey           = s"$TopicsSectionKey.${key}"
+
+            val topic                    = getStringOrNone(config, topicKey).getOrElse(key)
+            val bootstrapServersOverride = getStringOrNone(config, bootstrapServersKey)
+            val create                   = getBooleanOrNone(config, createKey).getOrElse(true)
+            val connections              = config.getStringList(connectionsKey).asScala.toVector
+            val kafkaConfig = getConfigOrEmpty(config, configKey)
+              .withoutPath(TopicKey)
+              .withoutPath(CreateKey)
+              .withoutPath(BootstrapServersKey)
+              .withoutPath(ConnectionsKey)
+            // validate at least that producer and consumer sections are objects.
+            // TODO It is possible to create a ConsumerConfig and ProducerConfig from properties and check unused,
+            // TODO if badly spelled or unknown settings need to be prevented.
+            if (kafkaConfig.hasPath(ProducerKey)) kafkaConfig.getObject(ProducerKey)
+            if (kafkaConfig.hasPath(ConsumerKey)) kafkaConfig.getObject(ConsumerKey)
+            if (kafkaConfig.hasPath(TopicConfigKey)) {
+              val topicConfig = kafkaConfig.getConfig(TopicConfigKey)
+              if (topicConfig.hasPath(PartitionsKey)) topicConfig.getInt(PartitionsKey)
+              if (topicConfig.hasPath(ReplicasKey)) topicConfig.getInt(ReplicasKey)
+            }
+            Topic(topic, connections, kafkaConfig, bootstrapServersOverride, create)
+          }.toVector
+        } else Vector.empty[Topic]
+
+        // not supporting previous format
+        if (config.hasPath(UnsupportedConnectionsSectionKey)) {
+          throw new ConfigException.BadPath(
+            UnsupportedConnectionsSectionKey,
+            s"Please specify '${TopicsSectionKey}' section instead of previously supported '${UnsupportedConnectionsSectionKey}' section."
+          )
+        }
+
+        Blueprint(streamletRefs, topics, streamletDescriptors).verify
+      } catch {
+        case e: ConfigException => Blueprint(globalProblems = Vector(BlueprintFormatError(e.getMessage)))
+      }
+    }
+
+  private def getKeys(config: Config, key: String): Vector[String] =
+    config
+      .getConfig(key)
+      .root()
+      .entrySet()
+      .asScala
+      .map(_.getKey)
+      .toVector
+
+  private def getStringOrNone(config: Config, key: String): Option[String] =
+    if (config.hasPath(key)) Some(config.getString(key)) else None
+  private def getBooleanOrNone(config: Config, key: String): Option[Boolean] =
+    if (config.hasPath(key)) Some(config.getBoolean(key)) else None
+  private def getConfigOrEmpty(config: Config, key: String): Config =
+    if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
+}
+
 final case class Blueprint(
     streamlets: Vector[StreamletRef] = Vector.empty[StreamletRef],
-    connections: Vector[StreamletConnection] = Vector.empty[StreamletConnection],
+    topics: Vector[Topic] = Vector.empty[Topic],
     streamletDescriptors: Vector[StreamletDescriptor] = Vector.empty,
     globalProblems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem]
 ) {
-  val problems = globalProblems ++ streamlets.flatMap(_.problems) ++ connections.flatMap(_.problems)
+  val problems = globalProblems ++ streamlets.flatMap(_.problems) ++ topics.flatMap(_.problems)
 
   val isValid = problems.isEmpty
 
@@ -67,53 +179,74 @@ final case class Blueprint(
     copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRef).verify
 
   def remove(streamletRef: String): Blueprint = {
-    val remainingConnections = connections.filterNot { con ⇒
-      VerifiedPortPath(con.from).exists(_.streamletRef == streamletRef) ||
-      VerifiedPortPath(con.to).exists(_.streamletRef == streamletRef)
-    }
+    val verifiedStreamlets = streamlets.flatMap(_.verified)
+    val newTopics = topics
+      .map { topic =>
+        topic
+          .copy(connections = topic.connections.filterNot(port => VerifiedPortPath(port).exists(_.streamletRef == streamletRef)))
+          .verify(verifiedStreamlets)
+      }
+      .filter(_.connections.nonEmpty)
 
     copy(
-      connections = remainingConnections,
-      streamlets = streamlets.filterNot(_.name == streamletRef)
+      streamlets = streamlets.filterNot(_.name == streamletRef),
+      topics = newTopics
     ).verify
   }
 
-  def connect(from: String, to: String): Blueprint =
-    connect(StreamletConnection(from, to))
-
-  def connect(connection: StreamletConnection): Blueprint = {
-    val verifiedConnection = connection.verify(streamlets.flatMap(_.verified))
-    val otherConnections   = connections.filterNot(con ⇒ con.from == verifiedConnection.from && con.to == verifiedConnection.to)
-    copy(connections = otherConnections :+ verifiedConnection).verify
+  def connect(topic: Topic, ports: Vector[String]): Blueprint = {
+    require(ports.size >= 1)
+    val foundTopic = topics
+      .find(_.name == topic.name)
+      .map(t => t.copy(connections = (t.connections ++ ports).distinct))
+      .getOrElse(topic.copy(connections = ports))
+    val verifiedTopic = foundTopic.verify(streamlets.flatMap(_.verified))
+    val otherTopics   = topics.filterNot(_.name == foundTopic.name)
+    copy(topics = otherTopics :+ verifiedTopic).verify
   }
 
-  def disconnect(inletPortPath: String): Blueprint = {
+  def connect(topic: Topic, port: String): Blueprint =
+    connect(topic, Vector(port))
 
+  def connect(topic: Topic, port: String, ports: String*): Blueprint =
+    connect(topic, Vector(port) ++ ports)
+
+  def disconnect(portPath: String): Blueprint = {
     val verifiedStreamlets = streamlets.flatMap(_.verified)
-    val verifiedPortPath   = VerifiedPortPath(inletPortPath)
-    val verifiedInlet      = VerifiedInlet.find(verifiedStreamlets, inletPortPath)
+    val verifiedTopics     = topics.flatMap(_.verified)
+    (for {
+      verifiedPortPath <- VerifiedPortPath(portPath)
+      verifiedPort     <- VerifiedPort.findPort(verifiedPortPath, verifiedStreamlets)
+    } yield {
+      val unmodified = verifiedTopics
+        .filterNot(_.connections.exists(_.portPath == verifiedPort.portPath))
+        .flatMap(verifiedTopic => topics.find(_.name == verifiedTopic.name))
 
-    val toBeDeleted: StreamletConnection ⇒ Boolean =
-      if (verifiedInlet.isRight) { con: StreamletConnection ⇒
-        VerifiedPortPath(con.to) == verifiedInlet.map(_.portPath)
-      } else if (verifiedPortPath.isRight) { con: StreamletConnection ⇒
-        VerifiedPortPath(con.to) == verifiedPortPath
-      } else { con: StreamletConnection ⇒
-        con.to == inletPortPath
-      }
+      val modified = verifiedTopics
+        .filter(_.connections.exists(_.portPath == verifiedPort.portPath))
+        .flatMap { verifiedTopic =>
+          topics
+            .find(_.name == verifiedTopic.name)
+            .map { topic =>
+              topic.copy(connections = topic.connections.filterNot(path => VerifiedPortPath(path).exists(_ == verifiedPortPath)))
+            }
+        }
+        .filter(_.connections.nonEmpty)
 
-    copy(connections = connections.filterNot(toBeDeleted)).verify
+      copy(topics = unmodified ++ modified).verify
+    }).getOrElse(this)
   }
 
-  def verify = {
+  def verify: Blueprint = {
     val emptyStreamletsProblem           = if (streamlets.isEmpty) Some(EmptyStreamlets) else None
     val emptyStreamletDescriptorsProblem = if (streamletDescriptors.isEmpty) Some(EmptyStreamletDescriptors) else None
 
     val newStreamlets      = streamlets.map(_.verify(streamletDescriptors))
     val verifiedStreamlets = newStreamlets.flatMap(_.verified)
 
-    val newConnections      = connections.map(_.verify(verifiedStreamlets))
-    val verifiedConnections = newConnections.flatMap(_.verified)
+    // verify that all topics are unique
+    val newTopics      = topics.map(_.verify(verifiedStreamlets))
+    val verifiedTopics = newTopics.flatMap(_.verified)
 
     val duplicatesProblem = verifyNoDuplicateStreamletNames(newStreamlets).left.toOption
 
@@ -121,36 +254,17 @@ final case class Blueprint(
     val configParameterProblems = verifyConfigParameters(streamletDescriptors)
     val volumeMountProblems     = verifyVolumeMounts(streamletDescriptors)
 
-    val illegalConnectionProblems =
-      verifyUniqueInletConnections(verifiedConnections)
-        .fold(identity, _ ⇒ Vector.empty[InletProblem])
-
-    val inletProblems: Vector[InletProblem] = illegalConnectionProblems ++
-          newConnections.flatMap { con ⇒
-            con.problems.collect {
-              case p: InletProblem ⇒ p
-            }
-          }
-
-    val unconnectedInletProblems = verifyInletsConnected(verifiedStreamlets, verifiedConnections)
-      .fold(identity, _ ⇒ Vector.empty)
-      .flatMap { problem ⇒
-        val filteredUnconnectedInlets = problem.unconnectedInlets.filterNot { unconnectedInlet ⇒
-          inletProblems.exists(_.inletPath == VerifiedPortPath(unconnectedInlet.streamletRef, Some(unconnectedInlet.inlet.name)))
-        }
-        if (filteredUnconnectedInlets.nonEmpty) Some(problem.copy(unconnectedInlets = filteredUnconnectedInlets))
-        else None
-      }
+    val unconnectedPortProblems = verifyPortsConnected(verifiedStreamlets, verifiedTopics)
 
     val globalProblems = Vector(
         emptyStreamletsProblem,
         emptyStreamletDescriptorsProblem,
         duplicatesProblem
-      ).flatten ++ illegalConnectionProblems ++ unconnectedInletProblems ++ portNameProblems ++ configParameterProblems ++ volumeMountProblems
+      ).flatten ++ unconnectedPortProblems ++ portNameProblems ++ configParameterProblems ++ volumeMountProblems
 
     copy(
       streamlets = newStreamlets,
-      connections = newConnections,
+      topics = newTopics,
       globalProblems = globalProblems
     )
   }
@@ -158,7 +272,7 @@ final case class Blueprint(
   def verified: Either[Vector[BlueprintProblem], VerifiedBlueprint] =
     for {
       validBlueprint ← verify.validate
-    } yield VerifiedBlueprint(validBlueprint.streamlets.flatMap(_.verified), validBlueprint.connections.flatMap(_.verified))
+    } yield VerifiedBlueprint(validBlueprint.streamlets.flatMap(_.verified), validBlueprint.topics.flatMap(_.verified))
 
   private def verifyNoDuplicateStreamletNames(
       streamlets: Vector[StreamletRef]
@@ -174,36 +288,30 @@ final case class Blueprint(
     else Left(DuplicateStreamletNamesFound(dups.toVector))
   }
 
-  private def verifyUniqueInletConnections(
-      verifiedStreamletConnections: Vector[VerifiedStreamletConnection]
-  ): Either[Vector[InletProblem], Vector[VerifiedStreamletConnection]] = {
-    val illegalConnectionProblems = verifiedStreamletConnections
-      .groupBy(_.verifiedInlet)
-      .collect {
-        case (inlet, cons) if cons.size > 1 ⇒ IllegalConnection(cons.map(_.verifiedOutlet.portPath), inlet.portPath)
-      }
-      .toVector
-    if (illegalConnectionProblems.nonEmpty) Left(illegalConnectionProblems)
-    else Right(verifiedStreamletConnections)
-  }
-
-  private def verifyInletsConnected(
+  private def verifyPortsConnected(
       verifiedStreamlets: Vector[VerifiedStreamlet],
-      verifiedStreamletConnections: Vector[VerifiedStreamletConnection]
-  ): Either[Vector[UnconnectedInlets], Vector[VerifiedStreamlet]] = {
-    val unconnectedPortProblems = verifiedStreamlets.flatMap { streamlet ⇒
-      val unconnectedInlets = streamlet.descriptor.inlets
-        .filterNot { inlet ⇒
-          verifiedStreamletConnections.exists(con ⇒ con.verifiedInlet.streamlet == streamlet && con.verifiedInlet.portName == inlet.name)
-        }
-        .map(inlet ⇒ UnconnectedInlet(streamlet.name, inlet))
+      verifiedTopics: Vector[VerifiedTopic]
+  ): Vector[UnconnectedPorts] = {
+    var problems = Vector.empty[UnconnectedPorts]
+    val (outlets, inlets) = verifiedStreamlets
+      .flatMap { streamlet ⇒
+        def unconnected(portDescriptors: immutable.IndexedSeq[PortDescriptor]) =
+          portDescriptors
+            .filterNot { port ⇒
+              verifiedTopics.exists(topic ⇒
+                topic.connections.exists(verifiedPort => verifiedPort.streamlet == streamlet && verifiedPort.portName == port.name)
+              )
+            }
+            .map(port ⇒ UnconnectedPort(streamlet.name, port))
 
-      if (unconnectedInlets.nonEmpty) {
-        Some(UnconnectedInlets(unconnectedInlets))
-      } else None
-    }
-    if (unconnectedPortProblems.nonEmpty) Left(unconnectedPortProblems)
-    else Right(verifiedStreamlets)
+        val unconnectedInlets  = unconnected(streamlet.descriptor.inlets)
+        val unconnectedOutlets = unconnected(streamlet.descriptor.outlets)
+        unconnectedInlets ++ unconnectedOutlets
+      }
+      .partition(_.port.isOutlet)
+    if (outlets.nonEmpty) problems = problems :+ UnconnectedOutlets(outlets)
+    if (inlets.nonEmpty) problems = problems :+ UnconnectedInlets(inlets)
+    problems
   }
 
   private def validate =

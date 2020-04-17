@@ -20,8 +20,6 @@ import com.typesafe.config._
 import org.scalatest._
 
 import cloudflow.blueprint._
-import spray.json._
-import ApplicationDescriptorJsonFormat._
 
 class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherValues with OptionValues with GivenWhenThen {
   case class Foo(name: String)
@@ -46,6 +44,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress))
         .use(ingressRef)
+        .connect(Topic("in"), ingressRef.out)
         .verified
         .right
         .get
@@ -76,8 +75,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(ingressRef)
         .use(processorRef)
         .use(egressRef)
-        .connect(ingressRef.out, processorRef.in)
-        .connect(processorRef.out, egressRef.in)
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(Topic("bars"), processorRef.out, egressRef.in)
         .verified
         .right
         .get
@@ -95,7 +94,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       descriptor.deployments.map(_.image).toSet.size mustBe 1
       descriptor.deployments.map(_.image).toSet.head mustBe image
       descriptor.streamlets.size mustBe 3
-      descriptor.connections.size mustBe 2
+      descriptor.deployments.flatMap(_.portMappings.values.map(_.name)).distinct.size mustBe 2
 
       And("the embedded streamlet deployments must be valid")
       val ingressDeployment   = descriptor.deployments.find(_.streamletName == ingressRef.name).value
@@ -112,7 +111,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       ingressDeployment.endpoint mustBe Some(Endpoint(appId, ingressRef.name, ingressContainerPort))
       ingressDeployment.config.getInt("cloudflow.internal.server.container-port") mustBe ingressContainerPort
       ingressDeployment.portMappings.size mustBe 1
-      ingressDeployment.portMappings must contain("out" -> Savepoint(appId, ingressRef.name, "out"))
+      ingressDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "foos")
       ingressDeployment.replicas mustBe None
 
       processorDeployment.name mustBe s"${appId}.${processorRef.name}"
@@ -122,8 +121,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       processorDeployment.endpoint mustBe None
       processorDeployment.config mustBe ConfigFactory.empty()
       processorDeployment.portMappings.size mustBe 2
-      processorDeployment.portMappings must contain("in"  -> Savepoint(appId, ingressRef.name, "out"))
-      processorDeployment.portMappings must contain("out" -> Savepoint(appId, processorRef.name, "out"))
+      processorDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in"  -> "foos")
+      processorDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "bars")
       processorDeployment.replicas mustBe None
 
       egressDeployment.name mustBe s"${appId}.${egressRef.name}"
@@ -133,7 +132,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       egressDeployment.endpoint mustBe Some(Endpoint(appId, egressRef.name, egressContainerPort))
       egressDeployment.config.getInt("cloudflow.internal.server.container-port") mustBe egressContainerPort
       egressDeployment.portMappings.size mustBe 1
-      egressDeployment.portMappings must contain("in" -> Savepoint(appId, processorRef.name, "out"))
+      egressDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in" -> "bars")
       egressDeployment.replicas mustBe None
     }
 
@@ -155,12 +154,12 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(processorRef)
         .use(egressRef)
         .use(processor2Ref)
-        .connect(ingressRef.out, processorRef.in)
-        .connect(processorRef.out, egressRef.in)
-        .connect(processorRef.out, processor2Ref.in)
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(Topic("bars1"), processorRef.out, processor2Ref.in, egressRef.in)
+        .connect(Topic("foos2"), processor2Ref.out)
         .verified
         .right
-        .get
+        .value
 
       When("I create a deployment descriptor from that blueprint")
       val appId      = "noisy-nissan-42"
@@ -178,18 +177,18 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val processor2Deployment = descriptor.deployments.find(_.streamletName == processor2Ref.name).value
 
       ingressDeployment.portMappings.size mustBe 1
-      ingressDeployment.portMappings must contain("out" -> Savepoint(appId, ingressRef.name, "out"))
+      ingressDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "foos")
 
       processorDeployment.portMappings.size mustBe 2
-      processorDeployment.portMappings must contain("in"  -> Savepoint(appId, ingressRef.name, "out"))
-      processorDeployment.portMappings must contain("out" -> Savepoint(appId, processorRef.name, "out"))
+      processorDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in"  -> "foos")
+      processorDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "bars1")
 
       egressDeployment.portMappings.size mustBe 1
-      egressDeployment.portMappings must contain("in" -> Savepoint(appId, processorRef.name, "out"))
+      egressDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in" -> "bars1")
 
       processor2Deployment.portMappings.size mustBe 2
-      processor2Deployment.portMappings must contain("in"  -> Savepoint(appId, processorRef.name, "out"))
-      processor2Deployment.portMappings must contain("out" -> Savepoint(appId, processor2Ref.name, "out"))
+      processor2Deployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in"  -> "bars1")
+      processor2Deployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "foos2")
     }
 
     "be built correctly from a verified blueprint (with dual-inlet merging)" in {
@@ -202,16 +201,16 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val ingress2Ref = ingress2.ref("ingress2")
       val mergeRef    = merge.ref("merge")
 
-      val verifiedBlueprint = Blueprint()
+      val blueprint = Blueprint()
         .define(Vector(ingress1, ingress2, merge))
         .use(ingress1Ref)
         .use(ingress2Ref)
         .use(mergeRef)
-        .connect(ingress1Ref.out, mergeRef.in0)
-        .connect(ingress2Ref.out, mergeRef.in1)
-        .verified
-        .right
-        .get
+        .connect(Topic("foos1"), ingress1Ref.out, mergeRef.in0)
+        .connect(Topic("foos2"), ingress2Ref.out, mergeRef.in1)
+        .connect(Topic("merged-bars"), mergeRef.out)
+        .verify
+      val verifiedBlueprint = blueprint.verified.right.value
 
       When("I create a deployment descriptor from that blueprint")
       val appId      = "funky-foofighter-9862"
@@ -228,15 +227,15 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val mergeDeployment    = descriptor.deployments.find(_.streamletName == mergeRef.name).value
 
       ingress1Deployment.portMappings.size mustBe 1
-      ingress1Deployment.portMappings must contain("out" -> Savepoint(appId, ingress1Ref.name, "out"))
+      ingress1Deployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "foos1")
 
       ingress2Deployment.portMappings.size mustBe 1
-      ingress2Deployment.portMappings must contain("out" -> Savepoint(appId, ingress2Ref.name, "out"))
+      ingress2Deployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out" -> "foos2")
 
       mergeDeployment.portMappings.size mustBe 3
-      mergeDeployment.portMappings must contain("in-0" -> Savepoint(appId, ingress1Ref.name, "out"))
-      mergeDeployment.portMappings must contain("in-1" -> Savepoint(appId, ingress2Ref.name, "out"))
-      mergeDeployment.portMappings must contain("out"  -> Savepoint(appId, mergeRef.name, "out"))
+      mergeDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in-0" -> "foos1")
+      mergeDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("in-1" -> "foos2")
+      mergeDeployment.portMappings.map { case (port, sp) => port -> sp.name } must contain("out"  -> "merged-bars")
     }
   }
 
