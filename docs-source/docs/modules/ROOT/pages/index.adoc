@@ -18,7 +18,7 @@ include::shared-content:ROOT:page$streaming-app-requirements.adoc[]
 
 == The Cloudflow approach 
 
-Cloudflow offers a complete solution for the creation, deployment, and management of streaming applications on Kubernetes. For development, it offers a toolbox that simplifies and accelerates application creation. For deployment, it comes with a set of extensions that makes Cloudflow streaming applications native to Kubernetes. For management, https://developer.lightbend.com/docs/cloudflow/current/index.html[Cloudflow enterprise features]--available with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend subscription]--include a browser-based UI for visualizing and monitoring streaming applications. 
+Cloudflow offers a complete solution for the creation, deployment, and management of streaming applications on Kubernetes. For development, it offers a toolbox that simplifies and accelerates application creation. For deployment, it comes with a set of extensions that makes Cloudflow streaming applications native to Kubernetes.
 
 A common challenge when building streaming applications is wiring all of the components together and testing them end-to-end _before_ &nbsp;going into production. Often different teams are responsible for different parts of the application, making coordination difficult. Repeatedly spinning up and deleting Kubernetes pods can be both difficult and costly. Cloudflow addresses this by allowing you to validate the connections between components and to run your application locally during development to avoid surprises during deployment.
 
@@ -48,7 +48,7 @@ Open-source Cloudflow includes tools for developing and deploying the most compl
 
 * For deploying to Kubernetes clusters, the Cloudflow operator takes care of orchestrating the deployment of the different parts of a streaming pipeline as an end-to-end application.
 
-Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. Lightbend also offers support and https://developer.lightbend.com/docs/cloudflow/current/index.html[enterprise features] such as enhanced deployment and operational features with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend Subscription]. 
+Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. Lightbend also offers support with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend Subscription].
 
 == What's next
 
