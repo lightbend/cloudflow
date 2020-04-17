@@ -72,7 +72,7 @@ final class AkkaStreamletContextImpl(
     val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
 
@@ -92,10 +92,10 @@ final class AkkaStreamletContextImpl(
   }
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
     val topic         = savepointPath.name
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
 
     Flow[(T, Committable)]
       .map {
@@ -114,10 +114,10 @@ final class AkkaStreamletContextImpl(
 
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.name
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+    val topic = savepointPath.name
 
     Flow[(T, CommittableOffset)]
       .map {
@@ -139,7 +139,7 @@ final class AkkaStreamletContextImpl(
     val topic         = savepointPath.name
     val gId           = savepointPath.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
 
@@ -153,10 +153,10 @@ final class AkkaStreamletContextImpl(
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
     val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.name
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
+    val topic = savepointPath.name
 
     Flow[T]
       .map { value ⇒
@@ -176,7 +176,7 @@ final class AkkaStreamletContextImpl(
     new KafkaSinkRef(
       system,
       outlet,
-      bootstrapServers,
+      savepointPath.bootstrapServers.getOrElse(bootstrapServers),
       savepointPath.name,
       killSwitch,
       completionPromise
