@@ -306,7 +306,8 @@ final case class Blueprint(
     val unconnectedPortProblems = verifiedStreamlets.flatMap { streamlet ⇒
       val unconnectedInlets = streamlet.descriptor.inlets
         .filterNot { inlet ⇒
-          verifiedStreamletConnections.exists(con ⇒ con.verifiedInlet.streamlet == streamlet && con.verifiedInlet.portName == inlet.name)
+          verifiedStreamletConnections.exists(con ⇒ con.verifiedInlet.streamlet == streamlet && con.verifiedInlet.portName == inlet.name) ||
+          verifiedStreamlets.exists(_.inletRefs.exists(_.inletName == inlet.name))
         }
         .map(inlet ⇒ UnconnectedInlet(streamlet.name, inlet))
 

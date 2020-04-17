@@ -30,9 +30,9 @@ object BlueprintProblem {
       case AmbiguousStreamletRef(streamletRef, className) ⇒
         s"ClassName matching `$className` is ambiguous for streamlet name $streamletRef."
       case InvalidInletRef(streamletRef, className, inletRef, message) ⇒
-        s"Inlet $inletRef defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.inlets.$inletRef for className `$className` is invalid: $message"
+        s"Inlet '$inletRef' defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.inlets.$inletRef for className `$className` is invalid: $message"
       case InvalidOutletRef(streamletRef, className, outletRef, message) ⇒
-        s"Outlet $outletRef defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.outlets.$outletRef for className `$className` is invalid: $message"
+        s"Outlet '$outletRef' defined in blueprint at ${Blueprint.StreamletsSectionKey}.$streamletRef.outlets.$outletRef for className `$className` is invalid: $message"
       case BacktrackingVolumeMounthPath(className, name, path) ⇒
         s"`$className` contains a volume mount `$name` with an invalid path `$path`, backtracking in paths are not allowed."
       case DuplicateConfigParameterKeyFound(className, keyName) ⇒
@@ -82,7 +82,7 @@ object BlueprintProblem {
         s"ClassName $className for $streamletRef cannot be found."
       case UnconnectedInlets(unconnectedInlets) ⇒
         val list = unconnectedInlets.map(ui ⇒ s"${ui.streamletRef}.${ui.inlet.name}").mkString(",")
-        if (list.size > 1) {
+        if (unconnectedInlets.size > 1) {
           s"Inlets ($list) are not connected."
         } else s"Inlet $list is not connected."
     }

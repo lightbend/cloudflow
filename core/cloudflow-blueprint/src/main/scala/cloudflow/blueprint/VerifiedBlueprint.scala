@@ -49,7 +49,12 @@ final case class VerifiedPortPath(streamletRef: String, portName: Option[String]
   override def toString = portName.fold(streamletRef)(port ⇒ s"$streamletRef.$port")
 }
 
-final case class VerifiedStreamlet(name: String, descriptor: StreamletDescriptor) {
+final case class VerifiedStreamlet(
+    name: String,
+    descriptor: StreamletDescriptor,
+    inletRefs: Vector[InletRef] = Vector.empty[InletRef],
+    outletRefs: Vector[OutletRef] = Vector.empty[OutletRef]
+) {
   def outlet(outlet: OutletDescriptor) = VerifiedOutlet(this, outlet.name, outlet.schema)
   def inlet(inlet: InletDescriptor)    = VerifiedInlet(this, inlet.name, inlet.schema)
 }
