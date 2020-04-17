@@ -48,14 +48,14 @@ object SavepointActions {
     val deleteActions =
       if (deleteOutdatedTopics) {
         (currentSavepoints -- newSavepoints).toVector
-          .map(deleteAction(labels))
+          .flatMap(savepoint => if (savepoint.create) Some(deleteAction(labels)(savepoint)) else None)
       } else {
         Vector.empty[Action[ObjectResource]]
       }
 
     val createActions =
       (newSavepoints -- currentSavepoints).toVector
-        .map(createAction(labels))
+        .flatMap(savepoint => if (savepoint.create) Some(createAction(labels)(savepoint)) else None)
     deleteActions ++ createActions
   }
 
