@@ -77,8 +77,13 @@ object VerifiedOutlet {
         .find(_.name == verifiedPortPath.streamletRef)
         .toRight(PortPathNotFound(outletPortPath))
         .flatMap { verifiedStreamlet ⇒
+          // a port path can leave out a port (inlet / outlet)
+          val portNameFound = verifiedPortPath.portName.getOrElse {
+            if (verifiedStreamlet.descriptor.outlets.size == 1) Some(verifiedStreamlet.descriptor.outlets.head.name)
+            else None
+          }
           verifiedStreamlet.outletRefs
-            .find(_.outletName == verifiedPortPath.portName)
+            .find(outletRef => Some(outletRef.outletName) == portNameFound)
             .map { outletRef =>
               Left(PortAlreadyBoundToTopic(outletPortPath, outletRef.topic))
             }
@@ -112,8 +117,13 @@ object VerifiedInlet {
         .find(_.name == verifiedPortPath.streamletRef)
         .toRight(PortPathNotFound(inletPortPath))
         .flatMap { verifiedStreamlet ⇒
+          // a port path can leave out a port (inlet / outlet)
+          val portNameFound = verifiedPortPath.portName.getOrElse {
+            if (verifiedStreamlet.descriptor.inlets.size == 1) Some(verifiedStreamlet.descriptor.inlets.head.name)
+            else None
+          }
           verifiedStreamlet.inletRefs
-            .find(_.inletName == verifiedPortPath.portName)
+            .find(inletRef => Some(inletRef.inletName) == portNameFound)
             .map { inletRef =>
               Left(PortAlreadyBoundToTopic(inletPortPath, inletRef.topic))
             }
