@@ -93,10 +93,11 @@ object HttpServerLogic {
  * [[ServerStreamletLogic]] for accepting HTTP requests.
  * Requires a `Server` to be passed in when it is created.
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
+ * When you define the logic inside the streamlet, you can just pass in `this`:
+ * 
  * [[HttpServerLogic]] also predefined logics (`HttpServerLogic.createDefault` and `HttpServerLogic.createDefaultStreaming`)
  * for accepting, transcoding, and writing to an outlet.
  *
- * When you define the logic inside the streamlet, you can just pass in `this`:
  * {{{
  * class TestHttpServer extends AkkaServerStreamlet {
  *   AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
