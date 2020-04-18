@@ -13,7 +13,6 @@ With its powerful abstractions, Cloudflow allows to define, build and deploy the
 - Develop: Focus only on business logic, leave the boilerplate to us.
 - Build: We provide all the tooling for going from business logic to a deployable Docker image.
 - Deploy: We provide Kubernetes tooling to deploy your distributed system with a single command, and manage durable connections between processing stages.
-- Operate: With a Lightbend subscription, you get all the tools you need to provide insights, observability, and lifecycle management for evolving your distributed streaming application.
 
 As data pipelines become first-class citizens in microservices architectures, Cloudflow gives developers data-optimized programming abstractions and run-time tooling for Kubernetes.
 In a nutshell, Cloudflow is an application development toolkit comprising:
