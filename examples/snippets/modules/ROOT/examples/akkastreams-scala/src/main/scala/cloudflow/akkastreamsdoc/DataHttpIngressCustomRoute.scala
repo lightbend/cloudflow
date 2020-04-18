@@ -18,6 +18,7 @@ class DataHttpIngressCustomRoute extends AkkaServerStreamlet {
   val out   = AvroOutlet[Data]("out").withPartitioner(RoundRobinPartitioner)
   def shape = StreamletShape.withOutlets(out)
   def createLogic = new HttpServerLogic(this, out) {
+    val writer = sinkRef(outlet)
     override def route(): Route =
       put {
         entity(as[Data]) { data ⇒
