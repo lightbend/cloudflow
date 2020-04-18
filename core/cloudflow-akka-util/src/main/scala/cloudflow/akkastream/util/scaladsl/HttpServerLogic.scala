@@ -132,9 +132,8 @@ abstract class HttpServerLogic(
     extends ServerStreamletLogic(server) {
 
   /**
-   * The method to override to supply a custom processing logic
-   *
-   * @return the HTTP route
+   * Override this method to define the HTTP route that this HttpServerLogic will use.
+   * @return the Route that will be used to handle HTTP requests.
    */
   def route(): Route
 

@@ -122,7 +122,10 @@ abstract class HttpServerLogic(
     server: Server,
     context: AkkaStreamletContext
 ) extends akkastream.util.scaladsl.HttpServerLogic(server)(context) {
-
+  /**
+   * Override this method to define the HTTP route that this HttpServerLogic will use.
+   * @return the Route that will be used to handle HTTP requests.
+   */
   def createRoute(): akka.http.javadsl.server.Route
   override def route(): Route = createRoute().asScala
 }
