@@ -94,6 +94,8 @@ final class AkkaStreamletContextImpl(
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val savepointPath = findSavepointPathForPort(outlet)
     val topic         = savepointPath.name
+    // TODO use savepointPath config (if not empty) to load producerConfig properties.
+    // TODO also in Spark and Flink contexts
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(savepointPath.bootstrapServers.getOrElse(bootstrapServers))
 

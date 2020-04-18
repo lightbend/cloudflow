@@ -111,6 +111,7 @@ object Blueprint {
       inletNames.map { inletName =>
         val inletConfig      = inletsConfig.getConfig(inletName)
         val bootstrapServers = getStringOrEmpty(inletConfig, BootstrapServersKey)
+        // TODO make sure producer-config is not allowed here
         val consumerConfig   = getConfigOrEmpty(inletConfig, "consumer-config")
         val topic            = getStringOrEmpty(inletConfig, TopicKey)
         InletRef(inletName, bootstrapServers, topic, streamletRefName, className, consumerConfig)
@@ -124,6 +125,7 @@ object Blueprint {
       outletNames.map { outletName =>
         val outletConfig     = outletsConfig.getConfig(outletName)
         val bootstrapServers = getStringOrEmpty(outletConfig, BootstrapServersKey)
+        // TODO make sure consumer-config is not allowed here
         val producerConfig   = getConfigOrEmpty(outletConfig, "producer-config")
         val topic            = getStringOrEmpty(outletConfig, TopicKey)
         OutletRef(outletName, bootstrapServers, topic, streamletRefName, className, producerConfig)

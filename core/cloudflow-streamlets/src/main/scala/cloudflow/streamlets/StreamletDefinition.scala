@@ -53,7 +53,13 @@ object SavepointPath {
 /**
  * The path to a savepoint.
  */
-final case class SavepointPath(appId: String, streamletRef: String, name: String, config: Config, bootstrapServers: Option[String]) {
+final case class SavepointPath(
+  appId: String, 
+  streamletRef: String, 
+  name: String, 
+  config: Config, 
+  bootstrapServers: Option[String]
+) {
 
   def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"$appId.$readingStreamletRef.${inlet.name}"
