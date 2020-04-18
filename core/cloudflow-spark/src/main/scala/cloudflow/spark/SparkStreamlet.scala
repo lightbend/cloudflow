@@ -116,6 +116,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
       def stop(): Future[Dun] = {
         streamletQueryExecution.stop()
         scheduledQueryCheck.cancel()
+        sysCheck.cancel()
         poll(streamletQueryExecution.queries.forall(!_.isActive), 1.second, StopTimeout, system.scheduler)
           .recoverWith {
             case ex: TimeoutException =>
