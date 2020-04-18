@@ -17,7 +17,7 @@ import JsonSupport._
 class DataHttpIngressCustomRoute extends AkkaServerStreamlet {
   val out   = AvroOutlet[Data]("out").withPartitioner(RoundRobinPartitioner)
   def shape = StreamletShape.withOutlets(out)
-  def createLogic = new HttpWriterLogic(this, out) {
+  def createLogic = new HttpServerLogic(this, out) {
     override def route(): Route =
       put {
         entity(as[Data]) { data ⇒

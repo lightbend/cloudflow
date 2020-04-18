@@ -116,7 +116,8 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
     val outlet = AvroOutlet[Data]("out", _.id.toString)
     val shape  = StreamletShape(outlet)
 
-    override def createLogic = new HttpWriterLogic(this, outlet) {
+    override def createLogic = new HttpServerLogic(this) {
+      val writer = sinkRef(outlet)
       override def route(): Route =
         put {
           entity(as[Data]) { data ⇒
@@ -138,7 +139,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
   val outlet = AvroOutlet[Data]("out", _.id.toString)
   def createDefaultIngress = new AkkaServerStreamlet() {
     val shape                = StreamletShape(outlet)
-    override def createLogic = HttpWriterLogic.default(this, outlet)
+    override def createLogic = HttpServerLogic.default(this, outlet)
   }
 
   def startIngress(ingress: AkkaStreamlet = createDefaultIngress): Unit = {

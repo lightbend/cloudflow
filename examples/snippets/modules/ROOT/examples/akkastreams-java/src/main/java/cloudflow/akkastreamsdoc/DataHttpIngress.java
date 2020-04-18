@@ -4,7 +4,7 @@ package cloudflow.akkastreamsdoc;
 import cloudflow.akkastream.AkkaServerStreamlet;
 
 import cloudflow.akkastream.AkkaStreamletLogic;
-import cloudflow.akkastream.util.javadsl.HttpWriterLogic;
+import cloudflow.akkastream.util.javadsl.HttpServerLogic;
 
 import cloudflow.streamlets.RoundRobinPartitioner;
 import cloudflow.streamlets.StreamletShape;
@@ -22,7 +22,7 @@ public class DataHttpIngress extends AkkaServerStreamlet {
   }
 
   public AkkaStreamletLogic createLogic() {
-    return HttpWriterLogic.createDefault(
+    return HttpServerLogic.createDefault(
         this, out, Jackson.byteStringUnmarshaller(Data.class), getContext());
   }
 }

@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package carly.ingestor
+package taxiride.ingestor
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.common.EntityStreamingSupport
-
+import scala.concurrent.duration._
+import akka.stream.scaladsl._
 import cloudflow.streamlets.avro._
-import carly.ingestor.JsonCallRecord._
-import carly.data._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
-import cloudflow.akkastream.util.scaladsl.HttpServerLogic
+import cloudflow.akkastream.scaladsl._
+import taxiride.avro._
+import spray.json._
+import TaxiFareJsonProtocol._
 
-class CallRecordStreamingIngress extends AkkaServerStreamlet {
-  implicit val entityStreamingSupport = EntityStreamingSupport.json()
+class KafkaFareIngress extends AkkaStreamlet {
+  val in = AvroInlet[TaxiFare]("in")
+  val out = AvroOutlet[TaxiFare]("out", _.rideId.toString)
 
-  val out = AvroOutlet[CallRecord]("out").withPartitioner(RoundRobinPartitioner)
+  final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
-  final override val shape = StreamletShape.withOutlets(out)
-
-  override final def createLogic = HttpServerLogic.defaultStreaming(this, out)
+  final override def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = sourceWithOffsetContext(in).to(committableSink(out))
+  }
 }

@@ -27,5 +27,5 @@ import SensorDataJsonSupport._
 class SensorDataHttpIngress extends AkkaServerStreamlet {
   val out                  = AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
   def shape                = StreamletShape.withOutlets(out)
-  override def createLogic = HttpWriterLogic.default(this, out)
+  override def createLogic = HttpServerLogic.default(this, out)
 }
