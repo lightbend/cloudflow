@@ -32,16 +32,24 @@ import akka.stream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
 
+/**
+ * Creates [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
+ */
 object HttpServerLogic {
   final def default[Out](
       server: Server,
       outlet: CodecOutlet[Out]
   )(implicit
     context: AkkaStreamletContext,
-    fbu: FromByteStringUnmarshaller[Out]) =
-    new HttpServerLogic(server, outlet) {
-      final override def route(writer: WritableSinkRef[Out]): Route = defaultRoute(writer)
+    fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
+    implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
+      PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
+        .andThen(implicitly[FromByteStringUnmarshaller[Out]])
+
+    new HttpServerLogic(server) {
+      final override def route(): Route = defaultRoute(sinkRef(outlet))
     }
+  }
 
   final def defaultStreaming[Out](
       server: Server,
@@ -51,10 +59,9 @@ object HttpServerLogic {
       context: AkkaStreamletContext,
       fbs: FromByteStringUnmarshaller[Out],
       ess: EntityStreamingSupport
-  ) =
-    new StreamingHttpServerLogic(server, outlet) {
-      def entityStreamingSupport: EntityStreamingSupport            = ess
-      final override def route(writer: WritableSinkRef[Out]): Route = defaultStreamingRoute(writer)
+  ): HttpServerLogic =
+    new HttpServerLogic(server) {
+      final override def route(): Route = defaultStreamingRoute(sinkRef(outlet))
     }
 
   final def defaultRoute[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
@@ -89,8 +96,7 @@ object HttpServerLogic {
 }
 
 /**
- * Accepts and transcodes HTTP requests, then writes the transcoded data to the outlet.
- * By default this `HttpServerLogic` accepts PUT or POST requests containing entities that can be unmarshalled using the FromByteStringUnmarshaller.
+ * [[ServerStreamletLogic]] for accepting HTTP requests.
  * The HttpServerLogic requires a `Server` to be passed in when it is created. You need to pass in a Server to create it
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
@@ -103,8 +109,9 @@ object HttpServerLogic {
  *    val outlet = AvroOutlet[Data]("out", _.id.toString)
  *    val shape = StreamletShape(outlet)
  *
- *    override def createLogic = new HttpServerLogic(this, outlet) {
- *      override def route(writer: WritableSinkRef[Data]): Route = {
+ *    override def createLogic = new HttpServerLogic(this) {
+ *      val writer = sinkRef(outlet)
+ *      override def route(): Route = {
  *        put {
  *          entity(as[Data]) { data ⇒
  *            if (data.id == 42) {
@@ -119,33 +126,27 @@ object HttpServerLogic {
  *  }
  * }}}
  */
-abstract class HttpServerLogic[Out](
-    server: Server,
-    outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext, fbu: FromByteStringUnmarshaller[Out])
+abstract class HttpServerLogic(
+    server: Server
+)(implicit context: AkkaStreamletContext)
     extends ServerStreamletLogic(server) {
-  implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
-    PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
-      .andThen(implicitly[FromByteStringUnmarshaller[Out]])
 
   /**
-   * The method to override to supply a custom processing logic
-   *
-   * @param writableSinkRef the writer to write to
-   * @return the HTTP route
+   * Override this method to define the HTTP route that this HttpServerLogic will use.
+   * @return the Route that will be used to handle HTTP requests.
    */
-  def route(writableSinkRef: WritableSinkRef[Out]): Route
+  def route(): Route
 
-  def run() = {
-    val flow = Route.handlerFlow(route(sinkRef(outlet)))
+  protected def flow = Route.handlerFlow(route())
+
+  def run() =
     startServer(
       context,
       flow,
       containerPort
     )
-  }
 
-  def startServer(
+  protected def startServer(
       context: AkkaStreamletContext,
       handler: Flow[HttpRequest, HttpResponse, _],
       port: Int
@@ -167,57 +168,4 @@ abstract class HttpServerLogic[Out](
           system.log.error(cause, s"Failed to bind to $port.")
           context.stop()
       }
-
-}
-
-/**
- * Accepts and transcodes HTTP requests that contains framed elements, then writes the transcoded data to the outlet.
- * You need to implement the `entityStreamingSupport` method, which must return an `EntityStreamingSupport` which
- * allows rendering and receiving incoming ``Source[T, _]`` from HTTP entities.
- * The elements in the source are unmarshalled using the `FromByteStringUnmarshaller`.
- *
- * This [[HttpServerLogic]] requires a [[Server]] to be passed in when it is created.
- * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
- * When you define the [[StreamingHttpServerLogic]] inside the streamlet, you can just pass in `this`:
- * {{{
- *  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
- *
- *  object TestHttpServer extends AkkaServerStreamlet {
- *    implicit val jsonformatData: RootJsonFormat[Data] = jsonFormat2(Data.apply)
- *    val outlet = AvroOutlet[Data]("out", _.id.toString)
- *    val shape = StreamletShape(outlet)
- *
- *    override def createLogic = new StreamingHttpServerLogic(this, outlet) {
- *      def entityStreamingSupport = EntityStreamingSupport.json()
- *    }
- *  }
- * }}}
- */
-abstract class StreamingHttpServerLogic[Out: FromByteStringUnmarshaller](
-    server: Server,
-    outlet: CodecOutlet[Out]
-)(implicit context: AkkaStreamletContext)
-    extends HttpServerLogic(server, outlet) {
-  implicit def entityStreamingSupport: EntityStreamingSupport
-
-  /**
-   * The method to override to supply a custom processing logic
-   *
-   * @param writer the writer to write to
-   * @return the HTTP route
-   */
-  override def route(writer: WritableSinkRef[Out]): Route =
-    entity(asSourceOf[Out]) { elements ⇒
-      val written: Future[_] =
-        elements
-          .mapAsync(1)(out ⇒ writer.write(out))
-          .toMat(Sink.ignore)(Keep.right)
-          .run
-
-      complete {
-        written.map { _ ⇒
-          StatusCodes.Accepted
-        }
-      }
-    }
 }

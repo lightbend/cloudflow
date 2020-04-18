@@ -29,7 +29,7 @@ import cloudflow.akkastream._
 import cloudflow.streamlets._
 
 /**
- * Creates default [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
+ * Creates [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
  */
 object HttpServerLogic {
 
@@ -42,10 +42,14 @@ object HttpServerLogic {
       outlet: CodecOutlet[Out],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       context: AkkaStreamletContext
-  ) =
-    new HttpServerLogic(server, outlet, fromByteStringUnmarshaller, context) {
-      final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
-        RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
+  ): HttpServerLogic =
+    new HttpServerLogic(server, context) {
+      implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
+        PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
+          .andThen(fromByteStringUnmarshaller.asScala)
+
+      final override def createRoute(): akka.http.javadsl.server.Route =
+        RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef(outlet)))
     }
 
   /**
@@ -58,20 +62,42 @@ object HttpServerLogic {
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       ess: EntityStreamingSupport,
       context: AkkaStreamletContext
-  ) = new StreamingHttpServerLogic(server, outlet, fromByteStringUnmarshaller, ess, context) {
-    implicit val fbs      = fromByteStringUnmarshaller.asScala
-    implicit val essScala = EntityStreamingSupportDelegate(ess)
-    final override def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route =
-      RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef))
+  ): HttpServerLogic = new HttpServerLogic(server, context) {
+    implicit val fbu         = fromByteStringUnmarshaller.asScala
+    implicit val essDelegate = EntityStreamingSupportDelegate(ess)
+    final override def createRoute(): akka.http.javadsl.server.Route =
+      RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultStreamingRoute(sinkRef(outlet)))
+  }
+
+  final case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
+      extends akka.http.scaladsl.common.EntityStreamingSupport {
+    def supported: akka.http.scaladsl.model.ContentTypeRange =
+      entityStreamingSupport.supported.asInstanceOf[akka.http.scaladsl.model.ContentTypeRange]
+    def contentType: akka.http.scaladsl.model.ContentType =
+      entityStreamingSupport.contentType.asInstanceOf[akka.http.scaladsl.model.ContentType]
+    def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed]  = entityStreamingSupport.getFramingDecoder.asScala
+    def framingRenderer: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] = entityStreamingSupport.getFramingRenderer.asScala
+    override def withSupported(range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport =
+      EntityStreamingSupportDelegate(entityStreamingSupport.withSupported(range))
+    override def withContentType(contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport =
+      EntityStreamingSupportDelegate(entityStreamingSupport.withContentType(contentType))
+
+    def parallelism: Int   = entityStreamingSupport.parallelism
+    def unordered: Boolean = entityStreamingSupport.unordered
+    def withParallelMarshalling(parallelism: Int, unordered: Boolean): akka.http.scaladsl.common.EntityStreamingSupport =
+      EntityStreamingSupportDelegate(entityStreamingSupport.withParallelMarshalling(parallelism, unordered))
   }
 }
 
 /**
- * Accepts and transcodes HTTP requests, then writes the transcoded data to the outlet.
- * By default this `HttpServerLogic` accepts PUT or POST requests containing entities that can be unmarshalled using the FromByteStringUnmarshaller.
+ * [[ServerStreamletLogic]] for accepting HTTP requests.
  * Requires a `Server` to be passed in when it is created.
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
+ * 
+ * [[HttpServerLogic]] also predefined logics (`HttpServerLogic.createDefault` and `HttpServerLogic.createDefaultStreaming`)
+ * for accepting, transcoding, and writing to an outlet.
+ *
  * {{{
  * class TestHttpServer extends AkkaServerStreamlet {
  *   AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
@@ -82,75 +108,24 @@ object HttpServerLogic {
  *    }
  *
  *    public HttpServerLogic createLogic() {
- *      return HttpServerLogic.createDefault(this, outlet, fbu, getStreamletContext());
+ *      return new HttpServerLogic(this, getStreamletContext()) {
+ *        Route createRoute() {
+ *          // define HTTP route here
+ *        }
+ *      }
  *    }
  *  }
  * }}}
  *
  */
-abstract class HttpServerLogic[Out](
+abstract class HttpServerLogic(
     server: Server,
-    outlet: CodecOutlet[Out],
-    fbu: Unmarshaller[ByteString, Out],
     context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.HttpServerLogic(server, outlet)(context, fbu.asScala) {
-
-  def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route
-  override def route(sinkRef: WritableSinkRef[Out]): Route = createRoute(sinkRef).asScala
-}
-
-/**
- * Accepts and transcodes HTTP requests that contains framed elements, then writes the transcoded data to the outlet.
- * You need to supply an `EntityStreamingSupport` which
- * allows rendering and receiving incoming ``Source[T, _]`` from HTTP entities.
- *
- * Requires a `Server` to be passed in when it is created.
- * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
- * When you define the logic inside the streamlet, you can just pass in `this`:
- *
- * The elements in the source are unmarshalled using the `FromByteStringUnmarshaller`:
- * {{{
- * class TestHttpServer extends AkkaServerStreamlet {
- *   AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out",  d -> d.name(), Data.class);
- *   Unmarshaller<ByteString, Data> fbu = Jackson.byteStringUnmarshaller(Data.class);
- *   EntityStreamingSupport ess = EntityStreamingSupport.json();
- *
- *    public StreamletShape shape() {
- *      return StreamletShape.createWithOutlets(outlet);
- *    }
- *
- *    public HttpServerLogic createLogic() {
- *      return HttpServerLogic.createDefaultStreaming(this, outlet, fbu, ess, getStreamletContext());
- *    }
- *  }
- * }}}
- */
-abstract class StreamingHttpServerLogic[Out](
-    server: Server,
-    outlet: CodecOutlet[Out],
-    fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
-    val entityStreamingSupport: EntityStreamingSupport,
-    context: AkkaStreamletContext
-) extends HttpServerLogic(server, outlet, fromByteStringUnmarshaller, context) {
-  def createRoute(sinkRef: WritableSinkRef[Out]): akka.http.javadsl.server.Route
-  override def route(sinkRef: WritableSinkRef[Out]): Route = createRoute(sinkRef).asScala
-}
-
-case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
-    extends akka.http.scaladsl.common.EntityStreamingSupport {
-  def supported: akka.http.scaladsl.model.ContentTypeRange =
-    entityStreamingSupport.supported.asInstanceOf[akka.http.scaladsl.model.ContentTypeRange]
-  def contentType: akka.http.scaladsl.model.ContentType =
-    entityStreamingSupport.contentType.asInstanceOf[akka.http.scaladsl.model.ContentType]
-  def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed]  = entityStreamingSupport.getFramingDecoder.asScala
-  def framingRenderer: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] = entityStreamingSupport.getFramingRenderer.asScala
-  override def withSupported(range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport =
-    EntityStreamingSupportDelegate(entityStreamingSupport.withSupported(range))
-  override def withContentType(contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport =
-    EntityStreamingSupportDelegate(entityStreamingSupport.withContentType(contentType))
-
-  def parallelism: Int   = entityStreamingSupport.parallelism
-  def unordered: Boolean = entityStreamingSupport.unordered
-  def withParallelMarshalling(parallelism: Int, unordered: Boolean): akka.http.scaladsl.common.EntityStreamingSupport =
-    EntityStreamingSupportDelegate(entityStreamingSupport.withParallelMarshalling(parallelism, unordered))
+) extends akkastream.util.scaladsl.HttpServerLogic(server)(context) {
+  /**
+   * Override this method to define the HTTP route that this HttpServerLogic will use.
+   * @return the Route that will be used to handle HTTP requests.
+   */
+  def createRoute(): akka.http.javadsl.server.Route
+  override def route(): Route = createRoute().asScala
 }

@@ -116,8 +116,9 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
     val outlet = AvroOutlet[Data]("out", _.id.toString)
     val shape  = StreamletShape(outlet)
 
-    override def createLogic = new HttpServerLogic(this, outlet) {
-      override def route(writer: WritableSinkRef[Data]): Route =
+    override def createLogic = new HttpServerLogic(this) {
+      val writer = sinkRef(outlet)
+      override def route(): Route =
         put {
           entity(as[Data]) { data ⇒
             if (data.id == 42) {
