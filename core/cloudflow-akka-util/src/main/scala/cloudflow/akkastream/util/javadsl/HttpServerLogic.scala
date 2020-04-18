@@ -94,7 +94,7 @@ object HttpServerLogic {
  * Requires a `Server` to be passed in when it is created.
  * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
- * 
+ *
  * [[HttpServerLogic]] also predefined logics (`HttpServerLogic.createDefault` and `HttpServerLogic.createDefaultStreaming`)
  * for accepting, transcoding, and writing to an outlet.
  *
@@ -122,6 +122,7 @@ abstract class HttpServerLogic(
     server: Server,
     context: AkkaStreamletContext
 ) extends akkastream.util.scaladsl.HttpServerLogic(server)(context) {
+
   /**
    * Override this method to define the HTTP route that this HttpServerLogic will use.
    * @return the Route that will be used to handle HTTP requests.
