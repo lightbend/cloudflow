@@ -69,7 +69,7 @@ object HttpServerLogic {
       RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultStreamingRoute(sinkRef(outlet)))
   }
 
-  case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
+  final case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
       extends akka.http.scaladsl.common.EntityStreamingSupport {
     def supported: akka.http.scaladsl.model.ContentTypeRange =
       entityStreamingSupport.supported.asInstanceOf[akka.http.scaladsl.model.ContentTypeRange]
