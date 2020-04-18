@@ -151,16 +151,35 @@ class UpdateAction[T <: ObjectResource](
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def executeUpdate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
       res ← existing
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-        .map(resourceToUpdate ⇒ client.update(resourceToUpdate)(format, resourceDefinition, lc))
+        .map(resourceToUpdate ⇒
+          try {
+            client.update(resourceToUpdate)(format, resourceDefinition, lc)
+          } catch {
+            case e: K8SException => {
+              val errMsg = e.status.message.getOrElse("")
+              if (errMsg.contains("please apply your changes to the latest version and try again")) {
+                executeUpdate(client)
+              } else {
+                throw (e)
+              }
+            }
+            case e: Throwable => throw (e)
+          }
+        )
         .getOrElse(client.create(resource)(format, resourceDefinition, lc))
-    } yield new UpdateAction(res, format, resourceDefinition, editor)
+    } yield res
+
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    for {
+      result <- executeUpdate(client)
+    } yield new UpdateAction(result, format, resourceDefinition, editor)
 }
 
 class PatchAction[T <: ObjectResource, O <: Patch](
@@ -199,7 +218,7 @@ class UpdateStatusAction[T <: ObjectResource](
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def executeUpdateStatus(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
       resourceVersionUpdated = existing
@@ -207,10 +226,26 @@ class UpdateStatusAction[T <: ObjectResource](
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
         .getOrElse(resource)
-      res ← client
-        .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
-        .map(o ⇒ new UpdateStatusAction(o, format, resourceDefinition, statusEv, editor))
+      res ← try {
+        client
+          .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
+      } catch {
+        case e: K8SException => {
+          val errMsg = e.status.message.getOrElse("")
+          if (errMsg.contains("please apply your changes to the latest version and try again")) {
+            executeUpdateStatus(client)
+          } else {
+            throw (e)
+          }
+        }
+        case e: Throwable => throw (e)
+      }
     } yield res
+
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    for {
+      result <- executeUpdateStatus(client)
+    } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 }
 
 /**
