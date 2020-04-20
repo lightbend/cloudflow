@@ -35,13 +35,9 @@ class CallRecordGeneratorIngressSpec extends SparkScalaTestSupport {
       val out = testKit.outletAsTap[CallRecord](streamlet.out)
 
       val run = testKit.run(streamlet, Seq.empty, Seq(out))
-      run.totalRows must be > 0L
-
-      // get data from outlet tap
-      val results = out.asCollection(session)
 
       // assert
-      results.size must be > 0
+      run.totalRows must be > 0L
 
     }
   }
