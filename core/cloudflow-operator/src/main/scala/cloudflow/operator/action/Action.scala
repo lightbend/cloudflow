@@ -159,9 +159,7 @@ class UpdateAction[T <: ObjectResource](
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
         .map(resourceToUpdate ⇒
-          try {
-            client.update(resourceToUpdate)(format, resourceDefinition, lc)
-          } catch {
+          client.update(resourceToUpdate)(format, resourceDefinition, lc).recoverWith {
             case e: K8SException => {
               val errMsg = e.status.message.getOrElse("")
               if (errMsg.contains("please apply your changes to the latest version and try again")) {
@@ -170,7 +168,6 @@ class UpdateAction[T <: ObjectResource](
                 throw (e)
               }
             }
-            case e: Throwable => throw (e)
           }
         )
         .getOrElse(client.create(resource)(format, resourceDefinition, lc))
@@ -226,20 +223,18 @@ class UpdateStatusAction[T <: ObjectResource](
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
         .getOrElse(resource)
-      res ← try {
-        client
-          .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
-      } catch {
-        case e: K8SException => {
-          val errMsg = e.status.message.getOrElse("")
-          if (errMsg.contains("please apply your changes to the latest version and try again")) {
-            executeUpdateStatus(client)
-          } else {
-            throw (e)
+      res ← client
+        .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
+        .recoverWith {
+          case e: K8SException => {
+            val errMsg = e.status.message.getOrElse("")
+            if (errMsg.contains("please apply your changes to the latest version and try again")) {
+              executeUpdateStatus(client)
+            } else {
+              throw (e)
+            }
           }
         }
-        case e: Throwable => throw (e)
-      }
     } yield res
 
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
