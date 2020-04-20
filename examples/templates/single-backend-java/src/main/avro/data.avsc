@@ -1,0 +1,16 @@
+{
+    "namespace": "com.example.app",
+    "type": "record",
+    "name": "Data",
+    "fields":[
+         {
+            "name": "id", 
+            "type": "string"
+         },
+         {
+            "name": "value",
+            "type": "double"
+         }
+    ]
+}
+

@@ -18,7 +18,15 @@ set -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 TARGET=$1
-
+if [ "$TARGET" == "" ]; 
+then
+  set +x
+  echo "==================================================================================="
+  echo "Error: 'target' missing."
+  echo "Usage: build-all.sh <target>  # where <target> is an sbt target: compile, test, ..."
+  echo "==================================================================================="
+  exit -1
+fi
 echo "========================================================================="
 echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="

@@ -49,3 +49,11 @@ examples:
     path: "snippets/modules/ROOT/examples/build-spark-streamlets-scala"
     description: |
       Set of files containing the Scala code snippets used in the build-spark-streamlets documentation
+  - id: "template-scala"
+    path: "templates/single-backend-scala"
+    description: |
+      A getting started template containing a minimal Scala project that can be used as a starting point
+  - id: "template-java"
+    path: "templates/single-backend-java"
+    description: |
+      A getting started template containing a minimal Java project that can be used as a starting point
