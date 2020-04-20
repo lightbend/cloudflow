@@ -98,7 +98,7 @@ object CloudflowApplication {
     kind = "CloudflowApplication",
     singular = Some("cloudflowapplication"),
     plural = Some("cloudflowapplications"),
-    shortNames = List("cloudflow"),
+    shortNames = List("cloudflowapp"),
     subresources = Some(Subresources().withStatusSubresource)
   )
 
