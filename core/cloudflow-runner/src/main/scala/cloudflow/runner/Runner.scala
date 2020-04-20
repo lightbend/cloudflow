@@ -79,7 +79,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
           case ex @ ExceptionAcc(exceptions) ⇒
             exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdown(loadedStreamlet, Some(ex))
-          case ex : Throwable =>
+          case ex: Throwable =>
             ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
             shutdown(loadedStreamlet, Some(ex))
         }
