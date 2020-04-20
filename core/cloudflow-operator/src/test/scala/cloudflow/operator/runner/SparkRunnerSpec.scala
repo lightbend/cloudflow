@@ -22,6 +22,7 @@ import org.scalatest._
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
+import cloudflow.blueprint.deployment.CloudflowApplication
 import play.api.libs.json._
 import skuber.Volume
 

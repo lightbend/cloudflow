@@ -16,6 +16,8 @@
 
 package cloudflow.operator
 
+import cloudflow.blueprint.deployment.CloudflowApplication
+
 case class CloudflowLabels(partOf: String, appVersion: String) {
 
   import CloudflowLabels._

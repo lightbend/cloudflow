@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.blueprint.deployment
 
 import java.security.MessageDigest
 
@@ -26,13 +26,10 @@ import play.api.libs.json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
 import skuber._
-import skuber.apiextensions._
 import skuber.ResourceSpecification.Subresources
+import skuber.apiextensions._
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment._
-
-import cloudflow.operator.action.Action
 
 /**
  * CloudflowApplication Custom Resource.
@@ -103,8 +100,7 @@ object CloudflowApplication {
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
-
-  val CRD = CustomResourceDefinition[CR]
+  val CRD                       = CustomResourceDefinition[CR]
 
   def apply(applicationSpec: CloudflowApplication.Spec): CR =
     CustomResource(
@@ -126,108 +122,10 @@ object CloudflowApplication {
     val Running          = "Running"
     val Pending          = "Pending"
     val CrashLoopBackOff = "CrashLoopBackOff"
-
-    def apply(
-        spec: CloudflowApplication.Spec
-    ): Status = {
-      val streamletStatuses = createStreamletStatuses(spec)
-      Status(
-        spec.appId,
-        spec.appVersion,
-        streamletStatuses,
-        Some(Unknown)
-      )
-    }
-
-    def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
-      // TODO not match on runtime, this is not great for extensibility.
-      // There are some plans to make replicas mandatory in the CR
-      // and to indicate extraPods required in the deployment to prevent the code below specific to runtimes
-      import cloudflow.operator.runner._
-      spec.deployments.map { deployment =>
-        val expectedPodCount = deployment.runtime match {
-          case AkkaRunner.runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-          case SparkRunner.runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
-          case FlinkRunner.runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
-        }
-        StreamletStatus(
-          deployment.streamletName,
-          expectedPodCount
-        )
-      }
-    }
-
-    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
-      if (streamletStatuses.forall { streamletStatus =>
-            streamletStatus.hasExpectedPods(streamletStatus.podStatuses.size) &&
-            streamletStatus.podStatuses.forall(_.isReady)
-          }) {
-        Status.Running
-      } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
-        Status.CrashLoopBackOff
-      } else {
-        Status.Pending
-      }
   }
 
-  // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
   case class Status private (appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
     def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
-    def updateApp(newApp: CloudflowApplication.CR) = {
-      // copy PodStatus lists that already exist
-      val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
-        streamletStatuses
-          .find(_.streamletName == newStreamletStatus.streamletName)
-          .map { streamletStatus =>
-            newStreamletStatus.copy(podStatuses = streamletStatus.podStatuses)
-          }
-          .getOrElse(newStreamletStatus)
-      }
-      copy(
-        appId = newApp.spec.appId,
-        appVersion = newApp.spec.appVersion,
-        streamletStatuses = newStreamletStatuses,
-        appStatus = Some(Status.calcAppStatus(newStreamletStatuses))
-      )
-    }
-
-    def updatePod(streamletName: String, pod: Pod) = {
-      val streamletStatus =
-        streamletStatuses
-          .find(_.streamletName == streamletName)
-          .map(_.updatePod(pod))
-          .toList
-      val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
-      copy(
-        streamletStatuses = streamletStatusesUpdated,
-        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
-      )
-    }
-
-    def deletePod(streamletName: String, pod: Pod) = {
-      val streamletStatus =
-        streamletStatuses
-          .find(_.streamletName == streamletName)
-          .map(_.deletePod(pod))
-          .toList
-      val streamletStatusesUpdated = streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
-      copy(
-        streamletStatuses = streamletStatusesUpdated,
-        appStatus = Some(Status.calcAppStatus(streamletStatusesUpdated))
-      )
-    }
-
-    def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
-      Action.updateStatus(app.withStatus(this), editor)
-  }
-
-  object StreamletStatus {
-    def apply(streamletName: String, expectedPodCount: Int): StreamletStatus =
-      StreamletStatus(streamletName, Some(expectedPodCount), Vector())
-    def apply(streamletName: String, pod: Pod, expectedPodCount: Int): StreamletStatus =
-      StreamletStatus(streamletName, Some(expectedPodCount), Vector(PodStatus(pod)))
-    def apply(streamletName: String, expectedPodCount: Int, podStatuses: Vector[PodStatus]): StreamletStatus =
-      StreamletStatus(streamletName, Some(expectedPodCount), podStatuses)
   }
 
   case class StreamletStatus(
@@ -242,6 +140,15 @@ object CloudflowApplication {
       copy(podStatuses = podStatuses.filterNot(_.name == podStatus.name) :+ podStatus)
     }
     def deletePod(pod: Pod) = copy(podStatuses = podStatuses.filterNot(_.name == pod.metadata.name))
+  }
+
+  object StreamletStatus {
+    def apply(streamletName: String, expectedPodCount: Int): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector())
+    def apply(streamletName: String, pod: Pod, expectedPodCount: Int): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), Vector(PodStatus(pod)))
+    def apply(streamletName: String, expectedPodCount: Int, podStatuses: Vector[PodStatus]): StreamletStatus =
+      StreamletStatus(streamletName, Some(expectedPodCount), podStatuses)
   }
 
   object PodStatus {

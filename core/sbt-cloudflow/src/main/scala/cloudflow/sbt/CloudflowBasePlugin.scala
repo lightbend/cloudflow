@@ -29,6 +29,7 @@ import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.archetypes._
 import spray.json._
+import JsonUtils._
 
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
@@ -47,6 +48,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val DepJarsDir: String               = "dep-jars"
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
+  final val CloudflowVersion                 = "1.4.0"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -72,7 +74,7 @@ object CloudflowBasePlugin extends AutoPlugin {
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets)
+          buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
         }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
@@ -126,7 +128,10 @@ object CloudflowBasePlugin extends AutoPlugin {
   private[sbt] def makeStreamletDescriptorsLabelValue(streamletDescriptorsJson: JsValue) = {
     // create a root object with the array
     val streamletDescriptorsJsonStr =
-      JsObject("streamlet-descriptors" -> streamletDescriptorsJson).compactPrint
+      JsObject(
+        "streamlet-descriptors" -> streamletDescriptorsJson // ,
+        // "api-version"           -> JsString(ApplicationDescriptor.APIVersion)
+      ).compactPrint
 
     val compressed = zlibCompression(streamletDescriptorsJsonStr.getBytes(UTF_8))
     Base64.getEncoder.encodeToString(compressed)
@@ -169,12 +174,18 @@ object CloudflowBasePlugin extends AutoPlugin {
     compressed.toByteArray()
   }
 
-  private[sbt] def buildStreamletDescriptors(detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] =
+  private[sbt] def buildStreamletDescriptors(
+      detectedStreamlets: Map[String, Config],
+      dockerImageName: Option[DockerImageName]
+  ): Def.Initialize[Task[Iterable[StreamletDescriptor]]] =
     Def.task {
       val detectedStreamletDescriptors = detectedStreamlets.map {
         case (_, configDescriptor) ⇒
           val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-          jsonString.parseJson.convertTo[cloudflow.blueprint.StreamletDescriptor]
+          dockerImageName
+            .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
+            .getOrElse(jsonString.parseJson.addField("image", "placeholder"))
+            .convertTo[cloudflow.blueprint.StreamletDescriptor]
       }
       detectedStreamletDescriptors
     }

@@ -22,6 +22,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import cloudflow.operator.action._
 import cloudflow.operator.event._
+import cloudflow.blueprint.deployment.CloudflowApplication
 import play.api.libs.json.Format
 import skuber._
 import skuber.api.client._

@@ -23,6 +23,7 @@ import skuber._
 import cloudflow.blueprint._
 import cloudflow.operator.runner._
 import BlueprintBuilder._
+import cloudflow.blueprint.deployment.CloudflowApplication
 
 class CloudflowApplicationSpec
     extends WordSpec
@@ -71,118 +72,109 @@ class CloudflowApplicationSpec
 
     "report its status as Pending when one pod is not ready" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningNotReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningNotReadyPod("s1"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Pending when all pods not ready" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningNotReadyPod("s1"))
-      status = status.updatePod("s2", mkRunningNotReadyPod("s2"))
-      status = status.updatePod("s3", mkRunningNotReadyPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningNotReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningNotReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkRunningNotReadyPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Pending when one pod is waiting" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkWaitingPod("s1", "ContainerCreating"))
-      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-      status = status.updatePod("s3", mkRunningReadyPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkWaitingPod("s1", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkRunningReadyPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Pending when all pods are waiting" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkWaitingPod("s1", "ContainerCreating"))
-      status = status.updatePod("s2", mkWaitingPod("s2", "ContainerCreating"))
-      status = status.updatePod("s3", mkWaitingPod("s3", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s1", mkWaitingPod("s1", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s2", mkWaitingPod("s2", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s3", mkWaitingPod("s3", "ContainerCreating"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as CrashLoopBackOff when one pod is in CrashLoopBackOff" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkCrashLoopBackOffPod("s1"))
-      status = status.updatePod("s2", mkWaitingPod("s2", "ContainerCreating"))
-      status = status.updatePod("s3", mkWaitingPod("s3", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s1", mkCrashLoopBackOffPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkWaitingPod("s2", "ContainerCreating"))
+      status = StatusUtils.updatePod(status, "s3", mkWaitingPod("s3", "ContainerCreating"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.CrashLoopBackOff
     }
 
     "report its status as CrashLoopBackOff when other podstatuses are terminated" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkCrashLoopBackOffPod("s1"))
-      status = status.updatePod("s2", mkTerminatedPod("s2"))
-      status = status.updatePod("s3", mkTerminatedPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkCrashLoopBackOffPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkTerminatedPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkTerminatedPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.CrashLoopBackOff
     }
 
     "report its status as Pending when all podstatuses are terminated" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkTerminatedPod("s1"))
-      status = status.updatePod("s2", mkTerminatedPod("s2"))
-      status = status.updatePod("s3", mkTerminatedPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkTerminatedPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkTerminatedPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkTerminatedPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Pending when not all streamlet pods are running and ready" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-      status = status.updatePod("s3", mkRunningNotReadyPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkRunningNotReadyPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Running when all streamlet pods are running and ready" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-      status = status.updatePod("s3", mkRunningReadyPod("s3"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s3", mkRunningReadyPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Running
     }
 
     "report its status as Pending when all streamlet pods are running and then one pod is deleted" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-      status = status.updatePod("s2", mkRunningReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningReadyPod("s2"))
       val pod = mkRunningReadyPod("s3")
-      status = status.updatePod("s3", pod)
+      status = StatusUtils.updatePod(status, "s3", pod)
       status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-      status = status.deletePod("s3", pod)
+      status = StatusUtils.deletePod(status, "s3", pod)
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Running when all streamlet pods are running, after delete and new running pod" in {
       var status = mkTestStatus()
-      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-      status = status.updatePod("s2", mkRunningReadyPod("s2"))
+      status = StatusUtils.updatePod(status, "s1", mkRunningReadyPod("s1"))
+      status = StatusUtils.updatePod(status, "s2", mkRunningReadyPod("s2"))
       val pod = mkRunningReadyPod("s3")
-      status = status.updatePod("s3", pod)
+      status = StatusUtils.updatePod(status, "s3", pod)
       status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-      status = status.deletePod("s3", pod)
+      status = StatusUtils.deletePod(status, "s3", pod)
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-      status = status.updatePod("s3", mkRunningReadyPod("s3"))
+      status = StatusUtils.updatePod(status, "s3", mkRunningReadyPod("s3"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Running
     }
 
     "report its status as Running when all streamlet pods are running and ready in a mixed app" in {
       var status = mkTestStatusMixedApp()
-      status = status.updatePod(
-        "ingress",
-        mkRunningReadyPod("ingress")
-      )
+      status = StatusUtils.updatePod(status, "ingress", mkRunningReadyPod("ingress"))
       status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
       (1 to SparkRunner.DefaultNrOfExecutorInstances + 1).foreach { _ =>
-        status = status.updatePod(
-          "spark-egress",
-          mkRunningReadyPod("spark-egress")
-        )
+        status = StatusUtils.updatePod(status, "spark-egress", mkRunningReadyPod("spark-egress"))
         status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
       }
 
       (1 to FlinkRunner.DefaultReplicas + 1).foreach { _ =>
-        status = status.updatePod(
-          "flink-egress",
-          mkRunningReadyPod("flink-egress")
-        )
+        status = StatusUtils.updatePod(status, "flink-egress", mkRunningReadyPod("flink-egress"))
       }
       status.aggregatedStatus mustBe CloudflowApplication.Status.Running
     }
@@ -243,7 +235,7 @@ class CloudflowApplicationSpec
       .value
 
     val newApp = mkApp(verifiedBlueprint)
-    CloudflowApplication.Status(newApp)
+    StatusUtils.makeStatus(newApp)
   }
 
   def mkTestStatusMixedApp() = {
@@ -267,7 +259,7 @@ class CloudflowApplicationSpec
       .value
 
     val newApp = mkApp(verifiedBlueprint)
-    CloudflowApplication.Status(newApp)
+    StatusUtils.makeStatus(newApp)
   }
 
   def mkApp(verifiedBlueprint: VerifiedBlueprint) =

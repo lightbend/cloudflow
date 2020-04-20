@@ -19,6 +19,7 @@ package action
 
 import scala.collection.immutable._
 import skuber._
+import cloudflow.blueprint.deployment.CloudflowApplication
 
 /**
  * Creates sequences of resource [[Action]]s deployment and undeployment of applications.
@@ -52,8 +53,8 @@ object Actions {
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
       newApp.status.flatMap { st =>
-        val newStatus = st.updateApp(newApp)
-        if (newStatus != st) Some(newStatus.toAction(newApp))
+        val newStatus = StatusUtils.updateApp(st, newApp)
+        if (newStatus != st) Some(StatusUtils.toAction(newStatus, newApp))
         else None
       }.toList ++
       EventActions.deployEvents(newApp, currentApp, namespace, cause)

@@ -274,6 +274,7 @@ lazy val blueprint =
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             SprayJson,
+            Skuber,
             Config,
             Logback % Test,
             Avro4sTest,

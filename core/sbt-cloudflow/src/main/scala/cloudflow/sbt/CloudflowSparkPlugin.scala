@@ -28,10 +28,9 @@ import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowSparkPlugin extends AutoPlugin {
-  final val SparkVersion     = "2.4.5"
-  final val CloudflowVersion = "1.3.1-SNAPSHOT"
+  final val SparkVersion = "2.4.5"
   final val CloudflowSparkDockerBaseImage =
-    s"lightbend/spark:$CloudflowVersion-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+    s"lightbend/spark:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -46,7 +45,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets)
+          buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
         }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
@@ -72,6 +71,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
+      streamletDescriptorsInProject.value.foreach(println)
 
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)

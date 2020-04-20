@@ -20,7 +20,8 @@ import java.time.ZonedDateTime
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
 import cloudflow.operator.runner.{ AkkaRunner, FlinkRunner, SparkRunner }
-import cloudflow.operator.{ CloudflowApplication, CloudflowLabels, DeploymentContext }
+import cloudflow.operator.{ CloudflowLabels, DeploymentContext }
+import cloudflow.blueprint.deployment.CloudflowApplication
 import skuber.json.format.eventFmt
 import skuber.{ Event, ObjectEditor, ObjectMeta, ObjectResource }
 

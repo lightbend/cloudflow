@@ -23,6 +23,7 @@ import skuber._
 import skuber.json.format._
 
 import cloudflow.operator.runner._
+import cloudflow.blueprint.deployment.CloudflowApplication
 
 /**
  * Creates a sequence of resource actions for the runner changes

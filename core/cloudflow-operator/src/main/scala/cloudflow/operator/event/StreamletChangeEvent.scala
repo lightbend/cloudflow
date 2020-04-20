@@ -28,6 +28,7 @@ import skuber.api.client._
 import cloudflow.operator.action._
 import cloudflow.operator.runner._
 import cloudflow.operator.runner.SparkResource.SpecPatch
+import cloudflow.blueprint.deployment.CloudflowApplication
 
 /**
  * Indicates that a streamlet has changed.
@@ -111,23 +112,23 @@ object StreamletChangeEvent {
 
             val appStatus = currentStatuses
               .get(appId)
-              .map(_.updateApp(app))
-              .getOrElse(CloudflowApplication.Status(app.spec))
+              .map(StatusUtils.updateApp(_, app))
+              .getOrElse(StatusUtils.makeStatus(app.spec))
 
             streamletChangeEvent match {
               case StreamletChangeEvent(appId, streamletName, _, watchEvent) ⇒
                 watchEvent match {
                   case WatchEvent(EventType.ADDED | EventType.MODIFIED, pod: Pod) ⇒
-                    currentStatuses = currentStatuses + (appId -> appStatus.updatePod(streamletName, pod))
+                    currentStatuses = currentStatuses + (appId -> StatusUtils.updatePod(appStatus, streamletName, pod))
                   case WatchEvent(EventType.DELETED, pod: Pod) ⇒
-                    currentStatuses = currentStatuses + (appId -> appStatus.deletePod(streamletName, pod))
+                    currentStatuses = currentStatuses + (appId -> StatusUtils.deletePod(appStatus, streamletName, pod))
                   case _ ⇒
                     system.log.warning(
                       s"Detected an unexpected change in $appId ${changeInfo(watchEvent)} in streamlet ${streamletName} (only expecting Pod changes): \n ${watchEvent}"
                     )
                 }
             }
-            currentStatuses.get(appId).map(_.toAction(app)).toList
+            currentStatuses.get(appId).map(StatusUtils.toAction(_, app)).toList
           case (None, streamletChangeEvent) ⇒ // app could not be found, remove status
             currentStatuses = currentStatuses - streamletChangeEvent.appId
             List()

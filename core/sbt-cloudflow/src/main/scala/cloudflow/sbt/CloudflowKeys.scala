@@ -79,4 +79,6 @@ trait CloudflowTaskKeys {
 
   private[sbt] val agentPaths                    = taskKey[Map[String, String]]("The paths to Java Agents added to Cloudflow application.")
   private[sbt] val streamletDescriptorsInProject = taskKey[Iterable[StreamletDescriptor]]("The streamlet descriptors")
+  private[sbt] val imageNamesByProject           = taskKey[Map[String, DockerImageName]]("The list of all image names")
+  private[sbt] val streamletClassNamesByProject  = taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project")
 }

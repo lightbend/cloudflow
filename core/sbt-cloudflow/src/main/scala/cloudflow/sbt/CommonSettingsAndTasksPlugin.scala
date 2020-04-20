@@ -70,6 +70,16 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
               .toMap
           }
         }.value,
+    imageNamesByProject := Def.taskDyn {
+          val buildNumber = cloudflowBuildNumber.value.buildNumber
+          Def.task {
+            buildStructure.value.allProjectRefs
+              .map(_.project)
+              .foldLeft(Map.empty[String, DockerImageName]) { (a, e) =>
+                a + (e.toLowerCase -> DockerImageName(e.toLowerCase, buildNumber))
+              }
+          }
+        }.value,
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
     libraryDependencies += "com.twitter" %% "bijection-avro" % "0.9.6",

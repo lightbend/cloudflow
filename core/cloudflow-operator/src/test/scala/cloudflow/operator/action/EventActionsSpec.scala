@@ -19,7 +19,8 @@ package cloudflow.operator.action
 import org.scalatest._
 import cloudflow.blueprint._
 import BlueprintBuilder._
-import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
+import cloudflow.operator.{ CloudflowApplicationSpecBuilder, TestDeploymentContext }
+import cloudflow.blueprint.deployment.CloudflowApplication
 
 class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 

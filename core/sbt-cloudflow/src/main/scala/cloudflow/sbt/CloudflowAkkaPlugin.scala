@@ -25,8 +25,12 @@ import spray.json._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import CloudflowBasePlugin._
+import java.io.File
 
 object CloudflowAkkaPlugin extends AutoPlugin {
+  final val AkkaVersion = "2.5.29"
+  final val AkkaDockerBaseImage =
+    s"lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -66,14 +70,12 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
 
       new Dockerfile {
-        from("adoptopenjdk/openjdk8")
-        runRaw(
-          "groupadd -r cloudflow -g 185 && useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow -s /sbin/nologin -c CloudflowUser cloudflow"
-        )
+        from(AkkaDockerBaseImage)
         user(UserInImage)
 
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+
         label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }

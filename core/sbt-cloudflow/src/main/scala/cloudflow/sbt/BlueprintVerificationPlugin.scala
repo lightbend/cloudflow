@@ -52,6 +52,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
           val dockerImageName    = cloudflowDockerImageName.value
           val bpFile             = blueprintFile.value
+          println(s"streamlets by project: ${streamletClassNamesByProject.value}")
           verifiedBlueprints(bpFile, detectedStreamlets, dockerImageName)
         }.value,
     verifiedBlueprintFile := Def.taskDyn {
@@ -88,7 +89,6 @@ object BlueprintVerificationPlugin extends AutoPlugin {
 
     val detectedStreamletDescriptors = detectedStreamlets.map {
       case (_, configDescriptor) ⇒
-        // some ducktape for now
         val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
         dockerImageName
           .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
