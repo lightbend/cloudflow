@@ -67,10 +67,10 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       // pack all streamlet-descriptors into a Json array
-      val streamletDescriptorsJson =
-        streamletDescriptorsInProject.value.toJson
+      // val streamletDescriptorsJson =
+      // streamletDescriptorsInProject.value.toJson
 
-      val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
+      // val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
 
       new Dockerfile {
         from(CloudflowFlinkDockerBaseImage)
@@ -79,7 +79,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
-        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
+        // label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }
   )

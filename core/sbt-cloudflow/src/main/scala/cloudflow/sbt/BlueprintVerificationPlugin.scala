@@ -27,6 +27,7 @@ import cloudflow.sbt.CloudflowKeys.{ agentPaths, blueprintFile, _ }
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.StreamletDescriptorFormat._
+import java.nio.charset.StandardCharsets._
 
 object BlueprintVerificationPlugin extends AutoPlugin {
   override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin
@@ -52,7 +53,6 @@ object BlueprintVerificationPlugin extends AutoPlugin {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
           val dockerImageName    = cloudflowDockerImageName.value
           val bpFile             = blueprintFile.value
-          println(s"streamlets by project: ${streamletClassNamesByProject.value}")
           verifiedBlueprints(bpFile, detectedStreamlets, dockerImageName)
         }.value,
     verifiedBlueprintFile := Def.taskDyn {
@@ -87,6 +87,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       dockerImageName: Option[DockerImageName]
   ): Def.Initialize[Task[Either[BlueprintVerificationFailed, BlueprintVerified]]] = Def.task {
 
+    /*
     val detectedStreamletDescriptors = detectedStreamlets.map {
       case (_, configDescriptor) ⇒
         val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
@@ -97,6 +98,17 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     }
 
     val streamletDescriptors = detectedStreamletDescriptors
+     */
+
+    val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
+    val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) { (a, e) =>
+      val image = e._2
+      val file  = new File(TEMP_DIRECTORY, image.asTaggedName)
+      if (file.exists()) {
+        val json = new String(IO.readBytes(file), UTF_8)
+        a ++ json.parseJson.convertTo[Map[String, StreamletDescriptor]].values
+      } else a
+    }
 
     //TODO cleanup: separate into a 'BlueprintConfigFormat.parse'
     bpFile.allPaths

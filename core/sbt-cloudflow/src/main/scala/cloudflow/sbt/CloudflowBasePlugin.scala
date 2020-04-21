@@ -19,7 +19,7 @@ package cloudflow.sbt
 import java.nio.charset.StandardCharsets._
 import java.util.Base64
 import java.util.zip.Deflater
-import java.io.ByteArrayOutputStream
+import java.io._
 
 import com.typesafe.config._
 
@@ -49,6 +49,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
   final val CloudflowVersion                 = "1.4.0"
+  final val TEMP_DIRECTORY                   = new File(System.getProperty("java.io.tmpdir"))
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -74,7 +75,8 @@ object CloudflowBasePlugin extends AutoPlugin {
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
+          val file               = new File(TEMP_DIRECTORY, cloudflowDockerImageName.value.get.asTaggedName)
+          buildStreamletDescriptors(file, detectedStreamlets, cloudflowDockerImageName.value)
         }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
@@ -175,18 +177,19 @@ object CloudflowBasePlugin extends AutoPlugin {
   }
 
   private[sbt] def buildStreamletDescriptors(
+      file: File,
       detectedStreamlets: Map[String, Config],
       dockerImageName: Option[DockerImageName]
-  ): Def.Initialize[Task[Iterable[StreamletDescriptor]]] =
+  ): Def.Initialize[Task[Map[String, StreamletDescriptor]]] =
     Def.task {
-      val detectedStreamletDescriptors = detectedStreamlets.map {
-        case (_, configDescriptor) ⇒
-          val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-          dockerImageName
-            .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
-            .getOrElse(jsonString.parseJson.addField("image", "placeholder"))
-            .convertTo[cloudflow.blueprint.StreamletDescriptor]
+      val detectedStreamletDescriptors = detectedStreamlets.mapValues { configDescriptor =>
+        val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
+        dockerImageName
+          .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
+          .getOrElse(jsonString.parseJson.addField("image", "placeholder"))
+          .convertTo[cloudflow.blueprint.StreamletDescriptor]
       }
+      IO.write(file, detectedStreamletDescriptors.toJson.compactPrint)
       detectedStreamletDescriptors
     }
 }

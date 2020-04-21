@@ -43,10 +43,10 @@ object CloudflowSparkPlugin extends AutoPlugin {
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
-    streamletDescriptorsInProject := Def.taskDyn {
-          val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
-        }.value,
+    // streamletDescriptorsInProject := Def.taskDyn {
+    // val detectedStreamlets = cloudflowStreamletDescriptors.value
+    // buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
+    // }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
           removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
@@ -71,7 +71,6 @@ object CloudflowSparkPlugin extends AutoPlugin {
     dockerfile in docker := {
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
-      streamletDescriptorsInProject.value.foreach(println)
 
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)

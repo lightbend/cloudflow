@@ -40,7 +40,7 @@ object CloudflowApplicationPlugin extends AutoPlugin {
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
-    CommonSettingsAndTasksPlugin && BlueprintVerificationPlugin && ImagePlugin
+    CommonSettingsAndTasksPlugin && BlueprintVerificationPlugin && CRGenerationPlugin && ImagePlugin
 
   override def buildSettings = Seq(
     cloudflowDockerRegistry := None,
