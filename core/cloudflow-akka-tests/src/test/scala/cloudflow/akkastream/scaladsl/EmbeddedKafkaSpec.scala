@@ -19,7 +19,6 @@ package cloudflow.akkastream.util.scaladsl
 import akka.actor.ActorSystem
 import akka.kafka.testkit.internal.TestFrameworkInterface
 import akka.kafka.testkit.scaladsl._
-import akka.stream.scaladsl._
 
 import org.scalatest._
 import org.scalatest.Suite

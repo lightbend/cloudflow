@@ -67,7 +67,8 @@ final class AkkaStreamletContextImpl(
 
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
 
-  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] = {
+  // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
+  private[akkastream] def _sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
     val gId           = savepointPath.groupId(streamletRef, inlet)
@@ -90,6 +91,13 @@ final class AkkaStreamletContextImpl(
       .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
       .map { case (record, _) ⇒ record }
   }
+
+  override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
+    _sourceWithContext[T](inlet)
+
+  @deprecated("Use sourceWithCommittableContext", "1.3.4")
+  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+    _sourceWithContext[T](inlet)
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)

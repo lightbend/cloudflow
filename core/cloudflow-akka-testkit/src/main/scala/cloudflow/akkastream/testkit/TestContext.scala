@@ -51,7 +51,13 @@ private[testkit] case class TestContext(
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
 
-  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+  @deprecated("Use `committableSink` instead.", "1.3.4")
+  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+    sourceWithContext(inlet)
+
+  override def sourceWithCommittableContext[T](inlet: CodecInlet[T]) = sourceWithContext(inlet)
+
+  private def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] =
     inletTaps
       .find(_.portName == inlet.name)
       .map(
@@ -103,7 +109,7 @@ private[testkit] case class TestContext(
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
-    sourceWithOffsetContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
+    sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒
     (el, TestCommittableOffset())
   }

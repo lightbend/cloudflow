@@ -110,18 +110,36 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * `sinkWithOffsetContext(outlet: CodecOutlet[T])` should be used if you want to commit the offset positions after records have been written to the specified `outlet`.
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
+  @deprecated("Use sourceWithCommittableContext", "1.3.4")
   def sourceWithOffsetContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithOffsetContext[T] = context.sourceWithOffsetContext(inlet)
+
+  /**
+   * This source emits `T` records together with the committable context, thus makes it possible
+   * to commit offset positions to Kafka (as received through the `inlet`).
+   * This is useful when "at-least once delivery" is desired, as each message will likely be
+   * delivered one time, but in failure cases, they can be duplicated.
+   *
+   * It is intended to be used with `committableSink(outlet: CodecOutlet[T])`,
+   * which commits the offset positions that accompany the records that are read from this source
+   * after the records have been written to the specified `outlet`.
+   *
+   * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   */
+  def sourceWithCommittableContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithCommittableContext[T] =
+    context.sourceWithCommittableContext(inlet)
 
   /**
    * Java API
    */
+  @deprecated("Use getSourceWithCommittableContext", "1.3.4")
   def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): javadsl.SourceWithOffsetContext[T] = sourceWithOffsetContext(inlet).asJava
 
   /**
    * Java API
+   * @see [[sourceWithCommittableContext]]
    */
-  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
-    getSourceWithOffsetContext(inlet)
+  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): javadsl.SourceWithCommittableContext[T] =
+    context.sourceWithCommittableContext(inlet).asJava
 
   /**
    * The `plainSource` emits `T` records (as received through the `inlet`).

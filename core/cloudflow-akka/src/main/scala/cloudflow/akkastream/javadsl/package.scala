@@ -23,25 +23,19 @@ import akka.kafka.ConsumerMessage._
 
 package object javadsl {
 
-  /**
-   * Java API
-   */
+  type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
+
+  type SourceWithCommittableContext[T] = SourceWithContext[T, Committable, _]
+
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   type FlowWithOffsetContext[In, Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
 
-  type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
-
-  /**
-   * Java API
-   */
-  type SourceWithOffsetContext[+T] = SourceWithContext[T, CommittableOffset, _]
+  @deprecated("Use `SourceWithCommittableContext` instead.", "1.3.4")
+  type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
 }
 
 package javadsl {
 
-  /**
-   * Java API
-   */
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   object FlowWithOffsetContext {
 
@@ -52,9 +46,6 @@ package javadsl {
     def create[In]() = FlowWithContext.create[In, CommittableOffset]()
   }
 
-  /**
-   * Java API
-   */
   object FlowWithCommittableContext {
 
     /**

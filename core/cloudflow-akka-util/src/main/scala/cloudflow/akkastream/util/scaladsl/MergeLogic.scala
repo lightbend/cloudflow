@@ -67,7 +67,7 @@ object Merger {
   def source[T](
       inlets: Seq[CodecInlet[T]]
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
-    Source.fromGraph(graph(inlets.map(context.sourceWithOffsetContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map {
+    Source.fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map {
       case (t, _) ⇒ t
     }
   def source[T](
@@ -75,7 +75,7 @@ object Merger {
       inlets: CodecInlet[T]*
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
     Source
-      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithOffsetContext(_))))
+      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_))))
       .asSourceWithContext { case (_, offset) ⇒ offset }
       .map { case (t, _) ⇒ t }
 }
@@ -98,7 +98,7 @@ class MergeLogic[T](
    */
   override def runnableGraph() = {
 
-    val inlets = inletPorts.map(inlet ⇒ sourceWithOffsetContext[T](inlet)).toList
+    val inlets = inletPorts.map(inlet ⇒ sourceWithCommittableContext[T](inlet)).toList
     val out    = committableSink[T](outlet)
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒

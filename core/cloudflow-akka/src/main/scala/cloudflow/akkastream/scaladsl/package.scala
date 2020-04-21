@@ -18,13 +18,29 @@ package cloudflow.akkastream
 
 import akka.NotUsed
 import akka.stream.scaladsl._
-import akka.kafka.ConsumerMessage._
+import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 
 package object scaladsl {
-  @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-  type FlowWithOffsetContext[-In, +Out]      = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
+
   type FlowWithCommittableContext[-In, +Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
 
+  type SourceWithCommittableContext[+T] = SourceWithContext[T, Committable, _]
+
+  object FlowWithCommittableContext {
+
+    /**
+     * Creates a [[akka.stream.scaladsl.FlowWithContext FlowWithContext]] that makes it possible for Cloudflow to commit reads when
+     * `StreamletLogic.atLeastOnceSource` and `StreamletLogic.atLeastOnceSink` is used.
+     */
+    def apply[In]() = FlowWithContext[In, Committable]
+  }
+
+  /** Deprecated API **/
+
+  @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
+  type FlowWithOffsetContext[-In, +Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
+
+  @deprecated("Use `SourceWithCommittableContext` instead.", "1.3.4")
   type SourceWithOffsetContext[+T] = SourceWithContext[T, CommittableOffset, _]
 
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
@@ -38,12 +54,4 @@ package object scaladsl {
     def apply[In]() = FlowWithContext[In, CommittableOffset]
   }
 
-  object FlowWithCommittableContext {
-
-    /**
-     * Creates a [[akka.stream.scaladsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads when
-     * `StreamletLogic.atLeastOnceSource` and `StreamletLogic.atLeastOnceSink` is used.
-     */
-    def apply[In]() = FlowWithContext[In, Committable]
-  }
 }
