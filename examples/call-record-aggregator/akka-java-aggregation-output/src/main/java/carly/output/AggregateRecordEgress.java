@@ -39,15 +39,15 @@ public class AggregateRecordEgress extends AkkaStreamlet {
     return new RunnableGraphStreamletLogic(getContext()) {
       @Override
       public RunnableGraph<?> createRunnableGraph() {
-        return getSourceWithOffsetContext(in)
+        return getSourceWithCommittableContext(in)
           .via(
-            FlowWithOffsetContext.<AggregatedCallStats>create()
+            FlowWithCommittableContext.<AggregatedCallStats>create()
               .map(metric -> {
                 System.out.println(metric);
                 return metric;
               })
           )
-          .to(getSinkWithOffsetContext());
+          .to(getCommittableSink());
       }
     };
   }

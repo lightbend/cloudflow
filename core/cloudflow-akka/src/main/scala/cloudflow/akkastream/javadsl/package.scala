@@ -24,7 +24,6 @@ import akka.kafka.ConsumerMessage._
 package object javadsl {
 
   type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
-
   type SourceWithCommittableContext[T] = SourceWithContext[T, Committable, _]
 
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
