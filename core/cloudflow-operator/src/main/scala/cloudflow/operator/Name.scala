@@ -111,7 +111,7 @@ object Name {
     makeDNS1123Compatible(s"configmap-${fixDots(streamletDeploymentName)}")
 
   def ofLabelValue(name: String) =
-    makeDNS1123Compatible(name)
+    truncateTo63Characters(name)
 
   def ofVolume(name: String) =
     truncateTo63Characters(name)
