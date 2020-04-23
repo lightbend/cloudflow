@@ -31,7 +31,6 @@ import cloudflow.akkastream.testkit.javadsl.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 
-// import org.scalatest.junit.JUnitSuite;
 import org.scalatestplus.junit.JUnitSuite;
 import org.junit.*;
 import scala.concurrent.duration.Duration;

@@ -21,18 +21,6 @@ import akka.stream.javadsl._
 
 import akka.kafka.ConsumerMessage._
 
-package object javadsl {
-
-  //type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
-  //type SourceWithCommittableContext[T] = SourceWithContext[T, Committable, _]
-
-  //@deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-  //type FlowWithOffsetContext[In, Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
-
-  //@deprecated("Use `SourceWithCommittableContext` instead.", "1.3.4")
-  //type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
-}
-
 package javadsl {
 
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
