@@ -35,6 +35,6 @@ class SensorDataToMetrics extends AkkaStreamlet {
         )
       }
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
+    def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
   }
 }

@@ -63,7 +63,7 @@ class ValidMetricLogger extends AkkaStreamlet {
         }
 
     def runnableGraph =
-      sourceWithOffsetContext(inlet).via(flow).to(committableSink)
+      sourceWithCommittableContext(inlet).via(flow).to(committableSink)
   }
 }
 //end::all[]
