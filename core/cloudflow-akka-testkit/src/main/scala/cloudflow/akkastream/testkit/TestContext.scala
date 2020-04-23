@@ -51,7 +51,7 @@ private[testkit] case class TestContext(
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
 
-  @deprecated("Use `committableSink` instead.", "1.3.4")
+  @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext(inlet)
 
