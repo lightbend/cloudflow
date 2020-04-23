@@ -58,7 +58,7 @@ class FarePerRideLogger extends AkkaStreamlet {
         }
 
     def runnableGraph =
-      sourceWithOffsetContext(inlet)
+      sourceWithCommittableContext(inlet)
         .via(flow)
         .to(committableSink)
   }
