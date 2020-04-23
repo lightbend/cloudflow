@@ -17,7 +17,7 @@
 package carly.output;
 
 import akka.NotUsed;
-import akka.kafka.ConsumerMessage.CommittableOffset;
+import akka.kafka.ConsumerMessage.Committable;
 import akka.stream.javadsl.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
@@ -37,15 +37,15 @@ public class AggregateRecordEgress extends AkkaStreamlet {
   @Override
   public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
+
       @Override
       public RunnableGraph<?> createRunnableGraph() {
         return getSourceWithCommittableContext(in)
-          .via(
-            FlowWithCommittableContext.<AggregatedCallStats>create()
-              .map(metric -> {
-                System.out.println(metric);
-                return metric;
-              })
+          .via(FlowWithCommittableContext.<AggregatedCallStats>create()
+                  .map(metric -> {
+                    System.out.println(metric);
+                    return metric;
+                  })
           )
           .to(getCommittableSink());
       }

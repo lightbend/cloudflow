@@ -38,7 +38,7 @@ class ConsoleOutput extends AkkaStreamlet {
     // check the Streamlet API of your chosen implementation to determine the entry point
     // corresponding to your chosen backend.
     def runnableGraph =
-      sourceWithOffsetContext(inlet).via(flow).to(committableSink)
+      sourceWithCommittableContext(inlet).via(flow).to(committableSink)
 
     // flow is a help function to make the structure more readable
     val flow = FlowWithCommittableContext[Data]
