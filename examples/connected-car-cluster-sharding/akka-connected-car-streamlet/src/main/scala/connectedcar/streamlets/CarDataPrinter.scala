@@ -17,6 +17,6 @@ object CarDataPrinter extends AkkaStreamlet {
       }
 
     def runnableGraph =
-      sourceWithOffsetContext(in).via(flow).to(committableSink)
+      sourceWithCommittableContext(in).via(flow).to(committableSink)
   }
 }
