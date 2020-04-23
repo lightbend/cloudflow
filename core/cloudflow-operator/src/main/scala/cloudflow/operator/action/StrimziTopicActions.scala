@@ -31,7 +31,7 @@ import cloudflow.blueprint.deployment._
  * Creates a sequence of resource actions for the savepoint changes
  * between a current application and a new application.
  */
-object TopicActions {
+object StrimziTopicActions {
   def apply(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
