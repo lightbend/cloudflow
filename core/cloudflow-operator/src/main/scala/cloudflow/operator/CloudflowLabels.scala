@@ -21,15 +21,16 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
   import CloudflowLabels._
 
   val baseLabels: Map[String, String] = Map(
-    PartOf    -> partOf,
+    PartOf    -> cloudflow.operator.Name.ofLabelValue(partOf),
     ManagedBy -> CloudflowLabels.ManagedByCloudflow,
-    Version   -> appVersion
+    Version   -> cloudflow.operator.Name.ofLabelValue(appVersion)
   )
 
-  def apply(name: String): Map[String, String] = baseLabels + (Name -> name)
+  def apply(name: String): Map[String, String] =
+    baseLabels + (Name -> cloudflow.operator.Name.ofLabelValue(name))
 
   def withComponent(name: String, component: String): Map[String, String] =
-    this(name) + (CloudflowLabels.Component -> component)
+    this(name) + (CloudflowLabels.Component -> cloudflow.operator.Name.ofLabelValue(component))
 }
 
 object CloudflowLabels {

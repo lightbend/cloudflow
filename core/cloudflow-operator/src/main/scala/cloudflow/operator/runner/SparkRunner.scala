@@ -115,9 +115,9 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     val secrets = Seq(NamePathSecretType(deployment.secretName, Runner.SecretMountPath))
 
     val name = Name.ofSparkApplication(deployment.name)
-    val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.0") ++
+    val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
 
     import ctx.sparkRunnerSettings._
     val cores = driverSettings.cores.map(_.amount.intValue).getOrElse(1)

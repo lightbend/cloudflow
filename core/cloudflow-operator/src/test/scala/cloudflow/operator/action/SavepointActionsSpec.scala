@@ -169,9 +169,9 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
     resource.spec.partitions mustBe ctx.kafkaContext.partitionsPerTopic
     resource.spec.replicas mustBe ctx.kafkaContext.replicationFactor
     resource.apiVersion mustBe "kafka.strimzi.io/v1beta1"
-    resource.metadata.labels("strimzi.io/cluster") mustBe ctx.kafkaContext.strimziClusterName
-    resource.metadata.labels("app.kubernetes.io/name") mustBe savepoint.name
-    resource.metadata.labels("app.kubernetes.io/part-of") mustBe appId
+    resource.metadata.labels("strimzi.io/cluster") mustBe Name.ofLabelValue(ctx.kafkaContext.strimziClusterName)
+    resource.metadata.labels("app.kubernetes.io/name") mustBe Name.ofLabelValue(savepoint.name)
+    resource.metadata.labels("app.kubernetes.io/part-of") mustBe Name.ofLabelValue(appId)
     resource.metadata.labels("app.kubernetes.io/managed-by") mustBe "cloudflow"
     resource.kind mustBe "KafkaTopic"
   }

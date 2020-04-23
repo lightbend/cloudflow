@@ -271,7 +271,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     val labels = deployment.spec.value.template.metadata.labels
     labels must contain(CloudflowLabels.Name      -> Name.ofPod(deployment.name))
     labels must contain(CloudflowLabels.Component -> CloudflowLabels.StreamletComponent.value)
-    labels must contain(CloudflowLabels.PartOf    -> appId)
+    labels must contain(CloudflowLabels.PartOf    -> Name.ofLabelValue(appId))
     labels must contain(CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow)
 
     val container = containers.head
