@@ -18,7 +18,7 @@ object AtLeastOnceReportPrinater extends AkkaStreamlet {
   def createLogic = new RunnableGraphStreamletLogic() {
     def format(report: Report) = s"${report.name}\n\n${report.description}"
     def runnableGraph =
-      sourceWithOffsetContext(inlet)
+      sourceWithCommittableContext(inlet)
         .map { report ⇒
           println(format(report))
           report
