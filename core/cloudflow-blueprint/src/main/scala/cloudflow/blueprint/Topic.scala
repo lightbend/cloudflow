@@ -34,7 +34,6 @@ final case class Topic(
 ) {
 
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): Topic = {
-    //TODO KafkaConfig, put bootstrapServers in if defined
     val patternErrors       = connections.flatMap(connection => VerifiedPortPath(connection).left.toOption)
     val verifiedPorts       = connections.flatMap(connection => VerifiedPortPath(connection).toOption)
     val verifiedPortsResult = VerifiedPort.collectPorts(verifiedPorts, verifiedStreamlets)
