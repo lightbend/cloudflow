@@ -35,10 +35,12 @@ import cloudflow.streamlets._
  */
 trait AkkaStreamletContext extends StreamletContext {
 
-  private[akkastream] def sourceWithCommittableContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithCommittableContext[T]
+  private[akkastream] def sourceWithCommittableContext[T](
+      inlet: CodecInlet[T]
+  ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
-  private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithOffsetContext[T]
+  private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
 
   private[akkastream] def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed]
   private[akkastream] def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed]

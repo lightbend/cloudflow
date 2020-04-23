@@ -32,7 +32,7 @@ package object scaladsl {
      * Creates a [[akka.stream.scaladsl.FlowWithContext FlowWithContext]] that makes it possible for Cloudflow to commit reads when
      * `StreamletLogic.atLeastOnceSource` and `StreamletLogic.atLeastOnceSink` is used.
      */
-    def apply[In]() = FlowWithContext[In, Committable]
+    def apply[In](): FlowWithCommittableContext[In, In] = FlowWithContext[In, Committable]
   }
 
   /** Deprecated API **/

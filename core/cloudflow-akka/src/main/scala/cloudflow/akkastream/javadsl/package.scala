@@ -23,14 +23,14 @@ import akka.kafka.ConsumerMessage._
 
 package object javadsl {
 
-  type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
-  type SourceWithCommittableContext[T] = SourceWithContext[T, Committable, _]
+  //type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
+  //type SourceWithCommittableContext[T] = SourceWithContext[T, Committable, _]
 
-  @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-  type FlowWithOffsetContext[In, Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
+  //@deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
+  //type FlowWithOffsetContext[In, Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
 
-  @deprecated("Use `SourceWithCommittableContext` instead.", "1.3.4")
-  type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
+  //@deprecated("Use `SourceWithCommittableContext` instead.", "1.3.4")
+  //type SourceWithOffsetContext[T] = SourceWithContext[T, CommittableOffset, _]
 }
 
 package javadsl {
@@ -42,7 +42,8 @@ package javadsl {
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */
     @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-    def create[In]() = FlowWithContext.create[In, CommittableOffset]()
+    def create[In](): FlowWithContext[In, CommittableOffset, In, CommittableOffset, NotUsed] =
+      FlowWithContext.create[In, CommittableOffset]()
   }
 
   object FlowWithCommittableContext {
@@ -50,6 +51,7 @@ package javadsl {
     /**
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */
-    def create[In]() = FlowWithContext.create[In, Committable]()
+    def create[In](): FlowWithContext[In, Committable, In, Committable, NotUsed] =
+      FlowWithContext.create[In, Committable]()
   }
 }

@@ -29,6 +29,7 @@ import akka.kafka.ConsumerMessage._
 import com.typesafe.config.Config
 
 import cloudflow.streamlets._
+import cloudflow.akkastream.scaladsl._
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
@@ -111,7 +112,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
-  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithOffsetContext[T] = context.sourceWithOffsetContext(inlet)
+  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): SourceWithOffsetContext[T] = context.sourceWithOffsetContext(inlet)
 
   /**
    * This source emits `T` records together with the committable context, thus makes it possible
@@ -125,20 +126,21 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    *
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    */
-  def sourceWithCommittableContext[T](inlet: CodecInlet[T]): scaladsl.SourceWithCommittableContext[T] =
+  def sourceWithCommittableContext[T](inlet: CodecInlet[T]): SourceWithCommittableContext[T] =
     context.sourceWithCommittableContext(inlet)
 
   /**
    * Java API
    */
   @deprecated("Use getSourceWithCommittableContext", "1.3.4")
-  def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): javadsl.SourceWithOffsetContext[T] = sourceWithOffsetContext(inlet).asJava
+  def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, CommittableOffset, _] =
+    sourceWithOffsetContext(inlet).asJava
 
   /**
    * Java API
    * @see [[sourceWithCommittableContext]]
    */
-  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): javadsl.SourceWithCommittableContext[T] =
+  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.sourceWithCommittableContext(inlet).asJava
 
   /**
