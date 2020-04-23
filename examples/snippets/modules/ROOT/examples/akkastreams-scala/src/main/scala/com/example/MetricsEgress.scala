@@ -5,8 +5,6 @@ import cloudflow.akkastream._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream.scaladsl._
 
-import akka.kafka.scaladsl.Committer
-
 import cloudflow.akkastreamsdoc.Data
 
 object MetricsEgress extends AkkaStreamlet {
@@ -15,10 +13,10 @@ object MetricsEgress extends AkkaStreamlet {
 
   final override def createLogic = new RunnableGraphStreamletLogic {
     override final def runnableGraph =
-      sourceWithOffsetContext(in)
+      sourceWithCommittableContext(in)
         .map { i ⇒
           println(s"Int: ${i.value}"); i
         }
-        .to(Committer.sinkWithOffsetContext(defaultCommitterSettings))
+        .to(committableSink(defaultCommitterSettings))
   }
 }

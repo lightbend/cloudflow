@@ -15,7 +15,7 @@ class DataSplitter extends AkkaStreamlet {
   val shape   = StreamletShape(in).withOutlets(invalid, valid)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).to(Splitter.sink(flow, invalid, valid))
+    def runnableGraph = sourceWithCommittableContext(in).to(Splitter.sink(flow, invalid, valid))
     def flow =
       FlowWithCommittableContext[Data]
         .map { data ⇒
