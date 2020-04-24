@@ -24,7 +24,7 @@ case class CloudflowCR(
     apiVersion: String,
     kind: String,
     metadata: Metadata,
-    descriptor: ApplicationDescriptor
+    spec: ApplicationDescriptor
 )
 
 object CloudflowCRFormat extends CloudflowCRFormat

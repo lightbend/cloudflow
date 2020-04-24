@@ -160,7 +160,7 @@ type CloudflowApplication struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta `json:"metadata"`
 	Spec              CloudflowApplicationSpec   `json:"spec"`
-	Status            CloudflowApplicationStatus `json:"status"`
+	Status            *CloudflowApplicationStatus `json:"status,omitempty"`
 }
 
 // CloudflowApplicationList is a list of CloudflowApplications

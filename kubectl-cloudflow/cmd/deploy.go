@@ -42,8 +42,8 @@ func init() {
 		Use:   "deploy",
 		Short: "Deploys a Cloudflow application to the cluster.",
 		Long: `Deploys a Cloudflow application to the cluster.
-The arguments to the command consists of a docker image path and optionally one
-or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
+The arguments to the command consists of a full path to a json file containing the 
+application CR and optionally one or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
 a space.
 
 Streamlet volume mounts can be configured using the --volume-mount flag.
@@ -53,25 +53,25 @@ is the name of a Kubernetes Persistent Volume Claim, which needs to be located
 in the same namespace as the Cloudflow application, e.g. the namespace with the
 same name as the application.
 
-  kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name
+  kubectl cloudflow deploy call-record-aggregator-cr.json --volume-mount my-streamlet.mount=pvc-name
 
 It is also possible to specify more than one "volume-mount" parameter.
 
-  kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
+  kubectl cloudflow deploy call-record-aggregator-cr.json --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
 
 You can optionally provide credentials for the docker registry that hosts the
-specified image by using the --username flag in combination with either
+images of the application by using the --username flag in combination with either
 the --password-stdin or the --password flag.
 
 The --password-stdin flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
 One way to provide the password via stdin is to pipe it from a file:
 
-  cat key.json | kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key --password-stdin
+  cat key.json | kubectl cloudflow deploy call-record-aggregator-cr.json --username _json_key --password-stdin
 
 You can also use --password, which is less secure:
 
-  kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key -password "$(cat key.json)"
+  kubectl cloudflow deploy call-record-aggregator-cr.json --username _json_key -password "$(cat key.json)"
 
 If you do not provide a username and password, you will be prompted for them
 the first time you deploy an image from a certain docker registry. The
@@ -81,7 +81,7 @@ the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
 `,
-		Example: `kubectl cloudflow deploy registry.test-cluster.io/cloudflow/sensor-data-scala:292-c183d80 valid-logger.log-level=info valid-logger.msg-prefix=valid`,
+		Example: `kubectl cloudflow deploy call-record-aggregator-cr.json valid-logger.log-level=info valid-logger.msg-prefix=valid`,
 		Args:    validateDeployCmdArgs,
 		Run:     deployOpts.deployImpl,
 	}
@@ -105,8 +105,13 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	bytes := []byte(crString)
 
-	var applicationSpec domain.CloudflowApplicationSpec
-	json.Unmarshal(bytes, &applicationSpec)
+	var cr domain.CloudflowApplication
+	err = json.Unmarshal(bytes, &cr)
+	if err != nil {
+		util.LogAndExit("%s", err.Error())
+	}
+
+	applicationSpec := cr.Spec
 
 	namespace := applicationSpec.AppID
 
@@ -118,6 +123,27 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	k8sClient, k8sErr := k8s.GetClient()
 	if k8sErr != nil {
 		util.LogAndExit("Failed to create new kubernetes client for Cloudflow application `%s`, %s", namespace, k8sErr.Error())
+	}
+
+	client, err := docker.GetClientForAPIVersionWithFallback()
+	if err != nil {
+		util.LogAndExit("Failed to create new docker client (%s)", err.Error())
+	}
+
+	// Get the first available image
+	image := applicationSpec.Deployments[0].Image
+
+	imageReference, err := parseImageReference(image)
+
+	if err != nil {
+		util.LogAndExit("%s", err.Error())
+	}
+
+	dockerRegistryURL := imageReference.registry
+
+	pulledImage, pullError := docker.PullImage(client, image)
+	if pullError != nil {
+		util.LogAndExit("Failed to pull image %s: %s", image, pullError.Error())
 	}
 
 	// Extract volume mounts and update the application spec with the name of the PVC's
