@@ -18,6 +18,7 @@ public class DataMerge extends AkkaStreamlet {
   public StreamletShape shape() {
     return StreamletShape.createWithInlets(inlet1, inlet2).withOutlets(outlet);
   }
+
   public RunnableGraphStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
       public RunnableGraph<?> createRunnableGraph() {

@@ -77,6 +77,7 @@ lazy val akkastream =
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaStream,
@@ -110,6 +111,7 @@ lazy val akkastreamUtil =
           )
     )
     .settings(
+      javacOptions += "-Xlint:deprecation",
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
 
@@ -135,6 +137,7 @@ lazy val akkastreamTestkit =
     .settings(
       (sourceDirectory in AvroConfig) := baseDirectory.value / "src/test/avro",
       (stringType in AvroConfig) := "String",
+      javacOptions += "-Xlint:deprecation",
       javacOptions += "-Xlint:unchecked"
     )
 
@@ -155,6 +158,7 @@ lazy val akkastreamTests =
           )
     )
     .settings(
+      javacOptions += "-Xlint:deprecation",
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
 

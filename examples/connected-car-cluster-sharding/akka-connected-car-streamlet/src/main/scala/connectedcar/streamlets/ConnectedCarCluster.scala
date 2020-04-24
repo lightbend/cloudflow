@@ -19,7 +19,7 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
   val shape = StreamletShape(in).withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
+    def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
 
     val carRegion: ActorRef = ClusterSharding(context.system).start(
       typeName = "Counter",

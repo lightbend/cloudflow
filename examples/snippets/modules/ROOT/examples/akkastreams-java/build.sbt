@@ -24,6 +24,7 @@ lazy val sensorData =  (project in file("."))
 
       scalaVersion := "2.12.10",
       crossScalaVersions := Vector(scalaVersion.value),
+      javacOptions ++= Seq("-Xlint:deprecation"),
       scalacOptions ++= Seq(
         "-encoding", "UTF-8",
         "-target:jvm-1.8",

@@ -29,7 +29,7 @@ object RecordSumFlow extends AkkaStreamlet {
       //end::usage[]
       val flow = FlowWithCommittableContext[Metric].grouped(recordsInWindow).map(sumRecords).mapContext(_.last)
 
-      sourceWithOffsetContext(inlet)
+      sourceWithCommittableContext(inlet)
         .via(flow)
         .to(committableSink(outlet))
     }

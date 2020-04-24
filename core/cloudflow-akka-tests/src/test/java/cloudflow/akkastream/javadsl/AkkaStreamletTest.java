@@ -21,6 +21,7 @@ import akka.actor.ActorSystem;
 import akka.japi.Pair;
 import akka.kafka.ConsumerMessage;
 import akka.kafka.ConsumerMessage.CommittableOffset;
+import akka.kafka.ConsumerMessage.Committable;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.testkit.TestKit;
@@ -30,7 +31,7 @@ import cloudflow.akkastream.testkit.javadsl.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 import org.junit.*;
 import scala.concurrent.duration.Duration;
 
@@ -147,9 +148,9 @@ public class AkkaStreamletTest extends JUnitSuite {
     public AkkaStreamletLogic createLogic() {
       return new AkkaStreamletLogic(getContext()) {
         public void run() {
-          getSourceWithOffsetContext(inlet)
-              .via(Flow.<Pair<Data, CommittableOffset>>create()) // no-op flow
-              .to(getSinkWithOffsetContext(outlet))
+          getSourceWithCommittableContext(inlet)
+              .via(Flow.<Pair<Data, Committable>>create()) // no-op flow
+              .to(getCommittableSink(outlet))
               .run(materializer());
         }
       };
@@ -219,9 +220,9 @@ public class AkkaStreamletTest extends JUnitSuite {
         public void run() {
           String configuredNameToFilterFor = streamletConfig().getString(nameFilter.getKey());
 
-          getSourceWithOffsetContext(inlet)
+          getSourceWithCommittableContext(inlet)
               .filter(data -> data.name().equals(configuredNameToFilterFor))
-              .to(getSinkWithOffsetContext(outlet))
+              .to(getCommittableSink(outlet))
               .run(materializer());
         }
       };

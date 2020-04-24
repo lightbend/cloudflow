@@ -21,27 +21,8 @@ import akka.stream.javadsl._
 
 import akka.kafka.ConsumerMessage._
 
-package object javadsl {
-
-  /**
-   * Java API
-   */
-  @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-  type FlowWithOffsetContext[In, Out] = FlowWithContext[In, CommittableOffset, Out, CommittableOffset, NotUsed]
-
-  type FlowWithCommittableContext[In, Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
-
-  /**
-   * Java API
-   */
-  type SourceWithOffsetContext[+T] = SourceWithContext[T, CommittableOffset, _]
-}
-
 package javadsl {
 
-  /**
-   * Java API
-   */
   @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
   object FlowWithOffsetContext {
 
@@ -49,17 +30,16 @@ package javadsl {
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */
     @deprecated("Use `FlowWithCommittableContext` instead.", "1.3.1")
-    def create[In]() = FlowWithContext.create[In, CommittableOffset]()
+    def create[In](): FlowWithContext[In, CommittableOffset, In, CommittableOffset, NotUsed] =
+      FlowWithContext.create[In, CommittableOffset]()
   }
 
-  /**
-   * Java API
-   */
   object FlowWithCommittableContext {
 
     /**
      * Creates a [[akka.stream.javadsl.FlowWithContext FlowWithContext]] that makes it possible for cloudflow to commit reads.
      */
-    def create[In]() = FlowWithContext.create[In, Committable]()
+    def create[In](): FlowWithContext[In, Committable, In, Committable, NotUsed] =
+      FlowWithContext.create[In, Committable]()
   }
 }

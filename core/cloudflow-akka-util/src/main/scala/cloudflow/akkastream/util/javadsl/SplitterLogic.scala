@@ -39,7 +39,7 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, JEither[L, R]],
+      flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       left: Sink[Pair[L, Committable], NotUsed],
       right: Sink[Pair[R, Committable], NotUsed]
   ): Sink[Pair[I, Committable], NotUsed] =
@@ -60,7 +60,7 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, JEither[L, R]],
+      flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       committerSettings: CommitterSettings,
@@ -82,7 +82,7 @@ object Splitter {
    * At-least-once semantics are used.
    */
   def sink[I, L, R](
-      flow: FlowWithCommittableContext[I, JEither[L, R]],
+      flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       context: AkkaStreamletContext
@@ -103,7 +103,7 @@ abstract class SplitterLogic[I, L, R](
     context: AkkaStreamletContext
 ) extends akkastream.util.scaladsl.SplitterLogic(in, left, right)(context) {
 
-  def createFlow(): FlowWithOffsetContext[I, JEither[L, R]]
+  def createFlow(): FlowWithContext[I, Committable, JEither[L, R], CommittableOffset, NotUsed]
   def flow: cloudflow.akkastream.scaladsl.FlowWithOffsetContext[I, Either[L, R]] =
     createFlow().map(jEither ⇒ if (jEither.isRight) Right(jEither.get()) else Left(jEither.getLeft())).asScala
   final def createFlowWithOffsetContext() = FlowWithOffsetContext.create[I]()

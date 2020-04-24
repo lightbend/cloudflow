@@ -36,6 +36,6 @@ final case object WineResultConsoleEgress extends AkkaStreamlet {
 
     def write(record: WineResult): Unit = println(record.toString)
 
-    def runnableGraph = sourceWithOffsetContext(in).map(write(_)).to(committableSink)
+    def runnableGraph = sourceWithCommittableContext(in).map(write(_)).to(committableSink)
   }
 }

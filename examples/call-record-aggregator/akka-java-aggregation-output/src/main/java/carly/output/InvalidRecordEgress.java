@@ -17,7 +17,6 @@
 package carly.output;
 
 import akka.NotUsed;
-import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.stream.javadsl.*;
 
 import cloudflow.streamlets.*;
@@ -41,16 +40,19 @@ public class InvalidRecordEgress extends AkkaStreamlet {
   @Override
   public AkkaStreamletLogic createLogic() {
     return new RunnableGraphStreamletLogic(getContext()) {
+
       @Override
       public RunnableGraph<?> createRunnableGraph() {
-        return getSourceWithOffsetContext(in)
-          .via(flowWithContext())
-          .to(getSinkWithOffsetContext());
+        return getSourceWithCommittableContext(in)
+          .via(FlowWithCommittableContext.<InvalidRecord>create()
+                  .map(metric -> {
+                    System.out.println(metric);
+                    return metric;
+                  }))
+          .to(getCommittableSink());
       }
     };
   }
 
-  private FlowWithContext<InvalidRecord,CommittableOffset,Object,CommittableOffset,NotUsed> flowWithContext() {
-    return FlowWithOffsetContext.<InvalidRecord>create().map(metric -> doPrint(metric));
-  }
+
 }
