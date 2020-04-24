@@ -30,7 +30,7 @@ var swissKnifeApp = cli.App{
 }
 
 var _ = Describe("Application deployment", func() {
-	Contexto("check that there's a cluster available with cloudflow installed", func() {
+	Context("check that there's a cluster available with cloudflow installed", func() {
 		It("should succeed to list apps", func() {
 			_, err := cli.ListApps()
 			if err != nil {
