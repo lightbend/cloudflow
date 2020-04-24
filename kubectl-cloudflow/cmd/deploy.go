@@ -88,6 +88,7 @@ You can update the credentials with the "update-docker-credentials" command.
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.username, "username", "u", "", "docker registry username.")
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.password, "password", "p", "", "docker registry password.")
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin")
+
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
 
 	rootCmd.AddCommand(deployOpts.cmd)
@@ -96,16 +97,16 @@ You can update the credentials with the "update-docker-credentials" command.
 func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	version.FailOnProtocolVersionMismatch()
 
-	imageRef := args[0]
-	imageReference, err := parseImageReference(imageRef)
-
+	crFile := args[0]
+	crString, err := util.GetFileContents(crFile)
 	if err != nil {
 		util.LogAndExit("%s", err.Error())
 	}
 
-	dockerRegistryURL := imageReference.registry
-	dockerRepository := imageReference.repository
-	applicationSpec, pulledImage := deploy.GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL, dockerRepository, imageRef)
+	bytes := []byte(crString)
+
+	var applicationSpec domain.CloudflowApplicationSpec
+	json.Unmarshal(bytes, &applicationSpec)
 
 	namespace := applicationSpec.AppID
 
@@ -380,7 +381,12 @@ func createOrUpdateCloudflowApplication(
 func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 
 	if len(args) < 1 || args[0] == "" {
-		return fmt.Errorf("please specify the full path to the Docker image containing the application. For example: 'docker-registry.mydomain.com/cloudflow/awesome-app:37-172e856'")
+		return fmt.Errorf("please specify the full path to the file containing the application CR")
+	}
+
+	crFile := args[0]
+	if !util.FileExists(crFile) {
+		return fmt.Errorf("Local file (%s) does not exist", crFile)
 	}
 
 	return nil
