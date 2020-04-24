@@ -36,7 +36,7 @@ case class StreamletDefinition(appId: String,
 
   private val portNameToTopicMap: Map[String, Topic] = {
     portMapping.map {
-      case ConnectedPort(port, savepointPath) ⇒ port -> savepointPath
+      case ConnectedPort(port, topic) ⇒ port -> topic
     }.toMap
   }
 
@@ -93,7 +93,7 @@ final case class Topic(
 /**
  * Mapping between the port name and the savepoint path
  */
-case class ConnectedPort(port: String, savepointPath: Topic)
+case class ConnectedPort(port: String, topic: Topic)
 
 object StreamletDefinition {
   implicit val contextDataReader: ValueReader[StreamletContextData] =
@@ -153,7 +153,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
     def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
-  implicit val savepointPathFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
+  implicit val topicFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")
@@ -169,7 +169,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
   }
 
   protected implicit val volumeMountFormat    = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
-  protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "savepoint_path")
+  protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "topic")
   protected implicit val contextDataFormat =
     jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
 

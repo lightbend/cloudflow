@@ -37,7 +37,7 @@ class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues 
         "accepted" -> Topic("appId", "sensor-data", "accepted"),
         "rejected" -> Topic("appId", "sensor-data", "rejected")
       )
-      ports.foreach(connectedPort ⇒ expectedPorts(connectedPort.port) must be(connectedPort.savepointPath))
+      ports.foreach(connectedPort ⇒ expectedPorts(connectedPort.port) must be(connectedPort.topic))
     }
 
     "a loaded instance must have its own configuration" in {

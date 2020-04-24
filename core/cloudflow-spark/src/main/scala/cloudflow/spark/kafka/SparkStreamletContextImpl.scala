@@ -41,13 +41,13 @@ class SparkStreamletContextImpl(
 
     implicit val inRowEncoder: ExpressionEncoder[Row] = RowEncoder(encoder.schema)
     val schema                                        = inPort.schemaAsString
-    val savepointPath                                 = findTopicForPort(inPort)
-    val srcTopic                                      = savepointPath.name
-    val brokers                                       = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
+    val topic                                         = findTopicForPort(inPort)
+    val srcTopic                                      = topic.name
+    val brokers                                       = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
-      .options(kafkaConsumerMap(savepointPath))
+      .options(kafkaConsumerMap(topic))
       .option("maxOffsetsPerTrigger", maxOffsetsPerTrigger)
       .option("subscribe", srcTopic)
       // Allow restart of stateful streamlets that may have been offline for longer than the kafka retention period.
@@ -66,10 +66,10 @@ class SparkStreamletContextImpl(
     dataframe.as[In]
   }
 
-  def kafkaConsumerMap(savepointPath: Topic) = savepointPath.kafkaConsumerProperties.map {
+  def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
-  def kafkaProducerMap(savepointPath: Topic) = savepointPath.kafkaProducerProperties.map {
+  def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
 
@@ -79,9 +79,9 @@ class SparkStreamletContextImpl(
     val avroEncoder   = new SparkAvroEncoder[Out](outPort.schemaAsString)
     val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
 
-    val savepointPath = findTopicForPort(outPort)
-    val destTopic     = savepointPath.name
-    val brokers       = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
+    val topic     = findTopicForPort(outPort)
+    val destTopic = topic.name
+    val brokers   = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
 
     // metadata checkpoint directory on mount
     val checkpointLocation = checkpointDir(outPort.name)
@@ -92,7 +92,7 @@ class SparkStreamletContextImpl(
       .format("kafka")
       .queryName(queryName)
       .option("kafka.bootstrap.servers", brokers)
-      .options(kafkaProducerMap(savepointPath))
+      .options(kafkaProducerMap(topic))
       .option("topic", destTopic)
       .option("checkpointLocation", checkpointLocation)
       .start()

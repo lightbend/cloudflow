@@ -46,7 +46,7 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
         "connected_ports": [
           {
             "port": "in",
-            "savepoint_path": 
+            "topic":
               {
                 "app_id": "appId",
                 "streamlet_ref": "to-metrics",
@@ -56,7 +56,7 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
           },
           {
             "port": "out",
-            "savepoint_path": 
+            "topic":
               {
                 "app_id": "appId",
                 "streamlet_ref": "to-metrics",

@@ -23,7 +23,7 @@
             "connected_ports": [
               {
                 "port": "accepted",
-                "savepoint_path": 
+                "topic":
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
@@ -34,7 +34,7 @@
               },
               {
                 "port": "rejected",
-                "savepoint_path": 
+                "topic":
                   {
                     "app_id": "appId",
                     "streamlet_ref": "sensor-data",
