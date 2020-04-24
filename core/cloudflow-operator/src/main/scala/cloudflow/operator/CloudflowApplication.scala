@@ -30,7 +30,7 @@ import skuber.apiextensions._
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment._
+import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
 import cloudflow.operator.action.Action
 
@@ -81,7 +81,7 @@ object CloudflowApplication {
     ),
     Writes(conf ⇒ Json.parse(conf.root().render(ConfigRenderOptions.concise())))
   )
-  implicit val savepointFmt: Format[Savepoint]            = Json.format[Savepoint]
+  implicit val savepointFmt: Format[AppDescriptorTopic]   = Json.format[AppDescriptorTopic]
   implicit val endpointFmt: Format[Endpoint]              = Json.format[Endpoint]
   implicit val deploymentFmt: Format[StreamletDeployment] = Json.format[StreamletDeployment]
 

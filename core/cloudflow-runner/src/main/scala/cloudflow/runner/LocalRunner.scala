@@ -30,7 +30,7 @@ import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, Savepoint, StreamletDeployment, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.runner.RunnerOps._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
@@ -137,7 +137,7 @@ object LocalRunner extends StreamletLoader {
         appDescriptor.deployments
           .find(_.streamletName == streamletInstance.name)
           .map(_.portMappings)
-          .getOrElse(Map.empty[String, Savepoint])
+          .getOrElse(Map.empty[String, Topic])
 
       val deployment: StreamletDeployment =
         StreamletDeployment(appDescriptor.appId,

@@ -44,7 +44,7 @@ class FlinkStreamletContextImpl(
    * @return the data read as `DataStream[In]`
    */
   override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
-    val savepointPath    = findSavepointPathForPort(inlet)
+    val savepointPath    = findTopicForPort(inlet)
     val srcTopic         = savepointPath.name
     val groupId          = savepointPath.groupId(streamletRef, inlet)
     val bootstrapServers = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
@@ -79,7 +79,7 @@ class FlinkStreamletContextImpl(
    */
   override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] = {
 
-    val savepointPath    = findSavepointPathForPort(outlet)
+    val savepointPath    = findTopicForPort(outlet)
     val destTopic        = savepointPath.name
     val bootstrapServers = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
 

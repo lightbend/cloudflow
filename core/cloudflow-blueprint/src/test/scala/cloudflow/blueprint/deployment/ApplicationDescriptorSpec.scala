@@ -44,7 +44,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val verifiedBlueprint = Blueprint()
         .define(Vector(ingress))
         .use(ingressRef)
-        .connect(Topic("in"), ingressRef.out)
+        .connect(cloudflow.blueprint.Topic("in"), ingressRef.out)
         .verified
         .right
         .get
@@ -75,8 +75,8 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(ingressRef)
         .use(processorRef)
         .use(egressRef)
-        .connect(Topic("foos"), ingressRef.out, processorRef.in)
-        .connect(Topic("bars"), processorRef.out, egressRef.in)
+        .connect(cloudflow.blueprint.Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(cloudflow.blueprint.Topic("bars"), processorRef.out, egressRef.in)
         .verified
         .right
         .get
@@ -154,9 +154,9 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(processorRef)
         .use(egressRef)
         .use(processor2Ref)
-        .connect(Topic("foos"), ingressRef.out, processorRef.in)
-        .connect(Topic("bars1"), processorRef.out, processor2Ref.in, egressRef.in)
-        .connect(Topic("foos2"), processor2Ref.out)
+        .connect(cloudflow.blueprint.Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(cloudflow.blueprint.Topic("bars1"), processorRef.out, processor2Ref.in, egressRef.in)
+        .connect(cloudflow.blueprint.Topic("foos2"), processor2Ref.out)
         .verified
         .right
         .value
@@ -206,9 +206,9 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
         .use(ingress1Ref)
         .use(ingress2Ref)
         .use(mergeRef)
-        .connect(Topic("foos1"), ingress1Ref.out, mergeRef.in0)
-        .connect(Topic("foos2"), ingress2Ref.out, mergeRef.in1)
-        .connect(Topic("merged-bars"), mergeRef.out)
+        .connect(cloudflow.blueprint.Topic("foos1"), ingress1Ref.out, mergeRef.in0)
+        .connect(cloudflow.blueprint.Topic("foos2"), ingress2Ref.out, mergeRef.in1)
+        .connect(cloudflow.blueprint.Topic("merged-bars"), mergeRef.out)
         .verify
       val verifiedBlueprint = blueprint.verified.right.value
 

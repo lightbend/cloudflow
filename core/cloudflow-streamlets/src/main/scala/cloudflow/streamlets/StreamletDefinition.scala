@@ -34,27 +34,27 @@ case class StreamletDefinition(appId: String,
                                volumeMounts: List[VolumeMount],
                                config: Config) {
 
-  private val portNameToSavepointPathMap: Map[String, SavepointPath] = {
+  private val portNameToTopicMap: Map[String, Topic] = {
     portMapping.map {
       case ConnectedPort(port, savepointPath) ⇒ port -> savepointPath
     }.toMap
   }
 
-  def resolveSavepoint(port: StreamletPort): Option[SavepointPath] = portNameToSavepointPathMap.get(port.name)
-  def resolveSavepoint(port: String): Option[SavepointPath]        = portNameToSavepointPathMap.get(port)
+  def resolveTopic(port: StreamletPort): Option[Topic] = resolveTopic(port.name)
+  def resolveTopic(port: String): Option[Topic]        = portNameToTopicMap.get(port)
 
 }
 
-object SavepointPath {
-  //TODO  used for testing, move to blueprint builder
-  def apply(appId: String, streamletRef: String, outlet: String): SavepointPath =
-    SavepointPath(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
+object Topic {
+  //TODO  used for testing, remove
+  def apply(appId: String, streamletRef: String, outlet: String): Topic =
+    Topic(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
 }
 
 /**
  * The path to a savepoint.
  */
-final case class SavepointPath(
+final case class Topic(
     appId: String,
     streamletRef: String,
     name: String,
@@ -93,7 +93,7 @@ final case class SavepointPath(
 /**
  * Mapping between the port name and the savepoint path
  */
-case class ConnectedPort(port: String, savepointPath: SavepointPath)
+case class ConnectedPort(port: String, savepointPath: Topic)
 
 object StreamletDefinition {
   implicit val contextDataReader: ValueReader[StreamletContextData] =
@@ -153,7 +153,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
     def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
-  implicit val savepointPathFormat = jsonFormat(SavepointPath.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
+  implicit val savepointPathFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")

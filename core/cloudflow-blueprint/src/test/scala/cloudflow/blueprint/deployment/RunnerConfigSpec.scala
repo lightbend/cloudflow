@@ -43,17 +43,17 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         connectedPorts must have size 1
 
         forExactly(1, connectedPorts) { connectedPort ⇒
-          val savepointConfig = connectedPort.getConfig("savepoint_path")
+          val topicConfig = connectedPort.getConfig("topic")
 
           ingressDeployment.portMappings must contain(
             (
               connectedPort.getString("port"),
-              Savepoint(
-                savepointConfig.getString("app_id"),
-                savepointConfig.getString("streamlet_ref"),
-                savepointConfig.getString("name"),
-                savepointConfig.getConfig("config"),
-                Some(savepointConfig.getString("bootstrap_servers")),
+              Topic(
+                topicConfig.getString("app_id"),
+                topicConfig.getString("streamlet_ref"),
+                topicConfig.getString("name"),
+                topicConfig.getConfig("config"),
+                Some(topicConfig.getString("bootstrap_servers")),
                 true
               )
             )
@@ -84,19 +84,19 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         connectedPorts must have size 2
 
         forExactly(2, connectedPorts) { connectedPort ⇒
-          val savepointConfig = connectedPort.getConfig("savepoint_path")
-          val portName        = connectedPort.getString("port")
-          val savepoint = Savepoint(
-            savepointConfig.getString("app_id"),
-            savepointConfig.getString("streamlet_ref"),
-            savepointConfig.getString("name"),
-            savepointConfig.getConfig("config"),
-            Some(savepointConfig.getString("bootstrap_servers")),
+          val topicConfig = connectedPort.getConfig("topic")
+          val portName    = connectedPort.getString("port")
+          val topic = Topic(
+            topicConfig.getString("app_id"),
+            topicConfig.getString("streamlet_ref"),
+            topicConfig.getString("name"),
+            topicConfig.getConfig("config"),
+            Some(topicConfig.getString("bootstrap_servers")),
             true
           )
 
           forExactly(1, allDeployments) { deployment ⇒
-            deployment.portMappings must contain(portName -> savepoint)
+            deployment.portMappings must contain(portName -> topic)
           }
         }
 

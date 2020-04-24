@@ -41,7 +41,7 @@ class SparkStreamletContextImpl(
 
     implicit val inRowEncoder: ExpressionEncoder[Row] = RowEncoder(encoder.schema)
     val schema                                        = inPort.schemaAsString
-    val savepointPath                                 = findSavepointPathForPort(inPort)
+    val savepointPath                                 = findTopicForPort(inPort)
     val srcTopic                                      = savepointPath.name
     val brokers                                       = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
     val src: DataFrame = session.readStream
@@ -66,10 +66,10 @@ class SparkStreamletContextImpl(
     dataframe.as[In]
   }
 
-  def kafkaConsumerMap(savepointPath: SavepointPath) = savepointPath.kafkaConsumerProperties.map {
+  def kafkaConsumerMap(savepointPath: Topic) = savepointPath.kafkaConsumerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
-  def kafkaProducerMap(savepointPath: SavepointPath) = savepointPath.kafkaProducerProperties.map {
+  def kafkaProducerMap(savepointPath: Topic) = savepointPath.kafkaProducerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
 
@@ -79,7 +79,7 @@ class SparkStreamletContextImpl(
     val avroEncoder   = new SparkAvroEncoder[Out](outPort.schemaAsString)
     val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
 
-    val savepointPath = findSavepointPathForPort(outPort)
+    val savepointPath = findTopicForPort(outPort)
     val destTopic     = savepointPath.name
     val brokers       = savepointPath.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
 

@@ -96,7 +96,7 @@ object ApplicationDescriptor {
   def portMappingsForStreamlet(appId: String, streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint) =
     blueprint.topics.flatMap { topic =>
       topic.connections.filter(_.streamlet.name == streamlet.name).map { verifiedPort =>
-        verifiedPort.portName -> Savepoint(
+        verifiedPort.portName -> Topic(
           appId,
           streamlet.name,
           topic.name,
@@ -133,7 +133,7 @@ final case class StreamletDeployment(
     endpoint: Option[Endpoint],
     secretName: String,
     config: Config,
-    portMappings: Map[String, Savepoint],
+    portMappings: Map[String, Topic],
     volumeMounts: Option[List[VolumeMountDescriptor]],
     replicas: Option[Int]
 )
@@ -147,7 +147,7 @@ object StreamletDeployment {
   def apply(appId: String,
             streamlet: StreamletInstance,
             image: String,
-            portMappings: Map[String, Savepoint],
+            portMappings: Map[String, Topic],
             containerPort: Int = EndpointContainerPort,
             replicas: Option[Int] = None): StreamletDeployment = {
     val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
@@ -181,7 +181,7 @@ object StreamletDeployment {
       .getOrElse((ConfigFactory.empty(), None))
 }
 
-final case class Savepoint(
+final case class Topic(
     appId: String,
     streamlet: String,
     name: String,

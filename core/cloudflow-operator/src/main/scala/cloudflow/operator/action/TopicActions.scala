@@ -31,7 +31,7 @@ import cloudflow.blueprint.deployment._
  * Creates a sequence of resource actions for the savepoint changes
  * between a current application and a new application.
  */
-object SavepointActions {
+object TopicActions {
   def apply(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
@@ -69,7 +69,7 @@ object SavepointActions {
 
   final case class Status(conditions: Option[List[Condition]], observedGeneration: Option[Int])
 
-  type Topic = CustomResource[Spec, Status]
+  type TopicResource = CustomResource[Spec, Status]
   private implicit val ConditionFmt: Format[Condition] = Json.format[Condition]
   private implicit val SpecFmt: Format[Spec]           = Json.format[Spec]
   private implicit val StatusFmt: Format[Status]       = Json.format[Status]
@@ -81,7 +81,7 @@ object SavepointActions {
     subresources = Some(Subresources().withStatusSubresource)
   )
 
-  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[Topic]
+  implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[TopicResource]
 
   def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
     Action.delete(resource(topic, labels))
@@ -113,7 +113,7 @@ object SavepointActions {
     override def updateMetadata(obj: CustomResource[Spec, Status], newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
   object TopicInfo {
-    def apply(sp: Savepoint): TopicInfo = TopicInfo(sp.name, sp.managed)
+    def apply(sp: Topic): TopicInfo = TopicInfo(sp.name, sp.managed)
   }
   case class TopicInfo(name: String, managed: Boolean)
 }
