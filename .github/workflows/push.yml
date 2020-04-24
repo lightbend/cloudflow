@@ -68,3 +68,28 @@ jobs:
         set -e
         cd kubectl-cloudflow
         make test
+
+  build-and-test-integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2-beta
+      with:
+        go-version: 1.13.8
+      id: go
+
+    - uses: actions/cache@v1
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Build
+      run: |
+        set -e
+        cd integration-tests/itest
+        go test -c
