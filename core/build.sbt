@@ -275,6 +275,7 @@ lazy val blueprint =
       libraryDependencies ++= Vector(
             SprayJson,
             Skuber,
+            JacksonDatabind,
             Config,
             Logback % Test,
             Avro4sTest,

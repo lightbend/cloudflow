@@ -19,7 +19,7 @@ package cloudflow.sbt
 import sbt._
 import com.typesafe.config._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, CloudflowApplication }
+import cloudflow.blueprint.deployment.ApplicationDescriptor
 import cloudflow.blueprint.StreamletDescriptor
 
 case class DockerImageName(name: String, tag: String) {
@@ -57,6 +57,7 @@ trait CloudflowTaskKeys {
   val build           = taskKey[Unit]("Build the image and app.")
   val buildAndPublish = taskKey[Unit]("Publish the image and app.")
   val runLocal        = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
+  val generateCR      = taskKey[Unit]("Generate Cloudflow Application CR")
 
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application")
@@ -77,10 +78,9 @@ trait CloudflowTaskKeys {
   private[sbt] val cloudflowBuildNumber =
     taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
-  private[sbt] val agentPaths = taskKey[Map[String, String]]("The paths to Java Agents added to Cloudflow application.")
   private[sbt] val streamletDescriptorsInProject =
     taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping")
   private[sbt] val imageNamesByProject          = taskKey[Map[String, DockerImageName]]("The list of all image names")
   private[sbt] val streamletClassNamesByProject = taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project")
-  private[sbt] val cloudflowApplicationSpec     = taskKey[CloudflowApplication.Spec]("The Application Spec")
+  private[sbt] val cloudflowApplicationCR       = taskKey[Unit]("Generates Cloudflow Application CR")
 }

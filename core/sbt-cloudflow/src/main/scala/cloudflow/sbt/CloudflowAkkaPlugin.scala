@@ -21,9 +21,7 @@ import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.Keys._
-import spray.json._
 import cloudflow.sbt.CloudflowKeys._
-import cloudflow.blueprint.StreamletDescriptorFormat._
 import CloudflowBasePlugin._
 import java.io.File
 
@@ -64,19 +62,11 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      // pack all streamlet-descriptors into a Json array
-      val streamletDescriptorsJson = streamletDescriptorsInProject.value.toJson
-
-      val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
-
       new Dockerfile {
         from(AkkaDockerBaseImage)
         user(UserInImage)
-
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-
-        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }
   )

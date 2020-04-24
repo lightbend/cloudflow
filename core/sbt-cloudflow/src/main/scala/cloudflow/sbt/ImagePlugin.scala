@@ -29,16 +29,13 @@ import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.archetypes._
-import com.lightbend.sbt.javaagent.JavaAgent
 import java.io.File
 import spray.json._
-import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.resolvedJavaAgents
 
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
 
 object ImagePlugin extends AutoPlugin {
-  val AppRunner: String                = "akka-entrypoint.sh"
   val AppHome                          = "${app_home}"
   val AppTargetDir: String             = "/app"
   val appTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
@@ -48,27 +45,14 @@ object ImagePlugin extends AutoPlugin {
 
   override def requires =
     CommonSettingsAndTasksPlugin &&
-      JavaAppPackaging && JavaAgent &&
+      JavaAppPackaging &&
       sbtdocker.DockerPlugin
-
-  private def agentMappings = Def.task[Seq[(File, String, String)]] {
-    resolvedJavaAgents.value.filter(_.agent.scope.dist).map { resolved ⇒
-      (resolved.artifact,
-       Project.normalizeModuleID(resolved.agent.name) + File.separator + resolved.artifact.name,
-       resolved.agent.arguments)
-    }
-  }
-
-  private def agentJavaOptions = Def.task[Seq[String]] {
-    agentMappings.value.map {
-      case (_, path, arguments) ⇒ s"""-javaagent:$AppHome/${path}$arguments"""
-    }
-  }
 
   override def projectSettings = Seq(
     // don't create and/or bundle scaladoc or source code since the only artifact we will produce is a docker image
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
+    /*
     buildOptions in docker := BuildOptions(
           cache = true,
           removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
@@ -89,36 +73,6 @@ object ImagePlugin extends AutoPlugin {
               if (jar.name.startsWith("cloudflow-runner-")) {
                 IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
               } else IO.copyFile(jar, new File(depJarDir, jar.getName))
-            }
-          }
-        }.value,
-    cloudflowStageScript := Def.taskDyn {
-          val log        = streams.value.log
-          val javaAgents = agentJavaOptions.value
-          Def.task {
-            val stagingDir            = stage.value
-            val runScriptTemplateURL  = getClass.getResource("/" + AppRunner)
-            val runScriptTemplate     = IO.readLinesURL(runScriptTemplateURL).mkString("\n")
-            val runScriptFileContents = runScriptTemplate.replace("AGENT_PLACEHOLDER", javaAgents.mkString(" "))
-            val runScriptFile         = new File(new File(stagingDir, "bin"), AppRunner)
-
-            // Optimized to make sure to only re-write the run script when the
-            // contents have actually changed. This prevents unnecessary filesystem
-            // changes that would result in a Docker layer being rewritten.
-            if (runScriptFile.exists()) {
-              // Using the same method for reading the file as we use for reading
-              // the template to make sure we use the same line endings.
-              val oldRunScriptFileContents = IO.readLines(runScriptFile).mkString("\n")
-
-              if (runScriptFileContents != oldRunScriptFileContents) {
-                IO.write(runScriptFile, runScriptFileContents)
-                log.info(s"Successfully regenerated the streamlet runner script at ${runScriptFile}")
-              } else {
-                log.info(s"The streamlet runner script already exists and is up to date.")
-              }
-            } else {
-              IO.write(runScriptFile, runScriptFileContents)
-              log.info(s"Successfully generated the streamlet runner script at ${runScriptFile}")
             }
           }
         }.value,
@@ -152,13 +106,10 @@ object ImagePlugin extends AutoPlugin {
 
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
-      cloudflowStageScript.value
 
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
-
-      val executable = s"${appTargetSubdir("bin")}/$AppRunner"
 
       val dockerParentImage = cloudflowDockerParentImage.value
 
@@ -181,18 +132,25 @@ object ImagePlugin extends AutoPlugin {
         from(dockerParentImage)
         user(userInImage)
 
-        copy(new File(appDir, "prometheus"), appTargetSubdir("prometheus"), chown = userAsOwner(userInImage))
         copy(depJarsDir, optAppDir, chown = userAsOwner(userInImage))
 
-        copy(new File(appDir, "bin"), appTargetSubdir("bin"), chown = userAsOwner(userInImage))
-        runShell("chmod", "+x", executable)
         copy(appJarsDir, optAppDir, chown = userAsOwner(userInImage))
         runRaw(s"cp ${optAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
-        run("cp", s"${AppTargetDir}/bin/${AppRunner}", "/opt")
         expose(4040) // used by the Spark UI
         labels.foreach { case (k, v) => label(k, v) }
       }
     },
+     */
+    build := verifyBlueprint.value,
+    /*
+    build := Def.taskDyn {
+          // val sds = buildStructure.value.allProjectRefs.map(_ / streamletDescriptorsInProject)
+          buildStructure.value.allProjectRefs.map(_.project).foreach(println)
+          val subs = buildStructure.value.allProjectRefs
+            .filterNot(p => (p.project != "datamodel") && (p.project.startsWith("root")) && (p.project.startsWith("call-record-pipeline")))
+            .map(_ / build)
+          Def.sequential(Seq(verifyBlueprint) ++ subs)
+        }.value,
     build := showResultOfBuild
           .dependsOn(
             docker.dependsOn(
@@ -201,6 +159,9 @@ object ImagePlugin extends AutoPlugin {
             )
           )
           .value,
+     */
+    buildAndPublish := verifyBlueprint.value
+    /*
     buildAndPublish := showResultOfBuildAndPublish
           .dependsOn(
             dockerBuildAndPush.dependsOn(
@@ -210,6 +171,7 @@ object ImagePlugin extends AutoPlugin {
             )
           )
           .value
+   */
   )
 
   private val verifyDockerRegistry = Def.task {

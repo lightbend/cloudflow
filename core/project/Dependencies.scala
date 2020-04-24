@@ -36,8 +36,8 @@ object Library {
   val SprayJson             = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
-  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.9"
-  val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9"
+  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.0"
+  val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9.1"
 
   val Skuber                = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 
@@ -56,6 +56,8 @@ object Library {
   val FastClasspathScanner  = "io.github.lukehutch"   %  "fast-classpath-scanner"   % "2.21"
   val ScalaCheck            = "org.scalacheck"        %% "scalacheck"               % "1.14.0"
   val Avro4sJson            = "com.sksamuel.avro4s"   %% "avro4s-json"              % "3.0.0"
+
+  val PlayJson              = "com.typesafe.play"     %% "play-json"                % "2.8.1" exclude("com.fasterxml.jackson.core","jackson-databind")
 
   // Test Dependencies
   val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test

@@ -21,9 +21,7 @@ import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.Keys._
-import spray.json._
 
-import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
@@ -43,10 +41,6 @@ object CloudflowSparkPlugin extends AutoPlugin {
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
-    // streamletDescriptorsInProject := Def.taskDyn {
-    // val detectedStreamlets = cloudflowStreamletDescriptors.value
-    // buildStreamletDescriptors(detectedStreamlets, cloudflowDockerImageName.value)
-    // }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
           removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
@@ -76,19 +70,12 @@ object CloudflowSparkPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      // pack all streamlet-descriptors into a Json array
-      val streamletDescriptorsJson =
-        streamletDescriptorsInProject.value.toJson
-
-      val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
-
       new Dockerfile {
         from(CloudflowSparkDockerBaseImage)
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         expose(4040)
-        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }
   )
