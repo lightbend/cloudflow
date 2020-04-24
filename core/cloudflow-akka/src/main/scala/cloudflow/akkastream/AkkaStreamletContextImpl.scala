@@ -68,7 +68,7 @@ final class AkkaStreamletContextImpl(
   private val bootstrapServers = system.settings.config.getString("cloudflow.kafka.bootstrap-servers")
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
-  private[akkastream] def _sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
+  private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val savepointPath = findSavepointPathForPort(inlet)
     val topic         = savepointPath.value
     val gId           = savepointPath.groupId(streamletRef, inlet)
