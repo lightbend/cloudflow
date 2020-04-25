@@ -577,7 +577,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       )
     }
 
-    "fail with InvalidPortPath and UnconnectedInlets if the inlet/outlet part is missing in connections" in {
+    "fail with InvalidPortPath and Unconnected inlets and outlets if the inlet/outlet part is missing in connections" in {
       val ingress    = randomStreamlet().asIngress[Foo]
       val ingressRef = ingress.randomRef
       val egress     = randomStreamlet().asEgress[Bar]

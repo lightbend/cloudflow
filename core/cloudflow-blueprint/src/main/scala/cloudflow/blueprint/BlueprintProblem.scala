@@ -60,6 +60,10 @@ object BlueprintProblem {
         s"Outlet `$name` in streamlet `$className` is invalid. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case InvalidPortPath(path) ⇒
         s"'$path' is not a valid path to an outlet or an inlet."
+      case InvalidProducerPortPath(path) ⇒
+        s"'$path' is not a valid path for a producer, it is not an outlet."
+      case InvalidConsumerPortPath(path) ⇒
+        s"'$path' is not a valid path for a consumer, it is not an inlet."
       case InvalidStreamletName(streamletRef) ⇒
         s"Invalid streamlet name '$streamletRef'. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case InvalidStreamletClassName(streamletRef, className) ⇒
@@ -101,8 +105,10 @@ sealed trait PortProblem extends BlueprintProblem {
 
 final case class IncompatibleSchema(path: VerifiedPortPath, otherPath: VerifiedPortPath) extends PortProblem
 
-sealed trait PortPathError                     extends BlueprintProblem
-final case class InvalidPortPath(path: String) extends BlueprintProblem with PortPathError
+sealed trait PortPathError                             extends BlueprintProblem
+final case class InvalidPortPath(path: String)         extends BlueprintProblem with PortPathError
+final case class InvalidProducerPortPath(path: String) extends BlueprintProblem with PortPathError
+final case class InvalidConsumerPortPath(path: String) extends BlueprintProblem with PortPathError
 final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
     extends PortPathError
 final case class PortAlreadyBoundToTopic(path: String, topic: String) extends PortPathError

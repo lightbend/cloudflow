@@ -31,12 +31,13 @@ object Blueprint {
   val UnsupportedConnectionsSectionKey = "blueprint.connections"
   val TopicKey                         = "topic.name"
   val CreateKey                        = "create"
-  val ConnectionsKey                   = "connections"
+  val ProducersKey                     = "producers"
+  val ConsumersKey                     = "consumers"
 
   // kafka config items
   val BootstrapServersKey = "bootstrap.servers"
-  val ProducerKey         = "producer"
-  val ConsumerKey         = "consumer"
+  val ProducerConfigKey   = "producer-config"
+  val ConsumerConfigKey   = "consumer-config"
   val PartitionsKey       = "partitions"
   val ReplicasKey         = "replicas"
   val TopicConfigKey      = "topic"
@@ -78,29 +79,32 @@ object Blueprint {
             val topicKey            = s"$TopicsSectionKey.${key}.$TopicKey"
             val bootstrapServersKey = s"$TopicsSectionKey.${key}.$BootstrapServersKey"
             val createKey           = s"$TopicsSectionKey.${key}.$CreateKey"
-            val connectionsKey      = s"$TopicsSectionKey.${key}.$ConnectionsKey"
+            val producersKey        = s"$TopicsSectionKey.${key}.$ProducersKey"
+            val consumersKey        = s"$TopicsSectionKey.${key}.$ConsumersKey"
             val configKey           = s"$TopicsSectionKey.${key}"
 
             val topic                    = getStringOrNone(config, topicKey).getOrElse(key)
             val bootstrapServersOverride = getStringOrNone(config, bootstrapServersKey)
             val create                   = getBooleanOrNone(config, createKey).getOrElse(true)
-            val connections              = config.getStringList(connectionsKey).asScala.toVector
+            val producers                = getStringListOrEmpty(config, producersKey)
+            val consumers                = getStringListOrEmpty(config, consumersKey)
             val kafkaConfig = getConfigOrEmpty(config, configKey)
               .withoutPath(TopicKey)
               .withoutPath(CreateKey)
               .withoutPath(BootstrapServersKey)
-              .withoutPath(ConnectionsKey)
+              .withoutPath(ProducersKey)
+              .withoutPath(ConsumersKey)
             // validate at least that producer and consumer sections are objects.
             // TODO It is possible to create a ConsumerConfig and ProducerConfig from properties and check unused,
             // TODO if badly spelled or unknown settings need to be prevented.
-            if (kafkaConfig.hasPath(ProducerKey)) kafkaConfig.getObject(ProducerKey)
-            if (kafkaConfig.hasPath(ConsumerKey)) kafkaConfig.getObject(ConsumerKey)
+            if (kafkaConfig.hasPath(ProducerConfigKey)) kafkaConfig.getObject(ProducerConfigKey)
+            if (kafkaConfig.hasPath(ConsumerConfigKey)) kafkaConfig.getObject(ConsumerConfigKey)
             if (kafkaConfig.hasPath(TopicConfigKey)) {
               val topicConfig = kafkaConfig.getConfig(TopicConfigKey)
               if (topicConfig.hasPath(PartitionsKey)) topicConfig.getInt(PartitionsKey)
               if (topicConfig.hasPath(ReplicasKey)) topicConfig.getInt(ReplicasKey)
             }
-            Topic(topic, connections, kafkaConfig, bootstrapServersOverride, create)
+            Topic(topic, producers, consumers, kafkaConfig, bootstrapServersOverride, create)
           }.toVector
         } else Vector.empty[Topic]
 
@@ -133,6 +137,8 @@ object Blueprint {
     if (config.hasPath(key)) Some(config.getBoolean(key)) else None
   private def getConfigOrEmpty(config: Config, key: String): Config =
     if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
+  private def getStringListOrEmpty(config: Config, key: String): Vector[String] =
+    if (config.hasPath(key)) config.getStringList(key).asScala.toVector else Vector.empty[String]
 }
 
 final case class Blueprint(
@@ -144,98 +150,6 @@ final case class Blueprint(
   val problems = globalProblems ++ streamlets.flatMap(_.problems) ++ topics.flatMap(_.problems)
 
   val isValid = problems.isEmpty
-
-  def define(streamletDescriptorsUpdated: Vector[StreamletDescriptor]): Blueprint =
-    copy(
-      streamletDescriptors = streamletDescriptorsUpdated
-    ).verify
-
-  def upsertStreamletRef(
-      streamletRef: String,
-      className: Option[String] = None,
-      metadata: Option[Config] = None
-  ): Blueprint =
-    streamlets
-      .find(_.name == streamletRef)
-      .map { streamletRef ⇒
-        val streamletRefWithClassNameUpdated =
-          className
-            .map(r ⇒ streamletRef.copy(className = r))
-            .getOrElse(streamletRef)
-        val streamletRefWithMetadataUpdated =
-          metadata
-            .map(_ ⇒ streamletRefWithClassNameUpdated.copy(metadata = metadata))
-            .getOrElse(streamletRefWithClassNameUpdated)
-
-        copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRefWithMetadataUpdated).verify
-      }
-      .getOrElse(
-        className
-          .map(streamletDescriptorRef ⇒ use(StreamletRef(name = streamletRef, className = streamletDescriptorRef, metadata = metadata)))
-          .getOrElse(this)
-      )
-
-  def use(streamletRef: StreamletRef): Blueprint =
-    copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRef).verify
-
-  def remove(streamletRef: String): Blueprint = {
-    val verifiedStreamlets = streamlets.flatMap(_.verified)
-    val newTopics = topics
-      .map { topic =>
-        topic
-          .copy(connections = topic.connections.filterNot(port => VerifiedPortPath(port).exists(_.streamletRef == streamletRef)))
-          .verify(verifiedStreamlets)
-      }
-      .filter(_.connections.nonEmpty)
-
-    copy(
-      streamlets = streamlets.filterNot(_.name == streamletRef),
-      topics = newTopics
-    ).verify
-  }
-
-  def connect(topic: Topic, ports: Vector[String]): Blueprint = {
-    require(ports.size >= 1)
-    val foundTopic = topics
-      .find(_.name == topic.name)
-      .map(t => t.copy(connections = (t.connections ++ ports).distinct))
-      .getOrElse(topic.copy(connections = ports))
-    val verifiedTopic = foundTopic.verify(streamlets.flatMap(_.verified))
-    val otherTopics   = topics.filterNot(_.name == foundTopic.name)
-    copy(topics = otherTopics :+ verifiedTopic).verify
-  }
-
-  def connect(topic: Topic, port: String): Blueprint =
-    connect(topic, Vector(port))
-
-  def connect(topic: Topic, port: String, ports: String*): Blueprint =
-    connect(topic, Vector(port) ++ ports)
-
-  def disconnect(portPath: String): Blueprint = {
-    val verifiedStreamlets = streamlets.flatMap(_.verified)
-    val verifiedTopics     = topics.flatMap(_.verified)
-    (for {
-      verifiedPortPath <- VerifiedPortPath(portPath)
-      verifiedPort     <- VerifiedPort.findPort(verifiedPortPath, verifiedStreamlets)
-    } yield {
-      val unmodified = verifiedTopics
-        .filterNot(_.connections.exists(_.portPath == verifiedPort.portPath))
-        .flatMap(verifiedTopic => topics.find(_.name == verifiedTopic.name))
-
-      val modified = verifiedTopics
-        .filter(_.connections.exists(_.portPath == verifiedPort.portPath))
-        .flatMap { verifiedTopic =>
-          topics
-            .find(_.name == verifiedTopic.name)
-            .map { topic =>
-              topic.copy(connections = topic.connections.filterNot(path => VerifiedPortPath(path).exists(_ == verifiedPortPath)))
-            }
-        }
-        .filter(_.connections.nonEmpty)
-
-      copy(topics = unmodified ++ modified).verify
-    }).getOrElse(this)
-  }
 
   def verify: Blueprint = {
     val emptyStreamletsProblem           = if (streamlets.isEmpty) Some(EmptyStreamlets) else None

@@ -21,10 +21,11 @@ import com.typesafe.config._
 /**
  * Defines a Topic and the streamlet inlets and outlets that connect to it.
  */
+// TODO check that topic-name is valid topic-name.
 final case class Topic(
     name: String,
-    connections: Vector[String] = Vector.empty[String],
-    // bootstrap servers, security settings, specific for producer and consumer
+    producers: Vector[String] = Vector.empty[String],
+    consumers: Vector[String] = Vector.empty[String],
     kafkaConfig: Config = ConfigFactory.empty(),
     // override for bootstrapServers
     bootstrapServers: Option[String] = None,
@@ -34,19 +35,57 @@ final case class Topic(
 ) {
 
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): Topic = {
-    val patternErrors       = connections.flatMap(connection => VerifiedPortPath(connection).left.toOption)
-    val verifiedPorts       = connections.flatMap(connection => VerifiedPortPath(connection).toOption)
-    val verifiedPortsResult = VerifiedPort.collectPorts(verifiedPorts, verifiedStreamlets)
-    val portPathErrors      = verifiedPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError])
-    val schemaErrors =
-      verifySchema(verifiedPortsResult.getOrElse(Vector.empty[VerifiedPort]))
-    copy(
-      problems = patternErrors ++ portPathErrors ++ schemaErrors,
-      verified = verifiedPortsResult.toOption.map { conns =>
-        VerifiedTopic(name, conns.distinct.sortBy(_.portPath.toString), bootstrapServers, create, kafkaConfig)
+
+    //TODO for Topic:
+    //val legalChars = "[a-zA-Z0-9\\._\\-]"
+    //private val maxNameLength = 255
+    //private val rgx = new Regex(legalChars + "+")
+
+    val patternErrors               = (producers ++ consumers).flatMap(port => VerifiedPortPath(port).left.toOption)
+    val verifiedProducerPaths       = producers.flatMap(producer => VerifiedPortPath(producer).toOption)
+    val verifiedConsumerPaths       = consumers.flatMap(consumer => VerifiedPortPath(consumer).toOption)
+    val verifiedProducerPortsResult = VerifiedPort.collectPorts(verifiedProducerPaths, verifiedStreamlets)
+    val verifiedConsumerPortsResult = VerifiedPort.collectPorts(verifiedConsumerPaths, verifiedStreamlets)
+
+    val portPathErrors = verifiedProducerPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError]) ++
+          verifiedConsumerPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError])
+
+    // producers must be outlets
+    val producerErrors = verifiedProducerPortsResult
+      .flatMap { res =>
+        val inlets = res.filterNot(_.isOutlet)
+        if (inlets.nonEmpty) Left(inlets.map(p => InvalidProducerPortPath(p.portPath.toString)))
+        else Right(res)
       }
+      .left
+      .toOption
+      .getOrElse(Vector.empty[PortPathError])
+
+    // consumers must be inlets
+    val consumerErrors = verifiedConsumerPortsResult
+      .flatMap { res =>
+        val outlets = res.filter(_.isOutlet)
+        if (outlets.nonEmpty) Left(outlets.map(p => InvalidConsumerPortPath(p.portPath.toString)))
+        else Right(res)
+      }
+      .left
+      .toOption
+      .getOrElse(Vector.empty[PortPathError])
+
+    val verifiedPorts = verifiedProducerPortsResult.getOrElse(Vector.empty[VerifiedPort]) ++ verifiedConsumerPortsResult.getOrElse(
+            Vector.empty[VerifiedPort]
+          )
+    val schemaErrors = verifySchema(verifiedPorts)
+    copy(
+      problems = patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ schemaErrors,
+      verified =
+        if (verifiedPorts.nonEmpty)
+          Some(VerifiedTopic(name, verifiedPorts.distinct.sortBy(_.portPath.toString), bootstrapServers, create, kafkaConfig))
+        else None
     )
   }
+
+  val connections = producers ++ consumers
 
   val AvroFormat = "avro"
 

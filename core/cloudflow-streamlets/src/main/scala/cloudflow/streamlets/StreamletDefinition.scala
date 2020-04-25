@@ -70,9 +70,9 @@ final case class SavepointPath(
 
   import scala.collection.JavaConverters._
   def kafkaProducerProperties: Map[String, String] =
-    if (config.hasPath("producer")) {
+    if (config.hasPath("producer-config")) {
       config
-        .getConfig("producer")
+        .getConfig("producer-config")
         .entrySet()
         .asScala
         .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
@@ -80,9 +80,9 @@ final case class SavepointPath(
     } else Map.empty[String, String]
 
   def kafkaConsumerProperties: Map[String, String] =
-    if (config.hasPath("consumer")) {
+    if (config.hasPath("consumer-config")) {
       config
-        .getConfig("consumer")
+        .getConfig("consumer-config")
         .entrySet()
         .asScala
         .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
