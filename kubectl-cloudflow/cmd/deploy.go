@@ -33,6 +33,7 @@ type deployOptions struct {
 	password      string
 	passwordStdin bool
 	volumeMounts  []string
+	replicasByStreamletName map[string]int
 }
 
 func init() {
@@ -45,6 +46,10 @@ func init() {
 The arguments to the command consists of a full path to a json file containing the 
 application CR and optionally one or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
 a space.
+
+The command supports a flag --scale to specify the scale of each streamlet on deploy in the form of key/value
+pairs ('streamlet-name=scale') separated by comma.
+  kubectl-cloudflow deploy call-record-aggregator-cr.json --scale cdr-aggregator=3,cdr-generator1=3
 
 Streamlet volume mounts can be configured using the --volume-mount flag.
 The flag accepts one or more key/value pair where the key is the name of the
@@ -90,6 +95,7 @@ You can update the credentials with the "update-docker-credentials" command.
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin")
 
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
+	deployOpts.cmd.Flags().StringToIntVar(&deployOpts.replicasByStreamletName, "scale", map[string]int{}, "Accepts key/value pairs for replicas per streamlet")
 
 	rootCmd.AddCommand(deployOpts.cmd)
 }
@@ -112,6 +118,17 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 
 	applicationSpec := cr.Spec
+
+	// update deployment with replicas passed through command line
+	for _, deployment := range applicationSpec.Deployments {
+		if s, ok := opts.replicasByStreamletName[deployment.StreamletName]; ok {
+			if spec, err := scale.UpdateDeploymentWithReplicas(applicationSpec, deployment.StreamletName, s); err != nil {
+				util.LogAndExit("Cannot set replicas for streamlet [%s] %s", deployment.StreamletName, err.Error())
+			} else {
+				applicationSpec = spec
+			}
+		}
+	}
 
 	namespace := applicationSpec.AppID
 
