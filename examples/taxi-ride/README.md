@@ -49,9 +49,18 @@ blueprint {
     logger = taxiride.logger.FarePerRideLogger
   }
   topics {
-    rides.connections = [rides.out, processor.in-taxiride]
-    fares.connections = [fares.out, processor.in-taxifare]
-    taxifares.connections = [processor.out, logger.in]
+    rides {
+      producers = [rides.out]
+      consumers = [processor.in-taxiride]
+    }
+    fares {
+      producers = [fares.out]
+      consumers = [processor.in-taxifare]
+    }
+    taxifares {
+      producers = [processor.out]
+      consumers = [logger.in]
+    }
   }
 }
 ```
