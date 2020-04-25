@@ -17,6 +17,11 @@
 package cloudflow.blueprint
 
 import com.typesafe.config._
+object Topic {
+  val LegalTopicChars   = "[a-zA-Z0-9\\._\\-]"
+  val LegalTopicPattern = s"$LegalTopicChars+".r
+  val MaxLength         = 255
+}
 
 /**
  * Defines a Topic and the streamlet inlets and outlets that connect to it.
@@ -33,13 +38,13 @@ final case class Topic(
     problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
     verified: Option[VerifiedTopic] = None
 ) {
-
+  import Topic._
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): Topic = {
 
-    //TODO for Topic:
-    //val legalChars = "[a-zA-Z0-9\\._\\-]"
-    //private val maxNameLength = 255
-    //private val rgx = new Regex(legalChars + "+")
+    val invalidTopicError = name match {
+      case LegalTopicPattern() => if (name.size > MaxLength) Vector(InvalidTopicName(name)) else Vector.empty[BlueprintProblem]
+      case _                   => Vector(InvalidTopicName(name))
+    }
 
     val patternErrors               = (producers ++ consumers).flatMap(port => VerifiedPortPath(port).left.toOption)
     val verifiedProducerPaths       = producers.flatMap(producer => VerifiedPortPath(producer).toOption)
@@ -54,7 +59,7 @@ final case class Topic(
     val producerErrors = verifiedProducerPortsResult
       .flatMap { res =>
         val inlets = res.filterNot(_.isOutlet)
-        if (inlets.nonEmpty) Left(inlets.map(p => InvalidProducerPortPath(p.portPath.toString)))
+        if (inlets.nonEmpty) Left(inlets.map(p => InvalidProducerPortPath(name, p.portPath.toString)))
         else Right(res)
       }
       .left
@@ -65,7 +70,7 @@ final case class Topic(
     val consumerErrors = verifiedConsumerPortsResult
       .flatMap { res =>
         val outlets = res.filter(_.isOutlet)
-        if (outlets.nonEmpty) Left(outlets.map(p => InvalidConsumerPortPath(p.portPath.toString)))
+        if (outlets.nonEmpty) Left(outlets.map(p => InvalidConsumerPortPath(name, p.portPath.toString)))
         else Right(res)
       }
       .left
@@ -77,7 +82,7 @@ final case class Topic(
           )
     val schemaErrors = verifySchema(verifiedPorts)
     copy(
-      problems = patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ schemaErrors,
+      problems = invalidTopicError ++ patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ schemaErrors,
       verified =
         if (verifiedPorts.nonEmpty)
           Some(VerifiedTopic(name, verifiedPorts.distinct.sortBy(_.portPath.toString), bootstrapServers, create, kafkaConfig))
