@@ -23,7 +23,6 @@ import skuber._
 import skuber.api.client._
 
 import cloudflow.operator.action._
-import cloudflow.blueprint.deployment.CloudflowApplication
 
 /**
  * Indicates that a cloudflow application was deployed or undeployed.

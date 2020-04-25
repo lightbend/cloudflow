@@ -22,7 +22,6 @@ import org.scalatest._
 import skuber._
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.CloudflowApplication
 
 import BlueprintBuilder._
 

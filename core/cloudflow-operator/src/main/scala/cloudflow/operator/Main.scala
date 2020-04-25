@@ -33,8 +33,6 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import skuber.apps.v1.Deployment
 
-import cloudflow.blueprint.deployment.CloudflowApplication
-
 object Main extends {
 
   def main(args: Array[String]): Unit = {

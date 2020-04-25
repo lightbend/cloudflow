@@ -22,7 +22,6 @@ import scala.collection.immutable._
 import skuber._
 
 import cloudflow.operator.runner._
-import cloudflow.blueprint.deployment.CloudflowApplication
 
 object SparkRunnerActions extends RunnerActions(SparkRunner) {
   def apply(

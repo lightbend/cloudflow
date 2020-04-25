@@ -23,7 +23,6 @@ import org.scalatest.{ ConfigMap ⇒ _, _ }
 import cloudflow.blueprint._
 import BlueprintBuilder._
 import cloudflow.operator.runner._
-import cloudflow.blueprint.deployment.CloudflowApplication
 
 class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
