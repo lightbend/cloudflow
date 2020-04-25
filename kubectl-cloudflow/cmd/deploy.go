@@ -49,7 +49,7 @@ a space.
 
 The command supports a flag --scale to specify the scale of each streamlet on deploy in the form of key/value
 pairs ('streamlet-name=scale') separated by comma.
-  kubectl-cloudflow deploy call-record-aggregator-cr.json --scale cdr-aggregator=3,cdr-generator1=3
+  kubectl-cloudflow deploy call-record-aggregator.json --scale cdr-aggregator=3,cdr-generator1=3
 
 Streamlet volume mounts can be configured using the --volume-mount flag.
 The flag accepts one or more key/value pair where the key is the name of the
@@ -58,11 +58,11 @@ is the name of a Kubernetes Persistent Volume Claim, which needs to be located
 in the same namespace as the Cloudflow application, e.g. the namespace with the
 same name as the application.
 
-  kubectl cloudflow deploy call-record-aggregator-cr.json --volume-mount my-streamlet.mount=pvc-name
+  kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name
 
 It is also possible to specify more than one "volume-mount" parameter.
 
-  kubectl cloudflow deploy call-record-aggregator-cr.json --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
+  kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
 
 You can optionally provide credentials for the docker registry that hosts the
 images of the application by using the --username flag in combination with either
@@ -72,11 +72,11 @@ The --password-stdin flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
 One way to provide the password via stdin is to pipe it from a file:
 
-  cat key.json | kubectl cloudflow deploy call-record-aggregator-cr.json --username _json_key --password-stdin
+  cat key.json | kubectl cloudflow deploy call-record-aggregator.json --username _json_key --password-stdin
 
 You can also use --password, which is less secure:
 
-  kubectl cloudflow deploy call-record-aggregator-cr.json --username _json_key -password "$(cat key.json)"
+  kubectl cloudflow deploy call-record-aggregator.json --username _json_key -password "$(cat key.json)"
 
 If you do not provide a username and password, you will be prompted for them
 the first time you deploy an image from a certain docker registry. The
@@ -86,7 +86,7 @@ the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
 `,
-		Example: `kubectl cloudflow deploy call-record-aggregator-cr.json valid-logger.log-level=info valid-logger.msg-prefix=valid`,
+		Example: `kubectl cloudflow deploy call-record-aggregator.json valid-logger.log-level=info valid-logger.msg-prefix=valid`,
 		Args:    validateDeployCmdArgs,
 		Run:     deployOpts.deployImpl,
 	}
@@ -106,7 +106,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	crFile := args[0]
 	crString, err := util.GetFileContents(crFile)
 	if err != nil {
-		util.LogAndExit("%s", err.Error())
+		util.LogAndExit("Failed to read the file contents for the CR - please check if the file exists or it has a bad formatting (%s)", err.Error())
 	}
 
 	bytes := []byte(crString)
@@ -429,7 +429,7 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 
 	crFile := args[0]
 	if !util.FileExists(crFile) {
-		return fmt.Errorf("Local file (%s) does not exist", crFile)
+		return fmt.Errorf("File (%s) does not exist", crFile)
 	}
 
 	return nil

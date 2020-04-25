@@ -57,8 +57,6 @@ object Library {
   val ScalaCheck            = "org.scalacheck"        %% "scalacheck"               % "1.14.0"
   val Avro4sJson            = "com.sksamuel.avro4s"   %% "avro4s-json"              % "3.0.0"
 
-  val PlayJson              = "com.typesafe.play"     %% "play-json"                % "2.8.1" exclude("com.fasterxml.jackson.core","jackson-databind")
-
   // Test Dependencies
   val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test
   val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                            % Test

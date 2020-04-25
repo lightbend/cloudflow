@@ -33,6 +33,7 @@ import cloudflow.blueprint.deployment.{ CloudflowCR, Metadata, StreamletInstance
 import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
 
 /**
+ * Plugin that generates the CR file for the application
  */
 object CRGenerationPlugin extends AutoPlugin {
   final val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
@@ -114,7 +115,7 @@ object CRGenerationPlugin extends AutoPlugin {
     )
 
     // generate the CR file in the current location
-    val file = new File(s"${appDescriptor.appId}-cr.json")
+    val file = new File(s"${appDescriptor.appId}.json")
     IO.write(file, cr.toJson.compactPrint)
     log.success(s"Cloudflow application CR generated in ${file.name}")
   }
