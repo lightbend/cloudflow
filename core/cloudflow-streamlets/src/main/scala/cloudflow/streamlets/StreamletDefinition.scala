@@ -46,7 +46,7 @@ case class StreamletDefinition(appId: String,
 }
 
 object SavepointPath {
-  //TODO  used for testing, remove
+  //TODO  used for testing, move to blueprint builder
   def apply(appId: String, streamletRef: String, outlet: String): SavepointPath =
     SavepointPath(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
 }
