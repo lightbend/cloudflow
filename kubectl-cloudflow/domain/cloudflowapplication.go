@@ -24,7 +24,7 @@ type PortMapping struct {
 	Streamlet        string          `json:"streamlet"`
 	Config           json.RawMessage `json:"config"`
 	BootstrapServers string          `json:"bootstrap_servers,omitempty"`
-	Create           bool            `json:"create"`
+	Managed          bool            `json:"managed"`
 }
 
 // Endpoint contains deployment endpoint information

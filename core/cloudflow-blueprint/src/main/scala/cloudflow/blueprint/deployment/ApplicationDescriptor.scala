@@ -187,7 +187,7 @@ final case class Savepoint(
     name: String,
     config: Config = ConfigFactory.empty(),
     bootstrapServers: Option[String] = None,
-    create: Boolean = true
+    managed: Boolean = true
 )
 
 final case class Endpoint(

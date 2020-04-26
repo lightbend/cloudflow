@@ -38,7 +38,7 @@ object SavepointActions {
       deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
-      app.deployments.flatMap(_.portMappings.values.map(sp => TopicInfo(sp.name, sp.create))).toSet
+      app.deployments.flatMap(_.portMappings.values.map(sp => TopicInfo(sp.name, sp.managed))).toSet
 
     val labels = CloudflowLabels(newApp)
 
@@ -48,14 +48,14 @@ object SavepointActions {
     val deleteActions =
       if (deleteOutdatedTopics) {
         (currentTopics -- newTopics).toVector
-          .flatMap(topic => if (topic.create) Some(deleteAction(labels)(topic)) else None)
+          .flatMap(topic => if (topic.managed) Some(deleteAction(labels)(topic)) else None)
       } else {
         Vector.empty[Action[ObjectResource]]
       }
 
     val createActions =
       (newTopics -- currentTopics).toVector
-        .flatMap(topic => if (topic.create) Some(createAction(labels)(topic)) else None)
+        .flatMap(topic => if (topic.managed) Some(createAction(labels)(topic)) else None)
     deleteActions ++ createActions
   }
 
@@ -113,7 +113,7 @@ object SavepointActions {
     override def updateMetadata(obj: CustomResource[Spec, Status], newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
   object TopicInfo {
-    def apply(sp: Savepoint): TopicInfo = TopicInfo(sp.name, sp.create)
+    def apply(sp: Savepoint): TopicInfo = TopicInfo(sp.name, sp.managed)
   }
-  case class TopicInfo(name: String, create: Boolean)
+  case class TopicInfo(name: String, managed: Boolean)
 }

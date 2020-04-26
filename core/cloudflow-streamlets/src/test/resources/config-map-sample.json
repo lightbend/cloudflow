@@ -29,7 +29,7 @@
                     "streamlet_ref": "sensor-data",
                     "name": "appId.sensor-data.accepted",
                     "config" : {},
-                    "create" : true
+                    "managed" : true
                   }
               },
               {
@@ -40,7 +40,7 @@
                     "streamlet_ref": "sensor-data",
                     "name": "appId.sensor-data.rejected",
                     "config" : {},
-                    "create" : true
+                    "managed" : true
                   }
               }
             ],

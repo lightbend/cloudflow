@@ -30,7 +30,7 @@ object Blueprint {
   val TopicsSectionKey                 = "blueprint.topics"
   val UnsupportedConnectionsSectionKey = "blueprint.connections"
   val TopicKey                         = "topic.name"
-  val CreateKey                        = "create"
+  val ManagedKey                       = "managed"
   val ProducersKey                     = "producers"
   val ConsumersKey                     = "consumers"
 
@@ -78,7 +78,7 @@ object Blueprint {
           getKeys(config, TopicsSectionKey).map { key ⇒
             val topicKey            = s"$TopicsSectionKey.${key}.$TopicKey"
             val bootstrapServersKey = s"$TopicsSectionKey.${key}.$BootstrapServersKey"
-            val createKey           = s"$TopicsSectionKey.${key}.$CreateKey"
+            val createKey           = s"$TopicsSectionKey.${key}.$ManagedKey"
             val producersKey        = s"$TopicsSectionKey.${key}.$ProducersKey"
             val consumersKey        = s"$TopicsSectionKey.${key}.$ConsumersKey"
             val configKey           = s"$TopicsSectionKey.${key}"
@@ -90,7 +90,7 @@ object Blueprint {
             val consumers                = getStringListOrEmpty(config, consumersKey)
             val kafkaConfig = getConfigOrEmpty(config, configKey)
               .withoutPath(TopicKey)
-              .withoutPath(CreateKey)
+              .withoutPath(ManagedKey)
               .withoutPath(BootstrapServersKey)
               .withoutPath(ProducersKey)
               .withoutPath(ConsumersKey)

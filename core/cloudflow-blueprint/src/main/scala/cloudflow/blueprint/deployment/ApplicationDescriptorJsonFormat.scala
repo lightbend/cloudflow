@@ -35,7 +35,7 @@ trait ConfigJsonFormat extends DefaultJsonProtocol {
 trait ApplicationDescriptorJsonFormat extends StreamletDescriptorFormat with ConfigJsonFormat {
   implicit val streamletFormat = jsonFormat(StreamletInstance.apply, "name", "descriptor")
 
-  implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet", "name", "config", "bootstrap_servers", "create")
+  implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet", "name", "config", "bootstrap_servers", "managed")
   implicit val endpointFormat  = jsonFormat(Endpoint.apply, "app_id", "streamlet", "container_port")
 
   implicit val streamletDeploymentFormat = jsonFormat(
