@@ -51,10 +51,10 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
       if (activateCluster && localMode) {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-        val clusterConfig              = ConfigFactory.load("akka-cluster-local.conf")
+        val clusterConfig              = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
         val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system = ActorSystem("akka_streamlet", fullConfig)
+        val system = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else if (activateCluster) {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
@@ -62,11 +62,11 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
           .parseString(
             s"""akka.discovery.kubernetes-api.pod-label-selector = "com.lightbend.cloudflow/streamlet-name=${streamletDefinition.streamletRef}""""
           )
-          .withFallback(ConfigFactory.load("akka-cluster-k8.conf"))
+          .withFallback(ConfigFactory.parseResourcesAnySyntax("akka-cluster-k8.conf"))
 
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system = ActorSystem("akka_streamlet", fullConfig)
+        val system = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
         AkkaManagement(system).start()
         ClusterBootstrap(system).start()
         Discovery(system).loadServiceDiscovery("kubernetes-api")
