@@ -52,7 +52,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       if (activateCluster && localMode) {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
         val clusterConfig              = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
-        val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
+        val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
         val system = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
