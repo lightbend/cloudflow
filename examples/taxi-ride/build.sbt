@@ -36,7 +36,7 @@ lazy val datamodel = appModule("datamodel")
   )
 
 lazy val ingestor = appModule("ingestor")
-  .enablePlugins(CloudflowAkkaStreamsLibraryPlugin)
+  .enablePlugins(CloudflowAkkaPlugin)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
@@ -49,7 +49,7 @@ lazy val ingestor = appModule("ingestor")
 
 
 lazy val processor = appModule("processor")
-  .enablePlugins(CloudflowFlinkLibraryPlugin)
+  .enablePlugins(CloudflowFlinkPlugin)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
@@ -63,7 +63,7 @@ lazy val processor = appModule("processor")
   .dependsOn(datamodel)
 
 lazy val ridelogger = appModule("logger")
-  .enablePlugins(CloudflowAkkaStreamsLibraryPlugin)
+  .enablePlugins(CloudflowAkkaPlugin)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
