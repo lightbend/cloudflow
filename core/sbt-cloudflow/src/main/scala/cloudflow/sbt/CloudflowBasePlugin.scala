@@ -41,7 +41,6 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
   final val CloudflowVersion                 = "1.4.0"
-  val TEMP_DIRECTORY                         = new File(System.getProperty("java.io.tmpdir"))
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -140,14 +139,17 @@ case object DockerRegistryNotSet extends Exception(DockerRegistryNotSetError.msg
 object DockerRegistryNotSetError {
   val msg =
     """
-              |Please set the `cloudflowDockerRegistry` sbt setting in your build.sbt file to the registry that you want to push the image to. This Docker registry must be configured for image pulling on your target Kubernetes clusters and you should `docker login` to it before building and pushing any images.
-              |Example:
-              |
-              |lazy val myProject = (project in file("."))
-              |  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
-              |  .settings(
-              |   cloudflowDockerRegistry := Some("docker-registry-default.cluster.example.com"),
-              |   // other settings
-              |  )
-            """.stripMargin
+      |Please set the `cloudflowDockerRegistry` sbt setting in your build.sbt file to the registry that you want to push the image to.
+      |This Docker registry must be configured for image pulling on your target Kubernetes clusters.
+      |You must authenticate to your target Docker registry using `docker login` to it before building and pushing any images.
+      |
+      |Example:
+      |
+      |lazy val myProject = (project in file("."))
+      |  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+      |  .settings(
+      |   cloudflowDockerRegistry := Some("docker-registry-default.cluster.example.com"),
+      |   // other settings
+      |  )
+    """.stripMargin
 }

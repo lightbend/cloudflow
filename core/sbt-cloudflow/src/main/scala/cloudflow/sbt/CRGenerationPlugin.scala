@@ -20,23 +20,20 @@ import java.io._
 import java.nio.charset.StandardCharsets._
 
 import spray.json._
-
 import sbt._
 import sbt.Keys._
 
 import scala.util.control.NoStackTrace
-
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptor
 import cloudflow.blueprint.StreamletDescriptorFormat._
-import cloudflow.blueprint.deployment.{ CloudflowCR, Metadata, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, CloudflowCR, Metadata, StreamletInstance }
 import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
 
 /**
  * Plugin that generates the CR file for the application
  */
 object CRGenerationPlugin extends AutoPlugin {
-  final val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
 
   override def requires =
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
@@ -55,21 +52,24 @@ object CRGenerationPlugin extends AutoPlugin {
     // these streamlet descriptors have been generated from the `build` task
     // if they have not been generated we throw an exception and ask the user
     // to run the build
-    val log = streams.value.log
+    val log     = streams.value.log
+    val workDir = cloudflowWorkDir.value
 
     val registry  = cloudflowDockerRegistry.value.get
     val namespace = cloudflowDockerRepository.value.get
 
-    val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) { (a, e) =>
-      val image = e._2
-      val file  = new File(TEMP_DIRECTORY, image.asTaggedName)
-      if (file.exists()) {
-        val json = new String(IO.readBytes(file), UTF_8)
-        a ++ json.parseJson.convertTo[Map[String, StreamletDescriptor]].values
-      } else a
+    val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) {
+      case (acc, (_, image)) =>
+        val file = new File(workDir, image.asTaggedName)
+        if (file.exists()) {
+          val json = new String(IO.readBytes(file), UTF_8)
+          acc ++ json.parseJson.convertTo[Map[String, StreamletDescriptor]].values
+        } else {
+          acc
+        }
     }
 
-    // build if you are trying to generate the CR before doing the build
+    // build is required before we can generate the CR
     if (streamletDescriptors.isEmpty) {
       throw new PreconditionViolationError("Need to run `build` first before generating CR")
     }
@@ -97,8 +97,17 @@ object CRGenerationPlugin extends AutoPlugin {
     // the new shiny `ApplicationDescriptor`
     val newApplicationDescriptor = appDescriptor.copy(streamlets = newStreamletInstances, deployments = newDeployments)
 
-    // get the CR
-    val cr = CloudflowCR(
+    // create the CR
+    val cr = makeCR(newApplicationDescriptor)
+
+    // generate the CR file in the current location
+    val file = new File(s"${appDescriptor.appId}.json")
+    IO.write(file, cr.toJson.compactPrint)
+    log.success(s"Cloudflow application CR generated in ${file.name}")
+  }
+
+  def makeCR(appDescriptor: ApplicationDescriptor): CloudflowCR =
+    CloudflowCR(
       apiVersion = "cloudflow.lightbend.com/v1alpha1",
       kind = "CloudflowApplication",
       metadata = Metadata(
@@ -111,14 +120,9 @@ object CRGenerationPlugin extends AutoPlugin {
         ),
         name = appDescriptor.appId
       ),
-      newApplicationDescriptor
+      appDescriptor
     )
 
-    // generate the CR file in the current location
-    val file = new File(s"${appDescriptor.appId}.json")
-    IO.write(file, cr.toJson.compactPrint)
-    log.success(s"Cloudflow application CR generated in ${file.name}")
-  }
 }
 
 class PreconditionViolationError(msg: String) extends Exception(s"\n$msg") with NoStackTrace with sbt.FeedbackProvidedException

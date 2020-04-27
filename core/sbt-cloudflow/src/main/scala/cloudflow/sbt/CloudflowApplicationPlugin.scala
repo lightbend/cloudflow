@@ -19,7 +19,7 @@ package cloudflow.sbt
 import java.util.concurrent.atomic.AtomicInteger
 
 import sbt.Keys._
-import sbt.{ Def, _ }
+import sbt._
 
 import scala.util.control.NoStackTrace
 
@@ -33,7 +33,6 @@ import cloudflow.sbt.CloudflowKeys._
 object CloudflowApplicationPlugin extends AutoPlugin {
 
   private val cloudflowAppProjects: AtomicInteger = new AtomicInteger()
-  val TEMP_DIRECTORY                              = new File(System.getProperty("java.io.tmpdir"))
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = StreamletDescriptorsPlugin && BlueprintVerificationPlugin && CRGenerationPlugin
@@ -57,8 +56,8 @@ object CloudflowApplicationPlugin extends AutoPlugin {
    * Check that this plugin isn't defined more than once in the multi-project build.
    */
   private def checkUsageCount(): Def.Initialize[Task[Unit]] = Def.task {
-    val isPipelineApp = thisProject.value.autoPlugins.exists(_.label.equals(CloudflowApplicationPlugin.label))
-    if (isPipelineApp && cloudflowAppProjects.incrementAndGet() > 1) {
+    val isCloudflowApp = thisProject.value.autoPlugins.exists(_.label.equals(CloudflowApplicationPlugin.label))
+    if (isCloudflowApp && cloudflowAppProjects.incrementAndGet() > 1) {
       throw new MultipleCloudflowApplicationError(
         "You can only define one project as a Cloudflow Application in a multi-project sbt build."
       )

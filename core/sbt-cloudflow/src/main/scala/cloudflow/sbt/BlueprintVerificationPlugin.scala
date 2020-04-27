@@ -29,7 +29,6 @@ import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 
 object BlueprintVerificationPlugin extends AutoPlugin {
-  val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
 
   override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin
 

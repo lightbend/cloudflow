@@ -19,12 +19,10 @@ package cloudflow.sbt
 import java.io._
 
 import com.typesafe.config._
-
 import sbt._
 import sbt.Keys._
 import spray.json._
 import JsonUtils._
-
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.blueprint.StreamletDescriptor
@@ -39,7 +37,6 @@ import cloudflow.blueprint.StreamletDescriptor
  * to the top level project name.
  */
 object StreamletDescriptorsPlugin extends AutoPlugin {
-  final val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
 
   override def requires =
     CommonSettingsAndTasksPlugin && StreamletScannerPlugin
@@ -49,8 +46,9 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
+          val workDir            = cloudflowWorkDir.value
           val detectedStreamlets = cloudflowStreamletDescriptors.value
-          val file               = new File(TEMP_DIRECTORY, cloudflowDockerImageName.value.get.asTaggedName)
+          val file               = new File(workDir, cloudflowDockerImageName.value.get.asTaggedName)
           buildStreamletDescriptors(file, detectedStreamlets, cloudflowDockerImageName.value)
         }.value
   )
@@ -63,14 +61,14 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
     Def.task {
       val detectedStreamletDescriptors = detectedStreamlets.mapValues { configDescriptor =>
         val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-        dockerImageName
-          .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
-          .getOrElse(jsonString.parseJson.addField("image", "placeholder"))
+        val imageName  = dockerImageName.map(din => din.asTaggedName).getOrElse("placeholder")
+        jsonString.parseJson
+          .addField("image", imageName)
           .convertTo[cloudflow.blueprint.StreamletDescriptor]
       }
       IO.write(file, detectedStreamletDescriptors.toJson.compactPrint)
       val log = streams.value.log
-      log.info(s"File ${file.getName} created")
+      log.info(s"Streamlet descriptor file [${file.getName}] created")
       detectedStreamletDescriptors
     }
 }
