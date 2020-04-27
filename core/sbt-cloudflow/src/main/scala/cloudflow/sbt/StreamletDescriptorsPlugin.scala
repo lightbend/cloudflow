@@ -63,14 +63,14 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
     Def.task {
       val detectedStreamletDescriptors = detectedStreamlets.mapValues { configDescriptor =>
         val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-        dockerImageName
-          .map(din ⇒ jsonString.parseJson.addField("image", din.asTaggedName))
-          .getOrElse(jsonString.parseJson.addField("image", "placeholder"))
+        val imageName  = dockerImageName.map(din => din.asTaggedName).getOrElse("placeholder")
+        jsonString.parseJson
+          .addField("image", imageName)
           .convertTo[cloudflow.blueprint.StreamletDescriptor]
       }
       IO.write(file, detectedStreamletDescriptors.toJson.compactPrint)
       val log = streams.value.log
-      log.info(s"File ${file.getName} created")
+      log.info(s"Streamlet descriptor file [${file.getName}] created")
       detectedStreamletDescriptors
     }
 }
