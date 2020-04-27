@@ -52,13 +52,13 @@ object AkkaRunner extends Runner[Deployment] {
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
-    val environmentVariables = List(EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions)) ++
-      if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
-        List(
-          EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
-          EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
-        )
-      } else Nil
+    val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
+      List(
+        EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
+        EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
+      )
+    } else Nil
+    val environmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions) :: prometheusEnvVars
 
     // Pass this argument to the entry point script. The top level entry point will be a
     // cloudflow-entrypoint.sh which will route to the appropriate entry point based on the
