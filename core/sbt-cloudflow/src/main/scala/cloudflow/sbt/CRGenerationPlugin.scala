@@ -34,7 +34,6 @@ import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
  * Plugin that generates the CR file for the application
  */
 object CRGenerationPlugin extends AutoPlugin {
-  final val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
 
   override def requires =
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
@@ -53,14 +52,15 @@ object CRGenerationPlugin extends AutoPlugin {
     // these streamlet descriptors have been generated from the `build` task
     // if they have not been generated we throw an exception and ask the user
     // to run the build
-    val log = streams.value.log
+    val log     = streams.value.log
+    val workDir = cloudflowWorkDir.value
 
     val registry  = cloudflowDockerRegistry.value.get
     val namespace = cloudflowDockerRepository.value.get
 
     val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) {
       case (acc, (_, image)) =>
-        val file = new File(TEMP_DIRECTORY, image.asTaggedName)
+        val file = new File(workDir, image.asTaggedName)
         if (file.exists()) {
           val json = new String(IO.readBytes(file), UTF_8)
           acc ++ json.parseJson.convertTo[Map[String, StreamletDescriptor]].values

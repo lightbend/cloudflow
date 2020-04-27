@@ -41,7 +41,6 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
   final val CloudflowVersion                 = "1.4.0"
-  val TEMP_DIRECTORY                         = new File(System.getProperty("java.io.tmpdir"))
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow

@@ -53,6 +53,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
+    cloudflowWorkDir := (ThisBuild / baseDirectory).value / "target" / ".cloudflow",
     imageNamesByProject := Def.taskDyn {
           val buildNumber = cloudflowBuildNumber.value.buildNumber
           Def.task {

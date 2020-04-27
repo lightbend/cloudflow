@@ -59,6 +59,7 @@ trait CloudflowTaskKeys {
   val runLocal        = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
   val generateCR      = taskKey[Unit]("Generate Cloudflow Application CR")
 
+  private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping")
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application")
 
