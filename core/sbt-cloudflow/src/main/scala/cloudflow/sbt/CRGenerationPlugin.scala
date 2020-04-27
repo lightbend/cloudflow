@@ -35,7 +35,7 @@ import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
  */
 object CRGenerationPlugin extends AutoPlugin {
   final val TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"))
-  
+
   override def requires =
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
 
