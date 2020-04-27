@@ -57,31 +57,33 @@ object FlinkRunner extends Runner[CR] {
     import ctx.flinkRunnerSettings._
 
     val envConfig = EnvConfig(
-      List(
-        EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
+      Some(
+        List(
+          EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
+        )
       )
     )
 
     val jobManagerConfig = JobManagerConfig(
-      jobManagerSettings.replicas,
+      Some(jobManagerSettings.replicas),
       Resources.make(
         ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
                               jobManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
       ),
-      envConfig
+      Some(envConfig)
     )
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
-      taskSlots = taskManagerSettings.taskSlots,
+      Some(taskManagerSettings.taskSlots),
       Resources.make(
         ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
                               taskManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
       ),
-      envConfig
+      Some(envConfig)
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -245,13 +247,13 @@ object FlinkResource {
   final case class JobManagerConfig(
       replicas: Option[Int],
       resources: Option[Resources] = None,
-      envConfig: Option[EnvConfig] = EnvConfig()
+      envConfig: Option[EnvConfig]
   )
 
   final case class TaskManagerConfig(
       taskSlots: Option[Int],
       resources: Option[Resources] = None,
-      envConfig: Option[EnvConfig] = EnvConfig()
+      envConfig: Option[EnvConfig]
   )
 
   /*
