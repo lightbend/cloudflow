@@ -39,6 +39,7 @@ object FlinkRunner extends Runner[CR] {
   final val runtime         = "flink"
   final val PVCMountPath    = "/mnt/flink/storage"
   final val DefaultReplicas = 2
+  final val JvmArgsEnvVar   = "JVM_ARGS"
 
   def resource(
       deployment: StreamletDeployment,
@@ -55,13 +56,23 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
+    // Flink operator has made envConfig mandatory
+    // https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1beta1/types.go#L110
+    // Hence setting a dummy variable @todo: remove this once fixed
+    val envConfig = EnvConfig(
+      List(
+        EnvVar(JvmArgsEnvVar, "-DDUMMY=dummy")
+      )
+    )
+
     val jobManagerConfig = JobManagerConfig(
       jobManagerSettings.replicas,
       Resources.make(
         ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
                               jobManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
-      )
+      ),
+      envConfig
     )
 
     val scale = deployment.replicas
@@ -72,7 +83,8 @@ object FlinkRunner extends Runner[CR] {
         ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
                               taskManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
-      )
+      ),
+      envConfig
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -269,7 +281,7 @@ object FlinkResource {
   final case class Spec(
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
-      flinkVersion: String = "1.8",
+      flinkVersion: String = "1.10",
       serviceAccountName: String = Name.ofServiceAccount,
       jarName: String,
       parallelism: Int,
