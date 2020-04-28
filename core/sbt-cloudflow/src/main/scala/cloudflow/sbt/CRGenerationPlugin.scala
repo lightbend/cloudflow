@@ -101,9 +101,10 @@ object CRGenerationPlugin extends AutoPlugin {
     val cr = makeCR(newApplicationDescriptor)
 
     // generate the CR file in the current location
-    val file = new File(s"${appDescriptor.appId}.json")
+    new File("target").mkdir()
+    val file = new File(s"target/${appDescriptor.appId}.json")
     IO.write(file, cr.toJson.compactPrint)
-    log.success(s"Cloudflow application CR generated in ${file.name}")
+    log.success(s"Cloudflow application CR generated in ${file.getAbsolutePath}")
   }
 
   def makeCR(appDescriptor: ApplicationDescriptor): CloudflowCR =
