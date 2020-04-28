@@ -10,8 +10,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@master
-    - name: Make all  
+    - name: Build documentation  
       run: |
+        cd docs
         make all
     - name: Publish to cloudflow.io  
       env:
@@ -20,7 +21,7 @@ jobs:
          CFIO_TOKEN: ${{ secrets.CLOUDFLOWIO_TOKEN }}
       run: |
         git clone https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git ./cloudflow.io
-        cp -r target/staging/* ./cloudflow.io
+        cp -r docs/target/staging/* ./cloudflow.io
         cd ./cloudflow.io
         git config  user.email "$CFIO_EMAIL"
         git config  user.name "$CFIO_USER"
