@@ -8,9 +8,7 @@ ROOT_DIR := ${SHELL_DIR}/..
 antora_docker_image     := lightbend/antora-doc
 antora_docker_image_tag := 0.1.0
 
-work_dir := ${ROOT_DIR}/target
-
-cloudflow_clone_dir := ${work_dir}/cloudflow
+work_dir := ${ROOT_DIR}/docs/target
 
 staging_dir := ${work_dir}/staging
 
@@ -66,25 +64,15 @@ list-todos: html
 		-c 'find /antora/docs-source/build/site/cloudflow/${version} -name "*.html" -print0 | xargs -0 grep -iE "TODO|FIXME|REVIEWERS|adoc"'
 
 # Generate the ScalaDoc and the JavaDoc, and put it in ${output}/scaladoc and ${output}/javadoc
-javascaladoc: cloudflow-clone
-	-(cd ${cloudflow_clone_dir}/core && sbt clean unidoc )
+javascaladoc: 
+	-(cd ${ROOT_DIR}/core && sbt clean unidoc )
 
 javascaladoc_staged: ${javascaladoc_dir} javascaladoc
-	cp -r ${cloudflow_clone_dir}/core/target/scala-2.12/unidoc ${javascaladoc_dir}/scaladoc
-	cp -r ${cloudflow_clone_dir}/core/target/javaunidoc ${javascaladoc_dir}/javadoc
-
-# Cloudflow streamlets source for java and scala doc
-cloudflow-clone: ${work_dir} clean-clone-dir
-	git clone https://github.com/lightbend/cloudflow.git ${cloudflow_clone_dir}
-	# need to use the release branch during release
-	# git clone --single-branch --branch v1.3.3 git@github.com:lightbend/cloudflow.git ${cloudflow_clone_dir}
-
-clean-clone-dir: 
-	rm -rf ${cloudflow_clone_dir}
+	cp -r ${ROOT_DIR}/core/target/scala-2.12/unidoc ${javascaladoc_dir}/scaladoc
+	cp -r ${ROOT_DIR}/core/target/javaunidoc ${javascaladoc_dir}/javadoc
 
 ${work_dir}: 
 	mkdir -p ${work_dir}
-
 
 ${staging_dir}:
 	mkdir -p ${staging_dir}
