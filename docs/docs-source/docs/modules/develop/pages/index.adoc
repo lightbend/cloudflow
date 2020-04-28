@@ -1,0 +1,11 @@
+= Developing Cloudflow streamlets
+:site.url: https://cloudflow.io/docs
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+
+include::ROOT:partial$include.adoc[]
+include::shared-content:develop:page$index.adoc[]
+
+// Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.

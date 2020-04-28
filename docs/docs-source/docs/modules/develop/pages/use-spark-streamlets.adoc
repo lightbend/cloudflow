@@ -1,0 +1,9 @@
+= Using Spark Streamlets
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+include::shared-content:develop:page$use-spark-streamlets.adoc[]
+
+// Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.

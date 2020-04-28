@@ -1,0 +1,41 @@
+= cloudflow configure
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Configures a deployed Cloudflow application.
+
+== Synopsis
+
+Configures a deployed Cloudflow application.
+
+[source,bash]
+----
+kubectl cloudflow configure [flags]
+----
+
+== Examples
+
+[source,bash]
+----
+kubectl cloudflow configure my-app mystreamlet.hostname=localhost
+----
+
+or to list all required configuration parameters:
+
+[source,bash]
+----
+kubectl cloudflow configure my-app
+----
+
+== Options
+
+
+[source,bash]
+----
+  -h, --help   help for configure
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

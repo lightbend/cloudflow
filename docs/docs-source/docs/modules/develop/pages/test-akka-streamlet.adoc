@@ -1,0 +1,9 @@
+= Testing an Akka streamlet
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+include::shared-content:develop:page$test-akka-streamlet.adoc[]
+
+// Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.

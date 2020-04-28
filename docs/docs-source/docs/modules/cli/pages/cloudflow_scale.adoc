@@ -1,0 +1,34 @@
+= cloudflow scale
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.
+
+== Synopsis
+
+Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.
+
+[source,bash]
+----
+kubectl cloudflow scale [flags]
+----
+
+== Examples
+
+[source,bash]
+----
+kubectl cloudflow scale my-app my-streamlet 2
+----
+
+== Options
+
+[source,bash]
+----
+-h, --help   help for scale
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.
+

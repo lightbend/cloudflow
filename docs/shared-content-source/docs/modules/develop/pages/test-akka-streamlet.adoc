@@ -1,0 +1,102 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+A `testkit` is provided to make it easier to write unit tests for Akka Stream streamlets. The unit tests are meant to facilitate local testing of streamlets. The `testkit` allows writing of tests in Scala, as well as Java.
+
+== Basic flow of `testkit` APIs
+
+Here's the basic flow that you need to follow when writing tests using the `testkit`:
+
+. Instantiate the `testkit`
+. Setup inlet taps that tap the inlet ports of the streamlet
+. Setup outlet taps for outlet ports
+. Push data into inlet ports
+. Run the streamlet using the `testkit` and the setup inlet taps and outlet taps
+. Use the probes of the outlet taps to a verify expected results
+
+The `testkit` connects taps to inlets and outlets of a streamlet. The taps provide means to the tester to write data to the inlets and read data from outlets, making it possible to assert that the streamlet behaves as expected.
+
+== Using the `testkit` from Scala
+
+Let's consider an example where we would like to write unit tests for testing a `FlowProcessor`. We will follow the steps that we outlined in the last section. We will use ScalaTest as the testing framework.
+
+=== Imports
+
+Here are the imports that we need for writing the tests. These include some obligatory inputs for ScalaTest and _test kits_ for Cloudflow and Akka, and the code that is generated from the Avro schemas.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=imports]
+----
+
+=== Setting up a sample TestProcessor
+
+Let's set up a `TestProcessor` streamlet that we would like to test. It's a simple one that filters events based on whether they contain keywords.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/TestProcessor.scala[tag=processor]
+----
+
+=== The unit test
+
+Here's how we would write a unit test using `AkkaStreamletTestkit`. The various logical steps of the test are annotated with inline comments explaining the rationale behind the step.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=test]
+----
+
+=== Initialization and cleanups
+
+As per ScalaTest guidelines, we can do custom cleanups in methods like `afterAll()` and `after()` depending on your requirements. In the current implementation we shutdown the actor system in `afterAll()`:
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=afterAll]
+----
+
+Similarly you can have `beforeAll()` and `before()` for custom initializations.
+
+If you have a number of tests that work based on similar initializations and cleanups you can also have a common base trait from which the test trait can extend.
+
+== Using the `testkit` from Java
+
+Using from Java is almost the same as from Scala, the only difference being that you need to use idiomatic Java abstractions and frameworks for writing the tests. In this example we will write the test for the same `TestProcessor` streamlet using the Java DSL of the toolkit in JUnit 4.
+
+=== Imports
+
+Here are the imports that we need for writing the tests. These include some obligatory inputs for JUnit and _test kits_ for Cloudflow and Akka, and the code that is generated from the Avro schemas.
+
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=imports]
+----
+
+=== Setting up a sample TestProcessor
+
+Let's set up a `TestProcessor` that we would like to test.
+
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/TestProcessor.java[tag=processor]
+----
+
+=== The unit test
+
+Here's how we would write a unit test using JUnit. The various logical steps of the test are annotated with inline comments explaining the rationale behind the step.
+
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=test]
+----
+
+=== Initialization and Cleanups
+
+As per JUnit guidelines, we can do custom initializations and cleanups in methods like `setup()` and `tearDown()` respectively depending on your requirements. One common practice is to set up a base class that does all common initializations and clean ups for your tests.
+
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=init]
+----

@@ -1,0 +1,17 @@
+{
+    "ignorePatterns": [
+        { "pattern": "^(?!http)" },
+        { "pattern": "^https?://\\d+\\." },
+        { "pattern": "^https?://localhost" },
+        { "pattern": "^http://apt\\.kubernetes\\.io/kubernetes-xenial" },
+        { "pattern": "^https://ec2-.+\\.compute\\.amazonaws\\.com:8443" },
+        { "pattern": "^https?://.+\\.default\\.svc" },
+        { "pattern": "\\$" },
+        { "pattern": "^https://github\\.com/lightbend/lightbend-platform-docs" },
+        { "pattern": "^https://github.com/minishift/minishift-centos-iso/releases/download/v1.12.0/minishift-centos7.iso$" },
+        { "pattern": "^https://repo\\.lightbend\\.com" },
+        { "pattern": "^https://lightbend\\.bintray\\.com" },
+        { "pattern": "^https://bintray\\.com/lightbend" },
+        { "pattern": "^http://maven\\.apache\\.org/SETTINGS/1\\.0\\.0$" }
+    ]
+}
