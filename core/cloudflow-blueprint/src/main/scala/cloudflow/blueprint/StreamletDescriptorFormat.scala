@@ -44,6 +44,7 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
     "runtime",
     "labels",
     "description",
+    "image",
     "inlets",
     "outlets",
     "config_parameters",

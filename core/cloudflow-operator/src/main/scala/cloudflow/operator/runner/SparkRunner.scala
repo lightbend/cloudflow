@@ -150,11 +150,21 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       configMaps = configMaps,
       securityContext = securityContext
     )
-    val monitoring = Monitoring(prometheus = Prometheus(
-      jmxExporterJar = agentPaths(CloudflowApplication.PrometheusAgentKey),
-      configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-    )
-    )
+
+    val monitoring = {
+      if (!agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
+        Monitoring(prometheus = Prometheus(
+          jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
+          configFile = "/etc/cloudflow-runner/prometheus.yaml",
+          port = 2050
+        )
+        )
+      } else {
+        Monitoring(prometheus = Prometheus(jmxExporterJar = agentPaths(CloudflowApplication.PrometheusAgentKey),
+                                           configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
+        )
+      }
+    }
 
     val spec = Spec(
       image = image,

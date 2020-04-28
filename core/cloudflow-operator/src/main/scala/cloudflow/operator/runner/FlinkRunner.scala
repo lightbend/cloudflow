@@ -56,9 +56,12 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
+    // Flink operator has made envConfig mandatory
+    // https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1beta1/types.go#L110
+    // Hence setting a dummy variable @todo: remove this once fixed
     val envConfig = EnvConfig(
       List(
-        EnvVar(JvmArgsEnvVar, makePrometheusAgentJvmArgs(app))
+        EnvVar(JvmArgsEnvVar, "-DDUMMY=dummy")
       )
     )
 
@@ -195,13 +198,6 @@ object FlinkRunner extends Runner[CR] {
       Runner.DownwardApiVolumeMount
     ) ++ streamletVolumeMount
   }
-
-  private def makePrometheusAgentJvmArgs(app: CloudflowApplication.CR): String = {
-    val agentPath  = app.spec.agentPaths(CloudflowApplication.PrometheusAgentKey)
-    val port       = PrometheusConfig.PrometheusJmxExporterPort.toString
-    val configPath = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-    s"-javaagent:$agentPath=$port:$configPath"
-  }
 }
 
 object FlinkResource {
@@ -285,7 +281,7 @@ object FlinkResource {
   final case class Spec(
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
-      flinkVersion: String = "1.8",
+      flinkVersion: String = "1.10",
       serviceAccountName: String = Name.ofServiceAccount,
       jarName: String,
       parallelism: Int,

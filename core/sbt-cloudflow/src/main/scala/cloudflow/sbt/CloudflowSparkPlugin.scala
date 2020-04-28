@@ -21,17 +21,14 @@ import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.Keys._
-import spray.json._
 
-import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowSparkPlugin extends AutoPlugin {
-  final val SparkVersion     = "2.4.5"
-  final val CloudflowVersion = "1.3.1-SNAPSHOT"
+  final val SparkVersion = "2.4.5"
   final val CloudflowSparkDockerBaseImage =
-    s"lightbend/spark:$CloudflowVersion-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+    s"lightbend/spark:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -43,10 +40,6 @@ object CloudflowSparkPlugin extends AutoPlugin {
     cloudflowDockerParentImage := CloudflowSparkDockerBaseImage,
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-        }.value,
-    streamletDescriptorsInProject := Def.taskDyn {
-          val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets)
         }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
@@ -77,19 +70,12 @@ object CloudflowSparkPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      // pack all streamlet-descriptors into a Json array
-      val streamletDescriptorsJson =
-        streamletDescriptorsInProject.value.toJson
-
-      val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
-
       new Dockerfile {
         from(CloudflowSparkDockerBaseImage)
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         expose(4040)
-        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }
   )

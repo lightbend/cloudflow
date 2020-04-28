@@ -16,23 +16,16 @@
 
 package cloudflow.sbt
 
-import java.nio.charset.StandardCharsets._
-import java.util.Base64
-import java.util.zip.Deflater
-import java.io.ByteArrayOutputStream
-
-import com.typesafe.config._
+import java.io._
 
 import sbt._
 import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.archetypes._
-import spray.json._
+import scala.util.control._
 
 import cloudflow.sbt.CloudflowKeys._
-import cloudflow.blueprint.StreamletDescriptorFormat._
-import cloudflow.blueprint.StreamletDescriptor
 
 /**
  * Base class for all Cloudflow runtime plugins for multi-image use case. Contains some
@@ -47,6 +40,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val DepJarsDir: String               = "dep-jars"
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
+  final val CloudflowVersion                 = "1.4.0"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -57,8 +51,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   val StreamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
 
   override def requires =
-    CommonSettingsAndTasksPlugin && StreamletScannerPlugin &&
-      JavaAppPackaging && sbtdocker.DockerPlugin
+    StreamletDescriptorsPlugin && JavaAppPackaging && sbtdocker.DockerPlugin
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
@@ -67,13 +60,6 @@ object CloudflowBasePlugin extends AutoPlugin {
           // jar needs to be uploaded to a specific location for Flink operator to pick up
           "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version
         ),
-    cloudflowDockerImageName := Def.task {
-          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-        }.value,
-    streamletDescriptorsInProject := Def.taskDyn {
-          val detectedStreamlets = cloudflowStreamletDescriptors.value
-          buildStreamletDescriptors(detectedStreamlets)
-        }.value,
     buildOptions in docker := BuildOptions(
           cache = true,
           removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
@@ -95,7 +81,8 @@ object CloudflowBasePlugin extends AutoPlugin {
     build := showResultOfBuild
           .dependsOn(
             docker.dependsOn(
-              checkUncommittedChanges
+              checkUncommittedChanges,
+              streamletDescriptorsInProject
             )
           )
           .value,
@@ -103,7 +90,8 @@ object CloudflowBasePlugin extends AutoPlugin {
           .dependsOn(
             dockerBuildAndPush.dependsOn(
               checkUncommittedChanges,
-              verifyDockerRegistry
+              verifyDockerRegistry,
+              streamletDescriptorsInProject
             )
           )
           .value,
@@ -121,15 +109,6 @@ object CloudflowBasePlugin extends AutoPlugin {
         s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build."
       )
     }
-  }
-
-  private[sbt] def makeStreamletDescriptorsLabelValue(streamletDescriptorsJson: JsValue) = {
-    // create a root object with the array
-    val streamletDescriptorsJsonStr =
-      JsObject("streamlet-descriptors" -> streamletDescriptorsJson).compactPrint
-
-    val compressed = zlibCompression(streamletDescriptorsJsonStr.getBytes(UTF_8))
-    Base64.getEncoder.encodeToString(compressed)
   }
 
   private[sbt] val showResultOfBuild = Def.task {
@@ -154,28 +133,23 @@ object CloudflowBasePlugin extends AutoPlugin {
     log.info("Successfully built and published the following image:")
     log.info(s"  $imagePushed")
   }
+}
 
-  private[sbt] def zlibCompression(raw: Array[Byte]): Array[Byte] = {
-    val deflater   = new Deflater()
-    val compressed = new ByteArrayOutputStream(0)
-    deflater.setInput(raw)
-    deflater.finish()
-    val buffer = new Array[Byte](1024)
-    while (!deflater.finished()) {
-      val len = deflater.deflate(buffer)
-      compressed.write(buffer, 0, len)
-    }
-    deflater.end()
-    compressed.toByteArray()
-  }
-
-  private[sbt] def buildStreamletDescriptors(detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Iterable[StreamletDescriptor]]] =
-    Def.task {
-      val detectedStreamletDescriptors = detectedStreamlets.map {
-        case (_, configDescriptor) ⇒
-          val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-          jsonString.parseJson.convertTo[cloudflow.blueprint.StreamletDescriptor]
-      }
-      detectedStreamletDescriptors
-    }
+case object DockerRegistryNotSet extends Exception(DockerRegistryNotSetError.msg) with NoStackTrace with sbt.FeedbackProvidedException
+object DockerRegistryNotSetError {
+  val msg =
+    """
+      |Please set the `cloudflowDockerRegistry` sbt setting in your build.sbt file to the registry that you want to push the image to.
+      |This Docker registry must be configured for image pulling on your target Kubernetes clusters.
+      |You must authenticate to your target Docker registry using `docker login` to it before building and pushing any images.
+      |
+      |Example:
+      |
+      |lazy val myProject = (project in file("."))
+      |  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+      |  .settings(
+      |   cloudflowDockerRegistry := Some("docker-registry-default.cluster.example.com"),
+      |   // other settings
+      |  )
+    """.stripMargin
 }
