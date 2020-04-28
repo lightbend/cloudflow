@@ -8,8 +8,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Make all  
+    - name: Build documentation
       run: |
+        cd docs
         make all
     
         
