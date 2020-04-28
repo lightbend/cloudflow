@@ -2,12 +2,13 @@
 
 include definitions.mk
 
-ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR := ${SHELL_DIR}/..
 
 antora_docker_image     := lightbend/antora-doc
 antora_docker_image_tag := 0.1.0
 
-work_dir := target
+work_dir := ${ROOT_DIR}/target
 
 cloudflow_clone_dir := ${work_dir}/cloudflow
 
@@ -16,6 +17,10 @@ staging_dir := ${work_dir}/staging
 javascaladoc_dir := ${staging_dir}/docs/current/api
 
 all: build
+
+show:
+	echo work dir: ${work_dir}
+	echo ROOT_DIR: ${ROOT_DIR}
 
 clean:
 	rm -rf ${work_dir}
@@ -31,7 +36,7 @@ html: clean
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=./.cache/antora \
 		--stacktrace \
-		docs-source/site.yml
+		docs/docs-source/site.yml
 	@echo "Done"
 
 html-author-mode: clean
