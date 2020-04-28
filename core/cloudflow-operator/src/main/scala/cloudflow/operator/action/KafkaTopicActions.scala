@@ -47,7 +47,9 @@ import cloudflow.blueprint.Blueprint
 object KafkaTopicActions {
   def apply(
       newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR]
+      currentApp: Option[CloudflowApplication.CR],
+      // TODO should this be supported?
+      deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctTopics(app: CloudflowApplication.Spec): Map[String, TopicInfo] =
       app.deployments
@@ -70,7 +72,7 @@ object KafkaTopicActions {
 
     val createActions =
       (newTopics -- currentTopics.keys).values.toVector
-        .flatMap(topic => if (topic.create) Some(createAction(labels)(topic)) else None)
+        .flatMap(topic => if (topic.managed) Some(createAction(labels)(topic)) else None)
     updateActions ++ createActions
   }
 
@@ -114,12 +116,12 @@ object KafkaTopicActions {
   }
 
   object TopicInfo {
-    def apply(sp: Savepoint): TopicInfo = TopicInfo(
-      sp.name,
-      intOrEmpty(sp.config, Blueprint.PartitionsKey),
-      intOrEmpty(sp.config, Blueprint.ReplicasKey),
-      topicConfigMap(sp.config),
-      sp.create
+    def apply(topic: Topic): TopicInfo = TopicInfo(
+      topic.name,
+      intOrEmpty(topic.config, Blueprint.PartitionsKey),
+      intOrEmpty(topic.config, Blueprint.ReplicasKey),
+      topicConfigMap(topic.config),
+      topic.managed
     )
     private def intOrEmpty(config: Config, key: String): Option[Int] =
       if (config.hasPath(key)) Some(config.getInt(key)) else None
@@ -140,7 +142,7 @@ object KafkaTopicActions {
       partitions: Option[Int],
       replicas: Option[Int],
       configMap: Map[String, String],
-      create: Boolean
+      managed: Boolean
   )
 
   // turn into an 'action', if it is done, or failed, close kafka admin client.
