@@ -35,7 +35,7 @@ object CloudflowApplicationPlugin extends AutoPlugin {
   private val cloudflowAppProjects: AtomicInteger = new AtomicInteger()
 
   /** This plugin depends on these other plugins: */
-  override def requires: Plugins = StreamletDescriptorsPlugin && BlueprintVerificationPlugin && CRGenerationPlugin
+  override def requires: Plugins = StreamletDescriptorsPlugin && BlueprintVerificationPlugin && BuildAppPlugin
 
   override def buildSettings = Seq(
     cloudflowDockerRegistry := None,
@@ -49,7 +49,7 @@ object CloudflowApplicationPlugin extends AutoPlugin {
     packageOptions in (Compile, packageBin) +=
         Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
     verifyBlueprint := verifyBlueprint.dependsOn(checkUsageCount()).andFinally(resetCount()).value,
-    generateCR := cloudflowApplicationCR.value
+    buildApp := cloudflowApplicationCR.value
   )
 
   /**
