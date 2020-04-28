@@ -21,15 +21,13 @@ import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
 import com.typesafe.sbt.packager.Keys._
-import spray.json._
-import cloudflow.sbt.CloudflowKeys._
-import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowFlinkPlugin extends AutoPlugin {
-  final val FlinkVersion                  = "1.10.0"
-  final val CloudflowFlinkDockerBaseImage = s"lightbend/flink:cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+  final val FlinkVersion = "1.10.0"
+  final val CloudflowFlinkDockerBaseImage =
+    s"lightbend/flink:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -65,12 +63,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      // pack all streamlet-descriptors into a Json array
-      val streamletDescriptorsJson =
-        streamletDescriptorsInProject.value.toJson
-
-      val streamletDescriptorsLabelValue = makeStreamletDescriptorsLabelValue(streamletDescriptorsJson)
-
       new Dockerfile {
         from(CloudflowFlinkDockerBaseImage)
         user(UserInImage)
@@ -78,7 +70,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
-        label(StreamletDescriptorsLabelName, streamletDescriptorsLabelValue)
       }
     }
   )

@@ -100,6 +100,7 @@ type Descriptor struct {
 	Outlets          []InOutlet                  `json:"outlets"`
 	Runtime          string                      `json:"runtime"`
 	Description      string                      `json:"description"`
+	Image            string                      `json:"image"`
 }
 
 // Streamlet TBD
@@ -160,7 +161,7 @@ type CloudflowApplication struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta `json:"metadata"`
 	Spec              CloudflowApplicationSpec   `json:"spec"`
-	Status            CloudflowApplicationStatus `json:"status"`
+	Status            *CloudflowApplicationStatus `json:"status,omitempty"`
 }
 
 // CloudflowApplicationList is a list of CloudflowApplications

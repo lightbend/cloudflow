@@ -60,6 +60,24 @@ func GetClient(version string) (*client.Client, error) {
 	return client.NewClientWithOpts(client.WithVersion(version))
 }
 
+func GetClientForAPIVersionWithFallback() (*client.Client, error) {
+	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
+	if apierr != nil {
+		return nil, fmt.Errorf("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
+	}
+
+	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
+	client, error := GetClient(trimmedapiversion)
+	if error != nil {
+		client, error = GetClient("1.39")
+		if error != nil {
+			fmt.Printf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
+			return nil, error
+		}
+	}
+	return client, nil
+}
+
 // PullImage pulls an image from a remote repository
 func PullImage(cli *client.Client, imageName string) (*PulledImage, error) {
 	ctx := context.Background()
