@@ -38,7 +38,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
     .define(Vector(ingress, egress))
     .use(ingressRef)
     .use(egressRef)
-    .connect(ingressRef.out, egressRef.in)
+    .connect(Topic("foos"), ingressRef.out, egressRef.in)
     .verified
     .right
     .value

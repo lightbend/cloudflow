@@ -16,7 +16,6 @@
 
 package cloudflow.sbt
 
-import scala.collection.JavaConverters._
 import scala.util.control.NoStackTrace
 import com.typesafe.config._
 import sbt._
@@ -102,37 +101,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       .get()
       .headOption
       .map { bpFile ⇒
-        val config = ConfigFactory.parseString(IO.read(bpFile))
-        val streamletRefs = config
-          .getConfig("blueprint.streamlets")
-          .entrySet
-          .asScala
-          .map { e ⇒
-            StreamletRef(
-              name = e.getKey,
-              className = config.getString(s"blueprint.streamlets.${e.getKey}")
-            )
-          }
-          .toVector
-
-        val streamletConnections = config
-          .getConfig("blueprint.connections")
-          .entrySet
-          .asScala
-          .flatMap { e ⇒
-            val inlets = config.getStringList(s"blueprint.connections.${e.getKey}").asScala
-            inlets.map { inlet ⇒
-              StreamletConnection(
-                from = e.getKey,
-                to = inlet
-              )
-            }
-          }
-          .toVector
-
-        val blueprint =
-          Blueprint(streamletRefs, streamletConnections, streamletDescriptors.toVector).verify
-
+        val blueprint = Blueprint.parseString(IO.read(bpFile), streamletDescriptors.toVector)
         if (blueprint.problems.isEmpty) {
           Right(BlueprintVerified(blueprint, bpFile))
         } else {

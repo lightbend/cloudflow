@@ -17,7 +17,6 @@
 package cloudflow.akkastream
 
 import java.util.concurrent.atomic.AtomicReference
-
 import java.nio.file.{ Files, Paths }
 
 import scala.concurrent._
@@ -69,18 +68,19 @@ final class AkkaStreamletContextImpl(
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
-    val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(streamletRef, inlet)
+    val topic = findTopicForPort(inlet)
+    val gId   = topic.groupId(streamletRef, inlet)
+
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      .withProperties(topic.kafkaConsumerProperties)
 
-    system.log.info(s"Creating committable source for group: $gId topic: $topic")
+    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
     Consumer
-      .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic))
+      .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
       // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
       .asSource
       .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
@@ -100,10 +100,10 @@ final class AkkaStreamletContextImpl(
     sourceWithContext[T](inlet)
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
+    val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
-    val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, Committable)]
       .map {
@@ -111,7 +111,7 @@ final class AkkaStreamletContextImpl(
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
       }
       .via(handleTermination)
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
@@ -122,10 +122,10 @@ final class AkkaStreamletContextImpl(
 
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
+    val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
-    val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, CommittableOffset)]
       .map {
@@ -133,7 +133,7 @@ final class AkkaStreamletContextImpl(
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
       }
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
   }
@@ -143,16 +143,16 @@ final class AkkaStreamletContextImpl(
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
-    val savepointPath = findSavepointPathForPort(inlet)
-    val topic         = savepointPath.value
-    val gId           = savepointPath.groupId(streamletRef, inlet)
+    val topic = findTopicForPort(inlet)
+    val gId   = topic.groupId(streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(bootstrapServers)
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
+      .withProperties(topic.kafkaConsumerProperties)
 
     Consumer
-      .plainSource(consumerSettings, Subscriptions.topics(topic))
+      .plainSource(consumerSettings, Subscriptions.topics(topic.name))
       .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
       .via(handleTermination)
       .map { record ⇒
@@ -161,17 +161,17 @@ final class AkkaStreamletContextImpl(
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
+    val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(bootstrapServers)
-    val savepointPath = findSavepointPathForPort(outlet)
-    val topic         = savepointPath.value
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+      .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
       .map { value ⇒
         val key        = outlet.partitioner(value)
         val bytesKey   = keyBytes(key)
         val bytesValue = outlet.codec.encode(value)
-        new ProducerRecord(topic, bytesKey, bytesValue)
+        new ProducerRecord(topic.name, bytesKey, bytesValue)
       }
       .via(handleTermination)
       .to(Producer.plainSink(producerSettings))
@@ -179,13 +179,13 @@ final class AkkaStreamletContextImpl(
   }
 
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
-    val savepointPath = findSavepointPathForPort(outlet)
+    val topic = findTopicForPort(outlet)
 
     new KafkaSinkRef(
       system,
       outlet,
       bootstrapServers,
-      savepointPath.value,
+      topic,
       killSwitch,
       completionPromise
     )

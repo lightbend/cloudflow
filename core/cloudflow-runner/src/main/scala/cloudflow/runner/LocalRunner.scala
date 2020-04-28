@@ -30,11 +30,11 @@ import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.runner.RunnerOps._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
-import com.typesafe.config.ConfigValueFactory
+import com.typesafe.config._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -58,6 +58,8 @@ object LocalRunner extends StreamletLoader {
   lazy val localConf = Option(this.getClass.getClassLoader.getResource("local.conf"))
     .map(res ⇒ ConfigFactory.parseURL(res).resolve)
     .getOrElse(ConfigFactory.empty())
+  val BootstrapServersKey = "bootstrap.servers"
+  val EmbeddedKafkaKey    = "embedded-kafka"
 
   /**
    * Starts the local runner using an Application Descriptor JSON file and
@@ -94,10 +96,21 @@ object LocalRunner extends StreamletLoader {
 
   private def run(appDescriptor: ApplicationDescriptor): Unit = {
 
-    val kafkaPort = 9092
-    val topics    = appDescriptor.connections.map(conn ⇒ List(appDescriptor.appId, conn.outletStreamletName, conn.outletName).mkString("."))
+    val kafkaPort            = 9092
+    val bootstrapServers     = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
+    val embeddedKafkaEnabled = if (localConf.hasPath(EmbeddedKafkaKey)) localConf.getBoolean(EmbeddedKafkaKey) else true
+    val topics = appDescriptor.deployments
+      .flatMap { deployment =>
+        deployment.portMappings.values.map(_.name)
+      }
+      .distinct
+      .sorted
 
-    setupKafka(kafkaPort, topics)
+    if (embeddedKafkaEnabled) {
+      setupKafka(kafkaPort, topics)
+    } else {
+      log.debug(s"Embedded Kaka is disabled, using Kafka brokers at: $bootstrapServers")
+    }
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion
@@ -119,15 +132,22 @@ object LocalRunner extends StreamletLoader {
       val localStorageDirectory =
         Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
       log.info(s"Using local storage directory: $localStorageDirectory")
+
+      val existingPortMappings =
+        appDescriptor.deployments
+          .find(_.streamletName == streamletInstance.name)
+          .map(_.portMappings)
+          .getOrElse(Map.empty[String, Topic])
+
       val deployment: StreamletDeployment =
         StreamletDeployment(appDescriptor.appId,
                             streamletInstance,
                             "",
-                            appDescriptor.connections,
+                            existingPortMappings,
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, "localhost:" + kafkaPort)
+      val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, bootstrapServers)
       val runnerConfig         = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
       val streamletParamConfig = streamletParameterConfig.atPath("cloudflow.streamlets")
 
@@ -135,7 +155,6 @@ object LocalRunner extends StreamletLoader {
         .withFallback(streamletParamConfig)
         .withFallback(baseConfig)
         .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
-
       (streamletInstance, patchedRunnerConfig)
     }
 
@@ -237,7 +256,7 @@ object LocalRunner extends StreamletLoader {
     }
 
   private def setupKafka(port: Int, topics: Seq[String]): Unit = {
-    log.debug(s"Setting up local Kafka on port: $port")
+    log.debug(s"Setting up embedded Kafka broker on port: $port")
     implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
     EmbeddedKafka.start()
     topics.foreach { topic ⇒

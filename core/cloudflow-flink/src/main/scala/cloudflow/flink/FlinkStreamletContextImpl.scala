@@ -16,6 +16,8 @@
 
 package cloudflow.flink
 
+import scala.collection.JavaConverters._
+
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala._
@@ -42,14 +44,15 @@ class FlinkStreamletContextImpl(
    * @return the data read as `DataStream[In]`
    */
   override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
-    val savepointPath = findSavepointPathForPort(inlet)
-    val srcTopic      = savepointPath.value
-    val groupId       = savepointPath.groupId(streamletRef, inlet)
+    val topic            = findTopicForPort(inlet)
+    val srcTopic         = topic.name
+    val groupId          = topic.groupId(streamletRef, inlet)
+    val bootstrapServers = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
+    val propsMap = Map("bootstrap.servers" -> bootstrapServers, "group.id" -> groupId, "auto.offset.reset" -> "earliest") ++
+          topic.kafkaConsumerProperties
 
-    val properties = new ju.Properties
-    properties.setProperty("bootstrap.servers", config.getString("cloudflow.kafka.bootstrap-servers"))
-    properties.setProperty("group.id", groupId)
-    properties.setProperty("auto.offset.reset", "earliest")
+    val properties = new ju.Properties()
+    properties.putAll(propsMap.asJava)
 
     val consumer = new FlinkKafkaConsumer[In](
       srcTopic,
@@ -76,12 +79,15 @@ class FlinkStreamletContextImpl(
    */
   override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] = {
 
-    val savepointPath = findSavepointPathForPort(outlet)
-    val destTopic     = savepointPath.value
+    val topic            = findTopicForPort(outlet)
+    val destTopic        = topic.name
+    val bootstrapServers = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
 
-    val properties = new ju.Properties
-    properties.setProperty("bootstrap.servers", config.getString("cloudflow.kafka.bootstrap-servers"))
-    properties.setProperty("batch.size", "0")
+    val propsMap = Map("bootstrap.servers" -> bootstrapServers, "batch.size" -> "0") ++
+          topic.kafkaProducerProperties
+
+    val properties = new ju.Properties()
+    properties.putAll(propsMap.asJava)
 
     stream.addSink(
       new FlinkKafkaProducer[Out](

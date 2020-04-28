@@ -32,9 +32,10 @@ case class RunnerConfig(data: String) extends ConfigMapData {
   val filename: String = RunnerConfig.AppConfigFilename
 }
 
-object RunnerConfig extends DefaultJsonProtocol {
-  val AppConfigFilename        = "application.conf"
-  implicit val savepointFormat = jsonFormat(Savepoint.apply, "app_id", "streamlet_ref", "port_name")
+object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
+
+  val AppConfigFilename    = "application.conf"
+  implicit val topicFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers", "managed")
 
   def apply(
       appId: String,
@@ -78,13 +79,13 @@ object RunnerConfig extends DefaultJsonProtocol {
 
   private def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
 
-  private def toConnectedPortsJson(portMappings: Map[String, Savepoint]) =
+  private def toConnectedPortsJson(portMappings: Map[String, Topic]) =
     JsArray(
       portMappings.map {
-        case (portName, savepoint) ⇒
+        case (portName, topic) ⇒
           JsObject(
-            "port"           -> JsString(portName),
-            "savepoint_path" -> savepoint.toJson
+            "port"  -> JsString(portName),
+            "topic" -> topic.toJson
           )
       }.toVector
     )

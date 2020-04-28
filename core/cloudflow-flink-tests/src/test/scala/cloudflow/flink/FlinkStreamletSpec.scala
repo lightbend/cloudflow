@@ -122,8 +122,6 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       val out: FlinkOutletTap[TaxiRideFare] = outletAsTap[TaxiRideFare](FlinkConnectedProcessor.out)
 
       run(FlinkConnectedProcessor, Seq(inRides, inFares), Seq(out), env)
-
-      println(TestFlinkStreamletContext.result.size)
       1 should equal(1)
     }
   }

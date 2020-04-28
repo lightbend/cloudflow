@@ -19,11 +19,10 @@ package action
 
 import org.scalatest._
 
-import cloudflow.blueprint._
-import cloudflow.blueprint.deployment._
+import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._
 
-class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
+class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
   case class Foo(name: String)
   case class Bar(name: String)
   val namespace  = "ns"
@@ -38,22 +37,22 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val newApp = createApp()
 
       When("savepoint actions are created from a new app")
-      val actions = SavepointActions(newApp, None, false)
+      val actions = TopicActions(newApp, None, false)
 
-      Then("only create topic actions must be created for all outlets")
+      Then("only create topic actions must be created between the streamlets")
       val createActions = actions.collect { case c: CreateAction[_] ⇒ c }
-      val savepoints    = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
+      val topics        = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
 
       createActions.size mustBe actions.size
-      // topics must be created for all outlets.
-      createActions.size mustBe newApp.spec.streamlets.map(_.descriptor.outlets.size).sum
-      savepoints.foreach { savepoint ⇒
+      // topics must be created to connect ingress, processor, egress
+      createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.name)).distinct.size
+      topics.foreach { topic ⇒
         val resource = createActions
-          .find(_.resource.metadata.name == savepoint.name)
+          .find(_.resource.metadata.name == topic.name)
           .value
           .resource
-          .asInstanceOf[SavepointActions.Topic]
-        assertSavepoint(savepoint, resource, newApp.spec.appId)
+          .asInstanceOf[TopicActions.TopicResource]
+        assertSavepoint(topic, resource, newApp.spec.appId)
       }
     }
 
@@ -64,7 +63,7 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
-      val actions = SavepointActions(newApp, currentApp, false)
+      val actions = TopicActions(newApp, currentApp, false)
 
       Then("no actions should be created")
       actions mustBe empty
@@ -85,18 +84,17 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
         .use(ingressRef)
         .use(processorRef)
         .use(egressRef)
-        .connect(ingressRef.out, processorRef.in)
-        .connect(processorRef.out, egressRef.in)
+        .connect(BTopic("foos"), ingressRef.out, processorRef.in)
+        .connect(BTopic("bars"), processorRef.out, egressRef.in)
 
       val verifiedBlueprint = bp.verified.right.value
+      val appId             = "monstrous-mite-12345"
+      val appVersion        = "42-abcdef0"
+      val newAppVersion     = "43-abcdef0"
+      val image             = "image-1"
+      val currentApp        = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
-      val appId         = "monstrous-mite-12345"
-      val appVersion    = "42-abcdef0"
-      val newAppVersion = "43-abcdef0"
-      val image         = "image-1"
-      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
-
-      val savepoint = currentApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
+      val deployedTopic = currentApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       When("the new app removes the processor and the egress")
       val newBp =
@@ -106,17 +104,17 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
           .remove(processorRef.name)
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-      val actions = SavepointActions(newApp, Some(currentApp), true)
+      val actions = TopicActions(newApp, Some(currentApp), true)
 
       Then("one delete action should be created for the processor outlet savepoint")
       actions.size mustBe 1
-      val resource = actions(0).resource.asInstanceOf[SavepointActions.Topic]
-      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp))
+      val resource = actions(0).resource.asInstanceOf[TopicActions.TopicResource]
+      resource mustBe TopicActions.resource(TopicActions.TopicInfo(deployedTopic), CloudflowLabels(newApp))
       actions(0) mustBe a[DeleteAction[_]]
-      assertSavepoint(savepoint, resource, appId)
+      assertSavepoint(deployedTopic, resource, appId)
 
       When("deleteExistingTopics is set to false")
-      val noActions = SavepointActions(newApp, Some(currentApp), false)
+      val noActions = TopicActions(newApp, Some(currentApp), false)
       Then("no delete actions should be created")
       noActions mustBe empty
     }
@@ -132,6 +130,7 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val bp = Blueprint()
         .define(Vector(ingress, processor, egress))
         .use(ingressRef)
+        .connect(BTopic("foos"), ingressRef.out)
 
       val verifiedBlueprint = bp.verified.right.value
 
@@ -146,24 +145,26 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       val newBp = bp
         .use(processorRef)
         .use(egressRef)
-        .connect(ingressRef.out, processorRef.in)
-        .connect(processorRef.out, egressRef.in)
+        .connect(BTopic("foos"), processorRef.in)
+        .connect(BTopic("bars"), processorRef.out, egressRef.in)
       val newAppVersion = "43-abcdef0"
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("one create action should be created for the new savepoint between processor and egress")
-      val actions  = SavepointActions(newApp, Some(currentApp), true)
-      val resource = actions(0).resource.asInstanceOf[SavepointActions.Topic]
+      val actions  = TopicActions(newApp, Some(currentApp), true)
+      val resource = actions(0).resource.asInstanceOf[TopicActions.TopicResource]
 
-      resource mustBe SavepointActions.resource(savepoint, CloudflowLabels(newApp))
+      resource mustBe TopicActions.resource(TopicActions.TopicInfo(savepoint), CloudflowLabels(newApp))
       actions(0) mustBe a[CreateAction[_]]
       assertSavepoint(savepoint, resource, appId)
     }
   }
 
-  def assertSavepoint(savepoint: Savepoint, resource: SavepointActions.Topic, appId: String)(implicit ctx: DeploymentContext) = {
+  def assertSavepoint(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
+      implicit ctx: DeploymentContext
+  ) = {
     resource.metadata.namespace mustBe ctx.kafkaContext.strimziTopicOperatorNamespace
     resource.metadata.name mustBe savepoint.name
     resource.spec.partitions mustBe ctx.kafkaContext.partitionsPerTopic
@@ -190,8 +191,8 @@ class SavepointActionsSpec extends WordSpec with MustMatchers with GivenWhenThen
       .use(ingressRef)
       .use(processorRef)
       .use(egressRef)
-      .connect(ingressRef.out, processorRef.in)
-      .connect(processorRef.out, egressRef.in)
+      .connect(BTopic("foos"), ingressRef.out, processorRef.in)
+      .connect(BTopic("bars"), processorRef.out, egressRef.in)
       .verified
       .right
       .value

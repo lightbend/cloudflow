@@ -36,13 +36,13 @@ final class KafkaSinkRef[T](
     system: ActorSystem,
     outlet: CodecOutlet[T],
     bootstrapServers: String,
-    topic: String,
+    topic: Topic,
     killSwitch: SharedKillSwitch,
     completionPromise: Promise[Dun]
 ) extends WritableSinkRef[T] {
   private val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-    .withBootstrapServers(bootstrapServers)
-
+    .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+    .withProperties(topic.kafkaProducerProperties)
   private val producer = producerSettings.createKafkaProducer()
 
   def sink: Sink[(T, Committable), NotUsed] = {
@@ -53,7 +53,7 @@ final class KafkaSinkRef[T](
         case (value, offset) ⇒
           val key        = outlet.partitioner(value)
           val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic, key.getBytes("UTF8"), bytesValue),
+          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic.name, key.getBytes("UTF8"), bytesValue),
                                                                          offset)
       }
       .via(Producer.flexiFlow(producerSettings.withProducer(producer)))
@@ -80,7 +80,7 @@ final class KafkaSinkRef[T](
     val key        = outlet.partitioner(value)
     val bytesKey   = keyBytes(key)
     val bytesValue = outlet.codec.encode(value)
-    val record     = new ProducerRecord(topic, bytesKey, bytesValue)
+    val record     = new ProducerRecord(topic.name, bytesKey, bytesValue)
     val promise    = Promise[T]()
 
     producer.send(
