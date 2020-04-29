@@ -112,6 +112,8 @@ object BuildAppPlugin extends AutoPlugin {
     val file = new File(s"target/${appDescriptor.appId}.json")
     IO.write(file, cr.toJson.compactPrint)
     log.success(s"Cloudflow application CR generated in ${file.getAbsolutePath}")
+    log.success(s"Use the following command to deploy the Cloudflow application:")
+    log.success(s"kubectl cloudflow deploy ${file.getAbsolutePath}")
   }
 
   def makeCR(appDescriptor: ApplicationDescriptor): CloudflowCR =
