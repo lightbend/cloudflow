@@ -178,7 +178,7 @@ In <<checkpoint-dir-example>>, we can see the use of the `checkpointDir` method 
 =======
 [source, scala]
 ---------------
-include::{code-snippets-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/SparkConsoleEgress.scala[tag=docs-checkpointDir-example]
+include::docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/SparkConsoleEgress.scala[tag=docs-checkpointDir-example]
 ---------------
 =======
 

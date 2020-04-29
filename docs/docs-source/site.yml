@@ -3,18 +3,16 @@ site:
   url: https://cloudflow.io 
   
 content:
+  branches: 
+    - master
   sources:
   - url: ./../../
-    branches: [master]
     start-path: docs/docs-source/docs 
   - url: ./../../
-    branches: [master]
     start-path: docs/homepage-source/docs
   - url: ./../../
-    branches: [master]
     start-path: docs/shared-content-source/docs
   - url: ./../../
-    branches: [master]
     start-path: examples/snippets
 
 ui: 
