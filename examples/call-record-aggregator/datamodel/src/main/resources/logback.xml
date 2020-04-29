@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <logger name="akka" level="WARN" />
   <logger name="org.apache" level="WARN" />
   <logger name="kafka" level="WARN" />
   <logger name="org.spark_project.jetty" level="WARN" />
@@ -12,5 +10,5 @@
         <pattern>%d{ISO8601} %-5level [%logger{0}] - %msg%n</pattern>
       </encoder>
     </appender>
-  </root>
+  </root>  
 </configuration>
