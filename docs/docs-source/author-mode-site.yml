@@ -1,0 +1,36 @@
+site:
+  title: "Cloudflow Guide"
+  url: https://cloudflow.io 
+  
+content:
+  sources:
+  - url: ./../
+    branches: [HEAD]
+    start-path: docs-source/docs 
+  - url: ./../
+    branches: [HEAD]
+    start-path: homepage-source/docs
+  - url: ./../
+    branches: [HEAD]
+    start-path: shared-content-source/docs
+  
+ui:
+  bundle:
+    url: https://github.com/lightbend/antora-ui-lightbend-cloud-theme/raw/master/build/ui-bundle.zip
+    snapshot: true
+    
+runtime:
+  fetch: true
+
+asciidoc:
+
+  attributes:
+    # the following two attributes cause review and todo notes to display
+    review: ''
+    todo: ''
+    
+    doc-title: 'Cloudflow Guide'
+
+output:
+  dir: ./../target/staging
+  clean: true

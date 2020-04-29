@@ -1,0 +1,37 @@
+:page-partial:
+
+To develop and deploy Cloudflow applications, you will need Java, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes-based platform. This page describes how to prepare for development, a later page covers the Kubernetes requirements.
+
+
+== Prerequisites
+
+First, make sure that you have the following installed:
+
+* Java 8 (JDK)
+* https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
+* https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
+* https://helm.sh/docs/intro/install/[Helm,window=_blank], version 2 or higher.
+* https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
+* https://git-scm.com/[git,window=_blank]
+
+== Download and install the Cloudflow CLI
+
+Using one of the links below, download the Cloudflow CLI version appropriate for your platform and install it on your local system by unzipping the archive and moving the executable into your `PATH`.
+
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.3.211-87a608c-darwin-amd64.tar.gz[MacOS]
+
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.3.211-87a608c-linux-amd64.tar.gz[Linux]
+
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-1.3.3.211-87a608c-windows-amd64.tar.gz[Windows 64-bit]
+
+Please make sure you have the executable in your path with proper permission settings. For Linux or MacOS, put the executables in `/usr/local/bin` with permission settings of `755`.
+
+NOTE:: On MacOS Catalina and later, the default behavior is to not allow unsigned executables downloaded from the internet. It is planned to sign the executable with an Apple developer certificate to fix this but in the mean time there is a very simple workaround. After downloading and unpacking the executable, please execute the following command to remove the "downloaded from the internet" filesystem flag that blocks the file from being executed:
++
+....
+xattr -d com.apple.quarantine [path to]/kubectl-cloudflow
+....
++
+More details can be found in the https://github.com/lightbend/cloudflow/issues/47[associated issue].
+
+ifdef::review[Reviewers:still need recommendations for Windows.]

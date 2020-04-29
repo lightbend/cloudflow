@@ -1,0 +1,10 @@
+= Administration tasks
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+This chapter describes common Cloudflow and Kubernetes administration tasks.
+
+. xref:providing-external-access-to-cloudflow-services.adoc[Providing External Access to Cloudflow Services]

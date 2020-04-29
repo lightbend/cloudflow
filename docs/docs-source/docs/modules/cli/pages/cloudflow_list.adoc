@@ -1,0 +1,26 @@
+= cloudflow list
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Lists deployed Cloudflow application in the current cluster.
+
+== Synopsis
+
+Lists deployed Cloudflow application in the current cluster.
+
+[source,bash]
+----
+kubectl cloudflow list [flags]
+----
+
+== Options
+
+[source,bash]
+----
+-h, --help   help for list
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

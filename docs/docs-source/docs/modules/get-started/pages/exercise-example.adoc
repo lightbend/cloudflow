@@ -1,0 +1,146 @@
+= Exercising the deployed example
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+Once you have one or more Cloudflow applications started, you can use some CLI helpers to monitor the status of your applications.
+
+* **--help** to see all options available
+
+```
+$ kubectl-cloudflow --help
+
+This command line tool can be used to deploy and operate Cloudflow applications.
+
+Usage:
+  cloudflow [command]
+
+Available Commands:
+  configure                 Configures a deployed Cloudflow application.
+  deploy                    Deploys a Cloudflow application to the cluster.
+  help                      Help about any command
+  install-oc-plugin         Installs the Cloudflow OpenShift CLI `oc` plugin.
+  list                      Lists deployed Cloudflow application in the current cluster.
+  scale                     Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.
+  status                    Gets the status of a Cloudflow application.
+  undeploy                  Undeploys a Cloudflow application.
+  update-docker-credentials Updates docker registry credentials that are used to pull Cloudflow application images.
+  version                   Prints the plugin version.
+
+Flags:
+  -h, --help   help for cloudflow
+
+Use "cloudflow [command] --help" for more information about a command.
+```
+
+* **list** shows all applications deployed in the cluster
+
+```
+$ kubectl-cloudflow list
+
+NAME              NAMESPACE         VERSION           CREATION-TIME     
+sensor-data       sensor-data       2-89ce8a7         2019-11-12 12:47:19 +0530 IST
+```
+
+* **status** shows details of a running application
+
+```
+$ kubectl-cloudflow status sensor-data
+Name:             sensor-data
+Namespace:        sensor-data
+Version:          2-89ce8a7
+Created:          2019-11-12 12:47:19 +0530 IST
+Status:           Running
+
+STREAMLET         POD                                         STATUS            RESTARTS          READY             
+valid-logger      sensor-data-valid-logger-76884bb775-86pwh   Running           0                 True
+metrics           sensor-data-metrics-6c47bfb489-xd644        Running           0                 True
+invalid-logger    sensor-data-invalid-logger-549d687d89-m64l7 Running           0                 True
+validation        sensor-data-validation-7dd858b6c5-lcp2n     Running           0                 True
+http-ingress      sensor-data-http-ingress-fd9cdb66f-jbsrm    Running           0                 True
+```
+
+## Push data to the Application
+
+Our application uses an http based ingress to ingest data. Follow the following steps to push JSON data through the ingress into the application.
+
+* Get the port details of our ingress streamlet
+
+```
+$ kubectl describe pod sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data
+Name:               sensor-data-http-ingress-fd9cdb66f-jbsrm
+Namespace:          sensor-data
+Priority:           0
+PriorityClassName:  <none>
+Node:               gke-dg-gke-1-default-pool-162a09d5-ddnq/10.132.0.21
+Start Time:         Tue, 12 Nov 2019 12:47:20 +0530
+Labels:             app.kubernetes.io/component=streamlet
+                    app.kubernetes.io/managed-by=cloudflow
+                    app.kubernetes.io/name=sensor-data-http-ingress
+                    app.kubernetes.io/part-of=sensor-data
+                    app.kubernetes.io/version=2-89ce8a7
+                    com.lightbend.cloudflow/app-id=sensor-data
+                    com.lightbend.cloudflow/streamlet-name=http-ingress
+                    pod-template-hash=fd9cdb66f
+Annotations:        prometheus.io/scrape: true
+Status:             Running
+IP:                 10.44.1.6
+Controlled By:      ReplicaSet/sensor-data-http-ingress-fd9cdb66f
+Containers:
+  sensor-data-http-ingress:
+    Container ID:  docker://9149cd757094e7ea1b943076048b7efc7aa343da8c2d598bba31295ef3cbfd6b
+    Image:         eu.gcr.io/bubbly-observer-178213/sensor-data@sha256:ee496e8cf3a3d9ab71c3ef4a4929ed8eeb6129845f981c33005942314ad30f18
+    Image ID:      docker-pullable://eu.gcr.io/bubbly-observer-178213/sensor-data@sha256:ee496e8cf3a3d9ab71c3ef4a4929ed8eeb6129845f981c33005942314ad30f18
+    Ports:         3000/TCP, 2048/TCP, 2049/TCP, 2050/TCP
+...
+```
+
+The streamlet exposes its HTTP endpoint for uploading data on port `3000` - let's set up a port forwarding on it.
+
+* Setup port forwarding for the Pod port
+
+```
+$ kubectl port-forward sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data 3000:3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+Handling connection for 3000
+```
+
+NOTE: The port-forward solution used here is a temporary route to the application from localhost. If you want to create a permanent route that can be accessed by anyone, please see the following chapter on Kubernetes ingresses: xref:ingress-creation.adoc[Providing External Access to Cloudflow Services]
+
+* Push data to the application. In order to do that follow the steps:
+ * create a json file named `data.json` with the content `{"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545346279,"measurements":{"power":1.7,"rotorSpeed":23.4,"windSpeed":100.1}}`
+ * run the following bash script:
+```
+ for str in $(cat test-data/10-storm.json)
+do
+  echo "Using $str"
+  curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data "$str"
+done
+```
+* Note that we are using the port number `3000` of `localhost` to which we mapped the Pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
+
+
+## Verify the Application works
+
+Check the log of the streamlet `valid-logger` to verify that you get the proper transformed metric.
+
+```
+$ kubectl logs sensor-data-valid-logger-76884bb775-86pwh -n sensor-data
+```
+
+Towards the end of the log you will see something like the following getting printed out:
+
+```
+[INFO] [11/12/2019 07:57:04.369] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "rotorSpeed", "value": 23.4}
+[INFO] [11/12/2019 07:57:04.375] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "power", "value": 1.7}
+[INFO] [11/12/2019 07:57:04.375] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "windSpeed", "value": 100.1}
+```
+
+== Undeploy the Application
+
+```
+$ kubectl-cloudflow undeploy sensor-data
+```

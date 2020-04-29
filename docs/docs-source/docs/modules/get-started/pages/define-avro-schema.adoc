@@ -1,0 +1,130 @@
+= Define Avro schema
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+Let's start building the avro schema for the domain objects that we need for the application. These schema files will have an extension `.avsc` and will go directly under `src/main/avro` in the project structure that we discussed earlier.
+
+In the Wind Turbine example, we will use the following domain objects:
+
+* **SensorData:** The data that we receive from the source and ingest through our ingress.
+* **Measurements:** A substructure of `SensorData` that abstracts the values of interest, such as wind speed.
+* **Metric:** A domain object that identifies the Turbine we would like to track and measure.
+* **InvalidMetric:** An object that abstracts the erroneous metric.
+
+During the build process, the Cloudflow plugin system processes the schemas. For each of these schema files, Cloudflow will generate Scala case classes that can be directly used from within the application.
+
+ifdef::review[REVIEWERS: I tried to put a bit more context around these domain objects and how they relate to the streamlets that we will be building next. Please correct me where they are incorrect and add anything you think will be helpful.]
+
+== Creating the schema files
+
+To create the avro schema for the domain objects, follow these steps:
+
+. Create a `SensorData.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition:
++
+```
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "SensorData",
+    "fields":[
+         {
+            "name": "deviceId", 
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+         },
+         {
+            "name": "timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+         },
+         {
+            "name": "measurements", "type": "sensordata.Measurements"
+         }
+    ]
+}
+
+```
+
+. Create a `Measurements.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition: 
++
+```
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "Measurements",
+    "fields":[
+         {
+            "name": "power", "type": "double"
+         },
+         {
+            "name": "rotorSpeed", "type": "double"
+         },
+         {
+            "name": "windSpeed", "type": "double"
+         }
+    ]
+}
+```
+
+
+. Create a `Metric.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition: 
++
+```
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "Metric",
+    "fields":[
+         {
+            "name": "deviceId", 
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+         },
+         {
+            "name": "timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+         },
+         {
+            "name": "name", "type": "string"
+         },
+         {
+            "name": "value", "type": "double"
+         }
+    ]
+}
+```
+
+
+. Create an `InvalidMetric.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition:
++
+```
+{
+    "namespace": "sensordata",
+    "type": "record",
+    "name": "InvalidMetric",
+    "fields":[
+         {
+            "name": "metric", "type": "sensordata.Metric"
+         },
+         {
+            "name": "error", "type": "string"
+         }
+    ]
+}
+```
+
+== What's next
+
+Now we can xref:develop-example-streamlets.adoc[develop the Wind Turbine example streamlets].

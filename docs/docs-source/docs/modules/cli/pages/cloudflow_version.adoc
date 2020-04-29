@@ -1,0 +1,26 @@
+= cloudflow version
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Prints the plugin version.
+
+== Synopsis
+
+Prints the plugin version.
+
+[source,bash]
+----
+kubectl cloudflow version [flags]
+----
+
+== Options
+
+[source,bash]
+----
+  -h, --help   help for version
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

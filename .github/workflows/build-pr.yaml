@@ -1,0 +1,16 @@
+name: Build PRs
+on:
+  # Trigger the workflow on push only for the master branch
+  pull_request:
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build documentation
+      run: |
+        cd docs
+        make all
+    
+        

@@ -1,0 +1,26 @@
+= cloudflow
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Create, manage, deploy, and operate Cloudflow applications.
+
+== Synopsis
+
+This command line tool can be used to deploy and operate Cloudflow applications.
+
+[source,bash]
+----
+-h, --help   help for cloudflow
+----
+
+== SEE ALSO
+
+* <<cloudflow_configure.adoc#,kubectl cloudflow configure>> - Configures a deployed Cloudflow application.
+* <<cloudflow_deploy.adoc#,kubectl cloudflow deploy>> - Deploys a Cloudflow application to the cluster.
+* <<cloudflow_list.adoc#,kubectl cloudflow list>> - Lists deployed Cloudflow application in the current cluster.
+* <<cloudflow_scale.adoc#,kubectl cloudflow scale>> - Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.
+* <<cloudflow_status.adoc#,kubectl cloudflow status>> - Gets the status of a Cloudflow application.
+* <<cloudflow_undeploy.adoc#,kubectl cloudflow undeploy>> - Undeploys a Cloudflow application.
+* <<cloudflow_update-docker-credentials.adoc#,kubectl cloudflow update-docker-credentials>> - Updates docker registry credentials that are used to pull Cloudflow application images.
+* <<cloudflow_version.adoc#,kubectl cloudflow version>> - Prints the plugin version.

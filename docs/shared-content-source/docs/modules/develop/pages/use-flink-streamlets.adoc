@@ -1,0 +1,115 @@
+:page-partial:
+
+A Flink streamlet has the following responsibilities:
+
+* It needs to capture your stream processing logic.
+* It needs to publish metadata used by the `sbt-cloudflow` plugin to verify that a blueprint is correct.
+  This metadata consists of the _shape_ of the streamlet (`StreamletShape`) defined by the inlets and outlets of the streamlet.
+  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints].
+  Cloudflow automatically extracts the shapes from the streamlets to verify this match.
+* For the Cloudflow runtime, it needs to provide metadata so that it can be configured, scaled, and run as part of an application.
+* The inlets and outlets of a `Streamlet` have two functions:
+** To specify to Cloudflow that the streamlet needs certain data streams to exist at runtime, which it will read from and write to, and
+** To provide handles inside the stream processing logic to connect to the data streams that Cloudflow provides. The `StreamletLogic` provides methods that take an inlet or outlet argument to read from or write to. These will be the specific data streams that Cloudflow has set up for you.
+
+The next sections will go into the details of defining a Flink streamlet:
+
+* defining inlets and outlets
+* creating a streamlet shape from the inlets and outlets
+* creating a streamlet logic that uses the inlets and outlets to read and write data
+
+== Inlets and outlets
+
+A streamlet can have one or more inlets and outlets. 
+Cloudflow offers classes for `Inlet`{empty}s and `Outlet`{empty}s based on the
+codec of the data they manipulate. 
+Currently, Cloudflow supports Avro, and therefore, the classes are named `AvroInlet` and `AvroOutlet`.
+Each outlet also allows the user to define a partitioning function that will be used to partition the data.
+
+== `StreamletShape`
+
+The `StreamletShape` captures the connectivity and compatibility details of a Spark-based streamlet.
+It captures which—and how many—inlets and outlets the streamlet has.
+
+The `sbt-cloudflow` plugin extracts—amongst other things—the _shape_ from the streamlet that it finds on the classpath.
+This metadata is used to verify that the blueprint connects the streamlets correctly.
+
+Cloudflow offers an API `StreamletShape` to define various shapes with inlets and outlets. Each inlet and outlet can be defined separately with specific names. 
+The outlet also allows for the definition of a partitioning function.
+This partitioning function is used to distribute the output data among partitions.
+
+When you build your own Flink streamlet, you need to define the shape.
+You will learn how to do this in xref:build-flink-streamlets.adoc[Building a Flink streamlet].
+The next section describes how the `FlinkStreamletLogic` captures stream processing logic.
+
+== `FlinkStreamletLogic`
+
+The stream processing logic is captured in the abstract class `FlinkStreamletLogic`.
+
+The `FlinkStreamletLogic` provides methods to read and write data streams, and provides access to the configuration of the streamlet, among other things.
+
+A `FlinkStreamletLogic` must provide a method for executing streaming queries that process the Flink computation graph. The method `buildExecutionGraph` has to be overridden by implementation classes that process one or more `DataStream` {empty}s. The resulting graph is then submitted by `executeStreamingQueries` to the Flink runtime `StreamExecutionEnvironment` to generate the final output.   
+These jobs will be run by the `run` method of `FlinkStreamlet` to produce a `StreamletExecution` class, the `StreamletExecution` class manages the execution of a Flink Job.
+
+The `FlinkStreamletLogic` may contain instance values since it's only constructed in runtime. The `Streamlet`, however, is also instantiated during compile-time, to extract metadata, and must not contain any instance values.
+
+== `FlinkStreamletContext`
+
+The `FlinkStreamletContext` provides the necessary context under which a streamlet runs.
+It contains the following context data and contracts:
+
+* An active `StreamExecutionEnvironment` that will be used to submit streaming jobs to the Flink runtime.
+* The Typesafe `Config` loaded from the classpath through a `config` method, which can be used to read configuration settings.
+* The name used in the blueprint for the specific instance of this streamlet being run.
+* A mapping that gives the name of the Kafka topic from the port name.
+
+== Lifecycle
+
+In general terms, when you publish and deploy a Cloudflow application, each streamlet definition becomes a physical deployment as one or more Kubernetes artifacts.
+In the case of Flink streamlets, each streamlet is submitted as a Flink application through the Flink Operator as a _Flink Application_ resource.
+Upon deployment, it becomes a set of running _pods_, with one _pod_ as a Flink Job Manager and _n-pods_ as Task Managers, where _n_ is the scale factor for that streamlet.
+
+[NOTE]
+====
+The Flink Operator is a Kubernetes operator dedicated to managing Flink applications.
+====
+The Flink Operator takes care of monitoring the streamlets and is responsible for their resilient execution, like restarting the Flink application in case of failure.
+
+[[flink-streamlet-deployment-model]]
+image::flink-application-deploy.png[Flink Streamlet Deployment Model,title="Flink Streamlet Deployment Model"]
+
+In <<flink-streamlet-deployment-model>>, we can visualize the chain of delegation involved in the deployment of a Flink streamlet:
+
+- The Cloudflow Operator prepares a _Custom Resource_ describing the Flink streamlet and submits it to the Flink Operator
+- The Flink Operator processes the _Custom Resource_ and issues the deployment of a Flink job manager pod.
+- The Flink Job Manager then requests task manager resources from Kubernetes to deploy the distributed processing.
+- Finally, if and when resources are available, the Flink-bound task managers start as Kubernetes pods. The task managers are the components tasked with the actual data processing, while the Job Manager serves as coordinator of the (stream) data process.
+
+If you make any changes to the streamlet and deploy the application again, the existing Flink application will be stopped, and the new version will be started to reflect the changes.
+It could be that Flink streamlets are restarted in other ways, for instance, by administrators.
+
+This means that a streamlet can get stopped, started or restarted at any moment in time. 
+The next section about message delivery semantics explains the options that are available for how to continue processing data after a restart.
+
+[[stream-processing-guarantees-flink]]
+== Stream processing semantics
+
+The message processing semantics provided by Flink streamlets are determined by the guarantees provided by the underlying sources, sinks and connectors. Flink offers _at-least-once_ or _exactly_once_ semantics depending on whether checkpointing is enabled. 
+
+If checkpointing is enabled, Flink guarantees end to end exactly-once processing with supported sources, sinks and connectors.
+
+When we say “exactly-once semantics”, what we mean is that each incoming event affects the final results exactly once. Even in case of a machine or software failure, there’s no duplicate data and no data that goes unprocessed. This  https://flink.apache.org/features/2018/03/01/end-to-end-exactly-once-apache-flink.html[post] explains in detail how `TwoPhaseCommitSinkFunction` implements the two-phase commit protocol and makes it possible to build end-to-end exactly-once applications with Flink and a selection of data sources and sinks, including Apache Kafka versions 0.11 and beyond.
+
+For more details of how the various types of processing semantics impact Kafka producers and consumers when interacting with Flink, please refer to this https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html[guide].
+
+In Cloudflow, streamlets communicate with each other through Kafka - hence the semantics here depends on the settings that we use in our streamlets implementation. For Flink we use _at-least-once_ in `FlinkKafkaProducer`. To use _exactly-once_ the Kafka broker needs to have the value of `transaction.max.timeout.ms` set to at least _1 hour_, which can have an impact on other runtimes in the application.
+
+
+== Reliable restart of stateful processes
+
+A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators are fully supported within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
+
+PVCs are automatically provisioned for each Cloudflow application.
+The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
+
+Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
