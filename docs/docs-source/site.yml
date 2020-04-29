@@ -4,17 +4,17 @@ site:
   
 content:
   sources:
-  - url: ./../
-    branches: [HEAD]
-    start-path: docs-source/docs 
-  - url: ./../
-    branches: [HEAD]
-    start-path: homepage-source/docs
-  - url: ./../
-    branches: [HEAD]
-    start-path: shared-content-source/docs
-  - url: git@github.com:lightbend/cloudflow
-    branches: [master]
+  - url: ./../../
+    branches: [integrate-docs]
+    start-path: docs/docs-source/docs 
+  - url: ./../../
+    branches: [integrate-docs]
+    start-path: docs/homepage-source/docs
+  - url: ./../../
+    branches: [integrate-docs]
+    start-path: docs/shared-content-source/docs
+  - url: ./../../
+    branches: [integrate-docs]
     start-path: examples/snippets
 
 ui: 
