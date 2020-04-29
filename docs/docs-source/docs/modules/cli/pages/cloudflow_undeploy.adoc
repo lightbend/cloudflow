@@ -1,0 +1,26 @@
+= cloudflow undeploy
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Undeploys a Cloudflow application.
+
+== Synopsis
+
+An interactive command to undeploy a Cloudflow application. The data managed by Cloudflow for the application is removed as well.
+
+[source,bash]
+----
+kubectl cloudflow undeploy [flags]
+----
+
+== Options
+
+[source,bash]
+----
+-h, --help   help for undeploy
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

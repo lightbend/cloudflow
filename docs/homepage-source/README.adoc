@@ -1,0 +1,4 @@
+= Home page for cloudflow.io
+
+The files in this subdirectory create the home page for cloudflow.io.
+To build the site, go to the root folder and use `make`.

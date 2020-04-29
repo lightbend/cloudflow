@@ -1,0 +1,94 @@
+:page-partial:
+
+An Akka-based streamlet has the following responsibilities:
+
+* Capturing your stream processing logic.
+* Publishing metadata which will be used by the `sbt-cloudflow` plugin to verify that a blueprint is correct.
+  This metadata consists of the _shape_ of the streamlet (`StreamletShape`) defined by the inlets and outlets of the streamlet.
+  Connecting streamlets need to match on inlets and outlets to make a valid cloudflow topology, as mentioned previously in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints].
+  Cloudflow automatically extracts the shapes from the streamlets to verify this match.
+* For the Cloudflow runtime, it needs to provide metadata so that it can be configured, scaled, and run as part of an application.
+* The inlets and outlets of a `Streamlet` have two functions:
+** To specify to Cloudflow that the streamlet needs certain data streams to exist at runtime, which it will read from and write to, and
+** To provide handles inside the stream processing logic to connect to the data streams that Cloudflow provides. The `StreamletLogic` provides methods that take an inlet or outlet argument to read from or write to. These will be the specific data streams that Cloudflow has set up for you.
+
+The next sections will go into the details of defining an Akka Streamlet:
+
+* defining inlets and outlets
+* creating a streamlet shape from the inlets and outlets
+* creating a streamlet logic that uses the inlets and outlets to read and write data
+
+== Inlets and outlets
+
+A streamlet can have one or more inlets and outlets. Cloudflow offers classes for `Inlet`{empty}s and `Outlet`{empty}s based on the
+codec of the data they manipulate. Currently Cloudflow supports Avro and hence the classes are named `AvroInlet` and `AvroOutlet`.
+Each outlet also allows the user to define a partitioning function that will be used to partition the data.
+
+== `StreamletShape`
+
+The `StreamletShape` captures the connectivity and compatibility details of an Akka-based streamlet.
+It captures which—and how many—inlets and outlets the streamlet has and provides it to the runtime as metadata.
+
+This metadata is used to verify that the blueprint connects the streamlets correctly.
+
+To define the `StreamletShape`, we first create one or more inlets and outlets. 
+Each inlet and outlet can be defined separately with specific names.
+Outlets use a partitioning function to ensure effective data partitioning logic.
+If not specified, the partitioning function defaults to the `RoundRobinPartitioner`, which evenly distributes data between all partitions. 
+
+When you build your own Akka streamlet, you need to define the shape by listing all defined inlets and outlets in a `StreamletShape` instance. You will learn how to do this in xref:build-akka-streamlets.adoc[Building an Akka streamlet].
+
+The next section describes how the `StreamletLogic` captures stream processing logic.
+
+== `StreamletLogic`
+
+The stream processing logic is captured in a `StreamletLogic`, which is an abstract class. It provides:
+
+- The `ActorSystem` to run Akka components in, a `Materializer` for Akka Stream graphs and an `ExecutionContext` for asynchronous calls (in Scala these are in implicit scope inside the `StreamletLogic`).
+- The Typesafe `Config` loaded from the classpath, from which can be read configuration settings. It is accessed using the `config` method.
+- A subset of the Typesafe `Config` that is reserved for the streamlet, which can be used for deployment-time, user-configurable settings. It is accessed through the `streamletConfig` method.
+- Hooks to access data streams to read from inlets and write to outlets, for when you want to build your own custom streamlets.
+
+A `StreamletLogic` will often setup an Akka Stream graph and run it. The `RunnableGraphStreamletLogic`, which extends `StreamletLogic`, makes this very easy, you only need to provide the `RunnableGraph` that you want to run.
+
+You can access the items described above, like actor system and config, directly through methods on the `StreamletLogic`, or through implicit scope.
+
+The `StreamletLogic` is only constructed once the streamlet is run, so it is safe to put instance values and variables in it that you would like to
+use when the streamlet is running.
+
+When you build your own Akka streamlet, you define both a `StreamletShape` and a subclass of `StreamletLogic`. More on that later.
+
+== Lifecycle
+
+In general terms, when you publish and deploy a Cloudflow application, each streamlet definition becomes a physical deployment as one or more Kubernetes artifacts.
+In the case of Akka-based streamlets, each streamlet is submitted as a https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[Deployment, window="k8s_deployment"] resource.
+Upon deployment, it becomes a set of running _pods_ depending in the scale factor for that streamlet.
+
+A so-called runner runs inside every pod. The runner connects the streamlet to data streams, at which point the streamlet starts consuming from inlets. The Streamlet advances through the data streams that are provided on inlets and writes data to outlets.
+
+If you make any changes to the streamlets and deploy the application again, existing pods will be stopped, new pods will be started to reflect the changes.
+It could be that pods are restarted in other ways, for instance by administrators.
+
+This means that streamlets can get stopped, started or restarted at any moment in time. The next section about message delivery semantics explains the options
+that are available for how to continue processing data after a restart.
+
+[[message-delivery-semantics-akka]]
+== Message delivery semantics
+
+If you only want to process data that is arriving in real-time—ignoring data from the past—an Akka streamlet can simply start from the most recently arrived record. In this case, an _at-most-once_ semantics is used (see xref:index.adoc#message-delivery-semantics[Message delivery semantics]). The streamlet will process data as it arrives. Data that arrives while the streamlet is not running will not be processed. 
+
+At-most-once message delivery semantics are applied to Akka streamlets that use standard Akka Stream graphs like `Source`, `Sink`, `Flow`.
+
+Akka Streamlets also supports _at-least-once_ semantics for cases where the above mentioned options are not viable.
+In this case, offsets of incoming records are tracked, so that the streamlet can start from a specific offset, per inlet, on restart.
+Once records are written to outlets, the associated incoming record offsets are considered.
+
+Akka streamlets that want to support at-least-once semantics, must use an Akka Stream `FlowWithContext` that propagates `Committable`{empty}s (both offsets and batches of offsets) through the flow.
+Cloudflow automatically propagates `Committable`{empty}s (offset details) through the flow and commits these in batches, acknowledging processed messages. Committed batches are not reread after a restart.
+
+The `FlowWithContext` provides a constrained set of operators compared to the Akka Stream `Flow`. The subset of operators process records in-order.
+
+There are some side effects to this approach. For instance, if you filter records, only offsets associated to records that are not filtered will be committed. This means that on restart, more re-processing—of previously filtered records—can occur than you might expect.
+
+Next, xref:build-akka-streamlets.adoc[Building an Akka Streamlet] provides more details.
+

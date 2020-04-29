@@ -1,0 +1,59 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+A `testkit` is provided to make it easier to write unit tests for Spark streamlets. The unit tests are meant to facilitate local testing of streamlets.
+
+== Basic flow of `testkit` APIs
+
+Here's the basic flow that you need to follow when writing tests using the `testkit`:
+
+. Extend the test class with the `SparkScalaTestSupport` trait. This trait provides the basic functionalities of managing the `SparkSession`, basic initialization and cleanups and the core APIs of the `testkit`.
+. Create a Spark streamlet `testkit` instance.
+. Create the Spark streamlet that needs to be tested.
+. Setup inlet taps that tap the inlet ports of the streamlet.
+. Setup outlet taps for outlet ports.
+. Push data into inlet ports.
+. Run the streamlet using the `testkit` and the setup inlet taps and outlet taps.
+. Write assertions to ensure that the expected results match the actual ones.
+
+== Details of the workflow
+
+Let's consider an example where we would like to write unit tests for testing a `SparkStreamlet` that reads data from an inlet, does some processing and writes processed data to an outlet. We will follow the steps that we outlined in the last section. We will use ScalaTest as the testing library.
+
+=== Setting up a sample SparkStreamlet
+
+Here is a list of imports needed for writing the test suite.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=imports]
+----
+
+`SparkStreamlet` is an abstract class. Let's set up a concrete instance that we would like to test. For more details on how to implement a Spark streamlet, please refer to xref:build-spark-streamlets.adoc[Building a Spark streamlet].
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/SparkProcessor.scala[tag=processor]
+----
+
+=== The unit test
+
+Here's how we would write a unit test using ScalaTest. The various logical steps of the test are annotated with inline comments explaining the rationale behind the step.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=test]
+----
+
+=== The SparkScalaTestSupport trait
+
+This provides session management and needs to be mixed in with the main test class. This trait provides the following functionalities:
+
+. Manage a `SparkSession` for all tests, initialized when the test class initialize.
+. Cleanup the session using `afterAll`. If you want custom logic for cleanups, override the `afterAll` method and call `super.afterAll()` before adding your custom logic.
+
+=== The SparkStreamletTestkit class
+
+. Provide core APIs like `inletAsTap`, `outletAsTap`, `run`.
+. Support for adding values for configuration parameters.

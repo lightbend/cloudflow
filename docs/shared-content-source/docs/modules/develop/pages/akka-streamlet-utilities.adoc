@@ -1,0 +1,163 @@
+:page-partial:
+:page-supergroup-scala-java: Language
+
+include::ROOT:partial$include.adoc[]
+
+The `cloudflow.akka.util` library contains some predefined `StreamletLogic`{empty}s:
+
+- `HttpServerLogic`
+- `Splitter`
+- `Merger`
+
+The following sections describe how you implement stream processing logic with these utilities.
+
+== HttpServerLogic
+
+=== Use case
+
+An `HttpServerLogic` can be used to handle HTTP requests and store the received data into an outlet.
+You need to extend your streamlet from `AkkaServerStreamlet`
+so that Cloudflow will expose an HTTP endpoint in Kubernetes.
+The `HttpServerLogic` typically unmarshalls incoming HTTP requests as they arrive and stores the data in the outlet.
+Http requests that are attempted while the `HttpServerLogic` is not running will result in a 503 response.
+
+=== Examples
+
+The `HttpServerLogic` defines an abstract method for the user to supply the processing logic, an HTTP route:
+
+[source,scala]
+----
+def route(sinkRef: WritableSinkRef[Out]): Route
+----
+
+The `HttpServerLogic` object has default implementations of the `HttpServerLogic`, which support some pre-baked routes:
+
+* the `default` method creates a `HttpServerLogic` that handles PUT and POST requests, where the data is read from the entity body.
+* the `defaultStreaming` method creates a `HttpServerLogic` that handles streaming HTTP requests, where the data is read from the entity body as a framed stream.
+
+=== Handle PUT / POST requests by default
+
+The code snippet below shows an example of an `HttpServerLogic` using the `defaultLogic`:
+
+[.tabset]
+Scala::
++
+In Scala: 
++
+* The `HttpServerLogic` requires an implicit `akka.http.scaladsl.marshalling.FromByteStringUnmarshaller[Out]` to unmarshal the entity body into the data that you want to write to the outlet. (`FromByteStringUnmarshaller[T]` is an alias for `Unmarshaller[ByteString, T]`)
++
+* An `HttpServerLogic` can only be used in combination with an `AkkaServerStreamlet`. The `HttpServerLogic.default` method requires a `Server` argument (this also applies to the `HttpServerLogic.defaultStreaming` method and the `HttpServerLogic` constructor, you cannot construct it without it). The `AkkaServerStreamlet` implements `Server`, so you can just pass `this` to it from inside the streamlet, as you can see in the snippet below.
++
+* In the example below, the `JsonSupport` object defines implicit spray-json JSON formats for the `SensorData` type.
++
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngress.scala[tag=httpIngress]
+----
+
+Java::
++
+In Java, the `akka.http.javadsl.unmarshalling.Unmarshaller<ByteString, T>` is an argument to the constructor. A Jackson `Unmarshaller<ByteString, Out>` is created for the `SensorData` class, using the `Jackson.byteStringUnmarshaller` method, as shown below
++
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataHttpIngress.java[tag=httpIngress]
+----
+
+
+=== Handle streamed HTTP entities
+
+The `defaultStreaming` requires an implicit `FromByteStringUnmarshaller[Out]` and an `EntityStreamingSupport`.
+
+[.tabset]
+Scala::
++
+The Scala example below shows: 
++
+* How to use the `defaultStreaming` method to unmarshal a JSON stream and write the unmarshalled data to the outlet. It provides a `EntityStreamingSupport.json()` to read the JSON stream. The `defaultStreamingLogic` uses this to read JSON from the request entity.
++
+* The `SensorDataJsonSupport` in the example provides implicit spray-json JSON `Formats` to unmarshal the JSON elements in the stream.
++
+* The `akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport` object implicitly provides a `FromByteStringUnmarshaller` based on the formats in the `SensorDataJsonSupport` object.
++
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataStreamingIngress.scala[tag=httpStreamingIngress]
+----
+
+Java::
++
+The Java example below shows how to use the `defaultStreaming` in a similar manner:
++
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataStreamingIngress.java[tag=httpStreamingIngress]
+----
+
+=== Define a custom Route
+
+If you want to provide your own `akka-http` Route, override the `route` method.
+The `route` method provides a `sinkRef` argument which you can use to write to the outlet.
+
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngressCustomRoute.scala[tag=customRoute]
+----
+
+The above Scala example creates a route that will handle put requests where the entity contains `Data`, which is written to the outlet using the `WritableSinkRef`.
+
+== Splitter
+
+=== Use case
+
+A `Splitter` can be used to split a stream in two, writing elements to one of two outlets.
+Every element from the outlet will be processed through a `FlowWithCommittableContext`, which provides at-least-once semantics.
+
+=== Example
+
+The `Splitter` defines a `sink` method for the user to supply a `FlowWithCommittableContext[I, Either[L, R]]` and a `left` and `right` outlet.
+The Java version of `Splitter` uses an `Either` type that is bundled with cloudflow as `cloudflow.akka.javadsl.util.Either`.
+
+The examples below shows a `Splitter` that validates metrics and splits the stream into valid and invalid metrics, which are written respectively to the `valid` and `invalid` outlets:
+
+[.tabset]
+Scala::
++
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataSplitter.scala[tag=splitter]
+----
+
+Java::
++
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataSplitter.java[tag=splitter]
+----
+
+== Merger
+
+=== Use case
+
+A `Merger` can be used to merge two or more inlets into one outlet.
+
+Elements from all inlets will be processed with at-least-once semantics. The elements will be processed in semi-random order and with equal priority for all inlets.
+
+=== Example
+
+The examples below shows how to use a `Merger.source` to combine elements from two inlets of the type `Metric` into one outlet of the same type.
+
+[.tabset]
+Scala::
++
+[source,scala]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataMerge.scala[tag=merge]
+----
+
+Java::
++
+[source,java]
+----
+include::{code-snippets-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataMerge.java[tag=merge]
+----

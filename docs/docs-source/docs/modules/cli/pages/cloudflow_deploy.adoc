@@ -1,0 +1,87 @@
+= cloudflow deploy
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+Deploys a Cloudflow application to the cluster.
+
+== Synopsis
+
+Deploys a Cloudflow application to the cluster.
+The arguments to the command consists of a docker image path and optionally one
+or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
+a space.
+
+Streamlet volume mounts can be configured using the --volume-mount flag.
+The flag accepts one or more key/value pair where the key is the name of the
+volume mount, specified as '[streamlet-name].[volume-mount-name]', and the value
+is the name of a Kubernetes Persistent Volume Claim, which needs to be located
+in the same namespace as the Cloudflow application, e.g. the namespace with the
+same name as the application.
+
+[source,bash]
+----
+kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name
+----
+
+It is also possible to specify more than one "volume-mount" parameter.
+
+[source,bash]
+----
+kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
+----
+
+You can optionally provide credentials for the docker registry that hosts the
+specified image by using the `--username` flag in combination with either
+the `--password-stdin` or the `--password` flag.
+
+The `--password-stdin` flag is preferred because it is read from stdin, which
+means that the password does not end up in the history of your shell.
+One way to provide the password via stdin is to pipe it from a file:
+
+[source,bash]
+----
+cat key.json | kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key --password-stdin
+----
+
+You can also use `--password`, which is less secure:
+
+[source,bash]
+----
+kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key -password "$(cat key.json)"
+----
+
+If you do not provide a username and password, you will be prompted for them
+the first time you deploy an image from a certain docker registry. The
+credentials will be stored in a Kubernetes "image pull secret" and linked to
+the Cloudflow service account. Subsequent usage of the deploy command will use
+the stored credentials.
+
+You can update the credentials with the "update-docker-credentials" command.
+
+[source,bash]
+----
+kubectl cloudflow deploy [flags]
+----
+
+== Examples
+
+[source,bash]
+----
+kubectl cloudflow deploy registry.test-cluster.io/cloudflow/sensor-data-scala:292-c183d80 valid-logger.log-level=info valid-logger.msg-prefix=valid
+----
+
+== Options
+
+[source,bash]
+----
+  -h, --help                       help for deploy
+  -p, --password string            docker registry password.
+      --password-stdin             Take the password from stdin
+  -u, --username string            docker registry username.
+      --volume-mount stringArray   Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.
+----
+
+== SEE ALSO
+
+* <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

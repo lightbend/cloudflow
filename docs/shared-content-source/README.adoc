@@ -1,0 +1,51 @@
+= Shared content
+
+Cloudflow currently has a documentation set for the open source version, and one for Enterprise Features, which require a Lightbend subscription. The `shared-content-source` folder contains information that can be included in other documentation repositories. For example, the information on how to develop streamlets is identical regardless of whether you are using the open source version of Cloudflow or https://developer.lightbend.com/docs/cloudflow/current/index.html[Cloudflow Enterprise Features]. To ensure that revisions are propagated to both sets of documentation and to avoid unnecessary duplication of work, the source for that information is located in the `shared-content-source/docs/modules/develop/pages` folder. 
+
+== How shared content is included
+
+Sharing content requires a source page, an including page, and a directive that causes antora to include the shared component during HTML generation. Here is how to accomplish that:
+
+. The source of a shared content page must include the attribute `:page-partial:` and *not* include a title. You can see an example in `./docs/modules/develop/pages/cloudflow-streamlet.adoc`. 
+
+. To use shared content, you use an `include` directive. For example, in this open source documentation repository, the `docs-source/docs/modules/develop/pages/index.html` file includes this shared file, using this directive: `include::shared-content:develop:page$index.adoc[]`.
+
+. In the `site.yml` (and, if you use it, the `author-mode-site.yml`), you must declare the `shared-content-source` as a `source` in the `content` element. The name of the component is set in the `shared-content-source/docs/antora.yml` file. In this repository, that name is `shared-content`, which is referenced in `site.yml` as:
++
+```
+- url: ./../
+  branches: [HEAD]
+  start-path: shared-content-source/docs
+```
+
+== How to edit shared content and use cross-references
+
+When editing shared content, you should be sure that the information applies to all repositories where the information is being shared. This is currently the open source version of Cloudflow and Enterprise Features, which are documented in the https://github.com/lightbend/cloudflow-enterprise-docs repository and published at: https://developer.lightbend.com/docs/cloudflow/current/index.html. 
+
+You can use cross-references between shared files, as long as all docs sets that share the content include both files. You can also use cross-references to non-shared files. The target of the xref must exist in all target doc sets. For example, this reference will resolve in both Cloudflow doc sets, because ROOT:index.adoc exists in both: Please read xref:ROOT:index.adoc[the introduction] for more information. Note that rather than using the page title for the link text, it more generically refers to "the introduction". In this way, the page can have a different title in each doc set.
+
+== How to add new content
+
+If you need to add content that differs in small ways, such as a few words or sentences, you can use conditional attributes in an existing shared file to display the information in the appropriate doc set. If the information is sufficient to create a new page and you have different information for each doc set that includes content, follow the steps below to add two new files. If the information only applies to one of the doc sets, you do not need to put the file in the `shared-content-source` folder, but can add it to the appropriate folder in the containing doc set. 
+
+To add new shared content:
+
+. Create the shared content file in `shared-content-source`, under an appropriately named module. See `./docs/modules/develop/pages/cloudflow-streamlet.adoc` for an example. Follow these guidelines:
+
+.. Do not use a title.
+.. At the top of the page, add the `:page-partial:` attribute.
+.. Start headings at level 2, i.e. `==`.
+
+. Create the file that will include the shared content in `docs-source/docs/modules`. See `docs-source/docs/modules/develop/pages/index.html` for an example. In the include file, follow these guidelines:
+
+.. Set the page attributes, such as TOC level and attribute include file. 
+.. You can add other content, either before or after the included material, but be sure to add comments to both the include and source file so that other authors are aware.
+
+. Add the include file to the `nav.adoc` file in the `ROOT` folder of `docs-source`. 
+
+
+
+ 
+
+Most attributes should be set in the including file, such as TOC level, and an attribute include file. 
+ 

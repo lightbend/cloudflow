@@ -1,0 +1,7 @@
+= Providing External Access to Cloudflow Services
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+include::shared-content:administration:page$providing-external-access-to-cloudflow-services.adoc[]
