@@ -5,16 +5,16 @@ site:
 content:
   sources:
   - url: ./../../
-    branches: [integrate-docs]
+    branches: [master]
     start-path: docs/docs-source/docs 
   - url: ./../../
-    branches: [integrate-docs]
+    branches: [master]
     start-path: docs/homepage-source/docs
   - url: ./../../
-    branches: [integrate-docs]
+    branches: [master]
     start-path: docs/shared-content-source/docs
   - url: ./../../
-    branches: [integrate-docs]
+    branches: [master]
     start-path: examples/snippets
 
 ui: 
