@@ -97,7 +97,7 @@ object CloudflowBasePlugin extends AutoPlugin {
           .value,
     fork in Compile := true,
     extraDockerInstructions := Seq(),
-    ownerInDockerImage := userAsOwner(UserInImage),
+    ownerInDockerImage := userAsOwner(UserInImage)
   )
 
   private[sbt] val verifyDockerRegistry = Def.task {

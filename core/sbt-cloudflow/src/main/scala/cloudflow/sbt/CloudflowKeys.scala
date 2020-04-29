@@ -55,20 +55,20 @@ trait CloudflowTaskKeys {
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
   val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
-  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint")
-  val build                     = taskKey[Unit]("Build the image and app.")
-  val buildAndPublish           = taskKey[Unit]("Publish the image and app.")
-  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
-  val buildApp        = taskKey[Unit]("Generate Cloudflow Application CR")
+  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
+  val build                     = taskKey[Unit]("Build the image.")
+  val buildAndPublish           = taskKey[Unit]("Publish the image.")
+  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
+  val buildApp                  = taskKey[Unit]("Generate Cloudflow Application CR")
 
-  private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping")
-  private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application")
-  private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application")
+  private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
+  private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
+  private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")
 
   private[sbt] val cloudflowStreamletDescriptors = taskKey[Map[String, Config]]("Streamlets found by scanning the application classpath.")
-  private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project")
+  private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project.")
 
-  private[sbt] val blueprintFile = taskKey[File]("Should be set to the blueprint in the src/main/blueprint directory")
+  private[sbt] val blueprintFile = taskKey[File]("Should be set to the blueprint in the src/main/blueprint directory.")
   private[sbt] val verificationResult = taskKey[Either[BlueprintVerificationFailed, BlueprintVerified]](
     "Verify the blueprint against the streamlets found by scanning the application classpath."
   )
@@ -82,8 +82,9 @@ trait CloudflowTaskKeys {
     taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
   private[sbt] val streamletDescriptorsInProject =
-    taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping")
-  private[sbt] val imageNamesByProject          = taskKey[Map[String, DockerImageName]]("The list of all image names")
-  private[sbt] val streamletClassNamesByProject = taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project")
-  private[sbt] val cloudflowApplicationCR       = taskKey[Unit]("Generates Cloudflow Application CR")
+    taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")
+  private[sbt] val imageNamesByProject = taskKey[Map[String, DockerImageName]]("The list of all image names.")
+  private[sbt] val streamletClassNamesByProject =
+    taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project.")
+  private[sbt] val cloudflowApplicationCR = taskKey[Unit]("Generates the Cloudflow Application CR.")
 }
