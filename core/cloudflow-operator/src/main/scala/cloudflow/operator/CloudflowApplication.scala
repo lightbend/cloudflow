@@ -30,7 +30,7 @@ import skuber.apiextensions._
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment._
+import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
 import cloudflow.operator.action.Action
 
@@ -45,7 +45,6 @@ object CloudflowApplication {
       appId: String,
       appVersion: String,
       streamlets: Vector[StreamletInstance],
-      connections: Vector[Connection],
       deployments: Vector[StreamletDeployment],
       agentPaths: Map[String, String]
   )
@@ -75,7 +74,6 @@ object CloudflowApplication {
   implicit val volumeMountDescriptorFmt: Format[VolumeMountDescriptor]         = Json.format[VolumeMountDescriptor]
   implicit val streamletDescriptorFormat: Format[StreamletDescriptor]          = Json.format[StreamletDescriptor]
   implicit val streamletFmt: Format[StreamletInstance]                         = Json.format[StreamletInstance]
-  implicit val connectionFmt: Format[Connection]                               = Json.format[Connection]
 
   implicit val configFmt: Format[Config] = Format[Config](
     Reads(jsValue ⇒
@@ -83,7 +81,7 @@ object CloudflowApplication {
     ),
     Writes(conf ⇒ Json.parse(conf.root().render(ConfigRenderOptions.concise())))
   )
-  implicit val savepointFmt: Format[Savepoint]            = Json.format[Savepoint]
+  implicit val savepointFmt: Format[AppDescriptorTopic]   = Json.format[AppDescriptorTopic]
   implicit val endpointFmt: Format[Endpoint]              = Json.format[Endpoint]
   implicit val deploymentFmt: Format[StreamletDeployment] = Json.format[StreamletDeployment]
 

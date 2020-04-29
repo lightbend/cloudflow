@@ -35,9 +35,9 @@ final case class StreamletRef(
       case ClassNamePattern(_) ⇒ None
       case _                   ⇒ Some(InvalidStreamletClassName(name, className))
     }
-
+    val foundDescriptor = streamletDescriptors.find(_.className == className)
     val descriptorFound: Either[BlueprintProblem, StreamletDescriptor] =
-      streamletDescriptors.find(_.className == className) match {
+      foundDescriptor match {
         case Some(streamlet) ⇒ Right(streamlet)
         case None ⇒ {
           val matchingPartially = streamletDescriptors.filter(_.className.contains(className))

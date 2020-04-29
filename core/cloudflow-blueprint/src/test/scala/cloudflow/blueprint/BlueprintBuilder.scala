@@ -16,6 +16,8 @@
 
 package cloudflow.blueprint
 
+import com.typesafe.config._
+
 /**
  * Builds [[Blueprint]]s and [[VerifiedBlueprint]]s for testing purposes.
  * See [[BlueprintSpec]] for how the builder can be used.
@@ -53,19 +55,36 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
       val inRef  = refsAdded.streamlets.find(_.className == in.className).get
 
       out.outlets
-        .flatMap { outlet ⇒
-          in.inlets.filter(_.schema == outlet.schema).map { inlet ⇒
-            StreamletConnection(
-              s"${outRef.name}.${outlet.name}",
-              s"${inRef.name}.${inlet.name}"
-            )
-          }
+        .map { outlet ⇒
+          Topic(
+            s"${outRef.name}.${outlet.name}",
+            in.inlets
+              .filter(_.schema == outlet.schema)
+              .map { inlet ⇒
+                s"${inRef.name}.${inlet.name}"
+              }
+              .toVector :+ s"${outRef.name}.${outlet.name}"
+          )
         }
-        .foldLeft(bp) { (connectingBlueprint, connection) ⇒
-          connectingBlueprint.connect(connection)
+        .foldLeft(bp) { (connectingBlueprint, topic) ⇒
+          connectingBlueprint.connect(topic, topic.connections)
         }
     }
-    connected.verify
+
+    val connectedInlets = connected.verify
+
+    // generate topic named exactly as portPath connect to portPath of unconnected outlets.
+    connectedInlets.problems
+      .collect {
+        case UnconnectedOutlets(unconnectedPorts) => unconnectedPorts
+      }
+      .flatten
+      .foldLeft(connectedInlets) { (connectingBlueprint, unconnectedPort) =>
+        val portPath = s"${unconnectedPort.streamletRef}.${unconnectedPort.port.name}"
+        val topic    = Topic(portPath)
+        connectingBlueprint.connect(topic, portPath)
+      }
+      .verify
   }
 
   /**
@@ -98,14 +117,124 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
     def in1                  = s"${streamletRef.name}.in-1"
   }
 
-  /**
-   * Adds methods to a VerifiedBlueprint for ease of testing.
-   */
-  implicit class VerifiedBlueprintOps(verifiedBlueprint: VerifiedBlueprint) {
+  implicit class BlueprintOps(blueprint: Blueprint) {
+    import blueprint._
+    def define(streamletDescriptorsUpdated: Vector[StreamletDescriptor]): Blueprint =
+      copy(
+        streamletDescriptors = streamletDescriptorsUpdated
+      ).verify
 
-    /**
-     * Returns a [[VerifiedPortPath]] for an outlet path in the verified blueprint. Fails with a scalatest value if the path is incorrect.
-     */
-    def outletPath(path: String): VerifiedPortPath = verifiedBlueprint.findOutlet(path).right.value.portPath
+    def upsertStreamletRef(
+        streamletRef: String,
+        className: Option[String] = None,
+        metadata: Option[Config] = None
+    ): Blueprint =
+      streamlets
+        .find(_.name == streamletRef)
+        .map { streamletRef ⇒
+          val streamletRefWithClassNameUpdated =
+            className
+              .map(r ⇒ streamletRef.copy(className = r))
+              .getOrElse(streamletRef)
+          val streamletRefWithMetadataUpdated =
+            metadata
+              .map(_ ⇒ streamletRefWithClassNameUpdated.copy(metadata = metadata))
+              .getOrElse(streamletRefWithClassNameUpdated)
+
+          copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRefWithMetadataUpdated).verify
+        }
+        .getOrElse(
+          className
+            .map(streamletDescriptorRef ⇒ use(StreamletRef(name = streamletRef, className = streamletDescriptorRef, metadata = metadata)))
+            .getOrElse(blueprint)
+        )
+
+    def use(streamletRef: StreamletRef): Blueprint =
+      copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRef).verify
+
+    def remove(streamletRef: String): Blueprint = {
+      val verifiedStreamlets = streamlets.flatMap(_.verified)
+      val newTopics = topics
+        .map { topic =>
+          topic
+            .copy(
+              producers = topic.producers.filterNot(port => VerifiedPortPath(port).exists(_.streamletRef == streamletRef)),
+              consumers = topic.consumers.filterNot(port => VerifiedPortPath(port).exists(_.streamletRef == streamletRef))
+            )
+            .verify(verifiedStreamlets)
+        }
+        .filter(_.connections.nonEmpty)
+
+      copy(
+        streamlets = streamlets.filterNot(_.name == streamletRef),
+        topics = newTopics
+      ).verify
+    }
+
+    def connect(topic: Topic, ports: Vector[String]): Blueprint = {
+      require(ports.size >= 1)
+      val verifiedStreamlets = streamlets.flatMap(_.verified)
+      val unverifiedPorts    = ports.flatMap(port => VerifiedPortPath(port).left.toOption.map(_ => port))
+
+      val (verifiedOutlets, verifiedInlets) = ports
+        .flatMap(port =>
+          VerifiedPortPath(port).toOption.flatMap { verifiedPortPath =>
+            VerifiedPort.findPort(verifiedPortPath, verifiedStreamlets).toOption
+          }
+        )
+        .partition(_.isOutlet)
+      val consumers = verifiedInlets.map(_.portPath.toString)
+      // Adding unverified ports to producers so the connect leads to errors in the Blueprint.
+      val producers = verifiedOutlets.map(_.portPath.toString) ++ unverifiedPorts
+
+      val foundTopic = topics
+        .find(_.name == topic.name)
+        .map(t =>
+          t.copy(
+            producers = (t.producers ++ producers).distinct,
+            consumers = (t.consumers ++ consumers).distinct
+          )
+        )
+        .getOrElse(topic.copy(producers = producers, consumers = consumers))
+      val verifiedTopic = foundTopic.verify(streamlets.flatMap(_.verified))
+      val otherTopics   = topics.filterNot(_.name == foundTopic.name)
+      copy(topics = otherTopics :+ verifiedTopic).verify
+    }
+
+    def connect(topic: Topic, port: String): Blueprint =
+      connect(topic, Vector(port))
+
+    def connect(topic: Topic, port: String, ports: String*): Blueprint =
+      connect(topic, Vector(port) ++ ports)
+
+    def disconnect(portPath: String): Blueprint = {
+      val verifiedStreamlets = streamlets.flatMap(_.verified)
+      val verifiedTopics     = topics.flatMap(_.verified)
+      (for {
+        verifiedPortPath <- VerifiedPortPath(portPath)
+        verifiedPort     <- VerifiedPort.findPort(verifiedPortPath, verifiedStreamlets)
+      } yield {
+        val unmodified = verifiedTopics
+          .filterNot(_.connections.exists(_.portPath == verifiedPort.portPath))
+          .flatMap(verifiedTopic => topics.find(_.name == verifiedTopic.name))
+
+        val modified = verifiedTopics
+          .filter(_.connections.exists(_.portPath == verifiedPort.portPath))
+          .flatMap { verifiedTopic =>
+            topics
+              .find(_.name == verifiedTopic.name)
+              .map { topic =>
+                topic.copy(
+                  producers = topic.producers.filterNot(path => VerifiedPortPath(path).exists(_ == verifiedPortPath)),
+                  consumers = topic.consumers.filterNot(path => VerifiedPortPath(path).exists(_ == verifiedPortPath))
+                )
+              }
+          }
+          .filter(_.connections.nonEmpty)
+
+        copy(topics = unmodified ++ modified).verify
+      }).getOrElse(blueprint)
+    }
+
   }
 }

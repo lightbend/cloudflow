@@ -33,13 +33,13 @@ import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
 /**
  * Plugin that generates the CR file for the application
  */
-object CRGenerationPlugin extends AutoPlugin {
+object BuildAppPlugin extends AutoPlugin {
 
   override def requires =
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
 
   override def projectSettings = Seq(
-    cloudflowApplicationCR := generateCR.dependsOn(verifyBlueprint).value
+    cloudflowApplicationCR := buildApp.dependsOn(verifyBlueprint).value
   )
 
   /**
@@ -48,7 +48,7 @@ object CRGenerationPlugin extends AutoPlugin {
    * latter since we need the proper image name associated with every streamlet descriptor
    * and streamlet deployment.
    */
-  def generateCR: Def.Initialize[Task[Unit]] = Def.task {
+  def buildApp: Def.Initialize[Task[Unit]] = Def.task {
     // these streamlet descriptors have been generated from the `build` task
     // if they have not been generated we throw an exception and ask the user
     // to run the build
@@ -71,7 +71,7 @@ object CRGenerationPlugin extends AutoPlugin {
 
     // build is required before we can generate the CR
     if (streamletDescriptors.isEmpty) {
-      throw new PreconditionViolationError("Need to run `build` first before generating CR")
+      throw new PreconditionViolationError("Need to run `build` first before using buildApp")
     }
 
     // get the full image name because that's how we want in the application descriptor
@@ -101,9 +101,10 @@ object CRGenerationPlugin extends AutoPlugin {
     val cr = makeCR(newApplicationDescriptor)
 
     // generate the CR file in the current location
-    val file = new File(s"${appDescriptor.appId}.json")
+    new File("target").mkdir()
+    val file = new File(s"target/${appDescriptor.appId}.json")
     IO.write(file, cr.toJson.compactPrint)
-    log.success(s"Cloudflow application CR generated in ${file.name}")
+    log.success(s"Cloudflow application CR generated in ${file.getAbsolutePath}")
   }
 
   def makeCR(appDescriptor: ApplicationDescriptor): CloudflowCR =

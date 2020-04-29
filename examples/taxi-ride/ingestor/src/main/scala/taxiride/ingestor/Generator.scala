@@ -25,7 +25,7 @@ import taxiride.datamodel._
 import spray.json._
 import TaxiFareJsonProtocol._
 
-class Generator extends AkkaServerStreamlet {
+class Generator extends AkkaStreamlet {
   val faresOut = AvroOutlet[TaxiFare]("fares", _.rideId.toString)
   val ridesOut = AvroOutlet[TaxiRide]("rides", _.rideId.toString)
 

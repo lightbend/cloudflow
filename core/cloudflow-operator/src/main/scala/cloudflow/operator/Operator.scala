@@ -31,7 +31,7 @@ import scala.concurrent._
 import scala.util._
 
 object Operator {
-  val ProtocolVersion              = "1"
+  val ProtocolVersion              = "2"
   val ProtocolVersionKey           = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
   def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = ConfigMap(

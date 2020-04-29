@@ -56,35 +56,28 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
-    // Flink operator has made envConfig mandatory
-    // https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1beta1/types.go#L110
-    // Hence setting a dummy variable @todo: remove this once fixed
-    val envConfig = EnvConfig(
-      List(
-        EnvVar(JvmArgsEnvVar, "-DDUMMY=dummy")
-      )
-    )
+    val envConfig = EnvConfig(None)
 
     val jobManagerConfig = JobManagerConfig(
-      jobManagerSettings.replicas,
+      Some(jobManagerSettings.replicas),
       Resources.make(
         ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
                               jobManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
       ),
-      envConfig
+      Some(envConfig)
     )
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
-      taskSlots = taskManagerSettings.taskSlots,
+      Some(taskManagerSettings.taskSlots),
       Resources.make(
         ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
                               taskManagerSettings.resources.cpuRequest.map(_.value)),
         ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
       ),
-      envConfig
+      Some(envConfig)
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -239,43 +232,49 @@ object FlinkResource {
   }
 
   final case class JobManagerConfig(
-      replicas: Int,
+      replicas: Option[Int],
       resources: Option[Resources] = None,
-      envConfig: EnvConfig = EnvConfig()
+      envConfig: Option[EnvConfig]
   )
 
   final case class TaskManagerConfig(
-      taskSlots: Int,
+      taskSlots: Option[Int],
       resources: Option[Resources] = None,
-      envConfig: EnvConfig = EnvConfig()
+      envConfig: Option[EnvConfig]
   )
 
   /*
-  https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1alpha1/types.go
+  https://github.com/lyft/flinkk8soperator/blob/v0.4.0/pkg/apis/app/v1beta1/types.go
 
   type FlinkApplicationSpec struct {
-    Image             string                       `json:"image,omitempty" protobuf:"bytes,2,opt,name=image"`
-    ImagePullPolicy   apiv1.PullPolicy             `json:"imagePullPolicy,omitempty" protobuf:"bytes,14,opt,name=imagePullPolicy,casttype=PullPolicy"`
-    ImagePullSecrets  []apiv1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,15,rep,name=imagePullSecrets"`
-    FlinkConfig       FlinkConfig                  `json:"flinkConfig"`
-    FlinkVersion      string                       `json:"flinkVersion"`
-    TaskManagerConfig TaskManagerConfig            `json:"taskManagerConfig,omitempty"`
-    JobManagerConfig  JobManagerConfig             `json:"jobManagerConfig,omitempty"`
-    JarName           string                       `json:"jarName"`
-    Parallelism       int32                        `json:"parallelism"`
-    EntryClass        string                       `json:"entryClass,omitempty"`
-    ProgramArgs       string                       `json:"programArgs,omitempty"`
-    SavepointInfo     SavepointInfo                `json:"savepointInfo,omitempty"`
-    DeploymentMode    DeploymentMode               `json:"deploymentMode,omitempty"`
-    RPCPort           *int32                       `json:"rpcPort,omitempty"`
-    BlobPort          *int32                       `json:"blobPort,omitempty"`
-    QueryPort         *int32                       `json:"queryPort,omitempty"`
-    UIPort            *int32                       `json:"uiPort,omitempty"`
-    MetricsQueryPort  *int32                       `json:"metricsQueryPort,omitempty"`
-    Volumes           []apiv1.Volume               `json:"volumes,omitempty"`
-    VolumeMounts      []apiv1.VolumeMount          `json:"volumeMounts,omitempty"`
-    RestartNonce      string                       `json:"restartNonce"`
-    DeleteMode        DeleteMode                   `json:"deleteMode,omitempty"`
+    Image                         string                       `json:"image,omitempty" protobuf:"bytes,2,opt,name=image"`
+    ImagePullPolicy               apiv1.PullPolicy             `json:"imagePullPolicy,omitempty" protobuf:"bytes,14,opt,name=imagePullPolicy,casttype=PullPolicy"`
+    ImagePullSecrets              []apiv1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,15,rep,name=imagePullSecrets"`
+    ServiceAccountName            string                       `json:"serviceAccountName,omitempty"`
+    FlinkConfig                   FlinkConfig                  `json:"flinkConfig"`
+    FlinkVersion                  string                       `json:"flinkVersion"`
+    TaskManagerConfig             TaskManagerConfig            `json:"taskManagerConfig,omitempty"`
+    JobManagerConfig              JobManagerConfig             `json:"jobManagerConfig,omitempty"`
+    JarName                       string                       `json:"jarName"`
+    Parallelism                   int32                        `json:"parallelism"`
+    EntryClass                    string                       `json:"entryClass,omitempty"`
+    ProgramArgs                   string                       `json:"programArgs,omitempty"`
+    // Deprecated: use SavepointPath instead
+    SavepointInfo                  SavepointInfo               `json:"savepointInfo,omitempty"`
+    SavepointPath                  string                      `json:"savepointPath,omitempty"`
+    DeploymentMode                 DeploymentMode              `json:"deploymentMode,omitempty"`
+    RPCPort                        *int32                      `json:"rpcPort,omitempty"`
+    BlobPort                       *int32                      `json:"blobPort,omitempty"`
+    QueryPort                      *int32                      `json:"queryPort,omitempty"`
+    UIPort                         *int32                      `json:"uiPort,omitempty"`
+    MetricsQueryPort               *int32                      `json:"metricsQueryPort,omitempty"`
+    Volumes                        []apiv1.Volume              `json:"volumes,omitempty"`
+    VolumeMounts                   []apiv1.VolumeMount         `json:"volumeMounts,omitempty"`
+    RestartNonce                   string                      `json:"restartNonce"`
+    DeleteMode                     DeleteMode                  `json:"deleteMode,omitempty"`
+    AllowNonRestoredState          bool                        `json:"allowNonRestoredState,omitempty"`
+    ForceRollback                  bool                        `json:"forceRollback"`
+    MaxCheckpointRestoreAgeSeconds *int32                      `json:"maxCheckpointRestoreAgeSeconds,omitempty"`
   } */
 
   final case class Spec(
@@ -332,7 +331,7 @@ object FlinkResource {
   implicit val jobManagerInfoFmt: Format[JobManagerInfo]     = Json.format[JobManagerInfo]
   implicit val statusFmt: Format[Status]                     = Json.format[Status]
 
-  final case class EnvConfig(env: List[EnvVar] = Nil)
+  final case class EnvConfig(env: Option[List[EnvVar]])
 
   type CR = CustomResource[Spec, Status]
 

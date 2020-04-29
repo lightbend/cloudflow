@@ -9,19 +9,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// Connection is one inlet/outlet connection
-type Connection struct {
-	InletName           string `json:"inlet_name"`
-	InletStreamletName  string `json:"inlet_streamlet_name"`
-	OutletName          string `json:"outlet_name"`
-	OutletStreamletName string `json:"outlet_streamlet_name"`
-}
-
 // PortMapping maps outlets
 type PortMapping struct {
-	AppID     string `json:"app_id"`
-	Outlet    string `json:"outlet"`
-	Streamlet string `json:"streamlet"`
+	AppID            string          `json:"app_id"`
+	Name             string          `json:"name"`
+	Streamlet        string          `json:"streamlet"`
+	Config           json.RawMessage `json:"config"`
+	BootstrapServers string          `json:"bootstrap_servers,omitempty"`
+	Managed          bool            `json:"managed"`
 }
 
 // Endpoint contains deployment endpoint information
@@ -111,13 +106,12 @@ type Streamlet struct {
 
 // SupportedApplicationDescriptorVersion is the Application Descriptor Version that this version of kubectl-cloudflow supports.
 // This version must match up with the version that is added by sbt-cloudflow, which is hardcoded in `cloudflow.blueprint.deployment.ApplicationDescriptor`.
-const SupportedApplicationDescriptorVersion = "1"
+const SupportedApplicationDescriptorVersion = "2"
 
 // CloudflowApplicationSpec TBD
 type CloudflowApplicationSpec struct {
 	AppID          string            `json:"app_id"`
 	AppVersion     string            `json:"app_version"`
-	Connections    []Connection      `json:"connections"`
 	Deployments    []Deployment      `json:"deployments"`
 	Streamlets     []Streamlet       `json:"streamlets"`
 	AgentPaths     map[string]string `json:"agent_paths"`
@@ -160,7 +154,7 @@ type CloudflowApplicationStatus struct {
 type CloudflowApplication struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta `json:"metadata"`
-	Spec              CloudflowApplicationSpec   `json:"spec"`
+	Spec              CloudflowApplicationSpec    `json:"spec"`
 	Status            *CloudflowApplicationStatus `json:"status,omitempty"`
 }
 
@@ -271,7 +265,6 @@ func (in *CloudflowApplication) DeepCopyInto(out *CloudflowApplication) {
 	out.Spec = CloudflowApplicationSpec{
 		AppID:       in.Spec.AppID,
 		AppVersion:  in.Spec.AppVersion,
-		Connections: in.Spec.Connections,
 		Deployments: in.Spec.Deployments,
 		Streamlets:  in.Spec.Streamlets,
 	}

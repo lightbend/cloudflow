@@ -32,22 +32,9 @@ object CloudflowApplicationSpecBuilder {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val streamlets             = blueprint.streamlets.map(toStreamlet)
-    val connections            = blueprint.connections.map(toConnection)
-    val deployments =
-      streamlets
-        .map { streamlet ⇒
-          StreamletDeployment(sanitizedApplicationId, streamlet, image, connections)
-        }
-
-    CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, connections, deployments, agentPaths)
+    val deployments            = ApplicationDescriptor(appId, appVersion, image, blueprint, agentPaths).deployments
+    CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, deployments, agentPaths)
   }
 
   private def toStreamlet(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)
-  private def toConnection(connection: VerifiedStreamletConnection) =
-    Connection(
-      connection.verifiedOutlet.portName,
-      connection.verifiedOutlet.streamlet.name,
-      connection.verifiedInlet.portName,
-      connection.verifiedInlet.streamlet.name
-    )
 }

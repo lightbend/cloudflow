@@ -100,6 +100,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
         if (someQueryStopped) completionPromise.completeWith(stop())
       }
 
+      //TODO remove this after testing
       val sysCheck: Cancellable = system.scheduler.schedule(1.minute, 1.minutes) {
         val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
         // TODO temporary logging total mem in case a recent issue resurfaces in a long running spark process.

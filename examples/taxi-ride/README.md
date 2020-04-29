@@ -48,10 +48,19 @@ blueprint {
     processor = taxiride.processor.TaxiRideProcessor
     logger = taxiride.logger.FarePerRideLogger
   }
-  connections {
-    rides.out = [processor.in-taxiride]
-    fares.out = [processor.in-taxifare]
-    processor.out = [logger.in]
+  topics {
+    rides {
+      producers = [rides.out]
+      consumers = [processor.in-taxiride]
+    }
+    fares {
+      producers = [fares.out]
+      consumers = [processor.in-taxifare]
+    }
+    taxifares {
+      producers = [processor.out]
+      consumers = [logger.in]
+    }
   }
 }
 ```

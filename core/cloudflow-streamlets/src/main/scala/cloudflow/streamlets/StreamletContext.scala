@@ -41,12 +41,12 @@ trait StreamletContext {
    *
    * @param port the StreamletPort
    * @return the savepoint path
-   * @throws PortNotFoundException if there is no mapping found
+   * @throws TopicForPortNotFoundException if there is no mapping found
    */
-  def findSavepointPathForPort(port: StreamletPort): SavepointPath =
+  def findTopicForPort(port: StreamletPort): Topic =
     streamletDefinition
-      .resolveSavepoint(port)
-      .getOrElse(throw PortNotFoundException(port, streamletDefinition))
+      .resolveTopic(port)
+      .getOrElse(throw TopicForPortNotFoundException(port, streamletDefinition))
 
   /**
    * The full configuration for the [[Streamlet]], containing all
@@ -93,7 +93,7 @@ trait StreamletContext {
 
 }
 
-case class PortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
+case class TopicForPortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
     extends Exception(
-      s"Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
+      s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
     )

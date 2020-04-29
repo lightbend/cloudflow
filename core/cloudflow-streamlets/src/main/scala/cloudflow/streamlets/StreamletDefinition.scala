@@ -34,33 +34,66 @@ case class StreamletDefinition(appId: String,
                                volumeMounts: List[VolumeMount],
                                config: Config) {
 
-  private val portNameToSavepointPathMap: Map[String, SavepointPath] = {
+  private val portNameToTopicMap: Map[String, Topic] = {
     portMapping.map {
-      case ConnectedPort(port, savepointPath) ⇒ port -> savepointPath
+      case ConnectedPort(port, topic) ⇒ port -> topic
     }.toMap
   }
 
-  def resolveSavepoint(port: StreamletPort): Option[SavepointPath] = portNameToSavepointPathMap.get(port.name)
-  def resolveSavepoint(port: String): Option[SavepointPath]        = portNameToSavepointPathMap.get(port)
+  def resolveTopic(port: StreamletPort): Option[Topic] = resolveTopic(port.name)
+  def resolveTopic(port: String): Option[Topic]        = portNameToTopicMap.get(port)
 
+}
+
+object Topic {
+  //TODO  used for testing, remove
+  def apply(appId: String, streamletRef: String, outlet: String): Topic =
+    Topic(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
 }
 
 /**
  * The path to a savepoint.
  */
-final case class SavepointPath(appId: String, streamletRef: String, portName: String) {
-  def value: String = s"${appId}.${streamletRef}.${portName}"
+final case class Topic(
+    appId: String,
+    streamletRef: String,
+    name: String,
+    config: Config,
+    bootstrapServers: Option[String]
+) {
+
   def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"$appId.$readingStreamletRef.${inlet.name}"
     if (inlet.hasUniqueGroupId) s"${base}.${randomUUID.toString}"
     else base
   }
+
+  import scala.collection.JavaConverters._
+  def kafkaProducerProperties: Map[String, String] =
+    if (config.hasPath("producer-config")) {
+      config
+        .getConfig("producer-config")
+        .entrySet()
+        .asScala
+        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+        .toMap
+    } else Map.empty[String, String]
+
+  def kafkaConsumerProperties: Map[String, String] =
+    if (config.hasPath("consumer-config")) {
+      config
+        .getConfig("consumer-config")
+        .entrySet()
+        .asScala
+        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+        .toMap
+    } else Map.empty[String, String]
 }
 
 /**
  * Mapping between the port name and the savepoint path
  */
-case class ConnectedPort(port: String, savepointPath: SavepointPath)
+case class ConnectedPort(port: String, topic: Topic)
 
 object StreamletDefinition {
   implicit val contextDataReader: ValueReader[StreamletContextData] =
@@ -115,12 +148,12 @@ case class StreamletContextData(
  * Helper object for creating an instance of StreamletContextData from JSON.
  */
 object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
-  implicit val savepointPathFormat = jsonFormat(SavepointPath.apply, "app_id", "streamlet_ref", "port_name")
 
   protected implicit val configFormat = new JsonFormat[Config] {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
     def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
+  implicit val topicFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")
@@ -136,7 +169,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
   }
 
   protected implicit val volumeMountFormat    = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
-  protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "savepoint_path")
+  protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "topic")
   protected implicit val contextDataFormat =
     jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
 
