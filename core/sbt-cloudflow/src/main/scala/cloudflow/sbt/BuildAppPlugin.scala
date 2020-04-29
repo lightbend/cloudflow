@@ -39,7 +39,14 @@ object BuildAppPlugin extends AutoPlugin {
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
 
   override def projectSettings = Seq(
-    cloudflowApplicationCR := buildApp.dependsOn(verifyBlueprint).value
+    cloudflowApplicationCR := buildApp.dependsOn(verifyBlueprint).value,
+    allBuildAndPublish := (Def.taskDyn {
+          val filter = ScopeFilter(inProjects(thisProject.value.uses: _*))
+          Def.task {
+            val allValues = buildAndPublish.all(filter).value
+            allValues
+          }
+        }).value
   )
 
   /**
@@ -57,7 +64,7 @@ object BuildAppPlugin extends AutoPlugin {
 
     val registry  = cloudflowDockerRegistry.value.get
     val namespace = cloudflowDockerRepository.value.get
-
+    allBuildAndPublish.value
     val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) {
       case (acc, (_, image)) =>
         val file = new File(workDir, image.asTaggedName)

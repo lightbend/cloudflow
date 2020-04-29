@@ -61,9 +61,13 @@ trait CloudflowTaskKeys {
   val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
   val buildApp                  = taskKey[Unit]("Generate Cloudflow Application CR")
 
+  private[sbt] val allBuildAndPublish    = taskKey[Unit]("Build and push all the images.")
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")
+
+  private[sbt] val allCloudflowStreamletDescriptors =
+    taskKey[Map[String, Config]]("Streamlets found in sub projects by scanning the application classpath.")
 
   private[sbt] val cloudflowStreamletDescriptors = taskKey[Map[String, Config]]("Streamlets found by scanning the application classpath.")
   private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project.")

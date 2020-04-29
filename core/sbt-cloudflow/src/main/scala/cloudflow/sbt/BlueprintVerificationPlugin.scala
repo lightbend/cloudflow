@@ -48,9 +48,20 @@ object BlueprintVerificationPlugin extends AutoPlugin {
             feedbackResults(verificationResult.value, log)
           }
         }.value,
+    allCloudflowStreamletDescriptors := (Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(thisProject.value.uses: _*))
+            Def.task {
+              val allValues = cloudflowStreamletDescriptors.all(filter).value
+              allValues
+            }
+          })
+          .value
+          .flatten
+          .toMap,
     verificationResult := Def.taskDyn {
           val bpFile             = blueprintFile.value
-          val detectedStreamlets = cloudflowStreamletDescriptors.value
+          val detectedStreamlets = allCloudflowStreamletDescriptors.value
           verifiedBlueprints(bpFile, detectedStreamlets)
         }.value,
     verifiedBlueprintFile := Def.taskDyn {
