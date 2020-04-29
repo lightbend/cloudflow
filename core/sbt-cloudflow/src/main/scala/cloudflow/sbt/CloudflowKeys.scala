@@ -59,7 +59,7 @@ trait CloudflowTaskKeys {
   val build                     = taskKey[Unit]("Build the image.")
   val buildAndPublish           = taskKey[Unit]("Publish the image.")
   val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
-  val buildApp                  = taskKey[Unit]("Generate Cloudflow Application CR")
+  val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
 
   private[sbt] val allBuildAndPublish    = taskKey[Unit]("Build and push all the images.")
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
