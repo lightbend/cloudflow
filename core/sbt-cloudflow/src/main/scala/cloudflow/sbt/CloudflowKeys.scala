@@ -45,6 +45,8 @@ trait CloudflowSettingKeys {
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
   val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val ownerInDockerImage =
+    settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
 }
 
 trait CloudflowTaskKeys {
@@ -53,11 +55,10 @@ trait CloudflowTaskKeys {
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
   val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
-
-  val verifyBlueprint = taskKey[Unit]("Verify Blueprint")
-  val build           = taskKey[Unit]("Build the image and app.")
-  val buildAndPublish = taskKey[Unit]("Publish the image and app.")
-  val runLocal        = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
+  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint")
+  val build                     = taskKey[Unit]("Build the image and app.")
+  val buildAndPublish           = taskKey[Unit]("Publish the image and app.")
+  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
   val buildApp        = taskKey[Unit]("Generate Cloudflow Application CR")
 
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping")
