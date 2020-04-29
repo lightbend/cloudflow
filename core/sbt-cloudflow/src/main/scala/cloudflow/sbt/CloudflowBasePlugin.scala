@@ -95,7 +95,8 @@ object CloudflowBasePlugin extends AutoPlugin {
             )
           )
           .value,
-    fork in Compile := true
+    fork in Compile := true,
+    extraDockerInstructions := Seq()
   )
 
   private[sbt] val verifyDockerRegistry = Def.task {

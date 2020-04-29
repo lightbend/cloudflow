@@ -75,6 +75,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+        addInstructions(extraDockerInstructions.value)
         expose(4040)
       }
     }

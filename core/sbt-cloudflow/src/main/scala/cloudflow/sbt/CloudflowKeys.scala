@@ -44,7 +44,7 @@ trait CloudflowSettingKeys {
   val schemaFormats              = settingKey[Seq[SchemaFormat.Format]]("A list of schema formats to generate source code for.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
-  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox ")
+  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
 }
 
 trait CloudflowTaskKeys {
@@ -52,6 +52,7 @@ trait CloudflowTaskKeys {
   val cloudflowDockerImageName  = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
+  val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
 
   val verifyBlueprint = taskKey[Unit]("Verify Blueprint")
   val build           = taskKey[Unit]("Build the image and app.")
