@@ -8,13 +8,13 @@ content:
     branches: [integrate-docs]
     start-path: docs/docs-source/docs 
   - url: ./../../
-    branches: [ integrate-docs]
+    branches: [integrate-docs]
     start-path: docs/homepage-source/docs
   - url: ./../../
-    branches: [ integrate-docs]
+    branches: [integrate-docs]
     start-path: docs/shared-content-source/docs
   - url: ./../../
-    branches: [ integrate-docs]
+    branches: [integrate-docs]
     start-path: examples/snippets
 
 ui: 
