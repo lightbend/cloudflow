@@ -1,4 +1,4 @@
-
+include::partial$include.adoc[]
 .Cloudflow Docs - version {cloudflow-version}
 
 * xref:index.adoc[Introducing Cloudflow]
