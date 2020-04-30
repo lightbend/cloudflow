@@ -8,7 +8,6 @@
 :cli:                          oc
 :cli-plugin:                   oc plugin
 
-
 :latest-openshift-platform-version:        3.11
 :minimum-kubernetes-on-openshift-version:  1.11
 :minimum-openshift-platform-version:       3.11
