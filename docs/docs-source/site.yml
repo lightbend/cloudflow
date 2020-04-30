@@ -7,15 +7,18 @@ content:
   - url: ./../../
     start-path: docs/docs-source/docs
     branches: [master]  # versioned content - add branches here
+    tags: [v1.3.3-docs] # versioned content - add tags here
   - url: ./../../
     start-path: docs/homepage-source/docs
     branches: [master] # should always remain as master
   - url: ./../../
     start-path: docs/shared-content-source/docs
-    branches: [master] # versioned content - add branches here
+    branches: [master]  # versioned content - add branches here
+    tags: [v1.3.3-docs] # versioned content - add tags here
   - url: ./../../
     start-path: examples/snippets
-    branches: [master] # versioned content - add branches here
+    branches: [master]  # versioned content - add branches here
+    tags: [v1.3.3-docs] # versioned content - add tags here
 
 ui: 
   bundle:
@@ -31,7 +34,7 @@ asciidoc:
     # the following two attributes cause review and todo notes to display
     # review: ''
     # todo: ''
-    cloudflow-version: '1.3.3'
+    cloudflow-version: '2.0-SNAPSHOT'
     doc-title: 'Cloudflow Guide'
 
 output:
