@@ -1,5 +1,5 @@
 // global attributes
-:cloudflow-version:            1.3.3
+:cloudflow-version: 2.0.0-SNAPSHOT
 :installer-image-tag:          INSTALLER_IMAGE_TAG
 :kubernetes-platform-name:     Kubernetes
 :kubernetes-platform-version:  1.12
@@ -15,5 +15,3 @@
 :minimum-platform-version-major-dot-minor: 3.11
 :minimum-sbt-version:                      0.13.7
 :latest-sbt-version: 
-
-include::shared-content:ROOT:partial$include.adoc[]
