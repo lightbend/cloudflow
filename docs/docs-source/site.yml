@@ -6,19 +6,16 @@ content:
   sources:
   - url: ./../../
     start-path: docs/docs-source/docs
-    branches: [master]  # versioned content - add branches here
-    tags: [v1.3.3-docs] # versioned content - add tags here
+    branches: [v1.3.3-docs, master]  # versioned content - add branches here
   - url: ./../../
     start-path: docs/homepage-source/docs
     branches: [master] # should always remain as master
   - url: ./../../
     start-path: docs/shared-content-source/docs
-    branches: [master]  # versioned content - add branches here
-    tags: [v1.3.3-docs] # versioned content - add tags here
+    branches: [v1.3.3-docs, master]  # versioned content - add branches here
   - url: ./../../
     start-path: examples/snippets
-    branches: [master]  # versioned content - add branches here
-    tags: [v1.3.3-docs] # versioned content - add tags here
+    branches: [v1.3.3-docs, master]  # versioned content - add branches here
 
 ui: 
   bundle:
