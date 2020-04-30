@@ -1,4 +1,4 @@
-= Introducing Cloudflow.
+= Introducing Cloudflow
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

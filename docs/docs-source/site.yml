@@ -4,18 +4,18 @@ site:
   
 content:
   sources:
-  
   - url: ./../../
-    start-paths: docs/docs-source/docs, docs/shared-content-source/docs
-    branches: [v1.3.3-docs, HEAD]  # versioned content - add branches here
-  
+    start-path: docs/docs-source/docs
+    branches: [HEAD, v1.3.3-docs]  # versioned content - add branches here
   - url: ./../../
     start-path: docs/homepage-source/docs
     branches: [master] # should always remain as master
-  
+  - url: ./../../
+    start-path: docs/shared-content-source/docs
+    branches: [HEAD, v1.3.3-docs]  # versioned content - add branches here
   - url: ./../../
     start-path: examples/snippets
-    branches: [v1.3.3-docs, HEAD]  # versioned content - add branches here
+    branches: [HEAD, v1.3.3-docs]  # versioned content - add branches here
 
 ui: 
   bundle:
