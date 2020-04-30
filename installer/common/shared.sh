@@ -190,14 +190,13 @@ export requestsCpu="1"
 export limitsMemory="1024M"
 export limitsCpu="2"
 
-# Installs an NFS server: $1: namespace, $2: boolean onOpenShift
 NFS_SERVER_NAME=cloudflow-nfs
 NFS_CHART_NAME=nfs-server-provisioner
 install_nfs_server() {
 helm upgrade $NFS_SERVER_NAME stable/$NFS_CHART_NAME \
 --install \
 --namespace "$1" \
---timeout $HELM_TIMEOUT \
+--timeout "$HELM_TIMEOUT" \
 --set serviceAccount.create=false \
 --set serviceAccount.name=cloudflow-operator
 }
@@ -208,7 +207,7 @@ install_efs_provisioner() {
 helm upgrade $EFS_SERVER_NAME stable/$EFS_CHART_NAME \
 --install \
 --namespace "$1" \
---timeout 600 \
+--timeout "$HELM_TIMEOUT" \
 --set efsProvisioner.awsRegion="$3" \
 --set efsProvisioner.dnsName="$2.efs.$3.amazonaws.com" \
 --set efsProvisioner.efsFileSystemId="$2" \
