@@ -65,7 +65,8 @@ trait CloudflowTaskKeys {
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")
-
+  private[sbt] val allProjectsWithStreamletScannerPlugin =
+    taskKey[Seq[ProjectReference]]("All projects that use the streamlet scanner plugin.")
   private[sbt] val allCloudflowStreamletDescriptors =
     taskKey[Map[String, Config]]("Streamlets found in sub projects by scanning the application classpath.")
 

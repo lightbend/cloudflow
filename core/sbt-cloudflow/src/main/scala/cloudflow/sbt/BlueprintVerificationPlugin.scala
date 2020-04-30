@@ -31,6 +31,14 @@ object BlueprintVerificationPlugin extends AutoPlugin {
 
   override def requires = CommonSettingsAndTasksPlugin && StreamletScannerPlugin
 
+  def projectWithStreamletScannerPlugin =
+    Def.task {
+      val pluginName = StreamletScannerPlugin.getClass.getName.dropRight(1)
+      if (thisProject.value.autoPlugins.exists(_.label == pluginName)) {
+        Some(thisProjectRef.value)
+      } else None
+    }
+
   override def projectSettings = Seq(
     blueprintFile := Def.taskDyn {
           Def.task {
@@ -48,9 +56,14 @@ object BlueprintVerificationPlugin extends AutoPlugin {
             feedbackResults(verificationResult.value, log)
           }
         }.value,
+    allProjectsWithStreamletScannerPlugin := Def.taskDyn {
+          Def.task {
+            projectWithStreamletScannerPlugin.all(ScopeFilter(inAnyProject)).value.flatten
+          }
+        }.value,
     allCloudflowStreamletDescriptors := (Def
           .taskDyn {
-            val filter = ScopeFilter(inProjects(thisProject.value.uses: _*))
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
             Def.task {
               val allValues = cloudflowStreamletDescriptors.all(filter).value
               allValues
