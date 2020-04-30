@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
 
-lazy val sparkSensors = (project in file("."))
+lazy val sparkSensors = Project(id = "spark-sensors", base = file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowSparkPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
@@ -9,8 +9,6 @@ lazy val sparkSensors = (project in file("."))
 	      "ch.qos.logback"     %  "logback-classic"        % "1.2.3",
         "org.scalatest"      %% "scalatest"              % "3.0.8" % "test"
       ),
-
-      name := "spark-sensors",
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
