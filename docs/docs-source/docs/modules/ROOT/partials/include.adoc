@@ -15,5 +15,3 @@
 :minimum-platform-version-major-dot-minor: 3.11
 :minimum-sbt-version:                      0.13.7
 :latest-sbt-version: 
-
-include::shared-content:ROOT:partial$include.adoc[]
