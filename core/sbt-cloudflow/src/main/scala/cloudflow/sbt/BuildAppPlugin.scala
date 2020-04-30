@@ -38,10 +38,23 @@ object BuildAppPlugin extends AutoPlugin {
   override def requires =
     StreamletDescriptorsPlugin && BlueprintVerificationPlugin
 
+  def projectWithCloudflowBasePlugin =
+    Def.task {
+      val pluginName = CloudflowBasePlugin.getClass.getName.dropRight(1)
+      if (thisProject.value.autoPlugins.exists(_.label == pluginName)) {
+        Some(thisProjectRef.value)
+      } else None
+    }
+
   override def projectSettings = Seq(
+    allProjectsWithCloudflowBasePlugin := Def.taskDyn {
+          Def.task {
+            projectWithCloudflowBasePlugin.all(ScopeFilter(inAnyProject)).value.flatten
+          }
+        }.value,
     cloudflowApplicationCR := buildApp.dependsOn(verifyBlueprint).value,
     allBuildAndPublish := (Def.taskDyn {
-          val filter = ScopeFilter(inProjects(thisProject.value.uses: _*))
+          val filter = ScopeFilter(inProjects(allProjectsWithCloudflowBasePlugin.value: _*))
           Def.task {
             val allValues = buildAndPublish.all(filter).value
             allValues
@@ -59,10 +72,10 @@ object BuildAppPlugin extends AutoPlugin {
     // these streamlet descriptors have been generated from the `build` task
     // if they have not been generated we throw an exception and ask the user
     // to run the build
-    val log     = streams.value.log
-    val workDir = cloudflowWorkDir.value
-
-    val registry  = cloudflowDockerRegistry.value.get
+    val log      = streams.value.log
+    val workDir  = cloudflowWorkDir.value
+    val registry = cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
+    // TODO fix, this is normally optional.
     val namespace = cloudflowDockerRepository.value.get
     allBuildAndPublish.value
     val streamletDescriptors = imageNamesByProject.value.foldLeft(Vector.empty[StreamletDescriptor]) {
