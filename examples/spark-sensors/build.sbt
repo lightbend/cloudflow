@@ -2,7 +2,7 @@ import sbt._
 import sbt.Keys._
 
 lazy val sparkSensors = (project in file("."))
-    .enablePlugins(CloudflowSparkApplicationPlugin, ScalafmtPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowSparkPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
