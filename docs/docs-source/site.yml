@@ -3,7 +3,7 @@ site:
   url: https://cloudflow.io 
   
 content:
-  branches: [1.3.3-docs]  # versioned content - add branches here
+  branches: [v1.3.3-docs]  # versioned content - add branches here
   sources:
   - url: ./../../
     start-path: docs/docs-source/docs
