@@ -1,4 +1,5 @@
-.Using Open Source Cloudflow
+
+.Cloudflow Docs - version {cloudflow-version}
 
 * xref:index.adoc[Introducing Cloudflow]
 * xref:app-development-process.adoc[The Cloudflow development process]
