@@ -34,9 +34,9 @@ At deployment time, Cloudflow uses the blueprint to deploy all its streamlets so
 [caption="Fig. 1 - "]
 image::apps-1.png[]
 
-== Open Source feature set
+== Feature set
 
-Open-source Cloudflow includes tools for developing and deploying the most complex streaming applications:
+Cloudflow includes tools for developing and deploying the most complex streaming applications:
 
 * The Cloudflow application development toolkit includes:
 ** An API definition for `Streamlet`, the core abstraction in Cloudflow.
