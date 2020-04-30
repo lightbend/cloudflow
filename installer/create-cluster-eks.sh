@@ -69,7 +69,7 @@ EOF
 ROLE_NAME_STANDARD=$(aws eks describe-nodegroup --nodegroup-name "$(aws eks list-nodegroups --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroups[]' | sed -n '1p')" --cluster-name "$CLUSTER_NAME" | jq -r '.nodegroup.nodeRole')
 echo "Role name workers: ${ROLE_NAME_STANDARD##*/}"
 
-# Ignore the error if the policy was already created during a previus run
+# Ignore the error if the policy was already created during a previous run
 aws iam create-policy \
   --policy-name cloudlfow-describe-file-systems \
   --policy-document file://describe-file-systems-policy.json > /dev/null 2>&1
