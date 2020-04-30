@@ -27,14 +27,14 @@ Here is a list of imports needed for writing the test suite.
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=imports]
+include::docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=imports]
 ----
 
 `SparkStreamlet` is an abstract class. Let's set up a concrete instance that we would like to test. For more details on how to implement a Spark streamlet, please refer to xref:build-spark-streamlets.adoc[Building a Spark streamlet].
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/SparkProcessor.scala[tag=processor]
+include::docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/SparkProcessor.scala[tag=processor]
 ----
 
 === The unit test
@@ -43,7 +43,7 @@ Here's how we would write a unit test using ScalaTest. The various logical steps
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=test]
+include::docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/test/scala/com/example/SparkProcessorSpec.scala[tag=test]
 ----
 
 === The SparkScalaTestSupport trait

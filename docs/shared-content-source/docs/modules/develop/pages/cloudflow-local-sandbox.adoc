@@ -122,10 +122,10 @@ The Streamlet API lets us declare configuration parameters that can be specified
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter1]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter1]
 //...
 
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter2]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/ValidMetricLogger.scala[tag=config-parameter2]
 //...
 ----
 
@@ -143,7 +143,7 @@ In the Streamlet API, Volume Mounts are declared in a similar way to configurati
 
 [source,scala]
 ----
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 ----
 
 In a Kubernetes deployment, that Volume Mount gets mapped to a Permanent Volume Claim. The requested mount path is replaced by a local path when we use the Sandbox to run an application containing one or more streamlets that declare a Volume Mount. The local path assignment can be configured to point to a specific directory. Otherwise, the mount path will be assigned to a temporary directory, created on the fly.
@@ -165,10 +165,10 @@ Note that for this feature to work properly, it’s important to request the ass
 ----
 // in the streamlet code
 // volume mount declaration
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 
 // use
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount2]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount2]
 ----
 
 In the Streamlet programming, do not assume that the mounted path is the same as the requested path. Do not do this:
@@ -176,7 +176,7 @@ In the Streamlet programming, do not assume that the mounted path is the same as
 [source,scala]
 ----
 // Do not access the mount path directly!
-include::{code-snippets-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount-bad]
+include::docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount-bad]
 ----
 
 == What's next
