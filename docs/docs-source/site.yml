@@ -3,8 +3,7 @@ site:
   url: https://cloudflow.io 
   
 content:
-  branches: 
-    - master
+  
   sources:
   - url: ./../../
     start-path: docs/docs-source/docs 
