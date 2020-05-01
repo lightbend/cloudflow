@@ -1,10 +1,8 @@
 package deploy
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,76 +18,50 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
 
-// GetCloudflowApplicationDescriptorFromDockerImage pulls a image and extracts the Cloudflow Application descriptor from a docker label
-func GetCloudflowApplicationDescriptorFromDockerImage(dockerRegistryURL string, dockerRepository string, dockerImagePath string) (domain.CloudflowApplicationSpec, docker.PulledImage) {
-
-	apiversion, apierr := exec.Command("docker", "version", "--format", "'{{.Server.APIVersion}}'").Output()
-	if apierr != nil {
-		util.LogAndExit("Could not get docker API version, is the docker daemon running? API error: %s", apierr.Error())
-	}
-
-	trimmedapiversion := strings.Trim(string(apiversion), "\t \n\r'")
-	client, error := docker.GetClient(trimmedapiversion)
-	if error != nil {
-		client, error = docker.GetClient("1.39")
-		if error != nil {
-			fmt.Printf("No compatible version of the Docker server API found, tried version %s and 1.39", trimmedapiversion)
-			panic(error)
-		}
-	}
-
-	pulledImage, pullError := docker.PullImage(client, dockerImagePath)
-	if pullError != nil {
-		util.LogAndExit("Failed to pull image %s: %s", dockerImagePath, pullError.Error())
-	}
-
-	applicationDescriptorImageDigest := docker.GetCloudflowApplicationDescriptor(client, dockerImagePath)
-
-	var spec domain.CloudflowApplicationSpec
-	marshalError := json.Unmarshal([]byte(applicationDescriptorImageDigest.AppDescriptor), &spec)
-	if marshalError != nil {
-		fmt.Print("\n\nAn unexpected error has occurred, please contact support and include the information below.\n\n")
-		panic(marshalError)
-	}
-
+//CheckApplicationDescriptorVersion checks the version, logs and exits oif not supported
+func CheckApplicationDescriptorVersion(spec domain.CloudflowApplicationSpec) {
 	if spec.Version != domain.SupportedApplicationDescriptorVersion {
 		// If the version is an int, compare them, otherwise provide a more general message.
 		if version, err := strconv.Atoi(spec.Version); err == nil {
 			if supportedVersion, err := strconv.Atoi(domain.SupportedApplicationDescriptorVersion); err == nil {
 				if version < supportedVersion {
 					if spec.LibraryVersion != "" {
-						util.LogAndExit("Image %s, built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image.", dockerImagePath, spec.LibraryVersion)
+						util.LogAndExit("Application built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'.", spec.LibraryVersion)
 					} else {
-						util.LogAndExit("Image %s is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the image.", dockerImagePath)
+						util.LogAndExit("Application is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'.")
 					}
 				}
 				if version > supportedVersion {
 					if spec.LibraryVersion != "" {
-						util.LogAndExit("Image %s, built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", dockerImagePath, spec.LibraryVersion)
+						util.LogAndExit("Application built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", spec.LibraryVersion)
 					} else {
-						util.LogAndExit("Image %s is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", dockerImagePath)
+						util.LogAndExit("Application is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.")
 					}
 				}
 			}
 		}
 
-		util.LogAndExit("Image %s is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the image.", dockerImagePath)
+		util.LogAndExit("Application is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the application with 'sbt buildApp'.")
 	}
+}
 
-	digest := applicationDescriptorImageDigest.ImageDigest
-
-	var imageRef string
-	if dockerRegistryURL == "" {
-		imageRef = dockerRepository + "/" + digest
-	} else {
-		imageRef = dockerRegistryURL + "/" + dockerRepository + "/" + digest
-	}
+// UpdateImageRefsWithDigests updates the imagesRefs to include the digest of the pulled images
+func UpdateImageRefsWithDigests(spec domain.CloudflowApplicationSpec, pulledImages map[string]*docker.PulledImage, dockerRegistryURL string, dockerRepository string) domain.CloudflowApplicationSpec {
 
 	// replace tagged images with digest based names
 	for i := range spec.Deployments {
+		digest := pulledImages[spec.Deployments[i].Name].Digest
+
+		var imageRef string
+		if dockerRegistryURL == "" {
+			imageRef = dockerRepository + "/" + digest
+		} else {
+			imageRef = dockerRegistryURL + "/" + dockerRepository + "/" + digest
+		}
+
 		spec.Deployments[i].Image = imageRef
 	}
-	return spec, *pulledImage
+	return spec
 }
 
 func splitOnFirstCharacter(str string, char byte) ([]string, error) {

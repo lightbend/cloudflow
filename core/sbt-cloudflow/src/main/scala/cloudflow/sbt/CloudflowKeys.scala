@@ -57,11 +57,11 @@ trait CloudflowTaskKeys {
   val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
   val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
   val build                     = taskKey[Unit]("Build the image.")
-  val buildAndPublish           = taskKey[Unit]("Publish the image.")
+  val buildAndPublish           = taskKey[(ImageNameAndId, Map[String, StreamletDescriptor])]("Publish the image.")
   val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
   val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
 
-  private[sbt] val allBuildAndPublish    = taskKey[Unit]("Build and push all the images.")
+  private[sbt] val allBuildAndPublish    = taskKey[Map[ImageNameAndId, Map[String, StreamletDescriptor]]]("Build and push all the images.")
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")
