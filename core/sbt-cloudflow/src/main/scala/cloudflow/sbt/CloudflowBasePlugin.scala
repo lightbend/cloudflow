@@ -160,11 +160,4 @@ object TooManyImagesBuiltError {
     """.stripMargin
 }
 
-final case class ImageNameAndId(imageName: ImageName, imageId: ImageId) {
-  override def toString = {
-    val registryString  = imageName.registry.fold("")(_ + "/")
-    val namespaceString = imageName.namespace.fold("")(_ + "/")
-    val idString        = s"@sha256:$imageId"
-    registryString + namespaceString + imageName.repository + idString
-  }
-}
+final case class ImageNameAndId(imageName: ImageName, imageId: ImageId)
