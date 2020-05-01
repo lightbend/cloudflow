@@ -27,7 +27,6 @@ final case class StreamletDescriptor(
     runtime: StreamletRuntimeDescriptor,
     labels: immutable.IndexedSeq[String],
     description: String,
-    image: String,
     inlets: immutable.IndexedSeq[InletDescriptor],
     outlets: immutable.IndexedSeq[OutletDescriptor],
     configParameters: immutable.IndexedSeq[ConfigParameterDescriptor],

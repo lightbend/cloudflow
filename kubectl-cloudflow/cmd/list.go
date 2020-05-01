@@ -48,7 +48,6 @@ func (c *listApplicationsCMD) listImpl(cmd *cobra.Command, args []string) {
 	for _, v := range listOfCRs.Items {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", v.Name, v.Namespace, v.Spec.AppVersion, v.ObjectMeta.CreationTimestamp.String())
 	}
-	fmt.Println("")
 	(*w).Flush()
 
 }

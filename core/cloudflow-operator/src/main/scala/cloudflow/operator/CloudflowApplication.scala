@@ -282,7 +282,7 @@ object CloudflowApplication {
         status.phase
           .map {
             case Pod.Phase.Pending   ⇒ getStatusFromContainerStates(containerStates, nrOfContainers)
-            case Pod.Phase.Running   ⇒ Running
+            case Pod.Phase.Running   ⇒ getStatusFromContainerStates(containerStates, nrOfContainers)
             case Pod.Phase.Succeeded ⇒ Succeeded
             case Pod.Phase.Failed    ⇒ Failed
             case Pod.Phase.Unknown   ⇒ Unknown
