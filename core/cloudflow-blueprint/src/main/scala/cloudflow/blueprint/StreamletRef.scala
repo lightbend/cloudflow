@@ -40,7 +40,10 @@ final case class StreamletRef(
       foundDescriptor match {
         case Some(streamlet) ⇒ Right(streamlet)
         case None ⇒ {
-          val matchingPartially = streamletDescriptors.filter(_.className.contains(className))
+          val matchingPartially = streamletDescriptors.filter { descriptor =>
+            descriptor.className == className ||
+            descriptor.className == s"$className$$"
+          }
 
           if (matchingPartially.size == 1) {
             Right(matchingPartially.head)
