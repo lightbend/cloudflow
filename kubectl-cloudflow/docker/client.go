@@ -1,10 +1,7 @@
 package docker
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/domain"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/util"
 
 	"github.com/docker/docker/api/types"
@@ -53,6 +49,7 @@ type ConfigEntry struct {
 type PulledImage struct {
 	ImageName     string
 	Authenticated bool
+	Digest        string
 }
 
 // GetClient returns a Docker client.Client structure that contains a connection to the docker daemon, note that you need to specify a version number
@@ -90,66 +87,37 @@ func PullImage(cli *client.Client, imageName string) (*PulledImage, error) {
 		if runErr != nil {
 			return nil, runErr
 		}
-		return &PulledImage{imageName, true}, nil
+		digest := GetImageDigest(cli, imageName)
+		return &PulledImage{imageName, true, digest}, nil
 	}
+	digest := GetImageDigest(cli, imageName)
 	io.Copy(ioutil.Discard, out)
 	defer out.Close()
-	return &PulledImage{imageName, false}, nil
+	return &PulledImage{imageName, false, digest}, nil
 }
 
-// GetCloudflowApplicationDescriptor extracts the configuration of a Cloudflow label from a docker image
-// and the image with digest in a struct
-func GetCloudflowApplicationDescriptor(cli *client.Client, imageName string) domain.CloudflowApplicationDescriptorDigestPair {
+// GetImageDigest gets the imageDigest for the imageName
+func GetImageDigest(cli *client.Client, imageName string) string {
 	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
 
 	if err != nil {
 		util.LogAndExit("Failed to list local docker images, %s", err.Error())
 	}
 
-	var descriptorDigest domain.CloudflowApplicationDescriptorDigestPair
 	for _, image := range images {
 		if len(image.RepoDigests) == 0 || len(image.RepoTags) == 0 || !imageMatchesNameAndTag(image, imageName) {
 			// not the image we are looking for
 			continue
 		}
-
-		// check if a not-compressed application descriptor is present
-		// 1.0.0 backward compatibility support.
-		// From 1.0.1, the sbt plugin populates the .zlib label with compressed data
-		if raw, ok := image.Labels["com.lightbend.cloudflow.application"]; ok {
-			dataBytes, err := base64.StdEncoding.DecodeString(raw)
-			if err != nil {
-				util.LogAndExit("Failed to recover the application descriptor from the docker image, %s", err.Error())
-			}
-			descriptorDigest.AppDescriptor = string(dataBytes)
-		} else {
-			// use the compressed application descriptor
-			// base 64 value
-			raw = getAllLabelValuesJoined(image, "com.lightbend.cloudflow.application.zlib")
-			// compressed data
-			compressed := base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(raw)))
-			reader, err := zlib.NewReader(compressed)
-			if err != nil {
-				util.LogAndExit("Failed to decompress the application descriptor, %s", err.Error())
-			}
-			// uncompressed string
-			uncompressed := new(bytes.Buffer)
-			_, err = uncompressed.ReadFrom(reader)
-			if err != nil {
-				util.LogAndExit("Failed to decompress the application descriptor, %s", err.Error())
-			}
-			descriptorDigest.AppDescriptor = uncompressed.String()
-			reader.Close()
-		}
-		_, descriptorDigest.ImageDigest = path.Split(image.RepoDigests[0])
-		return descriptorDigest
+		_, imageDigest := path.Split(image.RepoDigests[0])
+		return imageDigest
 	}
 	util.LogAndExit("Unable to inspect image '%s'. It could not be found locally.", imageName)
-	return domain.CloudflowApplicationDescriptorDigestPair{} // never reached
+	return "" // never reached
 }
 
 // In case the overall label value exceeded 64K, the scaal side has split into
-// multiple labels. In that case we need to join the values from all labels to 
+// multiple labels. In that case we need to join the values from all labels to
 // for the final value of the label
 func getAllLabelValuesJoined(image types.ImageSummary, labelBase string) string {
 	var labelNames []string
@@ -158,7 +126,7 @@ func getAllLabelValuesJoined(image types.ImageSummary, labelBase string) string 
 			labelNames = append(labelNames, k)
 		}
 	}
-	// optimization - makes sense since this will be 
+	// optimization - makes sense since this will be
 	// the most frequent path
 	if len(labelNames) == 1 {
 		return image.Labels[labelNames[0]]

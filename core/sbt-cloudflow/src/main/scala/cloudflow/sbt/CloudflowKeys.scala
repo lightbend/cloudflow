@@ -44,7 +44,9 @@ trait CloudflowSettingKeys {
   val schemaFormats              = settingKey[Seq[SchemaFormat.Format]]("A list of schema formats to generate source code for.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
-  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox ")
+  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val ownerInDockerImage =
+    settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
 }
 
 trait CloudflowTaskKeys {
@@ -52,21 +54,30 @@ trait CloudflowTaskKeys {
   val cloudflowDockerImageName  = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
+  val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
+  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
+  val build                     = taskKey[Unit]("Build the image.")
+  val buildAndPublish           = taskKey[(ImageNameAndId, Map[String, StreamletDescriptor])]("Publish the image.")
+  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
+  val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
 
-  val verifyBlueprint = taskKey[Unit]("Verify Blueprint")
-  val build           = taskKey[Unit]("Build the image and app.")
-  val buildAndPublish = taskKey[Unit]("Publish the image and app.")
-  val runLocal        = taskKey[Unit]("Run the Cloudflow application in a local Sandbox")
-  val buildApp        = taskKey[Unit]("Generate Cloudflow Application CR")
+  private[sbt] val allBuildAndPublish    = taskKey[Map[ImageNameAndId, Map[String, StreamletDescriptor]]]("Build and push all the images.")
+  private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
+  private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
+  private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")
+  private[sbt] val allProjectsWithStreamletScannerPlugin =
+    taskKey[Seq[ProjectReference]]("All projects that use the streamlet scanner plugin.")
 
-  private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping")
-  private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application")
-  private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application")
+  private[sbt] val allProjectsWithCloudflowBasePlugin =
+    taskKey[Seq[ProjectReference]]("All projects that use the CloudflowBasePlugin.")
+
+  private[sbt] val allCloudflowStreamletDescriptors =
+    taskKey[Map[String, Config]]("Streamlets found in sub projects by scanning the application classpath.")
 
   private[sbt] val cloudflowStreamletDescriptors = taskKey[Map[String, Config]]("Streamlets found by scanning the application classpath.")
-  private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project")
+  private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project.")
 
-  private[sbt] val blueprintFile = taskKey[File]("Should be set to the blueprint in the src/main/blueprint directory")
+  private[sbt] val blueprintFile = taskKey[File]("Should be set to the blueprint in the src/main/blueprint directory.")
   private[sbt] val verificationResult = taskKey[Either[BlueprintVerificationFailed, BlueprintVerified]](
     "Verify the blueprint against the streamlets found by scanning the application classpath."
   )
@@ -80,8 +91,9 @@ trait CloudflowTaskKeys {
     taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
   private[sbt] val streamletDescriptorsInProject =
-    taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping")
-  private[sbt] val imageNamesByProject          = taskKey[Map[String, DockerImageName]]("The list of all image names")
-  private[sbt] val streamletClassNamesByProject = taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project")
-  private[sbt] val cloudflowApplicationCR       = taskKey[Unit]("Generates Cloudflow Application CR")
+    taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")
+  private[sbt] val imageNamesByProject = taskKey[Map[String, DockerImageName]]("The list of all image names.")
+  private[sbt] val streamletClassNamesByProject =
+    taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project.")
+  private[sbt] val cloudflowApplicationCR = taskKey[Unit]("Generates the Cloudflow Application CR.")
 }

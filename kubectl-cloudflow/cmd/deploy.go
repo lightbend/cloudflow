@@ -28,11 +28,11 @@ import (
 )
 
 type deployOptions struct {
-	cmd           *cobra.Command
-	username      string
-	password      string
-	passwordStdin bool
-	volumeMounts  []string
+	cmd                     *cobra.Command
+	username                string
+	password                string
+	passwordStdin           bool
+	volumeMounts            []string
 	replicasByStreamletName map[string]int
 }
 
@@ -118,6 +118,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 
 	applicationSpec := cr.Spec
+	deploy.CheckApplicationDescriptorVersion(applicationSpec)
 
 	// update deployment with replicas passed through command line
 	for _, deployment := range applicationSpec.Deployments {
@@ -157,11 +158,17 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 
 	dockerRegistryURL := imageReference.registry
-
-	pulledImage, pullError := docker.PullImage(client, image)
-	if pullError != nil {
-		util.LogAndExit("Failed to pull image %s: %s", image, pullError.Error())
+	dockerRepository := imageReference.repository
+	var pulledImages = make(map[string]*docker.PulledImage)
+	for _, deployment := range applicationSpec.Deployments {
+		if pulledImage, err := docker.PullImage(client, deployment.Image); err == nil {
+			pulledImages[deployment.Name] = pulledImage
+		} else {
+			util.LogAndExit("Failed to pull image %s: %s", image, err.Error())
+		}
 	}
+	applicationSpec = deploy.UpdateImageRefsWithDigests(applicationSpec, pulledImages, dockerRegistryURL, dockerRepository)
+	firstPulledImage := pulledImages[applicationSpec.Deployments[0].Name]
 
 	// Extract volume mounts and update the application spec with the name of the PVC's
 	applicationSpec, err = deploy.ValidateVolumeMounts(k8sClient, applicationSpec, opts.volumeMounts)
@@ -180,7 +187,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	if pulledImage.Authenticated {
+	if firstPulledImage.Authenticated {
 		if err := verifyPasswordOptions(opts); err == nil {
 			if terminal.IsTerminal(int(os.Stdin.Fd())) && (opts.username == "" || opts.password == "") {
 				if !dockerConfigEntryExists(k8sClient, namespace, dockerRegistryURL) {

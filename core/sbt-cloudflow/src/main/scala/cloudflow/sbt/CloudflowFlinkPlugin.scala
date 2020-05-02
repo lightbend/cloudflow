@@ -62,13 +62,13 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
-
       new Dockerfile {
         from(CloudflowFlinkDockerBaseImage)
         user(UserInImage)
 
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+        addInstructions(extraDockerInstructions.value)
         runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
       }
     }

@@ -16,8 +16,6 @@
 
 package cloudflow.sbt
 
-import java.io._
-
 import sbt._
 import sbt.Keys._
 import sbtdocker._
@@ -86,16 +84,25 @@ object CloudflowBasePlugin extends AutoPlugin {
             )
           )
           .value,
-    buildAndPublish := showResultOfBuildAndPublish
-          .dependsOn(
-            dockerBuildAndPush.dependsOn(
-              checkUncommittedChanges,
-              verifyDockerRegistry,
-              streamletDescriptorsInProject
-            )
-          )
-          .value,
-    fork in Compile := true
+    buildAndPublish := Def.task {
+          val _ = (checkUncommittedChanges.value, verifyDockerRegistry.value)
+          Def.task {
+            val streamletDescriptors = streamletDescriptorsInProject.value
+            val imageId: ImageId     = dockerBuildAndPush.value
+            val log                  = streams.value.log
+            val imagesPushed         = (imageNames in docker).value
+            if (imagesPushed.size > 1) throw TooManyImagesBuilt
+            val imagePushed = imagesPushed.head
+
+            log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
+            log.info("Successfully built and published the following image:")
+            log.info(s"  $imagePushed")
+            ImageNameAndId(imagePushed, imageId) -> streamletDescriptors
+          }.value
+        }.value,
+    fork in Compile := true,
+    extraDockerInstructions := Seq(),
+    ownerInDockerImage := userAsOwner(UserInImage)
   )
 
   private[sbt] val verifyDockerRegistry = Def.task {
@@ -124,15 +131,6 @@ object CloudflowBasePlugin extends AutoPlugin {
     log.info("need to push it to a docker registry that is reachable from the cluster.")
     log.info(" ")
   }
-
-  private[sbt] val showResultOfBuildAndPublish = Def.task {
-    val log         = streams.value.log
-    val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
-
-    log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
-    log.info("Successfully built and published the following image:")
-    log.info(s"  $imagePushed")
-  }
 }
 
 case object DockerRegistryNotSet extends Exception(DockerRegistryNotSetError.msg) with NoStackTrace with sbt.FeedbackProvidedException
@@ -153,3 +151,13 @@ object DockerRegistryNotSetError {
       |  )
     """.stripMargin
 }
+
+case object TooManyImagesBuilt extends Exception(TooManyImagesBuiltError.msg) with NoStackTrace with sbt.FeedbackProvidedException
+object TooManyImagesBuiltError {
+  val msg =
+    """
+      | Unexpected error, the project built more than one docker image.
+    """.stripMargin
+}
+
+final case class ImageNameAndId(imageName: ImageName, imageId: ImageId)

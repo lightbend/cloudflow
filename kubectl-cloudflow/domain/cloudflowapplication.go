@@ -95,7 +95,6 @@ type Descriptor struct {
 	Outlets          []InOutlet                  `json:"outlets"`
 	Runtime          string                      `json:"runtime"`
 	Description      string                      `json:"description"`
-	Image            string                      `json:"image"`
 }
 
 // Streamlet TBD
