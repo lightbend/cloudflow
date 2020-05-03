@@ -120,9 +120,9 @@ final case class Topic(
       if (otherSchema.format == schema.format &&
           otherSchema.fingerprint == schema.fingerprint) {
         None
-      } else if (otherSchema.format == AvroFormat) {
+      } else if (otherSchema.format == AvroFormat && schema.format == AvroFormat) {
         checkAvroCompatibility(port, otherPort)
-      } else if (otherSchema.format == ProtoFormat) {
+      } else if (otherSchema.format == ProtoFormat && schema.format == ProtoFormat) {
         checkProtoCompatibility(port, otherPort)
       } else Some(IncompatibleSchema(port.portPath, otherPort.portPath))
     } else None
