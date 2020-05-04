@@ -17,7 +17,6 @@
 package cloudflow.sbt
 
 import java.io._
-import java.nio.charset.StandardCharsets._
 
 import spray.json._
 import sbt._
@@ -26,7 +25,6 @@ import sbt.Keys._
 import scala.util.control.NoStackTrace
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptor
-import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, CloudflowCR, Metadata, StreamletInstance }
 import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
 
@@ -75,8 +73,8 @@ object BuildAppPlugin extends AutoPlugin {
     // these streamlet descriptors have been generated from the `build` task
     // if they have not been generated we throw an exception and ask the user
     // to run the build
-    val log      = streams.value.log
-    val registry = cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
+    val log = streams.value.log
+    val _   = cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
 
     val imageToStreamletDescriptorsMaps: Map[ImageNameAndId, Map[String, StreamletDescriptor]] = allBuildAndPublish.value
     val streamletClassNamesToImageNameAndId: Map[String, ImageNameAndId] = imageToStreamletDescriptorsMaps

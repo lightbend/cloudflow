@@ -16,8 +16,6 @@
 
 package cloudflow.sbt
 
-import java.io.File
-
 import sbt.Keys._
 import sbt._
 import sbtavro.SbtAvro.autoImport._
@@ -64,39 +62,30 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
         }.value,
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in (Compile, packageSrc) := false,
-    libraryDependencies += "com.twitter" %% "bijection-avro" % "0.9.6",
+    libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
+    libraryDependencies += "org.apache.avro" % "avro"            % "1.9.2",
     schemaFormats := Seq(SchemaFormat.Avro),
     schemaCodeGenerator := SchemaCodeGenerator.Scala,
     schemaPaths := Map(SchemaFormat.Avro -> "src/main/avro"),
-    AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
-    AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
+    Compile / avroGenerate := Def.taskDyn {
+          val default    = (avroGenerate in Compile).taskValue
+          val schemaLang = schemaCodeGenerator.value
+          schemaLang match {
+            case SchemaCodeGenerator.Java  ⇒ Def.task(default.value)
+            case SchemaCodeGenerator.Scala ⇒ Def.task { Seq.empty[File] }
+          }
+        }.value,
+    avroStringType := "String",                                                                    // sbt-avro `String` type name
+    avroSource := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),                      // sbt-avro source directory
     Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
     Compile / sourceGenerators := {
-      val generators = (sourceGenerators in Compile).value
       val schemaLang = schemaCodeGenerator.value
-      val clean      = filterGeneratorTask(generators, generate, AvroConfig)
-
       schemaLang match {
-        case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
-        case SchemaCodeGenerator.Scala ⇒ clean :+ (avroScalaGenerateSpecific in Compile).taskValue
+        case SchemaCodeGenerator.Java  ⇒ Seq((avroGenerate in Compile).taskValue)
+        case SchemaCodeGenerator.Scala ⇒ Seq((avroScalaGenerateSpecific in Compile).taskValue)
       }
     }
   )
-
-  // ideally we could use `-=` to simply remove the Java Avro generator added by sbt-avro, but that's not possible
-  // because sourceGenerator's are a list of SBT Task's that have no equality semantics.
-  def filterGeneratorTask(generators: Seq[Task[Seq[File]]], taskKey: TaskKey[_], config: Configuration) = {
-    def toScopedKey(entry: AttributeEntry[_]) =
-      for (k ← Option(entry.value.asInstanceOf[ScopedKey[_]]))
-        yield (k.key, k.scope.config)
-
-    generators.filterNot { task ⇒
-      task.info.attributes.entries.toList.map(toScopedKey).exists {
-        case Some((key, Select(ConfigKey(configName)))) ⇒ taskKey.key == key && configName == config.name
-        case _                                          ⇒ false
-      }
-    }
-  }
 }
 
 trait CloudflowKeys  extends CloudflowSettingKeys with CloudflowTaskKeys
