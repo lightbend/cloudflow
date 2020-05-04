@@ -47,7 +47,7 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
       }
 
       def runnableGraph =
-        sourceWithOffsetContext(in).to(Splitter.sink(flow, left, right))
+        sourceWithCommittableContext(in).to(Splitter.sink(flow, left, right))
     }
   }
 
