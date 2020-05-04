@@ -107,7 +107,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     Path mountPath = Files.createTempFile("test", UUID.randomUUID().toString());
     FileWritingProcessor streamlet = new FileWritingProcessor(volumeMountName);
     AkkaStreamletTestKit testkit =
-        AkkaStreamletTestKit.create(system, mat)
+        AkkaStreamletTestKit.create(system)
             .withVolumeMounts(
                 VolumeMount.createReadWriteMany(volumeMountName, mountPath.toString()));
 
@@ -148,7 +148,7 @@ public class AkkaStreamletTest extends JUnitSuite {
           getSourceWithCommittableContext(inlet)
               .via(Flow.<Pair<Data, Committable>>create()) // no-op flow
               .to(getCommittableSink(outlet))
-              .run(materializer());
+              .run(system());
         }
       };
     }

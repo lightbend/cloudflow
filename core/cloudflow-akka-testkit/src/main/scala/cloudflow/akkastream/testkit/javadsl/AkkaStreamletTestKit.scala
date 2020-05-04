@@ -76,10 +76,10 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem, 
-                                                        volumeMounts: List[VolumeMount] = List.empty,
-                                                        config: Config = ConfigFactory.empty())
-    extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
+final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
+                                                        config: Config = ConfigFactory.empty(),
+                                                        volumeMounts: List[VolumeMount] = List.empty
+) extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 

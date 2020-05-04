@@ -133,7 +133,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       Files.write(filePath, expectedDataOut.name.getBytes())
 
       val volumeMountTestKit =
-        AkkaStreamletTestKit(system, mat).withVolumeMounts(VolumeMount(volumeMountName, filePath.toAbsolutePath.toString, ReadOnlyMany))
+        AkkaStreamletTestKit(system).withVolumeMounts(VolumeMount(volumeMountName, filePath.toAbsolutePath.toString, ReadOnlyMany))
       val out = volumeMountTestKit.outletAsTap(VolumeMountTestProcessor.out)
 
       volumeMountTestKit.run(

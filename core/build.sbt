@@ -104,6 +104,7 @@ lazy val akkastreamUtil =
             AkkaHttpJackson,
             AkkaStreamContrib,
             AkkaHttpTestkit,
+            AkkaStreamTestkit,
             Logback % Test,
             AkkaHttpSprayJsonTest,
             Junit,
@@ -372,7 +373,7 @@ lazy val operator =
         Skuber,
 	      JacksonDatabind,
         ScalaTest,
-        AkkaStreamTestkit % "test",
+        AkkaStreamTestkit,
         ScalaCheck        % "test",
         Avro4sJson        % "test",
       )

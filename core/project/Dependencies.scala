@@ -60,6 +60,7 @@ object Library {
   // Test Dependencies
   val AkkaHttpTestkit        = "com.typesafe.akka"   %% "akka-http-testkit"          % Version.AkkaHttp     % Test
   val AkkaHttpSprayJsonTest  = AkkaHttpSprayJson                                                            % Test
+  val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka         % Test 
   val Avro4sTest             = "com.sksamuel.avro4s" %% "avro4s-core"                % "3.0.0"              % Test
   val AkkaTestkit            = "com.typesafe.akka"   %% "akka-testkit"               % Version.Akka
   val ScalaTest              = ScalaTestUnscoped                                                            % Test
