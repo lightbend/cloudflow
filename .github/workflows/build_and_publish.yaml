@@ -12,15 +12,20 @@ jobs:
       uses: actions/checkout@master
     - name: List contents
       run: |
+        echo " == current dir =="
         pwd
+        echo " == dir content =="
         ls
+        echo " == git status =="
         git status
+        echo " == site.yaml =="
+        cat docs/docs-source/site.yml
 
     - name: Build documentation  
       run: |
         cd docs
         make html
-        echo  "going to ls >"
+        echo  "=== going to ls ==="
         ls /home/runner/work/cloudflow/cloudflow/docs/../docs/target/staging
-        echo  "docs >"
+        echo  "=== docs ==="
         ls /home/runner/work/cloudflow/cloudflow/docs/../docs/target/staging/docs
