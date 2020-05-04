@@ -112,7 +112,7 @@ public class FilterStreamlet extends AkkaStreamlet {
                                 acc.addAll(Collections.singletonList(entry.utf8String()));
                                 return acc;
                             },
-                            getMaterializer()
+                            system()
                         )
                 );
 
