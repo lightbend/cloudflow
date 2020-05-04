@@ -14,6 +14,6 @@ jobs:
       run: |
         cd docs
         make all
-        ls docs/target/staging/docs
+        ls /home/runner/work/cloudflow/cloudflow/docs/../docs/target/staging
     
         
