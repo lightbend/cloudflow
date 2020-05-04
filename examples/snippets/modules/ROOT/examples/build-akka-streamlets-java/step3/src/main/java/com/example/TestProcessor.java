@@ -12,7 +12,7 @@ import cloudflow.streamlets.avro.*;
 //tag::processor[]
 class TestProcessor extends AkkaStreamlet {
   AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
-  AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> d.getId().toString(), Data.class);
+  AvroOutlet<Data> outlet = AvroOutlet.<Data>create("out", d -> Integer.toString(d.getId()), Data.class);
 
   public StreamletShape shape() {
     return StreamletShape.createWithInlets(inlet).withOutlets(outlet);
