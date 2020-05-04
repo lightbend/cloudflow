@@ -21,7 +21,7 @@ class SampleSpec extends WordSpec with MustMatchers with BeforeAndAfterAll {
 
     //tag::config-value[]
     val testkit =
-      AkkaStreamletTestKit(system, mat).withConfigParameterValues(ConfigParameterValue(RecordSumFlow.recordsInWindowParameter, "20"))
+      AkkaStreamletTestKit(system).withConfigParameterValues(ConfigParameterValue(RecordSumFlow.recordsInWindowParameter, "20"))
     //end::config-value[]
 
     "Allow for creating a 'flow processor'" in {

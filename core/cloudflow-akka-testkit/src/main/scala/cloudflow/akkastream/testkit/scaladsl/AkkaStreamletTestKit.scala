@@ -37,7 +37,7 @@ object AkkaStreamletTestKit {
  *
  * {{{
  * // instantiate the testkit
- * val testkit = AkkaStreamletTestKit(system, mat)
+ * val testkit = AkkaStreamletTestKit(system)
  *
  * // setup inlet and outlet
  * val in = testkit.inletAsQueue(SimpleFlowProcessor.shape.inlet)
@@ -103,7 +103,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    * Example (see the full example above, on the class level:
    *
    * {{{
-   * val testkit = AkkaStreamletTestKit(system, mat)
+   * val testkit = AkkaStreamletTestKit(system)
    * val out = testkit.outletAsProbe(SimpleFlowProcessor.shape.outlet)
    *
    * ...

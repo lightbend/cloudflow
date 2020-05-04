@@ -42,7 +42,7 @@ object AkkaStreamletTestKit {
  *
  * {{{
  * // instantiate the testkit
- * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+ * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
  *
  * // setup inlet and outlet
  * SimpleFlowProcessor sfp = new SimpleFlowProcessor();
@@ -111,7 +111,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    * Example (see the full example above, on the class level:
    *
    * {{{
-   * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+   * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
    * SimpleFlowProcessor sfp = new SimpleFlowProcessor();
    * ProbeOutletTap<Data> out = testkit.makeOutletAsTap(sfp.shape().outlet());
    *

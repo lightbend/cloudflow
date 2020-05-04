@@ -31,7 +31,7 @@ class TestProcessorSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
   "A TestProcessor" should {
 
-    val testkit = AkkaStreamletTestKit(system, mat)
+    val testkit = AkkaStreamletTestKit(system)
 
     "Allow for creating a 'flow processor'" in {
       val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
