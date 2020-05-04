@@ -78,8 +78,8 @@ object AkkaStreamletTestKit {
  */
 final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
                                                         config: Config = ConfigFactory.empty(),
-                                                        volumeMounts: List[VolumeMount] = List.empty
-) extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
+                                                        volumeMounts: List[VolumeMount] = List.empty)
+    extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
 
