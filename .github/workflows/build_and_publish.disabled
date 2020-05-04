@@ -3,7 +3,7 @@ on:
   # Trigger the workflow on push only for the master branch
   push:
     branches:  
-      - master
+      - docs-ci-bug
 jobs:
   build-docs:
     runs-on: ubuntu-latest
@@ -14,6 +14,7 @@ jobs:
       run: |
         cd docs
         make all
+        ls docs/target/staging/
     - name: Publish to cloudflow.io  
       env:
          CFIO_USER: ${{ secrets.CLOUDFLOWIO_USER }}
