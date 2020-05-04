@@ -7,14 +7,18 @@ content:
   - url: ./../../
     start-path: docs/docs-source/docs
     #branches: [master, v1.3.3-docs]  # versioned content - add branches here
+    branches: [master]
   - url: ./../../
     start-path: docs/homepage-source/docs
+    branches: [master]
     #branches: [master] # should always remain as master
   - url: ./../../
     start-path: docs/shared-content-source/docs
+    branches: [master]
     #branches: [master, v1.3.3-docs]  # versioned content - add branches here
   - url: ./../../
     start-path: examples/snippets
+    branches: [master]
     #branches: [master, v1.3.3-docs]  # versioned content - add branches here
 
 ui: 

@@ -27,5 +27,4 @@ jobs:
         make html
         echo  "=== going to ls ==="
         ls /home/runner/work/cloudflow/cloudflow/docs/../docs/target/staging
-        echo  "=== docs ==="
-        ls /home/runner/work/cloudflow/cloudflow/docs/../docs/target/staging/docs
+        echo  "==="

@@ -36,6 +36,7 @@ html: clean
 		--stacktrace \
 		docs/docs-source/site.yml
 	@echo "Done"
+	@echo "${staging_dir}"
 
 html-author-mode: clean
 	docker run \
