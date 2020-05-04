@@ -32,7 +32,6 @@ lazy val datamodel = appModule("datamodel")
   .enablePlugins(CloudflowLibraryPlugin)
   .settings(
     commonSettings,
-    (sourceGenerators in Compile) += (avroScalaGenerateSpecific in Test).taskValue
   )
 
 lazy val ingestor = appModule("ingestor")
