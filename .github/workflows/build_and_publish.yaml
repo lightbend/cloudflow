@@ -14,19 +14,6 @@ jobs:
       run: |
         cd docs
         make all
-        ls docs/target/staging/
-    - name: Publish to cloudflow.io  
-      env:
-         CFIO_USER: ${{ secrets.CLOUDFLOWIO_USER }}
-         CFIO_EMAIL: ${{ secrets.CLOUDFLOWIO_EMAIL }}
-         CFIO_TOKEN: ${{ secrets.CLOUDFLOWIO_TOKEN }}
-      run: |
-        git clone https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git ./cloudflow.io
-        cp -r docs/target/staging/* ./cloudflow.io
-        cd ./cloudflow.io
-        git config  user.email "$CFIO_EMAIL"
-        git config  user.name "$CFIO_USER"
-        git add .
-        git commit -m "Automated publishing using a Github action on cloudflow-docs"
-        git push "https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git"
+        ls docs/target/staging/docs
+    
         
