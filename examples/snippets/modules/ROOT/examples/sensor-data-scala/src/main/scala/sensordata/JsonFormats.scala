@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::docs-code-example[]
 package sensordata
 
 import java.time.Instant
@@ -53,3 +53,4 @@ object SensorDataJsonSupport extends DefaultJsonProtocol with UUIDJsonSupport wi
   import MeasurementsJsonSupport._
   implicit val sensorDataFormat = jsonFormat3(SensorData.apply)
 }
+//end::docs-code-example[]

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::docs-code-example[]
 package sensordata
 
 import cloudflow.akkastream._
@@ -38,3 +38,4 @@ class SensorDataToMetrics extends AkkaStreamlet {
     def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
   }
 }
+//end::docs-code-example[]
