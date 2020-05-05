@@ -8,8 +8,8 @@
 :kubernetes-platform-version:  1.12
 :kubectl-plugin-version:       KUBECTL_PLUGIN_VERSION
 
-:cli:                          oc
-:cli-plugin:                   oc plugin
+:cli:                          kubectl
+:cli-plugin:                   kubectl
 
 :latest-openshift-platform-version:        3.11
 :minimum-kubernetes-on-openshift-version:  1.11
