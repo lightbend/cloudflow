@@ -89,6 +89,8 @@ In **package.scala**, which should live outside of *sensordata* directory at one
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/package.scala[tag=docs-code-example]
 ----
 
+== Configure the logging system
+
 Finally, add a logging configuration. 
 Create a file called `logback.xml` in the `resources/` folder with the following contents.
 Without it, the output of the application will be flooded with `DEBUG` messages from the underlying implementation and the actual output of the example won't be visible.
