@@ -322,7 +322,9 @@ lazy val plugin =
 lazy val runner =
   cloudflowModule("cloudflow-runner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    .dependsOn(streamlets, blueprint, events)
+    //TODO removed events for Flink Akka 2.6 conflict, will need to find a way to put it back.
+    .dependsOn(streamlets, blueprint, //events
+    )
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(

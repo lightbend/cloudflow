@@ -25,7 +25,8 @@ import org.slf4j.LoggerFactory
 import com.typesafe.config.Config
 import cloudflow.streamlets._
 import RunnerOps._
-import cloudflow.events.errors.ErrorEvents
+// TODO removed for Flink Akka 2.6 conflict. Need to find another way to do this.
+//import cloudflow.events.errors.ErrorEvents
 
 /**
  * Runner for cluster deployments. Assumes Linux-style paths!
@@ -77,10 +78,12 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
           shutdown(loadedStreamlet)
         } catch {
           case ex @ ExceptionAcc(exceptions) ⇒
-            exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
+            // TODO removed for Flink Akka conflict. Need to think of another way to do this.
+            // exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdown(loadedStreamlet, Some(ex))
           case ex: Throwable =>
-            ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
+            //TODO removed for Flink Akka. Need to think of another way to do this.
+            // ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, ex)
             shutdown(loadedStreamlet, Some(ex))
         }
       case Failure(ex) ⇒ throw new Exception(ex)
