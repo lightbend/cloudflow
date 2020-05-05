@@ -1,6 +1,9 @@
-// global attributes
+// Common attributes
+
+:page-partial:
 
 :cloudflow-version: 1.3.3
+:cloudflow-examples-version: 1.3.3
 
 :installer-image-tag:          INSTALLER_IMAGE_TAG
 :kubernetes-platform-name:     Kubernetes

@@ -1,4 +1,5 @@
 // global attributes
 
 :cloudflow-version: 1.3.3
+:cloudflow-examples-version: 1.3.3
 

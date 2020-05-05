@@ -5,5 +5,5 @@
 :imagesdir: assets/images
 
 include::partial$include.adoc[]
-include::shared-content:ROOT:page$app-development-process.adoc[]
+include::{cloudflow-version}@shared-content:ROOT:page$app-development-process.adoc[]
 

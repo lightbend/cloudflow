@@ -52,7 +52,7 @@ In Scala:
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngress.scala[tag=httpIngress]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngress.scala[tag=httpIngress]
 ----
 
 Java::
@@ -61,7 +61,7 @@ In Java, the `akka.http.javadsl.unmarshalling.Unmarshaller<ByteString, T>` is an
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataHttpIngress.java[tag=httpIngress]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataHttpIngress.java[tag=httpIngress]
 ----
 
 
@@ -82,7 +82,7 @@ The Scala example below shows:
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataStreamingIngress.scala[tag=httpStreamingIngress]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataStreamingIngress.scala[tag=httpStreamingIngress]
 ----
 
 Java::
@@ -91,7 +91,7 @@ The Java example below shows how to use the `defaultStreaming` in a similar mann
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataStreamingIngress.java[tag=httpStreamingIngress]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataStreamingIngress.java[tag=httpStreamingIngress]
 ----
 
 === Define a custom Route
@@ -101,7 +101,7 @@ The `route` method provides a `sinkRef` argument which you can use to write to t
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngressCustomRoute.scala[tag=customRoute]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataHttpIngressCustomRoute.scala[tag=customRoute]
 ----
 
 The above Scala example creates a route that will handle put requests where the entity contains `Data`, which is written to the outlet using the `WritableSinkRef`.
@@ -125,14 +125,14 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataSplitter.scala[tag=splitter]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataSplitter.scala[tag=splitter]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataSplitter.java[tag=splitter]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataSplitter.java[tag=splitter]
 ----
 
 == Merger
@@ -152,12 +152,12 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataMerge.scala[tag=merge]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataMerge.scala[tag=merge]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataMerge.java[tag=merge]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/DataMerge.java[tag=merge]
 ----

@@ -5,14 +5,12 @@ site:
 content:
   branches: [v1.3.3-docs]  # versioned content - add branches here
   sources:
-  - url: ./../../
-    start-path: docs/docs-source/docs
-  - url: ./../../
-    start-path: docs/homepage-source/docs
-  - url: ./../../
-    start-path: docs/shared-content-source/docs
-  - url: ./../../
-    start-path: examples/snippets
+  - url: git@github.com:lightbend/cloudflow.git
+    start-paths: 
+      - docs/docs-source/docs
+      - docs/homepage-source/docs
+      - docs/shared-content-source/docs
+      - examples/snippets
 
 ui: 
   bundle:

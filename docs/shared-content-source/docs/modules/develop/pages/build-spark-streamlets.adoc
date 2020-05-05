@@ -18,7 +18,7 @@ The first thing to do is extend the `cloudflow.spark.SparkStreamlet` abstract cl
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 The code snippet above shows an abstract class `SparkConsoleEgress` that extends `SparkStreamlet`.
@@ -32,7 +32,7 @@ The streamlet that we are building in this tutorial will have an inlet and no ou
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Cloudflow supports Avro encoded processing of data - we make this explicit by defining the inlet as `AvroInlet`. `Report` is the
@@ -44,7 +44,7 @@ of products from an inventory:
 
 [source,json]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/avro/Report.avsc[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. It's recommended that you use a
@@ -60,7 +60,7 @@ Lets now define the shape of `ReportPrinter` by using the APIs in `cloudflow.str
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 The above code overrides the `shape` method with a value that defines the shape of the streamlet. `StreamletShape` offers methods to define shapes, e.g. to define a streamlet with two inlets and two outlets, we could write `StreamletShape.withInlets(in0, in1).withOutlets(valid, invalid)`.
@@ -75,7 +75,7 @@ In this step we need to override `createLogic` from `SparkStreamlet` in our `Rep
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-spark-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 In the above code we override `createLogic` from `SparkStreamletLogic` with an instance that overrides `buildStreamingQueries` to supply the domain logic for the streamlet. In this case, since we are implementing a printer streamlet for console, all we need to do is read from the inlet that we defined earlier, `val in = AvroInlet[Report]("report-in")`, and do some processing on it.

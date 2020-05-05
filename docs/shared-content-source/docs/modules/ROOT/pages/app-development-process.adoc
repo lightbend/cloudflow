@@ -30,7 +30,7 @@ Let's take a look at the parts of a Streamlet in the following example:
 .Spark Streamlet Example
 [source, scala]
 ----
-include::docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/MovingAverageSparklet.scala[tag=spark-streamlet-example]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/sparkdoc/MovingAverageSparklet.scala[tag=spark-streamlet-example]
 ----
 
 <1> `SparkStreamlet` is the base class that defines `Streamlet` for the Apache Spark backend.
@@ -49,7 +49,7 @@ The following example shows a simple _Blueprint_ definition:
 .`blueprint` example
 [source, json]
 ----
-include::docsnippets:ROOT:example$spark-scala/src/main/blueprint/blueprint.conf[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/blueprint/blueprint.conf[]
 ----
 <1> `streamlets` section: declares instances from the streamlets available in the application (or its dependencies).
 <2> `connections` section: declares how the inlets/outlets of a streamlet should be connected.

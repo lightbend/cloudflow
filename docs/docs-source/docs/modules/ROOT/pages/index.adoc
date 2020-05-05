@@ -14,7 +14,7 @@ Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and
 
 == Streaming application requirements
 
-include::shared-content:ROOT:page$streaming-app-requirements.adoc[]
+include::{cloudflow-version}@shared-content:ROOT:page$streaming-app-requirements.adoc[]
 
 == The Cloudflow approach 
 

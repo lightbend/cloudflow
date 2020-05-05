@@ -27,7 +27,7 @@ Here are the imports that we need for writing the tests. These include some obli
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=imports]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=imports]
 ----
 
 === Setting up a sample TestProcessor
@@ -36,7 +36,7 @@ Let's set up a `TestProcessor` streamlet that we would like to test. It's a simp
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/TestProcessor.scala[tag=processor]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/TestProcessor.scala[tag=processor]
 ----
 
 === The unit test
@@ -45,7 +45,7 @@ Here's how we would write a unit test using `AkkaStreamletTestkit`. The various 
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=test]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=test]
 ----
 
 === Initialization and cleanups
@@ -54,7 +54,7 @@ As per ScalaTest guidelines, we can do custom cleanups in methods like `afterAll
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=afterAll]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/test/scala/com/example/TestProcessorSpec.scala[tag=afterAll]
 ----
 
 Similarly you can have `beforeAll()` and `before()` for custom initializations.
@@ -71,7 +71,7 @@ Here are the imports that we need for writing the tests. These include some obli
 
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=imports]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=imports]
 ----
 
 === Setting up a sample TestProcessor
@@ -80,7 +80,7 @@ Let's set up a `TestProcessor` that we would like to test.
 
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/TestProcessor.java[tag=processor]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/TestProcessor.java[tag=processor]
 ----
 
 === The unit test
@@ -89,7 +89,7 @@ Here's how we would write a unit test using JUnit. The various logical steps of 
 
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=test]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=test]
 ----
 
 === Initialization and Cleanups
@@ -98,5 +98,5 @@ As per JUnit guidelines, we can do custom initializations and cleanups in method
 
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=init]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/test/java/com/example/TestProcessorTest.java[tag=init]
 ----

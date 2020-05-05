@@ -26,7 +26,7 @@ Scala::
 --
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -34,7 +34,7 @@ Java::
 --
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -52,14 +52,14 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 Cloudflow supports Avro encoded processing of data. 
@@ -72,7 +72,7 @@ It contains a summary of the attributes of products from an inventory:
 
 [source,json]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/avro/Report.avsc[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. 
@@ -96,14 +96,14 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 The above code specifies that this streamlet has a "one inlet, no outlet" shape by overriding the `shape` method with this specific configuration. 
@@ -133,14 +133,14 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
 ----
 
 In the above code, we override `createLogic` to supply the domain logic for the streamlet.
@@ -309,14 +309,14 @@ Scala::
 +
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/AtLeastOnceReportPrinter.scala[tag=atLeastOnce]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-scala/step3/src/main/scala/com/example/AtLeastOnceReportPrinter.scala[tag=atLeastOnce]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/AtLeastOnceReportPrinter.java[tag=atLeastOnce]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/AtLeastOnceReportPrinter.java[tag=atLeastOnce]
 ----
 
 This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].
