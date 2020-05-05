@@ -33,6 +33,7 @@ As we move through the process, the leaf level directories of the above tree wil
 * **project/cloudflow-plugins.sbt** : contains the Cloudflow `sbt` plugin name and version.
 * **avro** : the avro schema of the domain objects
 * **blueprint** : the blueprint of the application in a file named `blueprint.conf`
+* **resources** : logging (`logback.xml`) and sandbox configuration (`local.conf`)
 * **scala** : the source code of the application under the package name `sensordata`
 * **build.sbt** : the sbt build script
 

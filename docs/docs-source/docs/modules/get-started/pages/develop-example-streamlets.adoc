@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name. The complete code is available in the https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala] example.
+All streamlets belong under the `src/main/scala/sensordata` directory, where `sensordata` is the package name. To develop the streamlets, copy the provided code to the appropriate source file name. The complete code is available in the https://github.com/lightbend/cloudflow/tree/v1.3.3/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala] example.
 
 == Ingress streamlet
 
@@ -15,7 +15,7 @@ In **SensorDataHttpIngress.scala**, include the following code:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataHttpIngress.scala[tag=docs-code-example]
 ----
 
 == Convert sensor to metric streamlet
@@ -26,7 +26,7 @@ In **SensorDataToMetrics.scala**, include the following code:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataToMetrics.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataToMetrics.scala[tag=docs-code-example]
 ----
 
 == Validation streamlets
@@ -39,14 +39,14 @@ In **MetricsValidation.scala**, include the following code:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/MetricsValidation.scala[tag=docs-code-example]
 ----
 
 In **SensorDataUtils.scala**, include the following code. A real validator would have more complex business logic, this is just for demonstration:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataUtils.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataUtils.scala[tag=docs-code-example]
 ----
 
 == Logging streamlets
@@ -66,7 +66,7 @@ In **InvalidMetricLogger.scala**, include the following code:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/InvalidMetricLogger.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/InvalidMetricLogger.scala[tag=docs-code-example]
 ----
 
 == Process JSON records
@@ -78,7 +78,7 @@ In **JsonFormats.scala**, include the following code:
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/JsonFormats.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/JsonFormats.scala[tag=docs-code-example]
 ----
 
 
@@ -86,8 +86,17 @@ In **package.scala**, which should live outside of *sensordata* directory at one
 
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/package.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/package.scala[tag=docs-code-example]
 ----
+
+Finally, add a logging configuration. 
+Without it, the output of the application will be flooded with `DEBUG` messages from the underlying implementation and the actual output of the example won't be visible.
+
+[source, xml]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/logback.xml[]
+----
+
 
 == What's next
 
