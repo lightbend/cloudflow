@@ -1,4 +1,5 @@
 :page-partial:
+include::ROOT:partial$include.adoc[]
 
 Stream processing is a discipline and a set of techniques for extracting information from unbounded data. Streaming applications apply stream processing to provide actionable insights from data as it arrives into the system. The growing popularity of streaming applications is driven by: 
 

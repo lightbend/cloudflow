@@ -99,7 +99,30 @@ An example of a blueprint is shown below:
 
 [source,hocon]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=all]
+blueprint {
+  streamlets {
+    sensor-data = com.example.SensorDataIngress
+    metrics = com.example.SensorDataToMetrics
+    validation = com.example.MetricsValidation
+    reporter = com.example.MetricsEgress
+  }
+
+  topics {
+    sensor-data {
+      producers = [sensor-data.out]
+      consumers = [metrics.in]
+    }
+    metrics{
+      producers = [metrics.out]
+      consumers = [validation.in]
+    }
+    validated {
+      producers = [validation.out-0]
+      consumers = [reporter.in]
+    }
+  }
+
+}
 ----
 
 NOTE: Blueprint files are specified in the https://github.com/lightbend/config/blob/master/HOCON.md[HOCON,window=_blank] format, a superset of JSON.
