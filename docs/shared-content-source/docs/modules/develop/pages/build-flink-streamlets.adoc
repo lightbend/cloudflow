@@ -23,7 +23,7 @@ Scala::
 --
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step0/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -31,7 +31,7 @@ Java::
 --
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -51,7 +51,7 @@ Scala::
 --
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -59,7 +59,7 @@ Java::
 --
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -78,7 +78,7 @@ of products from an inventory:
 
 [source,json]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/avro/Report.avsc[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step1/src/main/avro/Report.avsc[]
 ----
 
 In the definition of the inlet, "report-in" is the name of the inlet. The inlet should have a domain-specific 
@@ -100,7 +100,7 @@ Scala::
 --
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step2/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -108,7 +108,7 @@ Java::
 --
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -128,7 +128,7 @@ Scala::
 --
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/main/scala/com/example/ReportPrinter.scala[]
 ----
 --
 Java::
@@ -136,7 +136,7 @@ Java::
 --
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/main/java/com/example/ReportPrinter.java[]
 ----
 --
 
@@ -165,7 +165,7 @@ An example of a blueprint using the `ReportPrinter` could look like this:
 
 [source,hocon]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
 ----
 
 The omitted `ReportIngress` could for instance be another `FlinkStreamlet` that writes `Report`{empty}s to its outlet.

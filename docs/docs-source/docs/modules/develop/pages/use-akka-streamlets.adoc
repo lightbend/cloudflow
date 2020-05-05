@@ -5,6 +5,6 @@
 
 
 include::ROOT:partial$include.adoc[]
-include::shared-content:develop:page$use-akka-streamlets.adoc[]
+include::{cloudflow-version}@shared-content:develop:page$use-akka-streamlets.adoc[]
 
 // Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.

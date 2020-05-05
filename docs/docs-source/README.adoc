@@ -59,7 +59,7 @@ As a general rule, limit the number of projects at this location: one project pe
 For a file at `examples/snippets/modules/ROOT/examples/spark-scala/src/main/scala/com/example/Feature.scala`, the following statement is used to include the whole file:
 
 ```
- include::docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[]
+ include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[]
 ```
 
 In most case, including the complete file is not optimal. It is better to include only section of it. To do this, use tags.
@@ -77,7 +77,7 @@ class Feature {
 
 the relevant part is added using:
 ```
- include::docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[tag=something_interesting]
+ include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[tag=something_interesting]
 ```
 
 Antora has a good support for the tags:

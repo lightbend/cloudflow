@@ -5,8 +5,8 @@ include definitions.mk
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}/..
 
-antora_docker_image     := lightbend/antora-doc
-antora_docker_image_tag := 0.1.0
+antora_docker_image     := antora/antora
+antora_docker_image_tag := 2.3.1
 
 work_dir := ${ROOT_DIR}/docs/target
 

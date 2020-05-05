@@ -26,7 +26,7 @@ Let's consider an example where we would like to write unit tests for testing a 
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/main/scala/com/example/FlinkProcessor.scala[tag=processor]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/main/scala/com/example/FlinkProcessor.scala[tag=processor]
 ----
 
 === The unit test
@@ -35,7 +35,7 @@ Here is a list of imports needed for writing the test suite.
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/test/scala/com/example/FlinkProcessorSpec.scala[tag=imports]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/test/scala/com/example/FlinkProcessorSpec.scala[tag=imports]
 ----
 
 
@@ -43,7 +43,7 @@ Here's how we would write a unit test using ScalaTest. The various logical steps
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/test/scala/com/example/FlinkProcessorSpec.scala[tag=test]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-scala/step3/src/test/scala/com/example/FlinkProcessorSpec.scala[tag=test]
 ----
 
 == Basic flow of `testkit` APIs in Java
@@ -71,7 +71,7 @@ We will discuss the steps for implementation in both Scala and Java.
 
 [source,java]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/main/java/com/example/FlinkProcessor.java[tag=processor]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/main/java/com/example/FlinkProcessor.java[tag=processor]
 ----
 
 === The unit test
@@ -80,7 +80,7 @@ Here is a list of imports needed for writing the test suite.
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/test/java/com/example/FlinkProcessorTest.java[tag=imports]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/test/java/com/example/FlinkProcessorTest.java[tag=imports]
 ----
 
 
@@ -88,7 +88,7 @@ Here's how we would write a unit test using ScalaTest. The logical steps of the 
 
 [source,scala]
 ----
-include::docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/test/java/com/example/FlinkProcessorTest.java[tag=test]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step3/src/test/java/com/example/FlinkProcessorTest.java[tag=test]
 ----
 
 === The FlinkTestkit class
