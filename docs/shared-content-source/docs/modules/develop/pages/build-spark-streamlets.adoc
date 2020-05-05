@@ -107,7 +107,16 @@ An example of a blueprint using the `ReportPrinter` could look like this:
 
 [source,hocon]
 ----
-include::docsnippets:ROOT:example$build-spark-streamlets-scala/app/src/main/blueprint/blueprint.conf[]
+ blueprint {
+  streamlets {
+    ingress = com.example.ReportIngress
+    report-printer = com.example.ReportPrinter
+  }
+
+  connections {
+    ingress.out = [report-printer.report-in]
+  }
+}
 ----
 
 The omitted `ReportIngress` could for instance be another `SparkStreamlet` that writes `Report`{empty}s to its outlet.
