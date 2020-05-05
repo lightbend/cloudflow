@@ -90,6 +90,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 ----
 
 Finally, add a logging configuration. 
+Create a file called `logback.xml` in the `resources/` folder with the following contents.
 Without it, the output of the application will be flooded with `DEBUG` messages from the underlying implementation and the actual output of the example won't be visible.
 
 [source, xml]
