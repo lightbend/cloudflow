@@ -3,8 +3,8 @@ import sbt._
 // format: OFF
 object Version {
   val Akka         = "2.6.5"
-  val AkkaHttp     = "10.1.11"
-  val AkkaMgmt     = "1.0.3"
+  val AkkaHttp     = "10.1.10"
+  val AkkaMgmt     = "1.0.6"
   val AlpakkaKafka = "2.0.2"
   val Scala        = "2.12.9"
   val Spark        = "2.4.5"
@@ -26,7 +26,7 @@ object Library {
   
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
   val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
-  val AkkaClusterBootstrap   = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
+  val AkkaClusterBootstrap  = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
   val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
@@ -38,7 +38,7 @@ object Library {
   val SprayJson              = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection              = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
-  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
+  val JacksonScalaModule     = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
   val Skuber                 = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 
