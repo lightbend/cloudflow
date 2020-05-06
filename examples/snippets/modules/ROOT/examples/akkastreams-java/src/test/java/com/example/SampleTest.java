@@ -39,7 +39,7 @@ class TestProcessorTest {
   public void testFlowProcessor() {
 
     //tag::config-value[]
-    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat).withConfigParameterValues(ConfigParameterValue.create(RecordSumFlow.recordsInWindowParameter, "20"));
+    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system).withConfigParameterValues(ConfigParameterValue.create(RecordSumFlow.recordsInWindowParameter, "20"));
     //end::config-value[]
   
   }

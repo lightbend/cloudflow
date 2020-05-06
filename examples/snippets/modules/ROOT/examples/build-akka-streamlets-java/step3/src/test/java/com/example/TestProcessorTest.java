@@ -45,7 +45,7 @@ class TestProcessorTest {
     TestProcessor sfp = new TestProcessor();
 
     // 1. instantiate the testkit
-    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
 
     // 2. Setup inlet taps that tap the inlet ports of the streamlet
     QueueInletTap<Data> in = testkit.makeInletAsTap(sfp.inlet);

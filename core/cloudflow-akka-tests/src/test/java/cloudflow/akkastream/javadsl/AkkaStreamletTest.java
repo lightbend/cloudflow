@@ -22,7 +22,6 @@ import akka.japi.Pair;
 import akka.kafka.ConsumerMessage;
 import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.kafka.ConsumerMessage.Committable;
-import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.testkit.TestKit;
 import cloudflow.akkastream.*;
@@ -42,13 +41,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 
 public class AkkaStreamletTest extends JUnitSuite {
-  static ActorMaterializer mat;
   static ActorSystem system;
 
   @BeforeClass
   public static void setUp() throws Exception {
     system = ActorSystem.create();
-    mat = ActorMaterializer.create(system);
   }
 
   @AfterClass
@@ -60,7 +57,7 @@ public class AkkaStreamletTest extends JUnitSuite {
   @Test
   public void anAkkaStreamletShouldProcessDataWhenItIsRun() {
     TestProcessor streamlet = new TestProcessor();
-    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+    AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
 
     QueueInletTap<Data> in = testkit.makeInletAsTap(streamlet.inlet);
     ProbeOutletTap<Data> out = testkit.makeOutletAsTap(streamlet.outlet);
@@ -84,7 +81,7 @@ public class AkkaStreamletTest extends JUnitSuite {
   public void anAkkaStreamletShouldBeAbleToDefineAndUseConfigurationParameters() {
     TestConfigParametersProcessor streamlet = new TestConfigParametersProcessor();
     AkkaStreamletTestKit testkit =
-        AkkaStreamletTestKit.create(system, mat)
+        AkkaStreamletTestKit.create(system)
             .withConfigParameterValues(ConfigParameterValue.create(nameFilter, "b"));
 
     QueueInletTap<Data> in = testkit.makeInletAsTap(streamlet.inlet);
@@ -110,7 +107,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     Path mountPath = Files.createTempFile("test", UUID.randomUUID().toString());
     FileWritingProcessor streamlet = new FileWritingProcessor(volumeMountName);
     AkkaStreamletTestKit testkit =
-        AkkaStreamletTestKit.create(system, mat)
+        AkkaStreamletTestKit.create(system)
             .withVolumeMounts(
                 VolumeMount.createReadWriteMany(volumeMountName, mountPath.toString()));
 
@@ -151,7 +148,7 @@ public class AkkaStreamletTest extends JUnitSuite {
           getSourceWithCommittableContext(inlet)
               .via(Flow.<Pair<Data, Committable>>create()) // no-op flow
               .to(getCommittableSink(outlet))
-              .run(materializer());
+              .run(system());
         }
       };
     }
@@ -193,7 +190,7 @@ public class AkkaStreamletTest extends JUnitSuite {
                             return dataIn;
                           }))
               .to(getCommittableSink(outlet))
-              .run(materializer());
+              .run(system());
         }
       };
     }
@@ -223,7 +220,7 @@ public class AkkaStreamletTest extends JUnitSuite {
           getSourceWithCommittableContext(inlet)
               .filter(data -> data.name().equals(configuredNameToFilterFor))
               .to(getCommittableSink(outlet))
-              .run(materializer());
+              .run(system());
         }
       };
     }

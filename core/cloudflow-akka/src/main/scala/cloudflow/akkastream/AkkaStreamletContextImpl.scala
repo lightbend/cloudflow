@@ -47,8 +47,6 @@ final class AkkaStreamletContextImpl(
 ) extends AkkaStreamletContext {
   implicit val system: ActorSystem = sys
 
-  implicit def materializer = ActorMaterializer()(system)
-
   override def config: Config = streamletDefinition.config
 
   private val readyPromise      = Promise[Dun]()

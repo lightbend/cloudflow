@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
 
-val AkkaVersion = "2.5.29"
+val AkkaVersion = "2.6.5"
 
 lazy val root =
   Project(id = "root", base = file("."))
@@ -26,7 +26,7 @@ lazy val connectedCarExample = (project in file("./akka-connected-car"))
     name := "connected-car-akka-cluster",
     libraryDependencies ++= Seq(
       "ch.qos.logback" %  "logback-classic" % "1.2.3",
-      "org.scalatest"          %% "scalatest"              % "3.0.7"    % "test"
+      "org.scalatest"  %% "scalatest"       % "3.0.7"    % "test"
       )
   )
   .dependsOn(akkaConnectedCar)
@@ -35,7 +35,7 @@ lazy val datamodel = (project in file("./datamodel"))
   .enablePlugins(CloudflowLibraryPlugin)
 
 lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
-  .enablePlugins(CloudflowAkkaStreamsLibraryPlugin)
+  .enablePlugins(CloudflowAkkaPlugin)
   .settings(
     commonSettings,
     name := "akka-connected-car-streamlet",

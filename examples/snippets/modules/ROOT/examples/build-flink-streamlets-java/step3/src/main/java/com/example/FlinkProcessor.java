@@ -18,7 +18,7 @@ public class FlinkProcessor extends FlinkStreamlet {
   //         the partitioner function explicitly or else RoundRobinPartitioner will
   //         be used : using `name` as the partitioner here
   AvroInlet<Data> in = AvroInlet.<Data>create("in", Data.class);
-  AvroOutlet<Data> out = AvroOutlet.<Data>create("out", (Data d) -> d.getId().toString(), Data.class);
+  AvroOutlet<Data> out = AvroOutlet.<Data>create("out", (Data d) -> Integer.toString(d.getId()), Data.class);
 
   // Step 2: Define the shape of the streamlet. In this example the streamlet
   //         has 1 inlet and 1 outlet

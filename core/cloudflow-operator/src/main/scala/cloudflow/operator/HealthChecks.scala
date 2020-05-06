@@ -22,10 +22,9 @@ import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import akka.stream._
 
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, mat: ActorMaterializer, ec: ExecutionContext) =
+  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) =
     Http()
       .bindAndHandle(
         route,

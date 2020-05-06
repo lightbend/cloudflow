@@ -26,7 +26,7 @@ final class StreamletScannerSpec extends WordSpec with TryValues with OptionValu
     val classLoader       = this.getClass.getClassLoader
     val results           = StreamletScanner.scan(classLoader)
     val (valid, invalid)  = results.partition { case (_, triedDiscoveredStreamlet) ⇒ triedDiscoveredStreamlet.isSuccess }
-    val validStreamlets   = valid.map { case (k, Success(discovered)) ⇒ (k, discovered) }
+    val validStreamlets   = valid.collect { case (k, Success(discovered)) ⇒ (k, discovered) }
     val invalidStreamlets = invalid.toMap
 
     // These are all valid streamlets defined in TestStreamlets.scala

@@ -22,7 +22,6 @@ import collection.JavaConverters._
 import akka.NotUsed
 import akka.actor._
 import akka.japi.Pair
-import akka.stream._
 import akka.stream.javadsl._
 import com.typesafe.config._
 import cloudflow.akkastream._
@@ -32,9 +31,8 @@ import cloudflow.akkastream.testkit._
 import scala.annotation.varargs
 
 object AkkaStreamletTestKit {
-  def create(sys: ActorSystem, mat: ActorMaterializer): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, Some(mat))
-  def create(sys: ActorSystem, mat: ActorMaterializer, config: Config): AkkaStreamletTestKit =
-    AkkaStreamletTestKit(sys, Some(mat), List.empty, config)
+  def create(sys: ActorSystem): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys)
+  def create(sys: ActorSystem, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, config)
 }
 
 /**
@@ -44,7 +42,7 @@ object AkkaStreamletTestKit {
  *
  * {{{
  * // instantiate the testkit
- * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+ * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
  *
  * // setup inlet and outlet
  * SimpleFlowProcessor sfp = new SimpleFlowProcessor();
@@ -79,9 +77,8 @@ object AkkaStreamletTestKit {
  *
  */
 final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
-                                                        mat: Option[ActorMaterializer] = None,
-                                                        volumeMounts: List[VolumeMount] = List.empty,
-                                                        config: Config = ConfigFactory.empty())
+                                                        config: Config = ConfigFactory.empty(),
+                                                        volumeMounts: List[VolumeMount] = List.empty)
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
@@ -94,7 +91,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    */
   def makeInletAsTap[T](inlet: CodecInlet[T]): QueueInletTap[T] =
-    QueueInletTap[T](inlet)(mat.getOrElse(ActorMaterializer()(system)))
+    QueueInletTap[T](inlet)(system)
 
   /**
    *
@@ -114,7 +111,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    * Example (see the full example above, on the class level:
    *
    * {{{
-   * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system, mat);
+   * AkkaStreamletTestKit testkit = AkkaStreamletTestKit.create(system);
    * SimpleFlowProcessor sfp = new SimpleFlowProcessor();
    * ProbeOutletTap<Data> out = testkit.makeOutletAsTap(sfp.shape().outlet());
    *
