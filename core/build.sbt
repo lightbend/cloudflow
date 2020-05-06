@@ -51,6 +51,7 @@ lazy val streamlets =
       libraryDependencies ++= Vector(
             SprayJson,
             Ficus,
+            Avro,
             Bijection,
             ScalaTest
           )
@@ -136,8 +137,6 @@ lazy val akkastreamTestkit =
           )
     )
     .settings(
-      (sourceDirectory in AvroConfig) := baseDirectory.value / "src/test/avro",
-      (stringType in AvroConfig) := "String",
       javacOptions += "-Xlint:deprecation",
       javacOptions += "-Xlint:unchecked"
     )
@@ -168,6 +167,8 @@ lazy val spark =
     .dependsOn(streamlets)
     .settings(
       scalafmtOnCompile := true,
+      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Seq(
             AkkaSlf4j,
             AkkaStream,
@@ -193,7 +194,10 @@ lazy val sparkTestkit =
     .dependsOn(spark)
     .settings(
       scalafmtOnCompile := true,
+      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
+
             ScalaTestUnscoped,
             Junit
           )
@@ -205,6 +209,8 @@ lazy val sparkTests =
     .dependsOn(sparkTestkit)
     .settings(
       scalafmtOnCompile := true,
+      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
             Logback % Test,
             ScalaTest,
@@ -258,6 +264,7 @@ lazy val flinkTests =
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             FlinkAvro,
+            JodaTime % Test,
             Logback % Test,
             ScalaTest,
             Junit,
@@ -277,8 +284,9 @@ lazy val blueprint =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
-            SprayJson,
+            Avro,
             Config,
+            SprayJson,
             Logback % Test,
             Avro4sTest,
             ScalaTest
@@ -305,8 +313,8 @@ lazy val plugin =
       buildInfoPackage := "cloudflow.sbt",
       addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.5.0"),
       addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
-      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger"      % "2.0.0-RC18"),
+      addSbtPlugin("com.cavorite"      % "sbt-avro"            % "2.0.4"),
+      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger"      % "2.0.0-RC22"),
       addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent"       % "0.1.5"),
       addSbtPlugin("de.heikoseeberger" % "sbt-header"          % "5.2.0"),
       libraryDependencies ++= Vector(
