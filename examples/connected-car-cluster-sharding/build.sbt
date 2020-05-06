@@ -29,6 +29,7 @@ lazy val connectedCarExample = (project in file("./akka-connected-car"))
       "org.scalatest"  %% "scalatest"       % "3.0.7"    % "test"
       )
   )
+  .dependsOn(akkaConnectedCar)
 
 lazy val datamodel = (project in file("./datamodel"))
   .enablePlugins(CloudflowLibraryPlugin)
