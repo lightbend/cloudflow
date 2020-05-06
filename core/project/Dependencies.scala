@@ -38,8 +38,7 @@ object Library {
   val SprayJson              = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection              = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
-  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.0"
-  val JacksonDatabind       = "com.fasterxml.jackson.core"    % "jackson-databind"     % "2.9.9.1"
+  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
   val Skuber                 = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
 

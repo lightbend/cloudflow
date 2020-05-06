@@ -372,7 +372,6 @@ lazy val operator =
         Ficus,
         Logback,
         Skuber,
-	      JacksonDatabind,
         ScalaTest,
         AkkaStreamTestkit % "test",
         ScalaCheck        % "test",
