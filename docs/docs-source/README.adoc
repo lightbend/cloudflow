@@ -226,14 +226,6 @@ Interestingly, on the same page, you can use the following  notation including s
 <<Title of section>>
 ----
 
-== Versioning the doc
-The author-mode-site.yml and site.yml files are both set up to generate multiple versions of the doc, which are available to the end-user via version selectors. The 
-
-To add a new version: 
-* Create a new branch named with the version number, for example 1.2.2. In this branch, in docs/antora.yml, set the new version number, for example version: 1.2.2 
-* In the master branch, in site.yml, add the new branch, for example:    branches: [1.2.2, 1.2.1].
-
-NOTE: Because this is a new repo, we currently have the site.yml set to publish master and 1.2.0, which is the version that was converted from markdown. Moving forward, when we have version 1.2.1 ready to publish, the site.yml file should no longer refer to master and master will be the work in progress.
 
 
 
