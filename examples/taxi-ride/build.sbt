@@ -26,7 +26,6 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .settings(
     name := "taxi-ride-fare"
   )
-  .dependsOn(ingestor, processor, ridelogger)
 
 lazy val datamodel = appModule("datamodel")
   .enablePlugins(CloudflowLibraryPlugin)
