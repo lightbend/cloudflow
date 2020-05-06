@@ -4,10 +4,100 @@ The source files for this guide use asciidoc syntax and the project is configure
 
 This readme covers the following topics:
 
+
+* <<Support for multiple versions>>
 * <<Building the guide locally>>
 * <<Adding tabbed example blocks>>
 * <<Linking to section headings>>
 * <<Versioning the doc>>
+
+== Support for multiple versions
+
+The documentation structure and supporting scripts is set up to allow the easy evolution of versioned documentation alongside the main project.
+Each version is maintained in a separate branch that steems from the release that generated the new version.
+For example, for `v1.3.3` of the documentation, there's a (`v1.3.3-docs`)[https://github.com/lightbend/cloudflow/tree/v1.3.3/] branch that contains the version of the documents and links to the examples that corresponds to the Cloudflow 1.3.3 release.
+
+=== Version numbers
+
+As per internal Lightbend convention, the latest released version is called 'current' and is the default URL for the documentation landing page. For Cloudflow, the landing URL is: https://cloudflow.io/docs/current/index.html
+
+In Cloudflow, we call `dev` the version in the making. That is, the _latest-greatest_ changes that aren't released yet.
+The corresponding URL mapping is: https://cloudflow.io/docs/dev/index.html
+
+Any other version, is addressed by its explicit version number. For example: https://cloudflow.io/docs/v1.3.2/index.html
+
+In general, the versions produced by our documentation process follow the current mapping to names and git branches:
+
+.Versions: Names x Branch
+|===
+|git branch | name in URL | name in docs   |
+| master    | dev         | x.y.z-SNAPSHOT |
+| x.y.z-docs for the most recent x.y.z release | current | vx.y.z |
+| x.y.z-docs for older releases | vx.y.z | vx.y.z |
+|=== 
+
+
+=== Adding a new version
+
+Adding a version of the documentation require for a new release requires two steps:
+
+. Create a branch for the release and make it the `current` version by updating version references.
+. Update the previous release to demote it from `current` to its corresponding `vx.y.z` version.
+. Update the Antora configuration with the new branches.
+
+==== Creating a new `current` version
+
+As we saw in the previous section, the latest development is called `dev` in the documentation. 
+When we create a new release, we need to promote `dev` to `current`.
+We do that by creating a new `x.y.z-docs` branch and applying the following changes in the branch:
+
+First, name the documentation modules with their corresponding version:
+
+* In `docs/docs-source/docs/antora.yml`, update `version: dev` to `version: current`
+* In `docs/shared-content-source/docs/antora.yml`, update `version: x.y.z-SNAPSHOT` to `version: x.y.z`
+* In `examples/snippets/antora.yml`, update  `version: x.y.z-SNAPSHOT` to `version: x.y.z`
+
+Then, change the internal version references to the new versions:
+
+* In `docs/docs-source/docs/modules/ROOT/partials/include.adoc` 
+** update `:cloudflow-version:` to the new  `x.y.z` version
+** update `:cloudflow-examples-version:` to the new `x.y.z` version
+
+* In `docs/shared-content-source/docs/modules/ROOT/partials/include.adoc` 
+** update `:cloudflow-version:` to the new  `x.y.z` version
+** update `:cloudflow-examples-version:` to the new `x.y.z` version
+
+Note that internally, we use the actual version number to name our _modules_, while only the external-facing `docs-source` is called `current` to comply with the Lightbend conventions.
+
+
+==== Demoting the previous release to 
+
+Now that we have a new `current` version, we need to demote the previous release to use its `x.y.z` release (instead of `current`)
+
+In the branch that corresponds to the release, let's call it `x.y.z-docs`, make the following update:
+
+* In `docs/docs-source/docs/antora.yml`, update `version: current` to `version: x.y.z`
+
+Note that all internal versions should match this version already.
+
+==== Adding the new branch to the Antora build list
+
+At this point, we should have a new `x.y.z-docs` branch that corresponds to `current` and an updated `x.w.v` branch with the renamed `current` version to its explicit `x.w.v` version.
+At this point, in the `master` branch, we must add the new branch to the Antora `site.yaml` which informs the branches used when building and publishing the documentation.
+
+In `docs/docs-source/site.yml`, find the line that list the branches included in the build. 
+It looks like this:
+```
+ branches: [master, v1.3.3-docs]  # versioned content - add branches here
+```
+Then follow the advice in the comment :-)
+The updated version would look like:
+
+```
+ branches: [master, vx.y.z-docs, v1.3.3-docs]  # versioned content - add branches here
+```
+After merging this update to `master`, the CI script will pick up the new branch, generate the corresponding docs, and publish it to the external site. 
+
 
 == Building the guide locally
 
@@ -15,10 +105,10 @@ Building the Antora site is managed by the `Makefile` at the root of the project
 
 A few selected commands:
 
-* `make techhub-html` - build the antora site.
-* `make techhub-html-author-mode` - build the antora site in author mode, with the `todo` and `reviewer` attributes rendered in the output.
+* `make html` - build the antora site.
+* `make html-author-mode` - build the antora site in author mode, with the `todo` and `reviewer` attributes rendered in the output.
 
-The result of the build is available in the `techhub/build/site` directory.
+The result of the build is available in the `target/staging/` directory.
 
 == Creating new pages
 To create a new page, start your file with a title and select from the following attributes. You only need to use the *supergroup* attribute for the type of examples a page will include. The tabbed example boxes are specific to the Lightbend skin that we build against. (https://github.com/lightbend/antora-ui-lightbend-theme/).
