@@ -19,12 +19,15 @@ For example, for `v1.3.3` of the documentation, there's a (`v1.3.3-docs`)[https:
 
 === Version numbers
 
-As per internal Lightbend convention, the latest released version is called 'current' and is the default URL for the documentation landing page. For Cloudflow, the landing URL is: https://cloudflow.io/docs/current/index.html
+As per internal Lightbend convention, the latest released version is called 'current' and is the default URL for the documentation landing page. 
+For Cloudflow, the landing URL is: https://cloudflow.io/docs/current/index.html
 
-In Cloudflow, we call `dev` the version in the making. That is, the _latest-greatest_ changes that aren't released yet.
+In Cloudflow, we call `dev` the version in the making. 
+That is, the _latest-greatest_ changes that aren't released yet.
 The corresponding URL mapping is: https://cloudflow.io/docs/dev/index.html
 
-Any other version, is addressed by its explicit version number. For example: https://cloudflow.io/docs/v1.3.2/index.html
+Any other version, is addressed by its explicit version number. 
+For example: https://cloudflow.io/docs/v1.3.4/index.html
 
 In general, the versions produced by our documentation process follow the current mapping to names and git branches:
 
@@ -32,32 +35,32 @@ In general, the versions produced by our documentation process follow the curren
 |===
 |git branch | name in URL | name in docs   |
 | master    | dev         | x.y.z-SNAPSHOT |
-| x.y.z-docs for the most recent x.y.z release | current | vx.y.z |
-| x.y.z-docs for older releases | vx.y.z | vx.y.z |
+| x.y.z-docs for the most recent x.y.z release | current | x.y.z |
+| x.y.z-docs for older releases | x.y.z | x.y.z |
 |=== 
 
 
 === Adding a new version
 
-Adding a version of the documentation require for a new release requires two steps:
+Adding a version of the documentation for a new release requires three steps:
 
 . Create a branch for the release and make it the `current` version by updating version references.
-. Update the previous release to demote it from `current` to its corresponding `vx.y.z` version.
+. Update the previous release to demote it from `current` to its corresponding `x.y.z` version.
 . Update the Antora configuration with the new branches.
 
 ==== Creating a new `current` version
 
 As we saw in the previous section, the latest development is called `dev` in the documentation. 
 When we create a new release, we need to promote `dev` to `current`.
-We do that by creating a new `x.y.z-docs` branch and applying the following changes in the branch:
+We do that by creating a new `x.y.z-docs` branch from the released version and applying the following changes in that branch:
 
-First, name the documentation modules with their corresponding version:
+Update the documentation modules with their corresponding version:
 
 * In `docs/docs-source/docs/antora.yml`, update `version: dev` to `version: current`
 * In `docs/shared-content-source/docs/antora.yml`, update `version: x.y.z-SNAPSHOT` to `version: x.y.z`
 * In `examples/snippets/antora.yml`, update  `version: x.y.z-SNAPSHOT` to `version: x.y.z`
 
-Then, change the internal version references to the new versions:
+Change the internal version references to the new versions:
 
 * In `docs/docs-source/docs/modules/ROOT/partials/include.adoc` 
 ** update `:cloudflow-version:` to the new  `x.y.z` version
@@ -70,15 +73,17 @@ Then, change the internal version references to the new versions:
 Note that internally, we use the actual version number to name our _modules_, while only the external-facing `docs-source` is called `current` to comply with the Lightbend conventions.
 
 
-==== Demoting the previous release to 
+==== Demoting the previous release 
 
 Now that we have a new `current` version, we need to demote the previous release to use its `x.y.z` release (instead of `current`)
 
-In the branch that corresponds to the release, let's call it `x.y.z-docs`, make the following update:
+In the branch that corresponds to the previous release, let's call it `x.w.v-docs`, make the following update:
 
-* In `docs/docs-source/docs/antora.yml`, update `version: current` to `version: x.y.z`
+* In `docs/docs-source/docs/antora.yml`, update `version: current` to `version: x.w.v`
 
-Note that all internal versions should match this version already.
+Commit these changes to the `x.w.v-docs` branch.
+
+NOTE: All internal versions should already match this version.
 
 ==== Adding the new branch to the Antora build list
 
@@ -88,13 +93,14 @@ At this point, in the `master` branch, we must add the new branch to the Antora 
 In `docs/docs-source/site.yml`, find the line that list the branches included in the build. 
 It looks like this:
 ```
- branches: [master, v1.3.3-docs]  # versioned content - add branches here
+ branches: [master, vx.w.v-docs]  # versioned content - add branches here
 ```
-Then follow the advice in the comment :-)
+Then follow the advice in the comment and add the new `vx.y.z-docs` branch to the list :-)
+
 The updated version would look like:
 
 ```
- branches: [master, vx.y.z-docs, v1.3.3-docs]  # versioned content - add branches here
+ branches: [master, vx.y.z-docs, vx.w.v-docs]  # versioned content - add branches here
 ```
 After merging this update to `master`, the CI script will pick up the new branch, generate the corresponding docs, and publish it to the external site. 
 
