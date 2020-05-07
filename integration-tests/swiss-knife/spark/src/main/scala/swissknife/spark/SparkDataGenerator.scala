@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package swissknife
+package swissknife.spark
 
 import java.sql.Timestamp
 
@@ -26,6 +26,8 @@ import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.functions._
 
 import cloudflow.spark.sql.SQLImplicits._
+
+import swissknife.data.Data
 
 case class Rate(timestamp: Timestamp, value: Long)
 

@@ -1,5 +1,5 @@
 {
-    "namespace": "swissknife",
+    "namespace": "swissknife.data",
     "type": "record",
     "name": "Data",
     "fields":[

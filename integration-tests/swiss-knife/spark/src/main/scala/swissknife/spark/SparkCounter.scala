@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package swissknife
+package swissknife.spark
 
 import cloudflow.streamlets.StreamletShape
 
@@ -26,6 +26,8 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.TimestampType
 import cloudflow.spark.sql.SQLImplicits._
 import org.apache.spark.sql.streaming.OutputMode
+
+import swissknife.data.Data
 
 class SparkCounter extends SparkStreamlet {
 

@@ -17,34 +17,33 @@ lazy val swissKnife = (project in file("."))
     .aggregate(
       app,
       datamodel,
+      flink,
       akka,
-      spark,
-      flink
+      spark
+      
     )
-lazy val app = (project in file("app"))
+lazy val app = (project in file("./app"))
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
-  .dependsOn(datamodel, akka, spark, flink)
-
-
+  
 lazy val datamodel = (project in file("datamodel"))
   .enablePlugins(CloudflowLibraryPlugin)
   .settings(commonSettings)
 
-lazy val akka = (project in file("akka"))
+lazy val akka = (project in file("./akka"))
   .enablePlugins(CloudflowAkkaPlugin)
   .settings(commonSettings)
   .dependsOn(datamodel)
 
-lazy val spark = (project in file("spark"))
+lazy val spark = (project in file("./spark"))
   .enablePlugins(CloudflowSparkPlugin)
   .settings(commonSettings)  
   .dependsOn(datamodel)
 
-lazy val flink = (project in file("flink"))
+lazy val flink = (project in file("./flink"))
   .enablePlugins(CloudflowFlinkPlugin)
   .settings(commonSettings)
-  dependsOn(datamodel)
+  .dependsOn(datamodel)
 
 lazy val commonSettings = Seq(
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
