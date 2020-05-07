@@ -67,21 +67,21 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
     schemaFormats := Seq(SchemaFormat.Avro),
     schemaCodeGenerator := SchemaCodeGenerator.Scala,
     schemaPaths := Map(SchemaFormat.Avro -> "src/main/avro"),
-    Compile / avroGenerate := Def.taskDyn {
-          val default    = (avroGenerate in Compile).taskValue
+    AvroConfig / generate := Def.taskDyn {
+          val default    = (generate in AvroConfig).taskValue
           val schemaLang = schemaCodeGenerator.value
           schemaLang match {
             case SchemaCodeGenerator.Java  ⇒ Def.task(default.value)
             case SchemaCodeGenerator.Scala ⇒ Def.task { Seq.empty[File] }
           }
         }.value,
-    avroStringType := "String",                                                                    // sbt-avro `String` type name
-    avroSource := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),                      // sbt-avro source directory
+    AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
+    AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
     Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
     Compile / sourceGenerators := {
       val schemaLang = schemaCodeGenerator.value
       schemaLang match {
-        case SchemaCodeGenerator.Java  ⇒ Seq((avroGenerate in Compile).taskValue)
+        case SchemaCodeGenerator.Java  ⇒ Seq((generate in AvroConfig).taskValue)
         case SchemaCodeGenerator.Scala ⇒ Seq((avroScalaGenerateSpecific in Compile).taskValue)
       }
     }
