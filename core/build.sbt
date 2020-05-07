@@ -167,7 +167,7 @@ lazy val spark =
     .dependsOn(streamlets)
     .settings(
       scalafmtOnCompile := true,
-      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Seq(
             AkkaSlf4j,
@@ -194,7 +194,7 @@ lazy val sparkTestkit =
     .dependsOn(spark)
     .settings(
       scalafmtOnCompile := true,
-      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
 
@@ -209,7 +209,7 @@ lazy val sparkTests =
     .dependsOn(sparkTestkit)
     .settings(
       scalafmtOnCompile := true,
-      // avro 1.9.2 pulls in an incompatible version of jackson-databind
+      // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
             Logback % Test,
@@ -321,6 +321,7 @@ lazy val plugin =
             AkkaHttp,
             AkkaHttpSprayJson,
             AkkaStream,
+            AvroCompiler,
             FastClasspathScanner,
             Logback % Test,
             ScalaTest
