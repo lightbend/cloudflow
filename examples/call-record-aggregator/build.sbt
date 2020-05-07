@@ -26,6 +26,7 @@ lazy val callRecordPipeline = appModule("call-record-pipeline")
   .settings(
     name := "call-record-aggregator"
   )
+  .dependsOn(akkaCdrIngestor, akkaJavaAggregationOutput, sparkAggregation)
 //end::docs-CloudflowApplicationPlugin-example[]
 
 lazy val datamodel = appModule("datamodel")
@@ -36,7 +37,7 @@ lazy val akkaCdrIngestor= appModule("akka-cdr-ingestor")
     .settings(
       commonSettings,
       libraryDependencies ++= Seq(
-        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.11",
+        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.10",
         "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
         "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
       )
@@ -48,7 +49,7 @@ lazy val akkaJavaAggregationOutput= appModule("akka-java-aggregation-output")
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.11",
+      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.10",
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )
