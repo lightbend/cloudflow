@@ -37,6 +37,7 @@ lazy val root =
       flink,
       flinkTestkit,
       flinkTests,
+      localRunner,
       runner,
       blueprint,
       plugin,
@@ -153,8 +154,8 @@ lazy val akkastreamTests =
       libraryDependencies ++= Vector(
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
-            EmbeddedKafka % Test, 
-            Logback % Test,
+            EmbeddedKafka % Test,
+            Logback       % Test,
             ScalaTest,
             Junit
           )
@@ -339,14 +340,12 @@ lazy val runner =
   cloudflowModule("cloudflow-runner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     //TODO removed events for Flink Akka 2.6 conflict, will need to find a way to put it back.
-    .dependsOn(streamlets, blueprint, //events
+    .dependsOn(streamlets,
+               blueprint  //events
     )
     .settings(
       scalafmtOnCompile := true,
-      libraryDependencies ++= Vector(
-            Ficus,
-            EmbeddedKafka
-          )
+      libraryDependencies += Ficus
     )
     .settings(
       artifactName in (Compile, packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
@@ -368,6 +367,36 @@ lazy val runner =
             }
           ),
       buildInfoPackage := "cloudflow.runner"
+    )
+
+lazy val localRunner =
+  cloudflowModule("cloudflow-local-runner")
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .dependsOn(streamlets, blueprint)
+    .settings(
+      scalafmtOnCompile := true,
+      libraryDependencies ++= Vector(
+            Ficus,
+            EmbeddedKafka
+          )
+    )
+    .settings(
+      crossPaths := false
+    )
+    .settings(
+      buildInfoKeys := Seq[BuildInfoKey](
+            name,
+            version,
+            scalaVersion,
+            sbtVersion,
+            BuildInfoKey.action("buildTime") {
+              java.time.Instant.now().toString
+            },
+            BuildInfoKey.action("buildUser") {
+              sys.props.getOrElse("user.name", "unknown")
+            }
+          ),
+      buildInfoPackage := "cloudflow.localrunner"
     )
 
 lazy val operator =

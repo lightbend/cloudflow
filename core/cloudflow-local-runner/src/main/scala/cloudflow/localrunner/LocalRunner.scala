@@ -32,7 +32,7 @@ import spray.json._
 
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
-import cloudflow.runner.RunnerOps._
+import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
 import com.typesafe.config._
 import scala.concurrent.ExecutionContext.Implicits.global
