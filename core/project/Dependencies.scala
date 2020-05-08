@@ -3,7 +3,7 @@ import sbt._
 // format: OFF
 object Version {
   val Akka         = "2.6.5"
-  val AkkaHttp     = "10.1.10"
+  val AkkaHttp     = "10.1.11"
   val AkkaMgmt     = "1.0.6"
   val AlpakkaKafka = "2.0.2"
   val Scala        = "2.12.9"
