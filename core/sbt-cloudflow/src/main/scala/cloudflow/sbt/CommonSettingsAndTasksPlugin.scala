@@ -66,7 +66,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       publishArtifact in (Compile, packageSrc) := false,
       libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
       libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
-      //TODO move all of this to schema plugins, possibly specific for runtime.
+      // TODO move all of this to schema plugins, possibly specific for runtime. also needs some cleanup.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
       schemaPaths := Map(
             SchemaFormat.Avro  -> "src/main/avro",
@@ -88,11 +88,12 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
               case SchemaCodeGenerator.Scala ⇒ Def.task { Seq.empty[File] }
             }
           }.value,
-      AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro",                    // sbt-avro generated java source
-      AvroConfig / stringType := "String",                                                        // sbt-avro `String` type name
-      AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avro source directory
-      Compile / avroSourceDirectories += baseDirectory.value / schemaPaths
-                .value(SchemaFormat.Avro),                                                // sbt-avrohugger source directory
+      AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro", // sbt-avro generated java source
+      AvroConfig / stringType := "String",                                     // sbt-avro `String` type name
+      AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value
+                .getOrElse(SchemaFormat.Avro, "src/main/avro"), // sbt-avro source directory
+      Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value
+                .getOrElse(SchemaFormat.Avro, "src/main/avro"),                           // sbt-avrohugger source directory
       Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro", // sbt-avrohugger generated scala source
       Compile / sourceGenerators := {
         val generators = (sourceGenerators in Compile).value
@@ -106,7 +107,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       }
     ) ++ inConfig(Compile)(
           Seq(
-            PB.protoSources += sourceDirectory.value / schemaPaths.value(SchemaFormat.Proto)
+            PB.protoSources += sourceDirectory.value / schemaPaths.value.getOrElse(SchemaFormat.Proto, "src/main/protobuf")
           )
         )
 
