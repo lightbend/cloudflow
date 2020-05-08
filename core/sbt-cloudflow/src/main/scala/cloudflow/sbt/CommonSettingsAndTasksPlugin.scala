@@ -66,7 +66,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       publishArtifact in (Compile, packageSrc) := false,
       libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
       libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
-      // TODO move all of this to schema plugins, possibly specific for runtime. also needs some cleanup.
+      // TODO move all of this to schema plugins, possibly specific for runtime (when specific versions of libraries are needed, like Spark and Avro 1.8.2)
+      // Also needs some cleanup.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
       // TODO change this to a Seq of settings, a Map is not very useful.
       schemaPaths := Map(
