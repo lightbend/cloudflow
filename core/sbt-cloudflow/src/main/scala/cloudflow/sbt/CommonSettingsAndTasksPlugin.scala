@@ -46,7 +46,6 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
   /** Set default values for keys. */
-
   override def projectSettings =
     Seq(
       // Cloudflow is released with Ivy patterns - bintray is used for internal release
@@ -89,11 +88,12 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
               case SchemaCodeGenerator.Scala ⇒ Def.task { Seq.empty[File] }
             }
           }.value,
-      AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro",                       // sbt-avro generated java source
-      AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
-      AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
-      Compile / avroSpecificSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
-      Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro",                    // sbt-avrohugger generated scala source
+      AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro",                    // sbt-avro generated java source
+      AvroConfig / stringType := "String",                                                        // sbt-avro `String` type name
+      AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avro source directory
+      Compile / avroSpecificSourceDirectories += baseDirectory.value / schemaPaths
+                .value(SchemaFormat.Avro),                                                // sbt-avrohugger source directory
+      Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro", // sbt-avrohugger generated scala source
       Compile / sourceGenerators := {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
