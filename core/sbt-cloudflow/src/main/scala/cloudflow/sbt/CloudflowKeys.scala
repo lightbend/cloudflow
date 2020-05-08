@@ -36,12 +36,12 @@ trait CloudflowSettingKeys {
 
   object SchemaFormat {
     sealed trait Format
-    case object Avro extends Format
+    case object Avro  extends Format
+    case object Proto extends Format
   }
 
   val cloudflowDockerParentImage = settingKey[String]("The parent Docker image to use for Cloudflow images.")
   val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
-  val schemaFormats              = settingKey[Seq[SchemaFormat.Format]]("A list of schema formats to generate source code for.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
   val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")

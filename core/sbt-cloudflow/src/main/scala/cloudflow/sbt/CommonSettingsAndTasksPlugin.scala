@@ -20,19 +20,22 @@ import java.io.File
 
 import sbt.Keys._
 import sbt._
-import sbtavro.SbtAvro.autoImport._
-import sbtavrohugger.SbtAvrohugger.autoImport._
 
 /**
  * SBT Plugin that centralizes the use of common keys for Cloudflow projects.
  */
 object CommonSettingsAndTasksPlugin extends AutoPlugin {
+  import sbtavro.SbtAvro.autoImport._
+  import sbtavrohugger.SbtAvrohugger.autoImport._
+  import akka.grpc.sbt._
+  import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
+  import sbtprotoc.ProtocPlugin.autoImport._
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
     BuildNumberPlugin &&
       sbtavrohugger.SbtAvrohugger &&
-      sbtavro.SbtAvro
+      sbtavro.SbtAvro && AkkaGrpcPlugin
 
   /** Make public keys available. */
   object autoImport extends CloudflowKeys
@@ -45,45 +48,61 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
   /** Set default values for keys. */
-  override def projectSettings = Seq(
-    // TODO: currently required for our custom build of Akka. Remove when our features have been merged.
-    resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
-    // Cloudflow is released with Ivy patterns - bintray is used for internal release
-    resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
-    cloudflowDockerImageName := Def.task {
-          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
-        }.value,
-    cloudflowWorkDir := (ThisBuild / baseDirectory).value / "target" / ".cloudflow",
-    imageNamesByProject := Def.taskDyn {
-          val buildNumber = cloudflowBuildNumber.value.buildNumber
-          Def.task {
-            buildStructure.value.allProjectRefs
-              .map(_.project)
-              .foldLeft(Map.empty[String, DockerImageName]) { (a, e) =>
-                a + (e.toLowerCase -> DockerImageName(e.toLowerCase, buildNumber))
-              }
-          }
-        }.value,
-    publishArtifact in (Compile, packageDoc) := false,
-    publishArtifact in (Compile, packageSrc) := false,
-    libraryDependencies += "com.twitter" %% "bijection-avro" % "0.9.6",
-    schemaFormats := Seq(SchemaFormat.Avro),
-    schemaCodeGenerator := SchemaCodeGenerator.Scala,
-    schemaPaths := Map(SchemaFormat.Avro -> "src/main/avro"),
-    AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
-    AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
-    Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
-    Compile / sourceGenerators := {
-      val generators = (sourceGenerators in Compile).value
-      val schemaLang = schemaCodeGenerator.value
-      val clean      = filterGeneratorTask(generators, generate, AvroConfig)
+  override def projectSettings =
+    Seq(
+      // TODO: currently required for our custom build of Akka. Remove when our features have been merged.
+      resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
+      // Cloudflow is released with Ivy patterns - bintray is used for internal release
+      resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
+      cloudflowDockerImageName := Def.task {
+            Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+          }.value,
+      cloudflowWorkDir := (ThisBuild / baseDirectory).value / "target" / ".cloudflow",
+      imageNamesByProject := Def.taskDyn {
+            val buildNumber = cloudflowBuildNumber.value.buildNumber
+            Def.task {
+              buildStructure.value.allProjectRefs
+                .map(_.project)
+                .foldLeft(Map.empty[String, DockerImageName]) { (a, e) =>
+                  a + (e.toLowerCase -> DockerImageName(e.toLowerCase, buildNumber))
+                }
+            }
+          }.value,
+      publishArtifact in (Compile, packageDoc) := false,
+      publishArtifact in (Compile, packageSrc) := false,
+      libraryDependencies += "com.twitter" %% "bijection-avro" % "0.9.6",
+      schemaCodeGenerator := SchemaCodeGenerator.Scala,
+      schemaPaths := Map(
+            SchemaFormat.Avro  -> "src/main/avro",
+            SchemaFormat.Proto -> "src/main/protobuf"
+          ),
+      akkaGrpcGeneratedLanguages := {
+        val schemaLang = schemaCodeGenerator.value
+        schemaLang match {
+          case SchemaCodeGenerator.Java  ⇒ Seq(AkkaGrpc.Java)
+          case SchemaCodeGenerator.Scala ⇒ Seq(AkkaGrpc.Scala)
+        }
+      },
+      AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro",                       // sbt-avro generated java source
+      AvroConfig / stringType := "String",                                                           // sbt-avro `String` type name
+      AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro),    // sbt-avro source directory
+      Compile / avroSourceDirectories += baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avrohugger source directory
+      Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro",            // sbt-avrohugger generated scala source
+      Compile / sourceGenerators := {
+        val generators = (sourceGenerators in Compile).value
+        val schemaLang = schemaCodeGenerator.value
+        val clean      = filterGeneratorTask(generators, generate, AvroConfig)
 
-      schemaLang match {
-        case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
-        case SchemaCodeGenerator.Scala ⇒ clean :+ (avroScalaGenerateSpecific in Compile).taskValue
+        schemaLang match {
+          case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
+          case SchemaCodeGenerator.Scala ⇒ clean :+ (avroScalaGenerateSpecific in Compile).taskValue
+        }
       }
-    }
-  )
+    ) ++ inConfig(Compile)(
+          Seq(
+            PB.protoSources += sourceDirectory.value / schemaPaths.value(SchemaFormat.Proto)
+          )
+        )
 
   // ideally we could use `-=` to simply remove the Java Avro generator added by sbt-avro, but that's not possible
   // because sourceGenerator's are a list of SBT Task's that have no equality semantics.
