@@ -53,6 +53,7 @@ lazy val streamlets =
             Ficus,
             Avro,
             Bijection,
+            ScalaPbRuntime,
             ScalaTest
           )
     )
@@ -85,6 +86,8 @@ lazy val akkastream =
             AkkaStreamKafka,
             AkkaCluster,
             AkkaManagement,
+            AkkaHttp,
+            AkkaHttpSprayJson,
             AkkaClusterBootstrap,
             AkkaDiscovery,
             AkkaDiscoveryK8,
@@ -158,6 +161,11 @@ lazy val akkastreamTests =
     )
     .settings(
       javacOptions += "-Xlint:deprecation",
+      inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
+      PB.targets in Compile := Seq(
+        scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
+      ),
+      PB.protoSources in Compile := Seq(baseDirectory.value / "src/test/protobuf"),
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
 
@@ -289,7 +297,8 @@ lazy val blueprint =
             SprayJson,
             Logback % Test,
             Avro4sTest,
-            ScalaTest
+            ScalaTest,
+            ScalaPbRuntime,
           ),
       publishArtifact in Test := true
     )
@@ -311,17 +320,16 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.5.0"),
-      addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
-      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger"      % "2.0.0-RC18"),
-      addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent"       % "0.1.5"),
-      addSbtPlugin("de.heikoseeberger" % "sbt-header"          % "5.2.0"),
+      addSbtPlugin("se.marcuslonnberg"       % "sbt-docker"          % "1.5.0"),
+      addSbtPlugin("com.typesafe.sbt"        % "sbt-native-packager" % "1.3.25"),
+      addSbtPlugin("com.cavorite"            % "sbt-avro-1-8"        % "1.1.9"),
+      addSbtPlugin("com.thesamet"            % "sbt-protoc"          % "0.99.31"),
+      addSbtPlugin("com.julianpeeters"       % "sbt-avrohugger"      % "2.0.0-RC18"),
+      addSbtPlugin("com.lightbend.sbt"       % "sbt-javaagent"       % "0.1.5"),
+      addSbtPlugin("de.heikoseeberger"       % "sbt-header"          % "5.2.0"),
       libraryDependencies ++= Vector(
-            AkkaHttp,
-            AkkaHttpSprayJson,
-            AkkaStream,
             FastClasspathScanner,
+            ScalaPbCompilerPlugin,
             Logback % Test,
             ScalaTest
           )

@@ -59,7 +59,10 @@ lazy val datamodel = (project in file("./my-cloudflow-library"))
   .enablePlugins(CloudflowLibraryPlugin)
   .settings(
     schemaCodeGenerator := SchemaCodeGenerator.Java,
-    schemaPaths := Map(SchemaFormat.Avro -> "src/main/resources/avroschemas")
+    schemaPaths := Map(
+      SchemaFormat.Avro -> "src/main/resources/avroschemas",
+      SchemaFormat.Proto -> "src/main/resources/protobuf"
+    )
   )
 //end::avro-config[]
 

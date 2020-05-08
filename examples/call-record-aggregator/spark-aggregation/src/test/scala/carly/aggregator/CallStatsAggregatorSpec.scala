@@ -44,7 +44,7 @@ class CallStatsAggregatorSpec extends SparkScalaTestSupport with OptionValues {
           s"user-1",
           s"user-2",
           (if (i % 2 == 0) "incoming" else "outgoing"),
-          i*10,
+          i * 10,
           ts
         )
       }
@@ -58,7 +58,7 @@ class CallStatsAggregatorSpec extends SparkScalaTestSupport with OptionValues {
 
       // assert
       val aggregate = results.headOption.value
-      aggregate.totalCallDuration must be (550)
+      aggregate.totalCallDuration must be(550)
       aggregate.avgCallDuration must (be > 54.9 and be < 55.1)
       run.totalRows must be > 0L
     }
