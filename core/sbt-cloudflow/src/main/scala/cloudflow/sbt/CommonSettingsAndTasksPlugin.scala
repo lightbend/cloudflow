@@ -66,8 +66,9 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
           }.value,
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
-      libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
-      libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
+      libraryDependencies += "com.twitter"       %% "bijection-avro" % "0.9.7",
+      libraryDependencies += "org.apache.avro"   %  "avro"           % "1.8.2",
+      libraryDependencies += "com.typesafe.akka" %% "akka-discovery" % "2.6.5",
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
       schemaPaths := Map(
             SchemaFormat.Avro  -> "src/main/avro",
