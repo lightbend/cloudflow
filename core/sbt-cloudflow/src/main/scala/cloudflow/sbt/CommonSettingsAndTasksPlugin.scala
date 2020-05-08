@@ -40,8 +40,6 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   import autoImport._
 
-  // common definitions
-  final val CloudflowLocalConfigFile = ".lightbend/cloudflow/pipectl.json"
   // used for internal release
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
 
