@@ -86,6 +86,8 @@ lazy val akkastream =
             AkkaStreamKafka,
             AkkaCluster,
             AkkaManagement,
+            AkkaHttp,
+            AkkaHttpSprayJson,
             AkkaClusterBootstrap,
             AkkaDiscovery,
             AkkaDiscoveryK8,

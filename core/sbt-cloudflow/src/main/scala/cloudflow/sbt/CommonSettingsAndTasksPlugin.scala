@@ -68,6 +68,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
       // TODO move all of this to schema plugins, possibly specific for runtime. also needs some cleanup.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
+      // TODO change this to a Seq of settings, a Map is not very useful.
       schemaPaths := Map(
             SchemaFormat.Avro  -> "src/main/avro",
             SchemaFormat.Proto -> "src/main/protobuf"
