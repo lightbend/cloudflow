@@ -152,11 +152,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
       val out = testkit.outletAsTap(ingress.out)
 
-      testkit.run(ingress,
-                  out,
-                  () ⇒
-                    // TODO leave out key and need for partitioner when using probes.
-                    out.probe.receiveN(3) mustBe data.map(d ⇒ ingress.out.partitioner(d) -> d))
+      testkit.run(ingress, out, () ⇒ out.probe.receiveN(3) mustBe data.map(d ⇒ ingress.out.partitioner(d) -> d))
 
       out.probe.expectMsg(Completed)
     }
@@ -179,12 +175,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       val in     = testkit.inletFromSource(proc.in, source)
       val out    = testkit.outletAsTap(proc.out)
 
-      testkit.run(proc,
-                  in,
-                  out,
-                  () ⇒
-                    // TODO leave out key and need for partitioner when using probes.
-                    out.probe.receiveN(3) mustBe pdata.map(d ⇒ proc.out.partitioner(d) -> d))
+      testkit.run(proc, in, out, () ⇒ out.probe.receiveN(3) mustBe pdata.map(d ⇒ proc.out.partitioner(d) -> d))
 
       out.probe.expectMsg(Completed)
     }
