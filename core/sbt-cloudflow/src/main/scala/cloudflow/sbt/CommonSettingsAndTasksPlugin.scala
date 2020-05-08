@@ -18,6 +18,7 @@ package cloudflow.sbt
 
 import sbt.Keys._
 import sbt._
+import scalapb.ScalaPbCodeGenerator
 
 /**
  * SBT Plugin that centralizes the use of common keys for Cloudflow projects.
@@ -25,17 +26,14 @@ import sbt._
 object CommonSettingsAndTasksPlugin extends AutoPlugin {
   import sbtavro.SbtAvro.autoImport._
   import sbtavrohugger.SbtAvrohugger.autoImport._
-  import akka.grpc.sbt._
-  import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
   import sbtprotoc.ProtocPlugin.autoImport._
-  val AkkaVersion     = "2.6.5"
-  val AkkaHttpVersion = "10.1.11"
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
     BuildNumberPlugin &&
       sbtavrohugger.SbtAvrohugger &&
-      sbtavro.SbtAvro && AkkaGrpcPlugin
+      sbtavro.SbtAvro &&
+      sbtprotoc.ProtocPlugin
 
   /** Make public keys available. */
   object autoImport extends CloudflowKeys
@@ -68,23 +66,20 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
           }.value,
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
-      libraryDependencies += "com.twitter"       %% "bijection-avro" % "0.9.7",
-      libraryDependencies += "org.apache.avro"   % "avro"            % "1.8.2",
-      libraryDependencies += "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
-      libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % AkkaVersion,
-      libraryDependencies += "com.typesafe.akka" %% "akka-http"      % AkkaHttpVersion,
-      libraryDependencies += "com.typesafe.akka" %% "akka-slf4j"     % AkkaVersion,
-      libraryDependencies += "com.typesafe.akka" %% "akka-protobuf"  % AkkaVersion,
+      libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
+      libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
+      //TODO move all of this to schema plugins, possibly specific for runtime.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
       schemaPaths := Map(
             SchemaFormat.Avro  -> "src/main/avro",
             SchemaFormat.Proto -> "src/main/protobuf"
           ),
-      akkaGrpcGeneratedLanguages := {
+      PB.targets in Compile := {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
-          case SchemaCodeGenerator.Java  ⇒ Seq(AkkaGrpc.Java)
-          case SchemaCodeGenerator.Scala ⇒ Seq(AkkaGrpc.Scala)
+          case SchemaCodeGenerator.Java ⇒ Seq(PB.gens.java -> (sourceManaged in Compile).value)
+          case SchemaCodeGenerator.Scala =>
+            Seq(scalaPbTarget((crossTarget in Compile).value / "scalapb"))
         }
       },
       AvroConfig / generate := Def.taskDyn {
@@ -130,6 +125,15 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
         case _                                          ⇒ false
       }
     }
+  }
+
+  def scalaPbTarget(targetPath: File) = {
+    def ScalaGenerator: protocbridge.Generator = protocbridge.JvmGenerator("scala", ScalaPbCodeGenerator)
+    protocbridge.Target(
+      ScalaGenerator,
+      targetPath,
+      Seq("flat_package")
+    )
   }
 }
 

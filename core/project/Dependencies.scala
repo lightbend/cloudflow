@@ -51,6 +51,7 @@ object Library {
   val SparkStreaming        = "org.apache.spark"           %% "spark-streaming"      % Version.Spark
   val ScalaTestUnscoped     = "org.scalatest"              %% "scalatest"            % "3.0.8"
   val ScalaPbRuntime        = "com.thesamet.scalapb"       %% "scalapb-runtime"      % scalapb.compiler.Version.scalapbVersion
+  val ScalaPbCompilerPlugin = "com.thesamet.scalapb"       %% "compilerplugin"       % scalapb.compiler.Version.scalapbVersion
 
   val Flink                  = "org.apache.flink"      %% "flink-scala"              % Version.Flink
   val FlinkStreaming         = "org.apache.flink"      %% "flink-streaming-scala"    % Version.Flink
