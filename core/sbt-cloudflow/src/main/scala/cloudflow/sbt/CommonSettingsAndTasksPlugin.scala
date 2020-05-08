@@ -28,6 +28,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   import akka.grpc.sbt._
   import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
   import sbtprotoc.ProtocPlugin.autoImport._
+  val AkkaVersion     = "2.6.5"
+  val AkkaHttpVersion = "10.1.11"
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
@@ -68,7 +70,11 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       publishArtifact in (Compile, packageSrc) := false,
       libraryDependencies += "com.twitter"       %% "bijection-avro" % "0.9.7",
       libraryDependencies += "org.apache.avro"   % "avro"            % "1.8.2",
-      libraryDependencies += "com.typesafe.akka" %% "akka-discovery" % "2.6.5",
+      libraryDependencies += "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
+      libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % AkkaVersion,
+      libraryDependencies += "com.typesafe.akka" %% "akka-http"      % AkkaHttpVersion,
+      libraryDependencies += "com.typesafe.akka" %% "akka-slf4j"     % AkkaVersion,
+      libraryDependencies += "com.typesafe.akka" %% "akka-protobuf"  % AkkaVersion,
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
       schemaPaths := Map(
             SchemaFormat.Avro  -> "src/main/avro",
