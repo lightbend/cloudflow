@@ -326,9 +326,6 @@ lazy val plugin =
       addSbtPlugin("com.lightbend.sbt"       % "sbt-javaagent"       % "0.1.5"),
       addSbtPlugin("de.heikoseeberger"       % "sbt-header"          % "5.2.0"),
       libraryDependencies ++= Vector(
-            AkkaHttp,
-            AkkaHttpSprayJson,
-            AkkaStream,
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
             Logback % Test,
