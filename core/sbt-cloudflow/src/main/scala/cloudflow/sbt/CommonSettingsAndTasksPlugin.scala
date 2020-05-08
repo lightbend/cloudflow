@@ -92,14 +92,17 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro",                    // sbt-avro generated java source
       AvroConfig / stringType := "String",                                                        // sbt-avro `String` type name
       AvroConfig / sourceDirectory := baseDirectory.value / schemaPaths.value(SchemaFormat.Avro), // sbt-avro source directory
-      Compile / avroSpecificSourceDirectories += baseDirectory.value / schemaPaths
+      Compile / avroSourceDirectories += baseDirectory.value / schemaPaths
                 .value(SchemaFormat.Avro),                                                // sbt-avrohugger source directory
       Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro", // sbt-avrohugger generated scala source
-      Compile / sourceGenerators ++= {
+      Compile / sourceGenerators := {
+        val generators = (sourceGenerators in Compile).value
         val schemaLang = schemaCodeGenerator.value
+        val clean      = filterGeneratorTask(generators, generate, AvroConfig)
+
         schemaLang match {
-          case SchemaCodeGenerator.Java  ⇒ Seq((generate in AvroConfig).taskValue)
-          case SchemaCodeGenerator.Scala ⇒ Seq((avroScalaGenerateSpecific in Compile).taskValue)
+          case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
+          case SchemaCodeGenerator.Scala ⇒ clean :+ (avroScalaGenerateSpecific in Compile).taskValue
         }
       }
     ) ++ inConfig(Compile)(
@@ -107,6 +110,21 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
             PB.protoSources += sourceDirectory.value / schemaPaths.value(SchemaFormat.Proto)
           )
         )
+
+  // ideally we could use `-=` to simply remove the Java Avro generator added by sbt-avro, but that's not possible
+  // because sourceGenerator's are a list of SBT Task's that have no equality semantics.
+  def filterGeneratorTask(generators: Seq[Task[Seq[File]]], taskKey: TaskKey[_], config: Configuration) = {
+    def toScopedKey(entry: AttributeEntry[_]) =
+      for (k ← Option(entry.value.asInstanceOf[ScopedKey[_]]))
+        yield (k.key, k.scope.config)
+
+    generators.filterNot { task ⇒
+      task.info.attributes.entries.toList.map(toScopedKey).exists {
+        case Some((key, Select(ConfigKey(configName)))) ⇒ taskKey.key == key && configName == config.name
+        case _                                          ⇒ false
+      }
+    }
+  }
 }
 
 trait CloudflowKeys  extends CloudflowSettingKeys with CloudflowTaskKeys
