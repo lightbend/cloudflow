@@ -94,7 +94,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       Compile / avroSpecificSourceDirectories += baseDirectory.value / schemaPaths
                 .value(SchemaFormat.Avro),                                                // sbt-avrohugger source directory
       Compile / avroSpecificScalaSource := (crossTarget in Compile).value / "scala_avro", // sbt-avrohugger generated scala source
-      Compile / sourceGenerators := {
+      Compile / sourceGenerators ++= {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
           case SchemaCodeGenerator.Java  ⇒ Seq((generate in AvroConfig).taskValue)
