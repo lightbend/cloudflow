@@ -341,7 +341,7 @@ lazy val runner =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     //TODO removed events for Flink Akka 2.6 conflict, will need to find a way to put it back.
     .dependsOn(streamlets,
-               blueprint  //events
+               blueprint //events
     )
     .settings(
       scalafmtOnCompile := true,
@@ -370,7 +370,7 @@ lazy val runner =
     )
 
 lazy val localRunner =
-  cloudflowModule("cloudflow-local-runner")
+  cloudflowModule("cloudflow-localrunner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .dependsOn(streamlets, blueprint)
     .settings(
@@ -379,9 +379,6 @@ lazy val localRunner =
             Ficus,
             EmbeddedKafka
           )
-    )
-    .settings(
-      crossPaths := false
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](

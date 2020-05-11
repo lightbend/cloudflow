@@ -42,44 +42,87 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def requires: Plugins = BlueprintVerificationPlugin
   override def trigger           = allRequirements
 
-  val LocalRunnerClass = "cloudflow.runner.LocalRunner"
+  val LocalRunnerClass = "cloudflow.localrunner.LocalRunner"
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    allApplicationClasspathByProject := (Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+            Def.task {
+              val allValues = cloudflowApplicationClasspathByProject.all(filter).value
+              allValues
+
+            }
+          })
+          .value
+          .toMap,
+    allStreamletDescriptorsByProject := (Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+            Def.task {
+              val allValues = streamletDescriptorsByProject.all(filter).value
+              allValues
+            }
+          })
+          .value
+          .toMap,
     runLocal := Def.taskDyn {
           Def.task {
             implicit val logger = streams.value.log
-            val _               = verifyBlueprint.value // force check blueprint with feedback
+            val _               = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
             val classpath       = cloudflowApplicationClasspath.value
+            val cpByProject     = allApplicationClasspathByProject.value
+            val configFile      = runLocalConfigFile.value
+            val streamletDescriptorsByProject = allStreamletDescriptorsByProject.value.filter {
+              case (_, streamletMap) => streamletMap.nonEmpty
+            }
+            val _appDescriptor = applicationDescriptor.value
+            val appDescriptor = _appDescriptor.getOrElse {
+              logger.error("LocalRunner: ApplicationDescriptor is not presen. This is a bug. Please report it.")
+              throw new IllegalStateException("ApplicationDescriptor is not present")
+            }
+
+            val projects = streamletDescriptorsByProject.keys
+            projects.map { id =>
+              println(s"project name : $id ===================================")
+              println("streamlets:" + streamletDescriptorsByProject(id).keys)
+              println("classpath:" + cpByProject(id).mkString(","))
+              println("===================================")
+            }
+            println("all keys:" + cpByProject.keys.mkString(", "))
 
             // setup local file scaffolding
-            val (appId, appDescriptorFile, outputFile, log4jConfigFile) = (for {
-              tempRuntimeDir            ← prepareTempDir("local-cloudflow")
-              outputFile                ← prepareOutputFile(tempRuntimeDir)
-              log4jConfigFile           ← prepareLog4JFileFromResource(tempRuntimeDir, "local-run-log4j.properties")
-              (localConf, localConfMsg) ← preparePluginConfig(runLocalConfigFile.value)
-              appDescriptor             ← prepareApplicationDescriptor(applicationDescriptor.value, localConf, tempRuntimeDir)
-              appDescriptorFile         ← prepareApplicationFile(appDescriptor)
-            } yield {
-              logger.info(localConfMsg)
-              printInfo(appDescriptor, outputFile)
-              (appDescriptor.appId, appDescriptorFile, outputFile, log4jConfigFile)
-            }).recoverWith {
-              case NonFatal(ex) ⇒
-                warningBanner(s"Setup failed. Reason: ${ex.getMessage}")
-                Failure(ex)
-            }.get //force resolution
 
-            logger.debug("Using log4 config file at:" + log4jConfigFile)
-            logger.debug("Using output log file at:" + outputFile)
+            val attemptRuntimeDescriptorByProject = projects.map { pid =>
+              val streamlets        = streamletDescriptorsByProject(pid).keys.toSet
+              val projectDescriptor = streamletProjection(appDescriptor, streamlets)
+              pid -> scaffoldRuntime(projectDescriptor, configFile)
+            }
+            val errors = attemptRuntimeDescriptorByProject.collect {
+              case (_, Failure(ex)) =>
+                logger.error(s"Determining runtime descriptors failed: ${ex.getMessage}")
+                ex
+            }
+            // fail if there're errors
+            errors.foreach { ex =>
+              throw ex
+            }
 
-            val process = runPipelineJVM(appDescriptorFile, classpath, outputFile, log4jConfigFile)
+            //            logger.debug("Using log4 config file at:" + log4jConfigFile)
+            //            logger.debug("Using output log file at:" + outputFile)
 
-            println(s"Running ${appId}  \nTo terminate, press [ENTER]\n")
+            attemptRuntimeDescriptorByProject.collect {
+              case (pid, Success(rd)) =>
+                logger.info(s"Launching streamlets in $pid")
+                runPipelineJVM(rd.appDescriptorFile, cpByProject(pid), rd.outputFile, rd.logConfig)
+            }
+
+            // println(s"Running ${appId}  \nTo terminate, press [ENTER]\n")
 
             try {
               sbt.internal.util.SimpleReader.readLine("")
               logger.info("Attempting to terminate local Pipeline")
-              process.destroy()
+              //process.destroy()
             } catch {
               case ex: Throwable ⇒
                 logger.warn("Stopping process failed.")
@@ -102,6 +145,20 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   val infoBanner    = banner('-') _
   val warningBanner = banner('!') _
 
+  case class RuntimeDescriptor(id: String, appDescriptorFile: Path, outputFile: File, logConfig: Path, localConfMsg: String)
+
+  def scaffoldRuntime(descriptor: ApplicationDescriptor, configFile: Option[String])(implicit logger: Logger): Try[RuntimeDescriptor] =
+    for {
+      tempRuntimeDir            ← prepareTempDir("local-cloudflow")
+      outputFile                ← prepareOutputFile(tempRuntimeDir)
+      log4jConfigFile           ← prepareLog4JFileFromResource(tempRuntimeDir, "local-run-log4j.properties")
+      (localConf, localConfMsg) ← preparePluginConfig(configFile)
+      appDescriptor             ← prepareApplicationDescriptor(descriptor, localConf, tempRuntimeDir)
+      appDescriptorFile         ← prepareApplicationFile(appDescriptor)
+    } yield {
+      RuntimeDescriptor(appDescriptor.appId, appDescriptorFile, outputFile, log4jConfigFile, localConfMsg)
+    }
+
   def prepareLog4JFileFromResource(tempDir: Path, resourcePath: String)(implicit logger: Logger): Try[Path] = Try {
     val log4JSrc       = Option(this.getClass.getClassLoader.getResourceAsStream(resourcePath))
     val localLog4jFile = tempDir.resolve("local-log4j.properties")
@@ -116,6 +173,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       log4JSrc.foreach(_.close)
     }
     localLog4jFile
+  }
+
+  def streamletProjection(appDescriptor: ApplicationDescriptor, streamlets: Set[String]): ApplicationDescriptor = {
+    val streamletInstances   = appDescriptor.streamlets.filter(streamlet => streamlets(streamlet.name))
+    val deploymentDescriptor = appDescriptor.deployments.filter(streamletDeployment => streamlets(streamletDeployment.name))
+    appDescriptor.copy(streamlets = streamletInstances, deployments = deploymentDescriptor)
   }
 
   def prepareApplicationFile(applicationDescriptor: ApplicationDescriptor): Try[Path] = Try {
@@ -139,28 +202,19 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .getOrElse((ConfigFactory.empty(), NoLocalConfFoundMsg))
   }
 
-  def prepareApplicationDescriptor(applicationDescriptor: Option[ApplicationDescriptor],
+  def prepareApplicationDescriptor(applicationDescriptor: ApplicationDescriptor,
                                    config: Config,
-                                   tempDir: Path): Try[ApplicationDescriptor] =
-    (for {
-      descriptor ← failOnEmpty(applicationDescriptor) {
-        new RuntimeException("Invalid or missing application descriptor. This is certainly a bug. Please report it.")
-      }
-      updatedStreamlets ← tryOverrideVolumeMounts(descriptor.streamlets, config, tempDir)
-    } yield {
-      descriptor.copy(streamlets = updatedStreamlets)
-    }).recoverWith {
-      case NonFatal(ex) ⇒
-        warningBanner("Setup Failure")(ex.getMessage)
-        Failure(ex)
-    }
+                                   tempDir: Path): Try[ApplicationDescriptor] = {
+    val updatedStreamlets = tryOverrideVolumeMounts(applicationDescriptor.streamlets, config, tempDir)
+    updatedStreamlets.map(streamlets => applicationDescriptor.copy(streamlets = streamlets))
+  }
 
   def runPipelineJVM(applicationDescriptorFile: Path, classpath: Array[URL], outputFile: File, log4JConfigFile: Path)(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
     val separator = new SystemProperties().get("path.separator").getOrElse {
-      logger.warn("No \"path.separator\" setting found. Using default value \":\" ")
+      logger.warn("""No "path.separator" setting found. Using default value ":" """)
       ":"
     }
 

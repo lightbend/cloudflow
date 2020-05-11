@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.runner
+package cloudflow.localrunner
 
 import java.io.{ Closeable, File, FileOutputStream, OutputStream, PrintStream }
 import java.lang.{ Runtime ⇒ JRuntime }
