@@ -31,7 +31,7 @@ lazy val root = Project("cloudflow-installer", file("."))
         )
   )
   .settings(
-    scalaVersion := "2.12.9",
+    scalaVersion := "2.12.11",
     crossScalaVersions := Vector(scalaVersion.value),
     organization := "com.lightbend.cloudflow",
     skip in publish := true,
@@ -57,22 +57,22 @@ lazy val root = Project("cloudflow-installer", file("."))
           )
         ),
     dockerfile in docker := {
-        val appDir: File = stage.value
-        val targetDir    = "/app"
-        new Dockerfile {
-          from("marketplace.gcr.io/google/rbe-ubuntu18-04")
-          entryPoint(s"$targetDir/bin/${executableScriptName.value}")
-          copy(appDir, targetDir, chown = "daemon:daemon")
-          copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
-          workDir(targetDir)
-          runRaw(
-            "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
-          )
-          runRaw(
-            "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
-          )
-        }
-      },
+      val appDir: File = stage.value
+      val targetDir    = "/app"
+      new Dockerfile {
+        from("marketplace.gcr.io/google/rbe-ubuntu18-04")
+        entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+        copy(appDir, targetDir, chown = "daemon:daemon")
+        copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
+        workDir(targetDir)
+        runRaw(
+          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
+        )
+        runRaw(
+          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
+        )
+      }
+    },
     Test / fork := true,
     scalacOptions ++= Seq(
           "-encoding",

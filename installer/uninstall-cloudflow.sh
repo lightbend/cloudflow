@@ -56,12 +56,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Removing the Cloudflow namespace..."
     kubectl delete ns cloudflow --cascade
 
-    if [ "$1" == "icp4d" ]; then
-        kubectl delete clusterrole lightbend-role &&
-        kubectl delete clusterrolebinding lightbend-psp-users &&
-        kubectl delete podsecuritypolicy lightbend-admin
-    fi
-
     # All our CRDs
     echo "Removing CRDs..."
     kubectl delete crd alertmanagers.monitoring.coreos.com \

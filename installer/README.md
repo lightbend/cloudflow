@@ -1,4 +1,4 @@
-# CloudFlow Installer
+# Cloudflow Installer
 This project is the CloudFlow Installer, implemented as a Kubernetes operator.
 
 ## Development
@@ -37,11 +37,11 @@ Install Cloudflow (GKE)
 
 ## Relation with other projects
 
-The CloudFlow Installer uses the content of a number of Helm charts.
+The Cloudflow Installer uses the content of a number of Helm charts.
 
 Here the detail:
 
-[![relationship with other projects](doc-images/relationship-with-other-projects.png)](https://www.lucidchart.com/invitations/accept/0a9e1636-03d9-4b66-bb5e-3fe9a281f1e1)
+[![relationship with other projects](doc-images/cloudflow-installer-relationship-with-other-projects.png)](https://www.lucidchart.com/invitations/accept/0a9e1636-03d9-4b66-bb5e-3fe9a281f1e1)
 
 ### Code formatting
 
