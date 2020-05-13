@@ -1,10 +1,16 @@
-# Cloudflow installer
+# Cloudflow Installer
+##Introduction
 
-This is the installer for the [Cloudflow](https://github.com/lightbend/cloudflow) toolkit.
+### Prerequisite
 
-This installer deploys all the backend components required to turn your Kubernetes cluster into a Cloudflow-compliant platform.
+First you need to have a running Kubernetes cluster. If you don't, refer to [Starting a Kubernetes Cluster](start-cluster.md) on how to do it on GKE or EKS.
 
-The Cloudflow installer deploys:
+### Installing
+
+This project is the Cloudflow Installer, implemented as a Kubernetes operator.
+
+The Cloudflow installer runs as a single-pod deployment and it creates a CustomResourceDefinition called `cloudflows.cloudflow-installer.lightbend.com` or `cloudflow` for short. Once the installer is up and running, the user can create an instance of the `cloudflow` CRD to trigger installation of Cloudflow itself, which includes:
+
 - The Cloudflow operator, which orchestrates the deployment of Cloudflow applications
 - The [Spark Operator](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator)
 - The [Strimzi Kafka Operator](https://strimzi.io/) used to manage Apache Kafka clusters co-located or pre-existing
@@ -12,67 +18,102 @@ The Cloudflow installer deploys:
 - The required service accounts with the minimal permissions needed by the supporting components
 
 Additionally, this installer deploys:
+
 - NFS - a supporting component that provides a shareable file system to enable storage for stateful applications
 
-Currently, the provided installation scripts are validated for Google Kubernetes Engine (GKE) on the Google Cloud Platform.
-Testing on other major cloud providers is in the roadmap.
+**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**
 
-## Prerequisites
+### Uninstalling
 
-### K8s CLI's
-You need the command line tool for your particular Kubernetes cluster:
-* [Google Cloud SDK](https://cloud.google.com/sdk/)
-* [Amazon CLI for EKS](https://eksctl.io/)
+In case of a failed installation, first find the `cloudflow` custom resource:
 
-Note: Make sure you have the latest `aws-cli` version.
-
-### Utilities
-* [jq](https://stedolan.github.io/jq/)
-* [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
-
-## Installation Procedure
-
-### GKE
-To install Cloudflow on GKE it is a straightforward process:
-
+```bash
+$ kubectl get cloudflows --all-namespaces
 ```
-# create a GKE cluster with name <cluster-name>
-$ ./create-cluster-gke.sh <cluster-name>
-# install Cloudflow in the GKE cluster
-$ ./install.sh <cluster-name> gke
+
+And then delete  `cloudflow` objects you found in the output. This will trigger the deletion of all the component pods (e.g. Cloudflow operator). Then you can install Cloudflow again by creating another `cloudflow` custom resource.
+
+If you want to uninstall the installer, then simply delete the namespace where the installer was deployed.
+
+### Deprecated installer from prior to Cloudflow 1.3.3
+
+Prior to Cloudflow 1.3.3, there is a more primitive way of installing Cloudflow, that is by using the `install.sh` script:
+
+```bash
+$ install.sh <k8s-cluster-name> <eks/gke>
 ```
-Replace above `<cluster-name>` with the preferred name for your GKE cluster.
 
-### EKS
-Similarly, to install Cloudflow on EKS follow this process:
+that supports installing Cloudflow on an EKS or GKE cluster.
 
+Uninstalling can be done via:
+
+```bash
+$ uninstall.sh
 ```
-# create an EKS cluster with name <cluster-name>
-$ ./create-cluster-eks.sh <cluster-name> <aws-region>
-# install Cloudflow in the EKS cluster
-$ ./install.sh <cluster-name> eks
-```
-Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 
-#### EFS integration with EKS
+These scripts are now deprecated and may be removed in a future release.
 
-Some extra considerations are needed when integrating EFS with EKS. Please make sure the user launching the cluster
-satisfies the security groups requirements explained
-[here](https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html).
+## Development
 
-## Uninstall Procedure
+If you would like to make changes to the installer code, make sure you have the following required tools:
 
-In case of a failed installation, or if you simply want to uninstall entirely, run `./uninstall-cloudflow.sh`.
+* `sbt`
+* `make`
+* `helm`
+* `kubectl`
 
-Notes
------
-- `create-cluster-<gke|eks>.sh` is optional.
-It creates a cluster on GKE/EKS that's large enough to launch several applications.
-You can also opt to create a cluster customized to your needs by either changing the values in the
-`create-cluster-gke.sh`, using the [Google Cloud Console](cloud.google.com), or the `gcloud` CLI for GKE.
-Similarly, you can also opt to create a cluster customized to your needs by either changing the values in the
-`create-cluster-eks.sh`, using the [Amazon Web Services Console](aws.amazon.com), or the `ekstl` CLI for EKS.
+#### Testing
 
-- The `cloudflow` namespace
-The installer creates a namespace called `cloudflow` where all supporting components are installed.
-This restriction will be removed in the future.
+Currently the Cloudflow Installer is installed using `kubectl` and a yaml file located in the `/test` directory. This has been tested to work on the following Kubernetes distributions:
+
+- Openshift 3.11 and 4.3
+- GKE 1.14+
+- EKS 1.14+
+
+To use the Cloudflow Installer do the following:
+
+1. If you made any changes to dependent Helm charts used by the installer. First `cd` into `/yaml` directory and run `make all` from there to fetch all the YAML files.
+2. During development, the latest version of the docker image may not have been pushed, so build the latest version of the container using `sbt dockerBuildAndPush`. You can configure the registry (`docker.io` by default), account name (`lightbend` by default), image name (`cloudflow-installer` by default) and tag in `build.sbt` if needed.
+3. Update the `image:` field in the `test/installer-deployment.yaml` file with the new docker image.
+4. `kubectl apply -f test/installer-deployment.yaml` 
+5. Check the status of the deployments in the `cloudflow-installer` namespace.
+
+Once Cloudflow Installer is running, you are ready to install Cloudflow:
+
+1. `kubectl apply -f test/cloudflowinstance.yaml`
+2. Check the status of the deployments in the `cloudflow` namespace.
+
+>Note If you have issues login to the GCR container repo on Mac, please see this [post](https://stackoverflow.com/questions/49780218/docker-credential-gcloud-not-in-system-path) on StackOverflow.
+
+### Bootstrap script
+
+Instead of running `kubectl apply` a bunch of YAML files, the installer also offers a one-command solution that kicks off the installation of both the installer and Cloudflow itself. This is done via a bash script that you can generate by running `make all` in the `/release` directory. You can customize the image tags to be used in the `definitions.mk` file.
+
+Once the file `bootstrap-install-script-<VERSION>.sh` generated, run it and after a few minutes, Cloudflow will be up and running!
+
+For each Cloudflow release starting at version 1.3.3, we provide a bootstrap script that's ready to use on the corresponding release Github page. You can find the script for 1.3.3 [here](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh).
+
+
+
+## Relation with other projects
+
+The Cloudflow Installer uses the content of a number of Helm charts.
+
+Here the detail:
+
+[![relationship with other projects](doc-images/cloudflow-installer-relationship-with-other-projects.png)](https://www.lucidchart.com/invitations/accept/0a9e1636-03d9-4b66-bb5e-3fe9a281f1e1)
+
+### Code formatting
+
+The project uses `scalafmt` for formatting the source code, if you have VS Code + Metals you do not have to do anything.
+
+If you are using any other editor combination, the Scalafmt plugin has also been included, use any of the following commands to format the code:
+
+    myproject/scalafmt          Format main sources of myproject project
+    myproject/test:scalafmt     Format test sources of myproject project
+    scalafmtCheck               Check if the scala sources under the project has been formatted.
+    scalafmtSbt                 Format *.sbt and project/*.scala files.
+    scalafmtSbtCheck            Check if the files has been formatted by scalafmtSbt.
+    scalafmtOnly                Format a single given file.
+    scalafmtAll                 Execute the scalafmt task for all configurations in which it is enabled.
+    scalafmtCheckAll            Execute the scalafmtCheck task for all configurations in which it is enabled.

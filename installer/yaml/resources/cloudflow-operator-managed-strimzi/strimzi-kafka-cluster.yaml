@@ -1,0 +1,20 @@
+# strimzi-kafka-cluster.yaml
+
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: cloudflow
+  namespace: __namespace__
+  labels:
+    app.kubernetes.io/version: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+spec:
+  kafka:
+    storage:
+      type: persistent-claim
+      class: __kafkaClusterCr.kafkaPersistentStorageClass__
+
+  zookeeper:
+    storage:
+      type: persistent-claim
+      class: __kafkaClusterCr.zookeeperPersistentStorageClass__
