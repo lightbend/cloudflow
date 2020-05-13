@@ -2,12 +2,12 @@ package util
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"unicode"
-	"io/ioutil"
-	"net/url"
 
 	aurora "github.com/logrusorgru/aurora"
 )
