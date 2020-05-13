@@ -1,39 +1,99 @@
 # Cloudflow Installer
-This project is the CloudFlow Installer, implemented as a Kubernetes operator.
+##Introduction
+
+### Prerequisite
+
+First you need to have a running Kubernetes cluster. If you don't, refer to [Starting a Kubernetes Cluster](start-cluster.md) on how to do it on GKE or EKS.
+
+### Installing
+
+This project is the Cloudflow Installer, implemented as a Kubernetes operator.
+
+The Cloudflow installer runs as a single-pod deployment and it creates a CustomResourceDefinition called `cloudflows.cloudflow-installer.lightbend.com` or `cloudflow` for short. Once the installer is up and running, the user can create an instance of the `cloudflow` CRD to trigger installation of Cloudflow itself, which includes:
+
+- The Cloudflow operator, which orchestrates the deployment of Cloudflow applications
+- The [Spark Operator](https://github.com/GoogleCloudPlatform/spark-on-k8s-operator)
+- The [Strimzi Kafka Operator](https://strimzi.io/) used to manage Apache Kafka clusters co-located or pre-existing
+- The [Lyft Flink Operator](https://github.com/lyft/flinkk8soperator)
+- The required service accounts with the minimal permissions needed by the supporting components
+
+Additionally, this installer deploys:
+
+- NFS - a supporting component that provides a shareable file system to enable storage for stateful applications
+
+**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**
+
+### Uninstalling
+
+In case of a failed installation, first find the `cloudflow` custom resource:
+
+```bash
+$ kubectl get cloudflows --all-namespaces
+```
+
+And then delete  `cloudflow` objects you found in the output. This will trigger the deletion of all the component pods (e.g. Cloudflow operator). Then you can install Cloudflow again by creating another `cloudflow` custom resource.
+
+If you want to uninstall the installer, then simply delete the namespace where the installer was deployed.
+
+### Deprecated installer from prior to Cloudflow 1.3.3
+
+Prior to Cloudflow 1.3.3, there is a more primitive way of installing Cloudflow, that is by using the `install.sh` script:
+
+```bash
+$ install.sh <k8s-cluster-name> <eks/gke>
+```
+
+that supports installing Cloudflow on an EKS or GKE cluster.
+
+Uninstalling can be done via:
+
+```bash
+$ uninstall.sh
+```
+
+These scripts are now deprecated and may be removed in a future release.
 
 ## Development
 
-Required tools:
+If you would like to make changes to the installer code, make sure you have the following required tools:
 
 * `sbt`
 * `make`
 * `helm`
 * `kubectl`
-* `gcloud` - with docker [configured to access GCR](https://cloud.google.com/container-registry/docs/advanced-authentication).
 
-## Installing
+#### Testing
 
-Currently the CloudFlow Installer operator is installed using `kubectl` and a yaml file located in the `/test` directory. This has been tested to work on the following Kubernetes distributions:
+Currently the Cloudflow Installer is installed using `kubectl` and a yaml file located in the `/test` directory. This has been tested to work on the following Kubernetes distributions:
 
-- Openshift 3.11
-- GKE (Various versions)
+- Openshift 3.11 and 4.3
+- GKE 1.14+
+- EKS 1.14+
 
-To install the CloudFlow Installer do the following:
+To use the Cloudflow Installer do the following:
 
-1) Clone this repo
-2) During development, the latest version of the docker image may not be pushed, so build the latest version of the container using `sbt dockerBuildAndPush`
-3) Update the `image:` label in the `test/installer-deployment.yaml` file with the new docker container path
-4) `kubectl apply -f test/installer-deployment.yaml` 
-5) Check the status of the deployments in the `cloudflow-installer` namespace
+1. If you made any changes to dependent Helm charts used by the installer. First `cd` into `/yaml` directory and run `make all` from there to fetch all the YAML files.
+2. During development, the latest version of the docker image may not have been pushed, so build the latest version of the container using `sbt dockerBuildAndPush`. You can configure the registry (`docker.io` by default), account name (`lightbend` by default), image name (`cloudflow-installer` by default) and tag in `build.sbt` if needed.
+3. Update the `image:` field in the `test/installer-deployment.yaml` file with the new docker image.
+4. `kubectl apply -f test/installer-deployment.yaml` 
+5. Check the status of the deployments in the `cloudflow-installer` namespace.
 
-Install Cloudflow (GKE)
+Once Cloudflow Installer is running, you are ready to install Cloudflow:
 
-1) `kubectl apply -f test/cloudflowinstance_gke.yaml`
-2) Check the status of the deployments in the `cloudflow` namespace
+1. `kubectl apply -f test/cloudflowinstance.yaml`
+2. Check the status of the deployments in the `cloudflow` namespace.
 
->Note that if you are installing on `openshift` use the `cloudflowinstance_openshift.yaml` file instead.
+>Note If you have issues login to the GCR container repo on Mac, please see this [post](https://stackoverflow.com/questions/49780218/docker-credential-gcloud-not-in-system-path) on StackOverflow.
 
->Note If you have issues login to the GCR container repo on Mac, please see this post on SO: https://stackoverflow.com/questions/49780218/docker-credential-gcloud-not-in-system-path
+### Bootstrap script
+
+Instead of running `kubectl apply` a bunch of YAML files, the installer also offers a one-command solution that kicks off the installation of both the installer and Cloudflow itself. This is done via a bash script that you can generate by running `make all` in the `/release` directory. You can customize the image tags to be used in the `definitions.mk` file.
+
+Once the file `bootstrap-install-script-<VERSION>.sh` generated, run it and after a few minutes, Cloudflow will be up and running!
+
+For each Cloudflow release starting at version 1.3.3, we provide a bootstrap script that's ready to use on the corresponding release Github page. You can find the script for 1.3.3 [here](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh).
+
+
 
 ## Relation with other projects
 

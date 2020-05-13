@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+### WARNING:
+### This script is deprecated and may be removed in a future Cloudflow release.
+
 # Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
