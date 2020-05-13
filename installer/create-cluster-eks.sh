@@ -25,8 +25,8 @@ fi
 CLUSTER_NAME=$1
 AWS_DEFAULT_REGION=$2
 
-# Find the first 3 avialable zones
-AWS_REGION_NO_HYPENS="$(echo "$AWS_DEFAULT_REGION" | sed -e 's/\-//g' | tr '[:lower:]' '[:upper:]')"
+# Find the first 3 available zones
+AWS_REGION_NO_HYPHENS="$(echo "$AWS_DEFAULT_REGION" | sed -e 's/\-//g' | tr '[:lower:]' '[:upper:]')"
 
 ZONE_1="$(aws ec2 describe-availability-zones \
   --filters Name=region-name,Values="$AWS_DEFAULT_REGION" | jq -r ".AvailabilityZones | .[].ZoneName" | sed -n '1p' | grep -o .'\{1\}$')"
@@ -113,7 +113,7 @@ for zone_value in $ZONE_1 $ZONE_2 $ZONE_3; do
   ZONE="$(echo "$zone_value" | tr '[:lower:]' '[:upper:]')"
   echo "Zone: $ZONE"
 
-  SUBNET_ID="$(aws ec2 describe-subnets --filters Name=tag:Name,Values="eksctl-$CLUSTER_NAME-cluster/SubnetPublic$AWS_REGION_NO_HYPENS$ZONE" --output json | jq -r '.Subnets | .[].SubnetId')"
+  SUBNET_ID="$(aws ec2 describe-subnets --filters Name=tag:Name,Values="eksctl-$CLUSTER_NAME-cluster/SubnetPublic$AWS_REGION_NO_HYPHENS$ZONE" --output json | jq -r '.Subnets | .[].SubnetId')"
   echo "Subnet id: $SUBNET_ID"
 
   # shellcheck disable=SC2086
