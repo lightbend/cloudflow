@@ -37,7 +37,7 @@ Replace above `<cluster-name>` with the preferred name for your EKS cluster.
 To launch an AKS cluster:
 
 ```bash
-$ ./create-cluster-aks.sh -c <cluster-name> --resource-group <grou-name>
+$ ./create-cluster-aks.sh -c <cluster-name> --resource-group <group-name>
 ```
 
 #### EFS integration with EKS
