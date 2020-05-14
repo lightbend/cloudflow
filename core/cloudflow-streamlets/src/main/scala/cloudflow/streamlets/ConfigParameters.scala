@@ -33,7 +33,7 @@ final case class RegexpValidationType(regExpPattern: String) extends ValidationT
 }
 
 /**
- * Describes arguments that has to be supplied when deploying a Cloudflow application. Each streamlet in an application can require zero or more arguments.
+ * Describes arguments that have to be supplied when deploying a Cloudflow application. Each streamlet in an application can require zero or more arguments.
  * The configuration parameter contains information for the end user entering the values and logic to validate those values so they are entered correctly.
  *
  * Streamlet developers can create their own configuration parameters by deriving from [[ConfigParameter]], the parameter can use validation logic from a fixed set of types derived from [[ValidationType]].
