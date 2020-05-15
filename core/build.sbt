@@ -179,19 +179,15 @@ lazy val spark =
       // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Seq(
-            AkkaSlf4j,
-            AkkaStream,
-            AkkaStreamContrib,
+            AkkaActor,
             Ficus,
             Spark,
             SparkMllib,
             SparkSql,
             SparkSqlKafka,
             SparkStreaming,
-            Logback % Test,
             ScalaTest
-          ),
-      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) }
+          )
     )
     .settings(
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
@@ -221,7 +217,6 @@ lazy val sparkTests =
       // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
-            Logback % Test,
             ScalaTest,
             Junit
           )
@@ -331,6 +326,7 @@ lazy val plugin =
       libraryDependencies ++= Vector(
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
+            EmbeddedKafka,
             Logback % Test,
             ScalaTest
           )
@@ -377,7 +373,7 @@ lazy val localRunner =
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             Ficus,
-            EmbeddedKafka
+            Slf4jLog4jBridge
           )
     )
     .settings(
