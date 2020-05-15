@@ -38,9 +38,14 @@ func HandleConfig(
 	namespace string,
 	applicationSpec cfapp.CloudflowApplicationSpec,
 	configFiles []string) map[string]*corev1.Secret {
-	configurationArguments := splitConfigurationParameters(args[1:])
+	configurationArguments, err := splitConfigurationParameters(args[1:])
+
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
 
 	streamletNameSecretMap, err := handleConfig(namespace, applicationSpec, configurationArguments, configFiles)
+
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
@@ -345,19 +350,17 @@ func prefixConfigParameterKey(streamletName string, key string) string {
 }
 
 // splitConfigurationParameters maps string representations of a key/value pair into a map
-func splitConfigurationParameters(configurationParameters []string) map[string]string {
+func splitConfigurationParameters(configurationParameters []string) (map[string]string, error) {
 	configurationKeyValues := make(map[string]string)
 
 	for _, v := range configurationParameters {
 		keyValueArray, err := splitOnFirstCharacter(v, '=')
 		if err != nil {
-			printutil.LogAndExit(err.Error())
-		} else {
-			configurationKeyValues[keyValueArray[0]] = keyValueArray[1]
-
+			return map[string]string{}, err
 		}
+		configurationKeyValues[keyValueArray[0]] = keyValueArray[1]
 	}
-	return configurationKeyValues
+	return configurationKeyValues, nil
 }
 
 func splitOnFirstCharacter(str string, char byte) ([]string, error) {

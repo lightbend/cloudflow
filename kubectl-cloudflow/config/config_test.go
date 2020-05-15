@@ -29,14 +29,14 @@ func commandLineForConfiguration() []string {
 }
 
 func Test_SplitConfigurationParameters(t *testing.T) {
-	result := splitConfigurationParameters([]string{
+	result, err := splitConfigurationParameters([]string{
 		`a="b"`,
 		"key=ddd",
 		`some.key="some, value"`,
 		`some.key2=c29tZSBzdHJpbmc9PQ==`,
 		`some.key3="some text passed to a streamlet"`,
 		`some.key4=post Cobra processed, unquoted string`})
-
+	assert.Empty(t, err)
 	assert.NotEmpty(t, result)
 	assert.Equal(t, result["a"], "b")
 	assert.Equal(t, result["key"], "ddd")
@@ -45,7 +45,8 @@ func Test_SplitConfigurationParameters(t *testing.T) {
 	assert.Equal(t, result["some.key3"], "some text passed to a streamlet")
 	assert.Equal(t, result["some.key4"], "post Cobra processed, unquoted string")
 
-	empty := splitConfigurationParameters([]string{})
+	empty, err := splitConfigurationParameters([]string{})
+	assert.Empty(t, err)
 	assert.Empty(t, empty)
 }
 
@@ -60,7 +61,9 @@ func Test_validateConfigurationAgainstDescriptor(t *testing.T) {
 	err := validateConfigurationAgainstDescriptor(spec, configs)
 	assert.NotEmpty(t, err)
 
-	args := splitConfigurationParameters(commandLineForConfiguration())
+	args, err := splitConfigurationParameters(commandLineForConfiguration())
+	assert.Empty(t, err)
+
 	config := EmptyConfig()
 	config = addCommandLineArguments(spec, config, args)
 	fmt.Println(config)
@@ -70,7 +73,9 @@ func Test_validateConfigurationAgainstDescriptor(t *testing.T) {
 	err = validateConfigurationAgainstDescriptor(spec, configs)
 	assert.Empty(t, err)
 
-	half := splitConfigurationParameters([]string{`cloudflow.streamlets.valid-logger.config-parameters.log-level="warning"`})
+	half, err := splitConfigurationParameters([]string{`cloudflow.streamlets.valid-logger.config-parameters.log-level="warning"`})
+	assert.Empty(t, err)
+
 	config = EmptyConfig()
 	config = addCommandLineArguments(spec, config, half)
 	configs = make(map[string]*configuration.Config)
@@ -85,7 +90,8 @@ func Test_CreateSecretsData(t *testing.T) {
 	var spec cfapp.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
-	args := splitConfigurationParameters(commandLineForConfiguration())
+	args, err := splitConfigurationParameters(commandLineForConfiguration())
+	assert.Empty(t, err)
 
 	config := EmptyConfig()
 	config = addCommandLineArguments(spec, config, args)

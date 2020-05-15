@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -184,7 +183,7 @@ func APIVersion() string {
 func LoadCloudflowApplicationSpec(crFile string) (CloudflowApplicationSpec, error) {
 	crString, err := fileutil.GetFileContents(crFile)
 	if err != nil {
-		printutil.LogAndExit("Failed to read the file contents for the CR - please check if the file exists or it has a bad formatting (%s)", err.Error())
+		return CloudflowApplicationSpec{}, fmt.Errorf("Failed to read the file contents for the CR - please check if the file exists or it has a bad formatting (%s)", err.Error())
 	}
 
 	bytes := []byte(crString)
@@ -195,8 +194,8 @@ func LoadCloudflowApplicationSpec(crFile string) (CloudflowApplicationSpec, erro
 	}
 
 	applicationSpec := cr.Spec
-	CheckApplicationDescriptorVersion(applicationSpec)
-	return applicationSpec, nil
+	err = checkApplicationDescriptorVersion(applicationSpec)
+	return applicationSpec, err
 }
 
 // UpdateCloudflowApplication creates a CloudflowApplication struct that can be used with a Update call
@@ -321,28 +320,27 @@ func (in *CloudflowApplication) GenerateOwnerReference() metav1.OwnerReference {
 }
 
 //CheckApplicationDescriptorVersion checks the version, logs and exits if not supported
-func CheckApplicationDescriptorVersion(spec CloudflowApplicationSpec) {
+func checkApplicationDescriptorVersion(spec CloudflowApplicationSpec) error {
 	if spec.Version != SupportedApplicationDescriptorVersion {
 		// If the version is an int, compare them, otherwise provide a more general message.
 		if version, err := strconv.Atoi(spec.Version); err == nil {
 			if supportedVersion, err := strconv.Atoi(SupportedApplicationDescriptorVersion); err == nil {
 				if version < supportedVersion {
 					if spec.LibraryVersion != "" {
-						printutil.LogAndExit("Application built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'.", spec.LibraryVersion)
-					} else {
-						printutil.LogAndExit("Application is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'.")
+						return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'", spec.LibraryVersion)
 					}
+					return fmt.Errorf("Application is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'")
 				}
 				if version > supportedVersion {
 					if spec.LibraryVersion != "" {
-						printutil.LogAndExit("Application built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.", spec.LibraryVersion)
-					} else {
-						printutil.LogAndExit("Application is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again.")
+						return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again", spec.LibraryVersion)
 					}
+					return fmt.Errorf("Application is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again")
 				}
 			}
 		}
 
-		printutil.LogAndExit("Application is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the application with 'sbt buildApp'.")
+		return fmt.Errorf("Application is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the application with 'sbt buildApp'")
 	}
+	return nil
 }
