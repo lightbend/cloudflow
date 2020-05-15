@@ -214,7 +214,7 @@ object StreamletChangeEvent {
                   // TODO get runtime config and hook into a runtime specific action.
                   // TODO handle kubernetes config section.
 
-                  // create output secret which will be mounted by runtime specific deployments
+                  // create update action for output secret action which is mounted as config by runtime specific deployments
                   val outputSecret = Secret(
                     metadata = ObjectMeta(
                       name = streamletDeployment.secretName,
