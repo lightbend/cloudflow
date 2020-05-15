@@ -30,13 +30,13 @@ case class StreamletDefinition(appId: String,
                                appVersion: String,
                                streamletRef: String,
                                streamletClass: String,
-                               portMapping: List[ConnectedPort],
+                               portMappings: List[PortMapping],
                                volumeMounts: List[VolumeMount],
                                config: Config) {
 
   private val portNameToTopicMap: Map[String, Topic] = {
-    portMapping.map {
-      case ConnectedPort(port, topic) ⇒ port -> topic
+    portMappings.map {
+      case PortMapping(port, topic) ⇒ port -> topic
     }.toMap
   }
 
@@ -93,7 +93,7 @@ final case class Topic(
 /**
  * Mapping between the port name and the savepoint path
  */
-case class ConnectedPort(port: String, topic: Topic)
+case class PortMapping(port: String, topic: Topic)
 
 object StreamletDefinition {
   implicit val contextDataReader: ValueReader[StreamletContextData] =
@@ -116,7 +116,7 @@ object StreamletDefinition {
       appVersion = streamletContextData.appVersion,
       streamletRef = streamletRef,
       streamletClass = config.as[String]("class_name"),
-      streamletContextData.connectedPorts,
+      streamletContextData.portMappings,
       streamletContextData.volumeMounts.getOrElse(List()),
       streamletContextData.config
     )
@@ -139,7 +139,7 @@ object StreamletDefinition {
 case class StreamletContextData(
     appId: String,
     appVersion: String,
-    connectedPorts: List[ConnectedPort],
+    portMappings: List[PortMapping],
     volumeMounts: Option[List[VolumeMount]] = None,
     config: Config
 )
@@ -168,8 +168,8 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     }
   }
 
-  protected implicit val volumeMountFormat    = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
-  protected implicit val connectedPortsFormat = jsonFormat(ConnectedPort, "port", "topic")
+  protected implicit val volumeMountFormat  = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
+  protected implicit val portMappingsFormat = jsonFormat(PortMapping, "port", "topic")
   protected implicit val contextDataFormat =
     jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
 

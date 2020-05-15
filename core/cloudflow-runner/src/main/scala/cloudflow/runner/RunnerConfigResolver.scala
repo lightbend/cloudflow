@@ -34,9 +34,9 @@ trait RunnerConfigResolver {
 
     val config = if (Files.exists(secretPath)) {
       println(s"Loading application.conf from: $configPath, secret config from: $secretPath")
-
-      loadConfig(configPath)
-        .withFallback(loadConfig(secretPath))
+      // secret takes precedence, since it contains config.
+      loadConfig(secretPath)
+        .withFallback(loadConfig(configPath))
         .withFallback(ConfigFactory.load)
     } else {
       println(s"Loading application.conf from: $configPath")

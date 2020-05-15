@@ -32,7 +32,7 @@ class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues 
     }
 
     "a loaded instance must have port configuration" in {
-      val ports = streamletConfig.portMapping
+      val ports = streamletConfig.portMappings
       val expectedPorts = Map(
         "accepted" -> Topic("appId", "sensor-data", "accepted"),
         "rejected" -> Topic("appId", "sensor-data", "rejected")
