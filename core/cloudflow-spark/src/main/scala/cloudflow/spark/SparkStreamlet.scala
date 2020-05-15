@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, Promise }
 import scala.reflect.runtime.universe._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import akka.actor.{ ActorSystem, Cancellable, Scheduler }
 import com.typesafe.config.Config
 import org.apache.spark.SparkConf
@@ -31,8 +31,6 @@ import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
-
-import scala.annotation.tailrec
 
 /**
  * The base class for defining Spark streamlets. Derived classes need to override `createLogic` to
@@ -95,16 +93,24 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
     new StreamletExecution {
 
       // schedule a function to check periodically if any of the queries stopped
-      val scheduledQueryCheck: Cancellable = system.scheduler.schedule(InitialDelay, MonitorFrequency) {
-        val someQueryStopped = streamletQueryExecution.queries.exists(!_.isActive)
-        if (someQueryStopped) completionPromise.completeWith(stop())
+      val scheduledQueryCheck: Cancellable = system.scheduler.scheduleWithFixedDelay(InitialDelay, MonitorFrequency) {
+        new Runnable() {
+          override def run(): Unit = {
+            val someQueryStopped = streamletQueryExecution.queries.exists(!_.isActive)
+            if (someQueryStopped) completionPromise.completeWith(stop())
+          }
+        }
       }
 
       //TODO remove this after testing
-      val sysCheck: Cancellable = system.scheduler.schedule(1.minute, 1.minutes) {
-        val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
-        // TODO temporary logging total mem in case a recent issue resurfaces in a long running spark process.
-        log.info(s"jvm-total-mem: $totalMem Mb")
+      val sysCheck: Cancellable = system.scheduler.scheduleWithFixedDelay(1.minute, 1.minutes) {
+        new Runnable {
+          override def run(): Unit = {
+            val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
+            // TODO temporary logging total mem in case a recent issue resurfaces in a long running spark process.
+            log.info(s"jvm-total-mem: $totalMem Mb")
+          }
+        }
       }
 
       // this future will be successful when any of the queries face an exception
