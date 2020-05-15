@@ -57,6 +57,7 @@ func handleConfig(
 	}
 
 	config = addDefaultValuesFromSpec(applicationSpec, config)
+
 	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
 
 	if err := validateConfig(config, applicationSpec); err != nil {
@@ -97,6 +98,9 @@ func createStreamletConfigsMap(spec cfapp.CloudflowApplicationSpec, config *conf
 
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
 func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
+	if len(configFiles) == 0 {
+		return EmptyConfig(), nil
+	}
 	// For some reason WithFallback does not work as expected, so we'll use this workaround for now.
 	var sb strings.Builder
 
@@ -142,6 +146,9 @@ func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
 }
 
 func validateConfig(config *configuration.Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
+	if config.IsEmpty() {
+		return nil
+	}
 
 	// TODO kubernetes section: valide args to known path formats:
 	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
