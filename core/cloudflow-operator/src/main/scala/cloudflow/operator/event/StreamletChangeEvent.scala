@@ -205,42 +205,12 @@ object StreamletChangeEvent {
                 .map { bytes =>
                   val config = ConfigFactory.parseString(new String(bytes, StandardCharsets.UTF_8))
 
-                  // TODO refactor
-                  val streamletKey               = s"cloudflow.streamlets.$streamletName"
-                  val configParametersKey        = "config-parameters"
-                  val absoluteConfigParameterKey = s"$streamletKey.$configParametersKey"
-                  val configKey                  = "config"
-                  val absoluteRuntimeConfigKey   = s"$streamletKey.$configKey"
-
-                  val configParametersSection = Try(Some(config.getConfig(absoluteConfigParameterKey)))
-                    .getOrElse(None)
-                  val runtimeConfigSection = Try(Some(config.getConfig(absoluteRuntimeConfigKey)))
-                    .getOrElse(None)
                   // removing 'config-parameters' section and move it contents directly under the streamlet.
-                  var transformedConfig = configParametersSection
-                    .map { c =>
-                      val adjustedConfigParametersConfig = c.atPath(streamletKey)
-                      config.withoutPath(absoluteConfigParameterKey).withFallback(adjustedConfigParametersConfig)
-                    }
-                    .getOrElse(config)
+                  var transformedConfig = moveConfigParameters(config, streamletName)
+                  transformedConfig = mergeRuntimeConfigSection(transformedConfig, streamletName)
+                  transformedConfig = removeKubernetesConfigSection(transformedConfig, streamletName)
+                  transformedConfig = moveTopicsConfigToPortMappings(config, streamletName)
 
-                  // removing 'config' section and move it contents in the root of the config (akka, spark, flink, etc).
-                  transformedConfig = runtimeConfigSection
-                    .map { c =>
-                      val configs = c
-                        .root()
-                        .entrySet()
-                        .asScala
-                        .map { entry =>
-                          entry.getValue.atPath(entry.getKey)
-                        }
-                        .toVector
-                      val mergedConfig = transformedConfig.withoutPath(absoluteRuntimeConfigKey)
-                      configs.foldLeft(mergedConfig) { (acc, el) =>
-                        acc.withFallback(el)
-                      }
-                    }
-                    .getOrElse(transformedConfig)
                   // TODO get runtime config and hook into a runtime specific action.
                   // TODO handle kubernetes config section.
 
@@ -274,6 +244,61 @@ object StreamletChangeEvent {
         case _ ⇒ Nil // app could not be found, do nothing.
       }
       .mapConcat(_.toList)
+
+  def streamletConfigKey(streamletName: String) = s"cloudflow.streamlets.$streamletName"
+
+  def moveConfigParameters(config: Config, streamletName: String): Config = {
+    val key                        = streamletConfigKey(streamletName)
+    val configParametersKey        = "config-parameters"
+    val absoluteConfigParameterKey = s"$key.$configParametersKey"
+    val configParametersSection = Try(Some(config.getConfig(absoluteConfigParameterKey)))
+      .getOrElse(None)
+
+    configParametersSection
+      .map { c =>
+        val adjustedConfigParametersConfig = c.atPath(key)
+        config.withoutPath(absoluteConfigParameterKey).withFallback(adjustedConfigParametersConfig)
+      }
+      .getOrElse(config)
+  }
+
+  def mergeRuntimeConfigSection(config: Config, streamletName: String): Config = {
+    val streamletKey = streamletConfigKey(streamletName)
+
+    val configKey                = "config"
+    val absoluteRuntimeConfigKey = s"$streamletKey.$configKey"
+    val runtimeConfigSection = Try(Some(config.getConfig(absoluteRuntimeConfigKey)))
+      .getOrElse(None)
+    // removing 'config' section and move it contents in the root of the config (akka, spark, flink, etc).
+    runtimeConfigSection
+      .map { c =>
+        val configs = c
+          .root()
+          .entrySet()
+          .asScala
+          .map { entry =>
+            entry.getValue.atPath(entry.getKey)
+          }
+          .toVector
+        val mergedConfig = config.withoutPath(absoluteRuntimeConfigKey)
+        configs.foldLeft(mergedConfig) { (acc, el) =>
+          acc.withFallback(el)
+        }
+      }
+      .getOrElse(config)
+  }
+  def removeKubernetesConfigSection(config: Config, streamletName: String): Config =
+    // remove the kubernetes section, but it does need to be provided as Pod related details to the Runners that need to pass these through.
+    // TODO implement
+    config
+  def moveTopicsConfigToPortMappings(config: Config, streamletName: String): Config =
+    // TODO implement
+    config
+
+  // val kubernetesKey               = "kubernetes"
+  // val absoluteKubernetesConfigKey = s"$streamletKey.$kubernetesKey"
+  // val topicsKey                   = "topics"
+  // val absoluteTopicsConfigKey     = s"$streamletKey.$topicsKey"
 
   def secretEditor = new ObjectEditor[Secret] {
     def updateMetadata(obj: Secret, newMetadata: ObjectMeta): Secret = obj.copy(metadata = newMetadata)
