@@ -90,7 +90,7 @@ object Action {
    * Log message for when an [[Action]] is about to get executed.
    */
   def executing(action: Action[ObjectResource]) =
-    s"Executing ${action.name} action for resource ${action.resource.kind} ${action.resource.metadata.name} in namespace ${action.resource.namespace}"
+    s"Executing ${action.name} action for resource ${action.resource.kind}/${action.resource.metadata.name} in namespace ${action.resource.namespace}"
 
   /**
    * Log message for when an [[Action]] has been executed.
