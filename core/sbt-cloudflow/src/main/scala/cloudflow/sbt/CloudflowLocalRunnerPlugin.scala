@@ -21,7 +21,6 @@ import java.nio.file._
 import scala.sys.process.Process
 import scala.sys.SystemProperties
 import scala.util.{ Failure, Success, Try }
-import scala.util.control.NonFatal
 
 import com.typesafe.config.{ Config, ConfigFactory }
 import net.ceedubs.ficus.Ficus._
@@ -70,7 +69,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           Def.task {
             implicit val logger = streams.value.log
             val _               = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
-            val classpath       = cloudflowApplicationClasspath.value
             val cpByProject     = allApplicationClasspathByProject.value
             val configFile      = runLocalConfigFile.value
             val streamletDescriptorsByProject = allStreamletDescriptorsByProject.value.filter {
