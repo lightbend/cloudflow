@@ -49,6 +49,12 @@ object CloudflowLabels {
   // The git tag of the user application
   val Version = "app.kubernetes.io/version"
 
+  val ConfigFormat = "com.lightbend.cloudflow/config-format"
+
+  val InputConfig = "input"
+
+  val OutputConfig = "output"
+
   // Streamlet component type
   val StreamletComponent = "streamlet"
 

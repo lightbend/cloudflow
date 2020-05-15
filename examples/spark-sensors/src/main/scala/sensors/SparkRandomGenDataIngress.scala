@@ -45,7 +45,7 @@ class SparkRandomGenDataIngress extends SparkStreamlet {
 
     private def process: Dataset[Data] = {
 
-      val recordsPerSecond = context.streamletConfig.getInt(RecordsPerSecond.key)
+      val recordsPerSecond = RecordsPerSecond.value
 
       val gaugeGen: () ⇒ String = () ⇒ if (Random.nextDouble() < 0.5) "oil" else "gas"
 

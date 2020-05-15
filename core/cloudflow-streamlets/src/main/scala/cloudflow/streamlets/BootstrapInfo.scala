@@ -55,6 +55,7 @@ object BootstrapInfo {
     """.stripMargin
   }
 
+  // TODO move this, this is Akka specific?
   def startRunnerMessage(blockingIODispatcherConfig: Config,
                          dispatcherConfig: Config,
                          deploymentConfig: Config,

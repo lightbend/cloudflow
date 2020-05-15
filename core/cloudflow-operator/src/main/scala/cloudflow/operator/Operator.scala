@@ -77,14 +77,54 @@ object Operator {
     )
   }
 
+  def handleConfigurationInput(
+      client: KubernetesClient
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+    val actionExecutor = new SkuberActionExecutor()
+    // only watch secrets that contain input config
+    val watchOptions = ListOptions(
+      labelSelector = Some(
+        LabelSelector(
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.InputConfig)
+        )
+      ),
+      resourceVersion = None
+    )
+    // watch only Input secrets, transform the streamlet change events (the input secrets)
+    // into Output secret (create-or-) update actions.
+    runStream(
+      watch[Secret](client, watchOptions)
+        .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = false))
+        .log("config-input-change-event", ConfigInputChangeEvent.detected)
+        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
+        .via(StreamletChangeEvent.toInputConfigUpdateAction)
+        .via(executeActions(actionExecutor, logAttributes))
+        .toMat(Sink.ignore)(Keep.right),
+      "The configuration input stream completed unexpectedly, terminating.",
+      "The configuration input stream failed, terminating."
+    )
+  }
+
   def handleConfigurationUpdates(
       client: KubernetesClient
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
+    // only watch secrets that contain output config
+    val watchOptions = ListOptions(
+      labelSelector = Some(
+        LabelSelector(
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.OutputConfig)
+        )
+      ),
+      resourceVersion = None
+    )
 
     runStream(
-      watch[Secret](client)
+      watch[Secret](client, watchOptions)
         .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = true))
         .log("config-change-event", ConfigChangeEvent.detected)
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))

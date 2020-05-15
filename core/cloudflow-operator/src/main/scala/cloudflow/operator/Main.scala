@@ -54,6 +54,7 @@ object Main extends {
 
       Operator.handleAppEvents(client)
       Operator.handleConfigurationUpdates(client)
+      Operator.handleConfigurationInput(client)
       Operator.handleStatusUpdates(client)
     } catch {
       case t: Throwable ⇒

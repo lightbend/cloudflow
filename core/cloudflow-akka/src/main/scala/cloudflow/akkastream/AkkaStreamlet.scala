@@ -81,36 +81,41 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
-  override final def run(context: AkkaStreamletContext): StreamletExecution = {
+  override final def run(context: AkkaStreamletContext): StreamletExecution =
+    try {
+      // readiness probe to be done at operator using this
+      // the streamlet context has been created and the streamlet is ready to take requests
+      // needs to be done only in cluster mode - not in local running
 
-    // readiness probe to be done at operator using this
-    // the streamlet context has been created and the streamlet is ready to take requests
-    // needs to be done only in cluster mode - not in local running
+      val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+      if (!localMode) createTempFile(s"${context.streamletRef}-ready.txt", context.streamletRef)
 
-    val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
-    if (!localMode) createTempFile(s"${context.streamletRef}-ready.txt", context.streamletRef)
+      val blockingIODispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
+      val dispatcherConfig           = context.system.settings.config.getConfig("akka.actor.default-dispatcher")
+      val deploymentConfig           = context.system.settings.config.getConfig("akka.actor.deployment")
+      val streamletConfig = Try {
+        context.system.settings.config.getConfig("cloudflow.runner.streamlets")
+      }.getOrElse(ConfigFactory.empty())
 
-    val blockingIODispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
-    val dispatcherConfig           = context.system.settings.config.getConfig("akka.actor.default-dispatcher")
-    val deploymentConfig           = context.system.settings.config.getConfig("akka.actor.deployment")
-    val streamletConfig = Try {
-      context.system.settings.config.getConfig("cloudflow.runner.streamlets")
-    }.getOrElse(ConfigFactory.empty())
+      context.system.log.info(startRunnerMessage(blockingIODispatcherConfig, dispatcherConfig, deploymentConfig, streamletConfig))
 
-    context.system.log.info(startRunnerMessage(blockingIODispatcherConfig, dispatcherConfig, deploymentConfig, streamletConfig))
+      val logic = createLogic()
 
-    val logic = createLogic()
+      // create a marker file indicating that the streamlet has started running
+      // this will be used for pod liveness probe
+      // needs to be done only in cluster mode - not in local running
 
-    // create a marker file indicating that the streamlet has started running
-    // this will be used for pod liveness probe
-    // needs to be done only in cluster mode - not in local running
+      if (!localMode) createTempFile(s"${context.streamletRef}-live.txt", context.streamletRef)
 
-    if (!localMode) createTempFile(s"${context.streamletRef}-live.txt", context.streamletRef)
-
-    logic.run()
-    signalReadyAfterStart()
-    context.streamletExecution
-  }
+      logic.run()
+      signalReadyAfterStart()
+      context.streamletExecution
+    } catch {
+      case e: Throwable =>
+        // TODO fix this for failure.
+        context.streamletExecution.stop()
+        throw e
+    }
 
   private def createTempFile(relativePath: String, streamletRef: String): Unit = {
     val tempDir = System.getProperty("java.io.tmpdir")

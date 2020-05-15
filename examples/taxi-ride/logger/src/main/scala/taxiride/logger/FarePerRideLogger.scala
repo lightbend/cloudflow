@@ -38,14 +38,14 @@ class FarePerRideLogger extends AkkaStreamlet {
   override def configParameters = Vector(LogLevel, MsgPrefix)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    val logF: String ⇒ Unit = streamletConfig.getString(LogLevel.key).toLowerCase match {
+    val logF: String ⇒ Unit = LogLevel.value.toLowerCase match {
       case "debug"   ⇒ system.log.debug _
       case "info"    ⇒ system.log.info _
       case "warning" ⇒ system.log.warning _
       case "error"   ⇒ system.log.error _
     }
 
-    val msgPrefix = streamletConfig.getString(MsgPrefix.key)
+    val msgPrefix = MsgPrefix.value
 
     def log(rideFare: TaxiRideFare) =
       logF(s"$msgPrefix $rideFare")

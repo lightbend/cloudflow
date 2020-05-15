@@ -49,7 +49,7 @@ class CallRecordGeneratorIngress extends SparkStreamlet {
   val shape = StreamletShape(out)
 
   override def createLogic() = new SparkStreamletLogic {
-    val recordsPerSecond = context.streamletConfig.getInt(RecordsPerSecond.key)
+    val recordsPerSecond = RecordsPerSecond.value
     override def buildStreamingQueries = {
       val outStream = DataGenerator.mkData(super.session, recordsPerSecond)
       writeStream(outStream, out, OutputMode.Append).toQueryExecution
