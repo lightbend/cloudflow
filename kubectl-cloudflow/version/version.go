@@ -2,6 +2,7 @@ package version
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8sclient"
@@ -35,46 +36,9 @@ const ProtocolVersionConfigMapName = "cloudflow-protocol-version"
 // CloudflowDeploymentName is the name of the Cloudflow operator deployment
 const CloudflowDeploymentName = "cloudflow-operator"
 
-// GetProtocolVersionConfigMap Get the protocol version config map set by the operator
-func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
-	k8sClient, k8sErr := k8sclient.GetClient()
-	if k8sErr != nil {
-		printutil.LogAndExit("Failed to create new kubernetes client, %s", k8sErr.Error())
-	}
-	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{ProtocolVersionConfigMapName: ProtocolVersionConfigMapName}}
-
-	var cm *corev1.ConfigMap
-	configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(
-		metav1.ListOptions{LabelSelector: labels.Set(labelSelector.MatchLabels).String()})
-
-	if err == nil {
-		if len(configMaps.Items) > 1 {
-			return nil, errors.New("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting")
-		}
-		if len(configMaps.Items) < 1 {
-			return nil, errors.New("No Cloudflow operators detected in the cluster. Exiting")
-		}
-		return &configMaps.Items[0], nil
-	}
-	return cm, err
-}
-
-// FindCloudflowNamespace tries to find the Cloudflow namespace set in the protocol version config map
-func FindCloudflowNamespace() (string, error) {
-	cm, err := GetProtocolVersionConfigMap()
-	if err != nil {
-		printutil.LogAndExit("Could not find the Cloudflow namespace. Kubernetes API returned an error: %s", err)
-	}
-
-	if cm == nil {
-		printutil.LogAndExit("Cannot find the '%s' ConfigMap and/or the Cloudflow namespace. Please make sure that the Cloudflow operator is installed", ProtocolVersionConfigMapName)
-	}
-	return cm.GetObjectMeta().GetNamespace(), err
-}
-
 // FailOnProtocolVersionMismatch fails and exits if the protocol version of kubectl-cloudflow does not match with the cloudflow operator protocol version.
 func FailOnProtocolVersionMismatch() {
-	cm, err := GetProtocolVersionConfigMap()
+	cm, err := getProtocolVersionConfigMap()
 	if err != nil {
 		printutil.LogAndExit("Could not verify protocol version. Kubernetes API returned an error: %s", err)
 	}
@@ -97,4 +61,28 @@ func FailOnProtocolVersionMismatch() {
 		}
 		printutil.LogAndExit("This version of kubectl Cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
 	}
+}
+
+// getProtocolVersionConfigMap gets the protocol version config map set by the operator
+func getProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
+	k8sClient, k8sErr := k8sclient.GetClient()
+	if k8sErr != nil {
+		return nil, fmt.Errorf("Failed to create new kubernetes client, %s", k8sErr.Error())
+	}
+	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{ProtocolVersionConfigMapName: ProtocolVersionConfigMapName}}
+
+	var cm *corev1.ConfigMap
+	configMaps, err := k8sClient.CoreV1().ConfigMaps("").List(
+		metav1.ListOptions{LabelSelector: labels.Set(labelSelector.MatchLabels).String()})
+
+	if err == nil {
+		if len(configMaps.Items) > 1 {
+			return nil, errors.New("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting")
+		}
+		if len(configMaps.Items) < 1 {
+			return nil, errors.New("No Cloudflow operators detected in the cluster. Exiting")
+		}
+		return &configMaps.Items[0], nil
+	}
+	return cm, err
 }

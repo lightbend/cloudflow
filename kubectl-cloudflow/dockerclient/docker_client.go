@@ -14,7 +14,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
 
@@ -89,21 +88,21 @@ func PullImage(cli *client.Client, imageName string, dockerRegistryURL string) (
 		if runErr != nil {
 			return nil, runErr
 		}
-		digest := GetImageDigest(cli, imageName)
-		return &PulledImage{imageName, true, digest, dockerRegistryURL}, nil
+		digest, digestErr := getImageDigest(cli, imageName)
+		return &PulledImage{imageName, true, digest, dockerRegistryURL}, digestErr
 	}
-	digest := GetImageDigest(cli, imageName)
+	digest, digestErr := getImageDigest(cli, imageName)
 	io.Copy(ioutil.Discard, out)
 	defer out.Close()
-	return &PulledImage{imageName, false, digest, dockerRegistryURL}, nil
+	return &PulledImage{imageName, false, digest, dockerRegistryURL}, digestErr
 }
 
-// GetImageDigest gets the imageDigest for the imageName
-func GetImageDigest(cli *client.Client, imageName string) string {
+// getImageDigest gets the imageDigest for the imageName
+func getImageDigest(cli *client.Client, imageName string) (string, error) {
 	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
 
 	if err != nil {
-		printutil.LogAndExit("Failed to list local docker images, %s", err.Error())
+		return "", fmt.Errorf("Failed to list local docker images, %s", err.Error())
 	}
 
 	for _, image := range images {
@@ -112,10 +111,9 @@ func GetImageDigest(cli *client.Client, imageName string) string {
 			continue
 		}
 		_, imageDigest := path.Split(image.RepoDigests[0])
-		return imageDigest
+		return imageDigest, nil
 	}
-	printutil.LogAndExit("Unable to inspect image '%s'. It could not be found locally.", imageName)
-	return "" // never reached
+	return "", fmt.Errorf("unable to inspect image '%s'. It could not be found locally", imageName)
 }
 
 // In case the overall label value exceeded 64K, the scaal side has split into

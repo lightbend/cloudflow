@@ -12,7 +12,6 @@ import (
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,19 +36,13 @@ func HandleConfig(
 	k8sClient *kubernetes.Clientset,
 	namespace string,
 	applicationSpec cfapp.CloudflowApplicationSpec,
-	configFiles []string) map[string]*corev1.Secret {
+	configFiles []string) (map[string]*corev1.Secret, error) {
+
 	configurationArguments, err := splitConfigurationParameters(args[1:])
-
-	if err != nil {
-		printutil.LogErrorAndExit(err)
+	if err == nil {
+		return handleConfig(namespace, applicationSpec, configurationArguments, configFiles)
 	}
-
-	streamletNameSecretMap, err := handleConfig(namespace, applicationSpec, configurationArguments, configFiles)
-
-	if err != nil {
-		printutil.LogErrorAndExit(err)
-	}
-	return streamletNameSecretMap
+	return map[string]*corev1.Secret{}, err
 }
 
 func handleConfig(

@@ -123,7 +123,10 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	streamletNameSecretMap := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	streamletNameSecretMap, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
 
 	firstPulledImage, applicationSpec := updateImageRefs(client, applicationSpec)
 
@@ -137,7 +140,11 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		handleAuth(k8sClient, namespace, opts, firstPulledImage)
 	}
 
-	applicationSpec = scale.UpdateReplicas(appClient, applicationSpec, opts.replicasByStreamletName)
+	applicationSpec, err = scale.UpdateReplicas(appClient, applicationSpec, opts.replicasByStreamletName)
+
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
 
 	ownerReference := createOrUpdateCloudflowApplication(appClient, applicationSpec)
 

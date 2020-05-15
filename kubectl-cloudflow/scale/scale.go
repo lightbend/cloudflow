@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
@@ -23,24 +22,24 @@ func UpdateDeploymentWithReplicas(spec cfapp.CloudflowApplicationSpec, streamlet
 }
 
 // UpdateReplicas updates the deployment replicas in application spec with values from replicasByStreamletName
-func UpdateReplicas(applicationClient *cfapp.CloudflowApplicationClient, applicationSpec cfapp.CloudflowApplicationSpec, replicasByStreamletName map[string]int) cfapp.CloudflowApplicationSpec {
+func UpdateReplicas(applicationClient *cfapp.CloudflowApplicationClient, applicationSpec cfapp.CloudflowApplicationSpec, replicasByStreamletName map[string]int) (cfapp.CloudflowApplicationSpec, error) {
 
 	applicationSpec, err := copyReplicaConfigurationFromCurrentApplication(applicationClient, applicationSpec)
 	if err != nil {
-		printutil.LogAndExit("The application descriptor is invalid, %s", err.Error())
+		return cfapp.CloudflowApplicationSpec{}, fmt.Errorf("The application descriptor is invalid, %s", err.Error())
 	}
 
 	// update deployment with replicas passed through command line
 	for _, deployment := range applicationSpec.Deployments {
 		if s, ok := replicasByStreamletName[deployment.StreamletName]; ok {
 			if spec, err := UpdateDeploymentWithReplicas(applicationSpec, deployment.StreamletName, s); err != nil {
-				printutil.LogAndExit("Cannot set replicas for streamlet [%s] %s", deployment.StreamletName, err.Error())
+				return cfapp.CloudflowApplicationSpec{}, fmt.Errorf("Cannot set replicas for streamlet [%s] %s", deployment.StreamletName, err.Error())
 			} else {
 				applicationSpec = spec
 			}
 		}
 	}
-	return applicationSpec
+	return applicationSpec, nil
 }
 
 func copyReplicaConfigurationFromCurrentApplication(applicationClient *cfapp.CloudflowApplicationClient, spec cfapp.CloudflowApplicationSpec) (cfapp.CloudflowApplicationSpec, error) {
