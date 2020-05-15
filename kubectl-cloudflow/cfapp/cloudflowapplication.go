@@ -190,8 +190,7 @@ func LoadCloudflowApplicationSpec(crFile string) (CloudflowApplicationSpec, erro
 	bytes := []byte(crString)
 
 	var cr CloudflowApplication
-	err = json.Unmarshal(bytes, &cr)
-	if err != nil {
+	if json.Unmarshal(bytes, &cr); err != nil {
 		return CloudflowApplicationSpec{}, err
 	}
 
