@@ -20,15 +20,16 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.stream.scaladsl._
-
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
-
+import akka.kafka.cluster.sharding.KafkaClusterSharding
 import com.typesafe.config.Config
-
 import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
+
+import scala.concurrent.Future
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
@@ -118,6 +119,13 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def sourceWithCommittableContext[T](inlet: CodecInlet[T]): SourceWithCommittableContext[T] =
     context.sourceWithCommittableContext(inlet)
 
+  def shardedSourceWithCommittableContext[T, E](
+      inlet: CodecInlet[T],
+      typeKey: EntityTypeKey[E],
+      entityIdExtractor: E => String
+  ): (SourceWithCommittableContext[T], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) =
+    context.shardedSourceWithCommittableContext(inlet, typeKey, entityIdExtractor)
+
   /**
    * Java API
    */
@@ -140,6 +148,14 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
     context.plainSource(inlet, resetPosition)
+
+  def shardedPlainSource[T, E](
+      inlet: CodecInlet[T],
+      typeKey: EntityTypeKey[E],
+      entityIdExtractor: E => String,
+      resetPosition: ResetPosition = Latest
+  ): (Source[T, NotUsed], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) =
+    context.shardedPlainSource(inlet, typeKey, entityIdExtractor, resetPosition)
 
   /**
    * Java API

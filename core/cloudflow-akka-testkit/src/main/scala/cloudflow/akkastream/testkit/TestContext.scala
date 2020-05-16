@@ -19,15 +19,14 @@ package cloudflow.akkastream.testkit
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent._
-
 import akka.NotUsed
 import akka.actor._
+import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.CommitterSettings
 import akka.kafka.ConsumerMessage._
 import akka.stream._
 import akka.stream.scaladsl._
 import com.typesafe.config._
-
 import cloudflow.akkastream._
 import cloudflow.streamlets._
 
@@ -172,6 +171,16 @@ private[testkit] case class TestContext(
 
   def metricTags(): Map[String, String] =
     Map()
+
+  override private[akkastream] def shardedSourceWithCommittableContext[T, E](inlet: CodecInlet[T],
+                                                                             typeKey: EntityTypeKey[E],
+                                                                             entityIdExtractor: E => String) = ???
+
+  override private[akkastream] def shardedPlainSource[T, E](inlet: CodecInlet[T],
+                                                            typeKey: EntityTypeKey[E],
+                                                            entityIdExtractor: E => String,
+                                                            resetPosition: ResetPosition) =
+    ???
 }
 
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)
