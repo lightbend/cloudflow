@@ -1,23 +1,20 @@
 package connectedcar.streamlets
 
 import akka.actor.{ActorRef, Props}
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef, EntityTypeKey}
 import akka.util.Timeout
 import akka.actor.typed.scaladsl.adapter._
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
 import akka.cluster.sharding.typed.ClusterShardingSettings
-import akka.kafka.ConsumerSettings
-import akka.kafka.cluster.sharding.KafkaClusterSharding
 import cloudflow.akkastream.scaladsl.{FlowWithCommittableContext, RunnableGraphStreamletLogic}
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro.{AvroInlet, AvroOutlet}
-import connectedcar.actors.ConnectedCarActor
+import connectedcar.actors.{ConnectedCarActor, ConnectedCarERecordWrapper}
 
 import scala.concurrent.duration._
 import akka.pattern.ask
 import cloudflow.akkastream.{AkkaStreamlet, Clustering}
 import connectedcar.data.{ConnectedCarAgg, ConnectedCarERecord}
-import org.apache.kafka.common.serialization.StringDeserializer
 
 object ConnectedCarCluster extends AkkaStreamlet with Clustering {
   val in    = AvroInlet[ConnectedCarERecord]("in")
@@ -26,34 +23,32 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
 
   override def createLogic = new RunnableGraphStreamletLogic() {
     val groupId = "user-topic-group-id"
-    val typeKey = EntityTypeKey[ConnectedCarERecord](groupId)
+    val typeKey = EntityTypeKey[ConnectedCarERecordWrapper](groupId)
 
     val (source, messageExtractor) = shardedSourceWithCommittableContext(in,
                                       typeKey,
-                                      (msg: ConnectedCarERecord) => msg.carId+""
+                                      (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
                                     )
 
     def runnableGraph = source.via(flow).to(committableSink(out))
+    val clusterSharding = ClusterSharding(system.toTyped)
 
     messageExtractor.map(messageExtractor => {
-      ClusterSharding(system.toTyped).init(
-        Entity(typeKey)(createBehavior = _ => userBehaviour())
+      clusterSharding.init(
+        Entity(typeKey)(createBehavior = _ => ConnectedCarActor())
           .withAllocationStrategy(new ExternalShardAllocationStrategy(system, typeKey.name))
           .withMessageExtractor(messageExtractor)
           .withSettings(ClusterShardingSettings(system.toTyped)))
     })
 
-    val carRegion: ActorRef = ClusterSharding(context.system).start(
-      typeName = "Counter",
-      entityProps = Props[ConnectedCarActor],
-      settings = ClusterShardingSettings(context.system),
-      extractEntityId = ConnectedCarActor.extractEntityId,
-      extractShardId = ConnectedCarActor.extractShardId
-    )
-
     implicit val timeout: Timeout = 3.seconds
     def flow =
       FlowWithCommittableContext[ConnectedCarERecord]
-        .mapAsync(5)(msg ⇒ (carRegion ? msg).mapTo[ConnectedCarAgg])
+        .mapAsync(5) {
+          msg ⇒ ({
+            val carActor = clusterSharding.entityRefFor(typeKey, "counter-1")
+            carActor.ask[ConnectedCarAgg](ref => ConnectedCarERecordWrapper(msg, ref))
+          })
+        }
   }
 }
