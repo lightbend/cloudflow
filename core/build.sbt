@@ -327,7 +327,8 @@ lazy val plugin =
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
             EmbeddedKafka,
-            Logback % Test,
+            Logback               % Test,
+            "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
             ScalaTest
           )
     )
