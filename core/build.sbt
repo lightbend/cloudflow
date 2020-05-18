@@ -398,7 +398,7 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := Version.Scala,
       crossScalaVersions := Vector(scalaVersion.value),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,

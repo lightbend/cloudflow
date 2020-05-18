@@ -42,6 +42,7 @@ object Operator {
   )
 
   val AppIdLabel         = "com.lightbend.cloudflow/app-id"
+  val ConfigFormatLabel  = "com.lightbend.cloudflow/config-format"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
   val ConfigUpdateLabel  = "com.lightbend.cloudflow/config-update"
 
@@ -96,10 +97,10 @@ object Operator {
     // into Output secret (create-or-) update actions.
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = false))
+        .via(ConfigInputChangeEvent.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
-        .via(StreamletChangeEvent.toInputConfigUpdateAction)
+        .via(ConfigInputChangeEvent.mapToAppInSameNamespace(client))
+        .via(ConfigInputChangeEvent.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
@@ -125,7 +126,7 @@ object Operator {
 
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = true))
+        .via(StreamletChangeEvent.fromWatchEvent())
         .log("config-change-event", ConfigChangeEvent.detected)
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toConfigUpdateAction)

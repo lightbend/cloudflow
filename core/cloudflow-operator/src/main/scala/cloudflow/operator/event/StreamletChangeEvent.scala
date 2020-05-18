@@ -17,18 +17,13 @@
 package cloudflow.operator
 package event
 
-import java.nio.charset.StandardCharsets
-import scala.collection.JavaConverters._
 import scala.concurrent._
-import scala.util.Try
 
 import akka.actor._
 import akka.NotUsed
 import akka.stream.scaladsl._
-import com.typesafe.config._
 import skuber._
 import skuber.api.client._
-import skuber.json.format._
 
 import cloudflow.operator.action._
 import cloudflow.operator.runner._
@@ -38,14 +33,6 @@ import cloudflow.operator.runner.SparkResource.SpecPatch
  * Indicates that a streamlet has changed.
  */
 case class StreamletChangeEvent[T <: ObjectResource](appId: String, streamletName: String, namespace: String, watchEvent: WatchEvent[T])
-
-object ConfigInputChangeEvent {
-  val SecretDataKey = "secret.conf"
-
-  /** log message for when a StreamletChangeEvent is identified as a configuration change event */
-  def detected[T <: ObjectResource](event: StreamletChangeEvent[T]) =
-    s"User created or modified configuration for streamlet ${event.streamletName} in application ${event.appId}."
-}
 
 object ConfigChangeEvent {
 
@@ -68,11 +55,9 @@ object StreamletChangeEvent {
    * Only watch events for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
    * (watch events are filtered by Operator.AppIdLabel and Operator.StreamletNameLabel)
    */
-  def fromWatchEvent[O <: ObjectResource](
-      modifiedOnly: Boolean = false
-  )(implicit system: ActorSystem): Flow[WatchEvent[O], StreamletChangeEvent[O], NotUsed] =
+  def fromWatchEvent[O <: ObjectResource]()(implicit system: ActorSystem): Flow[WatchEvent[O], StreamletChangeEvent[O], NotUsed] =
     Flow[WatchEvent[O]]
-      .filter(_._type == EventType.MODIFIED || !modifiedOnly)
+      .filter(_._type == EventType.MODIFIED)
       .mapConcat { watchEvent ⇒
         val obj       = watchEvent._object
         val metadata  = obj.metadata
@@ -81,6 +66,8 @@ object StreamletChangeEvent {
         (for {
           appId         ← metadata.labels.get(Operator.AppIdLabel)
           streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+          configFormat  <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.OutputConfig
+
           _ = system.log.info(s"[app: $appId streamlet: $streamletName] streamlet changed ${changeInfo(watchEvent)}")
         } yield {
           StreamletChangeEvent(appId, streamletName, namespace, watchEvent)
@@ -185,123 +172,4 @@ object StreamletChangeEvent {
         case _ ⇒ Nil // app could not be found, do nothing.
       }
       .mapConcat(_.toList)
-
-  def toInputConfigUpdateAction(
-      implicit system: ActorSystem,
-      ctx: DeploymentContext
-  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
-    Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
-      .map {
-        case (Some(app), streamletChangeEvent) ⇒
-          import streamletChangeEvent._
-          app.spec.deployments
-            .find(_.streamletName == streamletName)
-            .map { streamletDeployment ⇒
-              val secret: Secret = streamletChangeEvent.watchEvent._object
-              system.log.info(s"Detected input secret '${secret.metadata.name}' changed for streamlet '$streamletName'.")
-
-              secret.data
-                .get(ConfigInputChangeEvent.SecretDataKey)
-                .map { bytes =>
-                  val config = ConfigFactory.parseString(new String(bytes, StandardCharsets.UTF_8))
-
-                  // removing 'config-parameters' section and move it contents directly under the streamlet.
-                  var transformedConfig = moveConfigParameters(config, streamletName)
-                  transformedConfig = mergeRuntimeConfigSection(transformedConfig, streamletName)
-                  transformedConfig = removeKubernetesConfigSection(transformedConfig, streamletName)
-                  transformedConfig = moveTopicsConfigToPortMappings(config, streamletName)
-
-                  // TODO get runtime config and hook into a runtime specific action.
-                  // TODO handle kubernetes config section.
-
-                  // create update action for output secret action which is mounted as config by runtime specific deployments
-                  val outputSecret = Secret(
-                    metadata = ObjectMeta(
-                      name = streamletDeployment.secretName,
-                      namespace = app.metadata.namespace,
-                      labels =
-                        CloudflowLabels(app).baseLabels ++ Map(
-                              Operator.AppIdLabel          -> appId,
-                              Operator.StreamletNameLabel  -> streamletName,
-                              CloudflowLabels.ConfigFormat -> CloudflowLabels.OutputConfig
-                            )
-                    ),
-                    data = Map(
-                      ConfigInputChangeEvent.SecretDataKey -> transformedConfig
-                            .root()
-                            .render(ConfigRenderOptions.concise())
-                            .getBytes(StandardCharsets.UTF_8)
-                    )
-                  )
-                  system.log.info(
-                    s"Adding update action for output secret ${outputSecret.metadata.name} in namespace ${outputSecret.metadata.namespace}"
-                  )
-                  Action.update(outputSecret, secretEditor)
-                }
-                .toList
-            }
-            .getOrElse(Nil)
-        case _ ⇒ Nil // app could not be found, do nothing.
-      }
-      .mapConcat(_.toList)
-
-  def streamletConfigKey(streamletName: String) = s"cloudflow.streamlets.$streamletName"
-
-  def moveConfigParameters(config: Config, streamletName: String): Config = {
-    val key                        = streamletConfigKey(streamletName)
-    val configParametersKey        = "config-parameters"
-    val absoluteConfigParameterKey = s"$key.$configParametersKey"
-    val configParametersSection = Try(Some(config.getConfig(absoluteConfigParameterKey)))
-      .getOrElse(None)
-
-    configParametersSection
-      .map { c =>
-        val adjustedConfigParametersConfig = c.atPath(key)
-        config.withoutPath(absoluteConfigParameterKey).withFallback(adjustedConfigParametersConfig)
-      }
-      .getOrElse(config)
-  }
-
-  def mergeRuntimeConfigSection(config: Config, streamletName: String): Config = {
-    val streamletKey = streamletConfigKey(streamletName)
-
-    val configKey                = "config"
-    val absoluteRuntimeConfigKey = s"$streamletKey.$configKey"
-    val runtimeConfigSection = Try(Some(config.getConfig(absoluteRuntimeConfigKey)))
-      .getOrElse(None)
-    // removing 'config' section and move it contents in the root of the config (akka, spark, flink, etc).
-    runtimeConfigSection
-      .map { c =>
-        val configs = c
-          .root()
-          .entrySet()
-          .asScala
-          .map { entry =>
-            entry.getValue.atPath(entry.getKey)
-          }
-          .toVector
-        val mergedConfig = config.withoutPath(absoluteRuntimeConfigKey)
-        configs.foldLeft(mergedConfig) { (acc, el) =>
-          acc.withFallback(el)
-        }
-      }
-      .getOrElse(config)
-  }
-  def removeKubernetesConfigSection(config: Config, streamletName: String): Config =
-    // remove the kubernetes section, but it does need to be provided as Pod related details to the Runners that need to pass these through.
-    // TODO implement
-    config
-
-  def moveTopicsConfigToPortMappings(config: Config, streamletName: String): Config =
-    // TODO implement
-    config
-
-  // val kubernetesKey               = "kubernetes"
-  // val absoluteKubernetesConfigKey = s"$streamletKey.$kubernetesKey"
-  // val topicsKey                   = "topics"
-  // val absoluteTopicsConfigKey     = s"$streamletKey.$topicsKey"
-
-  def secretEditor = new ObjectEditor[Secret] {
-    def updateMetadata(obj: Secret, newMetadata: ObjectMeta): Secret = obj.copy(metadata = newMetadata)
-  }
 }

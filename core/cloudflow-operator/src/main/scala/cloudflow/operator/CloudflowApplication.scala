@@ -109,6 +109,10 @@ object CloudflowApplication {
       applicationSpec
     )
 
+  def getOwnerReferences(app: CR) = List(
+    OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true))
+  )
+
   def hash(applicationSpec: CloudflowApplication.Spec): String = {
     val jsonString = Json.stringify(Json.toJson(CloudflowApplication(applicationSpec)))
 

@@ -43,12 +43,23 @@ sealed trait Action[+T <: ObjectResource] {
    * Returns the created or modified resource, or None if the resource is deleted.
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]]
+
+  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, f: KubernetesClient => Future[O])(
+      implicit ec: ExecutionContext
+  ): Future[O] =
+    future.recoverWith {
+      case e: K8SException if (e.status.code == Some(Action.ConflictCode)) => {
+        f(client)
+      }
+    }
+
 }
 
 /**
  * Creates actions.
  */
 object Action {
+  val ConflictCode = 409
 
   /**
    * Creates a [[CreateAction]].
@@ -106,9 +117,9 @@ object Action {
  */
 class CreateAction[T <: ObjectResource](
     val resource: T,
-    val format: Format[T],
-    val resourceDefinition: ResourceDefinition[T],
-    val editor: ObjectEditor[T]
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[T],
+    implicit val editor: ObjectEditor[T]
 ) extends Action[T] {
 
   val name = "create"
@@ -118,16 +129,24 @@ class CreateAction[T <: ObjectResource](
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
-      existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
+      result <- executeCreate(client)
+    } yield new CreateAction(result, format, resourceDefinition, editor)
+
+  private def executeCreate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+    for {
+      existing ← client.getOption[T](resource.name)
       res ← existing
         .map { existingResource ⇒
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
-          client
-            .update(resourceVersionUpdated)(format, resourceDefinition, lc)
-            .map(o ⇒ new CreateAction(o, format, resourceDefinition, editor))
+          recoverFromConflict(
+            client
+              .update(resourceVersionUpdated),
+            client,
+            executeCreate
+          )
         }
-        .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ new CreateAction(o, format, resourceDefinition, editor)))
+        .getOrElse(client.create(resource))
     } yield res
 
   /**
@@ -141,8 +160,8 @@ class CreateAction[T <: ObjectResource](
  */
 class UpdateAction[T <: ObjectResource](
     val resource: T,
-    val format: Format[T],
-    val resourceDefinition: ResourceDefinition[T],
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[T],
     val editor: ObjectEditor[T]
 ) extends Action[T] {
 
@@ -151,40 +170,28 @@ class UpdateAction[T <: ObjectResource](
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def executeUpdate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
-    for {
-      existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
-      res ← existing
-        .map(existingResource ⇒
-          editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
-        )
-        .map(resourceToUpdate ⇒
-          client.update(resourceToUpdate)(format, resourceDefinition, lc).recoverWith {
-            case e: K8SException => {
-              val errMsg = e.status.message.getOrElse("")
-              if (errMsg.contains("please apply your changes to the latest version and try again")) {
-                executeUpdate(client)
-              } else {
-                throw (e)
-              }
-            }
-          }
-        )
-        .getOrElse(client.create(resource)(format, resourceDefinition, lc))
-    } yield res
-
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       result <- executeUpdate(client)
     } yield new UpdateAction(result, format, resourceDefinition, editor)
+  private def executeUpdate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+    for {
+      existing ← client.getOption[T](resource.name)
+      res ← existing
+        .map(existingResource ⇒
+          editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
+        )
+        .map(resourceToUpdate ⇒ recoverFromConflict(client.update(resourceToUpdate), client, executeUpdate))
+        .getOrElse(client.create(resource))
+    } yield res
 }
 
 class PatchAction[T <: ObjectResource, O <: Patch](
     val resource: T,
     val patch: O,
-    val format: Format[T],
-    val patchWriter: Writes[O],
-    val resourceDefinition: ResourceDefinition[T]
+    implicit val format: Format[T],
+    implicit val patchWriter: Writes[O],
+    implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[T] {
 
   val name = "patch"
@@ -194,7 +201,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     client
-      .patch(resource.name, patch, Some(resource.ns))(patchWriter, format, resourceDefinition, lc)
+      .patch(resource.name, patch, Some(resource.ns))
       .map(r ⇒ new PatchAction(r, patch, format, patchWriter, resourceDefinition))
 }
 
@@ -204,9 +211,9 @@ class PatchAction[T <: ObjectResource, O <: Patch](
  */
 class UpdateStatusAction[T <: ObjectResource](
     val resource: T,
-    val format: Format[T],
-    val resourceDefinition: ResourceDefinition[T],
-    val statusEv: HasStatusSubresource[T],
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[T],
+    implicit val statusEv: HasStatusSubresource[T],
     val editor: ObjectEditor[T]
 ) extends Action[T] {
 
@@ -215,32 +222,21 @@ class UpdateStatusAction[T <: ObjectResource](
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    for {
+      result <- executeUpdateStatus(client)
+    } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
+
   def executeUpdateStatus(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client.getOption[T](resource.name)(format, resourceDefinition, lc)
+      existing ← client.getOption[T](resource.name)
       resourceVersionUpdated = existing
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
         .getOrElse(resource)
-      res ← client
-        .updateStatus(resourceVersionUpdated)(format, resourceDefinition, statusEv, lc)
-        .recoverWith {
-          case e: K8SException => {
-            val errMsg = e.status.message.getOrElse("")
-            if (errMsg.contains("please apply your changes to the latest version and try again")) {
-              executeUpdateStatus(client)
-            } else {
-              throw (e)
-            }
-          }
-        }
+      res ← recoverFromConflict(client.updateStatus(resourceVersionUpdated), client, executeUpdateStatus)
     } yield res
-
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
-    for {
-      result <- executeUpdateStatus(client)
-    } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 }
 
 /**
