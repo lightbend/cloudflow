@@ -11,6 +11,7 @@ lazy val swissKnife = (project in file("."))
       ),
       name := "swiss-knife",
       organization := "com.lightbend.cloudflow",
+
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>"))
     )
     .settings(commonSettings)
@@ -25,6 +26,9 @@ lazy val swissKnife = (project in file("."))
 lazy val app = (project in file("./app"))
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
+  .settings(
+    runLocalConfigFile := Some("app/main/resources/local.conf"),
+  )
   
 lazy val datamodel = (project in file("datamodel"))
   .enablePlugins(CloudflowLibraryPlugin)
