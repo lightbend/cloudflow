@@ -25,7 +25,7 @@ import scala.concurrent.duration.Duration
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
 import com.typesafe.config.{ Config, ConfigFactory }
-import org.slf4j.{ Logger, LoggerFactory, Marker }
+import org.slf4j.LoggerFactory
 import spray.json._
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
@@ -95,9 +95,8 @@ object LocalRunner extends StreamletLoader {
 
   private def run(appDescriptor: ApplicationDescriptor): Unit = {
 
-    val kafkaPort            = 9093
-    val bootstrapServers     = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
-    val embeddedKafkaEnabled = if (localConf.hasPath(EmbeddedKafkaKey)) localConf.getBoolean(EmbeddedKafkaKey) else true
+    val kafkaPort        = 9093
+    val bootstrapServers = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion

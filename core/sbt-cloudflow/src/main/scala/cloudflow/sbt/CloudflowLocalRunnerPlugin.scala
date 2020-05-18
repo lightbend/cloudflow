@@ -30,10 +30,9 @@ import spray.json._
 import com.github.mdr.ascii.layout._
 import com.github.mdr.ascii.graph._
 import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
-import cloudflow.sbt.CloudflowLocalRunnerPlugin.streamletFilterByClass
 import cloudflow.streamlets.ServerAttribute
 
 /**
@@ -124,16 +123,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               .sorted
             setupKafka(KafkaPort, topics)
 
-//            infoBanner("Running application: appDescriptor.appId") {
-//              s"""
-//                 |Sandbox output directory: ${tempDir.toString}
-//                 |topics: ${topics.mkString(", ")}
-//                 |$localConfMessage
-//              """.stripMargin
-//            }
             printAppLayout(resolveConnections(appDescriptor))
 
-            printInfo(descriptorByProject, topics, tempDir.toFile)
+            printInfo(runtimeDescriptorByProject, tempDir.toFile, localConfMessage)
 
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
@@ -169,7 +161,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     println(bottom + "\n")
   }
 
-  case class RuntimeDescriptor(id: String, appDescriptorFile: Path, outputFile: File, logConfig: Path, localConfMsg: String)
+  case class RuntimeDescriptor(id: String,
+                               appDescriptor: ApplicationDescriptor,
+                               appDescriptorFile: Path,
+                               outputFile: File,
+                               logConfig: Path,
+                               localConfMsg: String)
 
   def setupKafka(port: Int, topics: Seq[String])(implicit log: Logger) = {
     implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
@@ -182,6 +179,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       EmbeddedKafka.createCustomTopic(topic)
     }
   }
+  def stopKafka() =
+    EmbeddedKafka.stop()
 
   def getDescriptorsOrFail(
       descriptors: Iterable[(String, Try[RuntimeDescriptor])]
@@ -197,9 +196,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       }
     descriptors.collect { case (pid, Success(runtimeDescriptor)) => (pid, runtimeDescriptor) }
   }
-
-  def stopKafka() =
-    EmbeddedKafka.stop()
 
   def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
     val streamletIOResolver = appDescriptor.streamlets.map { st =>
@@ -242,7 +238,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       logFile                   <- log4jConfigFile
       appDescriptorFile         ← prepareApplicationFile(appDescriptor)
     } yield {
-      RuntimeDescriptor(appDescriptor.appId, appDescriptorFile, outputFile, logFile, localConfMsg)
+      RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfMsg)
     }
   }
 
@@ -278,7 +274,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def createOutputFile(workDir: Path, projectId: String): Try[File] = Try {
-    Files.createFile(workDir.resolve(projectId + "-local.log")).toFile
+    val localFile = workDir.resolve(projectId + "-local.log").toFile
+    if (!localFile.exists()) {
+      Files.createFile(workDir.resolve(projectId + "-local.log")).toFile
+    }
+    localFile
   }
 
   def createDirs(prefix: String): (Path, Path) = {
@@ -371,31 +371,22 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def printInfo(descriptors: Iterable[(String, ApplicationDescriptor)], topics: Seq[String], outputFile: File): Unit = {
-    val streamletInfoPerProject = descriptors.map { case (pid, desc) => pid -> streamletInfo(desc) }
+  def printInfo(descriptors: Iterable[(String, RuntimeDescriptor)], outputFolder: File, localConfMsg: String): Unit = {
+    val streamletInfoPerProject = descriptors.map { case (pid, rd) => (pid, rd.outputFile, streamletInfo(rd.appDescriptor)) }
     val streamletReport = streamletInfoPerProject.map {
-      case (pid, streamletInfo) =>
-        s"$pid\n" + streamletInfo.foldLeft("") { case (agg, str) => s"$agg\t$str\n" }
+      case (pid, outputFile, streamletInfo) =>
+        s"$pid - output file: ${outputFile.toURI.toString}\n\n" + streamletInfo.foldLeft("") { case (agg, str) => s"$agg\t$str\n" }
     }
-
     infoBanner("Streamlets per project")(streamletReport.mkString("\n"))
-    infoBanner("Topics")(topics.sorted.mkString("\n"))
-    infoBanner("Output")(s"Pipeline log output available in folder: " + outputFile)
+    infoBanner("Local Configuration")(localConfMsg)
+    infoBanner("Output")(s"Pipeline log output available in folder: " + outputFolder)
   }
 
   def streamletInfo(descriptor: ApplicationDescriptor): Seq[String] = {
     val streamletInstances: Seq[StreamletInstance] = descriptor.streamlets.sortBy(_.name)
-    //var endpointIdx                                = 0
-    streamletInstances.map { streamlet ⇒
-      val streamletDeployment  = descriptor.deployments.find(_.streamletName == streamlet.name)
-      val existingPortMappings = streamletDeployment.map(_.portMappings).getOrElse(Map.empty[String, Topic])
-//      val deployment = StreamletDeployment(descriptor.appId,
-//        streamlet,
-//        "",
-//        existingPortMappings,
-//        StreamletDeployment.EndpointContainerPort + endpointIdx)
-//      deployment.endpoint.foreach(_ => endpointIdx += 1)
 
+    streamletInstances.map { streamlet ⇒
+      val streamletDeployment = descriptor.deployments.find(_.streamletName == streamlet.name)
       val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
         if (sd.config.hasPath(ServerAttribute.configPath)) {
           Some(ServerAttribute.containerPort(sd.config))
@@ -411,6 +402,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           s"\t- mount [${mount.name}] available at [${mount.path}]"
         }
         .mkString("\n")
+
       val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
       s"${streamlet.name} [${streamlet.descriptor.className}]" +
         newLineIfNotEmpty(endpointMessage) +
