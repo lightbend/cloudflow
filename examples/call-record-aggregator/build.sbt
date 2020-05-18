@@ -26,7 +26,7 @@ lazy val callRecordPipeline = appModule("call-record-pipeline")
   .settings(
     name := "call-record-aggregator"
   )
-  .dependsOn(akkaCdrIngestor, akkaJavaAggregationOutput, sparkAggregation)
+  
 //end::docs-CloudflowApplicationPlugin-example[]
 
 lazy val datamodel = appModule("datamodel")
