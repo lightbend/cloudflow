@@ -35,122 +35,6 @@ import com.typesafe.config._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object FreakingLog extends Logger {
-  override def getName: String = "freaking log"
-
-  override def isTraceEnabled: Boolean = false
-
-  override def trace(msg: String): Unit = ()
-
-  override def trace(format: String, arg: Any): Unit = ()
-
-  override def trace(format: String, arg1: Any, arg2: Any): Unit = ()
-
-  override def trace(msg: String, t: Throwable): Unit = ()
-
-  override def isTraceEnabled(marker: Marker): Boolean = false
-
-  override def trace(marker: Marker, msg: String): Unit = ()
-
-  override def trace(marker: Marker, format: String, arg: Any): Unit = ()
-
-  override def trace(marker: Marker, format: String, arg1: Any, arg2: Any): Unit = ()
-
-  override def trace(marker: Marker, msg: String, t: Throwable): Unit = ()
-
-  override def isDebugEnabled: Boolean = false
-
-  override def debug(msg: String): Unit = ()
-
-  override def debug(format: String, arg: Any): Unit = ()
-
-  override def debug(format: String, arg1: Any, arg2: Any): Unit = ()
-
-  override def debug(msg: String, t: Throwable): Unit = ()
-
-  override def isDebugEnabled(marker: Marker): Boolean = false
-
-  override def debug(marker: Marker, msg: String): Unit = ()
-
-  override def debug(marker: Marker, format: String, arg: Any): Unit = ()
-
-  override def debug(marker: Marker, format: String, arg1: Any, arg2: Any): Unit = ()
-
-  override def debug(marker: Marker, msg: String, t: Throwable): Unit = ()
-
-  override def isInfoEnabled: Boolean = true
-
-  override def info(msg: String): Unit = println("I]> " + msg)
-
-  override def info(format: String, arg: Any): Unit = println(format)
-
-  override def info(format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def info(msg: String, t: Throwable): Unit = println(msg + " ::: " + t.getMessage)
-
-  override def isInfoEnabled(marker: Marker): Boolean = true
-
-  override def info(marker: Marker, msg: String): Unit = println(msg)
-
-  override def info(marker: Marker, format: String, arg: Any): Unit = println(format)
-
-  override def info(marker: Marker, format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def info(marker: Marker, msg: String, t: Throwable): Unit = println(msg + " ::: " + t.getMessage)
-
-  override def isWarnEnabled: Boolean = true
-
-  override def warn(msg: String): Unit = println(msg)
-
-  override def warn(format: String, arg: Any): Unit = println(format)
-
-  override def warn(format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def warn(msg: String, t: Throwable): Unit = println(msg)
-
-  override def isWarnEnabled(marker: Marker): Boolean = true
-
-  override def warn(marker: Marker, msg: String): Unit = println(msg)
-
-  override def warn(marker: Marker, format: String, arg: Any): Unit = println(format)
-
-  override def warn(marker: Marker, format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def warn(marker: Marker, msg: String, t: Throwable): Unit = println(msg)
-
-  override def isErrorEnabled: Boolean = true
-
-  override def error(msg: String): Unit = println(msg)
-
-  override def error(format: String, arg: Any): Unit = println(format)
-
-  override def error(format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def error(msg: String, t: Throwable): Unit = println(msg)
-
-  override def isErrorEnabled(marker: Marker): Boolean = true
-
-  override def error(marker: Marker, msg: String): Unit = println(msg)
-
-  override def error(marker: Marker, format: String, arg: Any): Unit = println(format)
-
-  override def error(marker: Marker, format: String, arg1: Any, arg2: Any): Unit = println(format)
-
-  override def error(marker: Marker, msg: String, t: Throwable): Unit = println(msg)
-
-  override def debug(x$1: org.slf4j.Marker, x$2: String, x$3: Object*): Unit = ???
-  override def debug(x$1: String, x$2: Object*): Unit                        = ???
-  override def error(x$1: org.slf4j.Marker, x$2: String, x$3: Object*): Unit = ???
-  override def error(x$1: String, x$2: Object*)                              = println(x$1)
-  override def info(x$1: org.slf4j.Marker, x$2: String, x$3: Object*): Unit  = println(x$2)
-  override def info(x$1: String, x$2: Object*)                               = println(x$1)
-  override def trace(x$1: org.slf4j.Marker, x$2: String, x$3: Object*): Unit = ???
-  override def trace(x$1: String, x$2: Object*): Unit                        = ???
-  override def warn(x$1: org.slf4j.Marker, x$2: String, x$3: Object*): Unit  = println(x$2)
-  override def warn(x$1: String, x$2: Object*): Unit                         = println(x$1)
-
-}
-
 /**
  * Local runner for sandbox testing. Because this is executed on Linux, MacOS, and
  * Windows, all path specifications must be compatible with all three platforms!
@@ -183,7 +67,6 @@ object LocalRunner extends StreamletLoader {
    *             args(1) must be the file to use for the output
    */
   def main(args: Array[String]): Unit = {
-    println("Starting local runner!! " + args.mkString(","))
     val usage = "Usage: localRunner <applicationFileJson> <outputFile>"
     val (appDescriptorFilename, outputFilename) = args.toList match {
       case app :: out :: Nil ⇒ (app, out)
@@ -194,7 +77,6 @@ object LocalRunner extends StreamletLoader {
 
     val outputFile = new File(outputFilename)
     require(outputFile.exists(), s"Output file [${outputFile}] must exist before starting this process")
-    println("local runner - using output file: " + outputFile)
 
     val fos = new FileOutputStream(outputFile)
     JRuntime.getRuntime.addShutdownHook(shutdownHook(fos))
@@ -203,10 +85,8 @@ object LocalRunner extends StreamletLoader {
       System.setOut(new PrintStream(fos))
       readDescriptorFile(appDescriptorFilename) match {
         case Success(applicationDescriptor) ⇒
-          println("Running app descriptor")
           run(applicationDescriptor)
         case Failure(ex) ⇒
-          println("Failed to run because" + ex.getMessage)
           log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
           System.exit(1)
       }
@@ -226,7 +106,6 @@ object LocalRunner extends StreamletLoader {
     val streamletParameterConfig = resolveLocalStreamletConf(appDescriptor.streamlets).recoverWith {
       case missingConfEx: MissingConfigurationException ⇒
         log.error("Missing streamlet configuration: \n" + missingConfEx.keys.mkString("\n"))
-        println("Missing streamlet configuration: \n" + missingConfEx.keys.mkString("\n"))
         log.error("Configuration for local running is resolved from local.conf in the application's classpath")
         Failure(missingConfEx)
     }.get
@@ -236,7 +115,6 @@ object LocalRunner extends StreamletLoader {
     var endpointIdx = 0
     val streamletsWithConf = streamlets.map { streamletInstance ⇒
       val streamletName = streamletInstance.name
-      println("Going to run streamlet: " + streamletName)
       // Make sure that we convert any backslash in the path to a forward slash since we want to store this in a JSON value
       val localStorageDirectory =
         Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
@@ -272,7 +150,6 @@ object LocalRunner extends StreamletLoader {
         loadStreamletClass(streamletDescriptor.descriptor.className)
           .map { streamlet ⇒
             log.info(s"Preparing streamlet: ${streamletDescriptor.name}")
-            println(s"Preparing streamlet: ${streamletDescriptor.name}")
             streamlet.run(config)
           }
           .recoverWith {
@@ -306,7 +183,6 @@ object LocalRunner extends StreamletLoader {
       log.error("The application can't be started.")
       failed.foreach { ex ⇒
         log.error(ex.getMessage, ex)
-        println("failure to launch streamlet" + ex.getMessage)
       }
       exit
     }
