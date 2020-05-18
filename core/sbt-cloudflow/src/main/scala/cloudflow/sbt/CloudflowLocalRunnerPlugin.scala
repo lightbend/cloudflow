@@ -30,10 +30,10 @@ import spray.json._
 import com.github.mdr.ascii.layout._
 import com.github.mdr.ascii.graph._
 import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
-
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
+import cloudflow.sbt.CloudflowLocalRunnerPlugin.streamletFilterByClass
 import cloudflow.streamlets.ServerAttribute
 
 /**
@@ -104,12 +104,15 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               .getOrElse("No local configuration provided.")
 
             val (tempDir, configDir) = createDirs("cloudflow-local-run")
+            val descriptorByProject = projects.map { pid =>
+              val streamletClasses = streamletDescriptorsByProject(pid).keys.toSet
+              pid -> streamletFilterByClass(appDescriptor, streamletClasses)
+            }
 
             val runtimeDescriptorByProject = getDescriptorsOrFail {
-              projects.map { pid =>
-                val streamletClasses  = streamletDescriptorsByProject(pid).keys.toSet
-                val projectDescriptor = streamletFilterByClass(appDescriptor, streamletClasses)
-                pid -> scaffoldRuntime(pid, projectDescriptor, configFile, tempDir, configDir)
+              descriptorByProject.map {
+                case (pid, projectDescriptor) =>
+                  pid -> scaffoldRuntime(pid, projectDescriptor, configFile, tempDir, configDir)
               }
             }
 
@@ -120,18 +123,20 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               .distinct
               .sorted
             setupKafka(KafkaPort, topics)
-            infoBanner("Running application: appDescriptor.appId") {
-              s"""
-                 |Sandbox output directory: ${tempDir.toString}
-                 |topics: ${topics.mkString(", ")}
-                 |$localConfMessage
-              """.stripMargin
-            }
+
+//            infoBanner("Running application: appDescriptor.appId") {
+//              s"""
+//                 |Sandbox output directory: ${tempDir.toString}
+//                 |topics: ${topics.mkString(", ")}
+//                 |$localConfMessage
+//              """.stripMargin
+//            }
             printAppLayout(resolveConnections(appDescriptor))
+
+            printInfo(descriptorByProject, topics, tempDir.toFile)
 
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
-                logger.info(s"Launching streamlets in $pid")
                 runPipelineJVM(rd.appDescriptorFile, cpByProject(pid), rd.outputFile, rd.logConfig)
             }
 
@@ -314,7 +319,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
-    val classpathStr = classpath.map(url ⇒ new File(url.toURI)).mkString(separator)
+    val classpathStr = classpath.collect { case url if !url.toString.contains("logback") ⇒ new File(url.toURI) }.mkString(separator)
     val options      = Seq(applicationDescriptorFile.toFile.getAbsolutePath, outputFile.getAbsolutePath)
 
     val cmd = Seq(cp, classpathStr, LocalRunnerClass) ++ options
@@ -366,24 +371,37 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def printInfo(appDescriptor: ApplicationDescriptor, outputFile: File): Unit = {
-    val streamletInstances: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
-    var endpointIdx                                = 0
+  def printInfo(descriptors: Iterable[(String, ApplicationDescriptor)], topics: Seq[String], outputFile: File): Unit = {
+    val streamletInfoPerProject = descriptors.map { case (pid, desc) => pid -> streamletInfo(desc) }
+    val streamletReport = streamletInfoPerProject.map {
+      case (pid, streamletInfo) =>
+        s"$pid\n" + streamletInfo.foldLeft("") { case (agg, str) => s"$agg\t$str\n" }
+    }
 
-    val streamletInfo = streamletInstances.map { streamlet ⇒
-      val existingPortMappings =
-        appDescriptor.deployments.find(_.streamletName == streamlet.name).map(_.portMappings).getOrElse(Map.empty[String, Topic])
-      val deployment = StreamletDeployment(appDescriptor.appId,
-                                           streamlet,
-                                           "",
-                                           existingPortMappings,
-                                           StreamletDeployment.EndpointContainerPort + endpointIdx)
-      deployment.endpoint.foreach(_ => endpointIdx += 1)
+    infoBanner("Streamlets per project")(streamletReport.mkString("\n"))
+    infoBanner("Topics")(topics.sorted.mkString("\n"))
+    infoBanner("Output")(s"Pipeline log output available in folder: " + outputFile)
+  }
 
-      val serverPort: Option[Int] = if (deployment.config.hasPath(ServerAttribute.configPath)) {
-        Some(ServerAttribute.containerPort(deployment.config))
-      } else {
-        None
+  def streamletInfo(descriptor: ApplicationDescriptor): Seq[String] = {
+    val streamletInstances: Seq[StreamletInstance] = descriptor.streamlets.sortBy(_.name)
+    //var endpointIdx                                = 0
+    streamletInstances.map { streamlet ⇒
+      val streamletDeployment  = descriptor.deployments.find(_.streamletName == streamlet.name)
+      val existingPortMappings = streamletDeployment.map(_.portMappings).getOrElse(Map.empty[String, Topic])
+//      val deployment = StreamletDeployment(descriptor.appId,
+//        streamlet,
+//        "",
+//        existingPortMappings,
+//        StreamletDeployment.EndpointContainerPort + endpointIdx)
+//      deployment.endpoint.foreach(_ => endpointIdx += 1)
+
+      val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
+        if (sd.config.hasPath(ServerAttribute.configPath)) {
+          Some(ServerAttribute.containerPort(sd.config))
+        } else {
+          None
+        }
       }
 
       def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
@@ -398,21 +416,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         newLineIfNotEmpty(endpointMessage) +
         newLineIfNotEmpty(volumeMounts)
     }
-
-    infoBanner("Streamlets")(streamletInfo.mkString("\n"))
-
-    infoBanner("Topics")(
-      appDescriptor.deployments
-        .flatMap { deployment =>
-          deployment.portMappings.map {
-            case (port, savepoint) =>
-              s"${savepoint.name} - ${deployment.streamletName}.${port}"
-          }
-        }
-        .sorted
-        .mkString("\n")
-    )
-    infoBanner("Output")(s"Pipeline log output available in file: " + outputFile)
   }
 
   val NoLocalConfFoundMsg = "No local.conf file location configured. \n" +
