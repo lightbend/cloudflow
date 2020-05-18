@@ -198,6 +198,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
+    def topicFormat(topic: String): String =
+      s"[$topic]"
     val streamletIOResolver = appDescriptor.streamlets.map { st =>
       val inlets  = st.descriptor.inlets.map(_.name)
       val outlets = st.descriptor.outlets.map(_.name)
@@ -210,11 +212,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       val inletOutlets = streamletIOResolver(streamlet)
       val topicsOtherStreamlet = deployment.portMappings.toSeq.map {
         case (port, topic) =>
-          val io = inletOutlets(port)
+          val formattedTopic = topicFormat(topic.name)
+          val io             = inletOutlets(port)
           if (io == "inlet") {
-            s"[T] ${topic.name}" -> s"${topic.streamlet}"
+            s"$formattedTopic" -> s"${topic.streamlet}"
           } else {
-            s"${topic.streamlet}" -> s"[T] ${topic.name}"
+            s"${topic.streamlet}" -> s"$formattedTopic"
           }
       }
       topicsOtherStreamlet
