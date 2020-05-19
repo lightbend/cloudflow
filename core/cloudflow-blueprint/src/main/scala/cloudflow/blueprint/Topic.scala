@@ -15,7 +15,7 @@
  */
 
 package cloudflow.blueprint
-
+import scala.util.Try
 import com.typesafe.config._
 object Topic {
   val LegalTopicChars   = "[a-zA-Z0-9\\._\\-]"
@@ -28,16 +28,14 @@ object Topic {
  */
 // TODO check that topic-name is valid topic-name.
 final case class Topic(
-    name: String,
+    id: String,
     producers: Vector[String] = Vector.empty[String],
     consumers: Vector[String] = Vector.empty[String],
     kafkaConfig: Config = ConfigFactory.empty(),
-    // override for bootstrapServers
-    bootstrapServers: Option[String] = None,
-    create: Boolean = true,
     problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
     verified: Option[VerifiedTopic] = None
 ) {
+  def name = Try(kafkaConfig.getString("topic.name")).getOrElse(id)
   import Topic._
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): Topic = {
 
@@ -85,7 +83,7 @@ final case class Topic(
       problems = invalidTopicError ++ patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ schemaErrors,
       verified =
         if (verifiedPorts.nonEmpty)
-          Some(VerifiedTopic(name, verifiedPorts.distinct.sortBy(_.portPath.toString), bootstrapServers, create, kafkaConfig))
+          Some(VerifiedTopic(id, verifiedPorts.distinct.sortBy(_.portPath.toString), kafkaConfig))
         else None
     )
   }

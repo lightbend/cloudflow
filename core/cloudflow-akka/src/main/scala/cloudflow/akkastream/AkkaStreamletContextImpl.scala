@@ -65,7 +65,7 @@ final class AkkaStreamletContextImpl(
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletRef, inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
@@ -140,7 +140,7 @@ final class AkkaStreamletContextImpl(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletRef, inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
       .withGroupId(gId)

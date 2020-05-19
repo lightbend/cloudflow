@@ -46,7 +46,7 @@ class FlinkStreamletContextImpl(
   override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
     val topic            = findTopicForPort(inlet)
     val srcTopic         = topic.name
-    val groupId          = topic.groupId(streamletRef, inlet)
+    val groupId          = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val bootstrapServers = topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers)
     val propsMap = Map("bootstrap.servers" -> bootstrapServers, "group.id" -> groupId, "auto.offset.reset" -> "earliest") ++
           topic.kafkaConsumerProperties

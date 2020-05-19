@@ -287,6 +287,15 @@ func Test_validateConfig(t *testing.T) {
 				Name: "my-streamlet",
 			},
 		},
+		Deployments: []cfapp.Deployment{
+			{
+				PortMappings: map[string]cfapp.PortMapping{
+					"port": {
+						ID: "my-topic",
+					},
+				},
+			},
+		},
 	}
 
 	noStreamletsOrRuntimes := newConfig("a.b.c { }")
@@ -358,6 +367,24 @@ func Test_validateConfig(t *testing.T) {
 		 }
 	`)
 	assert.NotEmpty(t, validateConfig(unknownConfigParameterInStreamletConfigSection, spec))
+
+	validTopic := newConfig(`
+     cloudflow.topics {
+			 my-topic {
+         topic.name = "my-topic-name"
+			 }
+		 }
+	`)
+	assert.Empty(t, validateConfig(validTopic, spec))
+	unknownTopic := newConfig(`
+     cloudflow.topics {
+			 topic {
+         topic.name = "my-topic-name"
+			 }
+		 }
+	`)
+	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
+
 }
 
 func Test_ValidationOfDuration(t *testing.T) {

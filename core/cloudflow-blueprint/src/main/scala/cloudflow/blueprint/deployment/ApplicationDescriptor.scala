@@ -16,6 +16,7 @@
 
 package cloudflow.blueprint.deployment
 
+import scala.util.Try
 import com.typesafe.config._
 import cloudflow.blueprint._
 
@@ -97,12 +98,8 @@ object ApplicationDescriptor {
     blueprint.topics.flatMap { topic =>
       topic.connections.filter(_.streamlet.name == streamlet.name).map { verifiedPort =>
         verifiedPort.portName -> Topic(
-          appId,
-          streamlet.name,
-          topic.name,
-          topic.kafkaConfig,
-          topic.bootstrapServers,
-          topic.create
+          topic.id,
+          topic.kafkaConfig
         )
       }
     }.toMap
@@ -182,13 +179,12 @@ object StreamletDeployment {
 }
 
 final case class Topic(
-    appId: String,
-    streamlet: String,
-    name: String,
-    config: Config = ConfigFactory.empty(),
-    bootstrapServers: Option[String] = None,
-    managed: Boolean = true
-)
+    id: String,
+    config: Config = ConfigFactory.empty()
+) {
+  def name: String     = Try(config.getString("topic.name")).getOrElse(id)
+  def managed: Boolean = Try(config.getBoolean("managed")).getOrElse(true)
+}
 
 final case class Endpoint(
     appId: String,

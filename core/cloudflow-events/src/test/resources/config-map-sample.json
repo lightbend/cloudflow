@@ -1,58 +1,52 @@
 {
   "cloudflow": {
-    "common" : {"attribute" : "value"},
+    "common": {
+      "attribute": "value"
+    },
     "kafka": {
       "bootstrap-servers": "cloudflow-kafka.lightbend:9092"
     },
     "runner": {
-        "streamlets": [{
-          "class_name": "cloudflow.examples.sensordata.SensorDataIngress$",
-          "streamlet_ref": "sensor-data",
-          "context": {
-            "app_id": "appId",
-            "app_version": "unknown",
-            "config": {
-              "cloudflow": {
-                "internal": {
-                  "server": {
-                    "container-port": 2049
-                  }
+      "streamlet": {
+        "class_name": "cloudflow.examples.sensordata.SensorDataIngress$",
+        "context": {
+          "app_id": "appId",
+          "app_version": "unknown",
+          "config": {
+            "cloudflow": {
+              "internal": {
+                "server": {
+                  "container-port": 2049
                 }
               }
-            },
-            "connected_ports": [
-              {
-                "port": "accepted",
-                "topic":
-                  {
-                    "app_id": "appId",
-                    "streamlet_ref": "sensor-data",
-                    "name": "appId.sensor-data.accepted",
-                    "config": {},
-                    "managed" : true
-                  }
+            }
+          },
+          "port_mappings": {
+            "accepted": {
+              "app_id": "appId",
+              "config": {
+                "managed": true
               },
-              {
-                "port": "rejected",
-                "topic":
-                  {
-                    "app_id": "appId",
-                    "streamlet_ref": "sensor-data",
-                    "name": "appId.sensor-data.rejected",
-                    "config": {},
-                    "managed" : true
-                  }
-              }
-            ],
-            "volume_mounts" : [
-              {
-                "name" : "mounted-vol",
-                "path": "/mnt/streamlet",
-                "access_mode": "ReadWriteMany"
-              }
-            ]
-          }
-        }]
+              "id": "accepted"
+            },
+            "rejected": {
+              "app_id": "appId",
+              "config": {
+                "managed": true
+              },
+              "id": "rejected"
+            }
+          },
+          "volume_mounts": [
+            {
+              "access_mode": "ReadWriteMany",
+              "name": "mounted-vol",
+              "path": "/mnt/streamlet"
+            }
+          ]
+        },
+        "streamlet_ref": "sensor-data"
       }
     }
   }
+}

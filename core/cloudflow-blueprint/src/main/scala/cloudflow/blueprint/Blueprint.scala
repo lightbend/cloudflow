@@ -76,22 +76,15 @@ object Blueprint {
 
         val topics = if (config.hasPath(TopicsSectionKey)) {
           getKeys(config, TopicsSectionKey).map { key ⇒
-            val topicKey            = s"$TopicsSectionKey.${key}.$TopicKey"
-            val bootstrapServersKey = s"$TopicsSectionKey.${key}.$BootstrapServersKey"
-            val createKey           = s"$TopicsSectionKey.${key}.$ManagedKey"
-            val producersKey        = s"$TopicsSectionKey.${key}.$ProducersKey"
-            val consumersKey        = s"$TopicsSectionKey.${key}.$ConsumersKey"
-            val configKey           = s"$TopicsSectionKey.${key}"
+            val topicKey     = s"$TopicsSectionKey.${key}.$TopicKey"
+            val producersKey = s"$TopicsSectionKey.${key}.$ProducersKey"
+            val consumersKey = s"$TopicsSectionKey.${key}.$ConsumersKey"
+            val configKey    = s"$TopicsSectionKey.${key}"
 
-            val topic                    = getStringOrNone(config, topicKey).getOrElse(key)
-            val bootstrapServersOverride = getStringOrNone(config, bootstrapServersKey)
-            val create                   = getBooleanOrNone(config, createKey).getOrElse(true)
-            val producers                = getStringListOrEmpty(config, producersKey)
-            val consumers                = getStringListOrEmpty(config, consumersKey)
+            val topicId   = key
+            val producers = getStringListOrEmpty(config, producersKey)
+            val consumers = getStringListOrEmpty(config, consumersKey)
             val kafkaConfig = getConfigOrEmpty(config, configKey)
-              .withoutPath(TopicKey)
-              .withoutPath(ManagedKey)
-              .withoutPath(BootstrapServersKey)
               .withoutPath(ProducersKey)
               .withoutPath(ConsumersKey)
             // validate at least that producer and consumer sections are objects.
@@ -104,7 +97,7 @@ object Blueprint {
               if (topicConfig.hasPath(PartitionsKey)) topicConfig.getInt(PartitionsKey)
               if (topicConfig.hasPath(ReplicasKey)) topicConfig.getInt(ReplicasKey)
             }
-            Topic(topic, producers, consumers, kafkaConfig, bootstrapServersOverride, create)
+            Topic(topicId, producers, consumers, kafkaConfig)
           }.toVector
         } else Vector.empty[Topic]
 
@@ -133,8 +126,6 @@ object Blueprint {
 
   private def getStringOrNone(config: Config, key: String): Option[String] =
     if (config.hasPath(key)) Some(config.getString(key)) else None
-  private def getBooleanOrNone(config: Config, key: String): Option[Boolean] =
-    if (config.hasPath(key)) Some(config.getBoolean(key)) else None
   private def getConfigOrEmpty(config: Config, key: String): Config =
     if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
   private def getStringListOrEmpty(config: Config, key: String): Vector[String] =

@@ -46,23 +46,16 @@ case class StreamletDefinition(appId: String,
 }
 
 object Topic {
-  //TODO  used for testing, remove
-  def apply(appId: String, streamletRef: String, outlet: String): Topic =
-    Topic(appId, streamletRef, s"$appId.$streamletRef.$outlet", ConfigFactory.empty(), None)
+  def apply(name: String): Topic = Topic(name, ConfigFactory.parseString("managed=true"))
 }
 
-/**
- * The path to a savepoint.
- */
 final case class Topic(
-    appId: String,
-    streamletRef: String,
-    name: String,
-    config: Config,
-    bootstrapServers: Option[String]
+    id: String,
+    config: Config
 ) {
-
-  def groupId[T](readingStreamletRef: String, inlet: CodecInlet[T]) = {
+  def name             = Try(config.getString("topic.name")).toOption.getOrElse(id)
+  def bootstrapServers = Try(config.getString("bootstrap.servers")).toOption
+  def groupId[T](appId: String, readingStreamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"$appId.$readingStreamletRef.${inlet.name}"
     if (inlet.hasUniqueGroupId) s"${base}.${randomUUID.toString}"
     else base
@@ -116,15 +109,15 @@ object StreamletDefinition {
       appVersion = streamletContextData.appVersion,
       streamletRef = streamletRef,
       streamletClass = config.as[String]("class_name"),
-      streamletContextData.portMappings,
+      streamletContextData.portMappings.map { case (port, topic) => PortMapping(port, topic) }.toList,
       streamletContextData.volumeMounts.getOrElse(List()),
       streamletContextData.config
     )
   }
 
-  val StreamletRootPath = "cloudflow.runner.streamlets"
+  val StreamletRootPath = "cloudflow.runner.streamlet"
   def read(config: Config, rootPath: String = StreamletRootPath): Try[StreamletDefinition] = Try {
-    config.as[Vector[StreamletDefinition]](rootPath).head
+    config.as[StreamletDefinition](rootPath)
   }
 
   // checkpoint folder set up
@@ -139,7 +132,7 @@ object StreamletDefinition {
 case class StreamletContextData(
     appId: String,
     appVersion: String,
-    portMappings: List[PortMapping],
+    portMappings: Map[String, Topic],
     volumeMounts: Option[List[VolumeMount]] = None,
     config: Config
 )
@@ -153,7 +146,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
     def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
   }
-  implicit val topicFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers")
+  implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")
@@ -171,7 +164,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
   protected implicit val volumeMountFormat  = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
   protected implicit val portMappingsFormat = jsonFormat(PortMapping, "port", "topic")
   protected implicit val contextDataFormat =
-    jsonFormat(StreamletContextData, "app_id", "app_version", "connected_ports", "volume_mounts", "config")
+    jsonFormat(StreamletContextData, "app_id", "app_version", "port_mappings", "volume_mounts", "config")
 
   /**
    * Converts a json String, that is expected to contain one streamlet

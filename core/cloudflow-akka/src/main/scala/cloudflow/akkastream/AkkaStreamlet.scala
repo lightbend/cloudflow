@@ -93,11 +93,6 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       val blockingIODispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
       val dispatcherConfig           = context.system.settings.config.getConfig("akka.actor.default-dispatcher")
       val deploymentConfig           = context.system.settings.config.getConfig("akka.actor.deployment")
-      val streamletConfig = Try {
-        context.system.settings.config.getConfig("cloudflow.runner.streamlets")
-      }.getOrElse(ConfigFactory.empty())
-
-      context.system.log.info(startRunnerMessage(blockingIODispatcherConfig, dispatcherConfig, deploymentConfig, streamletConfig))
 
       val logic = createLogic()
 

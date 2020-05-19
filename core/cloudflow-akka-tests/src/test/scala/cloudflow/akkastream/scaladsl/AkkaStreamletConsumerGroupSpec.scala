@@ -154,18 +154,18 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
 
     def run(testData: List[Data], outlet: String): StreamletExecution = {
       val gen     = new Generator(testData)
-      val context = new AkkaStreamletContextImpl(definition(StreamletRef, outlet), system)
+      val context = new AkkaStreamletContextImpl(definition(outlet), system)
       gen.setContext(context)
       gen.run(context)
     }
 
-    def definition(streamletRef: String, outlet: String) = StreamletDefinition(
+    def definition(outlet: String) = StreamletDefinition(
       appId = appId,
       appVersion = appVersion,
       streamletRef = StreamletRef,
       streamletClass = StreamletClass,
       portMappings = List(
-        PortMapping("out", Topic(appId, streamletRef, outlet))
+        PortMapping("out", Topic(outlet))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
@@ -197,7 +197,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       streamletRef = streamletRef,
       streamletClass = "TestReceiver",
       portMappings = List(
-        PortMapping("in", Topic(appId, Generator.StreamletRef, genOutlet))
+        PortMapping("in", Topic(genOutlet))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
