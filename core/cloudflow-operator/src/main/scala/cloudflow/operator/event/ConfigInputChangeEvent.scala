@@ -51,20 +51,42 @@ object ConfigInputChangeEvent {
    */
   def fromWatchEvent()(implicit system: ActorSystem): Flow[WatchEvent[Secret], ConfigInputChangeEvent, NotUsed] =
     Flow[WatchEvent[Secret]]
-      .filter(we => we._type == EventType.ADDED || we._type == EventType.MODIFIED)
-      .mapConcat { watchEvent ⇒
-        val obj       = watchEvent._object
-        val metadata  = obj.metadata
-        val namespace = obj.metadata.namespace
+      .statefulMapConcat { () ⇒
+        var currentSecrets = Map[String, WatchEvent[Secret]]()
+        watchEvent ⇒ {
+          val secret       = watchEvent._object
+          val metadata     = secret.metadata
+          val secretName   = secret.metadata.name
+          val namespace    = secret.metadata.namespace
+          val absoluteName = s"$namespace.$secretName"
+          val data         = getData(secret)
 
-        (for {
-          appId        ← metadata.labels.get(Operator.AppIdLabel)
-          configFormat <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.InputConfig
-          _ = system.log.info(s"[app: $appId configuration changed ${changeInfo(watchEvent)}]")
-        } yield {
-          ConfigInputChangeEvent(appId, namespace, watchEvent)
-        }).toList
+          watchEvent._type match {
+            case EventType.DELETED ⇒
+              currentSecrets = currentSecrets - absoluteName
+              List()
+            case EventType.ADDED | EventType.MODIFIED ⇒
+              if (currentSecrets.get(absoluteName).forall { existingEvent ⇒
+                    // the secret must have been updated
+                    existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
+                    // the secret must change
+                    getData(existingEvent._object) != data
+                  }) {
+                currentSecrets = currentSecrets + (absoluteName -> watchEvent)
+                (for {
+                  appId        ← metadata.labels.get(Operator.AppIdLabel)
+                  configFormat <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.InputConfig
+                  _ = system.log.info(s"[app: $appId configuration changed ${changeInfo(watchEvent)}]")
+                } yield {
+                  ConfigInputChangeEvent(appId, namespace, watchEvent)
+                }).toList
+              } else List()
+          }
+        }
       }
+
+  def getData(secret: Secret): String =
+    secret.data.get(ConfigInputChangeEvent.SecretDataKey).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
 
   private def changeInfo[T <: ObjectResource](watchEvent: WatchEvent[T]) = {
     val obj      = watchEvent._object

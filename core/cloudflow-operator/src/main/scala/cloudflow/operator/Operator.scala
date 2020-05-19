@@ -68,7 +68,7 @@ object Operator {
     val actionExecutor = new SkuberActionExecutor()
 
     runStream(
-      watch[CloudflowApplication.CR](client)
+      watch[CloudflowApplication.CR](client, DefaultWatchOptions)
         .via(AppEvent.fromWatchEvent(logAttributes))
         .via(AppEvent.toAction)
         .via(executeActions(actionExecutor, logAttributes))
@@ -141,7 +141,7 @@ object Operator {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
-      watch[Pod](client)
+      watch[Pod](client, DefaultWatchOptions)
         .via(StreamletChangeEvent.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
@@ -160,9 +160,11 @@ object Operator {
       .log("action", Action.executed)
       .withAttributes(logAttributes)
 
+  // NOTE: This watch can produce duplicate ADD events on startup, since it turns current resources into watch events,
+  // and concatenates results of a subsequent watch. This can be improved.
   private def watch[O <: ObjectResource](
       client: KubernetesClient,
-      options: ListOptions = DefaultWatchOptions
+      options: ListOptions
   )(implicit system: ActorSystem,
     fmt: Format[O],
     lfmt: Format[ListResource[O]],
@@ -201,10 +203,10 @@ object Operator {
       .recoverWithRetries(
         -1, {
           case _: TcpIdleTimeoutException ⇒
-            watch[O](client)
+            watch[O](client, options)
           case e: skuber.api.client.K8SException ⇒
             println(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
-            watch[O](client)
+            watch[O](client, options)
         }
       )
   }
