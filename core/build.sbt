@@ -164,8 +164,8 @@ lazy val akkastreamTests =
       javacOptions += "-Xlint:deprecation",
       inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
       PB.targets in Compile := Seq(
-        scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
-      ),
+            scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
+          ),
       PB.protoSources in Compile := Seq(baseDirectory.value / "src/test/protobuf"),
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
@@ -202,7 +202,6 @@ lazy val sparkTestkit =
       // Prevent incompatible version of jackson-databind
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
-
             ScalaTestUnscoped,
             Junit
           )
@@ -269,7 +268,7 @@ lazy val flinkTests =
       libraryDependencies ++= Vector(
             FlinkAvro,
             JodaTime % Test,
-            Logback % Test,
+            Logback  % Test,
             ScalaTest,
             Junit,
             JUnitInterface
@@ -294,7 +293,7 @@ lazy val blueprint =
             Logback % Test,
             Avro4sTest,
             ScalaTest,
-            ScalaPbRuntime,
+            ScalaPbRuntime
           ),
       publishArtifact in Test := true
     )
@@ -316,13 +315,13 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg"       % "sbt-docker"          % "1.5.0"),
-      addSbtPlugin("com.typesafe.sbt"        % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite"            % "sbt-avro-1-8"        % "1.1.9"),
-      addSbtPlugin("com.thesamet"            % "sbt-protoc"          % "0.99.31"),
-      addSbtPlugin("com.julianpeeters"       % "sbt-avrohugger"      % "2.0.0-RC18"),
-      addSbtPlugin("com.lightbend.sbt"       % "sbt-javaagent"       % "0.1.5"),
-      addSbtPlugin("de.heikoseeberger"       % "sbt-header"          % "5.2.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.5.0"),
+      addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
+      addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
+      addSbtPlugin("com.thesamet"      % "sbt-protoc"          % "0.99.31"),
+      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger"      % "2.0.0-RC18"),
+      addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent"       % "0.1.5"),
+      addSbtPlugin("de.heikoseeberger" % "sbt-header"          % "5.2.0"),
       libraryDependencies ++= Vector(
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
@@ -371,26 +370,7 @@ lazy val localRunner =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .dependsOn(streamlets, blueprint)
     .settings(
-      scalafmtOnCompile := true,
-      libraryDependencies ++= Vector(
-            Ficus,
-            Slf4jLog4jBridge
-          )
-    )
-    .settings(
-      buildInfoKeys := Seq[BuildInfoKey](
-            name,
-            version,
-            scalaVersion,
-            sbtVersion,
-            BuildInfoKey.action("buildTime") {
-              java.time.Instant.now().toString
-            },
-            BuildInfoKey.action("buildUser") {
-              sys.props.getOrElse("user.name", "unknown")
-            }
-          ),
-      buildInfoPackage := "cloudflow.localrunner"
+      scalafmtOnCompile := true
     )
 
 lazy val operator =
@@ -406,16 +386,16 @@ lazy val operator =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
-        AkkaSlf4j,
-        AkkaStream,
-        Ficus,
-        Logback,
-        Skuber,
-        ScalaTest,
-        AkkaStreamTestkit % "test",
-        ScalaCheck        % "test",
-        Avro4sJson        % "test",
-      )
+            AkkaSlf4j,
+            AkkaStream,
+            Ficus,
+            Logback,
+            Skuber,
+            ScalaTest,
+            AkkaStreamTestkit % "test",
+            ScalaCheck        % "test",
+            Avro4sJson        % "test"
+          )
     )
     .settings(
       scalaVersion := "2.12.11",

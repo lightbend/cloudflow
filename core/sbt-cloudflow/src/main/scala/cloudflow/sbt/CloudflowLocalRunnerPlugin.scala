@@ -44,6 +44,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def trigger           = allRequirements
 
   val LocalRunnerClass = "cloudflow.localrunner.LocalRunner"
+  val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
+  val Log4J            = "log4j" % "log4j" % "1.2.17"
 
   // kafka config keys
   val BootstrapServersKey = "bootstrap.servers"
@@ -58,7 +60,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependencies ++= Vector(
-          ),
+          Slf4jLog4jBridge,
+          Log4J
+        ),
     allApplicationClasspathByProject := (Def
           .taskDyn {
             val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
