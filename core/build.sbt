@@ -516,7 +516,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
               commitNextVersion,
               pushChanges
             ),
-        unidocGenjavadocVersion := "0.13",
+        unidocGenjavadocVersion := "0.16",
         scalacOptions ++= Seq(
               "-encoding",
               "UTF-8",
