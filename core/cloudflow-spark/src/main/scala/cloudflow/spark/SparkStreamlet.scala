@@ -102,17 +102,6 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
         }
       }
 
-      //TODO remove this after testing
-      val sysCheck: Cancellable = system.scheduler.scheduleWithFixedDelay(1.minute, 1.minutes) {
-        new Runnable {
-          override def run(): Unit = {
-            val totalMem = Runtime.getRuntime.totalMemory() / 1024.0 / 1024.0
-            // TODO temporary logging total mem in case a recent issue resurfaces in a long running spark process.
-            log.info(s"jvm-total-mem: $totalMem Mb")
-          }
-        }
-      }
-
       // this future will be successful when any of the queries face an exception
       // or is stopped. The runner needs to await on this future and exit only when it
       // succeeds
@@ -123,7 +112,6 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
       def stop(): Future[Dun] = {
         streamletQueryExecution.stop()
         scheduledQueryCheck.cancel()
-        sysCheck.cancel()
         poll(streamletQueryExecution.queries.forall(!_.isActive), 1.second, StopTimeout, system.scheduler)
           .recoverWith {
             case ex: TimeoutException =>
