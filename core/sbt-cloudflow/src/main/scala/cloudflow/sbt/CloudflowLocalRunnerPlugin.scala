@@ -129,7 +129,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
             printAppLayout(resolveConnections(appDescriptor))
 
-            printInfo(runtimeDescriptorByProject, tempDir.toFile, localConfMessage)
+            printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfMessage)
 
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
@@ -175,7 +175,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   def setupKafka(port: Int, topics: Seq[String])(implicit log: Logger) = {
     implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
     EmbeddedKafka.start()
-    println("topics in this app:" + topics.mkString(", "))
     log.debug(s"Setting up embedded Kafka broker on port: $port")
 
     topics.foreach { topic ⇒
@@ -378,13 +377,14 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def printInfo(descriptors: Iterable[(String, RuntimeDescriptor)], outputFolder: File, localConfMsg: String): Unit = {
+  def printInfo(descriptors: Iterable[(String, RuntimeDescriptor)], outputFolder: File, topics: Seq[String], localConfMsg: String): Unit = {
     val streamletInfoPerProject = descriptors.map { case (pid, rd) => (pid, rd.outputFile, streamletInfo(rd.appDescriptor)) }
     val streamletReport = streamletInfoPerProject.map {
       case (pid, outputFile, streamletInfo) =>
         s"$pid - output file: ${outputFile.toURI.toString}\n\n" + streamletInfo.foldLeft("") { case (agg, str) => s"$agg\t$str\n" }
     }
     infoBanner("Streamlets per project")(streamletReport.mkString("\n"))
+    infoBanner("Topics")(topics.map(t => s"[$t]").mkString("\n"))
     infoBanner("Local Configuration")(localConfMsg)
     infoBanner("Output")(s"Pipeline log output available in folder: " + outputFolder)
   }
