@@ -3,7 +3,7 @@ import sbt._
 import sbt.Keys._
 
 lazy val tensorflowAkka =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin, ScalafmtPlugin)
     .settings(
 //end::docs-projectSetup-example[]
       scalafmtOnCompile := true,
