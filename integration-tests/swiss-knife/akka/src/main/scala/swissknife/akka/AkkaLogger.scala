@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package swissknife
+package swissknife.akka
 
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
+import swissknife.data.Data
 
 class AkkaLogger extends AkkaStreamlet {
   val inlet = AvroInlet[Data]("in")
@@ -33,6 +34,6 @@ class AkkaLogger extends AkkaStreamlet {
       }
 
     def runnableGraph =
-      sourceWithOffsetContext(inlet).via(flow).to(committableSink)
+      sourceWithCommittableContext(inlet).via(flow).to(committableSink)
   }
 }

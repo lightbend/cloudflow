@@ -24,7 +24,7 @@ import java.nio.file.{ Files, Paths }
 import org.slf4j.LoggerFactory
 import com.typesafe.config.Config
 import cloudflow.streamlets._
-import RunnerOps._
+import cloudflow.blueprint.RunnerConfigUtils._
 // TODO removed for Flink Akka 2.6 conflict. Need to find another way to do this.
 //import cloudflow.events.errors.ErrorEvents
 

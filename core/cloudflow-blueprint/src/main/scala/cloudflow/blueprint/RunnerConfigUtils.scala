@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package cloudflow.runner
+package cloudflow.blueprint
 
 import com.typesafe.config.{ Config, ConfigFactory }
 
 import scala.io.Source
 import scala.util.{ Failure, Success, Try }
 
-object RunnerOps {
+object RunnerConfigUtils {
   val StorageMountPathKey = "storage.mountPath"
   val MetadataName        = "metadata.name"
   val MetadataNamespace   = "metadata.namespace"
@@ -35,12 +35,12 @@ object RunnerOps {
   def addPodRuntimeConfig(config: Config, downwardApiVolumeMountPath: String): Config = {
     val (name, namespace, uid) = getPodMetadata(downwardApiVolumeMountPath)
     val podRuntimeConfig       = ConfigFactory.parseString(s"""
-         |cloudflow.runner.pod: {
-         |  $MetadataName:"$name"
-         |  $MetadataNamespace:"$namespace"
-         |  $MetadataUid:"$uid"
-         |}
-         |""".stripMargin)
+                                                              |cloudflow.runner.pod: {
+                                                              |  $MetadataName:"$name"
+                                                              |  $MetadataNamespace:"$namespace"
+                                                              |  $MetadataUid:"$uid"
+                                                              |}
+                                                              |""".stripMargin)
     config.withFallback(podRuntimeConfig)
   }
 

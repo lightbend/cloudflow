@@ -3,7 +3,7 @@ import sbt._
 import sbt.Keys._
 
 lazy val sensorData =  (project in file("."))
-    .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
 //end::docs-projectSetup-example[]
       libraryDependencies ++= Seq(

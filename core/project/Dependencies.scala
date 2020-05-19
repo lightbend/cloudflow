@@ -2,6 +2,7 @@ import sbt._
 
 // format: OFF
 object Version {
+
   val Akka         = "2.6.5"
   val AkkaHttp     = "10.1.11"
   val AkkaMgmt     = "1.0.6"
@@ -9,7 +10,7 @@ object Version {
   val Scala        = "2.12.9"
   val Spark        = "2.4.5"
   val Flink        = "1.10.0"
-  val Kafka        = "2.4.0" 
+  val EmbeddedKafka        = "2.5.0" 
 }
 
 object Library {
@@ -17,11 +18,12 @@ object Library {
   val AkkaHttp              = "com.typesafe.akka"     %% "akka-http"                 % Version.AkkaHttp
   val AkkaHttpJackson       = "com.typesafe.akka"     %% "akka-http-jackson"         % Version.AkkaHttp
   val AkkaHttpSprayJson     = "com.typesafe.akka"     %% "akka-http-spray-json"      % Version.AkkaHttp
+  val AkkaActor             = "com.typesafe.akka"     %% "akka-actor"               % Version.Akka
   val AkkaStream            = "com.typesafe.akka"     %% "akka-stream"               % Version.Akka
   val AkkaSlf4j             = "com.typesafe.akka"     %% "akka-slf4j"                % Version.Akka
   val AkkaStreamContrib     = "com.typesafe.akka"     %% "akka-stream-contrib"       % "0.10"
-  val AkkaStreamKafka       = "com.typesafe.akka"     %% "akka-stream-kafka"         % Version.AlpakkaKafka exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
-  val AkkaStreamKafkaTestkit = "com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka exclude("com.typesafe.akka", "akka-stream-testkit")
+  val AkkaStreamKafka       = ("com.typesafe.akka"     %% "akka-stream-kafka"         % Version.AlpakkaKafka) .exclude("com.fasterxml.jackson.core","jackson-databind") .exclude("com.fasterxml.jackson.module", "jackson-module-scala")
+  val AkkaStreamKafkaTestkit = ("com.typesafe.akka"    %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka) .exclude("com.typesafe.akka", "akka-stream-testkit")
   val AkkaStreamTestkit      = "com.typesafe.akka"   %% "akka-stream-testkit"        % Version.Akka         
   
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
@@ -30,18 +32,19 @@ object Library {
   val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
-  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.Kafka exclude("org.apache.avro", "avro") exclude("com.fasterxml.jackson.core","jackson-databind") exclude("com.fasterxml.jackson.module", "jackson-module-scala")
+  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.EmbeddedKafka 
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
   val JodaTime              = "joda-time"              % "joda-time"                % "2.10.6"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
   val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
+  val Slf4jLog4jBridge      = "org.slf4j"              % "slf4j-log4j12"            % "1.7.30"            
 
   val SprayJson              = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection              = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
   val JacksonScalaModule     = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
-  val Skuber                 = "io.skuber"             %% "skuber"                   % "2.4.0" exclude("com.fasterxml.jackson.core","jackson-databind")
+  val Skuber                 = ("io.skuber"             %% "skuber"                   % "2.4.0") .exclude("com.fasterxml.jackson.core","jackson-databind")
 
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
   val SparkJacksonDatabind  = "com.fasterxml.jackson.core"  % "jackson-databind"     % "2.6.7.3"

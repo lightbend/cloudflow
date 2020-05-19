@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package swissknife
+package swissknife.spark
 
 import cloudflow.streamlets.StreamletShape
 
@@ -27,27 +27,17 @@ import org.apache.spark.sql.types.TimestampType
 import cloudflow.spark.sql.SQLImplicits._
 import org.apache.spark.sql.streaming.OutputMode
 
-class SparkCounter extends SparkStreamlet {
+import swissknife.data.Data
+
+class SparkOutput extends SparkStreamlet {
 
   val in    = AvroInlet[Data]("in")
-  val out   = AvroOutlet[Data]("out", _.src)
-  val shape = StreamletShape(in, out)
+  val shape = StreamletShape(in)
 
   override def createLogic() = new SparkStreamletLogic {
     override def buildStreamingQueries = {
-      val dataset   = readStream(in)
-      val outStream = process(dataset)
-      writeStream(outStream, out, OutputMode.Append).toQueryExecution
-    }
-
-    private def process(inDataset: Dataset[Data]): Dataset[Data] = {
-      val query = inDataset
-        .withColumn("ts", $"timestamp".cast(TimestampType))
-        .withColumn("updated_src", concat($"src", lit("-spark")))
-        .withWatermark("ts", "0 seconds")
-        .groupBy(window($"ts", "5 seconds"), $"updated_src")
-        .agg(count($"src").as("count"))
-      query.select($"updated_src".as("src"), $"window.start".as("timestamp"), $"count").as[Data]
+      val query   = readStream(in).writeStream.format("console").start
+      query.toQueryExecution
     }
   }
 

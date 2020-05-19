@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package swissknife
+package swissknife.akka
 
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.util.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
+import swissknife.data.Data
+
 
 class AkkaTransformation extends AkkaStreamlet {
   val in    = AvroInlet[Data]("in")
@@ -28,7 +30,7 @@ class AkkaTransformation extends AkkaStreamlet {
   val shape = StreamletShape(in).withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithOffsetContext(in).via(flow).to(committableSink(out))
+    def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
     def flow =
       FlowWithCommittableContext[Data]
         .map { data ⇒

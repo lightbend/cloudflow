@@ -56,7 +56,8 @@ object CloudflowBasePlugin extends AutoPlugin {
           // this artifact needs to have `%` and not `%%` as we build the runner jar
           // without version information. This is required for Flink runtime as a fixed name
           // jar needs to be uploaded to a specific location for Flink operator to pick up
-          "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version
+          "com.lightbend.cloudflow" % "cloudflow-runner"       % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-localrunner" % BuildInfo.version
         ),
     buildOptions in docker := BuildOptions(
           cache = true,

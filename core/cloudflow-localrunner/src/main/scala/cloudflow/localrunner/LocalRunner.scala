@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package cloudflow.runner
+package cloudflow.localrunner
 
 import java.io.{ Closeable, File, FileOutputStream, OutputStream, PrintStream }
-import java.lang.{ Runtime ⇒ JRuntime }
+import java.lang.{ Runtime => JRuntime }
 import java.nio.file._
 
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
-
 import com.typesafe.config.{ Config, ConfigFactory }
-import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
 import org.slf4j.LoggerFactory
 import spray.json._
-
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
-import cloudflow.runner.RunnerOps._
+import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
 import com.typesafe.config._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -86,7 +84,8 @@ object LocalRunner extends StreamletLoader {
     Console.withOut(fos) {
       System.setOut(new PrintStream(fos))
       readDescriptorFile(appDescriptorFilename) match {
-        case Success(applicationDescriptor) ⇒ run(applicationDescriptor)
+        case Success(applicationDescriptor) ⇒
+          run(applicationDescriptor)
         case Failure(ex) ⇒
           log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
           System.exit(1)
@@ -96,21 +95,8 @@ object LocalRunner extends StreamletLoader {
 
   private def run(appDescriptor: ApplicationDescriptor): Unit = {
 
-    val kafkaPort            = 9092
-    val bootstrapServers     = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
-    val embeddedKafkaEnabled = if (localConf.hasPath(EmbeddedKafkaKey)) localConf.getBoolean(EmbeddedKafkaKey) else true
-    val topics = appDescriptor.deployments
-      .flatMap { deployment =>
-        deployment.portMappings.values.map(_.name)
-      }
-      .distinct
-      .sorted
-
-    if (embeddedKafkaEnabled) {
-      setupKafka(kafkaPort, topics)
-    } else {
-      log.debug(s"Embedded Kaka is disabled, using Kafka brokers at: $bootstrapServers")
-    }
+    val kafkaPort        = 9093
+    val bootstrapServers = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion
@@ -179,7 +165,7 @@ object LocalRunner extends StreamletLoader {
 
     Await.ready(pipelineExecution, Duration.Inf).onComplete {
       case Success(_) ⇒
-        log.info("Pipeline application terminated successfully")
+        log.info("Application terminated successfully")
         System.exit(0)
       case Failure(ex) ⇒ {
         log.error("Failure in streamlet execution", ex)
@@ -254,16 +240,6 @@ object LocalRunner extends StreamletLoader {
         log.error(s"Failed to load application descriptor file [${appDescriptorFilename}].", ex)
         Failure(ex)
     }
-
-  private def setupKafka(port: Int, topics: Seq[String]): Unit = {
-    log.debug(s"Setting up embedded Kafka broker on port: $port")
-    implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
-    EmbeddedKafka.start()
-    topics.foreach { topic ⇒
-      log.debug(s"Kafka Setup: creating topic: $topic")
-      EmbeddedKafka.createCustomTopic(topic)
-    }
-  }
 
   def withResourceDo[T <: Closeable](closeable: T)(f: T ⇒ Unit): Unit =
     try {

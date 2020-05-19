@@ -75,7 +75,10 @@ trait CloudflowTaskKeys {
     taskKey[Map[String, Config]]("Streamlets found in sub projects by scanning the application classpath.")
 
   private[sbt] val cloudflowStreamletDescriptors = taskKey[Map[String, Config]]("Streamlets found by scanning the application classpath.")
-  private[sbt] val cloudflowApplicationClasspath = taskKey[Array[URL]]("classpath of the user project.")
+  private[sbt] val cloudflowStreamletDescriptorsByProject =
+    taskKey[Map[String, Map[String, Config]]]("Streamlets found by scanning the application classpath, organized by project id.")
+  private[sbt] val cloudflowApplicationClasspath          = taskKey[Array[URL]]("classpath of the user project.")
+  private[sbt] val cloudflowApplicationClasspathByProject = taskKey[(String, Array[URL])]("classpath of the user project per project.")
 
   private[sbt] val blueprintFile = taskKey[File]("Should be set to the blueprint in the src/main/blueprint directory.")
   private[sbt] val verificationResult = taskKey[Either[BlueprintVerificationFailed, BlueprintVerified]](
@@ -93,7 +96,11 @@ trait CloudflowTaskKeys {
   private[sbt] val streamletDescriptorsInProject =
     taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")
   private[sbt] val imageNamesByProject = taskKey[Map[String, DockerImageName]]("The list of all image names.")
-  private[sbt] val streamletClassNamesByProject =
-    taskKey[Map[String, Iterable[String]]]("The list of all streamlet class names by project.")
+  private[sbt] val streamletDescriptorsByProject =
+    taskKey[(String, Map[String, Config])]("streamlet descriptors per project.")
+  val allStreamletDescriptorsByProject =
+    taskKey[Map[String, Map[String, Config]]]("Streamlets found by scanning the application classpath, organized by project id.")
+  private[sbt] val allApplicationClasspathByProject = taskKey[Map[String, Array[URL]]]("classpath of the user projects per project")
+
   private[sbt] val cloudflowApplicationCR = taskKey[Unit]("Generates the Cloudflow Application CR.")
 }

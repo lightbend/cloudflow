@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <logger name="akka" level="${LOGLEVEL_AKKA:-OFF}" />
+  <logger name="akka" level="WARN" />
+  <logger name="org.apache" level="WARN" />
+  <logger name="kafka" level="WARN" />
+  <logger name="org.spark_project.jetty" level="WARN" />
 
-  <root level="${LOGLEVEL_ROOT:-OFF}">
+  <root level="INFO">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
       <target>System.out</target>
       <encoder>
