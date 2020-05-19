@@ -33,21 +33,19 @@ import skuber.json.format._
 import cloudflow.operator.action._
 
 /**
- * Indicates that a streamlet has changed.
+ * Indicates that the configuration of the application has been changed by the user.
  */
 case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret])
 
 object ConfigInputChangeEvent {
   val SecretDataKey = "secret.conf"
 
-  /** log message for when a StreamletChangeEvent is identified as a configuration change event */
+  /** log message for when a ConfigInputChangeEvent is identified as a configuration change event */
   def detected[T <: ObjectResource](event: ConfigInputChangeEvent) =
     s"User created or modified configuration for application ${event.appId}."
 
   /**
-   * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
-   * Only watch events for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
-   * (watch events are filtered by Operator.AppIdLabel and Operator.StreamletNameLabel)
+   * Transforms [[skuber.api.client.WatchEvent]]s into [[ConfigInputChangeEvent]]s.
    */
   def fromWatchEvent()(implicit system: ActorSystem): Flow[WatchEvent[Secret], ConfigInputChangeEvent, NotUsed] =
     Flow[WatchEvent[Secret]]
@@ -97,7 +95,7 @@ object ConfigInputChangeEvent {
   private def getKind(obj: ObjectResource) = if (obj.kind.isEmpty) obj.getClass.getSimpleName else obj.kind // sometimes kind is empty.
 
   /**
-   * Finds the associated [[CloudflowApplication.CR]]s for [[StreamletChangeEvent]]s.
+   * Finds the associated [[CloudflowApplication.CR]]s for [[ConfigInputChangeEvent]]s.
    * The resulting flow outputs tuples of the app and the streamlet change event.
    */
   def mapToAppInSameNamespace(
@@ -105,7 +103,6 @@ object ConfigInputChangeEvent {
   )(implicit ec: ExecutionContext): Flow[ConfigInputChangeEvent, (Option[CloudflowApplication.CR], ConfigInputChangeEvent), NotUsed] =
     Flow[ConfigInputChangeEvent].mapAsync(1) { configInputChangeEvent ⇒
       val ns = configInputChangeEvent.watchEvent._object.metadata.namespace
-      // toAppChangeEvent
       client.usingNamespace(ns).getOption[CloudflowApplication.CR](configInputChangeEvent.appId).map {
         case a @ Some(_) ⇒ a    -> configInputChangeEvent
         case none        ⇒ none -> configInputChangeEvent
@@ -120,13 +117,12 @@ object ConfigInputChangeEvent {
         case (Some(app), configInputChangeEvent) ⇒
           import configInputChangeEvent._
           val appConfig = getConfigFromSecret(configInputChangeEvent, system)
-          // Go through all deployments
+
           app.spec.deployments.map { streamletDeployment ⇒
             val streamletName   = streamletDeployment.streamletName
             val runtimeConfig   = getStreamletRuntimeConfig(streamletDeployment.runtime, streamletName, appConfig)
             var streamletConfig = getStreamletConfig(streamletName, appConfig, runtimeConfig)
 
-            // removing 'config-parameters' section and move it contents directly under the streamlet.
             streamletConfig = moveConfigParameters(streamletConfig, streamletName)
             streamletConfig = mergeRuntimeConfigToRoot(streamletConfig, streamletName)
             streamletConfig = removeKubernetesConfigSection(streamletConfig, streamletName)
