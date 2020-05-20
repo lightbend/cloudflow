@@ -136,8 +136,8 @@ func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 	hoconConf := config.parse()
 
 	// Maybe move validation completely to operator. The CLI can check for status. Bad side effect maybe, is that there will be incorrect resources in K8s.
-	if hoconConf.GetConfig(cloudflowStreamletsPath) == nil && hoconConf.GetConfig(cloudflowRuntimesPath) == nil {
-		return nil, fmt.Errorf("configuration does not contain '%s' or '%s' config sections", cloudflowStreamletsPath, cloudflowRuntimesPath)
+	if hoconConf.GetConfig(cloudflowStreamletsPath) == nil && hoconConf.GetConfig(cloudflowRuntimesPath) == nil && hoconConf.GetConfig(cloudflowTopicsPath) == nil {
+		return nil, fmt.Errorf("configuration does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, cloudflowRuntimesPath, cloudflowTopicsPath)
 	}
 	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
 	if streamletsConfig != nil && streamletsConfig.Root().IsObject() {
