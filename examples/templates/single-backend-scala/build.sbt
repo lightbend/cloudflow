@@ -2,7 +2,7 @@ import sbt._
 import sbt.Keys._
 
 lazy val templateScala = (project in file("."))
-  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin, ScalafmtPlugin)
+  .enablePlugins(CloudflowAkkaPlugin, CloudflowApplicationPlugin, ScalafmtPlugin)
   .settings(
     scalafmtOnCompile := true,
     libraryDependencies ++= Seq(
