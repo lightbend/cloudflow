@@ -99,6 +99,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               throw new IllegalStateException("ApplicationDescriptor is not present")
             }
 
+            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Compile).value)
+
             val projects = streamletDescriptorsByProject.keys
 
             // setup local file scaffolding
@@ -128,12 +130,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             setupKafka(KafkaPort, topics)
 
             printAppLayout(resolveConnections(appDescriptor))
-
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfMessage)
 
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
-                runPipelineJVM(rd.appDescriptorFile, cpByProject(pid), rd.outputFile, rd.logConfig)
+                val cp = prepareLoggingInClasspath(cpByProject(pid), logDependencies)
+                runPipelineJVM(rd.appDescriptorFile, cp, rd.outputFile, rd.logConfig)
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -163,6 +165,30 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     println(side + title + side)
     println(message.toString)
     println(bottom + "\n")
+  }
+
+  def prepareLoggingInClasspath(classpath: Array[URL], logDependencies: Seq[(String, URL)]): Array[URL] = {
+    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback")) // remove logback from the classpath
+    logDependencies.foldLeft(filteredClasspath) {
+      case (agg, (libName, url)) =>
+        if (agg.find(u => u.toString.contains(libName)).isEmpty) { // add slf/log4j if not there
+          agg :+ url
+        } else agg
+    }
+  }
+
+  def findLogLibsInPluginClasspath(classpath: Keys.Classpath): Seq[(String, URL)] = {
+    val localClasspath = classpath.files.map(_.toURI.toURL).toArray
+    val logLibs        = Seq(toURLSegment(Log4J), toURLSegment(Slf4jLog4jBridge))
+    // forced `get` b/c these libraries are added to the classpath.
+    logLibs.map(lib => lib -> localClasspath.find(_.toString.contains(lib)).get)
+  }
+
+  // transforms the organization and name of a module into the URL format used by the classpath resolution
+  def toURLSegment(dep: ModuleID): String = {
+    val org  = dep.organization.replaceAll("\\.", "/")
+    val name = dep.name
+    s"$org/$name"
   }
 
   case class RuntimeDescriptor(id: String,
