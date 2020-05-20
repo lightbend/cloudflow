@@ -100,9 +100,8 @@ object ConfigInputChangeEvent {
   )(implicit ec: ExecutionContext): Flow[ConfigInputChangeEvent, (Option[CloudflowApplication.CR], ConfigInputChangeEvent), NotUsed] =
     Flow[ConfigInputChangeEvent].mapAsync(1) { configInputChangeEvent ⇒
       val ns = configInputChangeEvent.watchEvent._object.metadata.namespace
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](configInputChangeEvent.appId).map {
-        case a @ Some(_) ⇒ a    -> configInputChangeEvent
-        case none        ⇒ none -> configInputChangeEvent
+      client.usingNamespace(ns).getOption[CloudflowApplication.CR](configInputChangeEvent.appId).map { cr =>
+        cr -> configInputChangeEvent
       }
     }
 

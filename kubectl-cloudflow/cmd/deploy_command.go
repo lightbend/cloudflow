@@ -302,7 +302,7 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 }
 
 func createOrUpdateAppInputSecret(k8sClient *kubernetes.Clientset, namespace string, appInputSecret *corev1.Secret) {
-	if _, err := k8sClient.CoreV1().Secrets(appInputSecret.ObjectMeta.Namespace).Get(appInputSecret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
+	if _, err := k8sClient.CoreV1().Secrets(appInputSecret.Namespace).Get(appInputSecret.Name, metav1.GetOptions{}); err != nil {
 		if _, err := k8sClient.CoreV1().Secrets(namespace).Create(appInputSecret); err != nil {
 			printutil.LogAndExit("Failed to create secret: %s", err.Error())
 		}

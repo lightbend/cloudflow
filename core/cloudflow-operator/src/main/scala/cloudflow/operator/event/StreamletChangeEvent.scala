@@ -92,9 +92,8 @@ object StreamletChangeEvent {
     Flow[StreamletChangeEvent[O]].mapAsync(1) { streamletChangeEvent ⇒
       val ns = streamletChangeEvent.watchEvent._object.metadata.namespace
       // toAppChangeEvent
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](streamletChangeEvent.appId).map {
-        case a @ Some(_) ⇒ a    -> streamletChangeEvent
-        case none        ⇒ none -> streamletChangeEvent
+      client.usingNamespace(ns).getOption[CloudflowApplication.CR](streamletChangeEvent.appId).map { cr =>
+        cr -> streamletChangeEvent
       }
     }
 
