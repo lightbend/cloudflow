@@ -398,7 +398,7 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := Version.Scala,
       crossScalaVersions := Vector(scalaVersion.value),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
@@ -516,7 +516,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
               commitNextVersion,
               pushChanges
             ),
-        unidocGenjavadocVersion := "0.13",
+        unidocGenjavadocVersion := "0.16",
         scalacOptions ++= Seq(
               "-encoding",
               "UTF-8",

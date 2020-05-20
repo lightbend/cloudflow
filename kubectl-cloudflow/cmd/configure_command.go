@@ -58,7 +58,7 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	streamletNameSecretMap, err := config.HandleConfig(args, k8sClient, namespace, appCR.Spec, c.configFiles)
+	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, appCR.Spec, c.configFiles)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
@@ -66,9 +66,9 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	// Get the Cloudflow operator ownerReference
 	ownerReference := appCR.GenerateOwnerReference()
 
-	streamletNameSecretMap = config.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	appInputSecret = config.UpdateSecretWithOwnerReference(ownerReference, appInputSecret)
 
-	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+	createOrUpdateAppInputSecret(k8sClient, namespace, appInputSecret)
 
 	printutil.PrintSuccess("Configuration of application %s has been updated.\n", applicationName)
 }

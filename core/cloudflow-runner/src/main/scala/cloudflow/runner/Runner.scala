@@ -77,7 +77,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
           Await.result(streamletExecution.completed, Duration.Inf)
           shutdown(loadedStreamlet)
         } catch {
-          case ex @ ExceptionAcc(exceptions) ⇒
+          case ex @ ExceptionAcc(exceptions @ _) ⇒
             // TODO removed for Flink Akka conflict. Need to think of another way to do this.
             // exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdown(loadedStreamlet, Some(ex))

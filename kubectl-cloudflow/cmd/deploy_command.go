@@ -123,7 +123,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	streamletNameSecretMap, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
@@ -148,9 +148,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	ownerReference := createOrUpdateCloudflowApplication(appClient, applicationSpec)
 
-	streamletNameSecretMap = config.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	appInputSecret = config.UpdateSecretWithOwnerReference(ownerReference, appInputSecret)
 
-	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+	createOrUpdateAppInputSecret(k8sClient, namespace, appInputSecret)
 
 	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount, ownerReference); err != nil {
@@ -301,16 +301,14 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 	return false
 }
 
-func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
-	for streamletName, secret := range streamletNameSecretMap {
-		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
-				printutil.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
-			}
-		} else {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Update(secret); err != nil {
-				printutil.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())
-			}
+func createOrUpdateAppInputSecret(k8sClient *kubernetes.Clientset, namespace string, appInputSecret *corev1.Secret) {
+	if _, err := k8sClient.CoreV1().Secrets(appInputSecret.Namespace).Get(appInputSecret.Name, metav1.GetOptions{}); err != nil {
+		if _, err := k8sClient.CoreV1().Secrets(namespace).Create(appInputSecret); err != nil {
+			printutil.LogAndExit("Failed to create secret: %s", err.Error())
+		}
+	} else {
+		if _, err := k8sClient.CoreV1().Secrets(namespace).Update(appInputSecret); err != nil {
+			printutil.LogAndExit("Failed to update secret: %s", err.Error())
 		}
 	}
 }

@@ -41,10 +41,8 @@ object Actions {
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
-    val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(
-      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
-    )
+    val labels          = CloudflowLabels(newApp)
+    val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
       deploySavepoints(newApp, currentApp, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
