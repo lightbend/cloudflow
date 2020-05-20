@@ -196,8 +196,7 @@ object ConfigInputChangeEvent {
     val key                        = streamletConfigPath(streamletName)
     val configParametersKey        = "config-parameters"
     val absoluteConfigParameterKey = s"$key.$configParametersKey"
-    val configParametersSection = Try(Some(config.getConfig(absoluteConfigParameterKey)))
-      .getOrElse(None)
+    val configParametersSection    = Try(config.getConfig(absoluteConfigParameterKey)).toOption
 
     configParametersSection
       .map { c =>
@@ -212,8 +211,7 @@ object ConfigInputChangeEvent {
 
     val configKey                = "config"
     val absoluteRuntimeConfigKey = s"$streamletKey.$configKey"
-    val runtimeConfigSection = Try(Some(config.getConfig(absoluteRuntimeConfigKey)))
-      .getOrElse(None)
+    val runtimeConfigSection = Try(config.getConfig(absoluteRuntimeConfigKey)).toOption
     // removing 'config' section and move it contents in the root of the config (akka, spark, flink, etc).
     runtimeConfigSection
       .map { c =>
