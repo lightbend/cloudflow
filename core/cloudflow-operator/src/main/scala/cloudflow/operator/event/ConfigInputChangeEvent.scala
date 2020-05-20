@@ -65,10 +65,9 @@ object ConfigInputChangeEvent {
               List()
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentSecrets.get(absoluteName).forall { existingEvent ⇒
-                    // the secret must have been updated
-                    existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-                    // the secret must change
-                    getData(existingEvent._object) != data
+                    val wasUpdated    = existingEvent._object.resourceVersion != watchEvent._object.resourceVersion
+                    val secretChanged = getData(existingEvent._object) != data
+                    wasUpdated && secretChanged
                   }) {
                 currentSecrets = currentSecrets + (absoluteName -> watchEvent)
                 (for {
