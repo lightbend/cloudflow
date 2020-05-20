@@ -57,19 +57,16 @@ object ConfigInputChangeEvent {
           val secretName   = secret.metadata.name
           val namespace    = secret.metadata.namespace
           val absoluteName = s"$namespace.$secretName"
-          val data         = getData(secret)
+
+          def hasChanged(existingEvent: WatchEvent[Secret]) =
+            watchEvent._object.resourceVersion != existingEvent._object.resourceVersion && getData(existingEvent._object) != getData(secret)
 
           watchEvent._type match {
             case EventType.DELETED ⇒
               currentSecrets = currentSecrets - absoluteName
               List()
             case EventType.ADDED | EventType.MODIFIED ⇒
-              if (currentSecrets.get(absoluteName).forall { existingEvent ⇒
-                    // the secret must have been updated
-                    existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-                    // the secret must change
-                    getData(existingEvent._object) != data
-                  }) {
+              if (currentSecrets.get(absoluteName).forall(hasChanged)) {
                 currentSecrets = currentSecrets + (absoluteName -> watchEvent)
                 (for {
                   appId        ← metadata.labels.get(Operator.AppIdLabel)

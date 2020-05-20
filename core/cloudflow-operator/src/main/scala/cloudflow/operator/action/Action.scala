@@ -44,6 +44,9 @@ sealed trait Action[+T <: ObjectResource] {
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]]
 
+  /**
+   * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
+   */
   protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, f: KubernetesClient => Future[O])(
       implicit ec: ExecutionContext
   ): Future[O] =
@@ -140,8 +143,7 @@ class CreateAction[T <: ObjectResource](
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
           recoverFromConflict(
-            client
-              .update(resourceVersionUpdated),
+            client.update(resourceVersionUpdated),
             client,
             executeCreate
           )
