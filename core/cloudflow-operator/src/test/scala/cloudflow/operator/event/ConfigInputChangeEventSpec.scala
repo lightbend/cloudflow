@@ -36,6 +36,7 @@ class ConfigInputChangeEventSpec
         streamlets.logger {
           config-parameters {
             log-level = warning
+            foo = bar
           }
           config {
             akka.loglevel = "DEBUG"
@@ -59,6 +60,7 @@ class ConfigInputChangeEventSpec
       loggerConfig = mergeRuntimeConfigToRoot(loggerConfig, streamletName)
       loggerConfig = removeKubernetesConfigSection(loggerConfig, streamletName)
       loggerConfig.getString("cloudflow.streamlets.logger.log-level") mustBe "info"
+      loggerConfig.getString("cloudflow.streamlets.logger.foo") mustBe "bar"
       loggerConfig.getString("cloudflow.streamlets.logger.msg-prefix") mustBe "valid-logger"
       loggerConfig.getInt("akka.kafka.producer.parallelism") mustBe 15000
       loggerConfig.getString("akka.loglevel") mustBe "DEBUG"

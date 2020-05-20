@@ -59,7 +59,7 @@ trait StreamletContext {
    * The default bootstrapServers for the Kafka broker that has been installed or configured
    * to be used globally for all Cloudflow applications
    */
-  def defaultBootstrapServers = config.getString("cloudflow.kafka.bootstrap-servers")
+  def internalKafkaBootstrapServers = config.getString("cloudflow.kafka.bootstrap-servers")
 
   /**
    * The subset of configuration specific to a single named instance of a streamlet.

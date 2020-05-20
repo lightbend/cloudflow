@@ -35,13 +35,13 @@ import cloudflow.streamlets._
 final class KafkaSinkRef[T](
     system: ActorSystem,
     outlet: CodecOutlet[T],
-    defaultBootstrapServers: String,
+    internalKafkaBootstrapServers: String,
     topic: Topic,
     killSwitch: SharedKillSwitch,
     completionPromise: Promise[Dun]
 ) extends WritableSinkRef[T] {
   private val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-    .withBootstrapServers(topic.bootstrapServers.getOrElse(defaultBootstrapServers))
+    .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
     .withProperties(topic.kafkaProducerProperties)
   private val producer = producerSettings.createKafkaProducer()
 
