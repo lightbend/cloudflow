@@ -68,7 +68,7 @@ class EndpointActionsSpec
       val actions = EndpointActions(newApp, currentApp, namespace)
 
       Then("only create endpoint actions must be created for all server attributed streamlets")
-      val createActions = actions.collect { case c: CreateAction[_] ⇒ c }
+      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
 
       val services = createActions.map(_.resource).collect {
         case service: Service ⇒ service
@@ -188,7 +188,7 @@ class EndpointActionsSpec
       Then("create actions for service should be created for the new endpoint")
       val actions = EndpointActions(newApp, Some(currentApp), namespace)
       actions.size mustBe 1
-      val createActions = actions.collect { case a: CreateAction[_] ⇒ a }
+      val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
       val services = createActions.map(_.resource).collect {
         case service: Service ⇒ service

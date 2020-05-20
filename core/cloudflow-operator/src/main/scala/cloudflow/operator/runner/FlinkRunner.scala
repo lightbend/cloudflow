@@ -17,6 +17,7 @@
 package cloudflow.operator
 package runner
 
+import com.typesafe.config._
 import play.api.libs.json._
 import skuber._
 import cloudflow.blueprint.deployment._
@@ -45,8 +46,13 @@ object FlinkRunner extends Runner[CR] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String,
-      updateLabels: Map[String, String]
+      podsConfig: PodsConfig,
+      runtimeConfig: Config,
+      updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
+    //TODO get flink config settings from runtimeConfig (in form of `some.setting`, 'flink' prefix is omitted), translate to Flink CR settings.
+    //TODO get resource settings from podsConfig, translate to jobmanager and taskmanager pods
+    //TODO (this might need some change in proposed config format, since FLink has 2 kinds of pods, driver and executor)
 
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)

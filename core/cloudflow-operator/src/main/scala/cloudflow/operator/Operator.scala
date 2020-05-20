@@ -80,7 +80,7 @@ object Operator {
 
   def handleConfigurationInput(
       client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     // only watch secrets that contain input config
@@ -118,7 +118,10 @@ object Operator {
       labelSelector = Some(
         LabelSelector(
           LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.OutputConfig)
+          LabelSelector.InRequirement(CloudflowLabels.ConfigFormat,
+                                      List(CloudflowLabels.RunnerConfigFormat,
+                                           CloudflowLabels.PodConfigFormat,
+                                           CloudflowLabels.RuntimeConfigFormat))
         )
       ),
       resourceVersion = None
@@ -126,8 +129,7 @@ object Operator {
 
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent())
-        .log("config-change-event", ConfigChangeEvent.detected)
+        .via(StreamletChangeEvent.fromWatchEvent(_ => true))
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
@@ -142,7 +144,7 @@ object Operator {
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client, DefaultWatchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent())
+        .via(StreamletChangeEvent.fromWatchEvent(_ => true))
         .log("status-change-event", StatusChangeEvent.detected)
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toStatusUpdateAction)

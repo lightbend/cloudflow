@@ -64,7 +64,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
 
       Then("only 'create actions' must be created for every runner")
-      val createActions = actions.collect { case c: CreateAction[_] ⇒ c }
+      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
       val configMaps = createActions.map(_.resource).collect {
         case configMap: ConfigMap ⇒ configMap
       }
@@ -76,7 +76,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       createActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
-      akkaDeployments.size mustBe streamletDeployments.size
+      // deployments are created on secret change
+      akkaDeployments.size mustBe 0
       configMaps.foreach { configMap ⇒
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
@@ -113,7 +114,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
 
       Then("update actions should be created")
-      val updateActions = actions.collect { case a: UpdateAction[_] ⇒ a }
+      val updateActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
       updateActions.size mustBe actions.size
     }
 
@@ -192,7 +193,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("create actions for runner resources should be created for the new endpoint")
       val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
-      val createActions = actions.collect { case a: CreateAction[_] ⇒ a }
+      val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
       val configMaps = createActions.map(_.resource).collect {
         case configMap: ConfigMap ⇒ configMap
@@ -200,8 +201,10 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val akkaDeployments = createActions.map(_.resource).collect {
         case akkaDeployment: Deployment ⇒ akkaDeployment
       }
-      configMaps.size mustBe 1
-      akkaDeployments.size mustBe 1
+      // create or update
+      configMaps.size mustBe 2
+      // Deployments are created later on secret change.
+      akkaDeployments.size mustBe 0
 
       configMaps.foreach { configMap ⇒
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)

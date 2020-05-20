@@ -82,7 +82,7 @@ object ApplicationDescriptor {
       namedStreamletDescriptors
         .map {
           case (streamlet, instance) ⇒
-            StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(appId, streamlet, blueprint))
+            StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
@@ -94,7 +94,7 @@ object ApplicationDescriptor {
                           LibraryVersion)
   }
 
-  def portMappingsForStreamlet(appId: String, streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint) =
+  def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint) =
     blueprint.topics.flatMap { topic =>
       topic.connections.filter(_.streamlet.name == streamlet.name).map { verifiedPort =>
         verifiedPort.portName -> Topic(

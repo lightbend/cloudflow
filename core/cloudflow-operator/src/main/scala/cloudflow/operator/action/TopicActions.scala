@@ -87,7 +87,7 @@ object TopicActions {
     Action.delete(resource(topic, labels))
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
-    Action.create(resource(topic, labels), editor)
+    Action.createOrUpdate(resource(topic, labels), editor)
 
   def resource(topic: TopicInfo, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext

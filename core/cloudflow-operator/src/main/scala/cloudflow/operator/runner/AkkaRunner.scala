@@ -16,7 +16,7 @@
 
 package cloudflow.operator
 package runner
-
+import com.typesafe.config._
 import cloudflow.blueprint.deployment._
 import skuber._
 import play.api.libs.json._
@@ -41,25 +41,21 @@ object AkkaRunner extends Runner[Deployment] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String,
-      updateLabels: Map[String, String]
+      podsConfig: PodsConfig,
+      runtimeConfig: Config,
+      updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): Deployment = {
+    // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
+
     val labels          = CloudflowLabels(app)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val appId           = app.spec.appId
-    val agentPaths      = app.spec.agentPaths
     val podName         = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
-    val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
-      List(
-        EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
-        EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
-      )
-    } else Nil
-    val environmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions) :: prometheusEnvVars
-
+    // TODO check if this is still valid.
     // Pass this argument to the entry point script. The top level entry point will be a
     // cloudflow-entrypoint.sh which will route to the appropriate entry point based on the
     // arguments passed to it
@@ -88,25 +84,18 @@ object AkkaRunner extends Runner[Deployment] {
     val volumeMount  = Volume.Mount(configMapName, Runner.ConfigMapMountPath, readOnly = true)
     val secretMount  = Volume.Mount(Name.ofVolume(secretName), Runner.SecretMountPath, readOnly = true)
 
+    val resourceRequirements = createResourceRequirements(podsConfig)
+    val environmentVariables = createEnvironmentVariables(app, podsConfig)
+
     val c = Container(
       name = podName,
+      resources = Some(resourceRequirements),
       image = deployment.image,
       env = environmentVariables,
       args = args,
       ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
       volumeMounts = List(secretMount) ++ pvcVolumeMounts :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
-    val appliedCpuLimits = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits
-      .map { cpuLimits ⇒
-        c.limitCPU(cpuLimits)
-      }
-      .getOrElse(c)
-
-    val appliedCpuAndMemoryLimits = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits
-      .map { memoryLimits ⇒
-        appliedCpuLimits.limitMemory(memoryLimits)
-      }
-      .getOrElse(appliedCpuLimits)
 
     val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
@@ -114,11 +103,8 @@ object AkkaRunner extends Runner[Deployment] {
     val tempDir              = System.getProperty("java.io.tmpdir")
     val pathToLivenessCheck  = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
-
-    val container = appliedCpuAndMemoryLimits
+    val container = c
       .withImagePullPolicy(ImagePullPolicy)
-      .requestCPU(ctx.akkaRunnerSettings.resourceConstraints.cpuRequests)
-      .requestMemory(ctx.akkaRunnerSettings.resourceConstraints.memoryRequests)
       .withLivenessProbe(
         Probe(
           ExecAction(List("/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")),
@@ -186,6 +172,69 @@ object AkkaRunner extends Runner[Deployment] {
         )
       )
     )
+  }
+
+  private def createResourceRequirements(podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
+    var resourceRequirements = Resource.Requirements(
+      requests = Map(
+        Resource.cpu    -> ctx.akkaRunnerSettings.resourceConstraints.cpuRequests,
+        Resource.memory -> ctx.akkaRunnerSettings.resourceConstraints.memoryRequests
+      )
+    )
+
+    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits
+      .map { cpuLimit =>
+        resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.cpu -> cpuLimit))
+      }
+      .getOrElse(resourceRequirements)
+
+    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits
+      .map { memoryLimit =>
+        resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.memory -> memoryLimit))
+      }
+      .getOrElse(resourceRequirements)
+    podsConfig.pods
+      .get(PodsConfig.CloudflowPodName)
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          resourceRequirements.copy(
+            limits = resourceRequirements.limits ++ containerConfig.resources.map(_.limits).getOrElse(Map()),
+            requests = resourceRequirements.requests ++ containerConfig.resources.map(_.requests).getOrElse(Map())
+          )
+        }
+      }
+      .getOrElse(resourceRequirements)
+  }
+
+  private def createEnvironmentVariables(app: CloudflowApplication.CR, podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
+    val agentPaths = app.spec.agentPaths
+    val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
+      List(
+        EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
+        EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
+      )
+    } else Nil
+
+    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions) :: prometheusEnvVars
+    val envVarsFomPodConfigMap = podsConfig.pods
+      .get(PodsConfig.CloudflowPodName)
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.env
+        }
+      }
+      .toList
+      .flatten
+      .map { envVar =>
+        envVar.name -> envVar
+      }
+      .toMap
+
+    val defaultEnvironmentVariablesMap = defaultEnvironmentVariables.map { envVar =>
+      envVar.name -> envVar
+    }.toMap
+
+    (defaultEnvironmentVariablesMap ++ envVarsFomPodConfigMap).values.toList
   }
 
   val JavaOptsEnvVar                    = "JAVA_OPTS"

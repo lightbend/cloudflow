@@ -41,13 +41,13 @@ object AppActions {
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
     Vector(
-      Action.create(roleBinding(namespace, labels, ownerReferences), roleBindingEditor),
-      Action.create(roleAkka, roleEditor),
-      Action.create(roleSpark, roleEditor),
-      Action.create(roleFlink, roleEditor),
-      Action.create(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor),
-      Action.create(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor),
-      Action.create(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor),
+      Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor),
+      Action.createOrUpdate(roleAkka, roleEditor),
+      Action.createOrUpdate(roleSpark, roleEditor),
+      Action.createOrUpdate(roleFlink, roleEditor),
+      Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor),
+      Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor),
+      Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor),
       CreatePersistentVolumeClaimAction(persistentVolumeClaim(appId, namespace, labels, ownerReferences))
     )
   }
@@ -253,7 +253,7 @@ object AppActions {
       override val resource: PersistentVolumeClaim,
       format: Format[PersistentVolumeClaim],
       resourceDefinition: ResourceDefinition[PersistentVolumeClaim]
-  ) extends CreateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
+  ) extends CreateOrUpdateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
     override def execute(client: KubernetesClient)(implicit ec: ExecutionContext,
                                                    lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
       for {

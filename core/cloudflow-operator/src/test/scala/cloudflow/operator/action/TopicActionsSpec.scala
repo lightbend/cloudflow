@@ -40,7 +40,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val actions = TopicActions(newApp, None, false)
 
       Then("only create topic actions must be created between the streamlets")
-      val createActions = actions.collect { case c: CreateAction[_] ⇒ c }
+      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
       val topics        = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
 
       createActions.size mustBe actions.size
@@ -157,7 +157,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val resource = actions(0).resource.asInstanceOf[TopicActions.TopicResource]
 
       resource mustBe TopicActions.resource(TopicActions.TopicInfo(savepoint), CloudflowLabels(newApp))
-      actions(0) mustBe a[CreateAction[_]]
+      actions(0) mustBe a[CreateOrUpdateAction[_]]
       assertSavepoint(savepoint, resource, appId)
     }
   }

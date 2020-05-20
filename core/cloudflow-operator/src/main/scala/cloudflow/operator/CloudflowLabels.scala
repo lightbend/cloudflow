@@ -53,7 +53,11 @@ object CloudflowLabels {
 
   val InputConfig = "input"
 
-  val OutputConfig = "output"
+  val RunnerConfigFormat = "config"
+
+  val PodConfigFormat = "pod-config"
+
+  val RuntimeConfigFormat = "runtime-config"
 
   // Streamlet component type
   val StreamletComponent = "streamlet"

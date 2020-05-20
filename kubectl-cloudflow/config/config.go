@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/go-akka/configuration"
@@ -28,6 +29,17 @@ const cloudflowTopicsPath = "cloudflow.topics"
 const configParametersKey = "config-parameters"
 const configKey = "config"
 const kubernetesKey = "kubernetes"
+const podsKey = "pods"
+const cloudflowPodName = "pod"
+const cloudflowContainerName = "container"
+const containersKey = "containers"
+const resourcesKey = "resources"
+const requestsKey = "requests"
+const limitsKey = "limits"
+const envKey = "env"
+const envNameKey = "name"
+const envValueKey = "value"
+
 const runtimeKey = "runtime"
 const runtimesKey = "runtimes"
 const streamletsKey = "streamlets"
@@ -224,6 +236,15 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 							}
 						}
 					}
+					if streamletConfigSectionKey == kubernetesKey {
+						if k8sConfig := streamletConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
+							if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
+								return k8serr
+							}
+						} else {
+							return fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
+						}
+					}
 				}
 			}
 		}
@@ -240,6 +261,11 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 				for runtimeConfigKey := range runtimeConfig.Root().GetObject().Items() {
 					if !(runtimeConfigKey == configKey || runtimeConfigKey == kubernetesKey) {
 						return fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPath, runtime, runtimeConfigKey)
+					}
+				}
+				if k8sConfig := runtimeConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
+					if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
+						return k8serr
 					}
 				}
 			}
@@ -273,6 +299,131 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 
 	if streamletsConfig == nil && runtimesConfig == nil && topicsConfig == nil {
 		return fmt.Errorf("Missing %s, %s or %s config sections", cloudflowStreamletsPath, cloudflowRuntimesPath, cloudflowTopicsPath)
+	}
+	return nil
+}
+
+func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string) error {
+	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
+		for podName := range podsConfig.Root().GetObject().Items() {
+			if podConfig := podsConfig.GetConfig(podName); podConfig != nil && podConfig.Root().IsObject() {
+				if containersConfig := podConfig.GetConfig(containersKey); containersConfig != nil && containersConfig.Root().IsObject() {
+					for containerName := range containersConfig.Root().GetObject().Items() {
+						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
+							for containerKey := range containerConfig.Root().GetObject().Items() {
+								if !(containerKey == resourcesKey || containerKey == envKey) {
+									return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+										rootPath,
+										kubernetesKey,
+										podsKey,
+										podName,
+										containersKey,
+										containerName,
+										resourcesKey,
+										envKey)
+								}
+								if containerKey == resourcesKey {
+									if resourcesConfig := containerConfig.GetConfig(resourcesKey); resourcesConfig != nil && resourcesConfig.Root().IsObject() {
+										for resourceRequirementKey := range resourcesConfig.Root().GetObject().Items() {
+											if !(resourceRequirementKey == requestsKey || resourceRequirementKey == limitsKey) {
+												return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+													rootPath,
+													kubernetesKey,
+													podsKey,
+													podName,
+													containersKey,
+													containerName,
+													resourcesKey,
+													requestsKey,
+													limitsKey)
+											}
+
+										}
+									} else {
+										return fmt.Errorf("kubernetes configuration%s.%s.%s.%s.%s.%s.%s is not a resources section",
+											rootPath,
+											kubernetesKey,
+											podsKey,
+											podName,
+											containersKey,
+											containerName,
+											resourcesKey)
+									}
+								}
+								if containerKey == envKey {
+									if containerConfig.IsArray(envKey) {
+										for i, envElement := range containerConfig.GetConfig(envKey).Root().GetArray() {
+											if envElement.GetObject() != nil {
+												for envObjectKey := range envElement.GetObject().Items() {
+													if !(envObjectKey == envNameKey || envObjectKey == envValueKey) {
+														return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object, unknown key %s",
+															rootPath,
+															kubernetesKey,
+															podsKey,
+															podName,
+															containersKey,
+															containerName,
+															envKey,
+															i,
+															envObjectKey)
+													}
+												}
+											} else {
+												return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object %s",
+													rootPath,
+													kubernetesKey,
+													podsKey,
+													podName,
+													containersKey,
+													containerName,
+													envKey,
+													i,
+													envElement,
+												)
+											}
+										}
+									} else {
+										return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s is not an environment variables array",
+											rootPath,
+											kubernetesKey,
+											podsKey,
+											podName,
+											containersKey,
+											containerName,
+											envKey)
+									}
+								}
+							}
+						} else {
+							return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s is not a container section",
+								rootPath,
+								kubernetesKey,
+								podsKey,
+								podName,
+								containersKey,
+								containerName)
+						}
+					}
+				} else {
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s does not contain a %s section",
+						rootPath,
+						kubernetesKey,
+						podsKey,
+						podName,
+						containersKey)
+				}
+			} else {
+				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section",
+					rootPath,
+					kubernetesKey,
+					podsKey)
+			}
+		}
+	} else {
+		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section",
+			rootPath,
+			kubernetesKey,
+			podsKey)
 	}
 	return nil
 }
@@ -339,6 +490,7 @@ func findSecretName(spec *cfapp.CloudflowApplicationSpec, streamletName string) 
 func createInputSecret(appID string, data map[string]string) *corev1.Secret {
 	labels := cfapp.CreateLabels(appID)
 	labels["com.lightbend.cloudflow/app-id"] = appID
+	labels["com.lightbend.cloudflow/created-at"] = fmt.Sprintf("%d", time.Now().UnixNano())
 	// indicates the secret contains cloudflow config format
 	labels["com.lightbend.cloudflow/config-format"] = "input"
 	secret := &corev1.Secret{

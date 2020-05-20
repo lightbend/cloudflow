@@ -116,7 +116,7 @@ object EventActions {
                                     message: String,
                                     `type`: EventType = EventType.Normal,
                                     objectReference: skuber.ObjectReference,
-                                    fieldPath: Option[String] = None)(implicit ctx: DeploymentContext): CreateAction[Event] = {
+                                    fieldPath: Option[String] = None)(implicit ctx: DeploymentContext): CreateOrUpdateAction[Event] = {
     val eventTime    = ZonedDateTime.now()
     val metadataName = newEventName(ctx.podName, app.spec.appId)
 
@@ -139,7 +139,7 @@ object EventActions {
       source = Some(OperatorSource)
     )
 
-    Action.create(event, eventEditor)
+    Action.createOrUpdate(event, eventEditor)
   }
 
   private def newEventName(sourceResource: String, appId: String): String = {

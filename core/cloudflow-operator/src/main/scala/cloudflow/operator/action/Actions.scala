@@ -58,7 +58,7 @@ object Actions {
 
   /**
    * Creates the [[Action]]s to undeploy the application.
-   * The undeploy is derived by reverting the [[CreateAction]]s that defined the
+   * The undeploy is derived by reverting the [[CreateOrUpdateAction]]s that defined the
    * creation of the application.
    */
   def undeploy(
@@ -76,7 +76,7 @@ object Actions {
     val actions = savepointActions ++ deployRunners(app, currentApp, namespace)
 
     actions.collect {
-      case createAction: CreateAction[_] ⇒ createAction.revert
+      case createAction: CreateOrUpdateAction[_] ⇒ createAction.revert
     } :+ EventActions.undeployEvent(app, namespace, cause)
   }
 

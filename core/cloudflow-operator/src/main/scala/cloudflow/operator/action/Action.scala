@@ -65,11 +65,11 @@ object Action {
   val ConflictCode = 409
 
   /**
-   * Creates a [[CreateAction]].
+   * Creates a [[CreateOrUpdateAction]].
    */
-  def create[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
-                                                                        resourceDefinition: ResourceDefinition[T]) =
-    new CreateAction(resource, format, resourceDefinition, editor)
+  def createOrUpdate[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
+                                                                                resourceDefinition: ResourceDefinition[T]) =
+    new CreateOrUpdateAction(resource, format, resourceDefinition, editor)
 
   /**
    * Creates a [[DeleteAction]].
@@ -77,12 +77,11 @@ object Action {
   def delete[T <: ObjectResource](resource: T)(implicit resourceDefinition: ResourceDefinition[T]) =
     new DeleteAction(resource, resourceDefinition)
 
-  /**
-   * Creates an [[UpdateAction]].
-   */
-  def update[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
-                                                                        resourceDefinition: ResourceDefinition[T]) =
-    new UpdateAction(resource, format, resourceDefinition, editor)
+  def createOrPatch[T <: ObjectResource, O <: Patch](
+      resource: T,
+      patch: O
+  )(implicit format: Format[T], patchWriter: Writes[O], resourceDefinition: ResourceDefinition[T]) =
+    new CreateOrPatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
    * Creates an [[PatchAction]].
@@ -115,10 +114,10 @@ object Action {
 }
 
 /**
- * Captures creation of the resource. This action does not fail if the resource already exists.
- * If the resource already exists, it will be updated, ensuring the desired effect of creating the resource.
+ * Captures create or update of the resource. This action does not fail if the resource already exists.
+ * If the resource already exists, it will be updated.
  */
-class CreateAction[T <: ObjectResource](
+class CreateOrUpdateAction[T <: ObjectResource](
     val resource: T,
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
@@ -133,7 +132,7 @@ class CreateAction[T <: ObjectResource](
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       result <- executeCreate(client)
-    } yield new CreateAction(result, format, resourceDefinition, editor)
+    } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
   private def executeCreate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
@@ -148,7 +147,7 @@ class CreateAction[T <: ObjectResource](
             executeCreate
           )
         }
-        .getOrElse(client.create(resource))
+        .getOrElse(recoverFromConflict(client.create(resource), client, executeCreate))
     } yield res
 
   /**
@@ -160,31 +159,30 @@ class CreateAction[T <: ObjectResource](
 /**
  * Captures the update of the resource.
  */
-class UpdateAction[T <: ObjectResource](
+class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     val resource: T,
+    val patch: O,
     implicit val format: Format[T],
-    implicit val resourceDefinition: ResourceDefinition[T],
-    val editor: ObjectEditor[T]
+    implicit val patchWriter: Writes[O],
+    implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[T] {
 
-  val name = "update"
+  val name = "create-or-patch"
 
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
-      result <- executeUpdate(client)
-    } yield new UpdateAction(result, format, resourceDefinition, editor)
-  private def executeUpdate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+      result <- executeCreateOrPatch(client)
+    } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
+
+  private def executeCreateOrPatch(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)
       res ← existing
-        .map(existingResource ⇒
-          editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
-        )
-        .map(resourceToUpdate ⇒ recoverFromConflict(client.update(resourceToUpdate), client, executeUpdate))
-        .getOrElse(client.create(resource))
+        .map(_ ⇒ client.patch(resource.name, patch, Some(resource.ns)))
+        .getOrElse(recoverFromConflict(client.create(resource), client, executeCreateOrPatch))
     } yield res
 }
 
