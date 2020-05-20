@@ -212,7 +212,7 @@ object ConfigInputChangeEvent {
     val configKey                = "config"
     val absoluteRuntimeConfigKey = s"$streamletKey.$configKey"
     val runtimeConfigSection     = Try(config.getConfig(absoluteRuntimeConfigKey)).toOption
-    // removing 'config' section and move it contents in the root of the config (akka, spark, flink, etc).
+    // removing 'config' section and move its contents in the root of the config (akka, spark, flink, etc).
     runtimeConfigSection
       .map { c =>
         val configs = c
