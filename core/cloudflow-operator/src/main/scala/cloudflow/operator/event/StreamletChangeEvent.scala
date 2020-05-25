@@ -66,8 +66,6 @@ object StreamletChangeEvent {
         (for {
           appId         ← metadata.labels.get(Operator.AppIdLabel)
           streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
-          configFormat  <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.OutputConfig
-
           _ = system.log.info(s"[app: $appId streamlet: $streamletName] streamlet changed ${changeInfo(watchEvent)}")
         } yield {
           StreamletChangeEvent(appId, streamletName, namespace, watchEvent)
@@ -133,41 +131,58 @@ object StreamletChangeEvent {
         }
       }
 
-  def toConfigUpdateAction[O <: ObjectResource](
+  def toConfigUpdateAction(
       implicit system: ActorSystem,
       ctx: DeploymentContext
-  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[O]), Action[ObjectResource], NotUsed] =
-    Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[O])]
+  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
+    Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
       .map {
         case (Some(app), streamletChangeEvent) ⇒
-          import streamletChangeEvent._
-          app.spec.deployments
-            .find(_.streamletName == streamletName)
-            .map { streamletDeployment ⇒
-              system.log.info(s"[app: $appId streamlet: $streamletName] for runtime ${streamletDeployment.runtime} configuration changed.")
-              val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-              val updateAction = streamletDeployment.runtime match {
-                case AkkaRunner.runtime ⇒
-                  val resource        = AkkaRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                  val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  Action.update(labeledResource, runner.AkkaRunner.editor)
+          val secret   = streamletChangeEvent.watchEvent._object
+          val metadata = secret.metadata
 
-                case SparkRunner.runtime ⇒
-                  val resource        = SparkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                  val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  val patch           = SpecPatch(labeledResource.spec)
-                  Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
-                case FlinkRunner.runtime ⇒
-                  val resource        = FlinkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                  val labeledResource = resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  Action.update(labeledResource, runner.FlinkRunner.editor)
+          metadata.labels
+            .get(CloudflowLabels.ConfigFormat)
+            .map { configFormat =>
+              if (configFormat == CloudflowLabels.OutputConfig) {
+                import streamletChangeEvent._
+                app.spec.deployments
+                  .find(_.streamletName == streamletName)
+                  .map { streamletDeployment ⇒
+                    system.log
+                      .info(s"[app: $appId streamlet: $streamletName] for runtime ${streamletDeployment.runtime} configuration changed.")
+                    val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+                    val updateAction = streamletDeployment.runtime match {
+                      case AkkaRunner.runtime ⇒
+                        val resource = AkkaRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
+                        val labeledResource =
+                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                        Action.update(labeledResource, runner.AkkaRunner.editor)
+
+                      case SparkRunner.runtime ⇒
+                        val resource = SparkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
+                        val labeledResource =
+                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                        val patch = SpecPatch(labeledResource.spec)
+                        Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+                      case FlinkRunner.runtime ⇒
+                        val resource = FlinkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
+                        val labeledResource =
+                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                        Action.update(labeledResource, runner.FlinkRunner.editor)
+                    }
+                    val streamletChangeEventAction =
+                      EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
+
+                    List(updateAction, streamletChangeEventAction)
+                  }
+                  .getOrElse(Nil)
+              } else {
+                Nil
               }
-              val streamletChangeEventAction =
-                EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
-
-              List(updateAction, streamletChangeEventAction)
             }
             .getOrElse(Nil)
+
         case _ ⇒ Nil // app could not be found, do nothing.
       }
       .mapConcat(_.toList)
