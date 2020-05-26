@@ -222,7 +222,9 @@ object StreamletChangeEvent {
                   val runtimeConfig = getRuntimeConfig(secret)
                   currentRuntimeConfigs = currentRuntimeConfigs + (absoluteStreamletKey -> runtimeConfig)
                   system.log.info(
-                    s"[app: ${streamletChangeEvent.appId} updated runtime config $runtimeConfig for streamlet $streamletName]"
+                    s"""[app: ${streamletChangeEvent.appId} updated runtime config which is ${if (existingRuntimeConfig.isEmpty)
+                      "empty"
+                    else "not empty"} for streamlet $streamletName]"""
                   )
                   system.log.debug(
                     s"[app: ${streamletChangeEvent.appId} using existing pods config for $existingPodsConfigSize pods for streamlet $streamletName]"
