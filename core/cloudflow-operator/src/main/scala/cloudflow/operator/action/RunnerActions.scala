@@ -34,6 +34,7 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+    implicit val format             = runner.format
     implicit val resourceDefinition = runner.resourceDefinition
 
     val newDeployments = newApp.spec.deployments.filter(_.runtime == runner.runtime)
@@ -56,7 +57,10 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
     val createActions = newDeployments
       .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
-        Seq(Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor))
+        Seq(
+          Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
+          Action.createOrUpdate(runner.resource(deployment, newApp, namespace), runner.editor)
+        )
       }
 
     // update streamlet deployments by name that are in both the current app and the new app
@@ -68,9 +72,12 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
           val patch        = SparkRunner.patch(deployment, newApp, namespace)
           val patchAction  = Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
           val configAction = Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor)
-          Seq(configAction)
+          Seq(configAction, patchAction)
         } else {
-          Seq(Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor))
+          Seq(
+            Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
+            Action.createOrUpdate(runner.resource(deployment, newApp, namespace), runner.editor)
+          )
         }
       }
 
