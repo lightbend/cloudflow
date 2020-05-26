@@ -124,7 +124,7 @@ class CreateOrUpdateAction[T <: ObjectResource](
     implicit val editor: ObjectEditor[T]
 ) extends Action[T] {
 
-  val name = "create"
+  val name = "create-or-update"
 
   /**
    * Creates the resources if it does not exist. If it does exist it updates the resource as required.
