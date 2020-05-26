@@ -38,7 +38,7 @@ object TopicActions {
       deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
-      app.deployments.flatMap(_.portMappings.values.map(sp => TopicInfo(sp.name, sp.managed))).toSet
+      app.deployments.flatMap(_.portMappings.values.map(topic => TopicInfo(topic.name, topic.managed))).toSet
 
     val labels = CloudflowLabels(newApp)
 

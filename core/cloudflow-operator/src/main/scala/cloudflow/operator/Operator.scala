@@ -93,8 +93,8 @@ object Operator {
       ),
       resourceVersion = None
     )
-    // watch only Input secrets, transform the streamlet change events (the input secrets)
-    // into Output secret (create-or-) update actions.
+    // watch only Input secrets, transform the application input secret
+    // into Output secret create actions.
     runStream(
       watch[Secret](client, watchOptions)
         .via(ConfigInputChangeEvent.fromWatchEvent())

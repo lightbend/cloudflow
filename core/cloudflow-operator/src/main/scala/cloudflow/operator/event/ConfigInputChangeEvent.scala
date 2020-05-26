@@ -122,7 +122,7 @@ object ConfigInputChangeEvent {
             streamletConfig = moveConfigParameters(streamletConfig, streamletName)
             streamletConfig = mergeRuntimeConfigToRoot(streamletConfig, streamletName)
             streamletConfig = removeKubernetesConfigSection(streamletConfig, streamletName)
-            streamletConfig = moveTopicsConfigToPortMappings(app, streamletConfig, streamletName)
+            streamletConfig = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig, streamletName)
 
             // TODO get runtime config and create a separate runner secret for it.
             // TODO get kubernetes config and create a separate secret for it.
@@ -156,24 +156,29 @@ object ConfigInputChangeEvent {
 
   def getConfigFromSecret(configInputChangeEvent: ConfigInputChangeEvent, system: ActorSystem) = {
     val secret: Secret = configInputChangeEvent.watchEvent._object
+    val empty          = ConfigFactory.empty()
     secret.data
       .get(ConfigInputChangeEvent.SecretDataKey)
-      .map { bytes =>
-        Try(ConfigFactory.parseString(new String(bytes, StandardCharsets.UTF_8))).toOption.getOrElse {
-          system.log.error(
-            s"Detected input secret '${secret.metadata.name}' contains invalid configuration data, IGNORING configuration."
-          )
-          ConfigFactory.empty()
-        }
+      .flatMap { bytes =>
+        val str = new String(bytes, StandardCharsets.UTF_8)
+        Try(ConfigFactory.parseString(str).resolve()).recover {
+          case cause =>
+            system.log.error(
+              cause,
+              s"Detected input secret '${secret.metadata.name}' contains invalid configuration data, IGNORING configuration."
+            )
+            empty
+        }.toOption
       }
       .getOrElse {
         system.log.error(
           s"Detected input secret '${secret.metadata.name}' does not have data key '${ConfigInputChangeEvent.SecretDataKey}', IGNORING configuration."
         )
-        ConfigFactory.empty()
+        empty
       }
   }
 
+  val TopicsConfigPath                                  = "cloudflow.topics"
   def streamletConfigPath(streamletName: String)        = s"cloudflow.streamlets.$streamletName"
   def streamletRuntimeConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.config"
   def globalRuntimeConfigPath(runtime: String)          = s"cloudflow.runtimes.$runtime.config"
@@ -236,16 +241,28 @@ object ConfigInputChangeEvent {
     // TODO implement
     config
 
-  def moveTopicsConfigToPortMappings(app: CloudflowApplication.CR, config: Config, streamletName: String): Config =
-    // convert to cloudflow.runner.streamlet.port_mappings.topic
-    // TODO does merge work well on arrays? (port mappings / connected ports is an array, maybe change to 'map')
-    // TODO implement
-    config
+  // move cloudflow.topics.<topic> config to cloudflow.runner.streamlet.context.port_mappings.<port>.config
+  // and let the merge magic happen!
+  def moveTopicsConfigToPortMappings(deployment: cloudflow.blueprint.deployment.StreamletDeployment,
+                                     streamletConfig: Config,
+                                     appConfig: Config,
+                                     streamletName: String): Config = {
+    val portMappingConfigs = deployment.portMappings.flatMap {
+      case (port, topic) =>
+        Try(
+          appConfig
+            .getConfig(s"$TopicsConfigPath.${topic.id}")
+            .withFallback(topic.config)
+            .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
+        ).toOption
+    }
+    portMappingConfigs.foldLeft(streamletConfig) { (acc, el) =>
+      acc.withFallback(el)
+    }
+  }
 
   // val kubernetesKey               = "kubernetes"
   // val absoluteKubernetesConfigKey = s"$streamletKey.$kubernetesKey"
-  // val topicsKey                   = "topics"
-  // val absoluteTopicsConfigKey     = s"$streamletKey.$topicsKey"
 
   def secretEditor = new ObjectEditor[Secret] {
     def updateMetadata(obj: Secret, newMetadata: ObjectMeta): Secret = obj.copy(metadata = newMetadata)

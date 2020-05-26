@@ -244,9 +244,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           val formattedTopic = topicFormat(topic.name)
           val io             = inletOutlets(port)
           if (io == "inlet") {
-            s"$formattedTopic" -> s"${topic.streamlet}"
+            // TODO verify this
+            s"$formattedTopic" -> s"${deployment.streamletName}"
           } else {
-            s"${topic.streamlet}" -> s"$formattedTopic"
+            // TODO verify this
+            s"${deployment.streamletName}" -> s"$formattedTopic"
           }
       }
       topicsOtherStreamlet

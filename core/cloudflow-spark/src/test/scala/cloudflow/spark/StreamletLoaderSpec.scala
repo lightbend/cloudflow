@@ -43,28 +43,20 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
         "config" : {
           "fake-config-value" : "bla"
         }
-        "connected_ports": [
-          {
-            "port": "in",
-            "topic":
-              {
-                "app_id": "appId",
-                "streamlet_ref": "to-metrics",
-                "name": "appId.to-metrics.in",
-                "config": {}
-              }
+        "port_mappings": {
+          "in ": {
+            "app_id": "appId",
+            "streamlet_ref": "to-metrics",
+            "id": "metrics-in",
+            "config": {}
           },
-          {
-            "port": "out",
-            "topic":
-              {
-                "app_id": "appId",
-                "streamlet_ref": "to-metrics",
-                "name": "appId.to-metrics.out",
-                "config": {}
-              }
+          "out": {
+            "app_id": "appId",
+            "streamlet_ref": "to-metrics",
+            "id": "metrics-out",
+            "config": {}
           }
-        ],
+        },
         "volume_mounts": [
           {
             "name":"test-mount",

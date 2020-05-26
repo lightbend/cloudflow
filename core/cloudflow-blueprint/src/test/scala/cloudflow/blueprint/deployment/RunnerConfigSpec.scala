@@ -28,80 +28,40 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
       val runnerConfig = RunnerConfig(appId, appVersion, ingressDeployment, kafkaBootstrapServers)
       val config       = ConfigFactory.parseString(runnerConfig.data)
 
-      val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
-      streamlets.size mustBe 1
-      forExactly(1, streamlets) { streamlet ⇒
-        streamlet.getString("class_name") mustBe ingressDeployment.className
-        streamlet.getString("streamlet_ref") mustBe ingressDeployment.streamletName
+      val streamlet = config.getConfig("cloudflow.runner.streamlet")
 
-        val streamletContext = streamlet.getConfig("context")
+      streamlet.getString("class_name") mustBe ingressDeployment.className
+      streamlet.getString("streamlet_ref") mustBe ingressDeployment.streamletName
 
-        streamletContext.getString("app_id") mustBe appId
-        streamletContext.getString("app_version") mustBe appVersion
+      val streamletContext = streamlet.getConfig("context")
 
-        val connectedPorts = streamletContext.getConfigList("connected_ports").asScala
-        connectedPorts must have size 1
+      streamletContext.getString("app_id") mustBe appId
+      streamletContext.getString("app_version") mustBe appVersion
 
-        forExactly(1, connectedPorts) { connectedPort ⇒
-          val topicConfig = connectedPort.getConfig("topic")
+      val portMappingConfig = streamletContext.getConfig("port_mappings")
+      val ports = portMappingConfig
+        .root()
+        .entrySet()
+        .asScala
+        .map(_.getKey)
+        .toVector
 
-          ingressDeployment.portMappings must contain(
-            (
-              connectedPort.getString("port"),
-              Topic(
-                topicConfig.getString("app_id"),
-                topicConfig.getString("streamlet_ref"),
-                topicConfig.getString("name"),
-                topicConfig.getConfig("config"),
-                Some(topicConfig.getString("bootstrap_servers")),
-                true
-              )
+      ports must have size 1
+      forExactly(1, ports) { port ⇒
+        val topicConfig = portMappingConfig.getConfig(port)
+
+        ingressDeployment.portMappings must contain(
+          (
+            port,
+            Topic(
+              topicConfig.getString("id"),
+              topicConfig.getConfig("config")
             )
           )
-        }
-
-        streamletContext.getConfig(s"config") mustBe ingressDeployment.config
+        )
       }
-    }
 
-    "generate the correct JSON (multiple streamlets per deployment)" in {
-      val runnerConfig = RunnerConfig(appId, appVersion, Vector(ingressDeployment, processorDeployment), kafkaBootstrapServers)
-      val config       = ConfigFactory.parseString(runnerConfig.data)
-
-      val streamlets = config.getConfigList("cloudflow.runner.streamlets").asScala
-      streamlets.size mustBe 2
-
-      forExactly(1, streamlets) { streamlet ⇒
-        streamlet.getString("class_name") mustBe processorDeployment.className
-        streamlet.getString("streamlet_ref") mustBe processorDeployment.streamletName
-
-        val streamletContext = streamlet.getConfig("context")
-
-        streamletContext.getString("app_id") mustBe appId
-        streamletContext.getString("app_version") mustBe appVersion
-
-        val connectedPorts = streamletContext.getConfigList("connected_ports").asScala.toList
-        connectedPorts must have size 2
-
-        forExactly(2, connectedPorts) { connectedPort ⇒
-          val topicConfig = connectedPort.getConfig("topic")
-          val portName    = connectedPort.getString("port")
-          val topic = Topic(
-            topicConfig.getString("app_id"),
-            topicConfig.getString("streamlet_ref"),
-            topicConfig.getString("name"),
-            topicConfig.getConfig("config"),
-            Some(topicConfig.getString("bootstrap_servers")),
-            true
-          )
-
-          forExactly(1, allDeployments) { deployment ⇒
-            deployment.portMappings must contain(portName -> topic)
-          }
-        }
-
-        streamletContext.getConfig(s"config") mustBe ConfigFactory.empty
-      }
+      streamletContext.getConfig(s"config") mustBe ingressDeployment.config
     }
   }
 
@@ -129,8 +89,8 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .define(Vector(ingress, processor))
     .use(ingressRef)
     .use(processorRef)
-    .connect(Topic(name = "foos", bootstrapServers = Some("localhost:9092")), ingressRef.out, processorRef.in)
-    .connect(Topic(name = "bars", bootstrapServers = Some("localhost:9092")), processorRef.out)
+    .connect(Topic(id = "foos"), ingressRef.out, processorRef.in)
+    .connect(Topic(id = "bars"), processorRef.out)
 
   val verifiedBlueprint = blueprint.verified.right.value
   val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
