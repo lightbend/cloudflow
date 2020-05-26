@@ -19,12 +19,14 @@ package cloudflow.operator
 import scala.concurrent._
 import scala.util._
 import akka.actor._
+import akka.stream._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) =
+  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) = {
+    implicit val materializer = ActorMaterializer()
     Http()
       .bindAndHandle(
         route,
@@ -41,6 +43,7 @@ object HealthChecks {
             sys.exit(-1)
           }
       }
+  }
   def route =
     // format: OFF
     path("robots.txt") {

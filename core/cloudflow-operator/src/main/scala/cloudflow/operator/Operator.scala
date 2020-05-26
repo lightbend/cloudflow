@@ -198,8 +198,8 @@ object Operator {
     val eventsResult = getCurrentEvents[O](client, options)
 
     Source
-      .future(eventsResult)
-      .mapConcat(identity)
+      .fromFuture(eventsResult)
+      .mapConcat(identity _)
       .concat(
         client
           .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
