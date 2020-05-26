@@ -43,7 +43,7 @@ and follow the install instructions: https://golang.org/doc/install
 
 OSX:
 
-`brew install golang` (latest known/tested version: 1.12)
+`brew install golang` (latest known/tested version: 1.14)
 
 ### Set up your workspace and `$GOPATH`
 
