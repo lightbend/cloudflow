@@ -76,7 +76,6 @@ object Blueprint {
 
         val topics = if (config.hasPath(TopicsSectionKey)) {
           getKeys(config, TopicsSectionKey).map { key ⇒
-            val topicKey     = s"$TopicsSectionKey.${key}.$TopicKey"
             val producersKey = s"$TopicsSectionKey.${key}.$ProducersKey"
             val consumersKey = s"$TopicsSectionKey.${key}.$ConsumersKey"
             val configKey    = s"$TopicsSectionKey.${key}"
@@ -124,8 +123,6 @@ object Blueprint {
       .map(_.getKey)
       .toVector
 
-  private def getStringOrNone(config: Config, key: String): Option[String] =
-    if (config.hasPath(key)) Some(config.getString(key)) else None
   private def getConfigOrEmpty(config: Config, key: String): Config =
     if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
   private def getStringListOrEmpty(config: Config, key: String): Vector[String] =

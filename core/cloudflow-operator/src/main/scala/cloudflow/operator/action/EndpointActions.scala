@@ -111,7 +111,7 @@ object EndpointActions {
       override val resource: Service,
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
-  ) extends CreateAction[Service](resource, format, resourceDefinition, serviceEditor) {
+  ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
     override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)

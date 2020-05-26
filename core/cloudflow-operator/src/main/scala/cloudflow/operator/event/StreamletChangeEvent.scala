@@ -17,11 +17,13 @@
 package cloudflow.operator
 package event
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent._
 
 import akka.actor._
 import akka.NotUsed
 import akka.stream.scaladsl._
+import com.typesafe.config._
 import skuber._
 import skuber.api.client._
 
@@ -32,13 +34,8 @@ import cloudflow.operator.runner.SparkResource.SpecPatch
 /**
  * Indicates that a streamlet has changed.
  */
-case class StreamletChangeEvent[T <: ObjectResource](appId: String, streamletName: String, namespace: String, watchEvent: WatchEvent[T])
-
-object ConfigChangeEvent {
-
-  /** log message for when a StreamletChangeEvent is identified as a configuration change event */
-  def detected[T <: ObjectResource](event: StreamletChangeEvent[T]) =
-    s"Configuration change for streamlet ${event.streamletName} detected in application ${event.appId}."
+case class StreamletChangeEvent[T <: ObjectResource](appId: String, streamletName: String, namespace: String, watchEvent: WatchEvent[T]) {
+  def absoluteStreamletKey = s"$appId.$streamletName"
 }
 
 object StatusChangeEvent {
@@ -47,29 +44,43 @@ object StatusChangeEvent {
   def detected[T <: ObjectResource](event: StreamletChangeEvent[T]) =
     s"Status change for streamlet ${event.streamletName} detected in application ${event.appId}."
 }
-
+//TODO cleanup StreamletChangeEvent, use separate events for Pod status changes and config updates
 object StreamletChangeEvent {
 
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
    * Only watch events for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
-   * (watch events are filtered by Operator.AppIdLabel and Operator.StreamletNameLabel)
    */
-  def fromWatchEvent[O <: ObjectResource]()(implicit system: ActorSystem): Flow[WatchEvent[O], StreamletChangeEvent[O], NotUsed] =
+  def fromWatchEvent[O <: ObjectResource](): Flow[WatchEvent[O], StreamletChangeEvent[O], NotUsed] =
     Flow[WatchEvent[O]]
-      .filter(_._type == EventType.MODIFIED)
-      .mapConcat { watchEvent ⇒
-        val obj       = watchEvent._object
-        val metadata  = obj.metadata
-        val namespace = obj.metadata.namespace
+      .statefulMapConcat { () ⇒
+        var currentObjects = Map[String, WatchEvent[O]]()
+        watchEvent ⇒ {
+          val secret       = watchEvent._object
+          val metadata     = secret.metadata
+          val secretName   = secret.metadata.name
+          val namespace    = secret.metadata.namespace
+          val absoluteName = s"$namespace.$secretName"
 
-        (for {
-          appId         ← metadata.labels.get(Operator.AppIdLabel)
-          streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
-          _ = system.log.info(s"[app: $appId streamlet: $streamletName] streamlet changed ${changeInfo(watchEvent)}")
-        } yield {
-          StreamletChangeEvent(appId, streamletName, namespace, watchEvent)
-        }).toList
+          def hasChanged(existingEvent: WatchEvent[O]) =
+            watchEvent._object.resourceVersion != existingEvent._object.resourceVersion
+
+          watchEvent._type match {
+            case EventType.DELETED ⇒
+              currentObjects = currentObjects - absoluteName
+              List()
+            case EventType.ADDED | EventType.MODIFIED ⇒
+              if (currentObjects.get(absoluteName).forall(hasChanged)) {
+                (for {
+                  appId         ← metadata.labels.get(Operator.AppIdLabel)
+                  streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+                } yield {
+                  currentObjects = currentObjects + (absoluteName -> watchEvent)
+                  StreamletChangeEvent(appId, streamletName, namespace, watchEvent)
+                }).toList
+              } else List()
+          }
+        }
       }
 
   private def changeInfo[T <: ObjectResource](watchEvent: WatchEvent[T]) = {
@@ -115,8 +126,10 @@ object StreamletChangeEvent {
               case StreamletChangeEvent(appId, streamletName, _, watchEvent) ⇒
                 watchEvent match {
                   case WatchEvent(EventType.ADDED | EventType.MODIFIED, pod: Pod) ⇒
+                    system.log.info(s"[app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                     currentStatuses = currentStatuses + (appId -> appStatus.updatePod(streamletName, pod))
                   case WatchEvent(EventType.DELETED, pod: Pod) ⇒
+                    system.log.info(s"[app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                     currentStatuses = currentStatuses + (appId -> appStatus.deletePod(streamletName, pod))
                   case _ ⇒
                     system.log.warning(
@@ -136,54 +149,169 @@ object StreamletChangeEvent {
       ctx: DeploymentContext
   ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
-      .map {
-        case (Some(app), streamletChangeEvent) ⇒
-          val secret   = streamletChangeEvent.watchEvent._object
-          val metadata = secret.metadata
+      .statefulMapConcat { () ⇒
+        // these are used as the last detected values.
+        var currentPodConfigs     = Map[String, PodsConfig]()
+        var currentRuntimeConfigs = Map[String, Config]()
 
-          metadata.labels
-            .get(CloudflowLabels.ConfigFormat)
-            .map { configFormat =>
-              if (configFormat == CloudflowLabels.OutputConfig) {
-                import streamletChangeEvent._
-                app.spec.deployments
-                  .find(_.streamletName == streamletName)
-                  .map { streamletDeployment ⇒
-                    system.log
-                      .info(s"[app: $appId streamlet: $streamletName] for runtime ${streamletDeployment.runtime} configuration changed.")
-                    val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-                    val updateAction = streamletDeployment.runtime match {
-                      case AkkaRunner.runtime ⇒
-                        val resource = AkkaRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                        val labeledResource =
-                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                        Action.update(labeledResource, runner.AkkaRunner.editor)
+        {
+          case (_, streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.DELETED ⇒
+            import streamletChangeEvent._
+            val secret   = watchEvent._object
+            val metadata = secret.metadata
 
-                      case SparkRunner.runtime ⇒
-                        val resource = SparkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                        val labeledResource =
-                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                        val patch = SpecPatch(labeledResource.spec)
-                        Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
-                      case FlinkRunner.runtime ⇒
-                        val resource = FlinkRunner.resource(streamletDeployment, app, app.metadata.namespace, updateLabels)
-                        val labeledResource =
-                          resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                        Action.update(labeledResource, runner.FlinkRunner.editor)
-                    }
-                    val streamletChangeEventAction =
-                      EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
-
-                    List(updateAction, streamletChangeEventAction)
-                  }
-                  .getOrElse(Nil)
-              } else {
-                Nil
+            metadata.labels
+              .get(CloudflowLabels.ConfigFormat)
+              .foreach { configFormat =>
+                if (configFormat == CloudflowLabels.PodConfigFormat) {
+                  system.log.info(s"Removing pods config for $absoluteStreamletKey")
+                  currentPodConfigs = currentPodConfigs - absoluteStreamletKey
+                } else if (configFormat == CloudflowLabels.RuntimeConfigFormat) {
+                  system.log.info(s"Removing runtime config for $absoluteStreamletKey")
+                  currentRuntimeConfigs = currentRuntimeConfigs - absoluteStreamletKey
+                }
               }
-            }
-            .getOrElse(Nil)
+            Nil
 
-        case _ ⇒ Nil // app could not be found, do nothing.
+          case (Some(app), streamletChangeEvent) ⇒
+            system.log.info(
+              s"[app: ${streamletChangeEvent.appId} detected config update for streamlet ${streamletChangeEvent.streamletName}: ${changeInfo(streamletChangeEvent.watchEvent)}]"
+            )
+            import streamletChangeEvent._
+            val secret                 = watchEvent._object
+            val metadata               = secret.metadata
+            val existingPodsConfigSize = currentPodConfigs.getOrElse(absoluteStreamletKey, PodsConfig()).size
+            val existingRuntimeConfig  = currentRuntimeConfigs.getOrElse(absoluteStreamletKey, ConfigFactory.empty())
+
+            metadata.labels
+              .get(CloudflowLabels.ConfigFormat)
+              .map { configFormat =>
+                if (configFormat == CloudflowLabels.RunnerConfigFormat) {
+                  system.log.debug(s"[app: ${streamletChangeEvent.appId} updating runner config format for streamlet $streamletName]")
+                  system.log.debug(
+                    s"[app: ${streamletChangeEvent.appId} using existing pods config for $existingPodsConfigSize pods for streamlet $streamletName]"
+                  )
+                  system.log.debug(
+                    s"""[app: ${streamletChangeEvent.appId} using existing runtime config which is ${if (existingRuntimeConfig.isEmpty)
+                      "empty"
+                    else "not empty"} for streamlet $streamletName]"""
+                  )
+
+                  actionsForRunner(
+                    app,
+                    streamletChangeEvent,
+                    currentPodConfigs.getOrElse(absoluteStreamletKey, PodsConfig()),
+                    currentRuntimeConfigs.getOrElse(absoluteStreamletKey, ConfigFactory.empty())
+                  )
+                } else if (configFormat == CloudflowLabels.PodConfigFormat) {
+                  val podsConfig = getPodsConfig(secret)
+                  currentPodConfigs = currentPodConfigs + (absoluteStreamletKey -> podsConfig)
+                  system.log.debug(
+                    s"[app: ${streamletChangeEvent.appId} updating pod config for $existingPodsConfigSize pods for streamlet $streamletName]"
+                  )
+                  system.log.debug(
+                    s"""[app: ${streamletChangeEvent.appId} using existing runtime config which is ${if (existingRuntimeConfig.isEmpty)
+                      "empty"
+                    else "not empty"} for streamlet $streamletName]"""
+                  )
+                  actionsForRunner(app,
+                                   streamletChangeEvent,
+                                   podsConfig,
+                                   currentRuntimeConfigs.getOrElse(absoluteStreamletKey, ConfigFactory.empty()))
+                } else if (configFormat == CloudflowLabels.RuntimeConfigFormat) {
+                  val runtimeConfig = getRuntimeConfig(secret)
+                  currentRuntimeConfigs = currentRuntimeConfigs + (absoluteStreamletKey -> runtimeConfig)
+                  system.log.info(
+                    s"""[app: ${streamletChangeEvent.appId} updated runtime config which is ${if (existingRuntimeConfig.isEmpty)
+                      "empty"
+                    else "not empty"} for streamlet $streamletName]"""
+                  )
+                  system.log.debug(
+                    s"[app: ${streamletChangeEvent.appId} using existing pods config for $existingPodsConfigSize pods for streamlet $streamletName]"
+                  )
+                  actionsForRunner(app,
+                                   streamletChangeEvent,
+                                   currentPodConfigs.getOrElse(absoluteStreamletKey, PodsConfig()),
+                                   runtimeConfig)
+                } else Nil
+              }
+              .getOrElse(Nil)
+          case _ ⇒ Nil // app could not be found, do nothing.
+        }
       }
-      .mapConcat(_.toList)
+  private def actionsForRunner(app: CloudflowApplication.CR,
+                               streamletChangeEvent: StreamletChangeEvent[Secret],
+                               // None means the change must not affect the podsConfig
+                               podsConfig: PodsConfig,
+                               // None means the change must not affect the runtimeConfig
+                               runtimeConfig: Config)(
+      implicit system: ActorSystem,
+      ctx: DeploymentContext
+  ) = {
+    import streamletChangeEvent._
+    app.spec.deployments
+      .find(_.streamletName == streamletName)
+      .map { streamletDeployment ⇒
+        system.log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
+        val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+        val updateAction = streamletDeployment.runtime match {
+          case AkkaRunner.runtime ⇒
+            val resource =
+              AkkaRunner.resource(streamletDeployment, app, app.metadata.namespace, podsConfig, runtimeConfig, updateLabels)
+            val labeledResource =
+              resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+            Action.createOrUpdate(labeledResource, runner.AkkaRunner.editor)
+
+          case SparkRunner.runtime ⇒
+            val resource =
+              SparkRunner.resource(streamletDeployment, app, app.metadata.namespace, podsConfig, runtimeConfig, updateLabels)
+            val labeledResource =
+              resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+            val patch = SpecPatch(labeledResource.spec)
+            Action.createOrPatch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+          case FlinkRunner.runtime ⇒
+            val resource =
+              FlinkRunner.resource(streamletDeployment, app, app.metadata.namespace, podsConfig, runtimeConfig, updateLabels)
+            val labeledResource =
+              resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+            Action.createOrUpdate(labeledResource, runner.FlinkRunner.editor)
+        }
+        val streamletChangeEventAction =
+          EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
+
+        List(updateAction, streamletChangeEventAction)
+      }
+      .getOrElse(Nil)
+  }
+
+  private def getPodsConfig(secret: Secret)(implicit system: ActorSystem): PodsConfig =
+    secret.metadata.labels
+      .get(CloudflowLabels.ConfigFormat)
+      .flatMap {
+        case CloudflowLabels.PodConfigFormat =>
+          PodsConfig
+            .fromConfig(ConfigFactory.parseString(getData(secret)))
+            .recover {
+              case e =>
+                system.log.error(
+                  e,
+                  s"Detected pod configs in secret '${secret.metadata.name}' contains invalid configuration data, IGNORING configuration."
+                )
+                PodsConfig()
+            }
+            .toOption
+        case _ => None
+      }
+      .getOrElse(PodsConfig())
+
+  private def getRuntimeConfig(secret: Secret): Config =
+    secret.metadata.labels
+      .get(CloudflowLabels.ConfigFormat)
+      .collect {
+        case CloudflowLabels.RuntimeConfigFormat => ConfigFactory.parseString(getData(secret))
+      }
+      .getOrElse(ConfigFactory.empty())
+
+  private def getData(secret: Secret): String =
+    secret.data.get(ConfigInputChangeEvent.SecretDataKey).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
 }

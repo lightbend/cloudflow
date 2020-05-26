@@ -17,6 +17,8 @@
 package cloudflow.operator
 package runner
 
+import scala.util._
+import com.typesafe.config._
 import cloudflow.blueprint.deployment._
 import skuber._
 import play.api.libs.json._
@@ -98,7 +100,111 @@ trait Runner[T <: ObjectResource] {
   /**
    * Creates the runner resource.
    */
-  def resource(deployment: StreamletDeployment, app: CloudflowApplication.CR, namespace: String, updateLabels: Map[String, String] = Map())(
+  def resource(
+      deployment: StreamletDeployment,
+      app: CloudflowApplication.CR,
+      namespace: String,
+      podsConfig: PodsConfig = PodsConfig(),
+      runtimeConfig: Config = ConfigFactory.empty(),
+      updateLabels: Map[String, String] = Map()
+  )(
       implicit ctx: DeploymentContext
   ): T
 }
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.namemappers.implicits.hyphenCase
+import collection.JavaConverters._
+import skuber.Resource.Quantity
+
+object PodsConfig {
+  val CloudflowPodName       = "pod"
+  val CloudflowContainerName = "container"
+
+  implicit val quantityReader: ValueReader[Quantity] = new ValueReader[Quantity] {
+    def read(config: Config, path: String) = {
+      // skuber quantity does not break construction
+      val q = Quantity(config.getString(path))
+      Try {
+        q.amount
+        q
+      }.recoverWith {
+          case e => Failure(new Exception(s"invalid quantity at key '$path'", e))
+        }
+        // users might use hocon MB, GB, gb, values, so fallback to that.
+        .orElse(Try(Quantity(config.getMemorySize(path).toBytes.toString)))
+        .get
+    }
+  }
+
+  implicit val envVarValueReader: ValueReader[EnvVar.Value] = new ValueReader[EnvVar.Value] {
+    def read(config: Config, path: String) =
+      config.as[Option[String]](path).map(EnvVar.StringValue).getOrElse(EnvVar.StringValue(""))
+  }
+
+  implicit val envVarReader: ValueReader[EnvVar] = ValueReader.relative { envConfig =>
+    val name  = envConfig.getString("name")
+    val value = envConfig.as[EnvVar.Value]("value")
+    EnvVar(name, value)
+  }
+  implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
+    val env       = containerConfig.as[Option[List[EnvVar]]]("env")
+    val resources = containerConfig.as[Option[Resource.Requirements]]("resources")
+    ContainerConfig(env.getOrElse(List()), resources)
+  }
+
+  implicit val podConfMapReader = ValueReader.relative { config ⇒
+    asConfigObjectToMap[PodConfig](config)
+  }
+
+  /*
+   *  The expected format is:
+   *  {{{
+   *  kubernetes {
+   *    pods {
+   *      # pod is special name for cloudflow
+   *      <pod-name> | pod {
+   *        containers {
+   *          # container is special name for cloudflow
+   *          <container-name> | container {
+   *            env = [
+   *             {name = "env-key", value = "env-value"}
+   *            ]
+   *            resources {
+   *              limits {
+   *                memory = "200Mi"
+   *              }
+   *              requests {
+   *                memory = "1200Mi"
+   *              }
+   *            }
+   *          }
+   *        }
+   *      }
+   *    }
+   *  }
+   *  }}}
+   */
+  def fromConfig(config: Config): Try[PodsConfig] =
+    Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
+
+  def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
+    config.root.keySet.asScala.map(key ⇒ key → config.as[T](key)).toMap
+}
+
+final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
+  def isEmpty  = pods.isEmpty
+  def nonEmpty = pods.nonEmpty
+  def size     = pods.size
+}
+
+final case class PodConfig(
+    containers: Map[String, ContainerConfig]
+)
+
+final case class ContainerConfig(
+    env: List[EnvVar] = List(),
+    resources: Option[Resource.Requirements] = None
+)

@@ -16,6 +16,7 @@
 
 package cloudflow.operator
 
+import scala.reflect._
 import akka.NotUsed
 import akka.actor._
 import akka.stream._
@@ -80,7 +81,7 @@ object Operator {
 
   def handleConfigurationInput(
       client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     // only watch secrets that contain input config
@@ -118,7 +119,10 @@ object Operator {
       labelSelector = Some(
         LabelSelector(
           LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.OutputConfig)
+          LabelSelector.InRequirement(CloudflowLabels.ConfigFormat,
+                                      List(CloudflowLabels.RunnerConfigFormat,
+                                           CloudflowLabels.PodConfigFormat,
+                                           CloudflowLabels.RuntimeConfigFormat))
         )
       ),
       resourceVersion = None
@@ -127,7 +131,6 @@ object Operator {
     runStream(
       watch[Secret](client, watchOptions)
         .via(StreamletChangeEvent.fromWatchEvent())
-        .log("config-change-event", ConfigChangeEvent.detected)
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
@@ -170,7 +173,8 @@ object Operator {
     lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],
     lc: LoggingContext,
-    ec: ExecutionContext): Source[WatchEvent[O], NotUsed] = {
+    ec: ExecutionContext,
+    ct: ClassTag[O]): Source[WatchEvent[O], NotUsed] = {
 
     /* =================================================
      * Workaround for issue found on openshift:
@@ -189,6 +193,7 @@ object Operator {
      * On failing watches this code becomes a polling loop of listing resources which are turned into events.
      * Events that have already been processed are discarded in AppEvents.fromWatchEvent.
      * ==================================================*/
+    system.log.info(s"Starting watch, getting current events for ${classTag[O].runtimeClass.getName}")
 
     val eventsResult = getCurrentEvents[O](client, options)
 
@@ -203,9 +208,10 @@ object Operator {
       .recoverWithRetries(
         -1, {
           case _: TcpIdleTimeoutException ⇒
+            system.log.warning("Restarting watch on TCP idle timeout.")
             watch[O](client, options)
           case e: skuber.api.client.K8SException ⇒
-            println(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
+            system.log.info(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
             watch[O](client, options)
         }
       )

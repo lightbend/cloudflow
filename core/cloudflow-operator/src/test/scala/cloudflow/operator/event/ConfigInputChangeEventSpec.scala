@@ -41,6 +41,27 @@ class ConfigInputChangeEventSpec
           config {
             akka.loglevel = "DEBUG"
           }
+          kubernetes {
+            pods {
+              pod {
+                containers {
+                  cloudflow {
+                    env = [ 
+                      { name = "JAVA_OPTS" 
+                        value = "-XX:MaxRAMPercentage=40.0"
+                      }
+                    ]
+                    # limited settings that we want to support
+                    resources {
+                      requests {
+                        memory = "1G"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
         runtimes.akka.config {
           akka.loglevel = INFO
@@ -52,18 +73,21 @@ class ConfigInputChangeEventSpec
       """)
       import ConfigInputChangeEvent._
 
-      val streamletName = "logger"
-      val runtimeConfig = getStreamletRuntimeConfig("akka", streamletName, appConfig)
+      val streamletName    = "logger"
+      val runtimeConfig    = getGlobalRuntimeConfigAtStreamletPath("akka", streamletName, appConfig)
+      val kubernetesConfig = getGlobalKubernetesConfigAtStreamletPath("akka", streamletName, appConfig)
 
-      val streamletConfig = getStreamletConfig(streamletName, appConfig, runtimeConfig)
-      var loggerConfig    = moveConfigParameters(streamletConfig, streamletName)
+      var loggerConfig = getMergedStreamletConfig(streamletName, appConfig, runtimeConfig, kubernetesConfig)
+      loggerConfig = moveConfigParameters(loggerConfig, streamletName)
       loggerConfig = mergeRuntimeConfigToRoot(loggerConfig, streamletName)
-      loggerConfig = removeKubernetesConfigSection(loggerConfig, streamletName)
+      loggerConfig = mergeKubernetesConfigToRoot(loggerConfig, streamletName)
+
       loggerConfig.getString("cloudflow.streamlets.logger.log-level") mustBe "info"
       loggerConfig.getString("cloudflow.streamlets.logger.foo") mustBe "bar"
       loggerConfig.getString("cloudflow.streamlets.logger.msg-prefix") mustBe "valid-logger"
       loggerConfig.getInt("akka.kafka.producer.parallelism") mustBe 15000
       loggerConfig.getString("akka.loglevel") mustBe "DEBUG"
+      loggerConfig.getMemorySize("kubernetes.pods.pod.containers.cloudflow.resources.requests.memory").toBytes mustBe 1024 * 1024 * 1024
     }
   }
 }

@@ -17,6 +17,7 @@
 package cloudflow.operator
 package runner
 
+import com.typesafe.config._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
 import play.api.libs.json._
@@ -30,6 +31,8 @@ trait PatchProvider[T <: Patch] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String,
+      podsConfig: PodsConfig = PodsConfig(),
+      runtimeConfig: Config = ConfigFactory.empty(),
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): T
 }
@@ -55,10 +58,12 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String,
+      podsConfig: PodsConfig,
+      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
-    val _spec           = patch(deployment, app, namespace, updateLabels)
+    val _spec           = patch(deployment, app, namespace, podsConfig, runtimeConfig, updateLabels)
     val name            = Name.ofSparkApplication(deployment.name)
     CustomResource[Spec, Status](_spec.spec)
       .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences))
@@ -68,8 +73,14 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String,
+      podsConfig: PodsConfig,
+      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
+    //TODO get spark config settings from runtimeConfig (in form of `some.setting`, 'spark' prefix is omitted), translate to Spark CR settings.
+    //TODO get resource settings from podsConfig, translate to Spark driver and executor pods
+    //TODO (this might need some change in proposed config format, since Spark has 2 kinds of pods, driver and executor)
+
     val appLabels     = CloudflowLabels(app)
     val appId         = app.spec.appId
     val agentPaths    = app.spec.agentPaths

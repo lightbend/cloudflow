@@ -29,7 +29,7 @@ import BootstrapInfo._
 import cloudflow.streamlets.StreamletRuntime
 import com.typesafe.config._
 
-import scala.util.{ Failure, Try }
+import scala.util.Failure
 import net.ceedubs.ficus.Ficus._
 
 /**
@@ -89,10 +89,6 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
       val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
       if (!localMode) createTempFile(s"${context.streamletRef}-ready.txt", context.streamletRef)
-
-      val blockingIODispatcherConfig = context.system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
-      val dispatcherConfig           = context.system.settings.config.getConfig("akka.actor.default-dispatcher")
-      val deploymentConfig           = context.system.settings.config.getConfig("akka.actor.deployment")
 
       val logic = createLogic()
 

@@ -325,9 +325,6 @@ func Test_validateConfig(t *testing.T) {
 				 config {
 					 akka.loglevel = "WARNING"
 				 }
-				 kubernetes {
-
-				 }
 			 }
 		 }
 	`)
@@ -338,9 +335,6 @@ func Test_validateConfig(t *testing.T) {
 			 my-streamlet {
 				 config-parameters {
            my-parameter = "value"
-				 }
-				 kubernetes {
-
 				 }
 				 config {
 					 akka.loglevel = "WARNING"
@@ -356,9 +350,6 @@ func Test_validateConfig(t *testing.T) {
 				 config-parameters {
 					 my-parameter = "value"
 					 my-par = "value"
-				 }
-				 kubernetes {
-
 				 }
 				 config {
 					 akka.loglevel = "WARNING"
@@ -384,6 +375,8 @@ func Test_validateConfig(t *testing.T) {
 		 }
 	`)
 	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
+	//TODO add kubernetes section tests.
+	//TODO maybe validate resource requests and limits
 
 }
 
