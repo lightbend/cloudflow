@@ -1,0 +1,311 @@
+{
+  "apiVersion": "cloudflow.lightbend.com/v1alpha1",
+  "kind": "CloudflowApplication",
+  "metadata": {
+    "annotations": {
+      "com.lightbend.cloudflow/created-by-cli-version": "SNAPSHOT (local build)"
+    },
+    "labels": {
+      "app.kubernetes.io/managed-by": "cloudflow",
+      "app.kubernetes.io/part-of": "swiss-knife",
+      "com.lightbend.cloudflow/app-id": "swiss-knife"
+    },
+    "name": "swiss-knife"
+  },
+  "spec": {
+    "agent_paths": {
+      "prometheus": "/prometheus/jmx_prometheus_javaagent.jar"
+    },
+    "app_id": "swiss-knife",
+    "app_version": "396-f3c3c94-dirty",
+    "deployments": [
+      {
+        "class_name": "swissknife.spark.SparkCounter",
+        "config": {},
+        "image": "docker.io/lightbend/spark:396-f3c3c94-dirty",
+        "name": "swiss-knife.spark-process",
+        "port_mappings": {
+          "in": {
+            "config": {},
+            "id": "source-data-pipe"
+          },
+          "out": {
+            "config": {},
+            "id": "process-pipe"
+          }
+        },
+        "runtime": "spark",
+        "secret_name": "spark-process",
+        "streamlet_name": "spark-process"
+      },
+      {
+        "class_name": "swissknife.spark.SparkDataGenerator",
+        "config": {},
+        "image": "docker.io/lightbend/spark:396-f3c3c94-dirty",
+        "name": "swiss-knife.ingress",
+        "port_mappings": {
+          "out": {
+            "config": {},
+            "id": "source-data-pipe"
+          }
+        },
+        "runtime": "spark",
+        "secret_name": "ingress",
+        "streamlet_name": "ingress"
+      },
+      {
+        "class_name": "swissknife.flink.FlinkCounter",
+        "config": {},
+        "image": "docker.io/lightbend/flink:396-f3c3c94-dirty",
+        "name": "swiss-knife.flink-process",
+        "port_mappings": {
+          "in": {
+            "config": {},
+            "id": "source-data-pipe"
+          },
+          "out": {
+            "config": {},
+            "id": "process-pipe"
+          }
+        },
+        "runtime": "flink",
+        "secret_name": "flink-process",
+        "streamlet_name": "flink-process"
+      },
+      {
+        "class_name": "swissknife.akka.AkkaLogger",
+        "config": {},
+        "image": "docker.io/lightbend/akka:396-f3c3c94-dirty",
+        "name": "swiss-knife.egress",
+        "port_mappings": {
+          "in": {
+            "config": {},
+            "id": "process-pipe"
+          }
+        },
+        "runtime": "akka",
+        "secret_name": "egress",
+        "streamlet_name": "egress"
+      },
+      {
+        "class_name": "swissknife.akka.AkkaTransformation",
+        "config": {},
+        "image": "docker.io/lightbend/akka:396-f3c3c94-dirty",
+        "name": "swiss-knife.akka-process",
+        "port_mappings": {
+          "in": {
+            "config": {},
+            "id": "source-data-pipe"
+          },
+          "out": {
+            "config": {},
+            "id": "process-pipe"
+          }
+        },
+        "runtime": "akka",
+        "secret_name": "akka-process",
+        "streamlet_name": "akka-process"
+      },
+      {
+        "class_name": "swissknife.spark.SparkOutput",
+        "config": {},
+        "image": "docker.io/lightbend/spark:396-f3c3c94-dirty",
+        "name": "swiss-knife.spark-output",
+        "port_mappings": {
+          "in": {
+            "config": {},
+            "id": "source-data-pipe"
+          }
+        },
+        "runtime": "spark",
+        "secret_name": "spark-output",
+        "streamlet_name": "spark-output"
+      }
+    ],
+    "library_version": "1.3.4-SNAPSHOT",
+    "streamlets": [
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.spark.SparkCounter",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [
+            {
+              "name": "in",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "labels": [],
+          "outlets": [
+            {
+              "name": "out",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "runtime": "spark",
+          "volume_mounts": []
+        },
+        "name": "spark-process"
+      },
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.spark.SparkDataGenerator",
+          "config_parameters": [
+            {
+              "default_value": "1",
+              "description": "Records per second to produce.",
+              "key": "records-per-second",
+              "validation_type": "int32"
+            }
+          ],
+          "description": "",
+          "inlets": [],
+          "labels": [],
+          "outlets": [
+            {
+              "name": "out",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "runtime": "spark",
+          "volume_mounts": []
+        },
+        "name": "ingress"
+      },
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.flink.FlinkCounter",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [
+            {
+              "name": "in",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "labels": [],
+          "outlets": [
+            {
+              "name": "out",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "runtime": "flink",
+          "volume_mounts": []
+        },
+        "name": "flink-process"
+      },
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.akka.AkkaLogger",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [
+            {
+              "name": "in",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "labels": [],
+          "outlets": [],
+          "runtime": "akka",
+          "volume_mounts": []
+        },
+        "name": "egress"
+      },
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.akka.AkkaTransformation",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [
+            {
+              "name": "in",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "labels": [],
+          "outlets": [
+            {
+              "name": "out",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "runtime": "akka",
+          "volume_mounts": []
+        },
+        "name": "akka-process"
+      },
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "swissknife.spark.SparkOutput",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [
+            {
+              "name": "in",
+              "schema": {
+                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "format": "avro",
+                "name": "swissknife.data.Data",
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+              }
+            }
+          ],
+          "labels": [],
+          "outlets": [],
+          "runtime": "spark",
+          "volume_mounts": []
+        },
+        "name": "spark-output"
+      }
+    ],
+    "version": "2"
+  }
+}
