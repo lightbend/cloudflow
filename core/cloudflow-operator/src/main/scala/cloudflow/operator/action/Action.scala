@@ -181,7 +181,7 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     for {
       existing ← client.getOption[T](resource.name)
       res ← existing
-        .map(_ ⇒ client.patch(resource.name, patch, Some(resource.ns)))
+        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, executeCreateOrPatch))
         .getOrElse(recoverFromConflict(client.create(resource), client, executeCreateOrPatch))
     } yield res
 }
