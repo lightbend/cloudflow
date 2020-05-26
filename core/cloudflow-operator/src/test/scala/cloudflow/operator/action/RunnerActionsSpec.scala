@@ -76,8 +76,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       createActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
-      // deployments are created on secret change
-      akkaDeployments.size mustBe 0
+      akkaDeployments.size mustBe streamletDeployments.size
       configMaps.foreach { configMap ⇒
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
@@ -201,10 +200,9 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val akkaDeployments = createActions.map(_.resource).collect {
         case akkaDeployment: Deployment ⇒ akkaDeployment
       }
-      // create or update
+      // create and update
       configMaps.size mustBe 2
-      // Deployments are created later on secret change.
-      akkaDeployments.size mustBe 0
+      akkaDeployments.size mustBe 2
 
       configMaps.foreach { configMap ⇒
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
