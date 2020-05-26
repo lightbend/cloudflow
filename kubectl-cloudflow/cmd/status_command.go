@@ -46,9 +46,14 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	printAppStatus(applicationCR, applicationCR.Status.AppStatus)
-	printEndpointStatuses(applicationCR)
-	printStreamletStatuses(applicationCR)
+	if applicationCR.Status != nil {
+		printAppStatus(applicationCR, applicationCR.Status.AppStatus)
+		printEndpointStatuses(applicationCR)
+		printStreamletStatuses(applicationCR)
+	} else {
+		printutil.LogAndExit("%s status is unknown", applicationCR.Name)
+	}
+
 }
 
 func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
