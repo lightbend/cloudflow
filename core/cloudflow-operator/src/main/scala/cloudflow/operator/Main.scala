@@ -39,9 +39,10 @@ object Main extends {
     implicit val system = ActorSystem()
 
     try {
-      implicit val ec  = system.dispatcher
-      val settings     = Settings(system)
-      implicit val ctx = settings.deploymentContext
+      implicit val ec           = system.dispatcher
+      implicit val materializer = ActorMaterializer()
+      val settings              = Settings(system)
+      implicit val ctx          = settings.deploymentContext
 
       logStartOperatorMessage(settings)
 

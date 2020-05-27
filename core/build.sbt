@@ -386,13 +386,13 @@ lazy val operator =
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
-            AkkaSlf4j,
-            AkkaStream,
+            AkkaSlf4jOperator,
+            AkkaStreamOperator,
             Ficus,
             Logback,
             Skuber,
             ScalaTest,
-            AkkaStreamTestkit % "test",
+            AkkaStreamTestkitOperator % "test",
             ScalaCheck        % "test",
             Avro4sJson        % "test"
           )
