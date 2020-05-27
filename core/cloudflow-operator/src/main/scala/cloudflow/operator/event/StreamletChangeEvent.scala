@@ -156,7 +156,7 @@ object StreamletChangeEvent {
   ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
       .mapConcat {
-        case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type != EventType.DELETED ⇒
+        case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
           import streamletChangeEvent._
           val secret   = watchEvent._object
           val metadata = secret.metadata
