@@ -68,7 +68,13 @@ object StreamletChangeEvent {
           watchEvent._type match {
             case EventType.DELETED ⇒
               currentObjects = currentObjects - absoluteName
-              List()
+              (for {
+                appId         ← metadata.labels.get(Operator.AppIdLabel)
+                streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+              } yield {
+                StreamletChangeEvent(appId, streamletName, namespace, watchEvent)
+              }).toList
+
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentObjects.get(absoluteName).forall(hasChanged)) {
                 (for {
