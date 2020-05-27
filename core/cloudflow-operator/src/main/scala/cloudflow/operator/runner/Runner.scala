@@ -229,7 +229,8 @@ object PodsConfig {
    *  }}}
    */
   def fromConfig(config: Config): Try[PodsConfig] =
-    Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
+    if (config.isEmpty) Try(PodsConfig())
+    else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
   def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
     config.root.keySet.asScala.map(key ⇒ key → config.as[T](key)).toMap
