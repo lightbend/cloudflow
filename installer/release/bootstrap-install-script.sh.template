@@ -16,10 +16,6 @@ print_error_message() {
   echo "$(tput setaf 1)$errorMessage$(tput sgr0)"
 }
 
-##### Install NFS StorageClass
-
-helm upgrade nfs-server-provisioner stable/nfs-server-provisioner --install
-
 ##### 1) Download yaml for the installer and Cloudflow CR
 # Embedded Yaml, inserted by the Makefile
 

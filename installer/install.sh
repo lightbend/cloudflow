@@ -20,7 +20,7 @@
 # Utilities for pretty-printing errors
 . common/utils.sh
 
-#Check env preconditions to execute the installation (should always pass on docker!)
+# Check env preconditions to execute the installation (should always pass on docker!)
 . common/requirements.sh
 
 CLOUDFLOW_NAMESPACE="cloudflow"
