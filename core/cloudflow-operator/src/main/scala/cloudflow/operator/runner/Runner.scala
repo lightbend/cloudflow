@@ -134,7 +134,7 @@ trait Runner[T <: ObjectResource] {
       .getOrElse(PodsConfig())
   }
 
-  def getRuntimeConfig(secret: Secret, log: LoggingAdapter): Config = {
+  def getRuntimeConfig(secret: Secret): Config = {
     val str = getData(secret, ConfigInputChangeEvent.RuntimeConfigDataKey)
     Try(ConfigFactory.parseString(str))
       .recover {
