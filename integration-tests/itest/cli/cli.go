@@ -11,8 +11,8 @@ import (
 
 // App represents an application name and docker image
 type App struct {
-	Image string
-	Name  string
+	CRFile string
+	Name   string
 }
 
 // AppEntry represents an entry in the list of applications
@@ -47,8 +47,11 @@ var pollSleepInterval, _ = time.ParseDuration("5s")
 
 // Deploy initiates the deployment of an application to the k8s cluster
 func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", user, "--password", pwd)
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.CRFile, "--username", user, "--password", pwd)
 	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("deploy error out [%s] code %s", out, err.Error())
+	}
 	return string(out), err
 }
 
@@ -80,13 +83,13 @@ func ListApps() (entries []AppEntry, err error) {
 	var res []AppEntry
 	for i, line := range splits {
 		switch i {
-		case 0, 1:
+		case 0: // skip the first line
 			continue
 		default:
 			parts := whitespaces.Split(line, -1)
 			if len(parts) == 7 {
 				appEntry := AppEntry{parts[0], parts[1], parts[2], parts[3] + parts[4] + parts[5] + parts[6]}
-
+				fmt.Printf("App listed %s", appEntry)
 				res = append(res, appEntry)
 			}
 		}
@@ -116,6 +119,7 @@ func Status(app App) (status AppStatus, err error) {
 		return AppStatus{}, err
 	}
 	if err != nil {
+		fmt.Printf("Error executing status command: %s", out)
 		return
 	}
 	str := string(out)

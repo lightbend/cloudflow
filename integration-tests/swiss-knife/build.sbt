@@ -9,9 +9,7 @@ lazy val swissKnife = (project in file("."))
 	      "ch.qos.logback"     %  "logback-classic"        % "1.2.3",
         "org.scalatest"      %% "scalatest"              % "3.0.8" % "test"
       ),
-      
       organization := "com.lightbend.cloudflow",
-
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>"))
     )
     .settings(commonSettings)
