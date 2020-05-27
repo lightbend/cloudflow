@@ -60,7 +60,9 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       actions.size mustBe 1
 
       Then("An ApplicationDeploy event should be created")
-      actions.count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationDeployed")) mustBe 1
+      actions
+        .collect { case a: CreateOrUpdateAction[_] => a }
+        .count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationDeployed")) mustBe 1
     }
 
     "create event resources for an updated app that's already been deployed" in {
@@ -77,7 +79,9 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       actions.size mustBe 1
 
       Then("An ApplicationDeploy event should be created")
-      actions.count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUpdated")) mustBe 1
+      actions
+        .collect { case a: CreateOrUpdateAction[_] => a }
+        .count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUpdated")) mustBe 1
     }
 
     "create event resources for an already deployed app with scaled streamlets" in {
@@ -95,10 +99,14 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       actions.size mustBe 3
 
       Then("An ApplicationDeploy event should be created")
-      actions.count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUpdated")) mustBe 1
+      actions
+        .collect { case a: CreateOrUpdateAction[_] => a }
+        .count(_.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUpdated")) mustBe 1
 
       Then("Two StreamletScaled events should be created")
-      actions.count(_.resource.asInstanceOf[skuber.Event].reason.contains("StreamletScaled")) mustBe 2
+      actions
+        .collect { case a: CreateOrUpdateAction[_] => a }
+        .count(_.resource.asInstanceOf[skuber.Event].reason.contains("StreamletScaled")) mustBe 2
     }
 
     "create event resources when streamlet configuration changes" in {
@@ -110,7 +118,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val action = EventActions.streamletChangeEvent(currentAppCr, currentApp.deployments.head, namespace, currentAppCr)
 
       Then("An StreamletConfigurationChanged event should be created")
-      action.resource.asInstanceOf[skuber.Event].reason.contains("StreamletConfigurationChanged")
+      action.asInstanceOf[CreateOrUpdateAction[_]].resource.asInstanceOf[skuber.Event].reason.contains("StreamletConfigurationChanged")
     }
 
     "create event resources for an app that is undeployed" in {
@@ -122,7 +130,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val action = EventActions.undeployEvent(currentAppCr, namespace, currentAppCr)
 
       Then("An ApplicationUndeployed event should be created")
-      action.resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUndeployed")
+      action.asInstanceOf[CreateOrUpdateAction[_]].resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUndeployed")
     }
   }
 }

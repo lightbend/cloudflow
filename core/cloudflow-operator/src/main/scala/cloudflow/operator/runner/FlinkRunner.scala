@@ -45,9 +45,8 @@ object FlinkRunner extends Runner[CR] {
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
-      podsConfig: PodsConfig,
-      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     //TODO get flink config settings from runtimeConfig (in form of `some.setting`, 'flink' prefix is omitted), translate to Flink CR settings.
@@ -105,7 +104,7 @@ object FlinkRunner extends Runner[CR] {
       taskManagerConfig = taskManagerConfig
     )
 
-    val name      = Name.ofFlinkApplication(deployment.name)
+    val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId).mapValues(Name.ofLabelValue)
@@ -122,6 +121,8 @@ object FlinkRunner extends Runner[CR] {
         )
       )
   }
+
+  def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)
 
   /**
    * Flink treats config-map, secret and pvc claim as volumes.

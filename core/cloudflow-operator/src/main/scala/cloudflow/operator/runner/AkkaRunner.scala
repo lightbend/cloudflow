@@ -16,7 +16,7 @@
 
 package cloudflow.operator
 package runner
-import com.typesafe.config._
+
 import cloudflow.blueprint.deployment._
 import skuber._
 import play.api.libs.json._
@@ -40,9 +40,8 @@ object AkkaRunner extends Runner[Deployment] {
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: skuber.Secret,
       namespace: String,
-      podsConfig: PodsConfig,
-      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): Deployment = {
     // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
@@ -54,6 +53,8 @@ object AkkaRunner extends Runner[Deployment] {
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
+
+    val podsConfig = getPodsConfig(configSecret)
 
     // TODO check if this is still valid.
     // Pass this argument to the entry point script. The top level entry point will be a
@@ -173,6 +174,8 @@ object AkkaRunner extends Runner[Deployment] {
       )
     )
   }
+
+  def resourceName(deployment: StreamletDeployment): String = Name.ofPod(deployment.name)
 
   private def createResourceRequirements(podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
     var resourceRequirements = Resource.Requirements(

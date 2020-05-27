@@ -35,7 +35,7 @@ final class SkuberActionExecutor(
   implicit val lc = skuber.api.client.RequestLoggingContext()
   def execute(action: Action[ObjectResource]): Future[Action[ObjectResource]] = {
     // An appropriate KubernetesClient is built up for the object resource namespace
-    val namespace = action.resource.metadata.namespace
+    val namespace = action.namespace
     system.log.debug(Action.executing(action))
     val kubernetesClient =
       k8sInit(k8sConfig.setCurrentNamespace(namespace))

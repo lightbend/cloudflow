@@ -83,8 +83,11 @@ object TopicActions {
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[TopicResource]
 
-  def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
-    Action.delete(resource(topic, labels))
+  def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
+    // TODO when strimzi supports it, create in the namespace where the CloudflowApplication resides.
+    val ns = ctx.kafkaContext.strimziTopicOperatorNamespace
+    Action.delete[TopicResource](topic.name, ns)
+  }
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
     Action.createOrUpdate(resource(topic, labels), editor)
@@ -108,7 +111,6 @@ object TopicActions {
         )
       )
   }
-
   private val editor = new ObjectEditor[CustomResource[Spec, Status]] {
     override def updateMetadata(obj: CustomResource[Spec, Status], newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }

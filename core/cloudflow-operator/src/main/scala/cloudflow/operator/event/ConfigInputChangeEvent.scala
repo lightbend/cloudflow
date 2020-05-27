@@ -39,7 +39,9 @@ import cloudflow.blueprint.deployment.StreamletDeployment
 case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret])
 
 object ConfigInputChangeEvent {
-  val SecretDataKey = "secret.conf"
+  val SecretDataKey        = "secret.conf"
+  val RuntimeConfigDataKey = "runtime-config.conf"
+  val PodsConfigDataKey    = "pods-config.conf"
 
   /** log message for when a ConfigInputChangeEvent is identified as a configuration change event */
   def detected[T <: ObjectResource](event: ConfigInputChangeEvent) =
@@ -124,35 +126,24 @@ object ConfigInputChangeEvent {
             streamletConfig = moveConfigParameters(streamletConfig, streamletName)
             streamletConfig = mergeRuntimeConfigToRoot(streamletConfig, streamletName)
             streamletConfig = mergeKubernetesConfigToRoot(streamletConfig, streamletName)
-            // TODO cleanup
-            val mergedKubernetesConfig = Try(streamletConfig.getConfig(KubernetesKey).atPath(KubernetesKey)).toOption
-            val mergedRuntimeConfig    = Try(streamletConfig.getConfig(runtime).atPath(runtime)).toOption
+
+            val mergedKubernetesConfig = Try(streamletConfig.getConfig(KubernetesKey).atPath(KubernetesKey)).getOrElse(ConfigFactory.empty)
+            val mergedRuntimeConfig    = Try(streamletConfig.getConfig(runtime).atPath(runtime)).getOrElse(ConfigFactory.empty)
 
             streamletConfig = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig)
 
             // create update action for output secret action which is mounted as config by runtime specific deployments
-            val runnerConfigSecret =
-              createSecret(streamletDeployment.secretName, app, streamletDeployment, streamletConfig, CloudflowLabels.RunnerConfigFormat)
-            List(Action.createOrUpdate(runnerConfigSecret, secretEditor)) ++
-              mergedKubernetesConfig.map { conf =>
-                // create secret for kubernetes pod resource settings
-                val podSecret =
-                  createSecret(s"${streamletDeployment.secretName}-pod-config",
-                               app,
-                               streamletDeployment,
-                               conf,
-                               CloudflowLabels.PodConfigFormat)
-                Action.createOrUpdate(podSecret, secretEditor)
-              }.toList ++
-              mergedRuntimeConfig.map { conf =>
-                // create secret for runtime specific settings
-                val runtimeSecret = createSecret(s"${streamletDeployment.secretName}-$runtime-config",
-                                                 app,
-                                                 streamletDeployment,
-                                                 conf,
-                                                 CloudflowLabels.RuntimeConfigFormat)
-                Action.createOrUpdate(runtimeSecret, secretEditor)
-              }.toList
+            val configSecret =
+              createSecret(
+                streamletDeployment.secretName,
+                app,
+                streamletDeployment,
+                streamletConfig,
+                mergedRuntimeConfig,
+                mergedKubernetesConfig,
+                CloudflowLabels.StreamletDeploymentConfigFormat
+              )
+            List(Action.createOrUpdate(configSecret, secretEditor))
           }
 
         case _ ⇒ Nil // app could not be found, do nothing.
@@ -283,6 +274,8 @@ object ConfigInputChangeEvent {
       app: CloudflowApplication.CR,
       streamletDeployment: StreamletDeployment,
       config: Config,
+      runtimeConfig: Config,
+      podsConfig: Config,
       configFormat: String
   ) =
     Secret(
@@ -298,12 +291,16 @@ object ConfigInputChangeEvent {
         ownerReferences = CloudflowApplication.getOwnerReferences(app)
       ),
       data = Map(
-        ConfigInputChangeEvent.SecretDataKey -> config
-              .root()
-              .render(ConfigRenderOptions.concise())
-              .getBytes(StandardCharsets.UTF_8)
+        ConfigInputChangeEvent.SecretDataKey        -> getData(config),
+        ConfigInputChangeEvent.RuntimeConfigDataKey -> getData(runtimeConfig),
+        ConfigInputChangeEvent.PodsConfigDataKey    -> getData(podsConfig)
       )
     )
+  private def getData(config: Config) =
+    config
+      .root()
+      .render(ConfigRenderOptions.concise())
+      .getBytes(StandardCharsets.UTF_8)
 
   def secretEditor = new ObjectEditor[Secret] {
     def updateMetadata(obj: Secret, newMetadata: ObjectMeta): Secret = obj.copy(metadata = newMetadata)

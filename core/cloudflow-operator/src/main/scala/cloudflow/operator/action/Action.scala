@@ -29,14 +29,19 @@ import skuber.api.patch.Patch
 sealed trait Action[+T <: ObjectResource] {
 
   /**
-   * The Kubernetes resource to create, update, or delete
-   */
-  def resource: T
-
-  /**
    * The action name
    */
   def name: String
+
+  /**
+   * The name of the resource that this action is applied to
+   */
+  def resourceName: String
+
+  /**
+   * The namespace that the action takes place in
+   */
+  def namespace: String
 
   /**
    * Executes the action using a KubernetesClient.
@@ -56,6 +61,8 @@ sealed trait Action[+T <: ObjectResource] {
       }
     }
 
+  def executing: String
+  def executed: String
 }
 
 /**
@@ -74,8 +81,8 @@ object Action {
   /**
    * Creates a [[DeleteAction]].
    */
-  def delete[T <: ObjectResource](resource: T)(implicit resourceDefinition: ResourceDefinition[T]) =
-    new DeleteAction(resource, resourceDefinition)
+  def delete[T <: ObjectResource](resourceName: String, namespace: String)(implicit resourceDefinition: ResourceDefinition[T]) =
+    DeleteAction(resourceName, namespace, resourceDefinition)
 
   def createOrPatch[T <: ObjectResource, O <: Patch](
       resource: T,
@@ -86,10 +93,19 @@ object Action {
   /**
    * Creates an [[PatchAction]].
    */
-  def patch[T <: ObjectResource, O <: Patch](resource: T, patch: O)(format: Format[T],
+  def patch[T <: ObjectResource, O <: Patch](resource: T, patch: O)(implicit format: Format[T],
                                                                     patchWriter: Writes[O],
                                                                     resourceDefinition: ResourceDefinition[T]) =
     new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
+
+  /**
+   * Creates an action provided that a resource with resourceName in namespace is found.
+   */
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: T => Action[R])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[T]
+  ) =
+    new ProvidedAction(resourceName, namespace, fAction, format, resourceDefinition)
 
   /**
    * Creates an [[UpdateStatusAction]].
@@ -102,15 +118,22 @@ object Action {
   /**
    * Log message for when an [[Action]] is about to get executed.
    */
-  def executing(action: Action[ObjectResource]) =
-    s"Executing ${action.name} action for resource ${action.resource.kind}/${action.resource.metadata.name} in namespace ${action.resource.namespace}"
+  def executing(action: Action[ObjectResource]) = action.executing
 
   /**
    * Log message for when an [[Action]] has been executed.
    */
-  def executed(action: Action[ObjectResource]) =
-    s"Executed ${action.name} action for ${action.resource.kind} ${action.resource.metadata.name} in namespace ${action.resource.namespace}"
+  def executed(action: Action[ObjectResource]) = action.executed
+}
 
+abstract class ResourceAction[T <: ObjectResource] extends Action[T] {
+  def resource: T
+  def resourceName = resource.metadata.name
+  def namespace    = resource.metadata.namespace
+  def executing =
+    s"Executing $name action for ${resource.kind}/${resource.namespace}/${resource.metadata.name}"
+  def executed =
+    s"Executed $name action for ${resource.kind}/${resource.namespace}/${resource.metadata.name}"
 }
 
 /**
@@ -122,7 +145,7 @@ class CreateOrUpdateAction[T <: ObjectResource](
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val editor: ObjectEditor[T]
-) extends Action[T] {
+) extends ResourceAction[T] {
 
   val name = "create-or-update"
 
@@ -153,7 +176,7 @@ class CreateOrUpdateAction[T <: ObjectResource](
   /**
    * Reverts the action to create the resource.
    */
-  def revert: DeleteAction[T] = new DeleteAction(resource, resourceDefinition)
+  def revert: DeleteAction[T] = DeleteAction(resource, resourceDefinition)
 }
 
 /**
@@ -165,7 +188,7 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends Action[T] {
+) extends ResourceAction[T] {
 
   val name = "create-or-patch"
 
@@ -192,7 +215,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends Action[T] {
+) extends ResourceAction[T] {
 
   val name = "patch"
 
@@ -215,7 +238,7 @@ class UpdateStatusAction[T <: ObjectResource](
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val statusEv: HasStatusSubresource[T],
     val editor: ObjectEditor[T]
-) extends Action[T] {
+) extends ResourceAction[T] {
 
   val name = "update"
 
@@ -239,21 +262,52 @@ class UpdateStatusAction[T <: ObjectResource](
     } yield res
 }
 
+object DeleteAction {
+  def apply[T <: ObjectResource](resource: T, resourceDefinition: ResourceDefinition[T]) =
+    new DeleteAction(resource.metadata.name, resource.metadata.namespace, resourceDefinition)
+}
+
 /**
  * Captures deletion of the resource.
  */
-class DeleteAction[T <: ObjectResource](
-    val resource: T,
-    val resourceDefinition: ResourceDefinition[T]
+final case class DeleteAction[T <: ObjectResource](
+    val resourceName: String,
+    namespace: String,
+    implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[T] {
-
   val name = "delete"
+
+  def executing =
+    s"Deleting $resourceName resource"
+  def executed =
+    s"Deleted $resourceName resource"
 
   /**
    * Deletes the resource.
    */
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
-    client.deleteWithOptions(resource.metadata.name, options)(resourceDefinition, lc).map(_ ⇒ this)
+    client.deleteWithOptions(name, options)(resourceDefinition, lc).map(_ ⇒ this)
   }
+}
+
+final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
+    val resourceName: String,
+    val namespace: String,
+    val getAction: T => Action[R],
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[T]
+) extends Action[R] {
+  val name = "provide"
+
+  def executing =
+    s"Providing $namespace/$resourceName to next action"
+  def executed =
+    s"Provided $namespace/$resourceName to next action"
+
+  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+    for {
+      existing ← client.usingNamespace(namespace).get[T](resourceName)
+      res      <- getAction(existing).execute(client)
+    } yield res
 }

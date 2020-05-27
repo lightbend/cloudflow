@@ -119,10 +119,7 @@ object Operator {
       labelSelector = Some(
         LabelSelector(
           LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.InRequirement(CloudflowLabels.ConfigFormat,
-                                      List(CloudflowLabels.RunnerConfigFormat,
-                                           CloudflowLabels.PodConfigFormat,
-                                           CloudflowLabels.RuntimeConfigFormat))
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.StreamletDeploymentConfigFormat)
         )
       ),
       resourceVersion = None

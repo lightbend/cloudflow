@@ -17,11 +17,17 @@
 package cloudflow.operator
 package runner
 
+import java.nio.charset.StandardCharsets
+
 import scala.util._
+
+import akka.event.LoggingAdapter
 import com.typesafe.config._
 import cloudflow.blueprint.deployment._
-import skuber._
 import play.api.libs.json._
+import org.slf4j._
+import skuber._
+import cloudflow.operator.event.ConfigInputChangeEvent
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -56,6 +62,7 @@ object Runner {
  * A Runner translates into a Runner Kubernetes resource, and a ConfigMap that configures the runner.
  */
 trait Runner[T <: ObjectResource] {
+  val log = LoggerFactory.getLogger(this.getClass)
   // The format for the runner resource T
   def format: Format[T]
   // The editor for the runner resource T to modify the metadata for update
@@ -96,6 +103,8 @@ trait Runner[T <: ObjectResource] {
       data = configData.map(cd ⇒ cd.filename -> cd.data).toMap
     )
   }
+  def configResourceName(deployment: StreamletDeployment) = Name.ofConfigMap(deployment.name)
+  def resourceName(deployment: StreamletDeployment): String
 
   /**
    * Creates the runner resource.
@@ -103,13 +112,45 @@ trait Runner[T <: ObjectResource] {
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
-      podsConfig: PodsConfig = PodsConfig(),
-      runtimeConfig: Config = ConfigFactory.empty(),
       updateLabels: Map[String, String] = Map()
   )(
       implicit ctx: DeploymentContext
   ): T
+
+  def getPodsConfig(secret: Secret): PodsConfig = {
+    val str = getData(secret, ConfigInputChangeEvent.PodsConfigDataKey)
+    PodsConfig
+      .fromConfig(ConfigFactory.parseString(str))
+      .recover {
+        case e =>
+          log.error(
+            s"Detected pod configs in secret '${secret.metadata.name}' that contains invalid configuration data, IGNORING configuration.",
+            e
+          )
+          PodsConfig()
+      }
+      .getOrElse(PodsConfig())
+  }
+
+  def getRuntimeConfig(secret: Secret): Config = {
+    val str = getData(secret, ConfigInputChangeEvent.RuntimeConfigDataKey)
+    Try(ConfigFactory.parseString(str))
+      .recover {
+        case e =>
+          log.error(
+            s"Detected runtime config in secret '${secret.metadata.name}' that contains invalid configuration data, IGNORING configuration.",
+            e
+          )
+          ConfigFactory.empty
+      }
+      .getOrElse(ConfigFactory.empty)
+  }
+
+  private def getData(secret: Secret, key: String): String =
+    secret.data.get(key).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
+
 }
 
 import net.ceedubs.ficus.Ficus._
@@ -188,7 +229,8 @@ object PodsConfig {
    *  }}}
    */
   def fromConfig(config: Config): Try[PodsConfig] =
-    Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
+    if (config.isEmpty) Try(PodsConfig())
+    else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
   def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
     config.root.keySet.asScala.map(key ⇒ key → config.as[T](key)).toMap

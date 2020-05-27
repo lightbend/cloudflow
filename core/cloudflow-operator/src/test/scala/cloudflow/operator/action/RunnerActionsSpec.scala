@@ -33,7 +33,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   case class Bar(name: String)
   val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
-
+  val secret     = Secret(metadata = ObjectMeta())
   "RunnerActions" should {
     "create resources for runners when there is no previous application deployment" in {
 
@@ -64,17 +64,23 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = AkkaRunnerActions(newApp, currentApp, namespace)
 
       Then("only 'create actions' must be created for every runner")
-      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
+      val createActions = actions.collect {
+        case c: ResourceAction[_] ⇒ c
+      }
+
+      val createDeploymentActions = actions.collect {
+        case p: ProvidedAction[_, _] ⇒
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(secret).asInstanceOf[ResourceAction[Deployment]]
+      }
+
       val configMaps = createActions.map(_.resource).collect {
         case configMap: ConfigMap ⇒ configMap
       }
-      val akkaDeployments = createActions.map(_.resource).collect {
-        case deployment: Deployment ⇒ deployment
-      }
+      val akkaDeployments = createDeploymentActions.map(_.resource)
 
       val streamletDeployments = newApp.spec.deployments
 
-      createActions.size mustBe actions.size
+      createActions.size + createDeploymentActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
       akkaDeployments.size mustBe streamletDeployments.size
       configMaps.foreach { configMap ⇒
@@ -114,7 +120,12 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("update actions should be created")
       val updateActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
-      updateActions.size mustBe actions.size
+      val updateDeploymentActions = actions.collect {
+        case p: ProvidedAction[_, _] ⇒
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(secret).asInstanceOf[ResourceAction[Deployment]]
+      }
+
+      (updateActions.size + updateDeploymentActions.size) mustBe actions.size
     }
 
     "delete runner resources when new app removes a runner" in {
@@ -147,21 +158,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("delete actions should be created")
       val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
-
-      val configMaps = deleteActions.map(_.resource).collect {
-        case configMap: ConfigMap ⇒ configMap
-      }
-      val akkaDeployments = deleteActions.map(_.resource).collect {
-        case akkaDeployment: Deployment ⇒ akkaDeployment
-      }
-      configMaps.size mustBe 1
-      akkaDeployments.size mustBe 1
-      configMaps.foreach { configMap ⇒
-        assertConfigMap(configMap, currentApp.spec, appId, appVersion, ctx)
-      }
-      akkaDeployments.foreach { deployment ⇒
-        assertAkkaDeployment(deployment, configMaps, currentApp.spec, appId, ctx)
-      }
+      deleteActions.size mustBe 2
     }
 
     "create new runner resources when a runner is added" in {
@@ -194,12 +191,15 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
       val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
+      val createDeploymentActions = actions.collect {
+        case p: ProvidedAction[_, _] ⇒
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(secret).asInstanceOf[ResourceAction[Deployment]]
+      }
+
       val configMaps = createActions.map(_.resource).collect {
         case configMap: ConfigMap ⇒ configMap
       }
-      val akkaDeployments = createActions.map(_.resource).collect {
-        case akkaDeployment: Deployment ⇒ akkaDeployment
-      }
+      val akkaDeployments = createDeploymentActions.map(_.resource)
       // create and update
       configMaps.size mustBe 2
       akkaDeployments.size mustBe 2
