@@ -52,7 +52,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
           .value
           .resource
           .asInstanceOf[TopicActions.TopicResource]
-        assertSavepoint(topic, resource, newApp.spec.appId)
+        assertTopic(topic, resource, newApp.spec.appId)
       }
     }
 
@@ -108,10 +108,9 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
 
       Then("one delete action should be created for the processor outlet savepoint")
       actions.size mustBe 1
-      val resource = actions(0).resource.asInstanceOf[TopicActions.TopicResource]
-      resource mustBe TopicActions.resource(TopicActions.TopicInfo(deployedTopic), CloudflowLabels(newApp))
+      val resourceName = actions(0).resourceName
+      resourceName mustBe deployedTopic.name
       actions(0) mustBe a[DeleteAction[_]]
-      assertSavepoint(deployedTopic, resource, appId)
 
       When("deleteExistingTopics is set to false")
       val noActions = TopicActions(newApp, Some(currentApp), false)
@@ -154,15 +153,15 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
 
       Then("one create action should be created for the new savepoint between processor and egress")
       val actions  = TopicActions(newApp, Some(currentApp), true)
-      val resource = actions(0).resource.asInstanceOf[TopicActions.TopicResource]
+      val resource = actions(0).asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
 
       resource mustBe TopicActions.resource(TopicActions.TopicInfo(savepoint), CloudflowLabels(newApp))
       actions(0) mustBe a[CreateOrUpdateAction[_]]
-      assertSavepoint(savepoint, resource, appId)
+      assertTopic(savepoint, resource, appId)
     }
   }
 
-  def assertSavepoint(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
+  def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
       implicit ctx: DeploymentContext
   ) = {
     resource.metadata.namespace mustBe ctx.kafkaContext.strimziTopicOperatorNamespace

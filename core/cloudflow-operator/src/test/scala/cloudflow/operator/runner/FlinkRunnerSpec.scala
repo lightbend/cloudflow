@@ -23,7 +23,7 @@ import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.runner.FlinkResource._
 import play.api.libs.json._
-import skuber.Volume
+import skuber._
 
 class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
@@ -83,6 +83,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val crd = FlinkRunner.resource(
         deployment = deployment,
         app = app,
+        configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
       )
 
@@ -123,6 +124,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val crd = FlinkRunner.resource(
         deployment = deployment,
         app = app,
+        configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
       )(dc)
 
@@ -136,6 +138,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val cr = FlinkRunner.resource(
         deployment = deployment,
         app = app,
+        configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
       )
 

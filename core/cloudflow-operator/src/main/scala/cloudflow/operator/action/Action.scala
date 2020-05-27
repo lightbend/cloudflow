@@ -32,6 +32,15 @@ sealed trait Action[+T <: ObjectResource] {
    * The action name
    */
   def name: String
+
+  /**
+   * The name of the resource that this action is applied to
+   */
+  def resourceName: String
+
+  /**
+   * The namespace that the action takes place in
+   */
   def namespace: String
 
   /**
@@ -119,7 +128,8 @@ object Action {
 
 abstract class ResourceAction[T <: ObjectResource] extends Action[T] {
   def resource: T
-  def namespace = resource.metadata.namespace
+  def resourceName = resource.metadata.name
+  def namespace    = resource.metadata.namespace
   def executing =
     s"Executing $name action for ${resource.kind}/${resource.namespace}/${resource.metadata.name}"
   def executed =
@@ -260,12 +270,11 @@ object DeleteAction {
 /**
  * Captures deletion of the resource.
  */
-case class DeleteAction[T <: ObjectResource](
+final case class DeleteAction[T <: ObjectResource](
     val resourceName: String,
     namespace: String,
     implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[T] {
-
   val name = "delete"
 
   def executing =
@@ -282,10 +291,10 @@ case class DeleteAction[T <: ObjectResource](
   }
 }
 
-class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
+final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val resourceName: String,
     val namespace: String,
-    fAction: T => Action[R],
+    val getAction: T => Action[R],
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[R] {
@@ -299,6 +308,6 @@ class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
   def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
     for {
       existing ← client.usingNamespace(namespace).get[T](resourceName)
-      res      <- fAction(existing).execute(client)
+      res      <- getAction(existing).execute(client)
     } yield res
 }

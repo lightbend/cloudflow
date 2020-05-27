@@ -146,15 +146,9 @@ class EndpointActionsSpec
       actions.size mustBe 1
       val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
 
-      val services = deleteActions.map(_.resource).collect {
-        case service: Service ⇒ service
-      }
+      val serviceNames = deleteActions.map(_.resourceName)
 
-      services.size mustBe 1
-      services.foreach { service ⇒
-        assertService(service, currentApp.spec)
-      }
-
+      serviceNames.size mustBe 1
     }
 
     "create a new service when an endpoint is added" in {

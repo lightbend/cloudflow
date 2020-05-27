@@ -82,10 +82,10 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
     CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
   }
-
+  val secret = Secret(metadata = ObjectMeta())
   "Deployments" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -95,7 +95,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   "Pod templates" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
 
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.copySpec.template.metadata.name.length mustEqual 63
 
@@ -104,7 +104,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Containers" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.containers.head.name.length mustEqual 63
 
@@ -113,7 +113,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volumes" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.volumes.foreach { vol ⇒
         assert(vol.name.length <= 63)
@@ -124,7 +124,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volume mounts" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
         assert(mount.name.length <= 63)
@@ -151,7 +151,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Custom resources" should {
     "have long names truncate to 63 characters when coming from SparkRunner" in {
-      val deployment = SparkRunner.resource(testApp01.spec.deployments.head, testApp01, namespace)
+      val deployment = SparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()), namespace)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -162,7 +162,14 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "have long names truncate to 63 characters when coming from EndpointActions" in {
       val endpointActions = EndpointActions(testApp01, None, namespace)
 
-      endpointActions.find(_.resource.isInstanceOf[Service]).get.resource.metadata.name.length mustEqual 63
+      endpointActions
+        .collect {
+          case action: CreateOrUpdateAction[_] => action.resource.asInstanceOf[Service]
+        }
+        .head
+        .metadata
+        .name
+        .length mustEqual 63
 
     }
   }
@@ -171,8 +178,15 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "have long names truncate to 63 characters when coming from AppActions" in {
       val appActions = AppActions(testApp02.spec.appId, namespace, CloudflowLabels(testApp02), testApp02.metadata.ownerReferences)
 
-      appActions.find(_.resource.isInstanceOf[PersistentVolumeClaim]).get.resource.metadata.name.length mustEqual 63
-
+      appActions
+        .collect {
+          case a: ResourceAction[_] if a.resource.isInstanceOf[PersistentVolumeClaim] =>
+            a.resource.asInstanceOf[PersistentVolumeClaim]
+        }
+        .head
+        .metadata
+        .name
+        .length mustEqual 63
     }
   }
 
