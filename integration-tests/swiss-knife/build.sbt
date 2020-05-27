@@ -24,6 +24,9 @@ lazy val swissKnife = (project in file("."))
       
     )
 lazy val app = (project in file("./app"))
+  .settings(
+    name:= "swiss-knife"
+  )
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
