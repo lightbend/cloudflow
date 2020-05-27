@@ -30,7 +30,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
   val image      = "image-1"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
-  "SavepointActions" should {
+  "TopicActions" should {
     "create topics when there is no previous application deployment" in {
 
       Given("no current app")

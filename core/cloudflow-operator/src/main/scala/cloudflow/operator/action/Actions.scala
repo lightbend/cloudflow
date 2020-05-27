@@ -44,7 +44,7 @@ object Actions {
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
-      deploySavepoints(newApp, currentApp, deleteOutdatedTopics) ++
+      deployTopics(newApp, currentApp, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
@@ -70,7 +70,7 @@ object Actions {
     val currentApp = None
 
     val savepointActions = if (deleteExistingTopics) {
-      deploySavepoints(app, currentApp)
+      deployTopics(app, currentApp)
     } else Seq()
 
     val actions = savepointActions ++ deployRunners(app, currentApp, namespace)
@@ -88,7 +88,7 @@ object Actions {
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     AppActions(appId, namespace, labels, ownerReferences)
 
-  private def deploySavepoints(
+  private def deployTopics(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false
