@@ -81,7 +81,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	FContext("The status of a deployed test application that uses akka, spark, and flink", func() {
+	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
 		checkContainsStreamlet := func(streamlet string) {
 			status, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
@@ -101,7 +101,7 @@ var _ = Describe("Application deployment", func() {
 		})
 	})
 
-	FContext("Running streamlets from the sample app should produce counter data", func() {
+	Context("Running streamlets from the sample app should produce counter data", func() {
 		checkLogsForOutput := func(streamlet string, output string) {
 			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
 			Expect(err).NotTo(HaveOccurred())
