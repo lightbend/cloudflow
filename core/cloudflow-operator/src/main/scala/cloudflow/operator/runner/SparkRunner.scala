@@ -30,9 +30,8 @@ trait PatchProvider[T <: Patch] {
   def patch(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
-      podsConfig: PodsConfig = PodsConfig(),
-      runtimeConfig: Config = ConfigFactory.empty(),
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): T
 }
@@ -57,24 +56,24 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
-      podsConfig: PodsConfig,
-      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
-    val _spec           = patch(deployment, app, namespace, podsConfig, runtimeConfig, updateLabels)
-    val name            = Name.ofSparkApplication(deployment.name)
+    val _spec           = patch(deployment, app, configSecret, namespace, updateLabels)
+    val name            = resourceName(deployment)
     CustomResource[Spec, Status](_spec.spec)
       .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences))
   }
 
+  def resourceName(deployment: StreamletDeployment): String = Name.ofSparkApplication(deployment.name)
+
   def patch(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
-      podsConfig: PodsConfig,
-      runtimeConfig: Config,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
     //TODO get spark config settings from runtimeConfig (in form of `some.setting`, 'spark' prefix is omitted), translate to Spark CR settings.
@@ -125,7 +124,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     val secrets = Seq(NamePathSecretType(deployment.secretName, Runner.SecretMountPath))
 
-    val name = Name.ofSparkApplication(deployment.name)
+    val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)

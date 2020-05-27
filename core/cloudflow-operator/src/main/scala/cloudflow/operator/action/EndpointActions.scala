@@ -50,9 +50,7 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
-        Action.delete(
-          serviceResource(endpoint, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet), namespace, labels, ownerReferences)
-        )
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), namespace)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
