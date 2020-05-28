@@ -80,4 +80,4 @@ To terminate, press [ENTER]
 
 == What's next
 
-Now, we are ready to xref:setup-gke-cluster.adoc[Set up a GKE cluster].
+Now, we are ready to xref:setup-k8s-cluster.adoc[Set up a Kubernetes cluster].
