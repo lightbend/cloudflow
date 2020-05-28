@@ -25,11 +25,12 @@ const (
 )
 
 var swissKnifeApp = cli.App{
-	Image: "docker.io/lightbend/swiss-knife:196-b6736b1",
-	Name:  "swiss-knife",
+	CRFile: "./resources/swiss-knife.json",
+	Name:   "swiss-knife",
 }
 
 var _ = Describe("Application deployment", func() {
+
 	Context("check that there's a cluster available with cloudflow installed", func() {
 		It("should succeed to list apps", func() {
 			_, err := cli.ListApps()

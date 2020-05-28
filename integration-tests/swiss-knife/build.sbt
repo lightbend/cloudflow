@@ -9,9 +9,7 @@ lazy val swissKnife = (project in file("."))
 	      "ch.qos.logback"     %  "logback-classic"        % "1.2.3",
         "org.scalatest"      %% "scalatest"              % "3.0.8" % "test"
       ),
-      name := "swiss-knife",
       organization := "com.lightbend.cloudflow",
-
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>"))
     )
     .settings(commonSettings)
@@ -30,6 +28,7 @@ lazy val app = (project in file("./app"))
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
+    name := "swiss-knife",
     runLocalConfigFile := Some("app/main/resources/local.conf"),
   )
   
