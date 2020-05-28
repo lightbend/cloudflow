@@ -86,7 +86,7 @@ Currently the Cloudflow Installer is installed using `kubectl` and a yaml file l
 
 To use the Cloudflow Installer do the following:
 
-1. If you made any changes to dependent Helm charts used by the installer. First `cd` into `/yaml` directory and run `make all` from there to fetch all the YAML files.
+1. If you made any changes to dependent Helm charts used by the installer. First `cd` into `/yaml` directory and run `make all` from there to fetch all the YAML files. **NOTE: Helm 3 is required**.
 2. During development, the latest version of the docker image may not have been pushed, so build the latest version of the container using `sbt dockerBuildAndPush`. You can configure the registry (`docker.io` by default), account name (`lightbend` by default), image name (`cloudflow-installer` by default) and tag in `build.sbt` if needed.
 3. Update the `image:` field in the `test/installer-deployment.yaml` file with the new docker image.
 4. `kubectl apply -f test/installer-deployment.yaml` 
