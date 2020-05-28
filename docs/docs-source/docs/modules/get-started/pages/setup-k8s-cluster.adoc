@@ -19,7 +19,8 @@ NOTE:: This can be done once you have a valid Google account and have access to 
 * Go to the Github release page for your chosen Cloudflow version and download the bootstrap script. It's in the list of assets. For example, this is the https://github.com/lightbend/cloudflow/releases/tag/v1.3.3[page] for Cloudflow 1.3.3.
 * Run the bootstrap script to install Cloudflow.
 
-This will take you through the process of installing Cloudflow in the cluster. In course of this it will ask a few questions regarding the storage class to be installed. The following should be the response to these:
+This will take you through the process of installing Cloudflow in the cluster. In the course of its execution, it will ask a few questions regarding the storage class to be installed. 
+The following provides guidance on how to respond to these questions:
 
 ```
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteMany'.
