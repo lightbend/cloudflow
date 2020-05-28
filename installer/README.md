@@ -21,7 +21,11 @@ The Cloudflow installer runs as a single-pod deployment and it creates a CustomR
 
 - NFS - a supporting component that provides a shareable file system to enable storage for stateful applications
 
-**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**
+**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v1.3.3/bootstrap-install-script-1.3.3.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**:
+
+```bash
+$ ./bootstrap-install-script-<CLOUDFLOW_VERSION>.sh
+```
 
 NOTE: During installation, the installer will prompt you twice, once to select a storage class that supports *read-write-many (RWM)* and once to select a storage class that supports *read-write-once (RWO)*. Make sure you have the appropriate storage classes already available in your Kubernetes cluster before attempting to install Cloudflow. Most cloud providers already provide a default storage class that supports RWO. For your convenience, we provide a script that will install an NFS storage provisioner that supports RWM. To run it:
 

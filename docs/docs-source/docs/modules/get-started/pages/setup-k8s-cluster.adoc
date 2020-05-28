@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Detailed instructions on how to install Cloudflow on a Kubernetes cluster are described in the https://github.com/lightbend/cloudflow/tree/master/installer[Cloudflow installer section] of the GitHub repo.
+This page walks you through the important steps to get Cloudflow up and running. For more detailed instructions on how to use or build your own Cloudflow installer, refer to the https://github.com/lightbend/cloudflow/tree/master/installer[installer section] of the GitHub repo.
 
 To create a new cluster, clone the https://github.com/lightbend/cloudflow/[repo] in your local system by selecting the latest release branch or download the latest release file from https://github.com/lightbend/cloudflow/releases[here], go to the `installer/` folder and follow the instructions below.
 
@@ -24,17 +24,17 @@ This will take you through the process of installing Cloudflow in the cluster. I
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteMany'.
 Examples of these are Spark and Flink checkpointing and savepointing.
 
-   NAME                 PROVISIONER                    SUPPORTS RWM                  DEFAULT?
-1. standard             kubernetes.io/gce-pd           Unknown                       -
-2. nfs                  lightbend.com/nfs              Unknown                       -
+   NAME                 PROVISIONER                             SUPPORTS RWM?           DEFAULT?
+1. standard             kubernetes.io/gce-pd                    Unknown                 -
+2. nfs                  cluster.local/nfs-server-provisioner    Unknown                 -
 > 2
 
 Select a storage class for workloads requiring persistent volumes with access mode 'ReadWriteOnce'.
 Examples of these are Kafka, Zookeeper, and Prometheus.
 
-   NAME                 PROVISIONER                    SUPPORTS RWO                  DEFAULT?
-1. standard             kubernetes.io/gce-pd           Verified                      -
-2. nfs                  lightbend.com/nfs              Unknown                       -
+   NAME                 PROVISIONER                             SUPPORTS RWO?            DEFAULT?
+1. standard             kubernetes.io/gce-pd                    Verified                 -
+2. nfs                  cluster.local/nfs-server-provisioner    Unknown                  -
 > 1
 ```
 
