@@ -82,7 +82,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
-    //TODO get spark config settings from runtimeConfig, translate to Spark CR settings.
     val podsConfig = getPodsConfig(configSecret)
 
     val appLabels     = CloudflowLabels(app)
