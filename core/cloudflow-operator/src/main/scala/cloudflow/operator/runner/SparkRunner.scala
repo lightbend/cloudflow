@@ -253,7 +253,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     // From Spark Operator (which is not supported yet):
     //
     //   CoreRequest is the physical CPU core request for the executor.
-    //   Maps to `spark.kubernetes.executor.request.cores` that is available since Spark 2.4. (suspect since Driver docs says 3.0)
+    //   Maps to `spark.kubernetes.executor.request.cores` that is available since Spark 2.4.
     //
     val coresOpt = toIntCores(executorSettings.cores)
 
