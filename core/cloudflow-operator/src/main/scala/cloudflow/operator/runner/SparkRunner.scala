@@ -301,7 +301,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
       .orElse(Some(1))
 
-  private def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): List[EnvVar] =
+  private def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
@@ -311,8 +311,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           containerConfig.env.filterNot(_.name == JavaOptsEnvVarName)
         }
       }
-      .toList
-      .flatten
 
   private def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
@@ -390,7 +388,7 @@ object SparkResource {
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
-      env: List[EnvVar] = List(),
+      env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       serviceAccount: Option[String] = Some(SparkServiceAccount),
       labels: Map[String, String] = Map(),
@@ -407,7 +405,7 @@ object SparkResource {
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
-      env: List[EnvVar] = List(),
+      env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       labels: Map[String, String] = Map(),
       configMaps: Seq[NamePath] = Seq(),
