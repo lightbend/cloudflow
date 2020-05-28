@@ -17,6 +17,7 @@
 package cloudflow.operator
 package runner
 
+import scala.collection.JavaConverters._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
 import play.api.libs.json._
@@ -144,7 +145,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         configMaps = configMaps,
         securityContext = securityContext
       ),
-      podsConfig
+      podsConfig,
+      deployment
     )
     val executor = addExecutorResourceRequirements(
       Executor(
@@ -157,7 +159,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         configMaps = configMaps,
         securityContext = securityContext
       ),
-      podsConfig
+      podsConfig,
+      deployment
     )
 
     val monitoring = {
@@ -175,9 +178,11 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
     }
 
+    val sparkConf = getSparkConf(configSecret)
     val spec = Spec(
       image = image,
       mainClass = RuntimeMainClass,
+      sparkConf = sparkConf,
       volumes = volumes,
       driver = driver,
       executor = executor,
@@ -193,7 +198,9 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   private val OnFailureRetryIntervalSecs           = 10
   private val OnSubmissionFailureRetryIntervalSecs = 60
 
-  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig)(implicit ctx: DeploymentContext): Driver = {
+  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig, deployment: StreamletDeployment)(
+      implicit ctx: DeploymentContext
+  ): Driver = {
     var updatedDriver = driver
     import ctx.sparkRunnerSettings._
 
@@ -212,7 +219,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       memoryOverhead = driverSettings.memoryOverhead.map(_.value)
     )
     // you can set the "driver" pod or just "pod", which means it will be used for both driver and executor (as fallback).
-    podsConfig.pods
+    updatedDriver = podsConfig.pods
       .get(DriverPod)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
@@ -227,9 +234,19 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         }
       }
       .getOrElse(updatedDriver)
+    log.info(s"""
+    Streamlet ${deployment.streamletName} - resources for driver pod:
+      cores:          ${updatedDriver.cores}
+      memory:         ${updatedDriver.memory}
+      coreLimit:      ${updatedDriver.coreLimit}
+      memoryOverhead: ${updatedDriver.memoryOverhead}
+    """)
+    updatedDriver
   }
 
-  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig)(implicit ctx: DeploymentContext): Executor = {
+  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig, deployment: StreamletDeployment)(
+      implicit ctx: DeploymentContext
+  ): Executor = {
     var updatedExecutor = executor
     import ctx.sparkRunnerSettings._
 
@@ -248,7 +265,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       memoryOverhead = executorSettings.memoryOverhead.map(_.value)
     )
     // you can set the "executor" pod or just "pod", which means it will be used for both executor and executor (as fallback).
-    podsConfig.pods
+    updatedExecutor = podsConfig.pods
       .get(ExecutorPod)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
@@ -264,6 +281,16 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         }
       }
       .getOrElse(updatedExecutor)
+
+    log.info(s"""
+    Streamlet ${deployment.streamletName} - resources for executor pod:
+      cores:          ${updatedExecutor.cores}
+      coreRequest:    ${updatedExecutor.coreRequest}
+      memory:         ${updatedExecutor.memory}
+      coreLimit:      ${updatedExecutor.coreLimit}
+      memoryOverhead: ${updatedExecutor.memoryOverhead}
+    """)
+    updatedExecutor
   }
 
   private def toIntCores(cores: Option[Quantity]): Option[Int] =
@@ -296,7 +323,18 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
         }
       }
-
+  private def getSparkConf(configSecret: Secret): Option[Map[String, String]] = {
+    val conf = getRuntimeConfig(configSecret)
+    if (conf.isEmpty) None
+    else
+      Some(
+        conf
+          .entrySet()
+          .asScala
+          .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+          .toMap
+      )
+  }
 }
 
 object SparkResource {
@@ -385,6 +423,7 @@ object SparkResource {
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
       mainClass: String = "", // required parameter
+      sparkConf: Option[Map[String, String]] = None,
       mainApplicationFile: Option[String] = Some("spark-internal"),
       volumes: Seq[Volume] = Nil,
       driver: Driver,
