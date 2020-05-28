@@ -219,7 +219,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
           containerConfig.resources.map { resources =>
             updatedDriver.copy(
-              cores = resources.requests.get(Resource.cpu).map(_.amount.intValue).orElse(coresOpt),
+              cores = toIntCores(resources.requests.get(Resource.cpu)).orElse(coresOpt),
               memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedDriver.memory),
               coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedDriver.coreLimit)
             )
@@ -255,7 +255,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
           containerConfig.resources.map { resources =>
             updatedExecutor.copy(
-              cores = resources.requests.get(Resource.cpu).map(_.amount.intValue).orElse(coresOpt),
+              cores = toIntCores(resources.requests.get(Resource.cpu)).orElse(coresOpt),
               coreRequest = resources.requests.get(Resource.cpu).map(_.value),
               memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedExecutor.memory),
               coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedExecutor.coreLimit)
