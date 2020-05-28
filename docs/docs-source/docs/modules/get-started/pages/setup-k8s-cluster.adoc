@@ -5,7 +5,8 @@
 
 include::ROOT:partial$include.adoc[]
 
-This page walks you through the important steps to get Cloudflow up and running. For more detailed instructions on how to use or build your own Cloudflow installer, refer to the https://github.com/lightbend/cloudflow/tree/master/installer[installer section] of the GitHub repo.
+This page walks you through the important steps to get Cloudflow up and running on a Kubernetes Cluster. 
+For more detailed instructions on how to use or build your own Cloudflow installer, refer to the https://github.com/lightbend/cloudflow/tree/master/installer[installer section] of the GitHub repo.
 
 To create a new cluster, clone the https://github.com/lightbend/cloudflow/[repo] in your local system by selecting the latest release branch or download the latest release file from https://github.com/lightbend/cloudflow/releases[here], go to the `installer/` folder and follow the instructions below.
 
