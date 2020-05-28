@@ -17,12 +17,13 @@
 package cloudflow.operator
 package runner
 
-import com.typesafe.config._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
 import play.api.libs.json._
 import skuber.ResourceSpecification.Subresources
 import skuber._
+import skuber.json.format._
+import skuber.Resource._
 import skuber.api.patch.{ JsonMergePatch, Patch }
 
 trait PatchProvider[T <: Patch] {
@@ -53,6 +54,10 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   def resourceDefinition = implicitly[ResourceDefinition[CR]]
   val runtime            = "spark"
 
+  val DriverPod   = "driver"
+  val ExecutorPod = "executor"
+  // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
+  val JavaOptsEnvVarName = "JAVA_OPTS"
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -76,9 +81,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
-    //TODO get spark config settings from runtimeConfig (in form of `some.setting`, 'spark' prefix is omitted), translate to Spark CR settings.
-    //TODO get resource settings from podsConfig, translate to Spark driver and executor pods
-    //TODO (this might need some change in proposed config format, since Spark has 2 kinds of pods, driver and executor)
+    //TODO get spark config settings from runtimeConfig, translate to Spark CR settings.
+    val podsConfig = getPodsConfig(configSecret)
 
     val appLabels     = CloudflowLabels(app)
     val appId         = app.spec.appId
@@ -130,35 +134,30 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
 
     import ctx.sparkRunnerSettings._
-    val cores = driverSettings.cores.map(_.amount.intValue).getOrElse(1)
-    val driver = Driver(
-      cores =
-        if (cores >= 1)
-          Some(cores)
-        else
-          Some(1),
-      memory = driverSettings.memory.map(_.value),
-      coreLimit = driverSettings.coreLimit.map(_.value),
-      memoryOverhead = driverSettings.memoryOverhead.map(_.value),
-      javaOptions = driverSettings.javaOptions,
-      labels = labels,
-      volumeMounts = volumeMounts,
-      secrets = secrets,
-      configMaps = configMaps,
-      securityContext = securityContext
+    val driver = addDriverResourceRequirements(
+      Driver(
+        javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
+        labels = labels,
+        volumeMounts = volumeMounts,
+        secrets = secrets,
+        env = getEnvironmentVariables(podsConfig, DriverPod),
+        configMaps = configMaps,
+        securityContext = securityContext
+      ),
+      podsConfig
     )
-    val executor = Executor(
-      cores = executorSettings.cores.map(_.amount.intValue),
-      memory = executorSettings.memory.map(_.value),
-      coreLimit = executorSettings.coreLimit.map(_.value),
-      memoryOverhead = executorSettings.memoryOverhead.map(_.value),
-      javaOptions = executorSettings.javaOptions,
-      instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
-      labels = labels,
-      volumeMounts = volumeMounts,
-      secrets = secrets,
-      configMaps = configMaps,
-      securityContext = securityContext
+    val executor = addExecutorResourceRequirements(
+      Executor(
+        javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
+        instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
+        labels = labels,
+        volumeMounts = volumeMounts,
+        secrets = secrets,
+        env = getEnvironmentVariables(podsConfig, ExecutorPod),
+        configMaps = configMaps,
+        securityContext = securityContext
+      ),
+      podsConfig
     )
 
     val monitoring = {
@@ -193,6 +192,110 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   // Lifecycle Management
   private val OnFailureRetryIntervalSecs           = 10
   private val OnSubmissionFailureRetryIntervalSecs = 60
+
+  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig)(implicit ctx: DeploymentContext): Driver = {
+    var updatedDriver = driver
+    import ctx.sparkRunnerSettings._
+
+    // this logic means you can only set cores to an int. and it blows up for decimals
+    // From Spark Operator (which is not supported yet):
+    //
+    //   CoreRequest is the physical CPU core request for the driver.
+    //   Maps to `spark.kubernetes.driver.request.cores` that is available since Spark 3.0.
+    //
+    val coresOpt = toIntCores(driverSettings.cores)
+
+    updatedDriver = updatedDriver.copy(
+      cores = coresOpt,
+      memory = driverSettings.memory.map(_.value),
+      coreLimit = driverSettings.coreLimit.map(_.value),
+      memoryOverhead = driverSettings.memoryOverhead.map(_.value)
+    )
+    // you can set the "driver" pod or just "pod", which means it will be used for both driver and executor (as fallback).
+    podsConfig.pods
+      .get(DriverPod)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.resources.map { resources =>
+            updatedDriver.copy(
+              cores = resources.requests.get(Resource.cpu).map(_.amount.intValue).orElse(coresOpt),
+              memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedDriver.memory),
+              coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedDriver.coreLimit)
+            )
+          }
+        }
+      }
+      .getOrElse(updatedDriver)
+  }
+
+  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig)(implicit ctx: DeploymentContext): Executor = {
+    var updatedExecutor = executor
+    import ctx.sparkRunnerSettings._
+
+    // this logic means you can only set cores to an int. and it blows up for decimals
+    // From Spark Operator (which is not supported yet):
+    //
+    //   CoreRequest is the physical CPU core request for the executor.
+    //   Maps to `spark.kubernetes.executor.request.cores` that is available since Spark 2.4. (suspect since Driver docs says 3.0)
+    //
+    val coresOpt = toIntCores(executorSettings.cores)
+
+    updatedExecutor = updatedExecutor.copy(
+      cores = coresOpt,
+      memory = executorSettings.memory.map(_.value),
+      coreLimit = executorSettings.coreLimit.map(_.value),
+      memoryOverhead = executorSettings.memoryOverhead.map(_.value)
+    )
+    // you can set the "executor" pod or just "pod", which means it will be used for both executor and executor (as fallback).
+    podsConfig.pods
+      .get(ExecutorPod)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.resources.map { resources =>
+            updatedExecutor.copy(
+              cores = resources.requests.get(Resource.cpu).map(_.amount.intValue).orElse(coresOpt),
+              coreRequest = resources.requests.get(Resource.cpu).map(_.value),
+              memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedExecutor.memory),
+              coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedExecutor.coreLimit)
+            )
+          }
+        }
+      }
+      .getOrElse(updatedExecutor)
+  }
+
+  private def toIntCores(cores: Option[Quantity]): Option[Int] =
+    cores
+      .map { quantity =>
+        val coresInt = quantity.amount.intValue
+        if (coresInt >= 1) coresInt else 1
+      }
+      .orElse(Some(1))
+
+  private def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): List[EnvVar] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
+          containerConfig.env.filterNot(_.name == JavaOptsEnvVarName)
+        }
+      }
+      .toList
+      .flatten
+
+  private def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
+        }
+      }
 
 }
 
@@ -240,11 +343,16 @@ object SparkResource {
       exposeExecutorMetrics: Boolean = true
   )
 
+  /**
+   * NOTE: coreRequest in Driver is only supported in Spark 3.0:
+   * https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/8c480acfdd09882ed2f00573f15e7830558de524/pkg/apis/sparkoperator.k8s.io/v1beta2/types.go#L499
+   */
   final case class Driver(
       cores: Option[Int] = Some(1),
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
+      env: List[EnvVar] = List(),
       javaOptions: Option[String] = None,
       serviceAccount: Option[String] = Some(SparkServiceAccount),
       labels: Map[String, String] = Map(),
@@ -257,9 +365,11 @@ object SparkResource {
   final case class Executor(
       instances: Int,
       cores: Option[Int] = Some(1),
+      coreRequest: Option[String] = None,
       coreLimit: Option[String] = None,
       memory: Option[String] = None,
       memoryOverhead: Option[String] = None,
+      env: List[EnvVar] = List(),
       javaOptions: Option[String] = None,
       labels: Map[String, String] = Map(),
       configMaps: Seq[NamePath] = Seq(),
@@ -299,8 +409,6 @@ object SparkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount]              = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume]                         = skuber.json.format.volumeFormat
   implicit val securityContextFmt: Format[SecurityContext]       = Json.format[SecurityContext]
   implicit val hostPathFmt: Format[HostPath]                     = Json.format[HostPath]
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
