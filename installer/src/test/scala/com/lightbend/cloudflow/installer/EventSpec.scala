@@ -31,11 +31,12 @@ class EventSpec extends WordSpec with MustMatchers with GivenWhenThen with Eithe
 
         val action = result.get.asInstanceOf[CompositeAction]
 
-        action.childActions must have size 7
+        action.childActions must have size 5
         action.childActions(0) mustBe a[Strimzi]
         action.childActions(1) mustBe a[SparkOperator]
         action.childActions(2) mustBe a[FlinkOperator]
         action.childActions(3) mustBe a[CloudflowOperatorManagedStrimzi]
+        action.childActions(4) mustBe a[PatchOwnerReferenceOfSparkMutatingWebhookConfig]
       }
 
       "transform an un-install event to an un-install action" in {
@@ -68,12 +69,13 @@ class EventSpec extends WordSpec with MustMatchers with GivenWhenThen with Eithe
 
         val action = result.get.asInstanceOf[CompositeAction]
 
-        action.childActions must have size 8
+        action.childActions must have size 6
         action.childActions(0) mustBe a[Strimzi]
         action.childActions(1) mustBe a[SparkOperator]
         action.childActions(2) mustBe a[FlinkOperator]
         action.childActions(3) mustBe a[AddSccToSparkServiceAccount]
         action.childActions(4) mustBe a[CloudflowOperatorManagedStrimzi]
+        action.childActions(5) mustBe a[PatchOwnerReferenceOfSparkMutatingWebhookConfig]
       }
     }
 
