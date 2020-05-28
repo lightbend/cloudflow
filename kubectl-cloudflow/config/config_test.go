@@ -380,6 +380,37 @@ func Test_validateConfig(t *testing.T) {
 
 }
 
+func Test_validateConfigEmptyDefault(t *testing.T) {
+	spec := cfapp.CloudflowApplicationSpec{
+		Streamlets: []cfapp.Streamlet{
+			{
+				Descriptor: cfapp.Descriptor{
+					ConfigParameters: []cfapp.ConfigParameterDescriptor{
+						{
+							Key:          "my-parameter",
+							DefaultValue: "",
+							Type:         "string",
+						},
+					},
+				},
+				Name: "my-streamlet",
+			},
+		},
+		Deployments: []cfapp.Deployment{
+			{
+				PortMappings: map[string]cfapp.PortMapping{
+					"port": {
+						ID: "my-topic",
+					},
+				},
+			},
+		},
+	}
+
+	validStreamletConfigSection := newConfig("")
+	assert.Empty(t, validateConfigurationAgainstDescriptor(spec, *validStreamletConfigSection))
+}
+
 func Test_ValidationOfDuration(t *testing.T) {
 
 	assert.NoError(t, validateDuration("300ms"))

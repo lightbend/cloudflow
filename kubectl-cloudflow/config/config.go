@@ -569,7 +569,7 @@ func validateConfigurationAgainstDescriptor(spec cfapp.CloudflowApplicationSpec,
 				invalidKeys = append(invalidKeys, ValidationErrorDescriptor{streamletConfigKey, err.Error()})
 			}
 
-			if hoconConf.GetString(fqKey) == "" {
+			if hoconConf.GetString(fqKey) == "" && descriptor.DefaultValue != "" {
 				missingKeys = append(missingKeys, ValidationErrorDescriptor{streamletConfigKey, descriptor.Description})
 			}
 		}
