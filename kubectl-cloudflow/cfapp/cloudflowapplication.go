@@ -15,7 +15,6 @@ import (
 
 // PortMapping maps outlets
 type PortMapping struct {
-	AppID  string          `json:"app_id"`
 	ID     string          `json:"id"`
 	Config json.RawMessage `json:"config"`
 }
