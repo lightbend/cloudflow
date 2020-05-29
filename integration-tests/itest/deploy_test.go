@@ -127,17 +127,14 @@ var _ = Describe("Application deployment", func() {
 
 	Context("A deployed streamlet can be configured using the CLI", func() {
 
-		It("should reconfigure the application and get to a RUNNING state", func(done Done) {
+		It("should reconfigure the application", func(done Done) {
 			err := cli.Configure(swissKnifeApp, UpdateConfigFile)
 			Expect(err).NotTo(HaveOccurred())
-			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(status).To(Equal("Running"))
 			close(done)
 		}, LongTimeout)
 
 		It("should have configured an akka streamlet", func(done Done) {
-			checkLogsForOutput("spark-egress", UpdateConfigPayload)
+			checkLogsForOutput("akka-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 
@@ -149,7 +146,7 @@ var _ = Describe("Application deployment", func() {
 		It("should have configured a flink streamlet", func(done Done) {
 			checkLogsForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
-		}, LongTimeout)
+		}, XLongTimeout)
 	})
 
 	Context("A deployed streamlet can be scaled", func() {
