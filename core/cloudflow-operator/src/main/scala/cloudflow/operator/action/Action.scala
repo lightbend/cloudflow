@@ -333,6 +333,7 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
           }
           .getOrElse {
             if (waiting <= timeout) {
+              sys.log.info(s"resource $resourceName not found in namespace $namespace, scheduling retry to get resource.")
               after(delayWhenNotFound, sys.scheduler)(executeUntil(client, timeout, delayWhenNotFound, waiting + 1.second))
             } else {
               // last attempt expects to be there or fail with error that the resource is not there.
