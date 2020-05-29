@@ -310,38 +310,26 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     s"Provided $namespace/$resourceName to next action"
 
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
-    executeUntil(
+    executeWithRetry(
       client,
-      timeout = 1.minute,
-      delayWhenNotFound = 1.second,
-      waiting = 0.second
+      delay = 1.second,
+      retries = 60
     )
 
-  private def executeUntil(
+  private def executeWithRetry(
       client: KubernetesClient,
-      timeout: FiniteDuration,
-      delayWhenNotFound: FiniteDuration,
-      waiting: FiniteDuration
-  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
-    client
-      .usingNamespace(namespace)
-      .getOption[T](resourceName)
-      .flatMap { result =>
-        result
-          .map { existing =>
-            getAction(existing).execute(client)
-          }
-          .getOrElse {
-            if (waiting <= timeout) {
-              sys.log.info(s"resource $resourceName not found in namespace $namespace, scheduling retry to get resource.")
-              after(delayWhenNotFound, sys.scheduler)(executeUntil(client, timeout, delayWhenNotFound, waiting + 1.second))
-            } else {
-              // last attempt expects to be there or fail with error that the resource is not there.
-              client
-                .usingNamespace(namespace)
-                .get[T](resourceName)
-                .flatMap(existing => getAction(existing).execute(client))
-            }
-          }
-      }
+      delay: FiniteDuration,
+      retries: Int
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+    def getAndProvide =
+      client
+        .usingNamespace(namespace)
+        .get[T](resourceName)
+        .flatMap { existing =>
+          getAction(existing).execute(client)
+        }
+    getAndProvide.recoverWith {
+      case _ if retries > 0 => after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+    }
+  }
 }
