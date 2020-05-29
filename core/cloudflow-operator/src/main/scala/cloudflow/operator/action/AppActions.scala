@@ -19,7 +19,7 @@ package action
 
 import scala.collection.immutable._
 import scala.concurrent._
-
+import akka.actor.ActorSystem
 import play.api.libs.json._
 import skuber.api.client._
 import skuber.json.format._
@@ -254,8 +254,9 @@ object AppActions {
       format: Format[PersistentVolumeClaim],
       resourceDefinition: ResourceDefinition[PersistentVolumeClaim]
   ) extends CreateOrUpdateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
-    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext,
-                                                   lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
+    override def execute(
+        client: KubernetesClient
+    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
       for {
         pvcResult ← client.getOption[PersistentVolumeClaim](resource.name)(format, resourceDefinition, lc)
         res ← pvcResult

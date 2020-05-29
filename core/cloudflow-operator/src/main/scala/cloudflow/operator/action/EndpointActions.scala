@@ -19,7 +19,7 @@ package action
 
 import scala.concurrent._
 import scala.collection.immutable._
-
+import akka.actor.ActorSystem
 import play.api.libs.json._
 
 import skuber._
@@ -110,7 +110,9 @@ object EndpointActions {
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
   ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
-    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
+    override def execute(
+        client: KubernetesClient
+    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
         res ← serviceResult
