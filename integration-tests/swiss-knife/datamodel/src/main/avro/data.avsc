@@ -14,6 +14,12 @@
          {
             "name": "count",
             "type": "long"
+         },
+         {
+            "name": "payload",
+            "type": "string",
+            "default": ""
+
          }
     ]
 }

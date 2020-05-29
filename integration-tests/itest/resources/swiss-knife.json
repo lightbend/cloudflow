@@ -17,12 +17,12 @@
       "prometheus": "/prometheus/jmx_prometheus_javaagent.jar"
     },
     "app_id": "swiss-knife",
-    "app_version": "391-c8964d7-dirty",
+    "app_version": "395-494e951-dirty",
     "deployments": [
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/akka:395-494e951-dirty",
         "name": "swiss-knife.akka-egress",
         "port_mappings": {
           "in": {
@@ -37,7 +37,7 @@
       {
         "class_name": "swissknife.spark.SparkCounter",
         "config": {},
-        "image": "docker.io/lightbend/spark:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/spark:395-494e951-dirty",
         "name": "swiss-knife.spark-process",
         "port_mappings": {
           "in": {
@@ -56,7 +56,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/akka:395-494e951-dirty",
         "name": "swiss-knife.flink-egress",
         "port_mappings": {
           "in": {
@@ -71,7 +71,7 @@
       {
         "class_name": "swissknife.spark.SparkDataGenerator",
         "config": {},
-        "image": "docker.io/lightbend/spark:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/spark:395-494e951-dirty",
         "name": "swiss-knife.ingress",
         "port_mappings": {
           "out": {
@@ -86,7 +86,7 @@
       {
         "class_name": "swissknife.flink.FlinkCounter",
         "config": {},
-        "image": "docker.io/lightbend/flink:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/flink:395-494e951-dirty",
         "name": "swiss-knife.flink-process",
         "port_mappings": {
           "in": {
@@ -105,7 +105,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/akka:395-494e951-dirty",
         "name": "swiss-knife.spark-egress",
         "port_mappings": {
           "in": {
@@ -120,7 +120,7 @@
       {
         "class_name": "swissknife.akka.AkkaTransformation",
         "config": {},
-        "image": "docker.io/lightbend/akka:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/akka:395-494e951-dirty",
         "name": "swiss-knife.akka-process",
         "port_mappings": {
           "in": {
@@ -139,7 +139,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/akka:395-494e951-dirty",
         "name": "swiss-knife.raw-egress",
         "port_mappings": {
           "in": {
@@ -154,7 +154,7 @@
       {
         "class_name": "swissknife.spark.SparkOutput",
         "config": {},
-        "image": "docker.io/lightbend/spark:391-c8964d7-dirty",
+        "image": "docker.io/lightbend/spark:395-494e951-dirty",
         "name": "swiss-knife.spark-output",
         "port_mappings": {
           "in": {
@@ -179,10 +179,10 @@
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -197,16 +197,24 @@
         "descriptor": {
           "attributes": [],
           "class_name": "swissknife.spark.SparkCounter",
-          "config_parameters": [],
+          "config_parameters": [
+            {
+              "default_value": "spark-original",
+              "description": "Configurable message.",
+              "key": "configurable-message",
+              "validation_pattern": ".*",
+              "validation_type": "string"
+            }
+          ],
           "description": "",
           "inlets": [
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -215,10 +223,10 @@
             {
               "name": "out",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -237,10 +245,10 @@
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -270,10 +278,10 @@
             {
               "name": "out",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -286,16 +294,24 @@
         "descriptor": {
           "attributes": [],
           "class_name": "swissknife.flink.FlinkCounter",
-          "config_parameters": [],
+          "config_parameters": [
+            {
+              "default_value": "flink-original",
+              "description": "Configurable message.",
+              "key": "configurable-message",
+              "validation_pattern": ".*",
+              "validation_type": "string"
+            }
+          ],
           "description": "",
           "inlets": [
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -304,10 +320,10 @@
             {
               "name": "out",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -326,10 +342,10 @@
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -344,16 +360,24 @@
         "descriptor": {
           "attributes": [],
           "class_name": "swissknife.akka.AkkaTransformation",
-          "config_parameters": [],
+          "config_parameters": [
+            {
+              "default_value": "akka-original",
+              "description": "Configurable message.",
+              "key": "configurable-message",
+              "validation_pattern": ".*",
+              "validation_type": "string"
+            }
+          ],
           "description": "",
           "inlets": [
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -362,10 +386,10 @@
             {
               "name": "out",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -384,10 +408,10 @@
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],
@@ -408,10 +432,10 @@
             {
               "name": "in",
               "schema": {
-                "fingerprint": "4v6ucA+ZdC8h+a2lrqYLDKFRsJrN07GXJ5724/V902U=",
+                "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
                 "format": "avro",
                 "name": "swissknife.data.Data",
-                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"}]}"
+                "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
               }
             }
           ],

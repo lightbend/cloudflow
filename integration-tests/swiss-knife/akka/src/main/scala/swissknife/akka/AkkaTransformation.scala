@@ -29,12 +29,17 @@ class AkkaTransformation extends AkkaStreamlet {
   val out   = AvroOutlet[Data]("out").withPartitioner(RoundRobinPartitioner)
   val shape = StreamletShape(in).withOutlets(out)
 
+  val configurableMessage = StringConfigParameter("configurable-message", "Configurable message.", Some("akka-original"))
+
+  override def configParameters = Vector(configurableMessage)
+
   override def createLogic = new RunnableGraphStreamletLogic() {
+    val msg = configurableMessage.value
     def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
     def flow =
       FlowWithCommittableContext[Data]
         .map { data ⇒
-          data.copy(src = data.src + "-akka")
+          data.copy(src = data.src + "-akka", payload = msg)
         }
   }
 }

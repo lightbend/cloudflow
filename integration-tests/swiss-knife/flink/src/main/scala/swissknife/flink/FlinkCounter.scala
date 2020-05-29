@@ -16,10 +16,9 @@
 package swissknife.flink
 
 import swissknife.data.Data
-
 import cloudflow.flink.FlinkStreamlet
 import org.apache.flink.streaming.api.scala._
-import cloudflow.streamlets.StreamletShape
+import cloudflow.streamlets.{StreamletShape, StringConfigParameter}
 import cloudflow.streamlets.avro._
 import cloudflow.flink._
 
@@ -30,12 +29,16 @@ class FlinkCounter extends FlinkStreamlet {
 
   @transient val shape = StreamletShape.withInlets(in).withOutlets(out)
 
+  val configurableMessage = StringConfigParameter("configurable-message", "Configurable message.", Some("flink-original"))
+  override def configParameters = Vector(configurableMessage)
+
   override def createLogic() = new FlinkStreamletLogic {
+    val message = configurableMessage.value
     override def buildExecutionGraph = {
       val stream: DataStream[Data] =
         readStream(in)
           .map { data ⇒
-            data.copy(src = data.src + "-flink")
+            data.copy(src = data.src + "-flink", payload = message)
           }
       writeStream(out, stream)
     }

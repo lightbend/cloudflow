@@ -45,12 +45,12 @@ class SparkDataGenerator extends SparkStreamlet {
       writeStream(process, out, OutputMode.Append).toQueryExecution
 
     private def process: Dataset[Data] = {
-      val recordsPerSecond = context.streamletConfig.getInt(RecordsPerSecond.key)
+      val recordsPerSecond = RecordsPerSecond.value
       session.readStream
         .format("rate")
         .option("rowsPerSecond", recordsPerSecond)
         .load()
-        .select(lit("origin").as("src"), $"timestamp", $"value".as("count"))
+        .select(lit("origin").as("src"), $"timestamp", lit("").as("payload"), $"value".as("count"))
         .as[Data]
     }
   }
