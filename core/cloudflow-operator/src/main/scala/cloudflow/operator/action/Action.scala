@@ -15,8 +15,10 @@
  */
 
 package cloudflow.operator.action
-
 import scala.concurrent._
+import scala.concurrent.duration._
+import akka.actor.ActorSystem
+import akka.pattern._
 
 import play.api.libs.json._
 import skuber._
@@ -47,7 +49,7 @@ sealed trait Action[+T <: ObjectResource] {
    * Executes the action using a KubernetesClient.
    * Returns the created or modified resource, or None if the resource is deleted.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]]
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]]
 
   /**
    * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
@@ -152,12 +154,12 @@ class CreateOrUpdateAction[T <: ObjectResource](
   /**
    * Creates the resources if it does not exist. If it does exist it updates the resource as required.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       result <- executeCreate(client)
     } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
-  private def executeCreate(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  private def executeCreate(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)
       res ← existing
@@ -195,12 +197,14 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       result <- executeCreateOrPatch(client)
     } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
 
-  private def executeCreateOrPatch(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  private def executeCreateOrPatch(
+      client: KubernetesClient
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)
       res ← existing
@@ -222,7 +226,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   /**
    * Updates the target resource using a patch
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     client
       .patch(resource.name, patch, Some(resource.ns))
       .map(r ⇒ new PatchAction(r, patch, format, patchWriter, resourceDefinition))
@@ -245,12 +249,12 @@ class UpdateStatusAction[T <: ObjectResource](
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
     for {
       result <- executeUpdateStatus(client)
     } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 
-  def executeUpdateStatus(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  def executeUpdateStatus(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing ← client.getOption[T](resource.name)
       resourceVersionUpdated = existing
@@ -285,7 +289,7 @@ final case class DeleteAction[T <: ObjectResource](
   /**
    * Deletes the resource.
    */
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
     client.deleteWithOptions(name, options)(resourceDefinition, lc).map(_ ⇒ this)
   }
@@ -305,9 +309,29 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
   def executed =
     s"Provided $namespace/$resourceName to next action"
 
-  def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
-    for {
-      existing ← client.usingNamespace(namespace).get[T](resourceName)
-      res      <- getAction(existing).execute(client)
-    } yield res
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+    executeWithRetry(
+      client,
+      delay = 1.second,
+      retries = 60
+    )
+
+  private def executeWithRetry(
+      client: KubernetesClient,
+      delay: FiniteDuration,
+      retries: Int
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+    def getAndProvide =
+      client
+        .usingNamespace(namespace)
+        .get[T](resourceName)
+        .flatMap { existing =>
+          getAction(existing).execute(client)
+        }
+    getAndProvide.recoverWith {
+      case _ if retries > 0 =>
+        sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName")
+        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+    }
+  }
 }
