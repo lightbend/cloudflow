@@ -69,7 +69,6 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.invalid-logger",
 		      "port_mappings": {
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "invalid",
 		          "streamlet": "validation"
 		        }
@@ -85,17 +84,14 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.validation",
 		      "port_mappings": {
 		        "invalid": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "invalid",
 		          "streamlet": "validation"
 		        },
 		        "valid": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "valid",
 		          "streamlet": "validation"
 		        },
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "metrics"
 		        }
@@ -111,7 +107,6 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.file-ingress",
 		      "port_mappings": {
 		        "out": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "file-ingress"
 		        }
@@ -135,17 +130,14 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.merge",
 		      "port_mappings": {
 		        "out": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "merge"
 		        },
 		        "in-0": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "http-ingress"
 		        },
 		        "in-1": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "file-ingress"
 		        }
@@ -166,7 +158,6 @@ func TestApplicationDescriptor() string {
 		        }
 		      },
 		      "endpoint": {
-		        "app_id": "sensor-data-scala",
 		        "container_port": 3004,
 		        "streamlet": "http-ingress"
 		      },
@@ -174,7 +165,6 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.http-ingress",
 		      "port_mappings": {
 		        "out": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "http-ingress"
 		        }
@@ -190,7 +180,6 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.rotor-avg-logger",
 		      "port_mappings": {
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "rotorizer"
 		        }
@@ -206,12 +195,10 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.metrics",
 		      "port_mappings": {
 		        "out": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "metrics"
 		        },
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "merge"
 		        }
@@ -227,7 +214,6 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.valid-logger",
 		      "port_mappings": {
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "valid",
 		          "streamlet": "validation"
 		        }
@@ -243,12 +229,10 @@ func TestApplicationDescriptor() string {
 		      "name": "sensor-data-scala.rotorizer",
 		      "port_mappings": {
 		        "out": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "out",
 		          "streamlet": "rotorizer"
 		        },
 		        "in": {
-		          "app_id": "sensor-data-scala",
 		          "outlet": "valid",
 		          "streamlet": "validation"
 		        }
