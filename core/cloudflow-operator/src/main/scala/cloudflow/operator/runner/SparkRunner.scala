@@ -16,10 +16,10 @@
 
 package cloudflow.operator
 package runner
-
 import scala.collection.JavaConverters._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
+import com.typesafe.config._
 import play.api.libs.json._
 import skuber.ResourceSpecification.Subresources
 import skuber._
@@ -134,6 +134,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
 
     import ctx.sparkRunnerSettings._
+
     val driver = addDriverResourceRequirements(
       Driver(
         javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
@@ -177,7 +178,22 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
     }
 
-    val sparkConf = getSparkConf(configSecret)
+    val defaultDriverCores            = toIntCores(driverSettings.cores)
+    val defaultDriverMemory           = driverSettings.memory.map(_.value)
+    val defaultDriverMemoryOverhead   = driverSettings.memoryOverhead.map(_.value)
+    val defaultExecutorCores          = toIntCores(executorSettings.cores)
+    val defaultExecutorMemory         = executorSettings.memory.map(_.value)
+    val defaultExecutorMemoryOverhead = executorSettings.memoryOverhead.map(_.value)
+
+    val sparkConf = getSparkConf(
+      configSecret,
+      defaultDriverCores,
+      defaultDriverMemory,
+      defaultDriverMemoryOverhead,
+      defaultExecutorCores,
+      defaultExecutorMemory,
+      defaultExecutorMemoryOverhead
+    )
     val spec = Spec(
       image = image,
       mainClass = RuntimeMainClass,
@@ -203,19 +219,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     var updatedDriver = driver
     import ctx.sparkRunnerSettings._
 
-    // this logic means you can only set cores to an int. and it blows up for decimals
-    // From Spark Operator (which is not supported yet):
-    //
-    //   CoreRequest is the physical CPU core request for the driver.
-    //   Maps to `spark.kubernetes.driver.request.cores` that is available since Spark 3.0.
-    //
-    val coresOpt = toIntCores(driverSettings.cores)
-
     updatedDriver = updatedDriver.copy(
-      cores = coresOpt,
-      memory = driverSettings.memory.map(_.value),
-      coreLimit = driverSettings.coreLimit.map(_.value),
-      memoryOverhead = driverSettings.memoryOverhead.map(_.value)
+      coreLimit = driverSettings.coreLimit.map(_.value)
     )
     // you can set the "driver" pod or just "pod", which means it will be used for both driver and executor (as fallback).
     updatedDriver = podsConfig.pods
@@ -225,8 +230,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
           containerConfig.resources.map { resources =>
             updatedDriver.copy(
-              cores = toIntCores(resources.requests.get(Resource.cpu)).orElse(coresOpt),
-              memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedDriver.memory),
               coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedDriver.coreLimit)
             )
           }
@@ -235,10 +238,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       .getOrElse(updatedDriver)
     log.info(s"""
     Streamlet ${deployment.streamletName} - resources for driver pod:
-      cores:          ${updatedDriver.cores}
-      memory:         ${updatedDriver.memory}
       coreLimit:      ${updatedDriver.coreLimit}
-      memoryOverhead: ${updatedDriver.memoryOverhead}
     """)
     updatedDriver
   }
@@ -249,19 +249,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     var updatedExecutor = executor
     import ctx.sparkRunnerSettings._
 
-    // this logic means you can only set cores to an int. and it blows up for decimals
-    // From Spark Operator (which is not supported yet):
-    //
-    //   CoreRequest is the physical CPU core request for the executor.
-    //   Maps to `spark.kubernetes.executor.request.cores` that is available since Spark 2.4.
-    //
-    val coresOpt = toIntCores(executorSettings.cores)
-
     updatedExecutor = updatedExecutor.copy(
-      cores = coresOpt,
-      memory = executorSettings.memory.map(_.value),
-      coreLimit = executorSettings.coreLimit.map(_.value),
-      memoryOverhead = executorSettings.memoryOverhead.map(_.value)
+      coreLimit = executorSettings.coreLimit.map(_.value)
     )
     // you can set the "executor" pod or just "pod", which means it will be used for both executor and executor (as fallback).
     updatedExecutor = podsConfig.pods
@@ -271,9 +260,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
           containerConfig.resources.map { resources =>
             updatedExecutor.copy(
-              cores = toIntCores(resources.requests.get(Resource.cpu)).orElse(coresOpt),
               coreRequest = resources.requests.get(Resource.cpu).map(_.value),
-              memory = resources.requests.get(Resource.memory).map(_.toString).orElse(updatedExecutor.memory),
               coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedExecutor.coreLimit)
             )
           }
@@ -283,11 +270,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     log.info(s"""
     Streamlet ${deployment.streamletName} - resources for executor pod:
-      cores:          ${updatedExecutor.cores}
       coreRequest:    ${updatedExecutor.coreRequest}
-      memory:         ${updatedExecutor.memory}
       coreLimit:      ${updatedExecutor.coreLimit}
-      memoryOverhead: ${updatedExecutor.memoryOverhead}
     """)
     updatedExecutor
   }
@@ -320,17 +304,38 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
         }
       }
-  private def getSparkConf(configSecret: Secret): Option[Map[String, String]] = {
-    val conf = getRuntimeConfig(configSecret)
+  private def getSparkConf(configSecret: Secret,
+                           defaultDriverCores: Option[Int],
+                           defaultDriverMemory: Option[String],
+                           defaultDriverMemoryOverhead: Option[String],
+                           defaultExecutorCores: Option[Int],
+                           defaultExecutorMemory: Option[String],
+                           defaultExecutorMemoryOverhead: Option[String]): Option[Map[String, String]] = {
+    val defaultConfigMap = List(
+      defaultDriverCores.map(v => "spark.driver.cores"                       -> v),
+      defaultDriverMemory.map(v => "spark.driver.memory"                     -> v),
+      defaultDriverMemoryOverhead.map(v => "spark.driver.memoryOverhead"     -> v),
+      defaultExecutorCores.map(v => "spark.executor.cores"                   -> v),
+      defaultExecutorMemory.map(v => "spark.executor.memory"                 -> v),
+      defaultExecutorMemoryOverhead.map(v => "spark.executor.memoryOverhead" -> v)
+    ).flatten.toMap
+    val defaultConfig = defaultConfigMap.foldLeft(ConfigFactory.empty) {
+      case (acc, (path, value)) =>
+        acc.withValue(path, ConfigValueFactory.fromAnyRef(value))
+    }
+    val conf = getRuntimeConfig(configSecret).withFallback(defaultConfig)
     if (conf.isEmpty) None
-    else
-      Some(
+    else {
+      val sparkConfMap = Some(
         conf
           .entrySet()
           .asScala
           .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
           .toMap
       )
+      log.info(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
+      sparkConfMap
+    }
   }
 }
 
@@ -383,10 +388,7 @@ object SparkResource {
    * https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/8c480acfdd09882ed2f00573f15e7830558de524/pkg/apis/sparkoperator.k8s.io/v1beta2/types.go#L499
    */
   final case class Driver(
-      cores: Option[Int] = Some(1),
       coreLimit: Option[String] = None,
-      memory: Option[String] = None,
-      memoryOverhead: Option[String] = None,
       env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       serviceAccount: Option[String] = Some(SparkServiceAccount),
@@ -399,11 +401,8 @@ object SparkResource {
 
   final case class Executor(
       instances: Int,
-      cores: Option[Int] = Some(1),
       coreRequest: Option[String] = None,
       coreLimit: Option[String] = None,
-      memory: Option[String] = None,
-      memoryOverhead: Option[String] = None,
       env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       labels: Map[String, String] = Map(),
