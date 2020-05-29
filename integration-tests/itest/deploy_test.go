@@ -18,11 +18,12 @@ import (
 // Automation will be the next step
 
 const (
-	ShortTimeout     = 60  // seconds
-	LongTimeout      = 240 // seconds
-	XLongTimeout     = 600 // seconds
-	InitialWaitTime  = "30s"
-	UpdateConfigFile = "./resources/updated_conf.conf"
+	ShortTimeout        = 60  // seconds
+	LongTimeout         = 240 // seconds
+	XLongTimeout        = 600 // seconds
+	InitialWaitTime     = "30s"
+	UpdateConfigFile    = "./resources/updated_conf.conf"
+	UpdateConfigPayload = "payload: updated_config"
 )
 
 var swissKnifeApp = cli.App{
@@ -136,17 +137,17 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 		It("should have configured an akka streamlet", func(done Done) {
-			checkLogsForOutput("spark-egress", "payload: updated_config")
+			checkLogsForOutput("spark-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 
 		It("should have configured a spark streamlet", func(done Done) {
-			checkLogsForOutput("spark-egress", "payload: updated_config")
+			checkLogsForOutput("spark-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 
 		It("should have configured a flink streamlet", func(done Done) {
-			checkLogsForOutput("flink-egress", "payload: updated_config")
+			checkLogsForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 	})
