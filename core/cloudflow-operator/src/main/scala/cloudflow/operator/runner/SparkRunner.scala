@@ -57,8 +57,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
-  // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
-  val JavaOptsEnvVarName = "JAVA_OPTS"
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -284,26 +282,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
       .orElse(Some(1))
 
-  private def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-      .flatMap { podConfig =>
-        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-          // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
-          containerConfig.env.filterNot(_.name == JavaOptsEnvVarName)
-        }
-      }
-
-  private def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-      .flatMap { podConfig =>
-        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
-          containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
-        }
-      }
   private def getSparkConf(configSecret: Secret,
                            defaultDriverCores: Option[Int],
                            defaultDriverMemory: Option[String],

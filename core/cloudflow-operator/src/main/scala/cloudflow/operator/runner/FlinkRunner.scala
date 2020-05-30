@@ -17,9 +17,13 @@
 package cloudflow.operator
 package runner
 
+import scala.collection.JavaConverters._
+import scala.util.Try
 import com.typesafe.config._
 import play.api.libs.json._
 import skuber._
+import skuber.json.format._
+import skuber.Resource._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
 import skuber.ResourceSpecification.Subresources
@@ -42,6 +46,9 @@ object FlinkRunner extends Runner[CR] {
   final val DefaultReplicas = 2
   final val JvmArgsEnvVar   = "JVM_ARGS"
 
+  final val JobManagerPod  = "job-manager"
+  final val TaskManagerPod = "task-manager"
+
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -49,9 +56,7 @@ object FlinkRunner extends Runner[CR] {
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
-    //TODO get flink config settings from runtimeConfig (in form of `some.setting`, 'flink' prefix is omitted), translate to Flink CR settings.
-    //TODO get resource settings from podsConfig, translate to jobmanager and taskmanager pods
-    //TODO (this might need some change in proposed config format, since FLink has 2 kinds of pods, driver and executor)
+    val podsConfig = getPodsConfig(configSecret)
 
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
@@ -61,38 +66,28 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
-    val envConfig = EnvConfig(None)
-
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
-      Resources.make(
-        ResourceRequests.make(jobManagerSettings.resources.memoryRequest.map(_.value),
-                              jobManagerSettings.resources.cpuRequest.map(_.value)),
-        ResourceLimits.make(jobManagerSettings.resources.memoryLimit.map(_.value), jobManagerSettings.resources.cpuLimit.map(_.value))
-      ),
-      Some(envConfig)
+      getJobManagerResourceRequirements(podsConfig, JobManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
     )
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
-      Resources.make(
-        ResourceRequests.make(taskManagerSettings.resources.memoryRequest.map(_.value),
-                              taskManagerSettings.resources.cpuRequest.map(_.value)),
-        ResourceLimits.make(taskManagerSettings.resources.memoryLimit.map(_.value), taskManagerSettings.resources.cpuLimit.map(_.value))
-      ),
-      Some(envConfig)
+      getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
     )
 
     val flinkConfig: Map[String, String] = Map(
-      "state.backend"                  -> "filesystem",
-      "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
-      "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
-      "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
-    )
+        "state.backend"                  -> "filesystem",
+        "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
+        "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
+        "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
+      ) ++ getFlinkConfig(configSecret)
 
-    val jobSpec = Spec(
+    val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
       parallelism = scale.map(_ * taskManagerSettings.taskSlots).getOrElse(ctx.flinkRunnerSettings.parallelism),
@@ -110,7 +105,7 @@ object FlinkRunner extends Runner[CR] {
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId).mapValues(Name.ofLabelValue)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
-    CustomResource[Spec, Status](jobSpec)
+    CustomResource[Spec, Status](_spec)
       .withMetadata(
         ObjectMeta(
           name = name,
@@ -123,6 +118,79 @@ object FlinkRunner extends Runner[CR] {
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)
+
+  private def getJobManagerResourceRequirements(podsConfig: PodsConfig,
+                                                podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
+    import ctx.flinkRunnerSettings._
+
+    var resourceRequirements = Resource.Requirements(
+      requests = List(
+        jobManagerSettings.resources.cpuRequest.map(req => Resource.cpu       -> req),
+        jobManagerSettings.resources.memoryRequest.map(req => Resource.memory -> req)
+      ).flatten.toMap,
+      limits = List(
+        jobManagerSettings.resources.memoryLimit.map(lim => Resource.memory -> lim),
+        jobManagerSettings.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
+      ).flatten.toMap
+    )
+
+    resourceRequirements = podsConfig.pods
+      .get(PodsConfig.CloudflowPodName)
+      .orElse(podsConfig.pods.get(podName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          resourceRequirements.copy(
+            limits = resourceRequirements.limits ++ containerConfig.resources.map(_.limits).getOrElse(Map()),
+            requests = resourceRequirements.requests ++ containerConfig.resources.map(_.requests).getOrElse(Map())
+          )
+        }
+      }
+      .getOrElse(resourceRequirements)
+    if (resourceRequirements.limits.nonEmpty || resourceRequirements.requests.nonEmpty) Some(resourceRequirements)
+    else None
+  }
+
+  private def getTaskManagerResourceRequirements(podsConfig: PodsConfig,
+                                                 podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
+    import ctx.flinkRunnerSettings._
+
+    var resourceRequirements = Resource.Requirements(
+      requests = List(
+        taskManagerSettings.resources.cpuRequest.map(req => Resource.cpu       -> req),
+        taskManagerSettings.resources.memoryRequest.map(req => Resource.memory -> req)
+      ).flatten.toMap,
+      limits = List(
+        taskManagerSettings.resources.memoryLimit.map(lim => Resource.memory -> lim),
+        taskManagerSettings.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
+      ).flatten.toMap
+    )
+
+    resourceRequirements = podsConfig.pods
+      .get(PodsConfig.CloudflowPodName)
+      .orElse(podsConfig.pods.get(podName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          resourceRequirements.copy(
+            limits = resourceRequirements.limits ++ containerConfig.resources.map(_.limits).getOrElse(Map()),
+            requests = resourceRequirements.requests ++ containerConfig.resources.map(_.requests).getOrElse(Map())
+          )
+        }
+      }
+      .getOrElse(resourceRequirements)
+    if (resourceRequirements.limits.nonEmpty || resourceRequirements.requests.nonEmpty) Some(resourceRequirements)
+    else None
+  }
+
+  def getFlinkConfig(configSecret: Secret): Map[String, String] = {
+    val conf = Try(getRuntimeConfig(configSecret).getConfig(runtime)).getOrElse(ConfigFactory.empty)
+    if (conf.isEmpty) Map()
+    else
+      conf
+        .entrySet()
+        .asScala
+        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+        .toMap
+  }
 
   /**
    * Flink treats config-map, secret and pvc claim as volumes.
@@ -240,13 +308,13 @@ object FlinkResource {
 
   final case class JobManagerConfig(
       replicas: Option[Int],
-      resources: Option[Resources] = None,
+      resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig]
   )
 
   final case class TaskManagerConfig(
       taskSlots: Option[Int],
-      resources: Option[Resources] = None,
+      resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig]
   )
 
@@ -317,9 +385,6 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount]        = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume]                   = skuber.json.format.volumeFormat
-  implicit val envVarFmt: Format[EnvVar]                   = skuber.json.format.envVarFormat
   implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
   implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
 

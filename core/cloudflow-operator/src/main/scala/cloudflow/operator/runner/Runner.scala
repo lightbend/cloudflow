@@ -18,10 +18,9 @@ package cloudflow.operator
 package runner
 
 import java.nio.charset.StandardCharsets
-
+import scala.collection.JavaConverters._
 import scala.util._
 
-import akka.event.LoggingAdapter
 import com.typesafe.config._
 import cloudflow.blueprint.deployment._
 import play.api.libs.json._
@@ -74,8 +73,9 @@ trait Runner[T <: ObjectResource] {
 
   def runtime: String
 
-  final val RuntimeMainClass = "cloudflow.runner.Runner"
-  final val RunnerJarName    = "cloudflow-runner.jar"
+  final val RuntimeMainClass   = "cloudflow.runner.Runner"
+  final val RunnerJarName      = "cloudflow-runner.jar"
+  final val JavaOptsEnvVarName = "JAVA_OPTS"
 
   /**
    * Creates the configmap for the runner.
@@ -151,6 +151,26 @@ trait Runner[T <: ObjectResource] {
   private def getData(secret: Secret, key: String): String =
     secret.data.get(key).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
 
+  def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
+          containerConfig.env.filterNot(_.name == JavaOptsEnvVarName)
+        }
+      }
+
+  def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
+        }
+      }
 }
 
 import net.ceedubs.ficus.Ficus._
