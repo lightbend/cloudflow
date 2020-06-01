@@ -16,17 +16,14 @@
 
 package swissknife.spark
 
-import cloudflow.streamlets.StreamletShape
-
+import cloudflow.streamlets.{StreamletShape, StringConfigParameter}
 import cloudflow.streamlets.avro._
-import cloudflow.spark.{ SparkStreamlet, SparkStreamletLogic }
-
+import cloudflow.spark.{SparkStreamlet, SparkStreamletLogic}
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.TimestampType
 import cloudflow.spark.sql.SQLImplicits._
 import org.apache.spark.sql.streaming.OutputMode
-
 import swissknife.data.Data
 
 class SparkCounter extends SparkStreamlet {
@@ -35,21 +32,26 @@ class SparkCounter extends SparkStreamlet {
   val out   = AvroOutlet[Data]("out", _.src)
   val shape = StreamletShape(in, out)
 
+  val configurableMessage = StringConfigParameter("configurable-message", "Configurable message.", Some("spark-original"))
+
+  override def configParameters = Vector(configurableMessage)
+
   override def createLogic() = new SparkStreamletLogic {
+    val msg = configurableMessage.value
     override def buildStreamingQueries = {
       val dataset   = readStream(in)
-      val outStream = process(dataset)
+      val outStream = process(dataset, msg)
       writeStream(outStream, out, OutputMode.Append).toQueryExecution
     }
 
-    private def process(inDataset: Dataset[Data]): Dataset[Data] = {
+    private def process(inDataset: Dataset[Data], message: String): Dataset[Data] = {
       val query = inDataset
         .withColumn("ts", $"timestamp".cast(TimestampType))
         .withColumn("updated_src", concat($"src", lit("-spark")))
         .withWatermark("ts", "0 seconds")
         .groupBy(window($"ts", "5 seconds"), $"updated_src")
         .agg(max($"count").as("count"))
-      query.select($"updated_src".as("src"), $"window.start".as("timestamp"), $"count").as[Data]
+      query.select($"updated_src".as("src"), $"window.start".as("timestamp"), lit(message).as("payload"), $"count").as[Data]
     }
   }
 

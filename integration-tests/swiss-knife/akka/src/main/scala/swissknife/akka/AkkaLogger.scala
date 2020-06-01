@@ -29,7 +29,7 @@ class AkkaLogger extends AkkaStreamlet {
   override def createLogic = new RunnableGraphStreamletLogic() {
     val flow = FlowWithCommittableContext[Data]
       .map { data ⇒
-        system.log.info(s"ts:${data.timestamp}, from:${data.src}, count: ${data.count}")
+        system.log.info(s"ts:${data.timestamp}, from:${data.src}, payload: ${data.payload}, count: ${data.count}")
         data
       }
 

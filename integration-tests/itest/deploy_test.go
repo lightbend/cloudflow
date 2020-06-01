@@ -18,10 +18,12 @@ import (
 // Automation will be the next step
 
 const (
-	ShortTimeout    = 60  // seconds
-	LongTimeout     = 240 // seconds
-	XLongTimeout    = 600 // seconds
-	InitialWaitTime = "30s"
+	ShortTimeout        = 60  // seconds
+	LongTimeout         = 240 // seconds
+	XLongTimeout        = 600 // seconds
+	InitialWaitTime     = "30s"
+	UpdateConfigFile    = "./resources/updated_conf.conf"
+	UpdateConfigPayload = "payload: updated_config"
 )
 
 var swissKnifeApp = cli.App{
@@ -102,12 +104,6 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("Running streamlets from the sample app should produce counter data", func() {
-		checkLogsForOutput := func(streamlet string, output string) {
-			pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
-			Expect(err).NotTo(HaveOccurred())
-			_, err = kubectl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
-			Expect(err).NotTo(HaveOccurred())
-		}
 		It("should produce a counter in the raw output log", func(done Done) {
 			checkLogsForOutput("raw-egress", "count:")
 			close(done)
@@ -127,6 +123,30 @@ var _ = Describe("Application deployment", func() {
 			checkLogsForOutput("flink-egress", "count:")
 			close(done)
 		}, LongTimeout)
+	})
+
+	Context("A deployed streamlet can be configured using the CLI", func() {
+
+		It("should reconfigure the application", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateConfigFile)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
+
+		It("should have configured an akka streamlet", func(done Done) {
+			checkLogsForOutput("akka-egress", UpdateConfigPayload)
+			close(done)
+		}, LongTimeout)
+
+		It("should have configured a spark streamlet", func(done Done) {
+			checkLogsForOutput("spark-egress", UpdateConfigPayload)
+			close(done)
+		}, LongTimeout)
+
+		It("should have configured a flink streamlet", func(done Done) {
+			checkLogsForOutput("flink-egress", UpdateConfigPayload)
+			close(done)
+		}, XLongTimeout)
 	})
 
 	Context("A deployed streamlet can be scaled", func() {
@@ -209,4 +229,11 @@ func ensureAppNotDeployed(app cli.App) error {
 		return kubectl.WaitUntilNoPods(app.Name)
 	}
 	return nil
+}
+
+func checkLogsForOutput(streamlet string, output string) {
+	pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = kubectl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
+	Expect(err).NotTo(HaveOccurred())
 }

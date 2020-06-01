@@ -69,6 +69,18 @@ func Scale(app App, streamlet string, scale int) error {
 	return err
 }
 
+// Configure applies a configuration file to a given application
+func Configure(app App, filePath string) error {
+	// kubectl cloudflow configure swiss-knife --conf message.conf
+	cmd := exec.Command("kubectl", "cloudflow", "configure", app.Name, "--conf", filePath)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("Configure failed. Reason: %s", out)
+		return err
+	}
+	return nil
+}
+
 // ListApps returns the list of of deployed applications on the currently active cluster
 func ListApps() (entries []AppEntry, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "list")
