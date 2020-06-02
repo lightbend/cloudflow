@@ -34,7 +34,7 @@ operator:
     limitsMemory: "2048M"
   sparkDriver:
     requestsCpu: "0.5"
-    requestsMemory: "512M"
+    requestsMemory: "1024M"
   sparkExecutor:
     requestsCpu: "1"
     requestsMemory: "2G"
