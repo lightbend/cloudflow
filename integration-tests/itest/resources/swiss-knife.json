@@ -167,7 +167,7 @@
         "streamlet_name": "spark-output"
       }
     ],
-    "library_version": "2.0.0-rc1",
+    "library_version": "1.3.4-SNAPSHOT",
     "streamlets": [
       {
         "descriptor": {

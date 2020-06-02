@@ -24,5 +24,5 @@ spec:
     version: 0.16.2
     kafka_persistent_storage_class: standard
   cloudflow_operator:
-    image_tag: 2.0.0-rc1
+    image_tag: 2.0.0-SNAPSHOT
     persistent_storage_class: nfs
