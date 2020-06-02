@@ -17,6 +17,12 @@ type PodEntry struct {
 	age      string
 }
 
+// PodResources the compute resources of a pod in terms of cpu and memory
+type PodResources struct {
+	Mem string
+	Cpu string
+}
+
 // GetLogs retrieves the most recent logs for a given pod in a namespace for the time speficied.
 // e.g.: is `since` is 1s, GetLogs will retrive the logs of the lastest second.
 func GetLogs(pod string, namespace string, since string) (logs string, err error) {
@@ -54,6 +60,31 @@ func GetPods(namespace string) (pods []PodEntry, err error) {
 		}
 	}
 	return res, nil
+}
+
+//GetPodResources retrieves the resource definition from a pod
+func GetPodResources(namespace string, pod string) (podResources PodResources, err error) {
+	var template = "{{  (index .spec.containers 0).resources.requests }}"
+	cmd := exec.Command("kubectl", "get", "pod", pod, "-n", namespace, "-o", "go-template=\""+template+"\"")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("Command GetPodResources failed with %s \n", out)
+		return
+	}
+	res := string(out)
+	regex := regexp.MustCompile(`cpu:(?P<cpu>\d+\w+) memory:(?P<memory>\d+\w+)`)
+	match := regex.FindStringSubmatch(res)
+	names := regex.SubexpNames()
+	for i, matchInstance := range match {
+		fmt.Printf("found name [%s]\n", names[i])
+		switch names[i] {
+		case "cpu":
+			podResources.Cpu = matchInstance
+		case "memory":
+			podResources.Mem = matchInstance
+		}
+	}
+	return podResources, nil
 }
 
 //PollUntilLogsContains polls the most recent logs of the specified pod and checks for

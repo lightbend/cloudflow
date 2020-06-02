@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
@@ -147,6 +148,25 @@ var _ = Describe("Application deployment", func() {
 			checkLogsForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
 		}, XLongTimeout)
+	})
+
+	FContext("Kubernetes configuration can be updated using the CLI", func() {
+		It("should reconfigure the pods of an Akka application", func() {
+			By("Register current CPU and memory for an Akka pods")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			// Expect(appStatus.Status).To(Equal("Running"))
+			someAkkaPod := cli.GetFirstStreamletPod(&appStatus, "akka-process")
+			Expect(someAkkaPod).NotTo(Equal(nil))
+			fmt.Printf("found a pod %s", someAkkaPod.Pod)
+			podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, someAkkaPod.Pod)
+			Expect(err).NotTo(HaveOccurred())
+			fmt.Printf("pod resources mem: %s, cpu: %s", podRes.Mem, podRes.Cpu)
+			// cpu, mem, err :=
+			// err := cli.Configure(swissKnifeApp, UpdateKubernetes)
+
+		})
+
 	})
 
 	Context("A deployed streamlet can be scaled", func() {
