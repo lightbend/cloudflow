@@ -18,12 +18,12 @@ import (
 // Automation will be the next step
 
 const (
-	ShortTimeout        = 60  // seconds
-	LongTimeout         = 240 // seconds
-	XLongTimeout        = 600 // seconds
-	InitialWaitTime     = "30s"
-	UpdateConfigFile    = "./resources/updated_conf.conf"
-	UpdateConfigPayload = "payload: updated_config"
+	ShortTimeout           = 60  // seconds
+	LongTimeout            = 240 // seconds
+	XLongTimeout           = 600 // seconds
+	InitialWaitTime        = "30s"
+	UpdateConfigParamsFile = "./resources/updated_conf.conf"
+	UpdateConfigPayload    = "payload: updated_config"
 )
 
 var swissKnifeApp = cli.App{
@@ -125,10 +125,10 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	Context("A deployed streamlet can be configured using the CLI", func() {
+	Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
 
 		It("should reconfigure the application", func(done Done) {
-			err := cli.Configure(swissKnifeApp, UpdateConfigFile)
+			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
 			Expect(err).NotTo(HaveOccurred())
 			close(done)
 		}, LongTimeout)
