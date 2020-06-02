@@ -90,8 +90,12 @@ func printStreamletStatuses(applicationCR *cfapp.CloudflowApplication) {
 	w.Init(os.Stdout, 18, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "STREAMLET\tPOD\tREADY\tSTATUS\tRESTARTS\t")
 	for _, s := range applicationCR.Status.StreamletStatuses {
-		for _, p := range s.PodStatuses {
-			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, p.Name, p.NrOfContainersReady, p.NrOfContainers, p.Status, p.Restarts)
+		if len(s.PodStatuses) == 0 {
+			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, "", 0, 0, "Missing", 0)
+		} else {
+			for _, p := range s.PodStatuses {
+				fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, p.Name, p.NrOfContainersReady, p.NrOfContainers, p.Status, p.Restarts)
+			}
 		}
 	}
 	fmt.Println("")
