@@ -20,7 +20,7 @@ To create a new cluster, clone the https://github.com/lightbend/cloudflow/[repo]
 NOTE:: This can be done once you have a valid Google account and have access to a project set up for you by the administrator.
 
 * Create a Kubernetes cluster with a specific name on a cloud provider of your choosing. We provide cluster launching scripts for GKE, AKS and EKS. `./create-cluster-[gke|aks|eks].sh <cluster-name>`
-* Make sure your cluster has at least appropriate storage class that offers ReadWriteMany (RWM) capability. Most cloud providers have their preferred storage class for that purpose (e.g. AzureFile on AKS and EFS CSI on EKS). We also provide a script `./install_nfs.sh` that you can run to install NFS that will satisfy the RWM characteristic.
+* Make sure your cluster has at least appropriate storage class that offers ReadWriteMany (RWM) capability. Most cloud providers have their preferred storage class for that purpose (e.g. AzureFile on AKS and EFS CSI on EKS). We also provide a script `./install-nfs.sh` that you can run to install NFS that will satisfy the RWM characteristic.
 * Go to the Github release page for your chosen Cloudflow version and download the bootstrap script. It's in the list of assets. For example, this is the https://github.com/lightbend/cloudflow/releases/tag/v1.3.3[page] for Cloudflow 1.3.3.
 * Run the bootstrap script to install Cloudflow.
 ```bash

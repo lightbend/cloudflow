@@ -30,7 +30,7 @@ $ ./bootstrap-install-script-<CLOUDFLOW_VERSION>.sh
 NOTE: During installation, the installer will prompt you twice, once to select a storage class that supports *read-write-many (RWM)* and once to select a storage class that supports *read-write-once (RWO)*. Make sure you have the appropriate storage classes already available in your Kubernetes cluster before attempting to install Cloudflow. Most cloud providers already provide a default storage class that supports RWO. For your convenience, we provide a script that will install an NFS storage provisioner that supports RWM. To run it:
 
 ```bash
-$./install_nfs.sh
+$./install-nfs.sh
 ```
 
 The script will try to detect the version of Helm you are using and install Tiller in the cluster if using Helm 2, or directly install NFS if using Helm 3.

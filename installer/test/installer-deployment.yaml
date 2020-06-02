@@ -42,7 +42,7 @@ spec:
       serviceAccountName: cloudflow-installer
       containers:
         - name: cloudflow-installer
-          image: lightbend/cloudflow-installer:1.3.4-SNAPSHOT
+          image: lightbend/cloudflow-installer:2.0.0-rc1
           imagePullPolicy: Always
           ports:
             - containerPort: 5001
