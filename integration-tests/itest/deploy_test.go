@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -161,7 +160,6 @@ var _ = Describe("Application deployment", func() {
 			Expect(someAkkaPod).NotTo(Equal(nil))
 			podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, someAkkaPod.Pod)
 			Expect(err).NotTo(HaveOccurred())
-			fmt.Printf("initial pod resources mem: %s, cpu: %s", podRes.Mem, podRes.Cpu)
 
 			By("Reconfigure a single Akka streamlet")
 			err = cli.Configure(swissKnifeApp, UpdateAkkaProcessResourcesFile)

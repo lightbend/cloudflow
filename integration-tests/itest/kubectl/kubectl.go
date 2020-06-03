@@ -76,7 +76,6 @@ func GetPodResources(namespace string, pod string) (podResources PodResources, e
 	match := regex.FindStringSubmatch(res)
 	names := regex.SubexpNames()
 	for i, matchInstance := range match {
-		fmt.Printf("found name [%s]\n", names[i])
 		switch names[i] {
 		case "cpu":
 			podResources.Cpu = matchInstance
