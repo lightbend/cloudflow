@@ -28,17 +28,17 @@ import org.scalatest.concurrent._
 import cloudflow.akkastream.testkit.scaladsl._
 import carly.data._
 
-class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
+class CallRecordSplitSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
 
-  private implicit val system = ActorSystem("CallRecordMergeSpec")
+  private implicit val system = ActorSystem("CallRecordSplitSpec")
 
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
 
-  "A CallRecordMerge" should {
+  "A CallRecordSplit" should {
     "merge incoming data" in {
       val testkit   = AkkaStreamletTestKit(system)
-      val streamlet = new CallRecordMerge
+      val streamlet = new CallRecordSplit
 
       val instant = Instant.now.toEpochMilli / 1000
       val past    = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
@@ -73,7 +73,7 @@ class CallRecordMergeSpec extends WordSpec with MustMatchers with ScalaFutures w
 
     "split incoming data into valid call records and those outside the time range" in {
       val testkit   = AkkaStreamletTestKit(system)
-      val streamlet = new CallRecordMerge()
+      val streamlet = new CallRecordSplit()
 
       val instant = Instant.now.toEpochMilli / 1000
       val past    = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000

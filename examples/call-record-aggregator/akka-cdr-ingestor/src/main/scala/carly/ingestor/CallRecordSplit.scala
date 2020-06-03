@@ -25,17 +25,15 @@ import cloudflow.akkastream.util.scaladsl.Splitter
 
 import carly.data._
 
-class CallRecordMerge extends AkkaStreamlet {
-  val in0 = AvroInlet[CallRecord]("in-0")
-  val in1 = AvroInlet[CallRecord]("in-1")
-  val in2 = AvroInlet[CallRecord]("in-2")
+class CallRecordSplit extends AkkaStreamlet {
+  val in = AvroInlet[CallRecord]("in")
 
   val left  = AvroOutlet[InvalidRecord]("invalid", _.record)
   val right = AvroOutlet[CallRecord]("valid", _.user)
 
   private val oldDataWatermark = java.sql.Timestamp.valueOf("2010-01-01 00:00:00.000").getTime / 1000 //seconds
 
-  final override val shape = StreamletShape.withInlets(in0, in1, in2).withOutlets(left, right)
+  final override val shape = StreamletShape.withInlets(in).withOutlets(left, right)
 
   final override def createLogic = new RunnableGraphStreamletLogic() {
     def validationFlow =
@@ -46,6 +44,6 @@ class CallRecordMerge extends AkkaStreamlet {
         }
 
     def runnableGraph =
-      Merger.source(in0, in1, in2).to(Splitter.sink(validationFlow, left, right))
+      sourceWithCommittableContext(in).to(Splitter.sink(validationFlow, left, right))
   }
 }
