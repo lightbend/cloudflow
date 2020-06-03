@@ -26,6 +26,7 @@ const (
 	UpdateConfigParamsFile         = "./resources/update_config_params.conf"
 	UpdateConfigPayload            = "payload: updated_config"
 	UpdateAkkaProcessResourcesFile = "./resources/update_akka_process_resources.conf"
+	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 )
 
 var swissKnifeApp = cli.App{
@@ -166,8 +167,8 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Wait for the deployment of the new configuration")
-			oneSecond, _ := time.ParseDuration("5s")
-			time.Sleep(oneSecond) // this wait is to let the application go into deployment
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Get new resource configuration")
@@ -181,6 +182,48 @@ var _ = Describe("Application deployment", func() {
 			// TODO: Read the config file and compare with the values there to avoid out-of-sync situations
 			Expect(podUpdatedRes.Cpu).To(Equal("550m"))
 			Expect(podUpdatedRes.Mem).To(Equal("612M"))
+			close(done)
+		}, LongTimeout)
+
+		It("Should reconfigure the Akka runtime of the complete application", func(done Done) {
+			By("Register the current CPU and memory for all Akka streamlets")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := [5]string{"akka-process", "akka-egress", "spark-egress", "raw-egress", "flink-egress"}
+			streamletResourceConfigMap := make(map[string]kubectl.PodResources)
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&appStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				streamletResourceConfigMap[streamlet] = podRes
+			}
+
+			By("Reconfigure the Akka Kubernetes Runtime")
+			err = cli.Configure(swissKnifeApp, UpdateAkkaRuntimeResourcesFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new configuration")
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
+			By("Get new resource configuration")
+			updatedAppStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&updatedAppStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				updatedPodRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				oldRes := streamletResourceConfigMap[streamlet]
+				Expect(updatedPodRes.Cpu).NotTo(Equal(oldRes.Cpu))
+				Expect(updatedPodRes.Mem).NotTo(Equal(oldRes.Mem))
+				// TODO: Read the config file for these values
+				Expect(updatedPodRes.Cpu).To(Equal("665m"))
+				Expect(updatedPodRes.Mem).To(Equal("655M"))
+			}
 			close(done)
 		}, LongTimeout)
 	})

@@ -72,7 +72,7 @@ func GetPodResources(namespace string, pod string) (podResources PodResources, e
 		return
 	}
 	res := string(out)
-	regex := regexp.MustCompile(`cpu:(?P<cpu>\d+\w+) memory:(?P<memory>\d+\w+)`)
+	regex := regexp.MustCompile(`cpu:(?P<cpu>\d+\w*) memory:(?P<memory>\d+\w+)`)
 	match := regex.FindStringSubmatch(res)
 	names := regex.SubexpNames()
 	for i, matchInstance := range match {
