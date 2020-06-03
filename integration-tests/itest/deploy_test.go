@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"log"
+	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
@@ -18,12 +19,14 @@ import (
 // Automation will be the next step
 
 const (
-	ShortTimeout        = 60  // seconds
-	LongTimeout         = 240 // seconds
-	XLongTimeout        = 600 // seconds
-	InitialWaitTime     = "30s"
-	UpdateConfigFile    = "./resources/updated_conf.conf"
-	UpdateConfigPayload = "payload: updated_config"
+	ShortTimeout                   = 60  // seconds
+	LongTimeout                    = 240 // seconds
+	XLongTimeout                   = 600 // seconds
+	InitialWaitTime                = "30s"
+	UpdateConfigParamsFile         = "./resources/update_config_params.conf"
+	UpdateConfigPayload            = "payload: updated_config"
+	UpdateAkkaProcessResourcesFile = "./resources/update_akka_process_resources.conf"
+	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 )
 
 var swissKnifeApp = cli.App{
@@ -125,10 +128,10 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	Context("A deployed streamlet can be configured using the CLI", func() {
+	Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
 
 		It("should reconfigure the application", func(done Done) {
-			err := cli.Configure(swissKnifeApp, UpdateConfigFile)
+			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
 			Expect(err).NotTo(HaveOccurred())
 			close(done)
 		}, LongTimeout)
@@ -143,11 +146,89 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		It("should have configured a flink streamlet", func(done Done) {
+		XIt("should have configured a flink streamlet", func(done Done) {
 			checkLogsForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
 		}, XLongTimeout)
 	})
+
+	Context("Kubernetes configuration can be updated using the CLI", func() {
+		It("should reconfigure the pods of an Akka application", func(done Done) {
+			By("Register current CPU and memory for an Akka pods")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			someAkkaPod := cli.GetFirstStreamletPod(&appStatus, "akka-process")
+			Expect(someAkkaPod).NotTo(Equal(nil))
+			podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, someAkkaPod.Pod)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Reconfigure a single Akka streamlet")
+			err = cli.Configure(swissKnifeApp, UpdateAkkaProcessResourcesFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new configuration")
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
+			By("Get new resource configuration")
+			updatedAppStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			updatedAkkaPod := cli.GetFirstStreamletPod(&updatedAppStatus, "akka-process")
+			Expect(updatedAkkaPod).NotTo(Equal(nil))
+			podUpdatedRes, err := kubectl.GetPodResources(swissKnifeApp.Name, updatedAkkaPod.Pod)
+			Expect(podUpdatedRes.Cpu).NotTo(Equal(podRes.Cpu))
+			Expect(podUpdatedRes.Mem).NotTo(Equal(podRes.Mem))
+			// TODO: Read the config file and compare with the values there to avoid out-of-sync situations
+			Expect(podUpdatedRes.Cpu).To(Equal("550m"))
+			Expect(podUpdatedRes.Mem).To(Equal("612M"))
+			close(done)
+		}, LongTimeout)
+
+		It("Should reconfigure the Akka runtime of the complete application", func(done Done) {
+			By("Register the current CPU and memory for all Akka streamlets")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := [5]string{"akka-process", "akka-egress", "spark-egress", "raw-egress", "flink-egress"}
+			streamletResourceConfigMap := make(map[string]kubectl.PodResources)
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&appStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				streamletResourceConfigMap[streamlet] = podRes
+			}
+
+			By("Reconfigure the Akka Kubernetes Runtime")
+			err = cli.Configure(swissKnifeApp, UpdateAkkaRuntimeResourcesFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new configuration")
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
+			By("Get new resource configuration")
+			updatedAppStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&updatedAppStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				updatedPodRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				oldRes := streamletResourceConfigMap[streamlet]
+				Expect(updatedPodRes.Cpu).NotTo(Equal(oldRes.Cpu))
+				Expect(updatedPodRes.Mem).NotTo(Equal(oldRes.Mem))
+				// TODO: Read the config file for these values
+				Expect(updatedPodRes.Cpu).To(Equal("665m"))
+				Expect(updatedPodRes.Mem).To(Equal("655M"))
+			}
+			close(done)
+		}, LongTimeout)
+	})
+
+	//TODO: runtime config
 
 	Context("A deployed streamlet can be scaled", func() {
 		// A function that calculates the streamlet scale based on pod count
@@ -189,7 +270,8 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		It("should scale a flink streamlet up and down", func(done Done) {
+		// Currently skipped b/c it takes too long!
+		XIt("should scale a flink streamlet up and down", func(done Done) {
 			scaleCheck("flink-process", coordinatorCorrection)
 			close(done)
 		}, XLongTimeout)
