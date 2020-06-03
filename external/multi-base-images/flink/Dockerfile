@@ -27,8 +27,7 @@ ENV FLINK_HOME=/opt/flink
 USER root
 
 ENV FLINK_TGZ=flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
-ENV FLINK_URL_FILE_PATH=flink/flink-${FLINK_VERSION}/${FLINK_TGZ}
-ENV FLINK_TGZ_URL=https://mirrors.ocf.berkeley.edu/apache/$FLINK_URL_FILE_PATH
+ENV FLINK_TGZ_URL=https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/${FLINK_TGZ}
 
 RUN mkdir ${FLINK_HOME}; \
     groupadd --system --gid=9999 flink && \
