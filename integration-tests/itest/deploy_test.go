@@ -167,8 +167,8 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Wait for the deployment of the new configuration")
-			oneSecond, _ := time.ParseDuration("5s")
-			time.Sleep(oneSecond) // this wait is to let the application go into deployment
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Get new resource configuration")
@@ -185,7 +185,7 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		FIt("Should reconfigure the Akka runtime of the complete application", func(done Done) {
+		It("Should reconfigure the Akka runtime of the complete application", func(done Done) {
 			By("Register the current CPU and memory for all Akka streamlets")
 			appStatus, err := cli.Status(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
@@ -204,8 +204,8 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Wait for the deployment of the new configuration")
-			oneSecond, _ := time.ParseDuration("5s")
-			time.Sleep(oneSecond) // this wait is to let the application go into deployment
+			sleepTime, _ := time.ParseDuration("5s")
+			time.Sleep(sleepTime) // this wait is to let the application go into deployment
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Get new resource configuration")
