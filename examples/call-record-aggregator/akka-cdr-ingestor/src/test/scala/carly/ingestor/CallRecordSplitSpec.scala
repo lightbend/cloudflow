@@ -47,19 +47,15 @@ class CallRecordSplitSpec extends WordSpec with MustMatchers with ScalaFutures w
       val cr2 = CallRecord("user-1", "user-2", "f", 15L, instant)
       val cr3 = CallRecord("user-1", "user-2", "f", 18L, instant)
 
-      val source0 = Source(Vector(cr1))
-      val source1 = Source(Vector(cr2))
-      val source2 = Source(Vector(cr3))
+      val source = Source(Vector(cr1, cr2, cr3))
 
-      val in0   = testkit.inletFromSource(streamlet.in0, source0)
-      val in1   = testkit.inletFromSource(streamlet.in1, source1)
-      val in2   = testkit.inletFromSource(streamlet.in2, source2)
+      val in   = testkit.inletFromSource(streamlet.in, source)
       val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 
       testkit.run(
         streamlet,
-        List(in0, in1, in2),
+        List(in),
         List(left, right),
         () ⇒ {
           right.probe.expectMsg(("user-1", cr1))
@@ -84,20 +80,16 @@ class CallRecordSplitSpec extends WordSpec with MustMatchers with ScalaFutures w
       val cr4 = CallRecord("user-1", "user-2", "f", 40L, past)
       val cr5 = CallRecord("user-1", "user-2", "f", 70L, past)
 
-      val source0 = Source(Vector(cr1, cr2, cr3))
-      val source1 = Source(Vector(cr4))
-      val source2 = Source(Vector(cr5))
+      val source = Source(Vector(cr1, cr2, cr3, cr4, cr5))
 
-      val in0 = testkit.inletFromSource(streamlet.in0, source0)
-      val in1 = testkit.inletFromSource(streamlet.in1, source1)
-      val in2 = testkit.inletFromSource(streamlet.in2, source2)
+      val in = testkit.inletFromSource(streamlet.in, source)
 
       val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 
       testkit.run(
         streamlet,
-        List(in0, in1, in2),
+        List(in),
         List(left, right),
         () ⇒ {
           right.probe.expectMsg(("user-1", cr1))
