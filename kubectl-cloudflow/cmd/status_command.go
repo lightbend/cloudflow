@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sort"
 	"text/tabwriter"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
@@ -89,7 +90,11 @@ func printStreamletStatuses(applicationCR *cfapp.CloudflowApplication) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 18, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "STREAMLET\tPOD\tREADY\tSTATUS\tRESTARTS\t")
-	for _, s := range applicationCR.Status.StreamletStatuses {
+	streamletStatuses := applicationCR.Status.StreamletStatuses
+	sort.Slice(streamletStatuses, func(i, j int) bool {
+		return streamletStatuses[i].StreamletName < streamletStatuses[j].StreamletName
+	})
+	for _, s := range streamletStatuses {
 		if len(s.PodStatuses) == 0 {
 			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, "", 0, 0, "Missing", 0)
 		} else {
