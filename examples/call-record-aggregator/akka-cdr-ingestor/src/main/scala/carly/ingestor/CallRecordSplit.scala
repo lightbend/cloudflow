@@ -20,7 +20,6 @@ import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
-import cloudflow.akkastream.util.scaladsl.Merger
 import cloudflow.akkastream.util.scaladsl.Splitter
 
 import carly.data._
