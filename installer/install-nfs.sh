@@ -3,4 +3,6 @@
 . common/helm.sh
 
 init_helm
-helm upgrade nfs-server-provisioner stable/nfs-server-provisioner --install
+helm upgrade nfs-server-provisioner stable/nfs-server-provisioner \
+  --install \
+  --set storageClass.provisionerName=cloudflow-nfs
