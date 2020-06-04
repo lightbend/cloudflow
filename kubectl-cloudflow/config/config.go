@@ -312,7 +312,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
 							for containerKey := range containerConfig.Root().GetObject().Items() {
 								if !(containerKey == resourcesKey || containerKey == envKey) {
-									return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+									return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s does not contain a %s or an %s section",
+										podName,
+										containerName,
 										rootPath,
 										kubernetesKey,
 										podsKey,
@@ -326,7 +328,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 									if resourcesConfig := containerConfig.GetConfig(resourcesKey); resourcesConfig != nil && resourcesConfig.Root().IsObject() {
 										for resourceRequirementKey := range resourcesConfig.Root().GetObject().Items() {
 											if !(resourceRequirementKey == requestsKey || resourceRequirementKey == limitsKey) {
-												return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+												return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+													podName,
+													containerName,
 													rootPath,
 													kubernetesKey,
 													podsKey,
@@ -340,14 +344,18 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 
 										}
 									} else {
-										return fmt.Errorf("kubernetes configuration%s.%s.%s.%s.%s.%s.%s is not a resources section",
+										return fmt.Errorf("kubernetes configuration for pod '%s', container '%s', resources section is missing at %s.%s.%s.%s.%s.%s.%s. The resources section should contain %s and/or %s sections",
+											podName,
+											containerName,
 											rootPath,
 											kubernetesKey,
 											podsKey,
 											podName,
 											containersKey,
 											containerName,
-											resourcesKey)
+											resourcesKey,
+											requestsKey,
+											limitsKey)
 									}
 								}
 								if containerKey == envKey {
@@ -356,7 +364,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 											if envElement.GetObject() != nil {
 												for envObjectKey := range envElement.GetObject().Items() {
 													if !(envObjectKey == envNameKey || envObjectKey == envValueKey) {
-														return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object, unknown key %s",
+														return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object, unknown key %s",
+															podName,
+															containerName,
 															rootPath,
 															kubernetesKey,
 															podsKey,
@@ -369,7 +379,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 													}
 												}
 											} else {
-												return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object %s",
+												return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object %s",
+													podName,
+													containerName,
 													rootPath,
 													kubernetesKey,
 													podsKey,
@@ -383,7 +395,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 											}
 										}
 									} else {
-										return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s.%s is not an environment variables array",
+										return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s is not an environment variables array",
+											podName,
+											containerName,
 											rootPath,
 											kubernetesKey,
 											podsKey,
@@ -395,7 +409,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 								}
 							}
 						} else {
-							return fmt.Errorf("kubernetes configuration %s.%s.%s.%s.%s.%s is not a container section",
+							return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
+								podName,
+								containerName,
 								rootPath,
 								kubernetesKey,
 								podsKey,
@@ -405,22 +421,32 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 						}
 					}
 				} else {
-					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s does not contain a %s section",
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section. The '%s' section should be at %s.kubernetes.pods.%s.containers",
 						rootPath,
 						kubernetesKey,
 						podsKey,
 						podName,
-						containersKey)
+						podName,
+						containersKey,
+						containersKey,
+						rootPath,
+						podName)
 				}
 			} else {
-				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section",
+				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
+					rootPath,
+					kubernetesKey,
+					podsKey,
 					rootPath,
 					kubernetesKey,
 					podsKey)
 			}
 		}
 	} else {
-		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section",
+		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
+			rootPath,
+			kubernetesKey,
+			podsKey,
 			rootPath,
 			kubernetesKey,
 			podsKey)

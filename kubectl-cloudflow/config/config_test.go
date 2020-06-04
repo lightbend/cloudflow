@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -375,9 +376,23 @@ func Test_validateConfig(t *testing.T) {
 		 }
 	`)
 	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
-	//TODO add kubernetes section tests.
-	//TODO maybe validate resource requests and limits
 
+	badK8sPath := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.resources.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath, spec))
+	fmt.Println(validateConfig(badK8sPath, spec))
+
+	badK8sPath2 := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath2, spec))
+	fmt.Println(validateConfig(badK8sPath2, spec))
+
+	badK8sPath3 := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.containers.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath3, spec))
 }
 
 func Test_validateConfigEmptyDefault(t *testing.T) {
