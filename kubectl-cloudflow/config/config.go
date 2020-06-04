@@ -434,10 +434,8 @@ func addDefaultValuesFromSpec(applicationSpec cfapp.CloudflowApplicationSpec, co
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixConfigParameterKey(streamlet.Name, descriptor.Key)
 			if !hoconConf.HasPath(fqKey) {
-				if len(descriptor.DefaultValue) > 0 {
-					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
-					config.append(fmt.Sprintf("%s=\"%s\"", fqKey, descriptor.DefaultValue))
-				}
+				fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
+				config.append(fmt.Sprintf("%s=\"%s\"", fqKey, descriptor.DefaultValue))
 			}
 		}
 	}
