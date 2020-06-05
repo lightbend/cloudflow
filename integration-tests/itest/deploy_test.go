@@ -238,6 +238,11 @@ var _ = Describe("Application deployment", func() {
 			By("Reconfigure Spark-specific configuration")
 			err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
 			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
 			By("Verifying configuration update")
 			checkMatchingPodLogForOutput("spark-output", "driver", UpdateSparkConfigOutput)
 			close(done)
@@ -265,6 +270,10 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			_, err = cli.PollUntilExpectedPodsForStreamlet(swissKnifeApp, streamlet, expectedPodCount)
 			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new scale factor")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Issuing a scale back to the original value")
 
@@ -348,8 +357,8 @@ func checkMatchingPodLogForOutput(streamlet string, partialPodName string, outpu
 		failStr := fmt.Sprintf("Could not find match for pod [%s] for streamlet [%s]", partialPodName, streamlet)
 		Fail(failStr)
 	}
-	fmt.Printf("got streamlet pod: %s", targetPod)
-	line, err := kubectl.PollUntilLogsContains(targetPod, swissKnifeApp.Name, output)
-	fmt.Printf("found log line with matching output: %s", line)
+	fmt.Printf("Going to monitor pod [%s] for streamlet [%s] \n", targetPod, streamlet)
+	_, err = kubectl.PollUntilLogsContains(targetPod, swissKnifeApp.Name, output)
 	Expect(err).NotTo(HaveOccurred())
+	return
 }
