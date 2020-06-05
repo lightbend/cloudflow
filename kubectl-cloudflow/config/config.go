@@ -108,7 +108,7 @@ func handleConfig(
 		return nil, err
 	}
 
-	config = addDefaultValuesFromSpec(applicationSpec, config)
+	config = addDefaultValuesFromSpec(applicationSpec, config, configurationArguments)
 
 	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
 
@@ -454,12 +454,13 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 	return nil
 }
 
-func addDefaultValuesFromSpec(applicationSpec cfapp.CloudflowApplicationSpec, config *Config) *Config {
+func addDefaultValuesFromSpec(applicationSpec cfapp.CloudflowApplicationSpec, config *Config, configurationArguments map[string]string) *Config {
 	hoconConf := config.parse()
 	for _, streamlet := range applicationSpec.Streamlets {
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixConfigParameterKey(streamlet.Name, descriptor.Key)
-			if !hoconConf.HasPath(fqKey) {
+			_, providedByArgs := configurationArguments[fqKey]
+			if !hoconConf.HasPath(fqKey) && !providedByArgs {
 				fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
 				config.append(fmt.Sprintf("%s=\"%s\"", fqKey, descriptor.DefaultValue))
 			}

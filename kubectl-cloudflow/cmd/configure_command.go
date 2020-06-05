@@ -23,17 +23,19 @@ func init() {
 	configureCMD.cmd = &cobra.Command{
 		Use:   "configure",
 		Short: "Configures a deployed Cloudflow application.",
-		Example: `kubectl cloudflow configure my-app mystreamlet.hostname=localhost
-
-TODO DOCUMENT
-
-The arguments to the command consists of optionally one
-or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
-a space. If the key does not point to a streamlet name in the blueprint, it is used to set application level configuration values for all streamlets, 
-for instance using 'akka.loglevel=DEBUG' (assuming there is no streamlet named akka) will set the akka loglevel to DEBUG for all streamlets.
+		Example: `kubectl cloudflow configure my-app --conf my-config.conf
 
 Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
-The streamlet arguments passed with '[streamlet-name].[configuration-parameter]=[value]' pairs take precedence over the files passed through with the --conf flag.
+
+It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
+a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
+Some examples:
+
+kubectl cloudflow configure swiss-knife cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+kubectl cloudflow configure swiss-knife cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+
+
+The arguments passed with '[config-key]=[value]' pairs take precedence over the files passed through with the --conf flag.
 `,
 
 		Run:  configureCMD.configureImpl,
