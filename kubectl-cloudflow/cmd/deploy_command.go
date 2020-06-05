@@ -56,7 +56,7 @@ kubectl cloudflow deploy target/swiss-knife.json cloudflow.runtimes.spark.config
 kubectl cloudflow deploy target/swiss-knife.json cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
 
 
-The arguments passed with '[config-key]=[value]' pairs take precedence over the files passed through with the --conf flag.
+The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the `--conf ` flag.
 
 The command supports a flag --scale to specify the scale of each streamlet on deploy in the form of key/value
 pairs ('streamlet-name=scale') separated by comma.
