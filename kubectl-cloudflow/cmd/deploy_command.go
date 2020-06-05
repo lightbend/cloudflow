@@ -46,7 +46,13 @@ func init() {
 		Short: "Deploys a Cloudflow application to the cluster.",
 		Long: `Deploys a Cloudflow application to the cluster.
 
-Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
+Configuration files in HOCON format can be passed through with the --conf flag. 
+Configuration files are merged by concatenating the files passed with --conf flags. 
+The last --conf [file] argument can override values specified in earlier --conf [file] arguments.
+In the example below, where the same configuration path is used in file1.conf and file2.conf, 
+the configuration value in file2.conf takes precedence, overriding the value provided by file1.conf:
+
+kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
 
 It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
 a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
