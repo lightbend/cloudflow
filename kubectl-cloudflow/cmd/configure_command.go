@@ -27,7 +27,7 @@ func init() {
 
 Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
 
-It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
+It is also possible to pass configuration values directly through the command-line as `[config-key]=value` pairs separated by
 a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
 Some examples:
 
