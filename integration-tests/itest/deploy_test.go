@@ -29,6 +29,8 @@ const (
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 )
 
+var deploySleepTime, _ = time.ParseDuration("5s")
+
 var swissKnifeApp = cli.App{
 	CRFile: "./resources/swiss-knife.json",
 	Name:   "swiss-knife",
@@ -58,6 +60,7 @@ var _ = Describe("Application deployment", func() {
 			output, err := cli.Deploy(swissKnifeApp, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
 			Expect(output).To(ContainSubstring(expected))
 		})
 
@@ -167,8 +170,7 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Wait for the deployment of the new configuration")
-			sleepTime, _ := time.ParseDuration("5s")
-			time.Sleep(sleepTime) // this wait is to let the application go into deployment
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Get new resource configuration")
@@ -204,8 +206,7 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Wait for the deployment of the new configuration")
-			sleepTime, _ := time.ParseDuration("5s")
-			time.Sleep(sleepTime) // this wait is to let the application go into deployment
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Get new resource configuration")
