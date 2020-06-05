@@ -33,7 +33,7 @@ the configuration value in file2.conf takes precedence, overriding the value pro
 
 kubectl cloudflow configure swiss-knife --conf file1.conf --conf file2.conf
 
-It is also possible to pass configuration values directly through the command-line as `[config-key]=value` pairs separated by
+It is also possible to pass configuration values directly through the command-line as '[config-key]=value' pairs separated by
 a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
 Some examples:
 
