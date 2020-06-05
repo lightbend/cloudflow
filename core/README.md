@@ -23,7 +23,7 @@ ImageName(
 3. Open the sbt console by typing `sbt`
 4. Switch to the `cloudflow-operator` project: `project cloudflow-operator`
 5. Build and push the docker image: `dockerBuildAndPush`
-6. Update the operator image settings in [shared.sh](../installer/common/shared.sh):
+6. Update the operator image settings in [shared.sh](../installer/deprecated-installer/common/shared.sh) if using the deprecated installer (Cloudflow 1.3.3 and earlier):
 
 ```
 export operatorImageName="<gcp_hostname>/<project_id>/cloudflow-operator"
