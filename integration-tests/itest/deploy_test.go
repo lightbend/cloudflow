@@ -1,7 +1,9 @@
 package main_test
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
@@ -27,6 +29,8 @@ const (
 	UpdateConfigPayload            = "payload: updated_config"
 	UpdateAkkaProcessResourcesFile = "./resources/update_akka_process_resources.conf"
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
+	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
+	UpdateSparkConfigOutput        = "locality=[5s]"
 )
 
 var deploySleepTime, _ = time.ParseDuration("5s")
@@ -111,22 +115,22 @@ var _ = Describe("Application deployment", func() {
 
 	Context("Running streamlets from the sample app should produce counter data", func() {
 		It("should produce a counter in the raw output log", func(done Done) {
-			checkLogsForOutput("raw-egress", "count:")
+			checkAnyPodLogForOutput("raw-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the akka output log", func(done Done) {
-			checkLogsForOutput("akka-egress", "count:")
+			checkAnyPodLogForOutput("akka-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the spark output log", func(done Done) {
-			checkLogsForOutput("spark-egress", "count:")
+			checkAnyPodLogForOutput("spark-egress", "count:")
 			close(done)
 		}, LongTimeout)
 
 		It("should produce a counter in the flink output log", func(done Done) {
-			checkLogsForOutput("flink-egress", "count:")
+			checkAnyPodLogForOutput("flink-egress", "count:")
 			close(done)
 		}, LongTimeout)
 	})
@@ -140,17 +144,17 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 		It("should have configured an akka streamlet", func(done Done) {
-			checkLogsForOutput("akka-egress", UpdateConfigPayload)
+			checkAnyPodLogForOutput("akka-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 
 		It("should have configured a spark streamlet", func(done Done) {
-			checkLogsForOutput("spark-egress", UpdateConfigPayload)
+			checkAnyPodLogForOutput("spark-egress", UpdateConfigPayload)
 			close(done)
 		}, LongTimeout)
 
 		XIt("should have configured a flink streamlet", func(done Done) {
-			checkLogsForOutput("flink-egress", UpdateConfigPayload)
+			checkAnyPodLogForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
 		}, XLongTimeout)
 	})
@@ -229,7 +233,16 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	//TODO: runtime config
+	Context("Framework configuration can be updated using the CLI", func() {
+		It("should reconfigure the configuration of a Spark application", func(done Done) {
+			By("Reconfigure Spark-specific configuration")
+			err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
+			Expect(err).NotTo(HaveOccurred())
+			By("Verifying configuration update")
+			checkMatchingPodLogForOutput("spark-output", "driver", UpdateSparkConfigOutput)
+			close(done)
+		}, LongTimeout)
+	})
 
 	Context("A deployed streamlet can be scaled", func() {
 		// A function that calculates the streamlet scale based on pod count
@@ -314,9 +327,29 @@ func ensureAppNotDeployed(app cli.App) error {
 	return nil
 }
 
-func checkLogsForOutput(streamlet string, output string) {
+func checkAnyPodLogForOutput(streamlet string, output string) {
 	pod, err := cli.GetOneOfThePodsForStreamlet(swissKnifeApp, streamlet)
 	Expect(err).NotTo(HaveOccurred())
 	_, err = kubectl.PollUntilLogsContains(pod, swissKnifeApp.Name, output)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func checkMatchingPodLogForOutput(streamlet string, partialPodName string, output string) {
+	pods, err := cli.GetPodsForStreamlet(swissKnifeApp, streamlet)
+	Expect(err).NotTo(HaveOccurred())
+	var targetPod string
+	for _, pod := range pods {
+		if strings.Contains(pod, partialPodName) {
+			targetPod = pod
+			break
+		}
+	}
+	if targetPod == "" {
+		failStr := fmt.Sprintf("Could not find match for pod [%s] for streamlet [%s]", partialPodName, streamlet)
+		Fail(failStr)
+	}
+	fmt.Printf("got streamlet pod: %s", targetPod)
+	line, err := kubectl.PollUntilLogsContains(targetPod, swissKnifeApp.Name, output)
+	fmt.Printf("found log line with matching output: %s", line)
 	Expect(err).NotTo(HaveOccurred())
 }
