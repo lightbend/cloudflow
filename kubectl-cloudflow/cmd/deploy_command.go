@@ -45,14 +45,24 @@ func init() {
 		Use:   "deploy",
 		Short: "Deploys a Cloudflow application to the cluster.",
 		Long: `Deploys a Cloudflow application to the cluster.
-The arguments to the command consists of a full path to a json file containing the 
-application CR and optionally one or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
-a space.
 
-TODO Update
+Configuration files in HOCON format can be passed through with the --conf flag. 
+Configuration files are merged by concatenating the files passed with --conf flags. 
+The last --conf [file] argument can override values specified in earlier --conf [file] arguments.
+In the example below, where the same configuration path is used in file1.conf and file2.conf, 
+the configuration value in file2.conf takes precedence, overriding the value provided by file1.conf:
 
-Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
-The streamlet arguments passed with '[streamlet-name].[configuration-parameter]=[value]' pairs take precedence over the files passed through with the --conf flag.
+kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
+
+It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
+a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
+Some examples:
+
+kubectl cloudflow deploy target/swiss-knife.json cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+kubectl cloudflow deploy target/swiss-knife.json cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+
+
+The arguments passed with '[config-key]=[value]' pairs take precedence over the files passed through with the '--conf' flag.
 
 The command supports a flag --scale to specify the scale of each streamlet on deploy in the form of key/value
 pairs ('streamlet-name=scale') separated by comma.

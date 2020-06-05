@@ -152,14 +152,14 @@ func Test_addDefaultValues(t *testing.T) {
 			},
 		},
 	}
-	conf = addDefaultValuesFromSpec(spec, conf)
+	conf = addDefaultValuesFromSpec(spec, conf, map[string]string{})
 	hoconConf := configuration.ParseString(conf.String())
 	assert.Equal(t, "5m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 	assert.Equal(t, "11m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
 
 	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf"})
 	assert.Empty(t, err)
-	conf = addDefaultValuesFromSpec(spec, conf)
+	conf = addDefaultValuesFromSpec(spec, conf, map[string]string{})
 	hoconConf = configuration.ParseString(conf.String())
 	assert.Equal(t, "10m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 	assert.Equal(t, "12m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
