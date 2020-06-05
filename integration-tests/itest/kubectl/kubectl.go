@@ -23,7 +23,7 @@ type PodResources struct {
 	Cpu string
 }
 
-func logIfOutputFailure(command string, output []byte, err error) {
+func logOutputIfFailure(command string, output []byte, err error) {
 	if err != nil {
 		fmt.Printf("[%s] error. Output: [%s] Error code: [%s]", command, output, err.Error())
 	}
@@ -35,7 +35,7 @@ func GetLogs(pod string, namespace string, since string) (logs string, err error
 	sinceParam := "--since=" + since
 	cmd := exec.Command("kubectl", "logs", pod, "-n", namespace, sinceParam)
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("getLogs", out, err)
+	logOutputIfFailure("getLogs", out, err)
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +46,7 @@ func GetLogs(pod string, namespace string, since string) (logs string, err error
 func GetPods(namespace string) (pods []PodEntry, err error) {
 	cmd := exec.Command("kubectl", "get", "pods", "-n", namespace)
 	out, er := cmd.CombinedOutput()
-	logIfOutputFailure("getPods", out, err)
+	logOutputIfFailure("getPods", out, err)
 	if er != nil {
 		err = er
 		return
@@ -75,7 +75,7 @@ func GetPodResources(namespace string, pod string) (podResources PodResources, e
 	var template = "{{  (index .spec.containers 0).resources.requests }}"
 	cmd := exec.Command("kubectl", "get", "pod", pod, "-n", namespace, "-o", "go-template=\""+template+"\"")
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("getPodResources", out, err)
+	logOutputIfFailure("getPodResources", out, err)
 	if err != nil {
 		return PodResources{}, err
 	}
