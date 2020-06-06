@@ -35,8 +35,17 @@ class SparkOutput extends SparkStreamlet {
   val shape = StreamletShape(in)
 
   override def createLogic() = new SparkStreamletLogic {
+    val sparkLocality = context.session.conf.getOption("spark.locality.wait").getOrElse("")
+    val feedbackMsg = s"locality=[$sparkLocality]"
+
     override def buildStreamingQueries = {
-      val query   = readStream(in).writeStream.format("console").start
+      val query   = readStream(in)
+        // we add this to the output to make it observable from the outside
+        .withColumn("payload", lit(feedbackMsg)) // we add this to the output to make it observable from the outside
+        .writeStream
+        .format("console")
+        .option("truncate","false")
+        .start
       query.toQueryExecution
     }
   }

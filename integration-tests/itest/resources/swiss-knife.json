@@ -17,12 +17,12 @@
       "prometheus": "/prometheus/jmx_prometheus_javaagent.jar"
     },
     "app_id": "swiss-knife",
-    "app_version": "425-de453c8",
+    "app_version": "431-58af6f2",
     "deployments": [
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:425-de453c8",
+        "image": "docker.io/lightbend/akka:431-58af6f2",
         "name": "swiss-knife.akka-egress",
         "port_mappings": {
           "in": {
@@ -37,7 +37,7 @@
       {
         "class_name": "swissknife.spark.SparkCounter",
         "config": {},
-        "image": "docker.io/lightbend/spark:425-de453c8",
+        "image": "docker.io/lightbend/spark:431-58af6f2",
         "name": "swiss-knife.spark-process",
         "port_mappings": {
           "in": {
@@ -56,7 +56,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:425-de453c8",
+        "image": "docker.io/lightbend/akka:431-58af6f2",
         "name": "swiss-knife.flink-egress",
         "port_mappings": {
           "in": {
@@ -71,7 +71,7 @@
       {
         "class_name": "swissknife.spark.SparkDataGenerator",
         "config": {},
-        "image": "docker.io/lightbend/spark:425-de453c8",
+        "image": "docker.io/lightbend/spark:431-58af6f2",
         "name": "swiss-knife.ingress",
         "port_mappings": {
           "out": {
@@ -86,7 +86,7 @@
       {
         "class_name": "swissknife.flink.FlinkCounter",
         "config": {},
-        "image": "docker.io/lightbend/flink:425-de453c8",
+        "image": "docker.io/lightbend/flink:431-58af6f2",
         "name": "swiss-knife.flink-process",
         "port_mappings": {
           "in": {
@@ -105,7 +105,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:425-de453c8",
+        "image": "docker.io/lightbend/akka:431-58af6f2",
         "name": "swiss-knife.spark-egress",
         "port_mappings": {
           "in": {
@@ -120,7 +120,7 @@
       {
         "class_name": "swissknife.akka.AkkaTransformation",
         "config": {},
-        "image": "docker.io/lightbend/akka:425-de453c8",
+        "image": "docker.io/lightbend/akka:431-58af6f2",
         "name": "swiss-knife.akka-process",
         "port_mappings": {
           "in": {
@@ -139,7 +139,7 @@
       {
         "class_name": "swissknife.akka.AkkaLogger",
         "config": {},
-        "image": "docker.io/lightbend/akka:425-de453c8",
+        "image": "docker.io/lightbend/akka:431-58af6f2",
         "name": "swiss-knife.raw-egress",
         "port_mappings": {
           "in": {
@@ -154,7 +154,7 @@
       {
         "class_name": "swissknife.spark.SparkOutput",
         "config": {},
-        "image": "docker.io/lightbend/spark:425-de453c8",
+        "image": "docker.io/lightbend/spark:431-58af6f2",
         "name": "swiss-knife.spark-output",
         "port_mappings": {
           "in": {

@@ -45,7 +45,7 @@ type StreamletPod struct {
 
 var pollSleepInterval, _ = time.ParseDuration("5s")
 
-func logIfOutputFailure(command string, output []byte, err error) {
+func logOutputIfFailure(command string, output []byte, err error) {
 	if err != nil {
 		fmt.Printf("[%s] error. Output: [%s] Error code: [%s]", command, output, err.Error())
 	}
@@ -55,7 +55,7 @@ func logIfOutputFailure(command string, output []byte, err error) {
 func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
 	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.CRFile, "--username", user, "--password", pwd)
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("deploy", out, err)
+	logOutputIfFailure("deploy", out, err)
 	return string(out), err
 }
 
@@ -63,7 +63,7 @@ func Deploy(app App, user string, pwd string) (deployRes string, deployErr error
 func Undeploy(app App) error {
 	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.Name)
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("undeploy", out, err)
+	logOutputIfFailure("undeploy", out, err)
 	return err
 }
 
@@ -71,7 +71,7 @@ func Undeploy(app App) error {
 func Scale(app App, streamlet string, scale int) error {
 	cmd := exec.Command("kubectl", "cloudflow", "scale", app.Name, streamlet, strconv.Itoa(scale))
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("scale", out, err)
+	logOutputIfFailure("scale", out, err)
 	return err
 }
 
@@ -79,7 +79,7 @@ func Scale(app App, streamlet string, scale int) error {
 func Configure(app App, filePath string) error {
 	cmd := exec.Command("kubectl", "cloudflow", "configure", app.Name, "--conf", filePath)
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("configure", out, err)
+	logOutputIfFailure("configure", out, err)
 	return err
 }
 
@@ -88,7 +88,7 @@ func ListApps() (entries []AppEntry, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "list")
 	out, err := cmd.CombinedOutput()
 	var res []AppEntry
-	logIfOutputFailure("list", out, err)
+	logOutputIfFailure("list", out, err)
 	if err != nil {
 		return res, err
 	}
@@ -128,7 +128,7 @@ func ListAppNames() (appNames []string, err error) {
 func Status(app App) (status AppStatus, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "status", app.Name)
 	out, err := cmd.CombinedOutput()
-	logIfOutputFailure("status", out, err)
+	logOutputIfFailure("status", out, err)
 	mkErr := func(err error) (AppStatus, error) {
 		return AppStatus{}, err
 	}

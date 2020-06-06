@@ -23,12 +23,19 @@ type PodResources struct {
 	Cpu string
 }
 
+func logOutputIfFailure(command string, output []byte, err error) {
+	if err != nil {
+		fmt.Printf("[%s] error. Output: [%s] Error code: [%s]", command, output, err.Error())
+	}
+}
+
 // GetLogs retrieves the most recent logs for a given pod in a namespace for the time speficied.
 // e.g.: is `since` is 1s, GetLogs will retrive the logs of the lastest second.
 func GetLogs(pod string, namespace string, since string) (logs string, err error) {
 	sinceParam := "--since=" + since
 	cmd := exec.Command("kubectl", "logs", pod, "-n", namespace, sinceParam)
 	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("getLogs", out, err)
 	if err != nil {
 		return "", err
 	}
@@ -39,6 +46,7 @@ func GetLogs(pod string, namespace string, since string) (logs string, err error
 func GetPods(namespace string) (pods []PodEntry, err error) {
 	cmd := exec.Command("kubectl", "get", "pods", "-n", namespace)
 	out, er := cmd.CombinedOutput()
+	logOutputIfFailure("getPods", out, err)
 	if er != nil {
 		err = er
 		return
@@ -67,9 +75,9 @@ func GetPodResources(namespace string, pod string) (podResources PodResources, e
 	var template = "{{  (index .spec.containers 0).resources.requests }}"
 	cmd := exec.Command("kubectl", "get", "pod", pod, "-n", namespace, "-o", "go-template=\""+template+"\"")
 	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("getPodResources", out, err)
 	if err != nil {
-		fmt.Printf("Command GetPodResources failed with %s \n", out)
-		return
+		return PodResources{}, err
 	}
 	res := string(out)
 	regex := regexp.MustCompile(`cpu:(?P<cpu>\d+\w*) memory:(?P<memory>\d+\w+)`)
@@ -90,25 +98,17 @@ func GetPodResources(namespace string, pod string) (podResources PodResources, e
 // the presence of the given string.
 // Returns the line where the string is found.
 func PollUntilLogsContains(pod string, namespace string, str string) (string, error) {
-	lastNonEmptyLine := func(str string) string {
-		lines := strings.Split(str, "\n")
-		for i := len(lines) - 1; i >= 0; i-- {
-			if len(strings.TrimSpace(lines[i])) > 0 {
-				return lines[i]
-			}
-		}
-		return ""
-	}
-
 	for {
 		logs, err := GetLogs(pod, namespace, "1s")
 		if err != nil {
 			return "", err
 		}
-		lastLine := lastNonEmptyLine(logs)
 
-		if strings.Contains(lastLine, str) == true {
-			return lastLine, nil
+		lines := strings.Split(logs, "\n")
+		for _, line := range lines {
+			if strings.Contains(line, str) {
+				return line, nil
+			}
 		}
 		time.Sleep(time.Second)
 	}
