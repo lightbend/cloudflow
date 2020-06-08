@@ -40,11 +40,10 @@ trait Event {
   def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
       client: KubernetesClient
   )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
-    Flow[E].mapAsync(1) { streamletChangeEvent ⇒
-      val ns = streamletChangeEvent.namespace
-      // toAppChangeEvent
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](streamletChangeEvent.appId).map { cr =>
-        cr -> streamletChangeEvent
+    Flow[E].mapAsync(1) { changeEvent ⇒
+      val ns = changeEvent.namespace
+      client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
+        cr -> changeEvent
       }
     }
 }
