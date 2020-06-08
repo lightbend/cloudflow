@@ -47,6 +47,15 @@ case class UndeployEvent(
   override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace $namespace"
 }
 
+/**
+ * Indicates that something changed in the cloudflow application.
+ */
+trait AppChangeEvent[T <: ObjectResource] {
+  def watchEvent: WatchEvent[T]
+  def namespace: String
+  def appId: String
+}
+
 object AppEvent {
 
   /**
