@@ -205,7 +205,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     SpecPatch(spec)
   }
 
-  val DefaultNrOfExecutorInstances = 2
+  val DefaultNrOfExecutorInstances = 1
 
   // Lifecycle Management
   private val OnFailureRetryIntervalSecs           = 10
