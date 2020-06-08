@@ -31,6 +31,8 @@ const (
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateSparkConfigOutput        = "locality=[5s]"
+	UpdateAkkaConfigurationFile    = "./resources/update_akka_config.conf"
+	UpdateAkkaConfigOutput         = "log-dead-letters=[15]"
 )
 
 var deploySleepTime, _ = time.ParseDuration("5s")
@@ -233,7 +235,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	Context("Framework configuration can be updated using the CLI", func() {
+	FContext("Framework configuration can be updated using the CLI", func() {
 		It("should reconfigure the configuration of a Spark application", func(done Done) {
 			By("Reconfigure Spark-specific configuration")
 			err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
@@ -244,9 +246,24 @@ var _ = Describe("Application deployment", func() {
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			By("Verifying configuration update")
-			checkMatchingPodLogForOutput("spark-output", "driver", UpdateSparkConfigOutput)
+			checkMatchingPodLogForOutput("spark-config-output", "driver", UpdateSparkConfigOutput)
 			close(done)
 		}, LongTimeout)
+
+		It("should reconfigure the configuration of an Akka application", func(done Done) {
+			By("Reconfigure Akka-specific configuration")
+			err := cli.Configure(swissKnifeApp, UpdateAkkaConfigurationFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+
+			By("Verifying configuration update")
+			checkAnyPodLogForOutput("akka-config-output", UpdateAkkaConfigOutput)
+			close(done)
+		}, LongTimeout)
+
 	})
 
 	Context("A deployed streamlet can be scaled", func() {
