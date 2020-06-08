@@ -235,7 +235,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	FContext("Framework configuration can be updated using the CLI", func() {
+	Context("Framework configuration can be updated using the CLI", func() {
 		It("should reconfigure the configuration of a Spark application", func(done Done) {
 			By("Reconfigure Spark-specific configuration")
 			err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
