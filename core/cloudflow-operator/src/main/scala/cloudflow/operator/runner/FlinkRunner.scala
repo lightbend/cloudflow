@@ -43,7 +43,7 @@ object FlinkRunner extends Runner[CR] {
   def resourceDefinition    = implicitly[ResourceDefinition[CR]]
   final val runtime         = "flink"
   final val PVCMountPath    = "/mnt/flink/storage"
-  final val DefaultReplicas = 1
+  final val DefaultReplicas = 2
   final val JvmArgsEnvVar   = "JVM_ARGS"
 
   final val JobManagerPod  = "job-manager"
