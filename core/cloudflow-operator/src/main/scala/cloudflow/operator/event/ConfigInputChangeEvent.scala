@@ -36,9 +36,9 @@ import cloudflow.blueprint.deployment.StreamletDeployment
 /**
  * Indicates that the configuration of the application has been changed by the user.
  */
-case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret])
+case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret]) extends AppChangeEvent[Secret]
 
-object ConfigInputChangeEvent {
+object ConfigInputChangeEvent extends Event {
   val SecretDataKey        = "secret.conf"
   val RuntimeConfigDataKey = "runtime-config.conf"
   val PodsConfigDataKey    = "pods-config.conf"
@@ -85,28 +85,6 @@ object ConfigInputChangeEvent {
 
   def getData(secret: Secret): String =
     secret.data.get(ConfigInputChangeEvent.SecretDataKey).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
-
-  private def changeInfo[T <: ObjectResource](watchEvent: WatchEvent[T]) = {
-    val obj      = watchEvent._object
-    val metadata = obj.metadata
-    s"(${getKind(obj)} ${metadata.name} ${watchEvent._type})"
-  }
-
-  private def getKind(obj: ObjectResource) = if (obj.kind.isEmpty) obj.getClass.getSimpleName else obj.kind // sometimes kind is empty.
-
-  /**
-   * Finds the associated [[CloudflowApplication.CR]]s for [[ConfigInputChangeEvent]]s.
-   * The resulting flow outputs tuples of the app and the streamlet change event.
-   */
-  def mapToAppInSameNamespace(
-      client: KubernetesClient
-  )(implicit ec: ExecutionContext): Flow[ConfigInputChangeEvent, (Option[CloudflowApplication.CR], ConfigInputChangeEvent), NotUsed] =
-    Flow[ConfigInputChangeEvent].mapAsync(1) { configInputChangeEvent ⇒
-      val ns = configInputChangeEvent.watchEvent._object.metadata.namespace
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](configInputChangeEvent.appId).map { cr =>
-        cr -> configInputChangeEvent
-      }
-    }
 
   def toInputConfigUpdateAction(
       implicit system: ActorSystem

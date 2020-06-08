@@ -100,7 +100,7 @@ object Operator {
       watch[Secret](client, watchOptions)
         .via(ConfigInputChangeEvent.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(ConfigInputChangeEvent.mapToAppInSameNamespace(client))
+        .via(ConfigInputChangeEvent.mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
         .via(ConfigInputChangeEvent.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
@@ -142,10 +142,10 @@ object Operator {
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client, DefaultWatchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent())
+        .via(StatusChangeEvent.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
-        .via(StreamletChangeEvent.toStatusUpdateAction)
+        .via(StatusChangeEvent.mapToAppInSameNamespace(client))
+        .via(StatusChangeEvent.toStatusUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
