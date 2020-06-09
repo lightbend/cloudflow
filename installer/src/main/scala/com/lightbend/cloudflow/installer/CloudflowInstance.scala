@@ -11,8 +11,7 @@ object CloudflowInstance {
   final case class KafkaClusterCR(name: String,
                                   version: String,
                                   kafkaPersistentStorageClass: String,
-                                  zooKeeperPersistentStorageClass: String
-  )
+                                  zooKeeperPersistentStorageClass: String)
 
   final case class FlinkOperator(version: String, serviceAccount: String)
   final case class SparkOperator(version: String, image: String)
@@ -23,8 +22,7 @@ object CloudflowInstance {
   final case class Spec(kafkaClusterCR: KafkaClusterCR,
                         flinkOperator: FlinkOperator,
                         sparkOperator: SparkOperator,
-                        cloudflowOperator: CloudflowOperator
-  )
+                        cloudflowOperator: CloudflowOperator)
 
   type CR = CustomResource[Spec, Status]
   implicit val Definition = ResourceDefinition[CR](

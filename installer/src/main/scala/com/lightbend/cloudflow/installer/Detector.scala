@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import org.zeroturnaround.exec._
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 sealed trait ClusterFeature
 final case object Scc                                       extends ClusterFeature

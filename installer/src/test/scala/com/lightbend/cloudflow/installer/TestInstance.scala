@@ -21,7 +21,6 @@ object TestInstance {
                                      Definition.spec.apiPathPrefix,
                                      ObjectMeta(name = "test", namespace = "test-namespace"),
                                      spec,
-                                     None
-    )
+                                     None)
   }
 }
