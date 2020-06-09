@@ -12,7 +12,8 @@ import akka.event.LoggingAdapter
 trait ActionExecutor {
   def execute(
       action: Action
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: Materializer,
     ec: ExecutionContext,
     log: LoggingAdapter,
@@ -22,7 +23,8 @@ trait ActionExecutor {
 case object KubectlActionExecutor extends ActionExecutor {
   override def execute(
       action: Action
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: Materializer,
     ec: ExecutionContext,
     log: LoggingAdapter,

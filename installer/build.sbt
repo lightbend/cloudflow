@@ -3,7 +3,6 @@ import sbt.Keys._
 
 import Dependencies._
 
-ThisBuild / scalaVersion := "2.13.0"
 ThisBuild / version := "1.0.0-SNAPSHOT"
 ThisBuild / organization := "com.lightbend"
 ThisBuild / organizationName := "Lightbend, Inc"
