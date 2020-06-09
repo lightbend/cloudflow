@@ -77,7 +77,7 @@ The script is a standard Scala sbt build file--with the addition of the Cloudflo
 . Add the Cloudflow plugin in `project/cloudflow-plugins.sbt`:
 +
 ```
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.0-RC4")
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.0")
 ```
 
 
