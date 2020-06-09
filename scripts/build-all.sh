@@ -40,7 +40,7 @@ echo "Core streamlet libraries built, tested and published to local"
 echo "Now starting build of installer"
 
 cd ../installer
-sbt --supershell=false "; scalafmtCheck ; clean ; test ; docker"
+sbt --supershell=false "; scalafmtCheck ; clean ; test"
 RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of installer" && exit -1
 
