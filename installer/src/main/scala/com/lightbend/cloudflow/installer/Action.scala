@@ -18,12 +18,11 @@ sealed trait Action {
 
   def requiredClusterFeatures: Option[ClusterFeature] = None
   def execute()(implicit
-      system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext,
-      log: LoggingAdapter,
-      settings: Settings
-  ): Future[ActionResult]
+                system: ActorSystem,
+                mat: Materializer,
+                ec: ExecutionContext,
+                log: LoggingAdapter,
+                settings: Settings): Future[ActionResult]
 }
 
 abstract class KubectlAction(val name: String)(implicit cr: CloudflowInstance.CR) extends Action {
@@ -33,12 +32,11 @@ abstract class KubectlAction(val name: String)(implicit cr: CloudflowInstance.CR
   override def instance = cr
 
   override def execute()(implicit
-      system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext,
-      log: LoggingAdapter,
-      settings: Settings
-  ): Future[ActionResult] =
+                         system: ActorSystem,
+                         mat: Materializer,
+                         ec: ExecutionContext,
+                         log: LoggingAdapter,
+                         settings: Settings): Future[ActionResult] =
     Future {
 
       log.info(s"Executing command '${commandLine().mkString(" ")}' for '$name'")
@@ -78,10 +76,10 @@ class KubectlApply(name: String)(implicit cr: CloudflowInstance.CR) extends Kube
   lazy val componentDestinationDirectory = os.temp.dir()
 
   private def applyOverlayValues(values: Map[String, String], fileContent: String): String =
-    values.foldLeft(fileContent){case (content, (key, value)) =>
-      content.replaceAll(s"__${key}__", value)
+    values.foldLeft(fileContent) {
+      case (content, (key, value)) =>
+        content.replaceAll(s"__${key}__", value)
     }
-
 
   private def copyComponentAndApplyOverlayValues(): Unit = {
     val basePath = ResourceDirectory.path / RelPath(name)
@@ -96,12 +94,11 @@ class KubectlApply(name: String)(implicit cr: CloudflowInstance.CR) extends Kube
       }
   }
   override def execute()(implicit
-      system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext,
-      log: LoggingAdapter,
-      settings: Settings
-  ): Future[ActionResult] = {
+                         system: ActorSystem,
+                         mat: Materializer,
+                         ec: ExecutionContext,
+                         log: LoggingAdapter,
+                         settings: Settings): Future[ActionResult] = {
     copyComponentAndApplyOverlayValues()
     super.execute()
   }
@@ -110,19 +107,19 @@ class KubectlApply(name: String)(implicit cr: CloudflowInstance.CR) extends Kube
     List("kubectl", "apply", "-n", instance.metadata.namespace, "-k", componentDestinationDirectory.toString)
 }
 
-final case class CompositeAction(val name: String, availableClusterFeatures: ClusterFeatures, actions: List[Action])(implicit
+final case class CompositeAction(val name: String, availableClusterFeatures: ClusterFeatures, actions: List[Action])(
+    implicit
     cr: CloudflowInstance.CR
 ) extends Action {
 
   val childActions = filterActionsBasedOnFeature(actions)
   def instance     = cr
   def execute()(implicit
-      system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext,
-      log: LoggingAdapter,
-      settings: Settings
-  ): Future[ActionResult] =
+                system: ActorSystem,
+                mat: Materializer,
+                ec: ExecutionContext,
+                log: LoggingAdapter,
+                settings: Settings): Future[ActionResult] =
     // oslib also drags in a Source
     akka.stream.scaladsl.Source(childActions).mapAsync(1)(_.execute()).runWith(Sink.last)
 
@@ -228,12 +225,11 @@ final case class UpdateCRStatusAction(validationFailures: List[CloudflowInstance
   def name: String = "no-operator"
   def instance     = cr
   def execute()(implicit
-      system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext,
-      log: LoggingAdapter,
-      settings: Settings
-  ): Future[ActionResult] =
+                system: ActorSystem,
+                mat: Materializer,
+                ec: ExecutionContext,
+                log: LoggingAdapter,
+                settings: Settings): Future[ActionResult] =
     Future {
       val status = validationFailures.map(v => v.errorMsg).mkString("\n")
       ActionFailure(this, 1, Some(status))
