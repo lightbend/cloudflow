@@ -78,11 +78,10 @@ class KubectlApply(name: String)(implicit cr: CloudflowInstance.CR) extends Kube
   lazy val componentDestinationDirectory = os.temp.dir()
 
   private def applyOverlayValues(values: Map[String, String], fileContent: String): String =
-    values.foldLeft(fileContent)((content, keyValue) =>
-      keyValue match {
-        case (key, value) => content.replaceAll(s"__${key}__", value)
-      }
-    )
+    values.foldLeft(fileContent){case (content, (key, value)) =>
+      content.replaceAll(s"__${key}__", value)
+    }
+
 
   private def copyComponentAndApplyOverlayValues(): Unit = {
     val basePath = ResourceDirectory.path / RelPath(name)
