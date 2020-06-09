@@ -12,21 +12,25 @@ import akka.event.LoggingAdapter
 trait ActionExecutor {
   def execute(
       action: Action
-  )(implicit system: ActorSystem,
-    materializer: Materializer,
-    ec: ExecutionContext,
-    log: LoggingAdapter,
-    settings: Settings): Future[ActionResult]
+  )(implicit
+      system: ActorSystem,
+      materializer: Materializer,
+      ec: ExecutionContext,
+      log: LoggingAdapter,
+      settings: Settings
+  ): Future[ActionResult]
 }
 
 case object KubectlActionExecutor extends ActionExecutor {
   override def execute(
       action: Action
-  )(implicit system: ActorSystem,
-    materializer: Materializer,
-    ec: ExecutionContext,
-    log: LoggingAdapter,
-    settings: Settings): Future[ActionResult] =
+  )(implicit
+      system: ActorSystem,
+      materializer: Materializer,
+      ec: ExecutionContext,
+      log: LoggingAdapter,
+      settings: Settings
+  ): Future[ActionResult] =
     action.execute().recover {
       case actionFailure: ActionFailure =>
         actionFailure

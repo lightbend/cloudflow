@@ -46,7 +46,7 @@ object Main {
   }
 
   private def createMaterializer()(implicit system: ActorSystem) = {
-    val decider: Supervision.Decider = (_ ⇒ Supervision.Stop)
+    val decider: Supervision.Decider = _ ⇒ Supervision.Stop
     ActorMaterializer(ActorMaterializerSettings(system).withSupervisionStrategy(decider))
   }
 
@@ -66,11 +66,10 @@ object Main {
     Await.ready(
       client.getOption[CustomResourceDefinition](CRD.name).map { result ⇒
         result.fold(client.create(CRD)) { crd ⇒
-          if (crd.spec.version != CRD.spec.version) {
+          if (crd.spec.version != CRD.spec.version)
             client.create(CRD)
-          } else {
+          else
             Future.successful(crd)
-          }
         }
       },
       crdTimeout

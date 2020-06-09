@@ -58,15 +58,17 @@ object Operator {
                 .getOrElse("")}"
             )
         }
-        Future { result }
+        Future(result)
       }
 
   private def updateStatus(
       k8sConfig: Configuration
-  )(implicit ec: ExecutionContext,
-    system: ActorSystem,
-    mat: ActorMaterializer,
-    log: LoggingAdapter): Flow[ActionResult, ActionResult, NotUsed] =
+  )(implicit
+      ec: ExecutionContext,
+      system: ActorSystem,
+      mat: ActorMaterializer,
+      log: LoggingAdapter
+  ): Flow[ActionResult, ActionResult, NotUsed] =
     Flow[ActionResult]
       .mapAsync(1) { actionResult =>
         val client                                              = k8sInit(k8sConfig.setCurrentNamespace(actionResult.action.instance.metadata.namespace))
@@ -76,25 +78,27 @@ object Operator {
         log.info(s"Updating status for ${updatedInstance.metadata.name}")
         for {
           existingCr <- client.getOption[CloudflowInstance.CR](actionResult.action.instance.metadata.name)
-          _ = existingCr
-            .map(
-              cloudflowInstanceCr =>
+          _ =
+            existingCr
+              .map(cloudflowInstanceCr =>
                 CloudflowInstance.editor.updateMetadata(
                   updatedInstance,
                   updatedInstance.metadata.copy(resourceVersion = cloudflowInstanceCr.metadata.resourceVersion)
                 )
-            )
-            .map(updateCr => client.updateStatus(updateCr))
+              )
+              .map(updateCr => client.updateStatus(updateCr))
         } yield actionResult
       }
 
   private def executeActions(
       executor: ActionExecutor
-  )(implicit system: ActorSystem,
-    materializer: Materializer,
-    ec: ExecutionContext,
-    log: LoggingAdapter,
-    settings: Settings): Flow[Action, ActionResult, NotUsed] =
+  )(implicit
+      system: ActorSystem,
+      materializer: Materializer,
+      ec: ExecutionContext,
+      log: LoggingAdapter,
+      settings: Settings
+  ): Flow[Action, ActionResult, NotUsed] =
     Flow[Action]
       .mapAsync(1) {
         executor.execute
@@ -103,12 +107,14 @@ object Operator {
   private def watch[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions = DefaultWatchOptions
-  )(implicit system: ActorSystem,
-    fmt: Format[O],
-    lfmt: Format[ListResource[O]],
-    rd: ResourceDefinition[O],
-    lc: LoggingContext,
-    ec: ExecutionContext): Source[WatchEvent[O], NotUsed] = {
+  )(implicit
+      system: ActorSystem,
+      fmt: Format[O],
+      lfmt: Format[ListResource[O]],
+      rd: ResourceDefinition[O],
+      lc: LoggingContext,
+      ec: ExecutionContext
+  ): Source[WatchEvent[O], NotUsed] = {
 
     /* =================================================
      * Workaround for issue found on openshift:
@@ -139,7 +145,8 @@ object Operator {
           .mapMaterializedValue(_ ⇒ NotUsed)
       )
       .recoverWithRetries(
-        -1, {
+        -1,
+        {
           case _: TcpIdleTimeoutException ⇒
             watch[O](client)
           case e: skuber.api.client.K8SException ⇒

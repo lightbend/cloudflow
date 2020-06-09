@@ -11,14 +11,14 @@ sealed trait CloudflowEvent
 case class InstallEvent(instance: CloudflowInstance.CR,
                         currentInstance: Option[CloudflowInstance.CR],
                         namespace: String,
-                        availableClusterFeatures: ClusterFeatures)
-    extends CloudflowEvent
+                        availableClusterFeatures: ClusterFeatures
+) extends CloudflowEvent
 
 case class UninstallEvent(instance: CloudflowInstance.CR,
                           currentInstance: Option[CloudflowInstance.CR],
                           namespace: String,
-                          availableClusterFeatures: ClusterFeatures)
-    extends CloudflowEvent
+                          availableClusterFeatures: ClusterFeatures
+) extends CloudflowEvent
 case class PreRequisiteFailed(instance: CloudflowInstance.CR, validationFailures: List[CloudflowInstance.ValidationFailure])
     extends CloudflowEvent
 
@@ -44,19 +44,20 @@ object CloudflowEvent {
             //   currentInstances = currentInstances - id
             //   List(UninstallEvent(instance, currentInstance, namespace, clusterFeatures))
             case EventType.ADDED | EventType.MODIFIED ⇒
-              if (currentInstances.get(id).forall { existingEvent ⇒
-                    existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-                    // the spec must change, otherwise it is not a deploy event (but likely a status update).
-                    existingEvent._object.spec != watchEvent._object.spec
-                  }) {
+              if (
+                currentInstances.get(id).forall { existingEvent ⇒
+                  existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
+                  // the spec must change, otherwise it is not a deploy event (but likely a status update).
+                  existingEvent._object.spec != watchEvent._object.spec
+                }
+              ) {
                 currentInstances = currentInstances + (id -> watchEvent)
 
                 val validationFailures = CloudflowInstance.validateClusterFeatures(instance, clusterFeatures)
-                if (validationFailures.nonEmpty) {
+                if (validationFailures.nonEmpty)
                   List(PreRequisiteFailed(instance, validationFailures))
-                } else {
+                else
                   List(InstallEvent(instance, currentInstance, namespace, clusterFeatures))
-                }
 
               } else List.empty
             case _ =>
