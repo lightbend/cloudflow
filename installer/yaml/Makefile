@@ -219,8 +219,7 @@ ${cloudflow_operator_managed_strimzi_work_dir}/base.yaml: helm-fetch-cloudflow-o
 ##############################
 
 helm-fetch-cloudflow-operator: helm-repo-lightbend-add ${cloudflow_operator_work_dir}
-	git clone --single-branch --branch ${cloudflow_operator_chart_repo_tag} ${cloudflow_operator_chart_repo} ${cloudflow_operator_work_dir}/git_repo
-	cp -r ${cloudflow_operator_work_dir}/git_repo/${cloudflow_operator_chart_dir_in_repo} ${cloudflow_operator_work_dir}/${cloudflow_operator_chart_name}
+	cp -r ../../${cloudflow_operator_chart_dir_in_repo} ${cloudflow_operator_work_dir}/${cloudflow_operator_chart_name}
 
 ##############
 # helm repos #
