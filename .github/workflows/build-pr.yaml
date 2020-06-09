@@ -12,5 +12,3 @@ jobs:
       run: |
         cd docs
         make all
-    
-        

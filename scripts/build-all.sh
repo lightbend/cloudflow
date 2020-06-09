@@ -25,16 +25,32 @@ then
   echo "Error: 'target' missing."
   echo "Usage: build-all.sh <target>  # where <target> is an sbt target: compile, test, ..."
   echo "==================================================================================="
-  exit -1
+  exit 1
 fi
 echo "========================================================================="
 echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
+cd $DIR/../installer/yaml
+if make all; then
+  echo "Successfully generated YAML for installer"
+else
+  echo "Failed generating YAML for installer"
+  exit 1
+fi
+
+cd ../
+if sbt docker; then
+  echo "Successfully built installer Docker image"
+else
+  echo "Failed building installer Docker image"
+  exit 1
+fi
+
 cd $DIR/../core
 sbt --supershell=false "; scalafmtCheck ; $TARGET  ; publishLocal"
 RETVAL=$?
-[ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
+[ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit 1
 
 echo "Core streamlet libraries built, tested and published to local"
 echo "Now starting building of examples..."
@@ -67,6 +83,6 @@ for prj in $PROJECTS; do
       ;;
   esac
   RETVAL=$?
-  [ $RETVAL -ne 0 ] && echo "Failure in project $prj" && exit -1
+  [ $RETVAL -ne 0 ] && echo "Failure in project $prj" && exit 1
   cd -
 done
