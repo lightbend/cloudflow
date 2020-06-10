@@ -1,50 +1,54 @@
-= Deploy example to GKE cluster
+= Deploy the Example to a GKE cluster
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
 
 include::ROOT:partial$include.adoc[]
 
-Once the application is built you need to publish the docker image to some registry that stores, manages and secures your application image. In this example we will use the GCloud registry `eu.gcr.io`.
+Once the application is built you need to publish the docker images to some registry that stores, manages and secures your application images. 
+In this example we will use the GCloud registry `eu.gcr.io`.
 
 Follow these steps to complete the process of publishing:
 
-* Set up the target environment of publishing in your local build process. Create a file named `target-env.sbt` in the root of your project folder (the same level where you have `build.sbt`). The file needs to have the following 2 lines:
+* Set up the target environment of publishing in your local build process. 
+Create a file named `target-env.sbt` in the root of your project folder (the same level where you have `build.sbt`). The file needs to have the following 2 lines:
 
 ```
+// Google Cloud Registry
 ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
 ThisBuild / cloudflowDockerRepository := Some("<gcloud project id>")
 ```
 
-Here `project id` refers to the _ID_ of your Google Cloud Platform project. This can be found on the project page of your Google Cloud Platform.
+Here `project id` refers to the _ID_ of your Google Cloud Platform project. 
+This can be found on the project page of your Google Cloud Platform.
 
 * Publish the docker image of your project to the above registry. This has 3 steps:
  * First make sure that you have access to the cluster `gcloud container clusters get-credentials <cluster-name>`
  * And that you have access to the Google docker registry `gcloud auth configure-docker`
- * Then publish `sbt buildAndPublish`
+ * Then build and publish the application `sbt buildApp`
 
-Once the image is successfully published, you will see something like the following as output of `buildAndPublish` in your console:
+Once the image is successfully published, you will see something like the following as output of `buildApp` in your console:
 
 ```
-[info] 2-89ce8a7: digest: sha256:ee496e8cf3a3d9ab71c3ef4a4929ed8eeb6129845f981c33005942314ad30f18 size: 6804
-[info]  
-[info] Successfully built and published the following Cloudflow application image:
-[info]  
-[info]   eu.gcr.io/<gcloud project id>/sensor-data:2-89ce8a7
-[info]  
-[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
-[info]  
-[info]   kubectl-cloudflow deploy eu.gcr.io/<gcloud project id>/sensor-data:2-89ce8a7
-```
+[info] Successfully built and published the following image:
+[info]   eu.gcr.io/bubbly-observer-178213/sensor-data-scala:471-89ca008
+[success] Cloudflow application CR generated in /.../sensor-data-scala/target/sensor-data-scala.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /.../sensor-data-scala/target/sensor-data-scala.json
+[success] Total time: 41 s, completed Jun 10, 2020 10:10:10 PM
 
-So now the image is available in the registry for deployment. We will next use Cloudflow CLI to deploy the application to the cluster.
+```
+At this point, the Docker image containing the streamlets has been published to the Docker repository.
+The `sensor-data-scala.json` file that the build produces contains the application descriptor.
+We use the Cloudflow CLI to deploy that application description to a cluster.
 
 == Deploy Application to the Cluster
 
-This is quite straightforward and the output of `buildAndPublish` actually tells you what command to run for deployment. In addition you need to supply the credentials along with the CLI.
+This is quite straightforward and the output of `buildApp` actually tells you what command to run for deployment. 
+In addition you need to supply the credentials to the Docker repository along with the CLI `deploy` command.
 
 ```
-$ kubectl-cloudflow deploy -u oauth2accesstoken eu.gcr.io/<gcloud project id>/sensor-data:2-89ce8a7 -p "$(gcloud auth print-access-token)"
+$ kubectl cloudflow deploy /.../sensor-data-scala/target/sensor-data-scala.json -u oauth2accesstoken -p "$(gcloud auth print-access-token)"
 ```
 
 If the command goes through you will see the following output:
