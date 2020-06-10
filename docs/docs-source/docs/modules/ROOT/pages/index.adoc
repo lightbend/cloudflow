@@ -54,7 +54,7 @@ Cloudflow includes tools for developing and deploying streaming applications:
 
 * The Cloudflow application development toolkit includes:
 ** An SDK definition for `Streamlet`, the core abstraction in Cloudflow.
-** An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Apache Spark Structured Streaming, Apache Flink, and Akka Streams.
+** An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Apache Spark Structured Streaming, Apache Flink, and Akka.
 ** A `Streamlet` composition model driven by a `blueprint` definition. 
 ** A _Sandbox_ execution mode that accelerates the execution and testing of your applications on your development machine.
 ** A set of `sbt` plugins for packaging Cloudflow applications into deployable containers and generating an application descriptor that informs the deployment.
