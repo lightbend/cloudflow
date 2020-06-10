@@ -26,7 +26,7 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 * A _sandbox_ local execution mode that accelerates the development and testing of your applications without requiring a cluster.
 * A set of `sbt` plugins that are able to package your application into deployable units.
 * The Cloudflow operator, a Kubernetes operator that manages the application lifecycle on Kubernetes.
-* A CLI, in the form of a `kubectl plugin`, that facilitates manual, scripted, and automated (CI/CD)management of the application.
+* A CLI, in the form of a `kubectl plugin`, that facilitates manual, scripted, and automated (CI/CD) management of the application.
 
 == Where To Go Next?
 * link:./docs/current/index.html[Introducing Cloudflow]
