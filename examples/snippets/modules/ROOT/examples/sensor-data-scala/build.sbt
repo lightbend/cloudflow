@@ -5,7 +5,6 @@ import sbt.Keys._
 lazy val sensorData =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin, ScalafmtPlugin)
     .settings(
-//end::docs-projectSetup-example[]
       scalaVersion := "2.12.10",
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
@@ -15,10 +14,10 @@ lazy val sensorData =  (project in file("."))
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.11" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 
-//tag::docs-projectName-example[]
+
       ),
       name := "sensor-data-scala",
-//end::docs-projectName-example[]
+//end::docs-projectSetup-example[]
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
       
