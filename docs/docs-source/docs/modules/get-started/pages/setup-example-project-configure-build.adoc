@@ -1,4 +1,4 @@
-= Set up example project and configure build
+= Set Up Example Project and Configure Build
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
@@ -11,7 +11,8 @@ https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
 The sources for the example described below can be found in the application called
 https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
 
-A typical Cloudflow application uses the organization shown below. We will implement the example in Scala. 
+A typical Cloudflow application uses the organization shown below. 
+We will implement the example in Scala. 
 
 . In a convenient location, such as `my-cloudflow-example` create the following directory structure:
 +
@@ -42,45 +43,35 @@ As we move through the process, the leaf level directories of the above tree wil
 git init
 ----
 +
-NOTE: The Cloudflow sbt plugin assumes that your project is version managed using git. It will use git commit information to generate dynamic versioning for the Docker images it produces. If the project doesn't have an initialized git index with at least one commit, some commands will fail with a `not a git repository`
-error.
+WARNING: The Cloudflow `sbt` plugin assumes that your project is version-managed using `git`. 
+It will use `git commit` information to generate dynamic versioning for the Docker images it produces. If the project doesn't have an initialized git index with at least one commit, some commands will fail with a `not a git repository` error.
 
 == The sbt build script
 
-Cloudflow provides sbt plugins for the supported runtimes, Akka Streams, Spark and Flink. The plugins speed development by abstracting much of the boilerplate necessary to build a complete application. You can use multiple runtimes in the same application. In this example, we use only the `CloudflowAkkaStreamsApplicationPlugin` that provides building blocks for developing a Cloudflow application with Akka Streams.
+Cloudflow provides sbt plugins for the supported runtimes, Akka Streams, Spark and Flink. 
+The plugins speed up development by adding the necessary dependencies and abstracting much of the boilerplate necessary to build a complete application. 
+You can use multiple runtimes in the same application, provided that each runtime is defined in its own sub-project.
+// TODO: Add here a link to the multi-project support
+
+In this example, we use the `CloudflowAkkaPlugin` that provides the building blocks for developing a Cloudflow application with Akka Streams.
+In addition to the backend-specific plugin, we need to add the `CloudflowApplicationPlugin` that provides the image-building and local-running capabilities to the project.
 
 . Create a `build.sbt` file with the following contents and save it in at the same level as your `src` directory:
 +
-```
-import sbt._
-import sbt.Keys._
-
-lazy val sensorData =  (project in file("."))
-  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
-  .settings(
-    libraryDependencies ++= Seq(
-      "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
-      "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.11",
-      "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
-      "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.11" % "test"
-    ),
-    name := "sensor-data",
-    organization := "com.lightbend",
-
-    scalaVersion := "2.12.10",
-    crossScalaVersions := Vector(scalaVersion.value)
-  )
-```
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[docs-projectSetup-example]
+----
 +
-The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams.
+The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams, the Cloudflow application pluging, and also the Scalafmt plugin that we suggest to keep the style consistent in the application (optional).
 
-. Add the Cloudflow plugin in `project/cloudflow-plugins.sbt`:
+. Create the file `project/cloudflow-plugins.sbt` and add the Cloudflow plugin dependency in it:
 +
-```
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.0")
-```
-
-
++
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[]
+----
 
 == What's next
 
