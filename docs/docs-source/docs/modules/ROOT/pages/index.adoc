@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 :imagesdir: assets/images
 
-Cloudflow is an SDK and a set of Kubernetes extensions that accelerates your development of distributed streaming applications and facilitates their deployment to deploy on Kubernetes.
+Cloudflow is an SDK and a set of Kubernetes extensions that accelerates your development of distributed streaming applications and facilitates their deployment on Kubernetes.
 
 The rapid advance and adoption of the Kubernetes ecosystem is delivering the devops promise of giving control and responsibility to dev teams over the lifecycle of their applications. 
 However, the adoption of Kubernetes also increases the complexity of delivering end-to-end applications. 
