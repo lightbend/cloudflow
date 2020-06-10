@@ -10,24 +10,43 @@ ifdef::review[REVIEWERS: it would be great to provide some comments explaining t
 
 The blueprint declares which streamlets join together to form our pipeline. Create `blueprint.conf` in `src/main/blueprint` to specify the connection as follows:
 
-```
-blueprint {
-  streamlets {
-    http-ingress = sensordata.SensorDataHttpIngress
-    metrics = sensordata.SensorDataToMetrics
-    validation = sensordata.MetricsValidation
-    valid-logger = sensordata.ValidMetricLogger
-    invalid-logger = sensordata.InvalidMetricLogger
-  }
+[source,json]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[]
+----
 
-  connections {
-    http-ingress.out = [metrics.in]
-    metrics.out = [validation.in]
-    validation.invalid = [invalid-logger.in]
-    validation.valid = [valid-logger.in]
-  }
-}
-```
+
+== Understanding the blueprint file.
+The blueprint file contains two sections: the `streamlets` section and the `topics` section.
+
+=== The `streamlets` section
+Declares the streamlets participating in the pipeline definition. 
+Each streamlet is declared by: `name = <fully qualified name of the implementing class>`
+where the streamlet `name` is a short descriptive name, which must be unique within the pipeline definition.
+
+=== The `topics` section
+Declares the Kafka topics used in this pipeline and the producers and consumers attached to it.
+
+Streamlet outlets are producers. Streamlet inlets are consumers.
+Taking this definition as an example:
+[source, json]
+----
+  topics {
+    sensor-data {
+      producers = [http-ingress.out, file-ingress.out]
+      consumers = [metrics.in]
+    }
+  ...    
+----
+We observe that we declare a topic called `sensor-data`. 
+The streamlets `http-ingress` and `file-ingress` produce data to it through their `.out` outlet.
+The streamlet `metrics` consumes from this topic through its `.in` inlet.
+
+The Cloudflow build system validates that these connections are schema compatible.  
+
+// It's also possible to include additional configuration for the topics.
+// TODO Add reference to blueprint/topics documentation.
+
 == Commit your changes
 Next, commit your changes:
 
@@ -36,7 +55,7 @@ Next, commit your changes:
 . Use the `git add` command to add all of the files you created.
 +
 ----
-git add *
+git add .
 ----
 . Use the `git commit` command to commit your changes:
 +
@@ -47,4 +66,4 @@ git commit -m "my first Cloudflow app"
 
 == What's next
 
-With the streamlets implemented and the blueprint ready, let's try xref:run-in-sandbox.adoc[running Hello World in a development sandbox].
+With the streamlets implemented and the blueprint ready, let's try xref:run-in-sandbox.adoc[running Wind Turbine in a development sandbox].
