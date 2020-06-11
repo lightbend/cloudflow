@@ -20,14 +20,14 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 The blueprint file contains two sections: the `streamlets` section and the `topics` section.
 
 === The `streamlets` section
-In the `streamlets` section of the blueprint, we declare the streamlets participating in the pipeline definition. 
+In the `streamlets` section of the blueprint, we declare the streamlets participating in the application definition. 
 Each streamlet is declared by: `name = <fully.qualified.name.of.the.implementing.class>`
 where the streamlet `name` is a short descriptive name, which must be unique within the pipeline definition.
 
 === The `topics` section
 
 In the `topics` section of the blueprint, we declare the Kafka topics used in this pipeline and the producers and consumers attached to it.
-Streamlet outlets are producers. Streamlet inlets are consumers. Consumers and producers of the same topic must have the same or compatible schemas.
+Streamlet outlets are producers. Streamlet inlets are consumers. Consumers and producers of the same topic must use the same or compatible schemas.
 
 Let's take this definition as an example:
 [source,json]
@@ -62,7 +62,7 @@ git commit -m "my first Cloudflow app"
 == Verify the Blueprint (optional)
 
 Cloudflow allows you to verify the sanity of the blueprint before you use the application.
-The verification process checks for unconnected end points, schema compatibility between streamlets, invalid/non-existing streamlets, and other issues related to the structure and semantics of the pipeline.
+The verification process checks for unconnected end points, schema compatibility between streamlets, invalid/non-existing streamlets, and other issues related to the structure and semantics of the application.
 
 To verify the blueprint:
 
