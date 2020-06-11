@@ -37,18 +37,17 @@ Use "cloudflow [command] --help" for more information about a command.
 * **list** shows all applications deployed in the cluster
 
 ```
-$ kubectl-cloudflow list
-
+$ kubectl cloudflow list
 NAME              NAMESPACE         VERSION           CREATION-TIME     
-sensor-data       sensor-data       2-89ce8a7         2020-06-10 10:10:10 +0200
+sensor-data-scala sensor-data-scala 484-199a3c1-dirty 2020-06-10 22:28:32 +0200 CEST
 ```
 
 * **status** shows details of a running application
 
 ```
-$ kubectl-cloudflow status sensor-data
-Name:             sensor-data
-Namespace:        sensor-data
+$ kubectl cloudflow status sensor-data-scala
+Name:             sensor-data-scala
+Namespace:        sensor-data-scala
 Version:          2-89ce8a7
 Created:          2020-06-10 22:28:32 +0200 CEST
 Status:           Running
@@ -69,9 +68,9 @@ Our application uses an http based ingress to ingest data. Follow the following 
 
 [source, text]
 ----
-$ kubectl describe pod sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data
+$ kubectl describe pod sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data-scala
 Name:               sensor-data-http-ingress-fd9cdb66f-jbsrm
-Namespace:          sensor-data
+Namespace:          sensor-data-scala
 Priority:           0
 PriorityClassName:  <none>
 Node:               gke-dg-gke-1-default-pool-162a09d5-ddnq/10.132.0.21
@@ -103,7 +102,7 @@ The streamlet exposes its HTTP endpoint for uploading data on port `3000` - let'
 
 [source, text]
 ----
-$ kubectl port-forward sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data 3000:3000
+$ kubectl port-forward sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data-scala 3000:3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 Handling connection for 3000
@@ -113,32 +112,50 @@ NOTE: The port-forward solution used here is a temporary route to the applicatio
 
 * Push data to the application. In order to do that follow the steps:
  * create a json file named `data.json` with the content `{"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545346279,"measurements":{"power":1.7,"rotorSpeed":23.4,"windSpeed":100.1}}`
- * run the following bash script:
+ * run the following command:
 ```
- for str in $(cat data.json)
-do
-  echo "Sending $str"
-  curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data "$str"
-done
+$curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data @data.json
 ```
-* Note that we are using the port number `3000` of `localhost` to which we mapped the Pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
+* Note that we are using the port number `3000` of `localhost` to which we forward the pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
+* When using this port-forward method, it's possible to use the same `send-local-data.sh` script that we used to send data to the local sandbox. Run the following command:
+[source, bash]
+----
+$./send-local-data.sh 
+----
++ And you should see output similar to the following:
+[source, bash]
+----
+Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
+HTTP/1.1 202 Accepted
+Server: akka-http/10.1.11
+Date: Thu, 11 Jun 2020 10:20:48 GMT
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 88
 
+The request has been accepted for processing, but the processing has not been completed.Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
+HTTP/1.1 202 Accepted
+Server: akka-http/10.1.11
+Date: Thu, 11 Jun 2020 10:20:48 GMT
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 88
+----
 
 ## Verify the Application works
 
 Check the log of the streamlet `valid-logger` to verify that you get the proper transformed metric.
 
-```
+[source, bash]
+----
 $ kubectl logs sensor-data-valid-logger-76884bb775-86pwh -n sensor-data
-```
+----
 
 Towards the end of the log you will see something like the following getting printed out:
 
-```
-[INFO] [11/12/2019 07:57:04.369] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "rotorSpeed", "value": 23.4}
-[INFO] [11/12/2019 07:57:04.375] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "power", "value": 1.7}
-[INFO] [11/12/2019 07:57:04.375] [akka_streamlet-akka.actor.default-dispatcher-4] [akka.actor.ActorSystemImpl(akka_streamlet)] {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545346279, "name": "windSpeed", "value": 100.1}
-```
+[source, text]
+----
+[INFO] [06/11/2020 12:20:49.288] [akka_streamlet-akka.actor.default-dispatcher-5] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "rotorSpeed", "value": 3.9}
+[INFO] [06/11/2020 12:20:49.293] [akka_streamlet-akka.actor.default-dispatcher-6] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "windSpeed", "value": 105.9}
+----
 
 == Undeploy the Application
 
