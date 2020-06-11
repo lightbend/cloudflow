@@ -179,7 +179,9 @@ Towards the end of the log you will see something like the following getting pri
 ----
 
 == Undeploy the Application
+When we are done experimenting with the application, we can undeploy it to terminate its operations.
 
-```
-$ kubectl cloudflow undeploy sensor-data
-```
+[source, bash]
+----
+$kubectl cloudflow undeploy sensor-data-scala
+----
