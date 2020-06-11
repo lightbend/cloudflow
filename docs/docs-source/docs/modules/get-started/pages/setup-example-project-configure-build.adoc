@@ -48,7 +48,7 @@ It will use `git commit` information to generate dynamic versioning for the Dock
 
 == The sbt build script
 
-Cloudflow provides sbt plugins for the supported runtimes, Akka Streams, Spark and Flink. 
+Cloudflow provides sbt plugins for the supported runtimes, Akka, Spark and Flink. 
 The plugins speed up development by adding the necessary dependencies and abstracting much of the boilerplate necessary to build a complete application. 
 You can use multiple runtimes in the same application, provided that each runtime is defined in its own sub-project.
 // TODO: Add here a link to the multi-project support
