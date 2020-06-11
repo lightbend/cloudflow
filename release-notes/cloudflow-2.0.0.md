@@ -24,19 +24,19 @@ Other notable changes relative to 1.3.3 include:
 - Experimental Protobuf support, Scala API [#405](https://github.com/lightbend/cloudflow/pull/405)
 - Removed old plugins [#429](https://github.com/lightbend/cloudflow/pull/429)
 - The default deployment configuration uses fewer resources when deploying Spark [#483](https://github.com/lightbend/cloudflow/pull/483)
-- Integration tests for configuration (#475, #478)
+- Integration tests for configuration ([#475](https://github.com/lightbend/cloudflow/pull/475), [#478](https://github.com/lightbend/cloudflow/pull/478))
 - `kubectl status` now sorts the report by streamlet name, desc [#466](https://github.com/lightbend/cloudflow/pull/466)
 - `HttpServerLogic` changed to make outlets optional [#243](https://github.com/lightbend/cloudflow/pull/243)
 - Fix for Flink `auto.offset.reset` to earliest [#229](https://github.com/lightbend/cloudflow/pull/229)
 - Fix for printing missing pods in kubectl cloudflow status.
 - Fix for kubectl cloudflow status (Missing pods and CrashloopBackoff) [#380](https://github.com/lightbend/cloudflow/pull/380)
-- Fix for default empty string config parameter. (#452, #467, #474)
+- Fix for default empty string config parameter. ([#452](https://github.com/lightbend/cloudflow/pull/452), [#467](https://github.com/lightbend/cloudflow/pull/467), [#474](https://github.com/lightbend/cloudflow/pull/474))
 - Fix for Kubernetes API versions [#438](https://github.com/lightbend/cloudflow/pull/438)
 - Fix for Akka cluster config [#357](https://github.com/lightbend/cloudflow/pull/357)
 - Fix for Call Record Aggregator test [#249](https://github.com/lightbend/cloudflow/pull/249)
 - Fix for truncating label of kafka topic [#241](https://github.com/lightbend/cloudflow/pull/241)
-- More stable Cloudflow operator, recovers from conflicts, retries up to a minute to get the resource. (#248, #454)
-- Deprecate ..WithOffsetContext [#252](https://github.com/lightbend/cloudflow/pull/252)
+- More stable Cloudflow operator, recovers from conflicts, retries up to a minute to get the resource. ([#248](https://github.com/lightbend/cloudflow/pull/248), [#454](https://github.com/lightbend/cloudflow/pull/454))
+- Deprecated ..WithOffsetContext [#252](https://github.com/lightbend/cloudflow/pull/252)
 - Integrated `cloudflow-docs` into the cloudflow repo [#381](https://github.com/lightbend/cloudflow/pull/381)
 - The documentation now supports multiple versions [#384](https://github.com/lightbend/cloudflow/pull/384)
 - Deprecated bash / helm based installer script [#470](https://github.com/lightbend/cloudflow/pull/470)
@@ -45,7 +45,7 @@ Other notable changes relative to 1.3.3 include:
 - Updated Integration Tests [#446](https://github.com/lightbend/cloudflow/pull/446)
 - Added getting started templates to quickly create new Cloudflow projects [#244](https://github.com/lightbend/cloudflow/pull/244)
 - CI improvement, added integration tests project
-- Remove kafka nodepool in create cluster for EKS [#226](https://github.com/lightbend/cloudflow/pull/226)
+- Removed Kafka nodepool in create cluster for EKS [#226](https://github.com/lightbend/cloudflow/pull/226)
 
 # Compatibility
 Cloudflow 2.0.0 is a breaking change compared to 1.3.3. 
