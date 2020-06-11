@@ -119,6 +119,7 @@ NOTE: The port-forward solution used here is a temporary route to the applicatio
 {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545346279,"measurements":{"power":1.7,"rotorSpeed":23.4,"windSpeed":100.1}}
 ----
  * run the following command:
++
 [source, bash]
 ----
 $curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data @data.json
@@ -129,7 +130,7 @@ $curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --dat
 ----
 $./send-local-data.sh 
 ----
-+ And you should see output similar to the following:
+* And you should see output similar to the following:
 [source, bash]
 ----
 Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
