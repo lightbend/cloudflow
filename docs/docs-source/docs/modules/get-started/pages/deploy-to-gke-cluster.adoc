@@ -34,7 +34,7 @@ Once the image is successfully published, you will see something like the follow
 [info]   eu.gcr.io/bubbly-observer-178213/sensor-data-scala:471-89ca008
 [success] Cloudflow application CR generated in /.../sensor-data-scala/target/sensor-data-scala.json
 [success] Use the following command to deploy the Cloudflow application:
-[success] kubectl cloudflow deploy /.../sensor-data-scala/target/sensor-data-scala.json
+[success] kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json
 [success] Total time: 41 s, completed Jun 10, 2020 10:10:10 PM
 
 ```
@@ -48,25 +48,32 @@ This is quite straightforward and the output of `buildApp` actually tells you wh
 In addition you need to supply the credentials to the Docker repository along with the CLI `deploy` command.
 
 ```
-$ kubectl cloudflow deploy /.../sensor-data-scala/target/sensor-data-scala.json -u oauth2accesstoken -p "$(gcloud auth print-access-token)"
+$ kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json -u oauth2accesstoken -p "$(gcloud auth print-access-token)"
 ```
 
 If the command goes through you will see the following output:
 
 ```
-[Done] Deployment of application `sensor-data` has started.
+[Done] Deployment of application `sensor-data-scala` has started.
 ```
 
 Once all streamlets are up in their pods, you can see them running using the following command:
 
 ```
-$ kubectl get pods -n sensor-data
-NAME                                          READY   STATUS    RESTARTS   AGE
-sensor-data-http-ingress-fd9cdb66f-jbsrm      1/1     Running   0          3m1s
-sensor-data-invalid-logger-549d687d89-m64l7   1/1     Running   0          3m1s
-sensor-data-metrics-6c47bfb489-xd644          1/1     Running   0          3m1s
-sensor-data-valid-logger-76884bb775-86pwh     1/1     Running   0          3m1s
-sensor-data-validation-7dd858b6c5-lcp2n       1/1     Running   0          3m1s
+$ kubectl cloudflow status sensor-data-scala 
+Name:             sensor-data-scala
+Namespace:        sensor-data-scala
+Version:          484-199a3c1-dirty
+Created:          2020-06-10 22:28:32 +0200 CEST
+Status:           Running
+
+STREAMLET         POD                                              READY             STATUS            RESTARTS          
+http-ingress      sensor-data-scala-http-ingress-6f4b677c84-8gtk7  1/1               Running           0
+invalid-logger    sensor-data-scala-invalid-logger-f76667866-lffmk 1/1               Running           0
+metrics           sensor-data-scala-metrics-859d9cf974-vrpzs       1/1               Running           0
+valid-logger      sensor-data-scala-valid-logger-6946746b4b-bpqdc  1/1               Running           0
+validation        sensor-data-scala-validation-b7f85669d-kkpx9     1/1               Running           0
+
 ```
 
 Note that all streamlets run in a namespace that matches the name of the application.
