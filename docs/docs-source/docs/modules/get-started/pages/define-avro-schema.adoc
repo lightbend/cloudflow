@@ -33,14 +33,14 @@ To create the avro schema for the domain objects, follow these steps:
 +
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/SensorData.sensor-data-scala/src/main/avro/Measurements.avcs[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/SensorData.avsc[]
 ----
 
 . Create a `Measurements.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition: 
 +
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/Measurements.avcs[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/Measurements.avsc[]
 ----
 
 
@@ -48,7 +48,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 +
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/Metric.sensor-data-scala/src/main/avro/Measurements.avcs[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/Metric.avsc[]
 ----
 
 . Create an `InvalidMetric.avsc` file and save it in the `avro` subdirectory of the example project. Use the following definition:
