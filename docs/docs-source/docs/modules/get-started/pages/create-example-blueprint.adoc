@@ -86,7 +86,7 @@ sbt:sensor-data> verifyBlueprint
 [info] Streamlet 'sensordata.SensorDataHttpIngress' found
 [info] Streamlet 'sensordata.ValidMetricLogger' found
 [info] Streamlet 'sensordata.InvalidMetricLogger' found
-[success] /.../sensor-data/src/main/blueprint/blueprint.conf verified.
+[success] /path/to/sensor-data/src/main/blueprint/blueprint.conf verified.
 ```
 
 == What's next
