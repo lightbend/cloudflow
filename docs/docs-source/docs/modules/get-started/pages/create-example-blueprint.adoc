@@ -12,7 +12,7 @@ The blueprint declares which streamlets join together to form our pipeline. Crea
 
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[tag=all]
 ----
 
 
@@ -32,7 +32,7 @@ Streamlet outlets are producers. Streamlet inlets are consumers. Consumers and p
 Let's take this definition as an example:
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[topic-example]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[tag=topic-example]
 ----
 <1> Declare a topic called `sensor-data`.
 <2> The streamlet `http-ingress` produce data to it through its `.out` outlet.
