@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::code[]
 package sensordata
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -29,3 +29,4 @@ class SensorDataHttpIngress extends AkkaServerStreamlet {
   def shape                = StreamletShape.withOutlets(out)
   override def createLogic = HttpServerLogic.default(this, out)
 }
+//end::code[]

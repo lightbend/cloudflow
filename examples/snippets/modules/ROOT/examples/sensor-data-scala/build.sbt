@@ -1,4 +1,3 @@
-//tag::docs-projectSetup-example[]
 import sbt._
 import sbt.Keys._
 
@@ -17,7 +16,6 @@ lazy val sensorData =  (project in file("."))
 
       ),
       name := "sensor-data-scala",
-//end::docs-projectSetup-example[]
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
       

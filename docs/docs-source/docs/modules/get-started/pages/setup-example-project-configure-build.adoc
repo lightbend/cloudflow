@@ -60,7 +60,7 @@ In addition to the backend-specific plugin, we need to add the `CloudflowApplica
 +
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[tag=docs-projectSetup-example]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[]
 ----
 +
 The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams, the Cloudflow application pluging, and also the Scalafmt plugin that we suggest to keep the style consistent in the application (optional).

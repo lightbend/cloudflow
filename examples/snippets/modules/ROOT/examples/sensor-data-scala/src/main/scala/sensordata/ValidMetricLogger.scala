@@ -1,4 +1,3 @@
-//tag::all[]
 /*
  * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
  *
@@ -14,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::all[]
 package sensordata
 
 import cloudflow.akkastream._
