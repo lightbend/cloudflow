@@ -1,4 +1,4 @@
-= Creating the blueprint
+= Creating the Blueprint
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
@@ -16,31 +16,27 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 ----
 
 
-== Understanding the blueprint file.
+== Understanding the Blueprint File.
 The blueprint file contains two sections: the `streamlets` section and the `topics` section.
 
 === The `streamlets` section
-Declares the streamlets participating in the pipeline definition. 
-Each streamlet is declared by: `name = <fully qualified name of the implementing class>`
+In the `streamlets` section of the blueprint, we declare the streamlets participating in the pipeline definition. 
+Each streamlet is declared by: `name = <fully.qualified.name.of.the.implementing.class>`
 where the streamlet `name` is a short descriptive name, which must be unique within the pipeline definition.
 
 === The `topics` section
-Declares the Kafka topics used in this pipeline and the producers and consumers attached to it.
 
-Streamlet outlets are producers. Streamlet inlets are consumers.
-Taking this definition as an example:
-[source, json]
+In the `topics` section of the blueprint, we declare the Kafka topics used in this pipeline and the producers and consumers attached to it.
+Streamlet outlets are producers. Streamlet inlets are consumers. Consumers and producers of the same topic must have the same or compatible schemas.
+
+Let's take this definition as an example:
+[source,json]
 ----
-  topics {
-    sensor-data {
-      producers = [http-ingress.out, file-ingress.out]
-      consumers = [metrics.in]
-    }
-  ...    
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[topic-example]
 ----
-We observe that we declare a topic called `sensor-data`. 
-The streamlets `http-ingress` and `file-ingress` produce data to it through their `.out` outlet.
-The streamlet `metrics` consumes from this topic through its `.in` inlet.
+<1> Declare a topic called `sensor-data`.
+<2> The streamlet `http-ingress` produce data to it through its `.out` outlet.
+<3> The streamlet `metrics` consumes from this topic through its `.in` inlet.
 
 The Cloudflow build system validates that these connections are schema compatible.  
 
