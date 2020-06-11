@@ -111,26 +111,31 @@ Handling connection for 3000
 NOTE: The port-forward solution used here is a temporary route to the application from localhost. If you want to create a permanent route that can be accessed by anyone, please see the following chapter on Kubernetes ingresses: xref:ingress-creation.adoc[Providing External Access to Cloudflow Services]
 
 * Push data to the application. In order to do that follow the steps:
- * create a json file named `data.json` with the following content:
- 
+** create a json file named `data.json` with the following content:
++ 
 .data.json
 [source, json]
 ----
 {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545346279,"measurements":{"power":1.7,"rotorSpeed":23.4,"windSpeed":100.1}}
 ----
- * run the following command:
+** run the following command:
 +
 [source, bash]
 ----
 $curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data @data.json
 ----
-* Note that we are using the port number `3000` of `localhost` to which we forward the pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
-* When using this port-forward method, it's possible to use the same `send-local-data.sh` script that we used to send data to the local sandbox. Run the following command:
+
+Note that we are using the port number `3000` of `localhost` to which we forward the pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
+
+When using this port-forward method, it's also possible to use the same `send-local-data.sh` script that we used to send data to the local sandbox. 
+For that, run the following command:
+
 [source, bash]
 ----
 $./send-local-data.sh 
 ----
-* And you should see output similar to the following:
+
+And you should see output similar to the following:
 [source, bash]
 ----
 Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
