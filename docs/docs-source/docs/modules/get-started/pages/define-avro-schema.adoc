@@ -55,7 +55,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 +
 [source,json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/InvalidMetric.avcs[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/avro/InvalidMetric.avsc[]
 ----
 
 == What's next
