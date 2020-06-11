@@ -20,66 +20,50 @@ sbt:sensor-data> runLocal
 [info] Streamlet 'sensordata.SensorDataHttpIngress' found
 [info] Streamlet 'sensordata.ValidMetricLogger' found
 [info] Streamlet 'sensordata.InvalidMetricLogger' found
-[success] /.../sensor-data/src/main/blueprint/blueprint.conf verified.
+[success] /path/to/sensor-data/src/main/blueprint/blueprint.conf verified.
 
-       ┌────────────┐       ┌────────────┐         
-       │http-ingress│       │file-ingress│         
-       └──────┬─────┘       └──────┬─────┘         
-              │                    │               
-              └────────┐    ┌──────┘               
-                       │    │                      
-                       v    v                      
-                  ┌─────────────┐                  
-                  │[sensor-data]│                  
-                  └──────┬──────┘                  
-                         │                         
-                         v                         
-                     ┌───────┐                     
-                     │metrics│                     
-                     └───┬───┘                     
-                         │                         
-                         v                         
-                    ┌─────────┐                    
-                    │[metrics]│                    
-                    └────┬────┘                    
-                         │                         
-                         v                         
-                   ┌──────────┐                    
-                   │validation│                    
-                   └───┬───┬──┘                    
-                       │   │                       
-                       │   └───────┐               
-                       v           │               
-          ┌───────────────┐        │               
-          │[valid-metrics]│        │               
-          └───┬───────┬───┘        │               
-              │       │            │               
-              v       │            │               
-         ┌─────────┐  │            │               
-         │rotorizer│  │            │               
-         └─┬───────┘  │            │               
-           │          │            │               
-           v          │            v               
-   ┌──────────────┐   │   ┌─────────────────┐      
-   │[rotor-speeds]│   │   │[invalid-metrics]│      
-   └──────┬───────┘   │   └────────────────┬┘      
-          │           └────┐               │       
-          │                │               │       
-          v                v               v       
- ┌────────────────┐ ┌────────────┐ ┌──────────────┐
- │rotor-avg-logger│ │valid-logger│ │invalid-logger│
- └────────────────┘ └────────────┘ └──────────────┘
+            ┌────────────┐            
+            │http-ingress│            
+            └─────┬──────┘            
+                  │                   
+                  v                   
+           ┌─────────────┐            
+           │[sensor-data]│            
+           └──────┬──────┘            
+                  │                   
+                  v                   
+              ┌───────┐               
+              │metrics│               
+              └───┬───┘               
+                  │                   
+                  v                   
+             ┌─────────┐              
+             │[metrics]│              
+             └─────┬───┘              
+                   │                  
+                   v                  
+             ┌──────────┐             
+             │validation│             
+             └───┬───┬──┘             
+                 │   │                
+                 │   └───────┐        
+                 │           │        
+                 v           v        
+ ┌─────────────────┐ ┌───────────────┐
+ │[invalid-metrics]│ │[valid-metrics]│
+ └────────┬────────┘ └─────┬─────────┘
+          │                │          
+          v                v          
+  ┌──────────────┐  ┌────────────┐    
+  │invalid-logger│  │valid-logger│    
+  └──────────────┘  └────────────┘    
 ---------------------------- Streamlets per project ----------------------------
  sensor-data-scala - output file: file:/tmp/cloudflow-local-run3239069643364862589/sensor-data-scala-local.log
 
-	file-ingress [sensordata.SensorDataFileIngress]
-	- mount [source-data-mount] available at [/tmp/cloudflow]
 	http-ingress [sensordata.SensorDataHttpIngress]
 	- HTTP port [3000]
 	invalid-logger [sensordata.InvalidMetricLogger]
 	metrics [sensordata.SensorDataToMetrics]
-	rotor-avg-logger [sensordata.RotorspeedWindowLogger]
-	rotorizer [sensordata.RotorSpeedFilter]
 	valid-logger [sensordata.ValidMetricLogger]
 	validation [sensordata.MetricsValidation]
 
