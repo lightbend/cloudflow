@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::code[]
 package sensordata
 
 object SensorDataUtils {
   def isValidMetric(m: Metric) = m.value >= 0.0
 }
+//end::code[]

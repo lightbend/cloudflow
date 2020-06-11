@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::code[]
 package sensordata
 
 import cloudflow.akkastream._
@@ -36,3 +36,4 @@ class InvalidMetricLogger extends AkkaStreamlet {
       sourceWithCommittableContext(inlet).via(flow).to(committableSink)
   }
 }
+//end::code[]

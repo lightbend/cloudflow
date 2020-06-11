@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//tag::code[]
 package sensordata
 
 import cloudflow.akkastream._
@@ -38,3 +38,4 @@ class MetricsValidation extends AkkaStreamlet {
         }
   }
 }
+//end::code[]

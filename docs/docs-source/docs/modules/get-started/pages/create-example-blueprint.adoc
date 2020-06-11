@@ -1,4 +1,4 @@
-= Creating the blueprint
+= Creating the Blueprint
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
@@ -10,24 +10,39 @@ ifdef::review[REVIEWERS: it would be great to provide some comments explaining t
 
 The blueprint declares which streamlets join together to form our pipeline. Create `blueprint.conf` in `src/main/blueprint` to specify the connection as follows:
 
-```
-blueprint {
-  streamlets {
-    http-ingress = sensordata.SensorDataHttpIngress
-    metrics = sensordata.SensorDataToMetrics
-    validation = sensordata.MetricsValidation
-    valid-logger = sensordata.ValidMetricLogger
-    invalid-logger = sensordata.InvalidMetricLogger
-  }
+[source,json]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[tag=all]
+----
 
-  connections {
-    http-ingress.out = [metrics.in]
-    metrics.out = [validation.in]
-    validation.invalid = [invalid-logger.in]
-    validation.valid = [valid-logger.in]
-  }
-}
-```
+
+== Understanding the Blueprint File.
+The blueprint file contains two sections: the `streamlets` section and the `topics` section.
+
+=== The `streamlets` section
+In the `streamlets` section of the blueprint, we declare the streamlets participating in the pipeline definition. 
+Each streamlet is declared by: `name = <fully.qualified.name.of.the.implementing.class>`
+where the streamlet `name` is a short descriptive name, which must be unique within the pipeline definition.
+
+=== The `topics` section
+
+In the `topics` section of the blueprint, we declare the Kafka topics used in this pipeline and the producers and consumers attached to it.
+Streamlet outlets are producers. Streamlet inlets are consumers. Consumers and producers of the same topic must have the same or compatible schemas.
+
+Let's take this definition as an example:
+[source,json]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/blueprint/blueprint.conf[tag=topic-example]
+----
+<1> Declare a topic called `sensor-data`.
+<2> The streamlet `http-ingress` produce data to it through its `.out` outlet.
+<3> The streamlet `metrics` consumes from this topic through its `.in` inlet.
+
+The Cloudflow build system validates that these connections are schema compatible.  
+
+// It's also possible to include additional configuration for the topics.
+// TODO Add reference to blueprint/topics documentation.
+
 == Commit your changes
 Next, commit your changes:
 
@@ -36,7 +51,7 @@ Next, commit your changes:
 . Use the `git add` command to add all of the files you created.
 +
 ----
-git add *
+git add .
 ----
 . Use the `git commit` command to commit your changes:
 +
@@ -44,7 +59,36 @@ git add *
 git commit -m "my first Cloudflow app"
 ----
 
+== Verify the Blueprint (optional)
+
+Cloudflow allows you to verify the sanity of the blueprint before you use the application.
+The verification process checks for unconnected end points, schema compatibility between streamlets, invalid/non-existing streamlets, and other issues related to the structure and semantics of the pipeline.
+
+To verify the blueprint:
+
+. From your project's top-level directory, run `sbt` in interactive mode:
++
+```
+sbt
+```
+. Enter the verify command:
++
+```
+verifyBlueprint
+```
++ 
+You should see output similar to the following:
++
+```
+sbt:sensor-data> verifyBlueprint
+[info] Streamlet 'sensordata.SensorDataToMetrics' found
+[info] Streamlet 'sensordata.MetricsValidation' found
+[info] Streamlet 'sensordata.SensorDataHttpIngress' found
+[info] Streamlet 'sensordata.ValidMetricLogger' found
+[info] Streamlet 'sensordata.InvalidMetricLogger' found
+[success] /path/to/sensor-data/src/main/blueprint/blueprint.conf verified.
+```
 
 == What's next
 
-With the streamlets implemented and the blueprint ready, let's try xref:run-in-sandbox.adoc[running Hello World in a development sandbox].
+With the streamlets implemented and the blueprint ready, let's try xref:run-in-sandbox.adoc[running Wind Turbine in a development sandbox].

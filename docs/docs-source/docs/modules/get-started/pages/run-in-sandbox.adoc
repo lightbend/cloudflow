@@ -1,42 +1,13 @@
-= Running in a local sandbox
+= Running the Application in the _Sandbox_
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
 
 include::ROOT:partial$include.adoc[]
 
-Now that we have the application code implemented, let's try to build the application and see what we can do with it locally without deploying in the cluster.
+Now that we have the application code implemented, let's build the application and exercise its functionality locally without requiring deploying it in a cluster.
 
-**Verify the Blueprint**
-
-Cloudflow allows you to verify the sanity of the blueprint before you deploy the application on the cluster. It will check for unconnected end points, invalid streamlets and other issues related to the structure and semantics of the pipeline.
-
-To verify the blueprint:
-
-. From your project's top-level directory, run `sbt` in interactive mode:
-+
-```
-sbt
-```
-. Enter the verify command:
-+
-```
-verifyBlueprint
-```
-+ 
-You should see output similar to the following:
-+
-```
-sbt:sensor-data> verifyBlueprint
-[info] Streamlet 'sensordata.SensorDataToMetrics' found
-[info] Streamlet 'sensordata.MetricsValidation' found
-[info] Streamlet 'sensordata.SensorDataHttpIngress' found
-[info] Streamlet 'sensordata.ValidMetricLogger' found
-[info] Streamlet 'sensordata.InvalidMetricLogger' found
-[success] /Users/debasishghosh/lightbend/oss/cloudflow-oss/cloudflow/examples/sensor-data/src/main/blueprint/blueprint.conf verified.
-```
-
-**Run the Streamlets Locally**
+== Run the Streamlets Locally
 The `sbt runLocal` command allows you to run your application on your local machine without a Kubernetes cluster. 
 
 . From the `sbt` shell, invoke `runLocal`:
@@ -49,34 +20,122 @@ sbt:sensor-data> runLocal
 [info] Streamlet 'sensordata.SensorDataHttpIngress' found
 [info] Streamlet 'sensordata.ValidMetricLogger' found
 [info] Streamlet 'sensordata.InvalidMetricLogger' found
-[success] /Users/debasishghosh/lightbend/oss/cloudflow-oss/cloudflow/examples/sensor-data/src/main/blueprint/blueprint.conf verified.
-[info] Using sandbox configuration from resources/local.conf
----------------------------------- Streamlets ----------------------------------
-http-ingress [sensordata.SensorDataHttpIngress]
+[success] /path/to/sensor-data/src/main/blueprint/blueprint.conf verified.
+
+            ┌────────────┐            
+            │http-ingress│            
+            └─────┬──────┘            
+                  │                   
+                  v                   
+           ┌─────────────┐            
+           │[sensor-data]│            
+           └──────┬──────┘            
+                  │                   
+                  v                   
+              ┌───────┐               
+              │metrics│               
+              └───┬───┘               
+                  │                   
+                  v                   
+             ┌─────────┐              
+             │[metrics]│              
+             └─────┬───┘              
+                   │                  
+                   v                  
+             ┌──────────┐             
+             │validation│             
+             └───┬───┬──┘             
+                 │   │                
+                 │   └───────┐        
+                 │           │        
+                 v           v        
+ ┌─────────────────┐ ┌───────────────┐
+ │[invalid-metrics]│ │[valid-metrics]│
+ └────────┬────────┘ └─────┬─────────┘
+          │                │          
+          v                v          
+  ┌──────────────┐  ┌────────────┐    
+  │invalid-logger│  │valid-logger│    
+  └──────────────┘  └────────────┘    
+---------------------------- Streamlets per project ----------------------------
+ sensor-data-scala - output file: file:/tmp/cloudflow-local-run3239069643364862589/sensor-data-scala-local.log
+
+	http-ingress [sensordata.SensorDataHttpIngress]
 	- HTTP port [3000]
-invalid-logger [sensordata.InvalidMetricLogger]
-metrics [sensordata.SensorDataToMetrics]
-valid-logger [sensordata.ValidMetricLogger]
-validation [sensordata.MetricsValidation]
+	invalid-logger [sensordata.InvalidMetricLogger]
+	metrics [sensordata.SensorDataToMetrics]
+	valid-logger [sensordata.ValidMetricLogger]
+	validation [sensordata.MetricsValidation]
+
 --------------------------------------------------------------------------------
 
---------------------------------- Connections ---------------------------------
-validation.valid -> valid-logger.in
-http-ingress.out -> metrics.in
-validation.invalid -> invalid-logger.in
-metrics.out -> validation.in
+------------------------------------ Topics ------------------------------------
+[invalid-metrics]
+[metrics]
+[rotor-speeds]
+[sensor-data]
+[valid-metrics]
+--------------------------------------------------------------------------------
+
+----------------------------- Local Configuration -----------------------------
+Using Sandbox local configuration file: src/main/resources/local.conf
 --------------------------------------------------------------------------------
 
 ------------------------------------ Output ------------------------------------
-Pipeline log output available in file: /var/folders/th/mq68kp9533z31prp3x7fm7rw0000gn/T/local-cloudflow2752564492899894997/local-cloudflow7958636402825157289.log
+Pipeline log output available in folder: /tmp/cloudflow-local-run3239069643364862589
 --------------------------------------------------------------------------------
 
-Running sensor-data  
+Running sensor-data-scala  
 To terminate, press [ENTER]
 
 ```
 
-. Press **ENTER** to terminate the application.
+While the application is running in this _local_ mode, it's possible to exercise all its interfaces and observe the output written by the streamlets logging or standard output.
+
+The line `sensor-data-scala - output file: <path-to-temp-file>` indicates the location of the captured output.
+You can follow the output using command line utilities (tail) or a text editor that support live updates (e.g. sublime text)
+
+We can also appreciate that the `ingress` streamlet is reachable on the TCP port 3000.
+```
+http-ingress [sensordata.SensorDataHttpIngress]
+	- HTTP port [3000]
+```
+You can send data to this port to exercise the pipeline.
+To make this easy, we include a script `send-local-data.sh` that takes a sample dataset from the `test-data/` directory and sends it record-by-record to the HTTP ingress port for processing.
+
+You should see an output similar to this:
+
+[source, bash]
+----
+$ ./send-local-data.sh 
+Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
+HTTP/1.1 202 Accepted
+Server: akka-http/10.1.11
+Date: Wed, 10 Jun 2020 18:11:18 GMT
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 88
+
+The request has been accepted for processing, but the processing has not been completed
+----
+
+You can then observe the results by inspecting the output file of the application, as explained above.
+In the `<path-to-temp-file`, you should see output similar to this:
+
+[source, text]
+----
+[INFO] [06/10/2020 20:21:34.400] [akka_streamlet-akka.actor.default-dispatcher-5] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "windSpeed", "value": 105.9}
+----
+
+When you are done experimenting with the running application, you can stop it by pressing **ENTER**
+
+[source, bash]
+----
+Running sensor-data-scala  
+To terminate, press [ENTER]
+
+
+[info] Attempting to terminate local application
+----
 
 == What's next
 
