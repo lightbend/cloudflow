@@ -44,7 +44,7 @@ html-author-mode: clean
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--stacktrace \
-		docs-source/author-mode-site.yml
+		docs/docs-source/author-mode-site.yml
 	@echo "Done"
 
 check-links:
