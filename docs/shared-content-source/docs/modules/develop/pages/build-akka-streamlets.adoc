@@ -310,4 +310,4 @@ Java::
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/step3/src/main/java/com/example/AtLeastOnceReportPrinter.java[tag=atLeastOnce]
 ----
 
-This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:index.adoc#streamlets-blueprints[Composing streamlets using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].
+This completes the code for the `ReportPrinter`. The next step is to use it in a blueprint, as described in xref:blueprints.adoc[Composing applications using blueprints]. Then, you will want to xref:test-akka-streamlet.adoc[test your streamlets].

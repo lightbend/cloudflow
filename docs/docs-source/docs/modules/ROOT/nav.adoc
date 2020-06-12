@@ -18,6 +18,7 @@ include::partial$include.adoc[]
 
 * xref:develop:index.adoc[Developing Applications with Cloudflow]
 ** xref:develop:schema-first-approach.adoc[Schema-First approach]
+** xref:develop:blueprints.adoc[Using Blueprints]
 ** xref:develop:cloudflow-local-sandbox.adoc[Using a local sandbox]
 ** xref:develop:developing-streamlets.adoc[Developing streamlets]
 *** xref:develop:use-akka-streamlets.adoc[Using Akka streamlets]

@@ -3,15 +3,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Schema-first approach
-
 Cloudflow uses a schema-first approach for building streaming data pipelines. You simply need to supply an http://avro.apache.org/docs/current/spec.html[Avro] schema as the starting point of the domain model for which a streaming data flow needs to be built. Cloudflow adds the appropriate plug-ins to the build system of the application to generate Java / Scala classes corresponding to the Avro schema.
 
 This approach has the advantage that you _only_ need to take care of the core domain model and Cloudflow does the heavy lifting of generating the classes and integrating them with the main application.
 
 However since Cloudflow takes the schema as the input, it needs to ensure that the corresponding data inlets and outlets honor the schema when allowing data to flow through them. This needs to be done to ensure data consistency across all the inlets and outlets. We discuss this in the next section.
 
-=== Schema code generation
+== Schema code generation
 
 You can choose what programming language to generate their schemas into by defining settings in the SBT project.  When no settings are defined, by default the `sbt-cloudflow` plugin will look for Avro schemas in `src/main/avro` and will generate Scala classes.
 
@@ -29,7 +27,7 @@ For example, to generate Java classes from Avro schemas in a non-default locatio
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/build.sbt[tag=avro-config]
 ----
 
-=== Schema-aware inlets and outlets
+== Schema-aware inlets and outlets
 
 In Cloudflow, all streamlet inlets and outlets are schema-aware. This means two things:
 
@@ -38,7 +36,7 @@ In Cloudflow, all streamlet inlets and outlets are schema-aware. This means two 
 
 Let's take a look at how Cloudflow ensures both of the above guarantees.
 
-=== Data integrity guarantee through schemas and types
+== Data integrity guarantee through schemas and types
 
 As mentioned above, any application definition starts with the schema definition for the domain object. 
 Let's assume you provide the following Avro schema as an input. 
@@ -67,7 +65,7 @@ Cloudflow ensures the following compile time guarantees through this type defini
 +
 For example, when implementing `createLogic` if you do `readStream(in)` where `in` is an inlet parameterized by a type other than `CallRecord`, the compiler will complain.
 
-=== Outlets and the partitioning function
+== Outlets and the partitioning function
 
 Similar to inlets, the user can define an outlet as: 
 
@@ -83,7 +81,7 @@ If no partitioning function is specified, it will default to the `RoundRobinPart
 All logic regarding data safety that we discussed for inlets in the last section applies for outlets as well.
 
 [[schema-aware]]
-=== Schema-aware `StreamletLogic`
+== Schema-aware `StreamletLogic`
 
 When we implement `StreamletLogic` for a streamlet, we use the inlets and outlets which, as we discussed above, are schema aware. Note that in the following code fragment, all inlet and outlet types are parameterized with domain classes `CallRecord` and `AggregatedCallStats` that have been generated using the schema. 
 Here's an example:
