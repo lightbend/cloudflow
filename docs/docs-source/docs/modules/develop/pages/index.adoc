@@ -1,4 +1,4 @@
-= Developing Cloudflow streamlets
+= Developing applications with Cloudflow
 :site.url: https://cloudflow.io/docs
 :toc:
 :toc-title: ON THIS PAGE

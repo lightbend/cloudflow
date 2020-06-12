@@ -4,7 +4,6 @@ site:
   
 content:
   sources:
-  sources:
   - url: ./../../
     branches: [HEAD]
     start-path: docs/docs-source/docs 
