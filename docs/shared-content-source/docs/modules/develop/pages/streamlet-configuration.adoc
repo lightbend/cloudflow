@@ -2,13 +2,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-// Moved to developing streamlets
-If you haven't done so yet, please read xref:ROOT:index.adoc[the introduction] to get an overview of Cloudflow. 
-
-This section goes into more depth on streamlets and how to develop them. Akka and Flink streamlets can be developed in Scala or Java, Spark streamlets can only be developed in Scala.
-
-== Streamlet configuration parameters
-
 A streamlet can require dynamic configuration parameters at deployment time. Configuration parameters can be used to change the way the streamlet functions when it is run.
 
 Examples of configuration parameters are database connection strings, URLs, credentials, or anything else that you want to specify at deployment time.
@@ -29,7 +22,7 @@ There are a number of predefined configuration parameter types:
 
 In addition to the predefined types, you can also define your own types.
 
-=== Using a configuration parameter in a streamlet
+== Using a configuration parameter in a streamlet
 
 The following section will break down how we can use an `Integer` configuration parameter type in a streamlet to request the value for a maximum number of records within a time window.
 
@@ -60,7 +53,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala
 
 Note that its up to the developer to use the correct config method to extract the value of the parameter. Since the type being used here is `IntegerConfigParameter` the config method used is `getInt`.
 
-=== Custom validation
+== Custom validation
 
 It is easy to create your own custom validation for a configuration parameter using the `RegExpConfigParameter` type. This type allows you to validate the entered value using a regular expression.
 
@@ -71,7 +64,7 @@ For example, if we want to validate a 24 hour timestamp, this is how it could be
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/ConfigCustomValidation.scala[tag=definition]
 --
 
-=== Providing values for configuration parameters when testing streamlets
+== Providing values for configuration parameters when testing streamlets
 
 When writing tests for streamlets, you can provide values for configuration parameters when you initialize the runner-specific testkit.
 
@@ -96,7 +89,7 @@ The Java API is slightly different as you can see in the example below:
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/test/java/com/example/SampleTest.java[tag=config-value]
 --
 
-=== Using configuration parameters in Java
+== Using configuration parameters in Java
 
 Using the Configuration parameters in Java is similar to the Scala version. The main difference is how class instantiation is done and how to retrieve the config parameter key.
 
@@ -115,7 +108,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/
 ----
 
 
-=== Providing configuration parameters when deploying a Cloudflow application
+== Providing configuration parameters when deploying a Cloudflow application
 
 Configuration parameters will need to be provided with values during deployment of the application. The `deploy` command accepts these values as a set of key/value pairs.
 
@@ -155,143 +148,3 @@ Default value '10' will be used for configuration parameter 'filter.filter-polli
 
 [Done] Deployment of application `sensor-data-java` has started.
 ----
-
-
-== Streamlet volume mounts
-
-Sometimes a streamlet needs to read and/or write files from/to some shared file system. Since streamlets run as processes on Kubernetes, they do not automatically have such a file system available. Cloudflow makes it possible for a streamlet to declare the need for a shared file system (e.g. a "volume" in Kubernetes terms) that should be mounted at a specific path. At deployment time the user can then indicate where that file system is actually located using a Kubernetes Persistent Volume Claim (PVC). Cloudflow will then make sure that the PVC will be mounted at the specified path at runtime and the streamlet can then treat it like a local file system.
-
-The following example streamlet shows how to declare and use a volume mount:
-
-[source,scala]
-----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/DataFileIngress.scala[]
-----
-
-=== Java API
-
-The Java API is slightly different from the Scala API. The example belows shows a streamlet that uses a read only volume mount.
-
-
-[source,java]
-----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/FilterStreamlet.java[]
-----
-
-
-If you want to use a writable volume mount you can replace `createReadOnlyMany` with `createReadWriteMany` above.
-
-=== Access Modes and PVC Mounting
-
-The PVC associated with the streamlet volume mount is required to have the same access mode as the volume mount declared in the streamlet. When deploying the application the access mode will be checked, if the access mode differs from the access mode declared in the streamlet, the deployment of the application will fail.
-
-The following access modes are available:
-
-- `ReadOnlyMany`: all streamlet instances get read-only access to the same volume.
-- `ReadWriteMany`: all streamlet instances get read and write access to the same volume.
-
-== Cluster Security Considerations
-
-When deploying a Cloudflow application that contains streamlets with a volume mount, you may have to apply additional Kubernetes security configuration resources to the Kubernetes cluster for the application to deploy successfully.
-
-The pod in which the streamlet is running may need to be associated with a Pod Security Context (PSP) or (on OpenShift) a Security Context Constraint (SCC).
-
-This can be done by associating the Cloudflow application service account, called `cloudflow-app-serviceaccount` and located in the namespace of the application, with a PSP/SCC.
-
-The PSP and SCC must allow the application pods to mount a writable volume as group id `185`. This is the group id of the user running in the streamlet container.
-
-=== Security context constraints example
-
-The following example shows an SCC that would allow a Cloudflow application with a writable volume mount to deploy correctly to an Openshift cluster with an activated SCC controller. See the OpenShift documentation on https://docs.openshift.com/container-platform/3.11/admin_guide/manage_scc.html[Managing Security Context Constraints] for more information.
-
-[source,yaml]
-----
-kind: SecurityContextConstraints
-apiVersion: v1
-metadata:
-  name: cloudflow-application-scc
-allowPrivilegedContainer: true
-runAsUser:
-  type: MustRunAsNonRoot
-seLinuxContext:
-  type: RunAsAny
-fsGroup:
-  type: MustRunAs
-  ranges:
-  - min: 185
-    max: 186
-supplementalGroups:
-  type: RunAsAny
-volumes:
-- '*'
-----
-
-
-=== Pod security policy example
-
-This is an example of a PSP that would allow a Cloudflow application with a writable volume mount to deploy correctly.
-
-[source,yaml]
-----
-apiVersion: extensions/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: cloudflow-volume-mount-psp
-spec:
-  runAsUser:
-    rule: 'MustRunAsNonRoot'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'MustRunAs'
-    ranges:
-    - min: 185
-      max: 186
-  volumes:
-  - '*'
-----
-
-https://kubernetes.io/docs/concepts/policy/pod-security-policy/[Pod Security Policies]
-
-== Deploying applications using volume mounts
-
-When deploying a Cloudflow application with streamlets that use the volume mount feature, a Kubernetes Persistent Volume Claim (PVC) will need to be specified for each of the volume mounts. 
-
-Before the application can be deployed, the PVC needs to be created in the application namespace.
-
-When the PVC has been created, you can deploy the application and associate the PVC with the streamlet volume mount name using a CLI flag.
-
-Deploying an application without a required volume mount will fail and result in an error message:
-
-[source,bash,subs=attributes+]
-----
-$ {cli-plugin} cloudflow deploy sensor-data-java:427-a20fc62-dirty
-
-[Error] The following volume mount needs to be bound to a Persistence Volume claim using the --volume-mount flag
-
-- filter.configuration
-----
-
-To successfully deploy the application, the volume mount has to be bound to a PVC.
-
-In the example below, the streamlet `filter` requires a volume mount called `configuration`. This volume mount is associated with the PVC named `source-data-claim` using the `--volume-mount` flag.
-
-[source,bash,subs=attributes+]
-----
-$ {cli-plugin} cloudflow deploy sensor-data-java:427-a20fc62-dirty --volume-mount filter.configuration=source-data-claim 
-
-The following volume mount is now bound to Persistent Volume Claim `source-data-claim`:
-
-- filter.configuration
-
-[Done] Deployment of application `sensor-data-java` has started.
-----
-
-== What's next
-
-After this general overview of streamlets, learn more about the specifics of using xref:use-akka-streamlets.adoc[Akka], xref:use-spark-streamlets.adoc[Spark], and xref:use-flink-streamlets.adoc[Flink] streamlets. Cloudflow also offers a way to test your streamlets in a xref:cloudflow-local-sandbox.adoc[local sandbox].
-

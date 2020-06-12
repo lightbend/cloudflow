@@ -1,0 +1,21 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+Cloudflow follows the 'let it crash' principle and can recover from most failure scenarios, except those deemed catastrophic, where the data used for recovery (snapshots) may have been lost.
+This approach also follows the general policy of Kubernetes, where processes are ephemeral and can be restarted, replaced, or scaled up/down at any time.
+
+The sections that follow mention different models for message delivery semantics provided by Spark-based and Akka-based streamlets. 
+By _message delivery semantics_, we refer to the expected message delivery guaranties in the case of failure recovery. 
+In a distributed application such as Cloudflow, failure may happen at several different execution levels: from a failed task in an individual executor, to a pod that goes down, to a complete application crash.
+
+After a failure recovery, we recognize these different message delivery guarantees:
+
+_At most once_:: Data may have been processed but will never be processed twice. In this case, data may be lost but processing will never result in duplicate records.
+_At-least-once_:: Data that has been processed may be replayed and processed again. In this case, each data record is guaranteed to be processed and may result in duplicate records.
+_Exactly once_:: Data is processed once and only once. All data is guaranteed to be processed and no duplicate records are generated. This is the most desirable guarantee for many enterprise applications, but it's considered impossible to achieve in a distributed environment.
+_Effectively Exactly Once_:: is a variant of _exactly once_ delivery semantics that tolerates duplicates during data processing and requires the producer side of the process to be idempotent.
+That is, producing the same record more than once is the same as producing it only once.
+In practical terms, this translates to writing the data to a system that can preserve the uniqueness of keys or use a deduplication process to prevent duplicate records from being produced to an external system.
+
+In the xref:developing-streamlets.adoc[Developing Streamlets] section corresponding to each supported runtime, you find specific information about message delivery semantics for each of them.

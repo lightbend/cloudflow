@@ -75,7 +75,7 @@ that are available for how to continue processing data after a restart.
 [[message-delivery-semantics-akka]]
 == Message delivery semantics
 
-If you only want to process data that is arriving in real-time—ignoring data from the past—an Akka streamlet can simply start from the most recently arrived record. In this case, an _at-most-once_ semantics is used (see xref:index.adoc#message-delivery-semantics[Message delivery semantics]). The streamlet will process data as it arrives. Data that arrives while the streamlet is not running will not be processed. 
+If you only want to process data that is arriving in real-time—ignoring data from the past—an Akka streamlet can simply start from the most recently arrived record. In this case, an _at-most-once_ semantics is used (see xref:message-delivery.adoc[Message delivery semantics]). The streamlet will process data as it arrives. Data that arrives while the streamlet is not running will not be processed. 
 
 At-most-once message delivery semantics are applied to Akka streamlets that use standard Akka Stream graphs like `Source`, `Sink`, `Flow`.
 
