@@ -1,0 +1,74 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+In Cloudflow, a streaming application is composed of `Streamlets`.
+Each `Streamlet` defines one or more inlets and outlets.
+To create a functional _pipeline_, we must define how the `Streamlets` connect together by declaring which outlet from one `Streamlet` should connect with an inlet of another.
+
+A blueprint specifies which streamlets should be used in a pipeline and how they should be connected together.
+It must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
+
+An example of a blueprint is shown below:
+
+[source,hocon]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=all]
+----
+
+NOTE: Blueprint files are specified in the https://github.com/lightbend/config/blob/master/HOCON.md[HOCON,window=_blank] format, a superset of JSON.
+
+The above example shows four streamlets, `sensor-data`, `metrics`, `validation`, and `reporter`. The `streamlets` section declares the streamlets used in that blueprint and gives them a short name that we use to refer to them in the next section.
+The `connections` section declares how the inlets and outlets of the different participating `streamlets` are connected.
+
+A blueprint file always consists of one `blueprint` section. The `streamlets` section defines which streamlets must be used in the blueprint and assigns a reference to every streamlet.
+The streamlet references are later on used for connecting streamlets together. Lets zoom in on the streamlets section in the example below:
+
+[source,hocon]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=streamlets]
+----
+
+The above example shows four streamlet types defined in the `cloudflow.examples.sensordata` package.
+Streamlet types (classes or objects) are specified by their fully qualified names.
+
+Every assignment in the `streamlets` section assigns a streamlet reference to an instance of a type of streamlet. Once deployed, Cloudflow will run at least one streamlet–depending on the requested number of replicas–for each streamlet reference that has been defined in the blueprint.
+
+The Streamlets can be defined in Java or Scala,
+as Java or Scala classes with default constructors or as Scala objects. These classes must be available on the classpath, which can be defined directly in the Cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
+
+[NOTE]
+====
+You can define more than one streamlet reference to the same Scala object.
+In that case, as many streamlets as assigned streamlet references will be run once everything is deployed (assuming a scaling factor of one). You should view a Streamlet, defined as a Scala object as a template that can be used many times to instantiate streamlets, not as a singleton object that will only run once as a streamlet.
+====
+
+The streamlet references assigned in the `streamlets` section can be used in the `connections` section to connect streamlets together.
+Lets zoom in on the streamlets section in the example below:
+
+[source,hocon]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=connections]
+----
+
+Every expression in a connections section defines how an outlet connects to one or more inlets. Every assignment follows the following pattern:
+
+[source,hocon]
+----
+  <streamlet-reference-a>.<outlet> = [<streamlet-reference-b>.<inlet>, <streamlet-reference-c>.<inlet>, ...]
+----
+
+Streamlet outlets and inlets are always prefixed by a streamlet-reference, followed by a dot ('.'). As you can see from the above pattern, it is possible to connect many inlets to the same outlet.
+
+Every streamlet type has a shape, defining how many inlets and outlets it has. All streamlets implement a `shape()` method which returns the shape of the streamlet.
+In this case, the streamlet referenced by `sensor-data` has a single outlet named "out".
+Similarly, the streamlet referenced by "metrics" has one inlet named "in" and one outlet named "out".
+
+As discussed earlier, inlets and outlets of streamlets are explicitly typed, e.g. they only handle data that conform to specific https://avro.apache.org/docs/current/[Avro,window=_blank] schemas. Inlets can only be connected to outlets if their schemas are compatible. You can verify if the blueprint connects all the streamlets correctly by using:
+
+[source,bash]
+----
+  sbt verifyBlueprint
+----
+
+The blueprint is automatically verified when `sbt buildAndPublish` is used.

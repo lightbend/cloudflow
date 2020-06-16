@@ -1,0 +1,96 @@
+:page-partial:
+:page-supergroup-scala-java: Language
+
+include::ROOT:partial$include.adoc[]
+
+Cloudflow uses a schema-first approach for building streaming data pipelines. You simply need to supply an http://avro.apache.org/docs/current/spec.html[Avro] schema as the starting point of the domain model for which a streaming data flow needs to be built. Cloudflow adds the appropriate plug-ins to the build system of the application to generate Java / Scala classes corresponding to the Avro schema.
+
+This approach has the advantage that you _only_ need to take care of the core domain model and Cloudflow does the heavy lifting of generating the classes and integrating them with the main application.
+
+However since Cloudflow takes the schema as the input, it needs to ensure that the corresponding data inlets and outlets honor the schema when allowing data to flow through them. This needs to be done to ensure data consistency across all the inlets and outlets. We discuss this in the next section.
+
+== Schema code generation
+
+You can choose what programming language to generate their schemas into by defining settings in the SBT project.  When no settings are defined, by default the `sbt-cloudflow` plugin will look for Avro schemas in `src/main/avro` and will generate Scala classes.
+
+If you wish to override the location of your Avro schemas in your project, or if you wish to generate Java classes instead, you can do so by defining a `Setting` in your SBT project.
+
+* `schemaCodeGenerator` (Default: `SchemaCodeGenerator.Scala`) - The programming language to generate Avro schemas classes into.
+* `schemaPaths` (Default: `Map(SchemaFormat.Avro -> "src/main/avro")`) - The relative path to the Avro schemas.
+* `schemaFormat` (Default: `Seq(SchemaFormat.Avro)`) - The schema formats to generate.  Avro is the default format. 
+Since Cloudflow 2.0, there's experimental support for Protobuf (`SchemaFormat.Proto`).
+
+For example, to generate Java classes from Avro schemas in a non-default location, you can use a configuration similar to the following:
+
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-akka-streamlets-java/build.sbt[tag=avro-config]
+----
+
+== Schema-aware inlets and outlets
+
+In Cloudflow, all streamlet inlets and outlets are schema-aware. This means two things:
+
+* Every inlet and outlet must allow _only_ data to flow through them that honors their schema.
+* Inlets and outlets can be connected together only if the schemas of an outlet and the corresponding inlet are compatible.
+
+Let's take a look at how Cloudflow ensures both of the above guarantees.
+
+== Data integrity guarantee through schemas and types
+
+As mentioned above, any application definition starts with the schema definition for the domain object. 
+Let's assume you provide the following Avro schema as an input. 
+It's a definition of a call record as used by a telephone company.
+
+[source,json]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/avro/CallRecord.avsc[]
+----
+
+In case of a Scala application, Cloudflow will generate a Scala `case class` `cloudflow.examples.CallRecord` corresponding to the above schema. 
+This class will now be made available for use within the application.
+
+When we define a streamlet where objects of type `CallRecord` will be passing through its inlet, we define the inlet as follows:
+
+[source, scala]
+----
+val in = AvroInlet[CallRecord]("call-record-in")
+----
+
+//TODO: we need to revisit this. Doesn't sound right. These are restrictions, not guarantees
+Cloudflow ensures the following compile time guarantees through this type definition:
+
+* The inlet only allows a codec of type Avro.
+* Cloudflow only allows the inlet to be used with an object of type `CallRecord`. 
++
+For example, when implementing `createLogic` if you do `readStream(in)` where `in` is an inlet parameterized by a type other than `CallRecord`, the compiler will complain.
+
+== Outlets and the partitioning function
+
+Similar to inlets, the user can define an outlet as: 
+
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/callrecordaggregator/CallRecordIngress.scala[tag=docs-outlet-partitioner-example]
+----
+
+Besides the name of the outlet, it may also have a partitioning function that defines how data will be partitioned when writing to Kafka topics.
+Data partitioning in Kafka ensures scalability.
+If no partitioning function is specified, it will default to the `RoundRobinPartitioner`.
+
+All logic regarding data safety that we discussed for inlets in the last section applies for outlets as well.
+
+[[schema-aware]]
+== Schema-aware `StreamletLogic`
+
+When we implement `StreamletLogic` for a streamlet, we use the inlets and outlets which, as we discussed above, are schema aware. Note that in the following code fragment, all inlet and outlet types are parameterized with domain classes `CallRecord` and `AggregatedCallStats` that have been generated using the schema. 
+Here's an example:
+
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/cloudflow/callrecordaggregator/CallStatsAggregator.scala[tags=docs-schemaAware-example]
+----
+
+In the above example, we have one inlet that allows data of type `CallRecord` and one outlet that allows data of type `AggregatedCallStats`. Here the user had supplied the schema for both of the above types from which Scala classes have been generated by Cloudflow. And the entire `StreamletLogic` code is based on these two classes - we read `CallRecord` from the inlet, do processing and generate `AggregatedCallStats` to be sent to the outlet.
+
+Hence the entire streamlet is guaranteed _only_ to process data that conforms to the schema which the user had supplied.
