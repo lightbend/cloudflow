@@ -93,7 +93,7 @@ $ kubectl port-forward taxi-ride-fare-taxi-fare-8474457d5-tptr7 -n taxi-ride-far
 
 Now you are ready to run the two scripts. Based on the above port forwards, you need to run `send-data-rides.sh` with port no `3000` and `send-data-fares.sh` with port no `3001`.
 
-```
+```bash
 $ ./send-data-rides.sh -p 3000
 ...
 $ ./send-data-fares.sh -p 3001
@@ -110,13 +110,13 @@ $ ./send-data-fares.sh -p 3001
 * Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow/blob/master/installer/README.md).
 Make sure you have access to your cluster:
 
-```
+```bash
 $ gcloud container clusters get-credentials <CLUSTER_NAME>
 ```
 
 and that you have access to the Google docker registry:
 
-```
+```bash
 $ gcloud auth configure-docker
 ```
 
@@ -132,44 +132,48 @@ ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 
 * Build the application.
 
-```
-$ sbt buildAndPublish
+```bash
+$ sbt buildApp
 ```
 At the very end you should see the application image built and instructions for how to deploy it:
 
 ```
-[info] Successfully built and published the following Cloudflow application image:
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/ingestor:467-26acd87-dirty
+[info] b99104733869: Pushed
+[info] 467-26acd87-dirty: digest: sha256:285ef24a568adfb6ceb738ef8ef9f5945c1885160d6870c72b64d2cec95528a9 size: 2415
 [info]  
-[info]   eu.gcr.io/my-awesome-project/taxi-ride-fare:34-69082eb-dirty
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/logger:467-26acd87-dirty
+[info] 87d027324c50: Pushed
+[info] 467-26acd87-dirty: digest: sha256:3c1a3dd7e29305941410b14ed783a562a5a43806110817d3b6fe73e0c697f7b5 size: 3046
 [info]  
-[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
-[info]  
-[info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/taxi-ride-fare:34-69082eb-dirty
-[info]  
-[success] Total time: 63 s, completed Nov 8, 2019 1:05:02 PM
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/processor:467-26acd87-dirty
+[success] Cloudflow application CR generated in /Users/myuser/lightbend-repos/cloudflow/examples/taxi-ride/target/taxi-ride-fare.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/taxi-ride/target/taxi-ride-fare.json
+[success] Total time: 167 s (02:47), completed Jun 16, 2020 9:25:56 AM
 ```
 
 * Make sure you have the `kubectl cloudflow` plugin configured.
 
-```
+```bash
 $ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
 
-* Deploy the app.
+* Deploy the app using the command mentioned in the output above:
 
-```
-$ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
-Existing value will be used for configuration parameter 'logger.log-level'
-Existing value will be used for configuration parameter 'logger.msg-prefix'
-WARNING! Using --password via the CLI is insecure. Use --password-stdin.
+```bash
+$ kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/taxi-ride/target/taxi-ride-fare.json
 [Done] Deployment of application `taxi-ride-fare` has started.
 ```
 
 * Verify that the application is deployed.
 
-```
+```bash
 $ kubectl cloudflow list
 
 NAME              NAMESPACE         VERSION           CREATION-TIME     
@@ -179,7 +183,7 @@ taxi-ride-fare    taxi-ride-fare    34-69082eb-dirty  2019-11-08 15:53:50 +0000 
 * Check all pods are running.
 
 
-```
+```bash
 $ kubectl get pods -n taxi-ride-fare
 NAME                                                    READY   STATUS    RESTARTS   AGE
 taxi-ride-fare-logger-7c64c57885-rmc8n                  1/1     Running   0          2m35s
@@ -195,7 +199,7 @@ taxi-ride-fare-taxi-ride-7b65bb666c-fg6l4               1/1     Running   0     
 Execute the steps above for ingesting data.
 If everything worked fine you should see output similar to this:
 
-```
+```bash
 $ kubectl logs taxi-ride-fare-logger-7c64c57885-rmc8n -n taxi-ride-fare
 ...
 [INFO] [11/08/2019 13:35:47.510] [akka_streamlet-akka.actor.default-dispatcher-2] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"rideId": 1, "totalFare": 21.5}
@@ -208,7 +212,7 @@ $ kubectl logs taxi-ride-fare-logger-7c64c57885-rmc8n -n taxi-ride-fare
 
 * Undeploy.
 
-```
+```bash
 $ kubectl cloudflow undeploy taxi-ride-fare
 ```
 
@@ -227,7 +231,7 @@ taxi-ride [taxiride.ingestor.TaxiRideIngress]
 
 The port numbers indicate the ports for the two ingresses. In order to feed data to the application, you need to run the 2 bash scripts in folder `test-data`, named `send-data-rides.sh` and `send-data-fares.sh`. 
 
-```
+```bash
 $ ./send-data-rides.sh -p 3001
 ...
 $ ./send-data-fares.sh -p 3000
