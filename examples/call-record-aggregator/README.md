@@ -23,14 +23,14 @@ This application consists of the following sub-projects:
 * Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 Make sure you have access to your cluster:
 
-```
-gcloud container clusters get-credentials <CLUSTER_NAME>
+```bash
+$ gcloud container clusters get-credentials <CLUSTER_NAME>
 ```
 
 and that you have access to the Google docker registry:
 
-```
-gcloud auth configure-docker
+```bash
+$ gcloud auth configure-docker
 ```
 
 * Add the Google docker registry to your sbt project (should be adjusted to your setup). The following lines should be there in the file `target-env.sbt` at the root of your application. e.g.
@@ -44,49 +44,52 @@ ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 
 * Build the application:
 
-```
-$ sbt buildAndPublish
+```bash
+$ sbt buildApp
 ```
 At the very end you should see the application image built and instructions for how to deploy it:
 
 ```
-[info] 34-69082eb-dirty: digest: sha256:ffd73588b130d364066d3b3e51fe4acceef9275bd3dde0a53a1ffb631804c529 size: 6805
+[info] 467-26acd87-dirty: digest: sha256:77b50070d11d07a030281b1e3f8cff8b8abfa28b6753b98a887a9b7fce541d30 size: 2415
 [info]  
-[info] Successfully built and published the following Cloudflow application image:
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/akka-cdr-ingestor:467-26acd87-dirty
+[info] 467-26acd87-dirty: digest: sha256:8659120e1c77a0492267fc087aefaf7adff3ce20b48d1cba913ee2c0d416b2a3 size: 2415
 [info]  
-[info]   eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/akka-java-aggregation-output:467-26acd87-dirty
+[info] 467-26acd87-dirty: digest: sha256:ee54b9fae8dff754e3c7949d1cc64f49fd8ab242d29e2a98d56228e3eb5daa5e size: 4927
 [info]  
-[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
-[info]  
-[info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty
-[info]  
-[success] Total time: 24 s, completed Nov 8, 2019 3:44:21 PM
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/spark-aggregation:467-26acd87-dirty
+[success] Cloudflow application CR generated in /Users/myuser/lightbend-repos/cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
+[success] Total time: 31 s, completed Jun 16, 2020 9:12:19 AM
 ```
 
 * Make sure you have the `kubectl cloudflow` plugin configured.
 
-```
+```bash
 $ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
 
-* Deploy the app.
+* Deploy the app using the command mentioned in the output above.
 
-```
-$ kubectl cloudflow deploy -u oauth2accesstoken eu.gcr.io/my-awesome-project/call-record-aggregator:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
+```bash
+$ kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
 Existing value will be used for configuration parameter 'cdr-generator2.records-per-second'
 Existing value will be used for configuration parameter 'cdr-generator1.records-per-second'
 Existing value will be used for configuration parameter 'cdr-aggregator.group-by-window'
 Existing value will be used for configuration parameter 'cdr-aggregator.watermark'
-WARNING! Using --password via the CLI is insecure. Use --password-stdin.
 [Done] Deployment of application `call-record-aggregator` has started.
-
 ```
 
 *  Verify it is deployed correctly.
 
-```
+```bash
 $ kubectl cloudflow list
 
 NAME                   NAMESPACE              VERSION           CREATION-TIME     
@@ -95,7 +98,7 @@ call-record-aggregator call-record-aggregator 34-69082eb-dirty  2019-11-08 15:46
 
 * Check all pods are running.
 
-```
+```bash
 $ kubectl get pods -n call-record-aggregator
 NAME                                                         READY   STATUS    RESTARTS   AGE
 call-record-aggregator-cdr-aggregator-1573217778868-exec-1   1/1     Running   0          63s
@@ -116,7 +119,7 @@ call-record-aggregator-merge-67b66c8fdb-2r247                1/1     Running   0
 
 * Verify the application output.
 
-```
+```bash
 $ kubectl logs call-record-aggregator-console-egress-5f6f7777f8-dknt6  -n call-record-aggregator
 Running Akka entrypoint script
 Pipelines Runner
@@ -134,6 +137,6 @@ Loading application.conf from: /etc/cloudflow-runner/application.conf, secret co
 
 * Undeploy.
 
-```
+```bash
 $ kubectl cloudflow undeploy call-record-aggregator
 ```

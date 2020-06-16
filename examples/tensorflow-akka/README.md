@@ -6,9 +6,9 @@ A simple pipeline that scores the quality of wines using a TensorFlow model.
 
 <p>
 <img src="./images/tensorflow-akka.png" width="800">
-
 <i>Simple model serving application using TensorFlow and Akka</i>
-</p>
+
+
 
 The TensorFlow models must be provided through a persistent volume claim. 
 The `models` directory contains a `copy-models.sh` script that copies the models found in this directory to the volume that is mounted on the model-server streamlet.
@@ -29,7 +29,7 @@ You can first deploy the app with `kubectl cloudflow deploy`, providing a model 
 When you want to change the model, add a model to the `models` directory, run the `copy-models.sh` script in the `models` directory, and choose the path to the new model, 
 for instance, to load a (hypothetical) model under `model-2/saved/1`:
 
-```
+```bash
 $ kubectl cloudflow configure tensorflow-akka model-server.model=model-2/saved/1
 ```
 
@@ -42,13 +42,13 @@ The WineRecordGenerator Streamlet generates wine records. Creating a streamlet t
 * Make sure you have created a GKE cluster and installed Cloudflow as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
 Verify access to your cluster:
 
-```
+```bash
 $ gcloud container clusters get-credentials <CLUSTER_NAME>
 ```
 
 and that you have access to the Google docker registry:
 
-```
+```bash
 $ gcloud auth configure-docker
 ```
 
@@ -64,20 +64,20 @@ ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 
 * Build the application:
 
-```
-$ sbt buildAndPublish
+```bash
+$ sbt buildApp
 ...
-[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
-[info]  
-[info]   kubectl cloudflow deploy eu.gcr.io/<projectID>/tensorflow-akka:8-2a0f65d-dirty
-[info]  
-[success] Total time: 19 s, completed Nov 25, 2019 11:22:53 AM
-
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/tensorflow-akka:467-26acd87-dirty
+[success] Cloudflow application CR generated in /Users/myuser/lightbend-repos/cloudflow/examples/tensorflow-akka/target/tensorflow-akka.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/tensorflow-akka/target/tensorflow-akka.json
+[success] Total time: 106 s (01:46), completed Jun 16, 2020 9:40:56 AM
 ```
 
 * Make sure you have the `kubectl cloudflow` plugin configured.
 
-```
+```bash
 $ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
@@ -87,13 +87,13 @@ This command line tool can be used to deploy and operate Cloudflow applications.
 
 First create the application namespace (since a PVC is namespaced).
 
-```
+```bash
 $ kubectl create ns tensorflow-akka
 ```
 
 claim.yaml:
 
-```
+```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -108,36 +108,34 @@ spec:
       storage: 1Gi
 ```
 
-```
+```bash
 $ kubectl apply -f claim.yaml
 ```
 
 Copy the models in this project to the persistent volume (NOTE: this script expects the `tensorflow-akka` namespace to already exist):
 
-```
+```bash
 $ cd models
 $ ./copy-models.sh eu.gcr.io/<projectID>
 ```
 * Deploy the app.
 
-```
-$ kubectl cloudflow  deploy -u oauth2accesstoken --volume-mount model-server.wine-models=claim1 model-server.model=model-1/saved/1 eu.gcr.io/<projectID>/tensorflow-akka:<version> -p "$(gcloud auth print-access-token)"
+```bash
+$ kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/tensorflow-akka/target/tensorflow-akka.json
 ```
 
 * Verify that the application is deployed.
 
-```
+```bash
 $ kubectl cloudflow list
-
 NAME              NAMESPACE         VERSION           CREATION-TIME     
 tensorflow-akka   tensorflow-akka   8-2a0f65d-dirty   2019-11-25 13:22:44 +0200 EET
 ```
 
 * Check all pods are running.
 
-```
+```bash
 $ kubectl get pods -n tensorflow-akka
-
 NAME                                                    READY   STATUS      RESTARTS   AGE
 copy-models-wlsk5                                       0/1     Completed   0          76s
 tensorflow-akka-console-egress-6d9c8b6c44-h5t8p         1/1     Running     1          4h40m
@@ -147,14 +145,13 @@ tensorflow-akka-wine-record-generator-fd79bd5f4-ldrwg   1/1     Running     0   
 
 * Verify the application output
 
-```
+```bash
 $ kubectl -n tensorflow-akka logs tensorflow-akka-console-egress-6d9c8b6c44-h5t8p
-
 {"inputRecord": {"datatype": "wine", "fixed_acidity": 6.8, "volatile_acidity": 0.77, "citric_acid": 0.0, "residual_sugar": 1.8, "chlorides": 0.066, "free_sulfur_dioxide": 34.0, "total_sulfur_dioxide": 52.0, "density": 0.9976, "pH": 3.62, "sulphates": 0.68, "alcohol": 9.9}, "modelResult": {"value": 5.0}, "modelResultMetadata": {"errors": "", "modelName": "model-1/saved/1", "startTime": 1575921833212, "duration": 0}}
 ```
 
 * Undeploy.
 
-```
+```bash
 $ kubectl cloudflow undeploy tensorflow-akka
 ```
