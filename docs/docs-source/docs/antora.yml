@@ -1,5 +1,5 @@
 name: docs
-version: current
+version: 1.3.3
 title: Cloudflow
 nav:
 - modules/ROOT/nav.adoc
