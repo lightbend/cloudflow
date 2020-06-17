@@ -16,12 +16,15 @@
 
 package cloudflow.operator
 package runner
-
+import scala.collection.JavaConverters._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
+import com.typesafe.config._
 import play.api.libs.json._
 import skuber.ResourceSpecification.Subresources
 import skuber._
+import skuber.json.format._
+import skuber.Resource._
 import skuber.api.patch.{ JsonMergePatch, Patch }
 
 trait PatchProvider[T <: Patch] {
@@ -29,6 +32,7 @@ trait PatchProvider[T <: Patch] {
   def patch(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String]
   )(implicit ctx: DeploymentContext): T
@@ -51,25 +55,33 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   def resourceDefinition = implicitly[ResourceDefinition[CR]]
   val runtime            = "spark"
 
+  val DriverPod   = "driver"
+  val ExecutorPod = "executor"
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
-    val _spec           = patch(deployment, app, namespace, updateLabels)
-    val name            = Name.ofSparkApplication(deployment.name)
+    val _spec           = patch(deployment, app, configSecret, namespace, updateLabels)
+    val name            = resourceName(deployment)
     CustomResource[Spec, Status](_spec.spec)
       .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences))
   }
 
+  def resourceName(deployment: StreamletDeployment): String = Name.ofSparkApplication(deployment.name)
+
   def patch(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
+      configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): SpecPatch = {
+    val podsConfig = getPodsConfig(configSecret)
+
     val appLabels     = CloudflowLabels(app)
     val appId         = app.spec.appId
     val agentPaths    = app.spec.agentPaths
@@ -114,41 +126,39 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     val secrets = Seq(NamePathSecretType(deployment.secretName, Runner.SecretMountPath))
 
-    val name = Name.ofSparkApplication(deployment.name)
+    val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
           Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
 
     import ctx.sparkRunnerSettings._
-    val cores = driverSettings.cores.map(_.amount.intValue).getOrElse(1)
-    val driver = Driver(
-      cores =
-        if (cores >= 1)
-          Some(cores)
-        else
-          Some(1),
-      memory = driverSettings.memory.map(_.value),
-      coreLimit = driverSettings.coreLimit.map(_.value),
-      memoryOverhead = driverSettings.memoryOverhead.map(_.value),
-      javaOptions = driverSettings.javaOptions,
-      labels = labels,
-      volumeMounts = volumeMounts,
-      secrets = secrets,
-      configMaps = configMaps,
-      securityContext = securityContext
+
+    val driver = addDriverResourceRequirements(
+      Driver(
+        javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
+        labels = labels,
+        volumeMounts = volumeMounts,
+        secrets = secrets,
+        env = getEnvironmentVariables(podsConfig, DriverPod),
+        configMaps = configMaps,
+        securityContext = securityContext
+      ),
+      podsConfig,
+      deployment
     )
-    val executor = Executor(
-      cores = executorSettings.cores.map(_.amount.intValue),
-      memory = executorSettings.memory.map(_.value),
-      coreLimit = executorSettings.coreLimit.map(_.value),
-      memoryOverhead = executorSettings.memoryOverhead.map(_.value),
-      javaOptions = executorSettings.javaOptions,
-      instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
-      labels = labels,
-      volumeMounts = volumeMounts,
-      secrets = secrets,
-      configMaps = configMaps,
-      securityContext = securityContext
+    val executor = addExecutorResourceRequirements(
+      Executor(
+        javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
+        instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
+        labels = labels,
+        volumeMounts = volumeMounts,
+        secrets = secrets,
+        env = getEnvironmentVariables(podsConfig, ExecutorPod),
+        configMaps = configMaps,
+        securityContext = securityContext
+      ),
+      podsConfig,
+      deployment
     )
 
     val monitoring = {
@@ -166,9 +176,26 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
     }
 
+    val defaultDriverCores            = toIntCores(driverSettings.cores)
+    val defaultDriverMemory           = driverSettings.memory.map(_.value)
+    val defaultDriverMemoryOverhead   = driverSettings.memoryOverhead.map(_.value)
+    val defaultExecutorCores          = toIntCores(executorSettings.cores)
+    val defaultExecutorMemory         = executorSettings.memory.map(_.value)
+    val defaultExecutorMemoryOverhead = executorSettings.memoryOverhead.map(_.value)
+
+    val sparkConf = getSparkConf(
+      configSecret,
+      defaultDriverCores,
+      defaultDriverMemory,
+      defaultDriverMemoryOverhead,
+      defaultExecutorCores,
+      defaultExecutorMemory,
+      defaultExecutorMemoryOverhead
+    )
     val spec = Spec(
       image = image,
       mainClass = RuntimeMainClass,
+      sparkConf = sparkConf,
       volumes = volumes,
       driver = driver,
       executor = executor,
@@ -178,12 +205,116 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     SpecPatch(spec)
   }
 
-  val DefaultNrOfExecutorInstances = 2
+  val DefaultNrOfExecutorInstances = 1
 
   // Lifecycle Management
   private val OnFailureRetryIntervalSecs           = 10
   private val OnSubmissionFailureRetryIntervalSecs = 60
 
+  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig, deployment: StreamletDeployment)(
+      implicit ctx: DeploymentContext
+  ): Driver = {
+    var updatedDriver = driver
+    import ctx.sparkRunnerSettings._
+
+    updatedDriver = updatedDriver.copy(
+      coreLimit = driverSettings.coreLimit.map(_.value)
+    )
+    // you can set the "driver" pod or just "pod", which means it will be used for both driver and executor (as fallback).
+    updatedDriver = podsConfig.pods
+      .get(DriverPod)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.resources.map { resources =>
+            updatedDriver.copy(
+              coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedDriver.coreLimit)
+            )
+          }
+        }
+      }
+      .getOrElse(updatedDriver)
+    log.info(s"""
+    Streamlet ${deployment.streamletName} - resources for driver pod:
+      coreLimit:      ${updatedDriver.coreLimit}
+    """)
+    updatedDriver
+  }
+
+  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig, deployment: StreamletDeployment)(
+      implicit ctx: DeploymentContext
+  ): Executor = {
+    var updatedExecutor = executor
+    import ctx.sparkRunnerSettings._
+
+    updatedExecutor = updatedExecutor.copy(
+      coreLimit = executorSettings.coreLimit.map(_.value)
+    )
+    // you can set the "executor" pod or just "pod", which means it will be used for both executor and executor (as fallback).
+    updatedExecutor = podsConfig.pods
+      .get(ExecutorPod)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.resources.map { resources =>
+            updatedExecutor.copy(
+              coreRequest = resources.requests.get(Resource.cpu).map(_.value),
+              coreLimit = resources.limits.get(Resource.cpu).map(_.toString).orElse(updatedExecutor.coreLimit)
+            )
+          }
+        }
+      }
+      .getOrElse(updatedExecutor)
+
+    log.info(s"""
+    Streamlet ${deployment.streamletName} - resources for executor pod:
+      coreRequest:    ${updatedExecutor.coreRequest}
+      coreLimit:      ${updatedExecutor.coreLimit}
+    """)
+    updatedExecutor
+  }
+
+  private def toIntCores(cores: Option[Quantity]): Option[Int] =
+    cores
+      .map { quantity =>
+        val coresInt = quantity.amount.intValue
+        if (coresInt >= 1) coresInt else 1
+      }
+      .orElse(Some(1))
+
+  private def getSparkConf(configSecret: Secret,
+                           defaultDriverCores: Option[Int],
+                           defaultDriverMemory: Option[String],
+                           defaultDriverMemoryOverhead: Option[String],
+                           defaultExecutorCores: Option[Int],
+                           defaultExecutorMemory: Option[String],
+                           defaultExecutorMemoryOverhead: Option[String]): Option[Map[String, String]] = {
+    val defaultConfigMap = List(
+      defaultDriverCores.map(v => "spark.driver.cores"                       -> v),
+      defaultDriverMemory.map(v => "spark.driver.memory"                     -> v),
+      defaultDriverMemoryOverhead.map(v => "spark.driver.memoryOverhead"     -> v),
+      defaultExecutorCores.map(v => "spark.executor.cores"                   -> v),
+      defaultExecutorMemory.map(v => "spark.executor.memory"                 -> v),
+      defaultExecutorMemoryOverhead.map(v => "spark.executor.memoryOverhead" -> v)
+    ).flatten.toMap
+    val defaultConfig = defaultConfigMap.foldLeft(ConfigFactory.empty) {
+      case (acc, (path, value)) =>
+        acc.withValue(path, ConfigValueFactory.fromAnyRef(value))
+    }
+    val conf = getRuntimeConfig(configSecret).withFallback(defaultConfig)
+    if (conf.isEmpty) None
+    else {
+      val sparkConfMap = Some(
+        conf
+          .entrySet()
+          .asScala
+          .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+          .toMap
+      )
+      log.info(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
+      sparkConfMap
+    }
+  }
 }
 
 object SparkResource {
@@ -230,11 +361,13 @@ object SparkResource {
       exposeExecutorMetrics: Boolean = true
   )
 
+  /**
+   * NOTE: coreRequest in Driver is only supported in Spark 3.0:
+   * https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/blob/8c480acfdd09882ed2f00573f15e7830558de524/pkg/apis/sparkoperator.k8s.io/v1beta2/types.go#L499
+   */
   final case class Driver(
-      cores: Option[Int] = Some(1),
       coreLimit: Option[String] = None,
-      memory: Option[String] = None,
-      memoryOverhead: Option[String] = None,
+      env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       serviceAccount: Option[String] = Some(SparkServiceAccount),
       labels: Map[String, String] = Map(),
@@ -246,10 +379,9 @@ object SparkResource {
 
   final case class Executor(
       instances: Int,
-      cores: Option[Int] = Some(1),
+      coreRequest: Option[String] = None,
       coreLimit: Option[String] = None,
-      memory: Option[String] = None,
-      memoryOverhead: Option[String] = None,
+      env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
       labels: Map[String, String] = Map(),
       configMaps: Seq[NamePath] = Seq(),
@@ -265,6 +397,7 @@ object SparkResource {
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
       mainClass: String = "", // required parameter
+      sparkConf: Option[Map[String, String]] = None,
       mainApplicationFile: Option[String] = Some("spark-internal"),
       volumes: Seq[Volume] = Nil,
       driver: Driver,
@@ -289,8 +422,6 @@ object SparkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val volumeMountFmt: Format[Volume.Mount]              = skuber.json.format.volMountFormat
-  implicit val volumeFmt: Format[Volume]                         = skuber.json.format.volumeFormat
   implicit val securityContextFmt: Format[SecurityContext]       = Json.format[SecurityContext]
   implicit val hostPathFmt: Format[HostPath]                     = Json.format[HostPath]
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]

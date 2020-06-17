@@ -19,7 +19,7 @@ package action
 
 import scala.concurrent._
 import scala.collection.immutable._
-
+import akka.actor.ActorSystem
 import play.api.libs.json._
 
 import skuber._
@@ -50,9 +50,7 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
-        Action.delete(
-          serviceResource(endpoint, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet), namespace, labels, ownerReferences)
-        )
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), namespace)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
@@ -111,8 +109,10 @@ object EndpointActions {
       override val resource: Service,
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
-  ) extends CreateAction[Service](resource, format, resourceDefinition, serviceEditor) {
-    override def execute(client: KubernetesClient)(implicit ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
+  ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
+    override def execute(
+        client: KubernetesClient
+    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
         res ← serviceResult

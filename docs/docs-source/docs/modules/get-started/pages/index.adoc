@@ -8,7 +8,8 @@ include::ROOT:partial$include.adoc[]
 
 The workflow to build and deploy your first Cloudflow application includes preparing a development environment, coding some streamlets, creating a blueprint to indicate data flow, and running the example. During development, you will likely want to run applications first in a local sandbox and then on a Kubernetes cluster.   
 
-This chapter describes how to build, deploy and run a simple "Wind Turbine" Cloudflow application and deploying it in a local sandbox and on a GKE cluster. Follow the main topics in order:
+This chapter describes how to build a simple "Wind Turbine" Cloudflow application, how to run it locally in the sandbox, and how to deploy and run it on a Google Kubernetes Engine (GKE) cluster. 
+Follow the main topics in order:
 
 . xref:prepare-development-environment.adoc[Prepare the development environment]
 . xref:wind-turbine-example.adoc[Develop the Wind Turbine example]
@@ -17,13 +18,14 @@ This chapter describes how to build, deploy and run a simple "Wind Turbine" Clou
 .. xref:develop-example-streamlets.adoc[Develop example streamlets]
 . xref:create-example-blueprint.adoc[Create the example blueprint]
 . xref:run-in-sandbox.adoc[Run in a local sandbox]
-. xref:setup-gke-cluster.adoc[Set up a GKE cluster]
+. xref:setup-k8s-cluster.adoc[Set up a Kubernetes cluster]
 . xref:deploy-to-gke-cluster.adoc[Deploy to a GKE cluster]
 . xref:exercise-example.adoc[Exercise the example]
 .. Use CLI helpers such as `status` and `list`
 .. Deal with http ingress and push some data to the application
 .. Undeploy the application
 
-NOTE:: Check the xref:versions.adoc[versions of dependencies] that Cloudflow supports.
+
+NOTE: Check the xref:versions.adoc[versions of dependencies] that Cloudflow supports.
 
 Let's get started by xref:prepare-development-environment.adoc[preparing the development environment].

@@ -37,17 +37,18 @@ object CloudflowInstance {
 
   val CRD = CustomResourceDefinition[CR]
 
-  def editor = new ObjectEditor[CR] {
-    def updateMetadata(obj: CR, newMetadata: ObjectMeta): CR = obj.copy(metadata = newMetadata)
-  }
+  def editor =
+    new ObjectEditor[CR] {
+      def updateMetadata(obj: CR, newMetadata: ObjectMeta): CR = obj.copy(metadata = newMetadata)
+    }
 
-  implicit val configFormat                     = JsonConfiguration(SnakeCase)
-  implicit val strimziOperatorFormat            = Json.format[KafkaClusterCR]
-  implicit val flinkOperatorFormat              = Json.format[FlinkOperator]
-  implicit val sparkOperatorFormat              = Json.format[SparkOperator]
-  implicit val cloudflowOperatorFormat          = Json.format[CloudflowOperator]
-  implicit val specFmt                          = Json.format[Spec]
-  implicit val statusFmt                        = Json.format[Status]
+  implicit val configFormat            = JsonConfiguration(SnakeCase)
+  implicit val strimziOperatorFormat   = Json.format[KafkaClusterCR]
+  implicit val flinkOperatorFormat     = Json.format[FlinkOperator]
+  implicit val sparkOperatorFormat     = Json.format[SparkOperator]
+  implicit val cloudflowOperatorFormat = Json.format[CloudflowOperator]
+  implicit val specFmt                 = Json.format[Spec]
+  implicit val statusFmt               = Json.format[Status]
 
   case class ValidationFailure(errorMsg: String)
 
@@ -57,11 +58,10 @@ object CloudflowInstance {
   def validateStorageClasses(instance: CloudflowInstance.CR, storageClasses: Set[StorageClass]): List[ValidationFailure] = {
 
     def validatePersistentStorage(storageClasses: Set[StorageClass])(selectedStorageClass: String): Option[ValidationFailure] =
-      if (!storageClasses.exists(sc => sc.name == selectedStorageClass)) {
+      if (!storageClasses.exists(sc => sc.name == selectedStorageClass))
         Some(ValidationFailure(s"The cluster does not have a '${selectedStorageClass}' storage class."))
-      } else {
+      else
         None
-      }
 
     // Validate storage types
     List(

@@ -23,7 +23,7 @@ import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
 import play.api.libs.json._
-import skuber.Volume
+import skuber._
 
 class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
@@ -93,6 +93,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val crd = SparkRunner.resource(
         deployment = deployment,
         app = app,
+        configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
       )
 
@@ -119,6 +120,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val crd = SparkRunner.resource(
         deployment = deployment,
         app = app,
+        configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
       )
 

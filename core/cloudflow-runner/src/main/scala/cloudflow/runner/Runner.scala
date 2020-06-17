@@ -24,7 +24,7 @@ import java.nio.file.{ Files, Paths }
 import org.slf4j.LoggerFactory
 import com.typesafe.config.Config
 import cloudflow.streamlets._
-import RunnerOps._
+import cloudflow.blueprint.RunnerConfigUtils._
 // TODO removed for Flink Akka 2.6 conflict. Need to find another way to do this.
 //import cloudflow.events.errors.ErrorEvents
 
@@ -77,7 +77,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
           Await.result(streamletExecution.completed, Duration.Inf)
           shutdown(loadedStreamlet)
         } catch {
-          case ex @ ExceptionAcc(exceptions) ⇒
+          case ex @ ExceptionAcc(exceptions @ _) ⇒
             // TODO removed for Flink Akka conflict. Need to think of another way to do this.
             // exceptions.foreach(ErrorEvents.report(loadedStreamlet, withPodRuntimeConfig, _))
             shutdown(loadedStreamlet, Some(ex))

@@ -188,7 +188,7 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
       val producers = verifiedOutlets.map(_.portPath.toString) ++ unverifiedPorts
 
       val foundTopic = topics
-        .find(_.name == topic.name)
+        .find(_.id == topic.id)
         .map(t =>
           t.copy(
             producers = (t.producers ++ producers).distinct,
@@ -197,7 +197,7 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
         )
         .getOrElse(topic.copy(producers = producers, consumers = consumers))
       val verifiedTopic = foundTopic.verify(streamlets.flatMap(_.verified))
-      val otherTopics   = topics.filterNot(_.name == foundTopic.name)
+      val otherTopics   = topics.filterNot(_.id == foundTopic.id)
       copy(topics = otherTopics :+ verifiedTopic).verify
     }
 
@@ -216,13 +216,13 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
       } yield {
         val unmodified = verifiedTopics
           .filterNot(_.connections.exists(_.portPath == verifiedPort.portPath))
-          .flatMap(verifiedTopic => topics.find(_.name == verifiedTopic.name))
+          .flatMap(verifiedTopic => topics.find(_.id == verifiedTopic.id))
 
         val modified = verifiedTopics
           .filter(_.connections.exists(_.portPath == verifiedPort.portPath))
           .flatMap { verifiedTopic =>
             topics
-              .find(_.name == verifiedTopic.name)
+              .find(_.id == verifiedTopic.id)
               .map { topic =>
                 topic.copy(
                   producers = topic.producers.filterNot(path => VerifiedPortPath(path).exists(_ == verifiedPortPath)),

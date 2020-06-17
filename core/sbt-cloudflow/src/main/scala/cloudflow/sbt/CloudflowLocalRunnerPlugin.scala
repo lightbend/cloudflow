@@ -21,15 +21,16 @@ import java.nio.file._
 import scala.sys.process.Process
 import scala.sys.SystemProperties
 import scala.util.{ Failure, Success, Try }
-import scala.util.control.NonFatal
 
 import com.typesafe.config.{ Config, ConfigFactory }
 import net.ceedubs.ficus.Ficus._
 import sbt._
 import sbt.Keys._
 import spray.json._
-
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
+import com.github.mdr.ascii.layout._
+import com.github.mdr.ascii.graph._
+import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.streamlets.ServerAttribute
@@ -42,48 +43,113 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def requires: Plugins = BlueprintVerificationPlugin
   override def trigger           = allRequirements
 
-  val LocalRunnerClass = "cloudflow.runner.LocalRunner"
+  val LocalRunnerClass = "cloudflow.localrunner.LocalRunner"
+  val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
+  val Log4J            = "log4j" % "log4j" % "1.2.17"
+
+  // kafka config keys
+  val BootstrapServersKey = "bootstrap.servers"
+  val EmbeddedKafkaKey    = "embedded-kafka"
+
+  // kafka local values
+  val KafkaPort = 9093
+
+  // Banner decorators
+  val infoBanner    = banner('-') _
+  val warningBanner = banner('!') _
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    libraryDependencies ++= Vector(
+          Slf4jLog4jBridge,
+          Log4J
+        ),
+    allApplicationClasspathByProject := (Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+            Def.task {
+              val allValues = cloudflowApplicationClasspathByProject.all(filter).value
+              allValues
+
+            }
+          })
+          .value
+          .toMap,
+    allStreamletDescriptorsByProject := (Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+            Def.task {
+              val allValues = streamletDescriptorsByProject.all(filter).value
+              allValues
+            }
+          })
+          .value
+          .toMap,
     runLocal := Def.taskDyn {
           Def.task {
             implicit val logger = streams.value.log
-            val _               = verifyBlueprint.value // force check blueprint with feedback
-            val classpath       = cloudflowApplicationClasspath.value
+            val _               = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
+            val cpByProject     = allApplicationClasspathByProject.value
+            val configFile      = runLocalConfigFile.value
+            val streamletDescriptorsByProject = allStreamletDescriptorsByProject.value.filter {
+              case (_, streamletMap) => streamletMap.nonEmpty
+            }
+            val _appDescriptor = applicationDescriptor.value
+            val appDescriptor = _appDescriptor.getOrElse {
+              logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
+              throw new IllegalStateException("ApplicationDescriptor is not present")
+            }
+
+            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Compile).value)
+
+            val projects = streamletDescriptorsByProject.keys
 
             // setup local file scaffolding
-            val (appId, appDescriptorFile, outputFile, log4jConfigFile) = (for {
-              tempRuntimeDir            ← prepareTempDir("local-cloudflow")
-              outputFile                ← prepareOutputFile(tempRuntimeDir)
-              log4jConfigFile           ← prepareLog4JFileFromResource(tempRuntimeDir, "local-run-log4j.properties")
-              (localConf, localConfMsg) ← preparePluginConfig(runLocalConfigFile.value)
-              appDescriptor             ← prepareApplicationDescriptor(applicationDescriptor.value, localConf, tempRuntimeDir)
-              appDescriptorFile         ← prepareApplicationFile(appDescriptor)
-            } yield {
-              logger.info(localConfMsg)
-              printInfo(appDescriptor, outputFile)
-              (appDescriptor.appId, appDescriptorFile, outputFile, log4jConfigFile)
-            }).recoverWith {
-              case NonFatal(ex) ⇒
-                warningBanner(s"Setup failed. Reason: ${ex.getMessage}")
-                Failure(ex)
-            }.get //force resolution
+            val localConfMessage = configFile
+              .map(file => "Using Sandbox local configuration file: " + file)
+              .getOrElse("No local configuration provided.")
 
-            logger.debug("Using log4 config file at:" + log4jConfigFile)
-            logger.debug("Using output log file at:" + outputFile)
+            val (tempDir, configDir) = createDirs("cloudflow-local-run")
+            val descriptorByProject = projects.map { pid =>
+              val streamletClasses = streamletDescriptorsByProject(pid).keys.toSet
+              pid -> streamletFilterByClass(appDescriptor, streamletClasses)
+            }
 
-            val process = runPipelineJVM(appDescriptorFile, classpath, outputFile, log4jConfigFile)
+            val runtimeDescriptorByProject = getDescriptorsOrFail {
+              descriptorByProject.map {
+                case (pid, projectDescriptor) =>
+                  pid -> scaffoldRuntime(pid, projectDescriptor, configFile, tempDir, configDir)
+              }
+            }
 
-            println(s"Running ${appId}  \nTo terminate, press [ENTER]\n")
+            val topics = appDescriptor.deployments
+              .flatMap { deployment =>
+                deployment.portMappings.values.map(_.name)
+              }
+              .distinct
+              .sorted
+            setupKafka(KafkaPort, topics)
+
+            printAppLayout(resolveConnections(appDescriptor))
+            printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfMessage)
+
+            val processes = runtimeDescriptorByProject.map {
+              case (pid, rd) =>
+                val cp = prepareLoggingInClasspath(cpByProject(pid), logDependencies)
+                runPipelineJVM(rd.appDescriptorFile, cp, rd.outputFile, rd.logConfig)
+            }
+
+            println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
 
             try {
               sbt.internal.util.SimpleReader.readLine("")
-              logger.info("Attempting to terminate local Pipeline")
-              process.destroy()
+              logger.info("Attempting to terminate local application")
+              processes.foreach(_.destroy())
             } catch {
               case ex: Throwable ⇒
                 logger.warn("Stopping process failed.")
                 ex.printStackTrace()
+            } finally {
+              stopKafka()
             }
           }
         }.value
@@ -95,27 +161,143 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val sideLength   = (bannerLength - title.size) / 2
     val side         = List.fill(sideLength)(bannerChar).mkString("")
     val bottom       = List.fill(bannerLength)(bannerChar).mkString("")
+
     println(side + title + side)
     println(message.toString)
     println(bottom + "\n")
   }
-  val infoBanner    = banner('-') _
-  val warningBanner = banner('!') _
 
-  def prepareLog4JFileFromResource(tempDir: Path, resourcePath: String)(implicit logger: Logger): Try[Path] = Try {
-    val log4JSrc       = Option(this.getClass.getClassLoader.getResourceAsStream(resourcePath))
-    val localLog4jFile = tempDir.resolve("local-log4j.properties")
+  def prepareLoggingInClasspath(classpath: Array[URL], logDependencies: Seq[(String, URL)]): Array[URL] = {
+    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback")) // remove logback from the classpath
+    logDependencies.foldLeft(filteredClasspath) {
+      case (agg, (libName, url)) =>
+        if (agg.find(u => u.toString.contains(libName)).isEmpty) { // add slf/log4j if not there
+          agg :+ url
+        } else agg
+    }
+  }
+
+  def findLogLibsInPluginClasspath(classpath: Keys.Classpath): Seq[(String, URL)] = {
+    val localClasspath = classpath.files.map(_.toURI.toURL).toArray
+    val logLibs        = Seq(toURLSegment(Log4J), toURLSegment(Slf4jLog4jBridge))
+    // forced `get` b/c these libraries are added to the classpath.
+    logLibs.map(lib => lib -> localClasspath.find(_.toString.contains(lib)).get)
+  }
+
+  // transforms the organization and name of a module into the URL format used by the classpath resolution
+  def toURLSegment(dep: ModuleID): String = {
+    val org  = dep.organization.replaceAll("\\.", "/")
+    val name = dep.name
+    s"$org/$name"
+  }
+
+  case class RuntimeDescriptor(id: String,
+                               appDescriptor: ApplicationDescriptor,
+                               appDescriptorFile: Path,
+                               outputFile: File,
+                               logConfig: Path,
+                               localConfMsg: String)
+
+  def setupKafka(port: Int, topics: Seq[String])(implicit log: Logger) = {
+    implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
+    EmbeddedKafka.start()
+    log.debug(s"Setting up embedded Kafka broker on port: $port")
+
+    topics.foreach { topic ⇒
+      log.debug(s"Kafka Setup: creating topic: $topic")
+      EmbeddedKafka.createCustomTopic(topic)
+    }
+  }
+  def stopKafka() =
+    EmbeddedKafka.stop()
+
+  def getDescriptorsOrFail(
+      descriptors: Iterable[(String, Try[RuntimeDescriptor])]
+  )(implicit logger: Logger): Iterable[(String, RuntimeDescriptor)] = {
+    descriptors
+      .collect {
+        case (_, Failure(ex)) =>
+          logger.error(s"Determining runtime descriptors failed: ${ex.getMessage}")
+          ex
+      }
+      .foreach { ex =>
+        throw ex
+      }
+    descriptors.collect { case (pid, Success(runtimeDescriptor)) => (pid, runtimeDescriptor) }
+  }
+
+  def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
+    def topicFormat(topic: String): String =
+      s"[$topic]"
+    val streamletIOResolver = appDescriptor.streamlets.map { st =>
+      val inlets  = st.descriptor.inlets.map(_.name)
+      val outlets = st.descriptor.outlets.map(_.name)
+      val inOut   = inlets.map(name => name -> "inlet") ++ outlets.map(name => name -> "outlet")
+      st.name -> inOut.toMap
+    }.toMap
+
+    appDescriptor.deployments.flatMap { deployment =>
+      val streamlet    = deployment.streamletName
+      val inletOutlets = streamletIOResolver(streamlet)
+      val topicsOtherStreamlet = deployment.portMappings.toSeq.map {
+        case (port, topic) =>
+          val formattedTopic = topicFormat(topic.name)
+          val io             = inletOutlets(port)
+          if (io == "inlet") {
+            // TODO verify this
+            s"$formattedTopic" -> s"${deployment.streamletName}"
+          } else {
+            // TODO verify this
+            s"${deployment.streamletName}" -> s"$formattedTopic"
+          }
+      }
+      topicsOtherStreamlet
+    }.toList
+  }
+
+  def printAppLayout(connections: List[(String, String)]): Unit = {
+    val vertices = connections.flatMap { case (a, b) => Seq(a, b) }.toSet
+    val graph    = Graph(vertices = vertices, edges = connections)
+    println(GraphLayout.renderGraph(graph))
+  }
+
+  def scaffoldRuntime(projectId: String, descriptor: ApplicationDescriptor, configFile: Option[String], targetDir: Path, configDir: Path)(
+      implicit logger: Logger
+  ): Try[RuntimeDescriptor] = {
+    val log4jConfigFile = prepareLog4JFileFromResource(configDir, "local-run-log4j.properties", "local-run-log4j.properties")
+    for {
+      (localConf, localConfMsg) ← loadCustomSandboxConfig(configFile)
+      appDescriptor             ← prepareApplicationDescriptor(descriptor, localConf, targetDir)
+      outputFile                ← createOutputFile(targetDir, projectId)
+      logFile                   <- log4jConfigFile
+      appDescriptorFile         ← prepareApplicationFile(appDescriptor)
+    } yield {
+      RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfMsg)
+    }
+  }
+
+  def prepareLog4JFileFromResource(tempDir: Path, source: String, target: String)(implicit logger: Logger): Try[Path] = Try {
+    val log4JSrc        = Option(this.getClass.getClassLoader.getResourceAsStream(source))
+    val stagedLog4jFile = tempDir.resolve(target)
     try {
-      log4JSrc
-        .map(src ⇒ Files.copy(src, localLog4jFile))
-        .getOrElse {
-          logger.warn("Could not find log4j configuration for local runner")
-          0L
-        }
+      if (!stagedLog4jFile.toFile.exists()) {
+        log4JSrc
+          .map(src ⇒ Files.copy(src, stagedLog4jFile))
+          .getOrElse {
+            logger.warn("Could not find log4j configuration for local runner")
+            0L
+          }
+      }
     } finally {
       log4JSrc.foreach(_.close)
     }
-    localLog4jFile
+    stagedLog4jFile
+  }
+
+  def streamletFilterByClass(appDescriptor: ApplicationDescriptor, streamletClasses: Set[String]): ApplicationDescriptor = {
+    val streamletInstances   = appDescriptor.streamlets.filter(streamlet => streamletClasses(streamlet.descriptor.className))
+    val deploymentDescriptor = appDescriptor.deployments.filter(streamletDeployment => streamletClasses(streamletDeployment.className))
+    appDescriptor.copy(streamlets = streamletInstances, deployments = deploymentDescriptor)
   }
 
   def prepareApplicationFile(applicationDescriptor: ApplicationDescriptor): Try[Path] = Try {
@@ -125,42 +307,43 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     localApplicationFile
   }
 
-  def prepareOutputFile(workDir: Path): Try[File] = Try {
-    Files.createTempFile(workDir, "local-cloudflow", ".log").toFile
+  def createOutputFile(workDir: Path, projectId: String): Try[File] = Try {
+    val localFile = workDir.resolve(projectId + "-local.log").toFile
+    if (!localFile.exists()) {
+      Files.createFile(workDir.resolve(projectId + "-local.log")).toFile
+    }
+    localFile
   }
 
-  def prepareTempDir(prefix: String): Try[Path] = Try {
-    Files.createTempDirectory(prefix)
+  def createDirs(prefix: String): (Path, Path) = {
+    val workDir       = Files.createTempDirectory(prefix)
+    val configDir     = workDir.resolve("config")
+    val configDirFile = configDir.toFile
+    if (!configDirFile.exists()) {
+      configDirFile.mkdirs()
+    }
+    (workDir, configDir)
   }
 
-  def preparePluginConfig(configFile: Option[String]): Try[(Config, String)] = Try {
+  def loadCustomSandboxConfig(configFile: Option[String]): Try[(Config, String)] = Try {
     configFile
       .map(filename ⇒ (ConfigFactory.parseFile(new File(filename)), s"Using sandbox configuration from $filename"))
       .getOrElse((ConfigFactory.empty(), NoLocalConfFoundMsg))
   }
 
-  def prepareApplicationDescriptor(applicationDescriptor: Option[ApplicationDescriptor],
+  def prepareApplicationDescriptor(applicationDescriptor: ApplicationDescriptor,
                                    config: Config,
-                                   tempDir: Path): Try[ApplicationDescriptor] =
-    (for {
-      descriptor ← failOnEmpty(applicationDescriptor) {
-        new RuntimeException("Invalid or missing application descriptor. This is certainly a bug. Please report it.")
-      }
-      updatedStreamlets ← tryOverrideVolumeMounts(descriptor.streamlets, config, tempDir)
-    } yield {
-      descriptor.copy(streamlets = updatedStreamlets)
-    }).recoverWith {
-      case NonFatal(ex) ⇒
-        warningBanner("Setup Failure")(ex.getMessage)
-        Failure(ex)
-    }
+                                   tempDir: Path): Try[ApplicationDescriptor] = {
+    val updatedStreamlets = tryOverrideVolumeMounts(applicationDescriptor.streamlets, config, tempDir)
+    updatedStreamlets.map(streamlets => applicationDescriptor.copy(streamlets = streamlets))
+  }
 
   def runPipelineJVM(applicationDescriptorFile: Path, classpath: Array[URL], outputFile: File, log4JConfigFile: Path)(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
     val separator = new SystemProperties().get("path.separator").getOrElse {
-      logger.warn("No \"path.separator\" setting found. Using default value \":\" ")
+      logger.warn("""No "path.separator" setting found. Using default value ":" """)
       ":"
     }
 
@@ -170,7 +353,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
-    val classpathStr = classpath.map(url ⇒ new File(url.toURI)).mkString(separator)
+    val classpathStr = classpath.collect { case url if !url.toString.contains("logback") ⇒ new File(url.toURI) }.mkString(separator)
     val options      = Seq(applicationDescriptorFile.toFile.getAbsolutePath, outputFile.getAbsolutePath)
 
     val cmd = Seq(cp, classpathStr, LocalRunnerClass) ++ options
@@ -222,24 +405,29 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def printInfo(appDescriptor: ApplicationDescriptor, outputFile: File): Unit = {
-    val streamletInstances: Seq[StreamletInstance] = appDescriptor.streamlets.sortBy(_.name)
-    var endpointIdx                                = 0
+  def printInfo(descriptors: Iterable[(String, RuntimeDescriptor)], outputFolder: File, topics: Seq[String], localConfMsg: String): Unit = {
+    val streamletInfoPerProject = descriptors.map { case (pid, rd) => (pid, rd.outputFile, streamletInfo(rd.appDescriptor)) }
+    val streamletReport = streamletInfoPerProject.map {
+      case (pid, outputFile, streamletInfo) =>
+        s"$pid - output file: ${outputFile.toURI.toString}\n\n" + streamletInfo.foldLeft("") { case (agg, str) => s"$agg\t$str\n" }
+    }
+    infoBanner("Streamlets per project")(streamletReport.mkString("\n"))
+    infoBanner("Topics")(topics.map(t => s"[$t]").mkString("\n"))
+    infoBanner("Local Configuration")(localConfMsg)
+    infoBanner("Output")(s"Pipeline log output available in folder: " + outputFolder)
+  }
 
-    val streamletInfo = streamletInstances.map { streamlet ⇒
-      val existingPortMappings =
-        appDescriptor.deployments.find(_.streamletName == streamlet.name).map(_.portMappings).getOrElse(Map.empty[String, Topic])
-      val deployment = StreamletDeployment(appDescriptor.appId,
-                                           streamlet,
-                                           "",
-                                           existingPortMappings,
-                                           StreamletDeployment.EndpointContainerPort + endpointIdx)
-      deployment.endpoint.foreach(_ => endpointIdx += 1)
+  def streamletInfo(descriptor: ApplicationDescriptor): Seq[String] = {
+    val streamletInstances: Seq[StreamletInstance] = descriptor.streamlets.sortBy(_.name)
 
-      val serverPort: Option[Int] = if (deployment.config.hasPath(ServerAttribute.configPath)) {
-        Some(ServerAttribute.containerPort(deployment.config))
-      } else {
-        None
+    streamletInstances.map { streamlet ⇒
+      val streamletDeployment = descriptor.deployments.find(_.streamletName == streamlet.name)
+      val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
+        if (sd.config.hasPath(ServerAttribute.configPath)) {
+          Some(ServerAttribute.containerPort(sd.config))
+        } else {
+          None
+        }
       }
 
       def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
@@ -249,26 +437,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           s"\t- mount [${mount.name}] available at [${mount.path}]"
         }
         .mkString("\n")
+
       val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
       s"${streamlet.name} [${streamlet.descriptor.className}]" +
         newLineIfNotEmpty(endpointMessage) +
         newLineIfNotEmpty(volumeMounts)
     }
-
-    infoBanner("Streamlets")(streamletInfo.mkString("\n"))
-
-    infoBanner("Topics")(
-      appDescriptor.deployments
-        .flatMap { deployment =>
-          deployment.portMappings.map {
-            case (port, savepoint) =>
-              s"${savepoint.name} - ${deployment.streamletName}.${port}"
-          }
-        }
-        .sorted
-        .mkString("\n")
-    )
-    infoBanner("Output")(s"Pipeline log output available in file: " + outputFile)
   }
 
   val NoLocalConfFoundMsg = "No local.conf file location configured. \n" +

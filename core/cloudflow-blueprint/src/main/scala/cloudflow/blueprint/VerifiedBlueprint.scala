@@ -60,10 +60,8 @@ final case class VerifiedStreamlet(
 }
 
 final case class VerifiedTopic(
-    name: String,
+    id: String,
     connections: Vector[VerifiedPort],
-    bootstrapServers: Option[String],
-    create: Boolean,
     kafkaConfig: Config
 )
 final case class VerifiedStreamletConnection(verifiedOutlet: VerifiedOutlet, verifiedInlet: VerifiedInlet, label: Option[String] = None)

@@ -38,7 +38,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val DepJarsDir: String               = "dep-jars"
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
-  final val CloudflowVersion                 = "1.4.0"
+  final val CloudflowVersion                 = "2.0.0"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
@@ -56,7 +56,8 @@ object CloudflowBasePlugin extends AutoPlugin {
           // this artifact needs to have `%` and not `%%` as we build the runner jar
           // without version information. This is required for Flink runtime as a fixed name
           // jar needs to be uploaded to a specific location for Flink operator to pick up
-          "com.lightbend.cloudflow" % "cloudflow-runner" % BuildInfo.version
+          "com.lightbend.cloudflow" % "cloudflow-runner"       % BuildInfo.version,
+          "com.lightbend.cloudflow" %% "cloudflow-localrunner" % BuildInfo.version
         ),
     buildOptions in docker := BuildOptions(
           cache = true,

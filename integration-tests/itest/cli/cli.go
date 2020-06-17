@@ -11,8 +11,8 @@ import (
 
 // App represents an application name and docker image
 type App struct {
-	Image string
-	Name  string
+	CRFile string
+	Name   string
 }
 
 // AppEntry represents an entry in the list of applications
@@ -45,48 +45,64 @@ type StreamletPod struct {
 
 var pollSleepInterval, _ = time.ParseDuration("5s")
 
+func logOutputIfFailure(command string, output []byte, err error) {
+	if err != nil {
+		fmt.Printf("[%s] error. Output: [%s] Error code: [%s]", command, output, err.Error())
+	}
+}
+
 // Deploy initiates the deployment of an application to the k8s cluster
 func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.Image, "--username", user, "--password", pwd)
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.CRFile, "--username", user, "--password", pwd)
 	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("deploy", out, err)
 	return string(out), err
 }
 
 // Undeploy initiates an application undeployment on the active cluster
 func Undeploy(app App) error {
 	cmd := exec.Command("kubectl", "cloudflow", "undeploy", app.Name)
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("undeploy", out, err)
 	return err
 }
 
 // Scale changes the scale factor of a streamlet in an app
 func Scale(app App, streamlet string, scale int) error {
 	cmd := exec.Command("kubectl", "cloudflow", "scale", app.Name, streamlet, strconv.Itoa(scale))
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("scale", out, err)
+	return err
+}
+
+// Configure applies a configuration file to a given application
+func Configure(app App, filePath string) error {
+	cmd := exec.Command("kubectl", "cloudflow", "configure", app.Name, "--conf", filePath)
+	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("configure", out, err)
 	return err
 }
 
 // ListApps returns the list of of deployed applications on the currently active cluster
 func ListApps() (entries []AppEntry, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "list")
-	out, er := cmd.CombinedOutput()
-	if er != nil {
-		err = er
-		return
+	out, err := cmd.CombinedOutput()
+	var res []AppEntry
+	logOutputIfFailure("list", out, err)
+	if err != nil {
+		return res, err
 	}
 	str := string(out)
 	splits := strings.Split(str, "\n")
 	whitespaces := regexp.MustCompile(`\s+`)
-	var res []AppEntry
 	for i, line := range splits {
 		switch i {
-		case 0, 1:
+		case 0: // skip the first line
 			continue
 		default:
 			parts := whitespaces.Split(line, -1)
 			if len(parts) == 7 {
 				appEntry := AppEntry{parts[0], parts[1], parts[2], parts[3] + parts[4] + parts[5] + parts[6]}
-
 				res = append(res, appEntry)
 			}
 		}
@@ -112,11 +128,12 @@ func ListAppNames() (appNames []string, err error) {
 func Status(app App) (status AppStatus, err error) {
 	cmd := exec.Command("kubectl", "cloudflow", "status", app.Name)
 	out, err := cmd.CombinedOutput()
+	logOutputIfFailure("status", out, err)
 	mkErr := func(err error) (AppStatus, error) {
 		return AppStatus{}, err
 	}
 	if err != nil {
-		return
+		return mkErr(err)
 	}
 	str := string(out)
 	splits := strings.Split(str, "\n")
@@ -134,7 +151,7 @@ func Status(app App) (status AppStatus, err error) {
 				return mkErr(err)
 			}
 			if value[0] != names[i] {
-				err = fmt.Errorf("unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
+				err = fmt.Errorf("Unexpected header name. Got [%s] but expected [%s]", value[0], names[i])
 				return mkErr(err)
 			}
 			*fields[i] = value[1]
@@ -146,27 +163,44 @@ func Status(app App) (status AppStatus, err error) {
 			if len(strings.TrimSpace(line)) == 0 {
 				continue
 			}
-			parts, err := parseLineInN(line, 5)
+			parts, err := parseLineInN(line, 4)
 			if err != nil {
 				return mkErr(err)
 			}
 			var streamletPod StreamletPod
 			streamletPod.Streamlet = parts[0]
-			streamletPod.Pod = parts[1]
-			streamletPod.ActualReady, streamletPod.ExpectedReady, err = parseReady(parts[2])
-			if err != nil {
-				return mkErr(err)
+
+			var parseErr error
+			if len(parts) == 4 { // POD = empty
+				streamletPod.Pod = ""
+				streamletPod, parseErr = parseStreamletPod(streamletPod, parts[1:4])
+			} else {
+				streamletPod.Pod = parts[1]
+				streamletPod, parseErr = parseStreamletPod(streamletPod, parts[2:5])
 			}
-			streamletPod.Status = parts[3]
-			streamletPod.Restarts, err = strconv.Atoi(parts[4])
-			if err != nil {
-				return mkErr(err)
+
+			if parseErr != nil {
+				return mkErr(parseErr)
 			}
 			streamletPods = append(streamletPods, streamletPod)
 		}
 	}
 	status.StreamletPods = streamletPods
 	return status, nil
+}
+
+func parseStreamletPod(streamletPod StreamletPod, elems []string) (StreamletPod, error) {
+	var err error
+	streamletPod.ActualReady, streamletPod.ExpectedReady, err = parseReady(elems[0])
+	if err != nil {
+		return streamletPod, err
+	}
+	streamletPod.Status = elems[1]
+	streamletPod.Restarts, err = strconv.Atoi(elems[2])
+	if err != nil {
+		return streamletPod, err
+	}
+	return streamletPod, nil
 }
 
 func parseReady(str string) (actual int, expected int, err error) {

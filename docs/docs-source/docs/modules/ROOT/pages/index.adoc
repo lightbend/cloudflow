@@ -8,11 +8,17 @@ include::ROOT:partial$include.adoc[]
 
 :imagesdir: assets/images
 
-Cloudflow enables you to quickly develop distributed streaming applications to deploy on Kubernetes. The rapid advance and adoption of the Kubernetes ecosystem is delivering on the devops promise of giving control and responsibility to dev teams over the lifecycle of their applications. However, use of Kubernetes also increases the complexity of delivering end-to-end applications. Cloudflow alleviates that pain for distributed streaming applications, which are often far more complex than typical front-end or microservice deployments.
+Cloudflow is an SDK and a set of Kubernetes extensions that accelerates your development of distributed streaming applications and facilitates their deployment on Kubernetes.
+
+The rapid advance and adoption of the Kubernetes ecosystem is delivering the devops promise of giving control and responsibility to dev teams over the lifecycle of their applications. 
+However, the adoption of Kubernetes also increases the complexity of delivering end-to-end applications. 
+Cloudflow alleviates that pain for distributed streaming applications, which are often far more demanding than typical front-end or microservice deployments.
 
 link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
 
-Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and Apache Flink. Using Cloudflow, you can easily break down your streaming application into small composable components and wire them together with schema-based contracts. With its powerful abstractions, Cloudflow enables you to define, build and deploy the most complex streaming applications. 
+Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and Apache Flink. 
+Using Cloudflow, you can easily break down your streaming application into small composable components and wire them together with schema-based contracts. 
+With those powerful abstractions, Cloudflow enables you to define, build and deploy the most complex streaming applications. 
 
 == Streaming application requirements
 
@@ -20,16 +26,22 @@ include::{cloudflow-version}@shared-content:ROOT:page$streaming-app-requirements
 
 == The Cloudflow approach 
 
-Cloudflow offers a complete solution for the creation, deployment, and management of streaming applications on Kubernetes. For development, it offers a toolbox that simplifies and accelerates application creation. For deployment, it comes with a set of extensions that makes Cloudflow streaming applications native to Kubernetes.
+Cloudflow offers a complete solution for the creation, deployment, and management of streaming applications on Kubernetes. 
+For development, it offers a toolbox that simplifies and accelerates application creation. 
+For deployment, it comes with a set of extensions that makes Cloudflow streaming applications native to Kubernetes.
 
-A common challenge when building streaming applications is wiring all of the components together and testing them end-to-end _before_ &nbsp;going into production. Often different teams are responsible for different parts of the application, making coordination difficult. Repeatedly spinning up and deleting Kubernetes pods can be both difficult and costly. Cloudflow addresses this by allowing you to validate the connections between components and to run your application locally during development to avoid surprises during deployment.
+A common challenge when building streaming applications is wiring all of the components together and testing them end-to-end _before_ &nbsp;going into production. 
+Often, different teams are responsible for different parts of the application, making coordination difficult.
+Repeatedly spinning up and deleting Kubernetes pods or clusters can be both cumbersome and costly. Cloudflow addresses this by allowing you to validate the connections between components and to run your application locally during development to avoid surprises at deployment time.
 
-Everything in Cloudflow is done in the context of an application, which represents a self-contained distributed system of data processing services connected together by data streams. A Cloudflow application includes: 
+Everything in Cloudflow is done in the context of an application, which represents a self-contained distributed system of data processing services connected together by data streams. 
+A Cloudflow application includes: 
 
 * Streamlets, which contain the stream processing logic
-* Blueprints, which define how streamlets are composed and configured.
+* A blueprint, that defines streamlets, topics, and how they are connected and configured.
 
-At deployment time, Cloudflow uses the blueprint to deploy all its streamlets so that data can start streaming as described. Cloudflow tools make it easy to create and manage multiple applications, each one forming a separate self-contained system, as illustrated below.
+At deployment time, Cloudflow uses the blueprint to deploy all its streamlets so that data can start streaming as described. 
+Cloudflow tools make it easy to create and manage multiple applications, each one forming a separate self-contained system, as illustrated below.
 
 [#multiple-apps]
 .Multiple Cloudflow Applications
@@ -38,19 +50,20 @@ image::apps-1.png[]
 
 == Feature set
 
-Cloudflow includes tools for developing and deploying the most complex streaming applications:
+Cloudflow includes tools for developing and deploying streaming applications:
 
 * The Cloudflow application development toolkit includes:
-** An API definition for `Streamlet`, the core abstraction in Cloudflow.
-** An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Spark's Structured Streaming, Apache Flink, and Akka Streams.
+** An SDK definition for `Streamlet`, the core abstraction in Cloudflow.
+** An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Apache Spark Structured Streaming, Apache Flink, and Akka.
 ** A `Streamlet` composition model driven by a `blueprint` definition. 
-** A _Sandbox_ execution mode that accelerates the development and testing of your applications.
-** A set of `sbt` plugins for packaging Cloudflow applications into a deployable container.
-** A CLI, in the form of a `kubectl` plugin, that facilitates manual and scripted management of the application.  
+** A _Sandbox_ execution mode that accelerates the execution and testing of your applications on your development machine.
+** A set of `sbt` plugins for packaging Cloudflow applications into deployable containers and generating an application descriptor that informs the deployment.
+** A CLI, in the form of a `kubectl` plugin, that facilitates manual, scripted, and automated management of the application.  
 
 * For deploying to Kubernetes clusters, the Cloudflow operator takes care of orchestrating the deployment of the different parts of a streaming pipeline as an end-to-end application.
 
-Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. Lightbend also offers support with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend Subscription].
+Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. 
+Lightbend also offers support with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend Subscription].
 
 == What's next
 

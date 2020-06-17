@@ -1,0 +1,150 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+A streamlet can require dynamic configuration parameters at deployment time. Configuration parameters can be used to change the way the streamlet functions when it is run.
+
+Examples of configuration parameters are database connection strings, URLs, credentials, or anything else that you want to specify at deployment time.
+
+A streamlet specifies that it requires particular config parameters by expressing them in code. The values for these parameters will be requested, validated, and set when `kubectl cloudflow deploy` is used to deploy the Cloudflow application.
+
+There are a number of predefined configuration parameter types:
+
+|======
+|`IntegerConfigParameter`| A signed 32 bit integer value.
+|`StringConfigParameter`| A string with the max length of 1k characters.
+|`DoubleConfigParameter`| A 64 bit floating point value.
+|`BooleanConfigParameter`| A boolean value.
+|`RegExpConfigParameter`| A string validated using a regular expression.
+|`DurationConfigParameter`| A duration string, for example "2 minutes".
+|`MemorySizeConfigParameter`| A memory size string, for example "32M".
+|======
+
+In addition to the predefined types, you can also define your own types.
+
+== Using a configuration parameter in a streamlet
+
+The following section will break down how we can use an `Integer` configuration parameter type in a streamlet to request the value for a maximum number of records within a time window.
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala[tag=all]
+--
+
+As seen in the example below, we first need to create an instance of `IntegerConfigParameter`.
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala[tag=definition]
+--
+
+The arguments provided to `IntegerConfigParameter()` are the following:
+
+    - A key, which has to be unique within the streamlet.
+    - Optionally, a description, which will be shown by the CLI.
+    - Optionally, a default value, which will be used by the CLI when no value is passed during deploy.
+
+After the configuration parameter is defined, we can use it to extract its value from the runtime configuration in the `createLogic` function:
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala[tag=usage]
+--
+
+Note that its up to the developer to use the correct config method to extract the value of the parameter. Since the type being used here is `IntegerConfigParameter` the config method used is `getInt`.
+
+== Custom validation
+
+It is easy to create your own custom validation for a configuration parameter using the `RegExpConfigParameter` type. This type allows you to validate the entered value using a regular expression.
+
+For example, if we want to validate a 24 hour timestamp, this is how it could be defined and used in a streamlet.
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/ConfigCustomValidation.scala[tag=definition]
+--
+
+== Providing values for configuration parameters when testing streamlets
+
+When writing tests for streamlets, you can provide values for configuration parameters when you initialize the runner-specific testkit.
+
+If we want to write a test for the example streamlet `RecordSumFlow`, we could add values for the `recordsInWindowParameter` configuration parameter like this:
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/test/scala/com/example/SampleSpec.scala[tag=config-value]
+--
+
+The Spark testkit has a similar function for adding values to configuration parameters when testing a streamlet.
+
+[source,scala]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/test/scala/com/example/SampleSpec.scala[tag=config-value]
+--
+
+The Java API is slightly different as you can see in the example below:
+
+[source,java]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/test/java/com/example/SampleTest.java[tag=config-value]
+--
+
+== Using configuration parameters in Java
+
+Using the Configuration parameters in Java is similar to the Scala version. The main difference is how class instantiation is done and how to retrieve the config parameter key.
+
+Creating an instance of a `StringConfigParameter` in Java:
+
+[source,java]
+--
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/FilterStreamlet.java[tag=definition]
+--
+
+Example of accessing the value of a configuration parameter in Java:
+
+[source,java]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/FilterStreamlet.java[tag=usage]
+----
+
+
+== Providing configuration parameters when deploying a Cloudflow application
+
+Configuration parameters will need to be provided with values during deployment of the application. The `deploy` command accepts these values as a set of key/value pairs.
+
+The format for specifying configuration parameter values is as follows:
+
+    [streamlet name].[configuration parameter name]="[value]"
+
+Deploying an application without specifying values for all required configuration parameters will fail and result in an error message like the following.
+
+NOTE: Examples in this section show the OpenShift `oc plugin`, however you should substitute the correct command for your K8s distribution.
+
+[source,bash,subs=attributes+]
+----
+$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/call-record-pipeline:292-c183d80 cdr-aggregator.group-by-window="7 minute" cdr-aggregator.watermark="1 minute"
+
+[Error] Please provide values for the following configuration parameter(s):
+- cdr-generator2.records-per-second - Records per second to process.
+- cdr-generator1.records-per-second - Records per second to process.
+----
+
+To successfully deploy the application, all configuration parameter values have to be provided on the command line:
+
+[source,bash,subs=attributes+]
+----
+$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/call-record-pipeline:292-c183d80 cdr-aggregator.group-by-window="7 minute" cdr-aggregator.watermark="1 minute" cdr-generator1.records-per-second="10" cdr-generator2.records-per-second="10"
+
+[Done] Deployment of application `call-record-aggregator` has started.
+----
+
+Configuration parameters can be omitted from the deployment command line as long as they have default values. 
+[source,bash,subs=attributes+]
+----
+$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/sensor-data-java:439-a5837b5
+
+Default value 'device-ids.txt' will be used for configuration parameter 'filter.filter-filename'
+Default value '10' will be used for configuration parameter 'filter.filter-pollinginterval'
+
+[Done] Deployment of application `sensor-data-java` has started.
+----

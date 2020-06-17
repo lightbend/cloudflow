@@ -15,12 +15,8 @@ import (
 
 // PortMapping maps outlets
 type PortMapping struct {
-	AppID            string          `json:"app_id"`
-	Name             string          `json:"name"`
-	Streamlet        string          `json:"streamlet"`
-	Config           json.RawMessage `json:"config"`
-	BootstrapServers string          `json:"bootstrap_servers,omitempty"`
-	Managed          bool            `json:"managed"`
+	ID     string          `json:"id"`
+	Config json.RawMessage `json:"config"`
 }
 
 // Endpoint contains deployment endpoint information

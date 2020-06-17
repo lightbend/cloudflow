@@ -11,9 +11,6 @@ ifeq (release,$(firstword $(MAKECMDGOALS)))
   $(eval $(RELEASE_TAG):;@:) # Make sure arg is not treated as a rule
 endif
 
-
-all: help
-
 test: ## Builds and test the plugin
 	./build-and-test.sh
 

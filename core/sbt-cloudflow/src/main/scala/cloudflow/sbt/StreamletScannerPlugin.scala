@@ -30,7 +30,8 @@ object StreamletScannerPlugin extends AutoPlugin {
   override def projectSettings = Seq(
     cloudflowStreamletDescriptors := scanForStreamlets.value,
     cloudflowApplicationClasspath := applicationClasspath.value,
-    streamletClassNamesByProject := streamletsByProject.value,
+    cloudflowApplicationClasspathByProject := (ThisProject / name).value -> applicationClasspath.value,
+    streamletDescriptorsByProject := streamletsByProject.value,
     mappings in (Compile, packageBin) += {
       streamletDescriptorsFile.value -> "streamlet-descriptors.conf"
     }
@@ -40,9 +41,9 @@ object StreamletScannerPlugin extends AutoPlugin {
     toClasspathUrls((fullClasspath in Compile).value)
   }
 
-  private def streamletsByProject: Def.Initialize[Task[Map[String, Iterable[String]]]] = Def.task {
+  private def streamletsByProject: Def.Initialize[Task[(String, Map[String, Config])]] = Def.task {
     val descriptors = cloudflowStreamletDescriptors.value
-    Map((ThisProject / name).value -> descriptors.keySet)
+    (ThisProject / name).value -> descriptors
   }
 
   private def scanForStreamlets: Def.Initialize[Task[Map[String, Config]]] = Def.task {

@@ -52,11 +52,10 @@ object CloudflowEvent {
                 currentInstances = currentInstances + (id -> watchEvent)
 
                 val validationFailures = CloudflowInstance.validateClusterFeatures(instance, clusterFeatures)
-                if (validationFailures.nonEmpty) {
+                if (validationFailures.nonEmpty)
                   List(PreRequisiteFailed(instance, validationFailures))
-                } else {
+                else
                   List(InstallEvent(instance, currentInstance, namespace, clusterFeatures))
-                }
 
               } else List.empty
             case _ =>

@@ -8,18 +8,16 @@ In this application we use a an ingress to generate random data from a set of vi
 
 Steps:
 
-* Make sure you have installed a gke cluster and you are running Cloudflow
-(check https://github.com/lightbend/cloudflow-installer for more).
-Make sure you have access to your cluster:
+* Make sure you have installed a gke cluster and you are running Cloudflow (check https://github.com/lightbend/cloudflow/tree/master/installer for more). Make sure you have access to your cluster:
 
-```
-gcloud container clusters get-credentials <CLUSTER_NAME>
+```bash
+$ gcloud container clusters get-credentials <CLUSTER_NAME>
 ```
 
 and that you have access to the Google docker registry:
 
-```
-gcloud auth configure-docker
+```bash
+$ gcloud auth configure-docker
 ```
 
 * Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
@@ -33,41 +31,35 @@ ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
 
 * Build the application.
 
-```
-sbt buildAndPublish
+```bash
+$ sbt buildApp
 ```
 At the very end you should see the application image built and instructions for how to deploy it:
 
 ```
-[info] 34-69082eb-dirty: digest: sha256:25e782e2ef9a9179a9eb53aac3a32c1c05f6a18b4898f47e179d81eb2d8b4d1f size: 6805
-[info]  
-[info] Successfully built and published the following Cloudflow application image:
-[info]  
-[info]   eu.gcr.io/my-awesome-project/spark-sensors:34-69082eb-dirty
-[info]  
-[info] You can deploy the application to a Kubernetes cluster using any of the the following commands:
-[info]  
-[info]   kubectl cloudflow deploy eu.gcr.io/my-awesome-project/spark-sensors:34-69082eb-dirty
-[info]  
-[success] Total time: 53 s, completed Nov 8, 2019 1:40:52 PM
+[info] Successfully built and published the following image:
+[info]   docker.io/lightbend/spark-sensors:467-26acd87-dirty
+[success] Cloudflow application CR generated in /Users/myuser/lightbend-repos/cloudflow/examples/spark-sensors/target/spark-sensors.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/spark-sensors/target/spark-sensors.json
+[success] Total time: 237 s (03:57), completed Jun 16, 2020 9:35:22 AM
 ```
 
 * Make sure you have the kubectl cloudflow plugin setup.
 
-```
-kubectl cloudflow help
+```bash
+$ kubectl cloudflow help
 This command line tool can be used to deploy and operate Cloudflow applications.
 ...
 ```
 * Deploy the app.
 
-```
-kubectl cloudflow deploy -u oauth2accesstoken  eu.gcr.io/my-awesome-project/spark-sensors:34-69082eb-dirty -p "$(gcloud auth print-access-token)"
-
+```bash
+$ kubectl cloudflow deploy /Users/myuser/lightbend-repos/cloudflow/examples/spark-sensors/target/spark-sensors.json
 ```
 
 * Verify it is deployed.
-```
+```bash
 $ kubectl cloudflow list
 
 NAME              NAMESPACE         VERSION           CREATION-TIME     
@@ -76,7 +68,7 @@ spark-sensors     spark-sensors     34-69082eb-dirty  2019-11-08 13:41:18 +0000 
 
 7) Check all pods are running.
 
-```
+```bash
 $ kubectl get pods -n spark-sensors
 NAME                                         READY   STATUS              RESTARTS   AGE
 spark-sensors-egress-1573220481661-exec-1    1/1     Running             0          2m10s
@@ -92,7 +84,7 @@ spark-sensors-process-driver
 
 * Verify the application output.
 
-```
+```bash
 $ kubectl log spark-sensors-egress-driver -n spark-sensors
 
 Loading application.conf from: /etc/cloudflow-runner/application.conf, secret config from: /etc/cloudflow-runner-secret/secret.conf
@@ -186,6 +178,6 @@ only showing top 20 rows
 
 * Undeploy.
 
-```
+```bash
 $ kubectl cloudflow undeploy spark-sensors
 ```

@@ -7,11 +7,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,15 +22,65 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Import additional authentication methods
 )
 
-const cloudflowStreamletsPrefix = "cloudflow.streamlets"
-const cloudflowRuntimesPrefix = "cloudflow.runtimes"
+const cloudflowPath = "cloudflow"
+const cloudflowStreamletsPath = "cloudflow.streamlets"
+const cloudflowRuntimesPath = "cloudflow.runtimes"
+const cloudflowTopicsPath = "cloudflow.topics"
 const configParametersKey = "config-parameters"
 const configKey = "config"
 const kubernetesKey = "kubernetes"
+const podsKey = "pods"
+const cloudflowPodName = "pod"
+const cloudflowContainerName = "container"
+const containersKey = "containers"
+const resourcesKey = "resources"
+const requestsKey = "requests"
+const limitsKey = "limits"
+const envKey = "env"
+const envNameKey = "name"
+const envValueKey = "value"
+
 const runtimeKey = "runtime"
 const runtimesKey = "runtimes"
 const streamletsKey = "streamlets"
-const cloudflowKey = "cloudflow"
+
+// Config keeps the configuration that has been built up so far.
+type Config struct {
+	builder strings.Builder
+}
+
+func newConfig(str string) *Config {
+	conf := new(Config)
+	conf.append(str)
+	return conf
+}
+
+func (conf *Config) appendBytes(data []byte) {
+	conf.builder.Write(data)
+}
+
+func (conf *Config) append(data string) {
+	conf.builder.WriteString(fmt.Sprintf("%s\r\n", data))
+}
+
+func (conf *Config) isEmpty() bool {
+	return conf.builder.Len() == 0
+}
+
+func (conf *Config) String() string {
+	return conf.builder.String()
+}
+
+func (conf *Config) parse() *configuration.Config {
+
+	defer func() {
+		if r := recover(); r != nil {
+			printutil.LogAndExit("The configuration file(s) specified are not valid.")
+		}
+	}()
+
+	return configuration.ParseString(conf.String())
+}
 
 // HandleConfig handles configuration files and configuration arguments
 func HandleConfig(
@@ -36,27 +88,27 @@ func HandleConfig(
 	k8sClient *kubernetes.Clientset,
 	namespace string,
 	applicationSpec cfapp.CloudflowApplicationSpec,
-	configFiles []string) (map[string]*corev1.Secret, error) {
+	configFiles []string) (*corev1.Secret, error) {
 
 	configurationArguments, err := splitConfigurationParameters(args[1:])
 	if err == nil {
 		return handleConfig(namespace, applicationSpec, configurationArguments, configFiles)
 	}
-	return map[string]*corev1.Secret{}, err
+	return nil, err
 }
 
 func handleConfig(
 	namespace string,
 	applicationSpec cfapp.CloudflowApplicationSpec,
 	configurationArguments map[string]string,
-	configFiles []string) (map[string]*corev1.Secret, error) {
+	configFiles []string) (*corev1.Secret, error) {
 
 	config, err := loadAndMergeConfigs(configFiles)
 	if err != nil {
 		return nil, err
 	}
 
-	config = addDefaultValuesFromSpec(applicationSpec, config)
+	config = addDefaultValuesFromSpec(applicationSpec, config, configurationArguments)
 
 	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
 
@@ -64,45 +116,22 @@ func handleConfig(
 		return nil, err
 	}
 
-	streamletConfigs := createStreamletConfigsMap(applicationSpec, config)
-
-	validationError := validateConfigurationAgainstDescriptor(applicationSpec, streamletConfigs)
+	validationError := validateConfigurationAgainstDescriptor(applicationSpec, *config)
 	if validationError != nil {
 		return nil, validationError
 	}
-	streamletNameSecretMap, err := createInputSecretsMap(&applicationSpec, streamletConfigs)
-	return streamletNameSecretMap, err
-}
-
-func createStreamletConfigsMap(spec cfapp.CloudflowApplicationSpec, config *configuration.Config) map[string]*configuration.Config {
-	configs := make(map[string]*configuration.Config)
-
-	for _, streamlet := range spec.Streamlets {
-		streamletConfig := config.GetConfig(streamletConfigKey(streamlet.Name))
-		if streamletConfig == nil {
-			streamletConfig = EmptyConfig()
-		} else {
-			streamletConfig = moveToRootPath(streamletConfig, streamletConfigKey(streamlet.Name))
-		}
-		rKey := runtimeConfigKey(streamlet.Descriptor.Runtime)
-		runtimeConfig := config.GetConfig(rKey)
-		if runtimeConfig != nil {
-			streamletConfig = mergeWithFallback(streamletConfig, moveToRootPath(runtimeConfig, streamletRuntimeConfigKey(streamlet.Name)))
-		}
-		if streamletConfig != nil {
-			configs[streamlet.Name] = streamletConfig
-		}
-	}
-	return configs
+	appInputSecret, err := createAppInputSecret(&applicationSpec, config)
+	return appInputSecret, err
 }
 
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
-func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
+func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 	if len(configFiles) == 0 {
-		return EmptyConfig(), nil
+		return &Config{}, nil
 	}
+	config := Config{}
+
 	// For some reason WithFallback does not work as expected, so we'll use this workaround for now.
-	var sb strings.Builder
 
 	for _, file := range configFiles {
 		if !fileutil.FileExists(file) {
@@ -112,19 +141,17 @@ func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read configuration file %s", file)
 		}
-		sb.Write(content)
-		sb.WriteString("")
-
+		config.appendBytes(content)
+		config.append("\r\n")
 	}
 
-	confStr := sb.String()
-	// go-akka/configuration can panic on error (not experienced), need to fix that in a fork.
-	config := configuration.ParseString(confStr)
+	hoconConf := config.parse()
 
-	if config.GetConfig(cloudflowStreamletsPrefix) == nil && config.GetConfig(cloudflowRuntimesPrefix) == nil {
-		return nil, fmt.Errorf("configuration does not contain '%s' or '%s' config sections", cloudflowStreamletsPrefix, cloudflowRuntimesPrefix)
+	// Maybe move validation completely to operator. The CLI can check for status. Bad side effect maybe, is that there will be incorrect resources in K8s.
+	if hoconConf.GetConfig(cloudflowStreamletsPath) == nil && hoconConf.GetConfig(cloudflowRuntimesPath) == nil && hoconConf.GetConfig(cloudflowTopicsPath) == nil {
+		return nil, fmt.Errorf("configuration does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, cloudflowRuntimesPath, cloudflowTopicsPath)
 	}
-	streamletsConfig := config.GetConfig(cloudflowStreamletsPrefix)
+	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
 	if streamletsConfig != nil && streamletsConfig.Root().IsObject() {
 		for streamletName := range streamletsConfig.Root().GetObject().Items() {
 			streamletConfig := streamletsConfig.GetConfig(streamletName)
@@ -132,29 +159,41 @@ func loadAndMergeConfigs(configFiles []string) (*configuration.Config, error) {
 				if streamletConfig.GetConfig(configParametersKey) == nil &&
 					streamletConfig.GetConfig(configKey) == nil &&
 					streamletConfig.GetConfig(kubernetesKey) == nil {
-					return nil, fmt.Errorf("streamlet config %s.%s does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPrefix, streamletName, configParametersKey, configKey, kubernetesKey)
+					return nil, fmt.Errorf("streamlet config %s.%s does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, streamletName, configParametersKey, configKey, kubernetesKey)
 				}
 				for streamletConfigSectionKey := range streamletConfig.Root().GetObject().Items() {
 					if !(streamletConfigSectionKey == configParametersKey || streamletConfigSectionKey == configKey || streamletConfigSectionKey == kubernetesKey) {
-						return nil, fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowStreamletsPrefix, streamletName, streamletConfigSectionKey)
+						return nil, fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowStreamletsPath, streamletName, streamletConfigSectionKey)
 					}
 				}
 			}
 		}
 	}
-	return config, nil
+	return &config, nil
 }
 
-func validateConfig(config *configuration.Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
-	if config.IsEmpty() {
+func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
+	if config.isEmpty() {
 		return nil
 	}
 
+	hoconConf := config.parse()
+	cloudflowConfig := hoconConf.GetConfig(cloudflowPath)
+	if cloudflowConfig != nil && cloudflowConfig.Root().IsObject() {
+		for section := range cloudflowConfig.Root().GetObject().Items() {
+			absPath := fmt.Sprintf("%s.%s", cloudflowPath, section)
+			if !(absPath == cloudflowStreamletsPath || absPath == cloudflowRuntimesPath || absPath == cloudflowTopicsPath) {
+				return fmt.Errorf("Unknown configuration path '%s'", absPath)
+			}
+		}
+	} else {
+		return fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
+	}
 	// TODO kubernetes section: valide args to known path formats:
 	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
 	// cloudflow.runtimes.<streamlet>.kubernetes.<k8s-keys>
 
-	streamletsConfig := config.GetConfig(cloudflowStreamletsPrefix)
+	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
 	if streamletsConfig != nil && streamletsConfig.Root().IsObject() {
 		for streamletName := range streamletsConfig.Root().GetObject().Items() {
 			streamletFound := false
@@ -175,11 +214,11 @@ func validateConfig(config *configuration.Config, applicationSpec cfapp.Cloudflo
 				if streamletConfig.GetConfig(configParametersKey) == nil &&
 					streamletConfig.GetConfig(configKey) == nil &&
 					streamletConfig.GetConfig(kubernetesKey) == nil {
-					return fmt.Errorf("streamlet config in path '%s.%s' does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPrefix, streamletName, configParametersKey, configKey, kubernetesKey)
+					return fmt.Errorf("streamlet config in path '%s.%s' does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, streamletName, configParametersKey, configKey, kubernetesKey)
 				}
 				for streamletConfigSectionKey := range streamletConfig.Root().GetObject().Items() {
 					if !(streamletConfigSectionKey == configParametersKey || streamletConfigSectionKey == configKey || streamletConfigSectionKey == kubernetesKey) {
-						return fmt.Errorf("streamlet config in path '%s.%s' contains unknown section '%s'", cloudflowStreamletsPrefix, streamletName, streamletConfigSectionKey)
+						return fmt.Errorf("streamlet config in path '%s.%s' contains unknown section '%s'", cloudflowStreamletsPath, streamletName, streamletConfigSectionKey)
 					}
 					if streamletConfigSectionKey == configParametersKey {
 						if configParametersSection := streamletConfig.GetConfig(configParametersKey); configParametersSection != nil && configParametersSection.Root().IsObject() {
@@ -192,115 +231,276 @@ func validateConfig(config *configuration.Config, applicationSpec cfapp.Cloudflo
 									}
 								}
 								if !configParFound {
-									return fmt.Errorf("Unknown config parameter '%s' found for streamlet '%s' in path '%s.%s.%s'", configParKey, streamletName, cloudflowStreamletsPrefix, streamletName, configParametersKey)
+									return fmt.Errorf("Unknown config parameter '%s' found for streamlet '%s' in path '%s.%s.%s'", configParKey, streamletName, cloudflowStreamletsPath, streamletName, configParametersKey)
 								}
 							}
+						}
+					}
+					if streamletConfigSectionKey == kubernetesKey {
+						if k8sConfig := streamletConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
+							if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
+								return k8serr
+							}
+						} else {
+							return fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
 						}
 					}
 				}
 			}
 		}
 	}
-	runtimesConfig := config.GetConfig(cloudflowRuntimesPrefix)
+	runtimesConfig := hoconConf.GetConfig(cloudflowRuntimesPath)
 	if runtimesConfig != nil && runtimesConfig.Root().IsObject() {
 		for runtime := range runtimesConfig.Root().GetObject().Items() {
 			runtimeConfig := runtimesConfig.GetConfig(runtime)
 			if runtimeConfig != nil && runtimeConfig.Root().IsObject() {
 				if runtimeConfig.GetConfig(configKey) == nil &&
 					runtimeConfig.GetConfig(kubernetesKey) == nil {
-					return fmt.Errorf("runtime config %s.%s does not contain '%s' or '%s' config sections", cloudflowRuntimesPrefix, runtime, configKey, kubernetesKey)
+					return fmt.Errorf("runtime config %s.%s does not contain '%s' or '%s' config sections", cloudflowRuntimesPath, runtime, configKey, kubernetesKey)
 				}
 				for runtimeConfigKey := range runtimeConfig.Root().GetObject().Items() {
 					if !(runtimeConfigKey == configKey || runtimeConfigKey == kubernetesKey) {
-						return fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPrefix, runtime, runtimeConfigKey)
+						return fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPath, runtime, runtimeConfigKey)
+					}
+				}
+				if k8sConfig := runtimeConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
+					if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
+						return k8serr
 					}
 				}
 			}
 		}
 	}
-	if streamletsConfig == nil && runtimesConfig == nil {
-		return fmt.Errorf("Missing %s or %s config sections", cloudflowStreamletsPrefix, cloudflowRuntimesPrefix)
+	unknownTopics := []string{}
+	topicsConfig := hoconConf.GetConfig(cloudflowTopicsPath)
+	if topicsConfig != nil && topicsConfig.Root().IsObject() {
+		for topicID := range topicsConfig.Root().GetObject().Items() {
+			foundTopic := false
+			for _, deployment := range applicationSpec.Deployments {
+				for _, topic := range deployment.PortMappings {
+					if topic.ID == topicID {
+						foundTopic = true
+						break
+					}
+				}
+			}
+			if !foundTopic {
+				unknownTopics = append(unknownTopics, topicID)
+			}
+		}
+	}
+	if len(unknownTopics) == 1 {
+		return fmt.Errorf("Unknown topic found in configuration file: %s", strings.Join(unknownTopics, ", "))
+	}
+
+	if len(unknownTopics) > 1 {
+		return fmt.Errorf("Unknown topics found in configuration file: %s", strings.Join(unknownTopics, ", "))
+	}
+
+	if streamletsConfig == nil && runtimesConfig == nil && topicsConfig == nil {
+		return fmt.Errorf("Missing %s, %s or %s config sections", cloudflowStreamletsPath, cloudflowRuntimesPath, cloudflowTopicsPath)
 	}
 	return nil
 }
 
-func addDefaultValuesFromSpec(applicationSpec cfapp.CloudflowApplicationSpec, config *configuration.Config) *configuration.Config {
-	var sb strings.Builder
+func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string) error {
+	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
+		for podName := range podsConfig.Root().GetObject().Items() {
+			if podConfig := podsConfig.GetConfig(podName); podConfig != nil && podConfig.Root().IsObject() {
+				if containersConfig := podConfig.GetConfig(containersKey); containersConfig != nil && containersConfig.Root().IsObject() {
+					for containerName := range containersConfig.Root().GetObject().Items() {
+						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
+							for containerKey := range containerConfig.Root().GetObject().Items() {
+								if !(containerKey == resourcesKey || containerKey == envKey) {
+									return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s does not contain a %s or an %s section",
+										podName,
+										containerName,
+										rootPath,
+										kubernetesKey,
+										podsKey,
+										podName,
+										containersKey,
+										containerName,
+										resourcesKey,
+										envKey)
+								}
+								if containerKey == resourcesKey {
+									if resourcesConfig := containerConfig.GetConfig(resourcesKey); resourcesConfig != nil && resourcesConfig.Root().IsObject() {
+										for resourceRequirementKey := range resourcesConfig.Root().GetObject().Items() {
+											if !(resourceRequirementKey == requestsKey || resourceRequirementKey == limitsKey) {
+												return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s does not contain a %s or a %s section",
+													podName,
+													containerName,
+													rootPath,
+													kubernetesKey,
+													podsKey,
+													podName,
+													containersKey,
+													containerName,
+													resourcesKey,
+													requestsKey,
+													limitsKey)
+											}
+
+										}
+									} else {
+										return fmt.Errorf("kubernetes configuration for pod '%s', container '%s', resources section is missing at %s.%s.%s.%s.%s.%s.%s. The resources section should contain %s and/or %s sections",
+											podName,
+											containerName,
+											rootPath,
+											kubernetesKey,
+											podsKey,
+											podName,
+											containersKey,
+											containerName,
+											resourcesKey,
+											requestsKey,
+											limitsKey)
+									}
+								}
+								if containerKey == envKey {
+									if containerConfig.IsArray(envKey) {
+										for i, envElement := range containerConfig.GetConfig(envKey).Root().GetArray() {
+											if envElement.GetObject() != nil {
+												for envObjectKey := range envElement.GetObject().Items() {
+													if !(envObjectKey == envNameKey || envObjectKey == envValueKey) {
+														return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object, unknown key %s",
+															podName,
+															containerName,
+															rootPath,
+															kubernetesKey,
+															podsKey,
+															podName,
+															containersKey,
+															containerName,
+															envKey,
+															i,
+															envObjectKey)
+													}
+												}
+											} else {
+												return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s array contains a value at (%d) that is not an environment variables name/value object %s",
+													podName,
+													containerName,
+													rootPath,
+													kubernetesKey,
+													podsKey,
+													podName,
+													containersKey,
+													containerName,
+													envKey,
+													i,
+													envElement,
+												)
+											}
+										}
+									} else {
+										return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s.%s is not an environment variables array",
+											podName,
+											containerName,
+											rootPath,
+											kubernetesKey,
+											podsKey,
+											podName,
+											containersKey,
+											containerName,
+											envKey)
+									}
+								}
+							}
+						} else {
+							return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
+								podName,
+								containerName,
+								rootPath,
+								kubernetesKey,
+								podsKey,
+								podName,
+								containersKey,
+								containerName)
+						}
+					}
+				} else {
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section. The '%s' section should be at %s.kubernetes.pods.%s.containers",
+						rootPath,
+						kubernetesKey,
+						podsKey,
+						podName,
+						podName,
+						containersKey,
+						containersKey,
+						rootPath,
+						podName)
+				}
+			} else {
+				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
+					rootPath,
+					kubernetesKey,
+					podsKey,
+					rootPath,
+					kubernetesKey,
+					podsKey)
+			}
+		}
+	} else {
+		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
+			rootPath,
+			kubernetesKey,
+			podsKey,
+			rootPath,
+			kubernetesKey,
+			podsKey)
+	}
+	return nil
+}
+
+func addDefaultValuesFromSpec(applicationSpec cfapp.CloudflowApplicationSpec, config *Config, configurationArguments map[string]string) *Config {
+	hoconConf := config.parse()
 	for _, streamlet := range applicationSpec.Streamlets {
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			fqKey := prefixConfigParameterKey(streamlet.Name, descriptor.Key)
-			if config.GetString(fqKey) == "" {
-				if len(descriptor.DefaultValue) > 0 {
-					fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
-					sb.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", fqKey, descriptor.DefaultValue))
-				}
+			_, providedByArgs := configurationArguments[fqKey]
+			if !hoconConf.HasPath(fqKey) && !providedByArgs {
+				fmt.Printf("Default value '%s' will be used for configuration parameter '%s'\n", descriptor.DefaultValue, fqKey)
+				config.append(fmt.Sprintf("%s=\"%s\"", fqKey, descriptor.DefaultValue))
 			}
 		}
 	}
-	defaults := configuration.ParseString(sb.String())
-	config = mergeWithFallback(defaults, config)
 	return config
 }
 
-func addCommandLineArguments(spec cfapp.CloudflowApplicationSpec, config *configuration.Config, configurationArguments map[string]string) *configuration.Config {
+func addCommandLineArguments(spec cfapp.CloudflowApplicationSpec, config *Config, configurationArguments map[string]string) *Config {
 	written := make(map[string]string)
-	var sb strings.Builder
 	for _, streamlet := range spec.Streamlets {
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			key := prefixConfigParameterKey(streamlet.Name, descriptor.Key)
 			configValue := configurationArguments[key]
 			if configValue != "" {
-				sb.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", key, configValue))
+				config.append(fmt.Sprintf("%s=\"%s\"", key, configValue))
 				written[key] = configValue
 			}
 		}
 	}
-	if sb.Len() > 0 {
-		config = mergeWithFallback(configuration.ParseString(sb.String()), config)
-	}
 
-	var sbNonValidatedParameters strings.Builder
 	for key, configValue := range configurationArguments {
 		if _, ok := written[key]; !ok {
-			sbNonValidatedParameters.WriteString(fmt.Sprintf("%s=\"%s\"\r\n", key, configValue))
+			config.append(fmt.Sprintf("%s=\"%s\"", key, configValue))
 		}
-	}
-	if sbNonValidatedParameters.Len() > 0 {
-		nonValidatedConfFromArgs := configuration.ParseString(sbNonValidatedParameters.String())
-		config = mergeWithFallback(nonValidatedConfFromArgs, config)
 	}
 	return config
 }
 
-func createInputSecretsMap(spec *cfapp.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) (map[string]*corev1.Secret, error) {
-	streamletSecretNameMap := make(map[string]*corev1.Secret)
-	for _, streamlet := range spec.Streamlets {
-		streamletName := streamlet.Name
-		secretName := findSecretName(spec, streamletName)
-		config := streamletConfigs[streamletName]
-		if config != nil {
-			secretMap := make(map[string]string)
-			var sb strings.Builder
-			sb.WriteString(config.String())
-			sb.WriteString("\n")
-			secretMap["secret.conf"] = sb.String()
-			streamletSecretNameMap[secretName] = createInputSecret(spec.AppID, secretName, secretMap)
-		} else {
-			secretMap := make(map[string]string)
-			secretMap["secret.conf"] = "{}"
-			streamletSecretNameMap[secretName] = createInputSecret(spec.AppID, secretName, secretMap)
-		}
-	}
-	return streamletSecretNameMap, nil
+func createAppInputSecret(spec *cfapp.CloudflowApplicationSpec, config *Config) (*corev1.Secret, error) {
+	secretMap := make(map[string]string)
+	secretMap["secret.conf"] = config.String()
+	secret := createInputSecret(spec.AppID, secretMap)
+	return secret, nil
 }
 
-// UpdateSecretsWithOwnerReference updates the secret with the ownerreference passed in
-func UpdateSecretsWithOwnerReference(cloudflowCROwnerReference metav1.OwnerReference, secrets map[string]*corev1.Secret) map[string]*corev1.Secret {
-	for key, value := range secrets {
-		value.ObjectMeta.OwnerReferences = []metav1.OwnerReference{cloudflowCROwnerReference}
-		secrets[key] = value
-	}
-	return secrets
+// UpdateSecretWithOwnerReference updates the secret with the ownerreference passed in
+func UpdateSecretWithOwnerReference(cloudflowCROwnerReference metav1.OwnerReference, secret *corev1.Secret) *corev1.Secret {
+	secret.ObjectMeta.OwnerReferences = []metav1.OwnerReference{cloudflowCROwnerReference}
+	return secret
 }
 
 func findSecretName(spec *cfapp.CloudflowApplicationSpec, streamletName string) string {
@@ -312,15 +512,16 @@ func findSecretName(spec *cfapp.CloudflowApplicationSpec, streamletName string) 
 	panic(fmt.Errorf("could not find secret name for streamlet %s", streamletName))
 }
 
-func createInputSecret(appID string, name string, data map[string]string) *corev1.Secret {
+func createInputSecret(appID string, data map[string]string) *corev1.Secret {
 	labels := cfapp.CreateLabels(appID)
-	labels["com.lightbend.cloudflow/streamlet-name"] = name
+	labels["com.lightbend.cloudflow/app-id"] = appID
+	labels["com.lightbend.cloudflow/created-at"] = fmt.Sprintf("%d", time.Now().UnixNano())
 	// indicates the secret contains cloudflow config format
 	labels["com.lightbend.cloudflow/config-format"] = "input"
 	secret := &corev1.Secret{
 		Type: corev1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", "config", name),
+			Name:      fmt.Sprintf("%s-%s", "config", appID),
 			Namespace: appID,
 			Labels:    labels,
 		},
@@ -330,19 +531,19 @@ func createInputSecret(appID string, name string, data map[string]string) *corev
 }
 
 func runtimeConfigKey(runtime string) string {
-	return fmt.Sprintf("%s.%s.%s", cloudflowRuntimesPrefix, runtime, configKey)
+	return fmt.Sprintf("%s.%s.%s", cloudflowRuntimesPath, runtime, configKey)
 }
 
 func streamletConfigKey(streamletName string) string {
-	return fmt.Sprintf("%s.%s", cloudflowStreamletsPrefix, streamletName)
+	return fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)
 }
 
 func streamletRuntimeConfigKey(streamletName string) string {
-	return fmt.Sprintf("%s.%s.%s", cloudflowStreamletsPrefix, streamletName, configKey)
+	return fmt.Sprintf("%s.%s.%s", cloudflowStreamletsPath, streamletName, configKey)
 }
 
 func configParametersPrefix(streamletName string) string {
-	return fmt.Sprintf("%s.%s.%s", cloudflowStreamletsPrefix, streamletName, configParametersKey)
+	return fmt.Sprintf("%s.%s.%s", cloudflowStreamletsPath, streamletName, configParametersKey)
 }
 
 func prefixConfigParameterKey(streamletName string, key string) string {
@@ -374,7 +575,7 @@ func splitOnFirstCharacter(str string, char byte) ([]string, error) {
 }
 
 // validateConfigurationAgainstDescriptor validates all configuration values against configuration parameter descriptors
-func validateConfigurationAgainstDescriptor(spec cfapp.CloudflowApplicationSpec, streamletConfigs map[string]*configuration.Config) error {
+func validateConfigurationAgainstDescriptor(spec cfapp.CloudflowApplicationSpec, config Config) error {
 
 	type ValidationErrorDescriptor struct {
 		FqKey              string
@@ -384,20 +585,16 @@ func validateConfigurationAgainstDescriptor(spec cfapp.CloudflowApplicationSpec,
 	var missingKeys []ValidationErrorDescriptor
 	var invalidKeys []ValidationErrorDescriptor
 
+	hoconConf := config.parse()
 	for _, streamlet := range spec.Streamlets {
-		conf := streamletConfigs[streamlet.Name]
-		if conf == nil {
-			conf = EmptyConfig()
-		}
 		for _, descriptor := range streamlet.Descriptor.ConfigParameters {
 			streamletConfigKey := prefixConfigParameterKey(streamlet.Name, descriptor.Key)
 			fqKey := streamletConfigKey
-
-			if err := validateStreamletConfigValue(descriptor, conf.GetString(fqKey)); err != nil {
+			if err := validateStreamletConfigValue(descriptor, hoconConf.GetString(fqKey)); err != nil {
 				invalidKeys = append(invalidKeys, ValidationErrorDescriptor{streamletConfigKey, err.Error()})
 			}
 
-			if conf.GetString(fqKey) == "" {
+			if hoconConf.GetString(fqKey) == "" && descriptor.DefaultValue != "" {
 				missingKeys = append(missingKeys, ValidationErrorDescriptor{streamletConfigKey, descriptor.Description})
 			}
 		}
@@ -562,49 +759,4 @@ func validateMemorySize(value string) error {
 		return uniterr
 	}
 	return nil
-}
-
-// workaround for WithFallback not working in go-akka/configuration
-func mergeWithFallback(config *configuration.Config, fallback *configuration.Config) *configuration.Config {
-	if config == nil {
-		config = EmptyConfig()
-	}
-	if fallback == nil {
-		fallback = EmptyConfig()
-	}
-	confStr := config.String()
-	fallbackStr := fallback.String()
-	var sb strings.Builder
-	// For some reason merging does not work on two objects in { } (it just reads the first and stops reading)
-	sb.WriteString("a : ")
-	sb.WriteString(fallbackStr)
-	sb.WriteString("\n\n")
-	sb.WriteString("a : ")
-	sb.WriteString(confStr)
-	sb.WriteString("\n")
-	conf := configuration.ParseString(sb.String()).GetConfig("a")
-	return conf
-}
-
-func moveToRootPath(config *configuration.Config, dotSeparatedPath string) *configuration.Config {
-	parts := strings.Split(dotSeparatedPath, ".")
-	if len(parts) > 0 {
-		for i := len(parts) - 1; i >= 0; i-- {
-			config = moveToRoot(config, parts[i])
-		}
-	}
-	return config
-}
-
-// Workaround for bad merging, root CANNOT be a dot separated path, needs fix in go-hocon
-func moveToRoot(config *configuration.Config, root string) *configuration.Config {
-	if config == nil {
-		return config
-	}
-	return configuration.NewConfigFromRoot(config.Root().AtKey(root))
-}
-
-//EmptyConfig creates an empty config (workaround, not found in go-akka configuration)
-func EmptyConfig() *configuration.Config {
-	return configuration.ParseString("")
 }

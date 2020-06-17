@@ -58,12 +58,13 @@ object Operator {
                 .getOrElse("")}"
             )
         }
-        Future { result }
+        Future(result)
       }
 
   private def updateStatus(
       k8sConfig: Configuration
-  )(implicit ec: ExecutionContext,
+  )(implicit
+    ec: ExecutionContext,
     system: ActorSystem,
     mat: ActorMaterializer,
     log: LoggingAdapter): Flow[ActionResult, ActionResult, NotUsed] =
@@ -77,12 +78,11 @@ object Operator {
         for {
           existingCr <- client.getOption[CloudflowInstance.CR](actionResult.action.instance.metadata.name)
           _ = existingCr
-            .map(
-              cloudflowInstanceCr =>
-                CloudflowInstance.editor.updateMetadata(
-                  updatedInstance,
-                  updatedInstance.metadata.copy(resourceVersion = cloudflowInstanceCr.metadata.resourceVersion)
-                )
+            .map(cloudflowInstanceCr =>
+              CloudflowInstance.editor.updateMetadata(
+                updatedInstance,
+                updatedInstance.metadata.copy(resourceVersion = cloudflowInstanceCr.metadata.resourceVersion)
+              )
             )
             .map(updateCr => client.updateStatus(updateCr))
         } yield actionResult
@@ -90,7 +90,8 @@ object Operator {
 
   private def executeActions(
       executor: ActionExecutor
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     materializer: Materializer,
     ec: ExecutionContext,
     log: LoggingAdapter,
@@ -103,7 +104,8 @@ object Operator {
   private def watch[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions = DefaultWatchOptions
-  )(implicit system: ActorSystem,
+  )(implicit
+    system: ActorSystem,
     fmt: Format[O],
     lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],

@@ -45,14 +45,24 @@ func init() {
 		Use:   "deploy",
 		Short: "Deploys a Cloudflow application to the cluster.",
 		Long: `Deploys a Cloudflow application to the cluster.
-The arguments to the command consists of a full path to a json file containing the 
-application CR and optionally one or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
-a space.
 
-TODO Update
+Configuration files in HOCON format can be passed through with the --conf flag. 
+Configuration files are merged by concatenating the files passed with --conf flags. 
+The last --conf [file] argument can override values specified in earlier --conf [file] arguments.
+In the example below, where the same configuration path is used in file1.conf and file2.conf, 
+the configuration value in file2.conf takes precedence, overriding the value provided by file1.conf:
 
-Configuration files in HOCON format can be passed through with the --conf flag. All configuration files are merged in the order that they are passed through.
-The streamlet arguments passed with '[streamlet-name].[configuration-parameter]=[value]' pairs take precedence over the files passed through with the --conf flag.
+kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
+
+It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
+a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file. 
+Some examples:
+
+kubectl cloudflow deploy target/swiss-knife.json cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+kubectl cloudflow deploy target/swiss-knife.json cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+
+
+The arguments passed with '[config-key]=[value]' pairs take precedence over the files passed through with the '--conf' flag.
 
 The command supports a flag --scale to specify the scale of each streamlet on deploy in the form of key/value
 pairs ('streamlet-name=scale') separated by comma.
@@ -123,7 +133,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	streamletNameSecretMap, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
@@ -148,9 +158,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	ownerReference := createOrUpdateCloudflowApplication(appClient, applicationSpec)
 
-	streamletNameSecretMap = config.UpdateSecretsWithOwnerReference(ownerReference, streamletNameSecretMap)
+	appInputSecret = config.UpdateSecretWithOwnerReference(ownerReference, appInputSecret)
 
-	createOrUpdateStreamletSecrets(k8sClient, namespace, streamletNameSecretMap)
+	createOrUpdateAppInputSecret(k8sClient, namespace, appInputSecret)
 
 	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
 	if _, err := createOrUpdateServiceAccount(k8sClient, namespace, serviceAccount, ownerReference); err != nil {
@@ -301,16 +311,14 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 	return false
 }
 
-func createOrUpdateStreamletSecrets(k8sClient *kubernetes.Clientset, namespace string, streamletNameSecretMap map[string]*corev1.Secret) {
-	for streamletName, secret := range streamletNameSecretMap {
-		if _, err := k8sClient.CoreV1().Secrets(secret.ObjectMeta.Namespace).Get(secret.ObjectMeta.Name, metav1.GetOptions{}); err != nil {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Create(secret); err != nil {
-				printutil.LogAndExit("Failed to create secret %s, %s", streamletName, err.Error())
-			}
-		} else {
-			if _, err := k8sClient.CoreV1().Secrets(namespace).Update(secret); err != nil {
-				printutil.LogAndExit("Failed to update secret %s, %s", streamletName, err.Error())
-			}
+func createOrUpdateAppInputSecret(k8sClient *kubernetes.Clientset, namespace string, appInputSecret *corev1.Secret) {
+	if _, err := k8sClient.CoreV1().Secrets(appInputSecret.Namespace).Get(appInputSecret.Name, metav1.GetOptions{}); err != nil {
+		if _, err := k8sClient.CoreV1().Secrets(namespace).Create(appInputSecret); err != nil {
+			printutil.LogAndExit("Failed to create secret: %s", err.Error())
+		}
+	} else {
+		if _, err := k8sClient.CoreV1().Secrets(namespace).Update(appInputSecret); err != nil {
+			printutil.LogAndExit("Failed to update secret: %s", err.Error())
 		}
 	}
 }

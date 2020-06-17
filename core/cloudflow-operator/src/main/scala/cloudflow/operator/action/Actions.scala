@@ -41,12 +41,10 @@ object Actions {
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
-    val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(
-      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
-    )
+    val labels          = CloudflowLabels(newApp)
+    val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
-      deploySavepoints(newApp, currentApp, deleteOutdatedTopics) ++
+      deployTopics(newApp, currentApp, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
@@ -60,7 +58,7 @@ object Actions {
 
   /**
    * Creates the [[Action]]s to undeploy the application.
-   * The undeploy is derived by reverting the [[CreateAction]]s that defined the
+   * The undeploy is derived by reverting the [[CreateOrUpdateAction]]s that defined the
    * creation of the application.
    */
   def undeploy(
@@ -72,13 +70,13 @@ object Actions {
     val currentApp = None
 
     val savepointActions = if (deleteExistingTopics) {
-      deploySavepoints(app, currentApp)
+      deployTopics(app, currentApp)
     } else Seq()
 
     val actions = savepointActions ++ deployRunners(app, currentApp, namespace)
 
     actions.collect {
-      case createAction: CreateAction[_] ⇒ createAction.revert
+      case createAction: CreateOrUpdateAction[_] ⇒ createAction.revert
     } :+ EventActions.undeployEvent(app, namespace, cause)
   }
 
@@ -90,7 +88,7 @@ object Actions {
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     AppActions(appId, namespace, labels, ownerReferences)
 
-  private def deploySavepoints(
+  private def deployTopics(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false

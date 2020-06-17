@@ -57,34 +57,28 @@ func Test_validateConfigurationAgainstDescriptor(t *testing.T) {
 	var spec cfapp.CloudflowApplicationSpec
 	json.Unmarshal([]byte(applicationConfiguration), &spec)
 
-	configs := make(map[string]*configuration.Config)
-	err := validateConfigurationAgainstDescriptor(spec, configs)
+	config := new(Config)
+	err := validateConfigurationAgainstDescriptor(spec, *config)
 	assert.NotEmpty(t, err)
 
 	args, err := splitConfigurationParameters(commandLineForConfiguration())
 	assert.Empty(t, err)
 
-	config := EmptyConfig()
 	config = addCommandLineArguments(spec, config, args)
-	fmt.Println(config)
+	err = validateConfigurationAgainstDescriptor(spec, *config)
 
-	configs = createStreamletConfigsMap(spec, config)
-	fmt.Println(configs)
-	err = validateConfigurationAgainstDescriptor(spec, configs)
 	assert.Empty(t, err)
 
 	half, err := splitConfigurationParameters([]string{`cloudflow.streamlets.valid-logger.config-parameters.log-level="warning"`})
 	assert.Empty(t, err)
 
-	config = EmptyConfig()
+	config = new(Config)
 	config = addCommandLineArguments(spec, config, half)
-	configs = make(map[string]*configuration.Config)
-	configs["valid-logger"] = config
-	err = validateConfigurationAgainstDescriptor(spec, configs)
+	err = validateConfigurationAgainstDescriptor(spec, *config)
 	assert.NotEmpty(t, err)
 }
 
-func Test_CreateSecretsData(t *testing.T) {
+func Test_CreateSecret(t *testing.T) {
 	applicationConfiguration := cfapp.TestApplicationDescriptor()
 
 	var spec cfapp.CloudflowApplicationSpec
@@ -93,45 +87,46 @@ func Test_CreateSecretsData(t *testing.T) {
 	args, err := splitConfigurationParameters(commandLineForConfiguration())
 	assert.Empty(t, err)
 
-	config := EmptyConfig()
+	config := new(Config)
 	config = addCommandLineArguments(spec, config, args)
-	fmt.Printf("Configs: \n%s\n", config)
-	configs := createStreamletConfigsMap(spec, config)
-	secrets, err := createInputSecretsMap(&spec, configs)
+	hoconConfig := configuration.ParseString(config.String())
+	secret, err := createAppInputSecret(&spec, config)
 	assert.Empty(t, err)
-
-	assert.NotEmpty(t, secrets)
-	fmt.Printf("Secrets: \n%s\n", secrets)
-	config = configuration.ParseString(secrets["valid-logger"].StringData["secret.conf"])
-	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.config-parameters.log-level") == "warning")
-	assert.True(t, config.GetString("cloudflow.streamlets.valid-logger.config-parameters.msg-prefix") == "test")
+	assert.NotEmpty(t, secret)
+	hoconConfig = configuration.ParseString(secret.StringData["secret.conf"])
+	assert.Equal(t, "warning", hoconConfig.GetString("cloudflow.streamlets.valid-logger.config-parameters.log-level"))
+	assert.Equal(t, "test", hoconConfig.GetString("cloudflow.streamlets.valid-logger.config-parameters.msg-prefix"))
 }
 
 func Test_loadAndMergeConfigs(t *testing.T) {
-	conf, err := loadAndMergeConfigs([]string{"non-existing.conf", "non-existing.conf"})
+	config, err := loadAndMergeConfigs([]string{"non-existing.conf", "non-existing.conf"})
 	assert.NotEmpty(t, err)
 
 	_, err = loadAndMergeConfigs([]string{"non-existing.conf", "test_config_files/test1.conf"})
 	assert.NotEmpty(t, err)
 
-	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf"})
-	assert.Empty(t, err)
-	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
-	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
+	config, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf"})
+	hoconConfig := configuration.ParseString(config.String())
 
-	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
 	assert.Empty(t, err)
-	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-	assert.Equal(t, "11m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
-	assert.EqualValues(t, 5, conf.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
+	assert.Equal(t, "5m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
+	assert.Equal(t, "12m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	assert.EqualValues(t, 5, hoconConfig.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
 
-	assert.Equal(t, "WARNING", conf.GetString("cloudflow.streamlets.cdr-aggregator.config.akka.loglevel"))
-
-	conf, err = loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/test1.conf"})
+	config, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
+	hoconConfig = configuration.ParseString(config.String())
 	assert.Empty(t, err)
-	assert.Equal(t, "2m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	assert.Equal(t, "5m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
+	assert.Equal(t, "11m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	assert.EqualValues(t, 5, hoconConfig.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
+
+	assert.Equal(t, "WARNING", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config.akka.loglevel"))
+
+	config, err = loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/test1.conf"})
+	hoconConfig = configuration.ParseString(config.String())
+	assert.Empty(t, err)
+	assert.Equal(t, "2m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
+	assert.Equal(t, "12m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
 }
 
 func Test_addDefaultValues(t *testing.T) {
@@ -157,23 +152,20 @@ func Test_addDefaultValues(t *testing.T) {
 			},
 		},
 	}
-	conf = addDefaultValuesFromSpec(spec, conf)
-	assert.Equal(t, "5m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-	assert.Equal(t, "11m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	conf = addDefaultValuesFromSpec(spec, conf, map[string]string{})
+	hoconConf := configuration.ParseString(conf.String())
+	assert.Equal(t, "5m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
+	assert.Equal(t, "11m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
 
 	conf, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf"})
 	assert.Empty(t, err)
-	conf = addDefaultValuesFromSpec(spec, conf)
-	assert.Equal(t, "10m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-	assert.Equal(t, "12m", conf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	conf = addDefaultValuesFromSpec(spec, conf, map[string]string{})
+	hoconConf = configuration.ParseString(conf.String())
+	assert.Equal(t, "10m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
+	assert.Equal(t, "12m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
 }
 
-func Test_addArguments(t *testing.T) {
-
-	config := mergeWithFallback(
-		configuration.LoadConfig("test_config_files/cdr-aggregator.conf"),
-		configuration.LoadConfig("test_config_files/cdr-generator1.conf"),
-	)
+func Test_addCommandLineArguments(t *testing.T) {
 
 	spec := cfapp.CloudflowApplicationSpec{
 		Streamlets: []cfapp.Streamlet{
@@ -208,94 +200,35 @@ func Test_addArguments(t *testing.T) {
 			},
 		},
 	}
+
+	config, err := loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/cdr-generator1.conf"})
+	assert.Empty(t, err)
 
 	configAdded := addCommandLineArguments(spec, config, map[string]string{
 		"cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window":    "14m",
 		"cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second": "100",
 	})
+	hoconConfig := configuration.ParseString(configAdded.String())
+	assert.EqualValues(t, 100, hoconConfig.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
+	assert.Equal(t, "14m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	assert.Equal(t, "2m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 
-	assert.EqualValues(t, 100, configAdded.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
-	assert.Equal(t, "14m", configAdded.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
-	assert.Equal(t, "2m", configAdded.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
-
-	config = mergeWithFallback(
-		configuration.LoadConfig("test_config_files/cdr-aggregator.conf"),
-		configuration.LoadConfig("test_config_files/cdr-generator1.conf"),
-	)
+	config, err = loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/cdr-generator1.conf"})
+	assert.Empty(t, err)
 
 	configAdded = addCommandLineArguments(spec, config, map[string]string{
 		"cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window": "2m",
 	})
-	assert.Equal(t, "2m", configAdded.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
-	assert.EqualValues(t, 8, configAdded.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
-}
-func Test_createStreamletConfigMap(t *testing.T) {
-	spec := cfapp.CloudflowApplicationSpec{
-		Streamlets: []cfapp.Streamlet{
-			{
-				Descriptor: cfapp.Descriptor{
-					ConfigParameters: []cfapp.ConfigParameterDescriptor{
-						{
-							Key:          "group-by-window",
-							DefaultValue: "10m",
-							Type:         "duration",
-						},
-						{
-							Key:          "watermark",
-							DefaultValue: "10m",
-							Type:         "duration",
-						},
-					},
-					Runtime: "spark",
-				},
-				Name: "cdr-aggregator",
-			},
-			{
-				Descriptor: cfapp.Descriptor{
-					ConfigParameters: []cfapp.ConfigParameterDescriptor{
-						{
-							Key:          "records-per-second",
-							DefaultValue: "10",
-							Type:         "int32",
-						},
-					},
-					Runtime: "spark",
-				},
-				Name: "cdr-generator1",
-			},
-		},
-	}
 
-	config := configuration.ParseString(`
-	  cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window = "12m"
-	  cloudflow.streamlets.cdr-aggregator.config {
-      baz = fooz
-		}
-		cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second = 8
-		cloudflow {
-			runtimes {
-				spark {
-					config {
-						foo = "bar"
-					}
-				}
-			}
-		}
-	`)
+	hoconConfig = configuration.ParseString(configAdded.String())
 
-	configs := createStreamletConfigsMap(spec, config)
-	fmt.Println(configs)
-	assert.Equal(t, "12m", configs["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
-	assert.EqualValues(t, 8, configs["cdr-generator1"].GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
-	assert.Equal(t, "bar", configs["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.config.foo"))
-	assert.Equal(t, "fooz", configs["cdr-aggregator"].GetString("cloudflow.streamlets.cdr-aggregator.config.baz"))
-	assert.Equal(t, "bar", configs["cdr-generator1"].GetString("cloudflow.streamlets.cdr-generator1.config.foo"))
+	assert.Equal(t, "2m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+	assert.EqualValues(t, 8, hoconConfig.GetInt32("cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second"))
 }
 
 func Test_validateConfigFiles(t *testing.T) {
-	aggConf := configuration.LoadConfig("test_config_files/cdr-aggregator.conf")
-
-	genConf := configuration.LoadConfig("test_config_files/cdr-generator1.conf")
+	config, err := loadAndMergeConfigs([]string{"test_config_files/cdr-aggregator.conf", "test_config_files/cdr-generator1.conf"})
+	assert.Empty(t, err)
 
 	spec := cfapp.CloudflowApplicationSpec{
 		Streamlets: []cfapp.Streamlet{
@@ -331,20 +264,11 @@ func Test_validateConfigFiles(t *testing.T) {
 		},
 	}
 
-	configs := map[string]*configuration.Config{
-		"cdr-aggregator": aggConf,
-		"cdr-generator1": genConf,
-	}
-
-	err := validateConfigurationAgainstDescriptor(spec, configs)
+	err = validateConfigurationAgainstDescriptor(spec, *config)
 	assert.Empty(t, err)
 
-	aggConf = configuration.LoadConfig("test_config_files/bad-cdr-aggregator.conf")
-	configs = map[string]*configuration.Config{
-		"cdr-aggregator": aggConf,
-		"cdr-generator1": genConf,
-	}
-	err = validateConfigurationAgainstDescriptor(spec, configs)
+	config, err = loadAndMergeConfigs([]string{"test_config_files/bad-cdr-aggregator.conf"})
+	err = validateConfigurationAgainstDescriptor(spec, *config)
 	assert.NotEmpty(t, err)
 }
 
@@ -364,14 +288,21 @@ func Test_validateConfig(t *testing.T) {
 				Name: "my-streamlet",
 			},
 		},
+		Deployments: []cfapp.Deployment{
+			{
+				PortMappings: map[string]cfapp.PortMapping{
+					"port": {
+						ID: "my-topic",
+					},
+				},
+			},
+		},
 	}
 
-	noStreamletsOrRuntimes := configuration.ParseString(`
-     a.b.c { }
-  `)
+	noStreamletsOrRuntimes := newConfig("a.b.c { }")
 	assert.NotEmpty(t, validateConfig(noStreamletsOrRuntimes, spec))
 
-	unknownStreamletConfigSection := configuration.ParseString(`
+	unknownStreamletConfigSection := newConfig(`
      cloudflow.streamlets {
 			 my-streamlet {
 				 config-par = 1
@@ -380,7 +311,7 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.NotEmpty(t, validateConfig(unknownStreamletConfigSection, spec))
 
-	unknownRuntimeConfigSection := configuration.ParseString(`
+	unknownRuntimeConfigSection := newConfig(`
      cloudflow.runtimes {
 			 akka {
 				 config-par = 1
@@ -389,28 +320,22 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.NotEmpty(t, validateConfig(unknownRuntimeConfigSection, spec))
 
-	validRuntimeConfigSection := configuration.ParseString(`
+	validRuntimeConfigSection := newConfig(`
      cloudflow.runtimes {
 			 akka {
 				 config {
 					 akka.loglevel = "WARNING"
-				 }
-				 kubernetes {
-					 
 				 }
 			 }
 		 }
 	`)
 	assert.Empty(t, validateConfig(validRuntimeConfigSection, spec))
 
-	validStreamletConfigSection := configuration.ParseString(`
+	validStreamletConfigSection := newConfig(`
      cloudflow.streamlets {
 			 my-streamlet {
 				 config-parameters {
            my-parameter = "value"
-				 }
-				 kubernetes {
-
 				 }
 				 config {
 					 akka.loglevel = "WARNING"
@@ -420,15 +345,12 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.Empty(t, validateConfig(validStreamletConfigSection, spec))
 
-	unknownConfigParameterInStreamletConfigSection := configuration.ParseString(`
+	unknownConfigParameterInStreamletConfigSection := newConfig(`
      cloudflow.streamlets {
 			 my-streamlet {
 				 config-parameters {
 					 my-parameter = "value"
 					 my-par = "value"
-				 }
-				 kubernetes {
-
 				 }
 				 config {
 					 akka.loglevel = "WARNING"
@@ -437,117 +359,71 @@ func Test_validateConfig(t *testing.T) {
 		 }
 	`)
 	assert.NotEmpty(t, validateConfig(unknownConfigParameterInStreamletConfigSection, spec))
+
+	validTopic := newConfig(`
+     cloudflow.topics {
+			 my-topic {
+         topic.name = "my-topic-name"
+			 }
+		 }
+	`)
+	assert.Empty(t, validateConfig(validTopic, spec))
+	unknownTopic := newConfig(`
+     cloudflow.topics {
+			 topic {
+         topic.name = "my-topic-name"
+			 }
+		 }
+	`)
+	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
+
+	badK8sPath := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.resources.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath, spec))
+	fmt.Println(validateConfig(badK8sPath, spec))
+
+	badK8sPath2 := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath2, spec))
+	fmt.Println(validateConfig(badK8sPath2, spec))
+
+	badK8sPath3 := newConfig(`
+	   cloudflow.streamlets.my-streamlet.kubernetes.pods.containers.requests.memory = "256M"
+	`)
+	assert.NotEmpty(t, validateConfig(badK8sPath3, spec))
 }
-func Test_moveToRootPath(t *testing.T) {
 
-	config := configuration.ParseString(`
-		my-streamlet {
-			config-parameters {
-				my-parameter = "value"
-			}
-			kubernetes {
+func Test_validateConfigEmptyDefault(t *testing.T) {
+	spec := cfapp.CloudflowApplicationSpec{
+		Streamlets: []cfapp.Streamlet{
+			{
+				Descriptor: cfapp.Descriptor{
+					ConfigParameters: []cfapp.ConfigParameterDescriptor{
+						{
+							Key:          "my-parameter",
+							DefaultValue: "",
+							Type:         "string",
+						},
+					},
+				},
+				Name: "my-streamlet",
+			},
+		},
+		Deployments: []cfapp.Deployment{
+			{
+				PortMappings: map[string]cfapp.PortMapping{
+					"port": {
+						ID: "my-topic",
+					},
+				},
+			},
+		},
+	}
 
-			}
-			config {
-				akka.loglevel = "WARNING"
-			}
-		}
-	`)
-
-	config = moveToRootPath(config, "cloudflow.streamlets")
-	println(config.String())
-	assert.Equal(t, "value", config.GetString("cloudflow.streamlets.my-streamlet.config-parameters.my-parameter"))
-}
-
-//Tests workaround for merging.
-func Test_mergeWithFallback(t *testing.T) {
-	os.Setenv("FOO", "1")
-	left := configuration.ParseString(`
-     a.b.c {
-			 d = 2
-			 e = 3
-			 g {
-				 h = 8
-			 }
-		 }
-		 z = 7
-		 n {
-			 o.p {
-				 q.r = 45
-				 s = ${FOO}
-				 t = 15
-				 t = ${?FOO}
-				 u = ${?BAR}
-				 v = ["1", "2", "3"]
-			 }
-		 }
-
-		 # note, after mixing this format , nothing else is read. (this might be according to spec)
-		 {
-			 x : 12
-		 }
-	`)
-	right := configuration.ParseString(`
-     a.b.c {
-			 d = 2
-			 e = 4
-			 f = 10
-			 g {
-				 h = 8
-			 }
-		 }
-		 z = 12
-		 # NOTE: This is not supported yet.
-		 # p = ${a.b.c}
-		 # p = ${a.b.c.d}
-
-		 i : {
-			 j : {
-				 k.l.m = 20
-			 }
-		 }
-
-		 n {
-			 o.p {
-				 q.r = 44
-				 v = ["4", "5", "6"]
-			 }
-		 }
-
-		 # note, after mixing this format , nothing else is read. (this might be according to spec)
-		 {
-			 x : 13
-		 }
-
-	`)
-
-	res := mergeWithFallback(left, right)
-	assert.Equal(t, "3", res.GetString("a.b.c.e"))
-	assert.Equal(t, "10", res.GetString("a.b.c.f"))
-	assert.Equal(t, "8", res.GetString("a.b.c.g.h"))
-	assert.Equal(t, "7", res.GetString("z"))
-	assert.Equal(t, "12", res.GetString("x"))
-	assert.Equal(t, "20", res.GetString("i.j.k.l.m"))
-	assert.Equal(t, "45", res.GetString("n.o.p.q.r"))
-	assert.Equal(t, "1", res.GetString("n.o.p.s"))
-	assert.Equal(t, "1", res.GetString("n.o.p.t"))
-	assert.Equal(t, "", res.GetString("n.o.p.u"))
-	assert.EqualValues(t, []string{"1", "2", "3"}, res.GetStringList("n.o.p.v"))
-	res = mergeWithFallback(right, left)
-	assert.Equal(t, "4", res.GetString("a.b.c.e"))
-	assert.Equal(t, "8", res.GetString("a.b.c.g.h"))
-	assert.Equal(t, "12", res.GetString("z"))
-	assert.Equal(t, "13", res.GetString("x"))
-	assert.Equal(t, "20", res.GetString("i.j.k.l.m"))
-	assert.Equal(t, "44", res.GetString("n.o.p.q.r"))
-	assert.EqualValues(t, []string{"4", "5", "6"}, res.GetStringList("n.o.p.v"))
-
-	// NOTE: Uncomment this ONLY to see where go-akka/configuration fails merging
-	// res = left.WithFallback(right)
-	// assert.Equal(t, "3", res.GetString("a.b.c.e"))
-	// assert.Equal(t, "10", res.GetString("a.b.c.f"))
-	// res = right.WithFallback(left)
-	// assert.Equal(t, "4", res.GetString("a.b.c.e"))
+	validStreamletConfigSection := newConfig("")
+	assert.Empty(t, validateConfigurationAgainstDescriptor(spec, *validStreamletConfigSection))
 }
 
 func Test_ValidationOfDuration(t *testing.T) {

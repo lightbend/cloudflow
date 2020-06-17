@@ -48,8 +48,8 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .filterNot(deployment ⇒ newDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         Seq(
-          Action.delete(runner.resource(deployment, newApp, namespace)),
-          Action.delete(runner.configResource(deployment, newApp, namespace))
+          Action.delete[T](runner.resourceName(deployment), namespace),
+          Action.delete[T](runner.configResourceName(deployment), namespace)
         )
       }
 
@@ -58,8 +58,10 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         Seq(
-          Action.create(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-          Action.create(runner.resource(deployment, newApp, namespace), runner.editor)
+          Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
+          Action.provided[Secret, T](deployment.secretName,
+                                     namespace,
+                                     secret => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor))
         )
       }
 
@@ -68,15 +70,23 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         if (runner == SparkRunner) {
-          val resource     = SparkRunner.resource(deployment, newApp, namespace)
-          val patch        = SparkRunner.patch(deployment, newApp, namespace)
-          val patchAction  = Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
-          val configAction = Action.update(runner.configResource(deployment, newApp, namespace), runner.configEditor)
+          val patchAction = Action.provided[Secret, SparkResource.CR](
+            deployment.secretName,
+            namespace, { secret =>
+              val resource = SparkRunner.resource(deployment, newApp, secret, namespace)
+              val patch    = SparkRunner.patch(deployment, newApp, secret, namespace)
+              Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+            }
+          )
+          val configAction = Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor)
           Seq(configAction, patchAction)
         } else {
           Seq(
-            Action.update(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-            Action.update(runner.resource(deployment, newApp, namespace), runner.editor)
+            Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
+            Action.provided[Secret, T](deployment.secretName,
+                                       namespace,
+                                       secret =>
+                                         Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor))
           )
         }
       }

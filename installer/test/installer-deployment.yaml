@@ -9,7 +9,7 @@ metadata:
   namespace: cloudflow-installer
   name: cloudflow-installer
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   creationTimestamp: null
@@ -42,7 +42,7 @@ spec:
       serviceAccountName: cloudflow-installer
       containers:
         - name: cloudflow-installer
-          image: lightbend/cloudflow-installer:1.3.4-SNAPSHOT
+          image: lightbend/cloudflow-installer:2.0.0-SNAPSHOT
           imagePullPolicy: Always
           ports:
             - containerPort: 5001

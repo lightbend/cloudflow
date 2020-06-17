@@ -1,6 +1,6 @@
 module github.com/lightbend/cloudflow/kubectl-cloudflow
 
-go 1.12
+go 1.14
 
 require (
 	cloud.google.com/go v0.37.2 // indirect

@@ -35,59 +35,44 @@ case class RunnerConfig(data: String) extends ConfigMapData {
 object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
 
   val AppConfigFilename    = "application.conf"
-  implicit val topicFormat = jsonFormat(Topic.apply, "app_id", "streamlet_ref", "name", "config", "bootstrap_servers", "managed")
+  implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
 
   def apply(
       appId: String,
       appVersion: String,
       deployment: StreamletDeployment,
       kafkaBootstrapServers: String
-  ): RunnerConfig = apply(appId, appVersion, Vector(deployment), kafkaBootstrapServers)
-
-  def apply(
-      appId: String,
-      appVersion: String,
-      deployments: Vector[StreamletDeployment],
-      kafkaBootstrapServers: String
   ): RunnerConfig =
     RunnerConfig(
       JsObject(
         "cloudflow" -> JsObject(
               "kafka"  -> JsObject("bootstrap-servers" -> JsString(kafkaBootstrapServers)),
-              "runner" -> toRunnerJson(appId, appVersion, deployments)
+              "runner" -> toRunnerJson(appId, appVersion, deployment)
             )
       ).compactPrint
     )
 
-  private def toRunnerJson(appId: String, appVersion: String, deployments: Vector[StreamletDeployment]) = JsObject(
-    "streamlets" -> JsArray(
-          deployments.map { deployment ⇒
-            JsObject(
-              "class_name"    -> JsString(deployment.className),
-              "streamlet_ref" -> JsString(deployment.streamletName),
-              "context" -> JsObject(
-                    "app_id"          -> appId.toJson,
-                    "app_version"     -> appVersion.toJson,
-                    "config"          -> toJson(deployment.config),
-                    "volume_mounts"   -> toVolumeMountJson(deployment.volumeMounts),
-                    "connected_ports" -> toConnectedPortsJson(deployment.portMappings)
-                  )
-            )
-          }
+  private def toRunnerJson(appId: String, appVersion: String, deployment: StreamletDeployment) = JsObject(
+    "streamlet" -> JsObject(
+          "class_name"    -> JsString(deployment.className),
+          "streamlet_ref" -> JsString(deployment.streamletName),
+          "context" -> JsObject(
+                "app_id"        -> appId.toJson,
+                "app_version"   -> appVersion.toJson,
+                "config"        -> toJson(deployment.config),
+                "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
+                "port_mappings" -> toPortMappingsJson(deployment.portMappings)
+              )
         )
   )
 
   private def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
 
-  private def toConnectedPortsJson(portMappings: Map[String, Topic]) =
-    JsArray(
+  private def toPortMappingsJson(portMappings: Map[String, Topic]) =
+    JsObject(
       portMappings.map {
-        case (portName, topic) ⇒
-          JsObject(
-            "port"  -> JsString(portName),
-            "topic" -> topic.toJson
-          )
-      }.toVector
+        case (portName, topic) ⇒ portName -> topic.toJson
+      }
     )
 
   private def toVolumeMountJson(volumeMounts: Option[List[VolumeMountDescriptor]]) =

@@ -16,6 +16,7 @@
 
 package cloudflow.operator
 
+import scala.reflect._
 import akka.NotUsed
 import akka.actor._
 import akka.stream._
@@ -42,6 +43,7 @@ object Operator {
   )
 
   val AppIdLabel         = "com.lightbend.cloudflow/app-id"
+  val ConfigFormatLabel  = "com.lightbend.cloudflow/config-format"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
   val ConfigUpdateLabel  = "com.lightbend.cloudflow/config-update"
 
@@ -67,7 +69,7 @@ object Operator {
     val actionExecutor = new SkuberActionExecutor()
 
     runStream(
-      watch[CloudflowApplication.CR](client)
+      watch[CloudflowApplication.CR](client, DefaultWatchOptions)
         .via(AppEvent.fromWatchEvent(logAttributes))
         .via(AppEvent.toAction)
         .via(executeActions(actionExecutor, logAttributes))
@@ -79,7 +81,7 @@ object Operator {
 
   def handleConfigurationInput(
       client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     // only watch secrets that contain input config
@@ -92,14 +94,14 @@ object Operator {
       ),
       resourceVersion = None
     )
-    // watch only Input secrets, transform the streamlet change events (the input secrets)
-    // into Output secret (create-or-) update actions.
+    // watch only Input secrets, transform the application input secret
+    // into Output secret create actions.
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = false))
+        .via(ConfigInputChangeEvent.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
-        .via(StreamletChangeEvent.toInputConfigUpdateAction)
+        .via(ConfigInputChangeEvent.mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
+        .via(ConfigInputChangeEvent.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
@@ -117,7 +119,7 @@ object Operator {
       labelSelector = Some(
         LabelSelector(
           LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.OutputConfig)
+          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.StreamletDeploymentConfigFormat)
         )
       ),
       resourceVersion = None
@@ -125,8 +127,7 @@ object Operator {
 
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent(modifiedOnly = true))
-        .log("config-change-event", ConfigChangeEvent.detected)
+        .via(StreamletChangeEvent.fromWatchEvent())
         .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
@@ -140,11 +141,11 @@ object Operator {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
-      watch[Pod](client)
-        .via(StreamletChangeEvent.fromWatchEvent())
+      watch[Pod](client, DefaultWatchOptions)
+        .via(StatusChangeEvent.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
-        .via(StreamletChangeEvent.toStatusUpdateAction)
+        .via(StatusChangeEvent.mapToAppInSameNamespace(client))
+        .via(StatusChangeEvent.toStatusUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
@@ -159,15 +160,18 @@ object Operator {
       .log("action", Action.executed)
       .withAttributes(logAttributes)
 
+  // NOTE: This watch can produce duplicate ADD events on startup, since it turns current resources into watch events,
+  // and concatenates results of a subsequent watch. This can be improved.
   private def watch[O <: ObjectResource](
       client: KubernetesClient,
-      options: ListOptions = DefaultWatchOptions
+      options: ListOptions
   )(implicit system: ActorSystem,
     fmt: Format[O],
     lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],
     lc: LoggingContext,
-    ec: ExecutionContext): Source[WatchEvent[O], NotUsed] = {
+    ec: ExecutionContext,
+    ct: ClassTag[O]): Source[WatchEvent[O], NotUsed] = {
 
     /* =================================================
      * Workaround for issue found on openshift:
@@ -186,12 +190,13 @@ object Operator {
      * On failing watches this code becomes a polling loop of listing resources which are turned into events.
      * Events that have already been processed are discarded in AppEvents.fromWatchEvent.
      * ==================================================*/
+    system.log.info(s"Starting watch, getting current events for ${classTag[O].runtimeClass.getName}")
 
     val eventsResult = getCurrentEvents[O](client, options)
 
     Source
-      .future(eventsResult)
-      .mapConcat(identity)
+      .fromFuture(eventsResult)
+      .mapConcat(identity _)
       .concat(
         client
           .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
@@ -200,10 +205,11 @@ object Operator {
       .recoverWithRetries(
         -1, {
           case _: TcpIdleTimeoutException ⇒
-            watch[O](client)
+            system.log.warning("Restarting watch on TCP idle timeout.")
+            watch[O](client, options)
           case e: skuber.api.client.K8SException ⇒
-            println(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
-            watch[O](client)
+            system.log.info(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
+            watch[O](client, options)
         }
       )
   }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sort"
 	"text/tabwriter"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
@@ -46,9 +47,14 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	printAppStatus(applicationCR, applicationCR.Status.AppStatus)
-	printEndpointStatuses(applicationCR)
-	printStreamletStatuses(applicationCR)
+	if applicationCR.Status != nil {
+		printAppStatus(applicationCR, applicationCR.Status.AppStatus)
+		printEndpointStatuses(applicationCR)
+		printStreamletStatuses(applicationCR)
+	} else {
+		printutil.LogAndExit("%s status is unknown", applicationCR.Name)
+	}
+
 }
 
 func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
@@ -84,9 +90,17 @@ func printStreamletStatuses(applicationCR *cfapp.CloudflowApplication) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 18, 0, 1, ' ', 0)
 	fmt.Fprintln(w, "STREAMLET\tPOD\tREADY\tSTATUS\tRESTARTS\t")
-	for _, s := range applicationCR.Status.StreamletStatuses {
-		for _, p := range s.PodStatuses {
-			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, p.Name, p.NrOfContainersReady, p.NrOfContainers, p.Status, p.Restarts)
+	streamletStatuses := applicationCR.Status.StreamletStatuses
+	sort.Slice(streamletStatuses, func(i, j int) bool {
+		return streamletStatuses[i].StreamletName < streamletStatuses[j].StreamletName
+	})
+	for _, s := range streamletStatuses {
+		if len(s.PodStatuses) == 0 {
+			fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, "", 0, 0, "Missing", 0)
+		} else {
+			for _, p := range s.PodStatuses {
+				fmt.Fprintf(w, "%s\t%s\t%d/%d\t%s\t%d\n", s.StreamletName, p.Name, p.NrOfContainersReady, p.NrOfContainers, p.Status, p.Restarts)
+			}
 		}
 	}
 	fmt.Println("")

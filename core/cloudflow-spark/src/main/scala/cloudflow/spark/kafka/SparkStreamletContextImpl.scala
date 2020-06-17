@@ -43,7 +43,7 @@ class SparkStreamletContextImpl(
     val schema                                        = inPort.schemaAsString
     val topic                                         = findTopicForPort(inPort)
     val srcTopic                                      = topic.name
-    val brokers                                       = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
+    val brokers                                       = topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers)
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -81,7 +81,7 @@ class SparkStreamletContextImpl(
 
     val topic     = findTopicForPort(outPort)
     val destTopic = topic.name
-    val brokers   = topic.bootstrapServers.getOrElse(config.getString("cloudflow.kafka.bootstrap-servers"))
+    val brokers   = topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers)
 
     // metadata checkpoint directory on mount
     val checkpointLocation = checkpointDir(outPort.name)

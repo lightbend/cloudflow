@@ -17,28 +17,28 @@ def appModule(moduleID: String): Project = {
 }
 
 lazy val step0 = appModule("step0")
-    .enablePlugins(CloudflowSparkLibraryPlugin)
+    .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
     )
 
 lazy val step1 = appModule("step1")
-    .enablePlugins(CloudflowSparkLibraryPlugin)
+    .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
     )
 
 lazy val step2 = appModule("step2")
-    .enablePlugins(CloudflowSparkLibraryPlugin)
+    .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
     )
 
 lazy val step3 = appModule("step3")
-    .enablePlugins(CloudflowSparkLibraryPlugin)
+    .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
