@@ -16,6 +16,13 @@ print_error_message() {
   echo "$(tput setaf 1)$errorMessage$(tput sgr0)"
 }
 
+CLOUDFLOW_INSTALLER_IMAGE=$1
+if [ -z "$CLOUDFLOW_INSTALLER_IMAGE" ]; then
+    CLOUDFLOW_INSTALLER_IMAGE=lightbend/cloudflow-installer
+fi
+echo "Cloudflow installer image to be used: $CLOUDFLOW_INSTALLER_IMAGE"
+echo
+
 ##### 1) Download yaml for the installer and Cloudflow CR
 # Embedded Yaml, inserted by the Makefile
 
@@ -223,7 +230,8 @@ else
 fi
 
 echo "$CLOUDFLOW_INSTALLER_YAML" | \
-  sed -e "s/CLOUDFLOW_INSTALLER_IMAGE_TAG_PH/$CLOUDFLOW_INSTALLER_IMAGE_TAG/" | \
+  sed -e "s~CLOUDFLOW_INSTALLER_IMAGE_TAG_PH~$CLOUDFLOW_INSTALLER_IMAGE_TAG~" \
+      -e "s~CLOUDFLOW_INSTALLER_IMAGE_PH~$CLOUDFLOW_INSTALLER_IMAGE~" | \
   kubectl apply -f -
 
 ##### 5) Wait for installer deployment rollout
