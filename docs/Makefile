@@ -16,6 +16,11 @@ javascaladoc_dir := ${staging_dir}/docs/current/api
 
 all: build
 
+local-preview: html-author-mode
+	@echo "Access the documentation on http://localhost:8000"
+	(cd target/staging/; python3 -m http.server)
+
+
 show:
 	echo work dir: ${work_dir}
 	echo ROOT_DIR: ${ROOT_DIR}
