@@ -21,7 +21,7 @@ lazy val sensorData =  (project in file("."))
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
       schemaCodeGenerator := SchemaCodeGenerator.Java,
-      scalaVersion := "2.12.10",
+      scalaVersion := "2.12.11",
       crossScalaVersions := Vector(scalaVersion.value),
       javacOptions ++= Seq("-Xlint:deprecation"),
       scalacOptions ++= Seq(
