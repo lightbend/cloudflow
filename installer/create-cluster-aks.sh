@@ -22,12 +22,12 @@ function usage {
   Options:
   The following options determine the cluster configuration.
   -c | --cluster-name name              The name used for the cluster
-  --resource-group group                The resource group to use
+  -r | --resource-group group           The resource group to use
   --location eastus                     AKS location to launch the cluster in. "eastus" by default
                                         For available locations, refer to https://azure.microsoft.com/en-us/global-infrastructure/services/?products=kubernetes-service.
-  --k8s-version 1.17.3                  Kubernetes version to use. "1.17.3" by default
+  --k8s-version 1.16.9                  Kubernetes version to use. "1.16.9" by default
                                         To view all supported versions, run " az aks get-versions --location <LOCATION>"
-  --node-vm-size Standard_A8_v2         Size of node VMs in the cluster. "Standard_A8_v2" by default.
+  --node-vm-size Standard_A4_v2         Size of node VMs in the cluster. "Standard_A4_v2" by default.
                                         For a list of supported sizes, refer to https://docs.microsoft.com/en-us/azure/virtual-machines/linux/sizes.
                                         using "provision-large.config.template".
   --node-count 5                        Number of nodes to launch. 5 by default.
@@ -45,7 +45,7 @@ function parse_args {
         CLUSTER_NAME=$1
         [ -z "$CLUSTER_NAME" ] && error '"--cluster-name" requires a non-empty option argument.\n'
       ;;
-      --resource-group)
+      -r|--resource-group)
         shift
         RESOURCE_GROUP_NAME=$1
         [ -z "$RESOURCE_GROUP_NAME" ] && error '"--resource-group" requires a non-empty option argument.\n'
@@ -53,22 +53,22 @@ function parse_args {
       --location)
         shift
         LOCATION=$1
-        [ -z "$LOCATION" ] && error LOCATION=eastus
+        [ -z "$LOCATION" ] && error '"--location" requires a non-empty option argument.\n'
       ;;
       --k8s-version)
         shift
         K8S_VERSION=$1
-        [ -z "$K8S_VERSION" ] && K8S_VERSION=1.17.3
+        [ -z "$K8S_VERSION" ] && error '"--k8s-version" requires a non-empty option argument.\n'
       ;;
       --node-vm-size)
         shift
         NODE_VM_SIZE=$1
-        [ -z "$NODE_VM_SIZE" ] && NODE_VM_SIZE=Standard_A8_v2
+        [ -z "$NODE_VM_SIZE" ] && error '"--node-vm-size" requires a non-empty option argument.\n'
       ;;
       --node-count)
         shift
         NODE_COUNT=$1
-        [ -z "$NODE_COUNT" ] && NODE_COUNT=5
+        [ -z "$NODE_COUNT" ] && error '"--node-count" requires a non-empty option argument.\n'
       ;;
       -h|--help)      # Call a "usage" function to display a synopsis, then exit.
         usage
@@ -98,12 +98,17 @@ if [ -z "$CLUSTER_NAME" ]
     exit 1
 fi
 
-if [ -z "$RESOURCE_GROUP" ]
+if [ -z "$RESOURCE_GROUP_NAME" ]
   then
     echo "No resource group specified."
     usage
     exit 1
 fi
+
+[ -z "$LOCATION" ] && LOCATION=eastus
+[ -z "$K8S_VERSION" ] && K8S_VERSION=1.16.9
+[ -z "$NODE_VM_SIZE" ] && NODE_VM_SIZE=Standard_A4_v2
+[ -z "$NODE_COUNT" ] && NODE_COUNT=5
 
 # Create resource group
 az group create --name "$RESOURCE_GROUP_NAME" --location "$LOCATION"
@@ -113,9 +118,12 @@ az aks create --resource-group "$RESOURCE_GROUP_NAME" \
   --name "$CLUSTER_NAME" \
   --node-count $NODE_COUNT \
   --enable-addons monitoring \
+  --enable-cluster-autoscaler \
   --generate-ssh-keys \
   --kubernetes-version "$CLUSTER_VERSION" \
-  --node-vm-size $NODE_VM_SIZE
+  --node-vm-size $NODE_VM_SIZE \
+  --min-count 1 \
+  --max-count 7
 
 # Connect to new cluster
 az aks get-credentials --resource-group "$RESOURCE_GROUP_NAME" --name "$CLUSTER_NAME"
