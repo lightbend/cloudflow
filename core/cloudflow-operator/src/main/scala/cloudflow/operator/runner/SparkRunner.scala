@@ -383,6 +383,7 @@ object SparkResource {
       coreLimit: Option[String] = None,
       env: Option[List[EnvVar]] = None,
       javaOptions: Option[String] = None,
+      serviceAccount: Option[String] = Some(SparkServiceAccount),
       labels: Map[String, String] = Map(),
       configMaps: Seq[NamePath] = Seq(),
       secrets: Seq[NamePathSecretType] = Seq(),
