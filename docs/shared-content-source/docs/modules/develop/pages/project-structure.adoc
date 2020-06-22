@@ -2,4 +2,163 @@
 
 include::ROOT:partial$include.adoc[]
 
+Cloudflow uses and extends `sbt`, the _scala build tool_, to support the building, packaging, and local execution of applications.
+The project structure of a Cloudflow application follows the general conventions and folder structure of a `sbt` project with a few additional considerations.
 
+== The Essential Structure
+
+To create any Cloudflow application, we require the following folder structure and files that we describe next:
+
+.The structure of a Cloudflow project
+[source, bash]
+----
+.
+├── build.sbt                 #<1>
+├── project                   #<2>
+│   ├── build.properties      #<3>
+│   ├── cloudflow-plugins.sbt #<4>
+│   └── plugins.sbt           #<5>
+├── src                       #<6>
+│   └── main
+└── target-env.sbt            #<7>
+----
+<1> The `build.sbt` file specifies the build configuration, project dependencies and eventual sub-projects.
+<2> The `project\` folder contains additional configuration for the project build, like plugins and sbt versions. This folder is mandatory.
+<3> `build.properties` file contains the `sbt` version 
+<4> The `cloudflow-plugins.sbt` file contains the dependency for the Cloudflow plugin for `sbt` 
+<5> In the `plugins.sbt` file 
+<6> The `src` folder contains the code for the application.
+<7> The `target-env.sbt` file contains the configuration for the Docker registry to use when publishing the application Docker containers.
+
+You might recognize this structure as the typical `sbt` project with a few additional components.
+There are two particular files that require your attention:
+
+- The `cloudflow-plugins.sbt` adds the repository and plugin version for the Cloudflow `sbt` plugins and,
+- the `target-env.sbt` contains the configuration of the Docker registry to use for publishing the resulting Docker images.
+
+In the following sections we explore the Cloudflow plugin in more detail.
+We also review the project setup required for single and multi-runtime projects.
+
+== The Cloudflow Plugin
+
+The Cloudflow plugin is the main enabler of any Cloudflow application development. 
+Internally, it contains several `sbt` plugin definitions that provide functions like dependency management, Docker image setup, library definitions, and also the local _sandbox_, that lets you run the applications on the local machine.
+
+We add the Cloudflow plugin to our application by creating a `cloudflow-plugins.sbt` file in the `project/` folder.
+
+[source, scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/project/cloudflow-plugins.sbt[]
+----
+<1> Adds the bintray repository hosting the Cloudflow plugin.
+<2> Adds the `sbt-cloudflow` plugin with a given version to the build definition.
+
+WARNING: The version of the `sbt-cloudflow` plugin defines with version of Cloudflow you are using.
+It must match with the version installed in your Kubernetes cluster.
+
+Once the `sbt-cloudflow` plugin is added to the project, a number of plugins become available to your application. 
+These plugins are used to enable different facets of an application.
+
+=== Application-level Plugins
+
+The application-level plugins provided by `sbt-cloudflow` are:
+
+The `CloudflowApplicationPlugin`:: The `CloudflowApplicationPlugin` is a SBT plugin for building and publishing the application. 
+It provides a target `buildApp` that validates the application against its blueprint, creates and publishes all the Docker images required, and generates the application CR, a JSON document that describes the application and is used by the Cloudflow CLI to initiate the application deployment on a Kubernetes cluster.
++
+There must be at most one `CloudflowApplicationPlugin` enabled in a Cloudflow application.
+
+The `CloudflowLibraryPlugin`:: The `CloudflowLibraryPlugin` is used when we want to create generic libraries that use Cloudflow concepts, such as data definitions (e.g. `Codec`), AVRO support, Protobuf support, etc.
+
+The `CloudflowLocalRunnerPlugin`:: The `CloudflowLocalRunnerPlugin` adds a the `runLocal` task to `sbt` that allows you to run complete Cloudflow application in your local development environment.
++
+The `CloudflowLocalRunnerPlugin` does not require a explicit declaration in the build file. 
+It is an _autoplugin_ that becomes enabled when the `CloudflowApplicationPlugin` is present.
+
+=== Runtime-specific Plugins
+
+Cloudflow provides out-of-the-box support for Akka, Apache Spark Structured Streaming, and Apache Flink in the form of specific implementations of the Streamlet API and the inclusion of supporting elements, like Docker base images and _runners_ that are able to launch each specific technology stack on Kubernetes.
+
+To develop `Streamlet`{empty}s for a specific runtime, we add the corresponding plugin to the project.
+To ensure proper isolation of the different runtimes, we require a different structural approach when using only one runtime or when mixing `Streamlet`{empty}s implementations that use two or more runtimes.
+We explore these differences in the next section. 
+Before delving into that, here we list the runtime plugins:
+
+`CloudflowAkkaPlugin`:: SBT plugin for creating Akka-based streamlets. 
+`CloudflowSparkPlugin`:: SBT plugin for creating Spark Structured Streaming based streamlets.
+`CloudflowFlinkPlugin`:: SBT plugin for creating Flink-based streamlets.
+
+
+== Single Runtime Applications
+
+Applications that use a single runtime are the most simple form of a Cloudflow application project structure and build definition.
+As we see in the next section, we can also combine `Streamlet`{empty}s that use different runtimes in a single application but that requires a slightly more complex build structure.
+
+Let's explore how to declare a Cloudflow application in a build definition with an example: 
+
+.Single Runtime Setup
+[source, scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/build.sbt[tag=docs-projectSetup-example]
+----
+<1> use `enablePlugins` to activate the Cloudflow plugins for this project.
+
+NOTE: See the complete example in the https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/snippets/modules/ROOT/examples/akkastreams-scala/build.sbt[examples folder of the Cloudflow project] 
+
+We provide templates to get started with a Cloudflow project that uses a single runtime. See
+https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/templates[templates folder of the Cloudflow project]
+
+== Multiple Runtime Applications
+
+Applications that combine multiple streamlet runtimes *must be* organized using `sbt` https://www.scala-sbt.org/1.x/docs/Multi-Project.html[multi-projects builds].
+Streamlets for each runtime must be into its own separate sub-project.
+
+Next to that, we recommend to separate the datamodel into its own sub-project so that streamlet sub-projects can easily import the common data definitions.
+
+For example, if we have an application that uses Akka and Structured Streaming, we could have the following structure:
+
+.Project Structure using Multiple Runtimes
+[source, text]
+----
+.
+├── my-application        #<1>
+│   └── src
+│       └── main
+│           └── blueprint #<2>
+├── datamodel             #<3>
+│   └── src
+│       └── main
+│           └── avro      #<4>
+├── akka-ingestor         #<5>
+│   └── src
+│       ├── main
+│       │   └── scala
+│       └── test
+│           └── scala
+├── spark-aggregation     #<6>
+│   └── src
+│       ├── main
+│       │   └── scala
+│       └── test
+│           └── scala
+├── project               #<7>
+│   ├── build.properties
+│   └── cloudflow-plugins.sbt
+├── build.sbt             #<8> 
+└── target-env.sbt        #<9>
+----
+<1> The application 'root' project that contains the `blueprint` definition.
+<2> The `blueprint.conf` is expected in a `src/main/blueprint` directory by default.
+<3> The `datamodel/` folder contains the shared schema definitions.
+<4> The `avro/` folder contains the schema definitions in AVRO format. 
+<5> `akka-ingestor` is a sub-project that contains Akka-based streamlets
+<6> `spark-aggregation` is a sub-project that contains Spark-based streamlets
+<7> The `project/` folder contains the `cloudflow-plugins.sbt` and other necessary files as we saw previously.
+<8> The `target-env.sbt` contains the Docker repository configuration as we saw at the start of the chapter.
+
+We can find a `build.sbt` definition that exemplifies the use of a multi-project setup in this https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/call-record-aggregator[Cloudflow example]
+
+
+== Where to go next?
+
+You can learn more about the xref:develop:schema-first-approach.adoc[Schema-First approach] used in Cloudflow
