@@ -23,7 +23,7 @@ $ gcloud container clusters get-credentials <cluster-name> --zone <zone> --proje
 == Building and Deploying call-record-aggregator
 
 Next we'll deploy a sample Cloudflow application called https://github.com/lightbend/cloudflow/tree/master/examples/call-record-aggregator[call-record-aggregator] to the cluster.
-Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd` into the `examples/call-record-aggregator` directory. Then run
+Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd` into the `examples/call-record-aggregator` directory. Then run the following command to build the application:
 
 [source,bash]
 ----
