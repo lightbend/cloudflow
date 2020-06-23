@@ -134,7 +134,11 @@ final class AkkaStreamletContextImpl(
         settings = consumerSettings
       )
 
-    (consumer, messageExtractor)
+    Source.futureSource {
+      messageExtractor.map(x => {
+        (x, consumer)
+      })
+    }
   }
 
   override def shardedSourceWithCommittableContext[T, E](
@@ -235,9 +239,9 @@ final class AkkaStreamletContextImpl(
   ): (Source[T, NotUsed], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) = {
     // TODO clean this up, lot of copying code, refactor.
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletRef, inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
       .withProperties(topic.kafkaConsumerProperties)
