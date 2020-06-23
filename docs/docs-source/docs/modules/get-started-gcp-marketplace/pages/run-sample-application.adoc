@@ -30,7 +30,7 @@ Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd`
 $ sbt buildApp
 ----
 
-to build the application. Once it's complete, you should see at the end of the output a `kubectl cloudflow deploy` command to deploy your application. Run it:
+Once it's complete, you should see at the end of the output a `kubectl cloudflow deploy` command to deploy your application. Run it:
 
 [source,bash]
 ----
