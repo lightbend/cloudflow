@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Cloudflow uses and extends `sbt`, the _scala build tool_, to support the building, packaging, and local execution of applications.
+Cloudflow uses and extends `sbt`, the _Scala Build Tool_, to support the building, packaging, and local execution of applications.
 The project structure of a Cloudflow application follows the general conventions and folder structure of a `sbt` project with a few additional considerations.
 
 == The Essential Structure
@@ -22,7 +22,7 @@ To create any Cloudflow application, we require the following folder structure a
 │   └── main
 └── target-env.sbt            #<7>
 ----
-<1> The `build.sbt` file specifies the build configuration, project dependencies and eventual sub-projects.
+<1> The `build.sbt` file specifies the build configuration, project dependencies, and eventual sub-projects.
 <2> The `project\` folder contains additional configuration for the project build, like plugins and sbt versions. This folder is mandatory.
 <3> The `build.properties` file contains the `sbt` version 
 <4> The `cloudflow-plugins.sbt` file contains the dependency for the Cloudflow plugin for `sbt` 
@@ -31,18 +31,18 @@ To create any Cloudflow application, we require the following folder structure a
 <7> The `target-env.sbt` file contains the configuration for the Docker registry to use when publishing the application Docker containers.
 
 You might recognize this structure as the typical `sbt` project with a few additional components.
-There are two particular files that require your attention:
+Two particular files that require your attention:
 
 - The `cloudflow-plugins.sbt` adds the repository and plugin version for the Cloudflow `sbt` plugins and,
 - the `target-env.sbt` contains the configuration of the Docker registry to use for publishing the resulting Docker images.
 
-In the following sections we explore the Cloudflow plugin in more detail.
+In the following sections, we explore the Cloudflow plugin in more detail.
 We also review the project setup required for single and multi-runtime projects.
 
 == The Cloudflow Plugin
 
-The Cloudflow plugin is the main enabler of any Cloudflow application development. 
-Internally, it contains several `sbt` plugin definitions that provide functions like dependency management, Docker image setup, library definitions, and also the local _sandbox_, that lets you run the applications on the local machine.
+The Cloudflow plugin is the primary enabler of any Cloudflow application development. 
+Internally, it contains several `sbt` plugin definitions that support the building of applications and enable additional functions such as the local _sandbox_, that lets you run the applications on the local machine.
 
 We add the Cloudflow plugin to our application by creating a `cloudflow-plugins.sbt` file in the `project/` folder.
 
@@ -66,7 +66,7 @@ The application-level plugins provided by `sbt-cloudflow` are:
 The `CloudflowApplicationPlugin`:: The `CloudflowApplicationPlugin` is a SBT plugin for building and publishing the application. 
 It provides a target `buildApp` that validates the application against its blueprint, creates and publishes all the Docker images required, and generates the application CR, a JSON document that describes the application and is used by the Cloudflow CLI to initiate the application deployment on a Kubernetes cluster.
 +
-There must be at most one `CloudflowApplicationPlugin` enabled in a Cloudflow application.
+There must be at-most-one `CloudflowApplicationPlugin` enabled in a Cloudflow application.
 
 The `CloudflowLibraryPlugin`:: The `CloudflowLibraryPlugin` is used when we want to create generic libraries that use Cloudflow concepts, such as data definitions (e.g. `Codec`), AVRO support, Protobuf support, etc.
 
@@ -77,7 +77,7 @@ It is an _autoplugin_ that becomes enabled when the `CloudflowApplicationPlugin`
 
 === Runtime-specific Plugins
 
-Cloudflow provides out-of-the-box support for Akka, Apache Spark Structured Streaming, and Apache Flink in the form of specific implementations of the Streamlet API and the inclusion of supporting elements, like Docker base images and _runners_ that are able to launch each specific technology stack on Kubernetes.
+Cloudflow provides out-of-the-box support for Akka, Apache Spark Structured Streaming, and Apache Flink in the form of specific implementations of the Streamlet API and supporting elements, like Docker base images and _runners_ that are able to launch each specific technology stack on Kubernetes.
 
 To develop `Streamlet`{empty}s for a specific runtime, we add the corresponding plugin to the project.
 To ensure proper isolation of the different runtimes, we require a different structural approach when using only one runtime or when mixing `Streamlet`{empty}s implementations that use two or more runtimes.
@@ -91,8 +91,8 @@ Before delving into that, here we list the runtime plugins:
 
 == Single Runtime Applications
 
-Applications that use a single runtime are the most simple form of a Cloudflow application project structure and build definition.
-As we see in the next section, we can also combine `Streamlet`{empty}s that use different runtimes in a single application but that requires a slightly more complex build structure.
+Applications that use a single runtime are the simplest form of a Cloudflow application project structure and build definition.
+As we see in the next section, we can also combine `Streamlet`{empty}s that use different runtimes in a single application, but that requires a slightly more complex build structure.
 
 Let's explore how to declare a Cloudflow application in a build definition with an example: 
 
@@ -117,7 +117,7 @@ IMPORTANT: The multi-project build organization is necessary to ensure the corre
 Frameworks like Spark and Flink pack a long list of library dependencies and some of them conflict with each other when placed in the same classloader.
 Using multi-project builds ensures the correct functioning of the local _sandbox_ and informs the generation of a Docker image per sub-project with the correct dependencies.
 
-Next to that, we recommend to separate the datamodel into its own sub-project so that streamlet sub-projects can easily import the common data definitions.
+Next to that, we recommend separating the data-oriented schemas into their own sub-project so that streamlet sub-projects can easily import these common data definitions.
 
 For example, if we have an application that uses Akka and Structured Streaming, we could have the following structure:
 
