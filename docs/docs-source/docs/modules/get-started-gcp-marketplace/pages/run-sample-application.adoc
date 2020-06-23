@@ -50,7 +50,7 @@ To monitor the call-record-aggregator application you just deployed, first find 
 Then run:
 [source,bash]
 ----
-$ kubectl -n <cloudflow-namespace> port-forward <console-frontend-pod> 8080:8080
+$ kubectl -n <cloudflow-namespace> port-forward pod/<console-frontend-pod> 8080:8080
 ----
 
 Now from the browser, go to http://127.0.0.1:8080/ and you should see the following page:
