@@ -30,7 +30,7 @@ After some time you should see the following page:
 image::deploy-finish.png[Cloudflow deployment status]
 
 It shows that the components of Cloudflow are being installed, while "some components are pending".
-Wait another minute and then refresh the page, the warning message should be gone and you'll see a check mark next to the Cloudflow logo.
+Wait a little longer, refresh the page, and you should see a check mark next to the Cloudflow logo.
 
 == What's next
 Now you have Cloudflow deployed on a GKE cluster, you are ready to xref:run-sample-application.adoc[run a sample Cloudflow application].
