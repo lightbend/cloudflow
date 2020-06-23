@@ -24,7 +24,7 @@ To create any Cloudflow application, we require the following folder structure a
 ----
 <1> The `build.sbt` file specifies the build configuration, project dependencies and eventual sub-projects.
 <2> The `project\` folder contains additional configuration for the project build, like plugins and sbt versions. This folder is mandatory.
-<3> `build.properties` file contains the `sbt` version 
+<3> The `build.properties` file contains the `sbt` version 
 <4> The `cloudflow-plugins.sbt` file contains the dependency for the Cloudflow plugin for `sbt` 
 <5> In the `plugins.sbt` file 
 <6> The `src` folder contains the code for the application.
@@ -53,7 +53,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala
 <1> Adds the bintray repository hosting the Cloudflow plugin.
 <2> Adds the `sbt-cloudflow` plugin with a given version to the build definition.
 
-WARNING: The version of the `sbt-cloudflow` plugin defines with version of Cloudflow you are using.
+WARNING: The version of the `sbt-cloudflow` plugin defines which version of Cloudflow you are using.
 It must match with the version installed in your Kubernetes cluster.
 
 Once the `sbt-cloudflow` plugin is added to the project, a number of plugins become available to your application. 
@@ -70,9 +70,9 @@ There must be at most one `CloudflowApplicationPlugin` enabled in a Cloudflow ap
 
 The `CloudflowLibraryPlugin`:: The `CloudflowLibraryPlugin` is used when we want to create generic libraries that use Cloudflow concepts, such as data definitions (e.g. `Codec`), AVRO support, Protobuf support, etc.
 
-The `CloudflowLocalRunnerPlugin`:: The `CloudflowLocalRunnerPlugin` adds a the `runLocal` task to `sbt` that allows you to run complete Cloudflow application in your local development environment.
+The `CloudflowLocalRunnerPlugin`:: The `CloudflowLocalRunnerPlugin` adds the `runLocal` task to `sbt` that allows you to run complete Cloudflow application in your local development environment.
 +
-The `CloudflowLocalRunnerPlugin` does not require a explicit declaration in the build file. 
+The `CloudflowLocalRunnerPlugin` does not require an explicit declaration in the build file. 
 It is an _autoplugin_ that becomes enabled when the `CloudflowApplicationPlugin` is present.
 
 === Runtime-specific Plugins
@@ -111,7 +111,11 @@ https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/
 == Multiple Runtime Applications
 
 Applications that combine multiple streamlet runtimes *must be* organized using `sbt` https://www.scala-sbt.org/1.x/docs/Multi-Project.html[multi-projects builds].
-Streamlets for each runtime must be into its own separate sub-project.
+Streamlets for each runtime must added be into their own separate sub-project.
+
+IMPORTANT: The multi-project build organization is necessary to ensure the correct isolation of the dependencies required by each runtime in their own classpath.
+Frameworks like Spark and Flink pack a long list of library dependencies and some of them conflict with each other when placed in the same classloader.
+Using multi-project builds ensures the correct functioning of the local _sandbox_ and informs the generation of a Docker image per sub-project with the correct dependencies.
 
 Next to that, we recommend to separate the datamodel into its own sub-project so that streamlet sub-projects can easily import the common data definitions.
 
