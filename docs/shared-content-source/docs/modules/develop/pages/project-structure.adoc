@@ -3,7 +3,7 @@
 include::ROOT:partial$include.adoc[]
 
 Cloudflow uses and extends `sbt`, the _Scala Build Tool_, to support the building, packaging, and local execution of applications.
-The project structure of a Cloudflow application follows the general conventions and folder structure of a `sbt` project with a few additional considerations.
+The project structure of a Cloudflow application follows the general conventions and folder structure of an `sbt` project with a few additional considerations.
 
 == The Essential Structure
 
