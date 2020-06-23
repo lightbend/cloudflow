@@ -33,4 +33,4 @@ It shows that the components of Cloudflow are being installed, while "some compo
 Wait a little longer, refresh the page, and you should see a check mark next to the Cloudflow logo.
 
 == What's next
-Now you have Cloudflow deployed on a GKE cluster, you are ready to xref:run-sample-application.adoc[run a sample Cloudflow application].
+Now that you have Cloudflow deployed on a GKE cluster, you are ready to xref:run-sample-application.adoc[run a sample Cloudflow application].
