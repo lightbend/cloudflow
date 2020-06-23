@@ -1,4 +1,4 @@
-= Run a Sample Cloudflow Application on GCP Marketplace
+= Run a Sample Cloudflow Application on GCP
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
