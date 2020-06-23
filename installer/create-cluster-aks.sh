@@ -30,7 +30,6 @@ function usage {
   --node-vm-size Standard_A4_v2         Size of node VMs in the cluster. "Standard_A4_v2" by default.
                                         For a list of supported sizes, refer to https://docs.microsoft.com/en-us/azure/virtual-machines/linux/sizes.
                                         using "provision-large.config.template".
-  --node-count 5                        Number of nodes to launch. 5 by default.
   -h | --help                           Prints this message.
 EOF
 }
@@ -43,32 +42,27 @@ function parse_args {
       -c|--cluster-name)
         shift
         CLUSTER_NAME=$1
-        [ -z "$CLUSTER_NAME" ] && error '"--cluster-name" requires a non-empty option argument.\n'
+        [ -z "$CLUSTER_NAME" ] && error '"--cluster-name" requires an argument.\n'
       ;;
       -r|--resource-group)
         shift
         RESOURCE_GROUP_NAME=$1
-        [ -z "$RESOURCE_GROUP_NAME" ] && error '"--resource-group" requires a non-empty option argument.\n'
+        [ -z "$RESOURCE_GROUP_NAME" ] && error '"--resource-group" requires an argument.\n'
       ;;
       --location)
         shift
         LOCATION=$1
-        [ -z "$LOCATION" ] && error '"--location" requires a non-empty option argument.\n'
+        [ -z "$LOCATION" ] && error '"--location" requires an argument.\n'
       ;;
       --k8s-version)
         shift
         K8S_VERSION=$1
-        [ -z "$K8S_VERSION" ] && error '"--k8s-version" requires a non-empty option argument.\n'
+        [ -z "$K8S_VERSION" ] && error '"--k8s-version" requires an argument.\n'
       ;;
       --node-vm-size)
         shift
         NODE_VM_SIZE=$1
-        [ -z "$NODE_VM_SIZE" ] && error '"--node-vm-size" requires a non-empty option argument.\n'
-      ;;
-      --node-count)
-        shift
-        NODE_COUNT=$1
-        [ -z "$NODE_COUNT" ] && error '"--node-count" requires a non-empty option argument.\n'
+        [ -z "$NODE_VM_SIZE" ] && error '"--node-vm-size" requires an argument.\n'
       ;;
       -h|--help)      # Call a "usage" function to display a synopsis, then exit.
         usage
@@ -108,7 +102,6 @@ fi
 [ -z "$LOCATION" ] && LOCATION=eastus
 [ -z "$K8S_VERSION" ] && K8S_VERSION=1.16.9
 [ -z "$NODE_VM_SIZE" ] && NODE_VM_SIZE=Standard_A4_v2
-[ -z "$NODE_COUNT" ] && NODE_COUNT=5
 
 # Create resource group
 az group create --name "$RESOURCE_GROUP_NAME" --location "$LOCATION"
@@ -116,7 +109,7 @@ az group create --name "$RESOURCE_GROUP_NAME" --location "$LOCATION"
 # Create cluster
 az aks create --resource-group "$RESOURCE_GROUP_NAME" \
   --name "$CLUSTER_NAME" \
-  --node-count $NODE_COUNT \
+  --node-count 5 \
   --enable-addons monitoring \
   --enable-cluster-autoscaler \
   --generate-ssh-keys \
