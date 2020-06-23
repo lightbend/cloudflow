@@ -21,7 +21,7 @@ Or you can quickly spin up a new cluster in your preferred cluster zone by click
 Note that your existing cluster may not be available for selection if it does not meet the resource requirements, in which case you'll also need to create a new cluster.
 
 Once your cluster is up and running, go through the other configuration options.
-Some of them have a tooltip next to them that explains the purpose of that configuration option. Their names should also be self-explanatory.
+Some of them have a tooltip next to them that explains the purpose of that configuration option.
 When you've verified all configuration values, click "Deploy" to deploy Cloudflow.
 
 Now wait about a minute, then you should see the following page:
