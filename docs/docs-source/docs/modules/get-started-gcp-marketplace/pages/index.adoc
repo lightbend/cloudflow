@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A convenient way to try out Cloudflow is via Google Cloud Platform (GCP) Marketplace, a place where you can quickly deploy Cloudflow that runs on Google Kubernetes Engine (GKE) with just a few clicks.
+A convenient way to use Cloudflow is via Google Cloud Platform (GCP) Marketplace, a place where you can quickly install Cloudflow on Google Kubernetes Engine (GKE) with just a few clicks.
 
 This chapter walks you through how to run Cloudflow from GCP Marketplace.
 Follow the step-by-step tutorial in the order below:
