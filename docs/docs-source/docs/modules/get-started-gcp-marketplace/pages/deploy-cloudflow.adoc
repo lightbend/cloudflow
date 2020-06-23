@@ -10,7 +10,7 @@ You have followed the xref:find-cloudflow-on-gcp-marketplace.adoc[previous step]
 .The Cloudflow page on Marketplace
 image::cloudflow-main-gcp.png[Cloudflow page on Marketplace]
 
-Spend some time reading through the information on the page, especially the section on pricing. When you are ready, click "Configure" to proceed to the deployment screen:
+Spend some time reading through the information on the page. When you are ready, click "Configure" to proceed to the deployment screen:
 
 .The Cloudflow Configuration and Deployment Page
 image::deploy.png[Cloudflow deployment page]
