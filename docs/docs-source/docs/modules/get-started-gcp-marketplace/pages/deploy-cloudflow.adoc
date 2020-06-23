@@ -24,7 +24,7 @@ Once your cluster is up and running, go through the other configuration options.
 Some of them have a tooltip next to them that explains the purpose of that configuration option.
 When you've verified all configuration values, click "Deploy" to deploy Cloudflow.
 
-Now wait about a minute, then you should see the following page:
+After some time you should see the following page:
 
 .The Cloudflow Deployment Status
 image::deploy-finish.png[Cloudflow deployment status]
