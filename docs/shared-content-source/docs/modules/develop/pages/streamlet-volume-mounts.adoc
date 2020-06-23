@@ -1,3 +1,7 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
 Sometimes a streamlet needs to read and/or write files from/to some shared file system. Since streamlets run as processes on Kubernetes, they do not automatically have such a file system available. Cloudflow makes it possible for a streamlet to declare the need for a shared file system (e.g. a "volume" in Kubernetes terms) that should be mounted at a specific path. At deployment time the user can then indicate where that file system is actually located using a Kubernetes Persistent Volume Claim (PVC). Cloudflow will then make sure that the PVC will be mounted at the specified path at runtime and the streamlet can then treat it like a local file system.
 
 The following example streamlet shows how to declare and use a volume mount:
