@@ -3,7 +3,7 @@
 :toc-title: ON THIS PAGE
 :toclevels: 2
 
-== Setting up CLI
+== Setting up the Cloudflow `kubectl` Plugin
 
 With Cloudflow installed on a GKE cluster through the Marketplace, you can interact with Cloudflow via its `kubectl` plugin: `kubectl cloudflow`.
 If you haven't already, download the CLI from the https://github.com/lightbend/cloudflow/releases/tag/v2.0.0[Github release page].
