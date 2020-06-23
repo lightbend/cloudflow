@@ -158,7 +158,7 @@ For example, if we have an application that uses Akka and Structured Streaming, 
 <5> `akka-ingestor` is a sub-project that contains Akka-based streamlets
 <6> `spark-aggregation` is a sub-project that contains Spark-based streamlets
 <7> The `project/` folder contains the `cloudflow-plugins.sbt` and other necessary files as we saw previously.
-<8> The `target-env.sbt` contains the Docker repository configuration as we saw at the start of the chapter.
+<8> The `target-env.sbt` contains the Docker repository configuration, as we saw at the start of the chapter.
 
 We can find a `build.sbt` definition that exemplifies the use of a multi-project setup in this https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/call-record-aggregator[Cloudflow example]
 
