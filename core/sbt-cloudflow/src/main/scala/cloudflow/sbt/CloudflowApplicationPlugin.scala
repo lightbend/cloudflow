@@ -27,7 +27,6 @@ import cloudflow.sbt.CloudflowKeys._
 
 /**
  * SBT Plugin for publishing multi-module projects using a combination of different runtimes and streamlet libraries.
- * This plugin enables the creation of a single docker image that contains all the required dependencies for the application.
  * It also verifies the blueprint and publishes it to the platform after a successful build of the docker image.
  */
 object CloudflowApplicationPlugin extends AutoPlugin {
