@@ -6,7 +6,7 @@ Cloudflow makes use of a number of open source projects. This page summarizes th
 
 **Akka**
 
-* https://github.com/akka/akka[Akka]: `2.6.5`
+* https://github.com/akka/akka[Akka]: `2.6.6`
 
 **Apache Spark**
 
