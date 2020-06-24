@@ -3,26 +3,31 @@
 
 include::ROOT:partial$include.adoc[]
 
-One of the most common concerns of every distributed application developer is the fairly long and troublesome cycle of developing and testing their applications on a cluster. End to end testing of a distributed streaming application usually requires the creation of docker images, a lengthy upload of those images to some repository, and available cluster resources to testing.
+One of the most common concerns of every distributed application (cloud) developer is the fairly long and troublesome cycle of developing and testing their applications on a cluster. 
+End to end testing of a distributed streaming application usually requires the creation of artifacts, such as Docker images, a lengthy upload of those artifacts to some repository, and available cluster resources to testing.
 
-Cloudflow includes a local execution mode, called 'Sandbox'. It lets you execute your complete application as a lightweight process on your machine. It only requires enough free memory to execute a scaled-down version of every streamlet.
+Cloudflow includes a local execution mode, called _Sandbox_. 
+It lets you execute your complete application as a lightweight process on your machine. 
+The sandbox only requires sufficient free memory to execute a scaled-down version of every streamlet.
+As a rough guideline, we can run a 5-streamlet application in 1 GB of memory.
 
-The Cloudflow Sandbox accelerates the development of streaming applications by shortening the deployment and test cycle of functional requirements.
+The Cloudflow _Sandbox_ accelerates the development of streaming applications by shortening the deployment and test cycle of functional requirements.
 
-Sandbox is provided as an auto-plugin included in the cloudflow-streamlets package. It’s automatically available when an application enables support for Akka Streams, Spark, or Flink streamlets.
+The _Sandbox_ is provided as an auto-plugin included in the `sbt-cloudflow` plugin. 
+It is automatically available when an application enables support for Akka, Spark, or Flink streamlets.
 
-== Using Sandbox
+== Using the _Sandbox_
 
-The Sandbox is accessible as an sbt task called runLocal in the build of your Cloudflow application.
+The _Sandbox_ is accessible as an `sbt` task called `runLocal` in the root build of your Cloudflow application.
 
-It can be called directly from the command line, like:
+It can be called directly from the command line, as we show here:
 
 [source,bash]
 ----
 $sbt runLocal
 ----
 
-Or from an active sbt session, to run the application in the background with the current state displayed in the console:
+Or from an active `sbt` session.
 
 [source,bash]
 ----
@@ -31,70 +36,159 @@ $sbt
 [project]>runLocal
 ----
 
+The Sandbox runs the application in the background and provides a summary of the application characteristics, ports (if any), mount-volumes (if any), and the set of files where we can inspect the output of the different streamlets.
 
-In the example below, we see the summary output of sensor-data-scala, one of the Cloudflow examples available at https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala[https://github.com/lightbend/cloudflow/tree/master/examples/sensor-data-scala]:
+In the example below, we see the summary output of `call-record-aggregator`, one of the Cloudflow examples available at https://github.com/lightbend/cloudflow/blob/master/examples/call-record-aggregator/[examples/call-record-aggregator]:
 
 [source,bash]
 ----
----------------------------------- Streamlets ----------------------------------
-file-ingress [sensordata.SensorDataFileIngress]
-  - mount [source-data-mount] available at [/tmp/local-cloudflow2714008686931483476/source-data-mount]
-http-ingress [sensordata.SensorDataHttpIngress]
-  - HTTP port [3000]
-invalid-logger [sensordata.InvalidMetricLogger]
-merge [sensordata.SensorDataMerge]
-metrics [sensordata.SensorDataToMetrics]
-rotor-avg-logger [sensordata.RotorspeedWindowLogger]
-rotorizer [sensordata.RotorSpeedFilter]
-valid-logger [sensordata.ValidMetricLogger]
-validation [sensordata.MetricsValidation]
+#<1>
+[success] /cloudflow/examples/call-record-aggregator/call-record-pipeline/src/main/blueprint/blueprint.conf verified.
+ ┌──────────────┐ ┌──────────────┐ ┌───────────┐   
+ │cdr-generator1│ │cdr-generator2│ │cdr-ingress│   
+ └───────┬──────┘ └──────┬───────┘ └─────┬─────┘   
+         │               │               │         
+         └─────────┐     │     ┌─────────┘         
+                   │     │     │                   
+                   v     v     v                   
+            ┌────────────────────────┐             
+            │[generated-call-records]│             
+            └────────────┬───────────┘             
+                         │                         
+                         v                         
+                      ┌─────┐                      
+                      │split│                      
+                      └─┬─┬─┘                      
+                        │ │                        
+                        │ └───────────┐            
+                        │             └┐           
+                        v              │           
+         ┌────────────────────┐        │           
+         │[valid-call-records]│        │           
+         └─────────┬──────────┘        │           
+                   │                   │           
+                   v                   │           
+           ┌──────────────┐            │           
+           │cdr-aggregator│            │           
+           └─┬────────────┘            │           
+             │                         │           
+             v                         v           
+ ┌───────────────────────┐ ┌──────────────────────┐
+ │[aggregated-call-stats]│ │[invalid-call-records]│
+ └────────────┬──────────┘ └───────┬──────────────┘
+              │                    │               
+              v                    v               
+      ┌──────────────┐      ┌────────────┐         
+      │console-egress│      │error-egress│         
+      └──────────────┘      └────────────┘         
+#<2>
+---------------------------- Streamlets per project ----------------------------
+spark-aggregation - output file: file:/tmp/cloudflow-local-run3031754564524796564/spark-aggregation-local.log
+
+	cdr-aggregator [carly.aggregator.CallStatsAggregator]
+	cdr-generator1 [carly.aggregator.CallRecordGeneratorIngress]
+	cdr-generator2 [carly.aggregator.CallRecordGeneratorIngress]
+
+akka-java-aggregation-output - output file: file:/tmp/cloudflow-local-run3031754564524796564/akka-java-aggregation-output-local.log
+
+	console-egress [carly.output.AggregateRecordEgress]
+	error-egress [carly.output.InvalidRecordEgress]
+
+akka-cdr-ingestor - output file: file:/tmp/cloudflow-local-run3031754564524796564/akka-cdr-ingestor-local.log
+
+	cdr-ingress [carly.ingestor.CallRecordIngress]
+	- HTTP port [3000]
+	split [carly.ingestor.CallRecordSplit]
+
 --------------------------------------------------------------------------------
 
---------------------------------- Connections ---------------------------------
-validation.valid -> valid-logger.in
-validation.valid -> rotorizer.in
-rotorizer.out -> rotor-avg-logger.in
-validation.invalid -> invalid-logger.in
-merge.out -> metrics.in
-http-ingress.out -> merge.in-0
-metrics.out -> validation.in
-file-ingress.out -> merge.in-1
+#<3>
+------------------------------------ Topics ------------------------------------
+[aggregated-call-stats]
+[generated-call-records]
+[invalid-call-records]
+[valid-call-records]
 --------------------------------------------------------------------------------
 
+#<4>
+----------------------------- Local Configuration -----------------------------
+No local configuration provided.
+--------------------------------------------------------------------------------
+
+#<5>
 ------------------------------------ Output ------------------------------------
-Pipeline log output available in file: /tmp/local-cloudflow2714008686931483476/local-cloudflow3796438553652935419.log
+Pipeline log output available in folder: /tmp/cloudflow-local-run3031754564524796564
 --------------------------------------------------------------------------------
 
-Running sensor-data-scala
+Running call-record-aggregator  
 To terminate, press [ENTER]
+
 ----
+<1> Topology View
+<2> Streamlets
+<3> Topics
+<4> Local Configuration
+<5> Output Information
 
-We can appreciate three main sections of this info panel: Streamlets, Connections, and Output.
+We can appreciate five main sections of this info panel: The Topology View, Streamlets, Topics, Local Configuration, and Output Information.
 
-Streamlets
-The streamlets info panel provides a list of the streamlets instantiated in this application; below each streamlet name there may be one or more local resources printed, like a volume mount or TCP port For example, in the example above, file-ingress is using a volume mount assigned to a local directory:
+The Topology View::
+The first part of the output of the `runLocal` command is an _ascii art_ representation of the topology of the application. 
+This is the directed graph of connections between streamlets and topics that shows how the components are connected to one another and how the data flows within the application.
 
-file-ingress [sensordata.SensorDataFileIngress]
-- mount [source-data-mount] available at [/tmp/local-cloudflow2714008686931483476/source-data-mount]
-The `http-ingress` is offering an HTTP endpoint on port 3000
-http-ingress [sensordata.SensorDataHttpIngress]
-  - HTTP port [3000]
-Connections
-The Connections panel shows how the streamlets are connected to one another. It represents the connection schema specified in the blueprint.
+Streamlets::
+The streamlets info panel provides a list of the streamlets instantiated in this application.
+As we see in the example above, the streamlets are grouped by sub-project (if sub-projects are used). 
+For each group, we also have an output file that aggregates the output of all streamlets in that group.
++
+Internally, each group of streamlets will run in a separate JVM to isolate the dependencies of each sub-project.
+Below each streamlet name there may be one or more local resources printed, like a volume mount or a TCP port.
+For example, in the example above, `cdr-ingress` is offering an HTTP endpoint on port `3000`.
 
-Output
-The Output panel shows where the output of the running application is made available. You can use your favorite text editor or command-line tools to inspect the output and verify that your application is doing what you expect.
+Topics::
+The name of this panel is self-explaining. 
+It list the topics used by this application.
+In the `sandbox`, all _cloudflow-managed_ topics are created on an in-memory Kafka instance.
+If external topics are used in the application, they must be reachable from the local machine. 
+Otherwise, the connection to it will fail.
 
-Terminating a Running Application
-The application executes on the background until [ENTER] is pressed, which terminates the application process. The file containing the output of the running application is preserved for later examination.
+Local Configuration::
+It's possible to provide a custom configuration for the streamlets running in local mode.
+For example, to connect to a local instance of a database, instead to an external (cloud) service.
+The local configuration is explained below in  <<local-conf>> section.
+
+Output::
+The Output panel shows the directory where the all the output of the running application is made available. 
+You can use your favorite text editor or command-line tools to inspect the output and verify that your application is doing what you expect.
+
+=== The Running Application
+
+The `runLocal` task remains active until the `ENTER` key is pressed. 
+While the application is running, you can interact with it through its open interfaces. 
+If you included a Streamlet with a server endpoint, it's `HTTP` ports will be available to receive data. 
+Another interesting way of exercising your application is to include data generating streamlets that simulate and inject the expected data into the running system.
+
+To inspect the output use command line tools, like `tail`, or text editors to consume the output generated in the temporary files that capture the streamlet's output and logs.
+
+TIP: the `file://` URLs provided by the `runLocal` output are clickable in most systems.
+
+=== Terminating a Running Application
+
+The application executes on the background until the `[ENTER]` key is pressed, which terminates all the application processes. 
+The files containing the output of the running application are preserved for later examination.
 
 == Streamlet Features in Sandbox
 
-In a Cloudflow application, Streamlets offer several customization options such as configuration requirements, volume mounts, and server ports. The Sandbox offers a local implementation of these options that are meaningful in a local environment.
+In a Cloudflow application, Streamlets offer several customization options such as configuration requirements, volume mounts, and server ports. 
+The Sandbox offers a local implementation of these options that are meaningful in a local environment.
 
+[[local-conf]]
 === The local configuration file
 
-Applications running in the Sandbox can specify custom values for the local environment by making use of a local configuration file in HOCON format. This file is called local.conf by default and is assumed to be available on the classpath, usually under the application/src/main/resources folder. A custom local configuration file can be specified in the build, using the runLocalConfigFile key. For example, in this build.sbt file, we change the local configuration to myruntime.conf in the root dir of the project
+Applications running in the Sandbox can specify custom values for the local environment by making use of a local configuration file in HOCON format. 
+This file is called local.conf by default and is assumed to be available on the classpath, usually under the `application/src/main/resources` folder. 
+A custom local configuration file can be specified in the `build.sbt`, using the `runLocalConfigFile` key. 
+For example, in this `build.sbt` file, we change the local configuration to myruntime.conf in the root dir of the project
 
 [source,conf]
 ----
