@@ -18,6 +18,7 @@ It should look like the following:
 ----
 $ gcloud container clusters get-credentials <cluster-name> --zone <zone> --project <gcp-project>
 ----
+Where, cluster-name refers to your Kubernetes cluster, as identified https://console.cloud.google.com/kubernetes/list[here], and gcp-project refers to your https://cloud.google.com/resource-manager/docs/creating-managing-projects[Google Cloud project].
 
 == Building and Deploying call-record-aggregator
 
@@ -28,6 +29,9 @@ Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd`
 ----
 $ sbt buildApp
 ----
+This step may take several minutes to complete, as it will build and push multiple Docker images to the Docker repository configured in `target-env.sbt`.
+
+NOTE: before running `sbt buildApp`, make sure under `call-record-aggregator` directory, you have a file named `target-env.sbt` containing the Docker registry and repository that application images will be pushed to. Refer to `target-env.sbt.example` for an example.
 
 Once it's complete, you should see at the end of the output a `kubectl cloudflow deploy` command to deploy your application. Run it:
 
@@ -35,6 +39,8 @@ Once it's complete, you should see at the end of the output a `kubectl cloudflow
 ----
 $ kubectl cloudflow deploy call-record-aggregator.json
 ----
+
+NOTE: You might be prompted to enter credentials for the Docker registry that hosts your application images, if this is your first time deploying an application using that registry.
 
 Once the deployment of the application starts, you can view the progress of the application using the `kubectl cloudflow status` command:
 
@@ -62,17 +68,11 @@ split             call-record-aggregator-split-54f5844cf5-z8fp2              1/1
 
 == Using Lightbend Console
 Lightbend Console is a suite of tools provided by Lightbend that enables observing and monitoring Kubernetes applications.
-To monitor the call-record-aggregator application you just deployed, first find the pod in the namespace where you deployed Cloudflow (by default the `default` namespace) whose name starts with `console-frontend-`:
+To monitor the call-record-aggregator application you just deployed, run `kubectl port-forward` on the `console-frontend` deployment:
 
 [source,bash]
 ----
-$ kubectl -n <cloudflow-namespace> get pods | awk '{print $1}' | grep -e "console-frontend"
-----
-
-Then run:
-[source,bash]
-----
-$ kubectl -n <cloudflow-namespace> port-forward pod/<console-frontend-pod> 8080:8080
+$ kubectl -n <cloudflow-namespace> port-forward deployment/console-frontend 8080:8080
 ----
 
 NOTE: Setting up an `Ingress` is the recommended production-ready mechanism of accessing Lightbend Console. Refer to the Console https://developer.lightbend.com/docs/console/current/installation/access.html[documentation] on how to do it.
