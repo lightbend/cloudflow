@@ -1,0 +1,21 @@
+= Find Cloudflow on GCP Marketplace
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+== Locating Cloudflow
+
+https://console.cloud.google.com/marketplace[GCP Marketplace] offers a catalog of software packages that can be quickly deployed to run on Google Cloud. To access Cloudflow on GCP Marketplace, first look for it using the search feature.
+
+In the search box that says "Search for solutions", type "Cloudflow" and then press Enter:
+
+.The GCP Marketplace UI
+image::search-gcp.png[GCP Marketplace search page]
+
+In the next page, click "Cloudflow" in the search results:
+
+.Cloudflow in the Marketplace search result
+image::search-result.png[Cloudflow in search result]
+
+== What's next
+Now you are ready to xref:deploy-cloudflow.adoc[deploy Cloudflow].
