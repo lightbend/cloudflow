@@ -18,7 +18,7 @@ It should look like the following:
 ----
 $ gcloud container clusters get-credentials <cluster-name> --zone <zone> --project <gcp-project>
 ----
-Where, cluster-name refers to your Kubernetes cluster, as identified https://console.cloud.google.com/kubernetes/list[here], and gcp-project refers to your https://cloud.google.com/resource-manager/docs/creating-managing-projects[Google Cloud project].
+Where cluster-name refers to your Kubernetes cluster, as identified https://console.cloud.google.com/kubernetes/list[here], and gcp-project refers to your https://cloud.google.com/resource-manager/docs/creating-managing-projects[Google Cloud project].
 
 == Building and Deploying call-record-aggregator
 
