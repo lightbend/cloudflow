@@ -3,7 +3,6 @@
 :description: Quickly develop, orchestrate, and operate distributed streaming data pipelines with Apache Spark, Apache Flink, and Akka Streams on Kubernetes
 :keywords: spark, kubernetes, stream, streaming, stream processing, apache spark, apache flink, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
 
-
 Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes. 
 With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts. 
 Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours. 
@@ -29,6 +28,7 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 * A CLI, in the form of a `kubectl plugin`, that facilitates manual, scripted, and automated (CI/CD) management of the application.
 
 == Where To Go Next?
+* https://console.cloud.google.com/marketplace/details/lightbend-public/cloudflow[Get Cloudflow on Google Cloud Marketplace]
 * link:./docs/current/index.html[Introducing Cloudflow]
 * link:./docs/current/app-development-process.html[The Cloudflow development process]
 * link:./docs/current/get-started/index.html[Getting started with Cloudflow]
