@@ -23,15 +23,30 @@ Where cluster-name refers to your Kubernetes cluster, as identified https://cons
 == Building and Deploying call-record-aggregator
 
 Next we'll deploy a sample Cloudflow application called https://github.com/lightbend/cloudflow/tree/master/examples/call-record-aggregator[call-record-aggregator] to the cluster.
-Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd` into the `examples/call-record-aggregator` directory. Then run the following command to build the application:
+Clone the Cloudflow https://github.com/lightbend/cloudflow[Github repo] and `cd` into the `examples/call-record-aggregator` directory.
+
+Check that you have a file named `target-env.sbt` containing the Docker registry and repository that application images will be pushed to.
+Refer to `target-env.sbt.example` for a template.
+For example, if you are using Google Container Registry (GCR), your `target-env.sbt` should look like below:
+
+[source]
+----
+ThisBuild / cloudflowDockerRegistry := Some("<region>.gcr.io")
+ThisBuild / cloudflowDockerRepository := Some("<gcloud-project-id>")
+----
+Where region is `us`, `eu`, `asia`, or empty, in which case the dot following it should be omitted too.
+
+The next step is to log in to the Docker registry specified in `target-env.sbt`.
+For most registries, `docker login` will work.
+For GCR, you can also run `gcloud auth configure-docker`.
+
+Now run the following command to build the application:
 
 [source,bash]
 ----
 $ sbt buildApp
 ----
 This step may take several minutes to complete, as it will build and push multiple Docker images to the Docker repository configured in `target-env.sbt`.
-
-NOTE: before running `sbt buildApp`, make sure under `call-record-aggregator` directory, you have a file named `target-env.sbt` containing the Docker registry and repository that application images will be pushed to. Refer to `target-env.sbt.example` for an example.
 
 Once it's complete, you should see at the end of the output a `kubectl cloudflow deploy` command to deploy your application. Run it:
 

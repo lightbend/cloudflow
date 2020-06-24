@@ -20,6 +20,8 @@ If you have an existing cluster, you may select it from the dropdown menu.
 Or you can quickly spin up a new cluster in your preferred cluster zone by clicking the "Create cluster" button.
 Note that your existing cluster may not be available for selection if it does not meet the resource requirements, in which case you'll also need to create a new cluster.
 
+NOTE: The minimal resource requirements for a cluster to run Cloudflow are three nodes where each node has at least 4 CPU cores and 6 Gi of memory.
+
 Once your cluster is up and running, go through the other configuration options.
 Some of them have a tooltip next to them that explains the purpose of that configuration option.
 
