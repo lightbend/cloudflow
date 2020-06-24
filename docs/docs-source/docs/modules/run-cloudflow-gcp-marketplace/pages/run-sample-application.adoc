@@ -75,7 +75,7 @@ To monitor the call-record-aggregator application you just deployed, run `kubect
 $ kubectl -n <cloudflow-namespace> port-forward deployment/console-frontend 8080:8080
 ----
 
-NOTE: Setting up an `Ingress` is the recommended production-ready mechanism of accessing Lightbend Console. Refer to the Console https://developer.lightbend.com/docs/console/current/installation/access.html[documentation] on how to do it.
+NOTE: Setting up an `Ingress` is the recommended production-ready mechanism of accessing Lightbend Console. Refer to the Console https://developer.lightbend.com/docs/console/current/installation/access.html[documentation] on how to set it up.
 
 Now from the browser, go to http://127.0.0.1:8080/ and you should see the following page:
 
