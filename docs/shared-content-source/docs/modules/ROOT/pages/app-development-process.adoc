@@ -203,7 +203,7 @@ Depending on the project structure, this process will generate one or more Docke
 
 Those images get published to the Docker repository of your choice, which must be configured in the project.
 
-The process of building the application created and published those Docker images. 
+The process of building the application creates and publishes those Docker images. 
 The final result is an application descriptor encoded as a JSON file that can be used with the `kubectl` Cloudflow plugin to deploy the application to a cluster.
 
 The `buildApp` task in the `sbt-cloudflow` plugin loads, verifies, creates and publishes the Docker images, and finally generates the JSON descriptor that we can use to deploy the application. 
