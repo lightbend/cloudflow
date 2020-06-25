@@ -168,7 +168,7 @@ While the application is running, you can interact with it through its open inte
 If you included a Streamlet with a server endpoint, it's `HTTP` ports will be available to receive data. 
 Another interesting way of exercising your application is to include data generating streamlets that simulate and inject the expected data into the running system.
 
-To inspect the output use command line tools, like `tail`, or text editors to consume the output generated in the temporary files that capture the streamlet's output and logs.
+To inspect the output, use command line tools, like `tail`, or text editors to consume the output generated in the temporary files that capture the streamlet's output and logs.
 
 TIP: the `file://` URLs provided by the `runLocal` output are clickable in most systems.
 
