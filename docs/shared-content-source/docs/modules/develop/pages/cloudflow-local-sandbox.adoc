@@ -4,7 +4,7 @@
 include::ROOT:partial$include.adoc[]
 
 One of the most common concerns of every distributed application (cloud) developer is the fairly long and troublesome cycle of developing and testing their applications on a cluster. 
-End to end testing of a distributed streaming application usually requires the creation of artifacts, such as Docker images, a lengthy upload of those artifacts to some repository, and available cluster resources to testing.
+End to end testing of a distributed streaming application usually requires the creation of artifacts, such as Docker images, a lengthy upload of those artifacts to some repository, and available cluster resources for testing.
 
 Cloudflow includes a local execution mode, called _Sandbox_. 
 It lets you execute your complete application as a lightweight process on your machine. 
