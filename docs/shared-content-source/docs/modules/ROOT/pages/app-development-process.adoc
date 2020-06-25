@@ -198,7 +198,7 @@ You get a blazing fast feedback loop for the functionality you are developing--r
 == Publishing the Application Artifacts
 
 Once you are confident that the application functions as expected, you can build and publish its artifacts. 
-Cloudflow applications are packaged as a Docker images that contain the necessary dependencies to run the different streamlets on their respective backends.
+Cloudflow applications are packaged as Docker images that contain the necessary dependencies to run the different streamlets on their respective backends.
 Depending on the project structure, this process will generate one or more Docker images, at least one for each runtime used in the application. 
 
 Those images get published to the Docker repository of your choice, which must be configured in the project.
