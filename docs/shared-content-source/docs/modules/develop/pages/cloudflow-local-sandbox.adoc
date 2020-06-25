@@ -154,7 +154,7 @@ Otherwise, the connection to it will fail.
 
 Local Configuration::
 It's possible to provide a custom configuration for the streamlets running in local mode.
-For example, to connect to a local instance of a database, instead to an external (cloud) service.
+For example, to connect to a local instance of a database, instead of an external (cloud) service.
 The local configuration is explained below in  <<local-conf>> section.
 
 Output::
