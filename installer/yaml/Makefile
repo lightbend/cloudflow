@@ -207,10 +207,10 @@ ${cloudflow_operator_managed_strimzi_work_dir}/base.yaml: helm-fetch-cloudflow-o
 			--set kafka.strimzi.topicOperatorNamespace="${strimziTopicOperatorNamespacePH}" \
 			--set operator.image.name="${cloudflow_operator_image_name}:${cloudflowOperatorImageTagPH}"\
 			--set operator.image.tag="${cloudflowOperatorImageTagPH}" \
-			--set operator.resources.requests.memory="256M" \
-			--set operator.resources.requests.cpu="1" \
+			--set operator.resources.requests.memory="512M" \
+			--set operator.resources.requests.cpu="100m" \
 			--set operator.resources.limits.memory="1024M" \
-			--set operator.resources.limits.cpu="2" \
+			--set operator.resources.limits.cpu="1" \
 			--set operator.persistentStorageClass="${cloudflowRWMStorageClassPH}",\
 			${cloudflow_operator_chart_name} | cat > "../../${cloudflow_operator_managed_strimzi_work_dir}/base.yaml")
 
