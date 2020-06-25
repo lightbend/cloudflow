@@ -56,7 +56,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/m
 
 Akka Streams and Flink-based `Streamlets` follow the same pattern. 
 
-== Compose The Application Flow with a Blueprint
+== Compose the Application Flow with a Blueprint
 
 Once you have developed components as Streamlets, you compose the application's end-to-end flow by creating a _blueprint_. 
 The blueprint declares the `streamlet` instances that belong to an application and how each streamlet instance connects to the others.
