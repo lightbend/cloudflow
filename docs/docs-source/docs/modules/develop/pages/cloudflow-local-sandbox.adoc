@@ -1,4 +1,4 @@
-= Using a local sandbox
+= Using the Local Sandbox
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
