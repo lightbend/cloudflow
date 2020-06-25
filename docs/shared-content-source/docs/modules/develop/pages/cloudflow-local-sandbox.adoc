@@ -158,7 +158,7 @@ For example, to connect to a local instance of a database, instead to an externa
 The local configuration is explained below in  <<local-conf>> section.
 
 Output::
-The Output panel shows the directory where the all the output of the running application is made available. 
+The Output panel shows the directory where all the output of the running application is made available. 
 You can use your favorite text editor or command-line tools to inspect the output and verify that your application is doing what you expect.
 
 === The Running Application
