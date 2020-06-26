@@ -10,11 +10,19 @@ metadata:
     cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
 spec:
   kafka:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2G
     storage:
       type: persistent-claim
       class: __kafkaClusterCr.kafkaPersistentStorageClass__
 
   zookeeper:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2G
     storage:
       type: persistent-claim
       class: __kafkaClusterCr.zookeeperPersistentStorageClass__

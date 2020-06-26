@@ -33,3 +33,10 @@ spec:
             - -webhook-port=8080
             - -webhook-svc-name=cloudflow-webhook
             - -webhook-config-name=cloudflow-sparkoperator-webhook-config
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1024M
+            requests:
+              cpu: 100m
+              memory: 512M
