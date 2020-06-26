@@ -103,7 +103,7 @@ In the event-based model used by Cloudflow, `inlet`{empty}s are stream consumers
 
 Consumers and producers do not connect point-to-point to each other. 
 Instead, we use topics to provide a communication channel between producers and consumers.
-This model allows for an organic growth of an application over time, as newly implemented processes, modelled as streamlets, can be added to an existing application by connecting them to the list of consumers at the appropriate place in the data flow.
+This model allows for an organic growth of an application over time, as newly implemented processes, modeled as streamlets, can be added to an existing application by connecting them to the list of consumers at the appropriate place in the data flow.
 
 We can see these connections in the following diagram.
 
