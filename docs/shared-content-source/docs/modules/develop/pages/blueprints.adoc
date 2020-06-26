@@ -2,12 +2,14 @@
 
 include::ROOT:partial$include.adoc[]
 
-In Cloudflow, a streaming application is composed of `Streamlets`.
-Each `Streamlet` defines one or more inlets and outlets.
-To create a functional _pipeline_, we must define how the `Streamlets` connect together by declaring which outlet from one `Streamlet` should connect with an inlet of another.
+In Cloudflow, a streaming application is composed of connected `Streamlet`{empty}s.
+Each `Streamlet` defines zero or more inlets and outlets.
+To create a working application, we must define how the `Streamlet`{empty}s connect together, using _topics_ as communication channels.
+ by declaring which outlet from one `Streamlet` should connect with an inlet of another.
 
-A blueprint specifies which streamlets should be used in a pipeline and how they should be connected together.
-It must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
+A blueprint specifies the streamlets used in an application and how they connect together.
+In practical terms, a blueprint is a text file that uses the HOCON format to declare the streamlets in an application, the topics used as communication channels, and the connections between streamlets and topics.
+ the It must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
 
 An example of a blueprint is shown below:
 
@@ -18,57 +20,204 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala
 
 NOTE: Blueprint files are specified in the https://github.com/lightbend/config/blob/master/HOCON.md[HOCON,window=_blank] format, a superset of JSON.
 
-The above example shows four streamlets, `sensor-data`, `metrics`, `validation`, and `reporter`. The `streamlets` section declares the streamlets used in that blueprint and gives them a short name that we use to refer to them in the next section.
-The `connections` section declares how the inlets and outlets of the different participating `streamlets` are connected.
+The above example shows four streamlets, `sensor-data`, `metrics`, `validation`, and `reporter`. 
+The `streamlets` section declares the streamlets used in the application and gives them a short name.
+The `topics` section declares topics and describes the connections between streamlets and topics.
 
-A blueprint file always consists of one `blueprint` section. The `streamlets` section defines which streamlets must be used in the blueprint and assigns a reference to every streamlet.
-The streamlet references are later on used for connecting streamlets together. Lets zoom in on the streamlets section in the example below:
+Let's review these sections in more detail.
+
+== The `streamlets` Section
+
+In this section, we describe the streamlets used within the application.
+Each streamlet declaration consists of `<short-name> = <fully qualified implementation file>` pairs.
+Declaring streamlets in this way ensures two important conditions: 
+
+- Only streamlets declared in this section will be used in the application, regardless of the available streamlets in the implementing project.
+- The same streamlet implementation class can be instantiated multiple times by declaring multiple streamlet names that point to the same implementation class.
+
+You should view a `Streamlet`, implemented as a Java or Scala class, as a reusable component that can be used to create instances, not as a singleton object that will only run once.
+
+TIP: Using the configuration system, different streamlet instances of the same implementation can be given a different configuration so that they can work in customized ways.
+
+=== Understanding the `short-name`
+
+There are a few characteristics related to the streamlet name given with the `short-name`, as we list here:
+
+- The short name gives a name to a streamlet instance.
+- The implementation of that instance is indicated by the fully qualified name (FQN) of the streamlet implementation class. 
+- Each short name must be unique within the application.
+
+The `short-name` becomes part of the application in the following ways:
+
+- We use this name to refer to the streamlets in the _topics_ section.
+- It becomes the name of the component in the application runtime (either on a cluster or on the local sandbox)
+
+=== The `streamlets` Section: An Example 
+
+Lets zoom in on the streamlets section in the example below:
 
 [source,hocon]
 ----
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=streamlets]
 ----
 
-The above example shows four streamlet types defined in the `cloudflow.examples.sensordata` package.
-Streamlet types (classes or objects) are specified by their fully qualified names.
+The above example shows four streamlet instances defined in the `com.example` package:
 
-Every assignment in the `streamlets` section assigns a streamlet reference to an instance of a type of streamlet. Once deployed, Cloudflow will run at least one streamlet–depending on the requested number of replicas–for each streamlet reference that has been defined in the blueprint.
+- `sensor-data`
+- `metrics`
+- `validation`
+- `reporter`
 
-The Streamlets can be defined in Java or Scala,
-as Java or Scala classes with default constructors or as Scala objects. These classes must be available on the classpath, which can be defined directly in the Cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
+Streamlet classes are specified by their fully qualified names:
 
-[NOTE]
-====
-You can define more than one streamlet reference to the same Scala object.
-In that case, as many streamlets as assigned streamlet references will be run once everything is deployed (assuming a scaling factor of one). You should view a Streamlet, defined as a Scala object as a template that can be used many times to instantiate streamlets, not as a singleton object that will only run once as a streamlet.
-====
-
-The streamlet references assigned in the `streamlets` section can be used in the `connections` section to connect streamlets together.
-Lets zoom in on the streamlets section in the example below:
-
-[source,hocon]
+[source, json]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=connections]
+sensor-data = com.example.SensorDataIngress
 ----
 
-Every expression in a connections section defines how an outlet connects to one or more inlets. Every assignment follows the following pattern:
+It is possible to declare additional instances of any streamlet class. 
+This would be a legal declaration:
 
-[source,hocon]
+[source, json]
 ----
-  <streamlet-reference-a>.<outlet> = [<streamlet-reference-b>.<inlet>, <streamlet-reference-c>.<inlet>, ...]
+valid-metric-reporter   = com.example.MetricsEgress
+invalid-metric-reporter = com.example.MetricsEgress
 ----
 
-Streamlet outlets and inlets are always prefixed by a streamlet-reference, followed by a dot ('.'). As you can see from the above pattern, it is possible to connect many inlets to the same outlet.
+Once deployed, Cloudflow will run at least one streamlet instance–depending on the requested number of replicas–for each streamlet reference that has been defined in the blueprint.
 
-Every streamlet type has a shape, defining how many inlets and outlets it has. All streamlets implement a `shape()` method which returns the shape of the streamlet.
-In this case, the streamlet referenced by `sensor-data` has a single outlet named "out".
-Similarly, the streamlet referenced by "metrics" has one inlet named "in" and one outlet named "out".
+// Not sure that this belongs here
+// The Streamlets can be defined in Java or Scala, as Java or Scala classes with default constructors.
+These classes must be available on the classpath, which can be defined directly in the Cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
 
-As discussed earlier, inlets and outlets of streamlets are explicitly typed, e.g. they only handle data that conform to specific https://avro.apache.org/docs/current/[Avro,window=_blank] schemas. Inlets can only be connected to outlets if their schemas are compatible. You can verify if the blueprint connects all the streamlets correctly by using:
+The streamlet references assigned in the `streamlets` section can be used in the `topics` section to connect streamlets and topics together, as we explore in the next section.
+
+== The `topics` Section
+
+In the `topics` section, we define the connections of an application.
+As we explained in xref:app-development-process.adoc[the Cloudflow development process], streamlets have `inlet`{empty}s and `outlet`{empty}s.
+
+=== Consumers and Producers
+
+In the event-based model used by Cloudflow, `inlet`{empty}s are stream consumers and `outlet`{empty}s are stream producers. 
+
+Consumers and producers do not connect point-to-point to each other. 
+Instead, we use topics to provide a communication channel between producers and consumers.
+This model allows for an organic growth of an application over time, as newly implemented processes, modelled as streamlets, can be added to an existing application by connecting them to the list of consumers at the appropriate place in the data flow.
+
+We can see these connections in the following diagram.
+
+[[ing-proc-eggr]]
+image::streamlets-and-topics.png[Streamlets and Topics, title="Streamlets and Topics"]
+
+[[basic-config]]
+=== Basic Declaration of Topics, Consumers, and Producers
+
+In a blueprint definition, we define topics by adding a named configuration stanza to the `topics` section for each topic that we want to use.
+
+Let's consider the following generic definition:
+
+[source, HOCON]
+----
+my-topic-name {
+  producers = [streamlet-a1.out, streamlet-a2.out]
+  consumers = [streamlet-b.in]
+}
+----
+
+We can appreciate in this snippet that:
+
+- The name of the configuration, `my-topic-name`, corresponds to the name of the topic we want to define.
+- `producers` is a list of zero or more streamlet outlets (data producers)
+- `consumers` is a list of zero or more streamlet inlets (data consumers)
+
+At deployment time, the Cloudflow operator will create a topic called `my-topic-name` on the Kafka broker managed by Cloudflow.
+
+WARNING: The topic name is global to all applications deployed with Cloudflow on the same cluster. 
+
+
+=== Advanced Topic Configuration
+
+In <<basic-config>>, we saw how to declare a _built-in topic_ in Cloudflow to connect two or more Streamlets.
+
+It is possible to extend the topic definition with additional configuration parameters to connect to arbitrary Kafka topics, hosted locally, on a remote server, or even connect to a managed Cloud service.
+
+In the following snippet, we declare a three topics that connect to an external managed Kafka instance.
+(Note that the credentials are redacted for obvious reasons)
+
+[source, HOCON]
+----
+cloudflow {
+  topics {
+    rides = ${shared-config} {      //<1>
+      topic.name = "incoming-rides" //<2>
+      consumers = [...]
+      producers = [...]
+    }
+    fares = ${shared-config} {      
+      topic.name = "incoming-fares"
+      consumers = [...]
+      producers = [...]
+    }
+  }
+}
+shared-config { //<3>                    
+  managed = no                       //<4>
+  producer-config = ${kafka-connection-config} {
+    # more config can be added here from Kafka ProducerConfig (see org.apache.kafka.clients.producer.ProducerConfi)
+  }
+  consumer-config = ${kafka-connection-config} {
+    # more config can be added here from Kafka ConsumerConfig (see org.apache.kafka.clients.consumer.ConsumerConfig)
+  }
+}
+----
+<1> Creates a topic definition by extending the `shared-config` with additional configuration.
+<2> Set the topic name explicitly, using the `topic.name` configuration key.
+<3> Adds an arbitrary configuration section to the blueprint definition.
+<4> Sets the `managed` topic flag to false.
+
+
+In the snippet above, we are centralizing the common configuration for all topics in a `shared-config` configuration entry.
+We then use the HOCON configuration extension syntax, as in `${shared-config} {...}` to extend the common configuration with the specific values required for each topic definition.
+
+We are also using the explicit `topic.name` property instead of using the default name of the configuration object.
+
+It is important to note the presence of the flag `managed`, which indicated whether Cloudflow should create the topic (`managed=true` (default)) or not (`managed=false`).
+
+
+We can setup the Kafka provider configuration in a separate configuration file, like this:
+
+.`kafka-provider.conf`
+[source, HOCON]
+----
+kafka-connection-config {
+  bootstrap.servers="my-server.europe-west1.gcp.cloud:9092"
+  security.protocol="SASL_SSL"
+  sasl.jaas.config="org.apache.kafka.common.security.plain.PlainLoginModule   required username=\"MYAPIKEY\"   password=\"MyPassWord\";"
+  ssl.endpoint.identification.algorithm="https"
+  sasl.mechanism="PLAIN"
+}
+----
+
+Then, at deployment time, we provide our additional configuration file (`kafka-provider.conf`) to the deploy command.
+
+[sorce, bash]
+----
+kubectl cloudflow deploy -u _json_key --password-stdin \
+    /path/to/examples/taxi-ride/target/taxi-ride-fare.json  --conf kafka-provider.conf
+----    
+
+== Blueprint Verification
+
+As discussed earlier, inlets and outlets of streamlets are explicitly typed, i.e. they only handle data that conform to specific https://avro.apache.org/docs/current/[Avro,window=_blank] schemas. 
+Inlets and outlets can only be connected to a topic if their schemas are compatible. 
+
+Cloudflow provides a blueprint verification task as part of the `sbt-cloudflow` plugin.
+You can explicitly verify if the blueprint connects all the streamlets correctly by using:
 
 [source,bash]
 ----
   sbt verifyBlueprint
 ----
 
-The blueprint is automatically verified when `sbt buildAndPublish` is used.
+The blueprint is automatically verified when application-level targets, like `buildApp` and `runLocal` are used.
