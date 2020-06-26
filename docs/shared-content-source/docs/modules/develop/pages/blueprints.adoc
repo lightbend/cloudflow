@@ -172,7 +172,7 @@ shared-config { //<3>
 }
 ----
 <1> Creates a topic definition by extending the `shared-config` with additional configuration.
-<2> Set the topic name explicitly, using the `topic.name` configuration key.
+<2> Sets the topic name explicitly, using the `topic.name` configuration key.
 <3> Adds an arbitrary configuration section to the blueprint definition.
 <4> Sets the `managed` topic flag to false.
 
