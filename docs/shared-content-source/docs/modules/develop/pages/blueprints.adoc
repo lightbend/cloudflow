@@ -185,7 +185,7 @@ We are also using the explicit `topic.name` property instead of using the defaul
 It is important to note the presence of the flag `managed`, which indicated whether Cloudflow should create the topic (`managed=true` (default)) or not (`managed=false`).
 
 
-We can setup the Kafka provider configuration in a separate configuration file, like this:
+We can set up the Kafka provider configuration in a separate configuration file, like this:
 
 .`kafka-provider.conf`
 [source, HOCON]
