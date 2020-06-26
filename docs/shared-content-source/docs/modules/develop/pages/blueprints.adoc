@@ -4,12 +4,12 @@ include::ROOT:partial$include.adoc[]
 
 In Cloudflow, a streaming application is composed of connected `Streamlet`{empty}s.
 Each `Streamlet` defines zero or more inlets and outlets.
-To create a working application, we must define how the `Streamlet`{empty}s connect together, using _topics_ as communication channels.
- by declaring which outlet from one `Streamlet` should connect with an inlet of another.
+To create a working application, we must describe how the `Streamlet`{empty}s connect together, using _topics_ as communication channels.
 
-A blueprint specifies the streamlets used in an application and how they connect together.
+A blueprint specifies the streamlets used in an application and how they are connected.
 In practical terms, a blueprint is a text file that uses the HOCON format to declare the streamlets in an application, the topics used as communication channels, and the connections between streamlets and topics.
- The blueprint must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
+
+The blueprint must be defined within the file structure of the Cloudflow application _sbt project_, in the file `src/main/blueprint/blueprint.conf`.
 
 An example of a blueprint is shown below:
 
@@ -37,7 +37,7 @@ Declaring streamlets in this way ensures two important conditions:
 
 You should view a `Streamlet`, implemented as a Java or Scala class, as a reusable component that can be used to create instances, not as a singleton object that will only run once.
 
-TIP: Using the configuration system, different streamlet instances of the same implementation can be given a different configuration so that they can work in customized ways.
+TIP: Using the configuration system, different streamlet instances of the same implementation can be given different configurations so that they can work in customized ways.
 
 === Understanding the `short-name`
 
@@ -50,7 +50,7 @@ There are a few characteristics related to the streamlet name given with the `sh
 The `short-name` becomes part of the application in the following ways:
 
 - We use this name to refer to the streamlets in the _topics_ section.
-- It becomes the name of the component in the application runtime (either on a cluster or on the local sandbox)
+- It becomes the name of the component in the application runtime (deployments or pods on a Kubernetes cluster)
 
 === The `streamlets` Section: An Example 
 
@@ -70,7 +70,7 @@ The above example shows four streamlet instances defined in the `com.example` pa
 
 Streamlet classes are specified by their fully qualified names:
 
-[source, json]
+[source, HOCON]
 ----
 sensor-data = com.example.SensorDataIngress
 ----
@@ -78,7 +78,7 @@ sensor-data = com.example.SensorDataIngress
 It is possible to declare additional instances of any streamlet class. 
 This would be a legal declaration:
 
-[source, json]
+[source, HOCON]
 ----
 valid-metric-reporter   = com.example.MetricsEgress
 invalid-metric-reporter = com.example.MetricsEgress
@@ -90,7 +90,7 @@ Once deployed, Cloudflow will run at least one streamlet instance–depending on
 // The Streamlets can be defined in Java or Scala, as Java or Scala classes with default constructors.
 These classes must be available on the classpath, which can be defined directly in the Cloudflow application sbt project or in any dependency that the project has specified, as you would expect of any sbt project.
 
-The streamlet references assigned in the `streamlets` section can be used in the `topics` section to connect streamlets and topics together, as we explore in the next section.
+The streamlet references assigned in the `streamlets` section can be used in the `topics` section to connect streamlets and topics, as we explore in the next section.
 
 == The `topics` Section
 
@@ -99,11 +99,12 @@ As we explained in xref:app-development-process.adoc[the Cloudflow development p
 
 === Consumers and Producers
 
-In the event-based model used by Cloudflow, `inlet`{empty}s are stream consumers and `outlet`{empty}s are stream producers. 
+In the event-based model used by Cloudflow, `inlet`{empty}s are stream consumers, and `outlet`{empty}s are stream producers. 
 
 Consumers and producers do not connect point-to-point to each other. 
 Instead, we use topics to provide a communication channel between producers and consumers.
-This model allows for an organic growth of an application over time, as newly implemented processes, modeled as streamlets, can be added to an existing application by connecting them to the list of consumers at the appropriate place in the data flow.
+This model allows for organic growth of an application over time.
+Newly implemented processes, modeled as streamlets, can be added to an existing application by connecting them to the list of consumers at the appropriate place in the data flow.
 
 We can see these connections in the following diagram.
 
@@ -161,10 +162,10 @@ cloudflow {
     }
   }
 }
-shared-config { //<3>                    
+shared-config {                      //<3>                    
   managed = no                       //<4>
   producer-config = ${kafka-connection-config} {
-    # more config can be added here from Kafka ProducerConfig (see org.apache.kafka.clients.producer.ProducerConfi)
+    # more config can be added here from Kafka ProducerConfig (see org.apache.kafka.clients.producer.ProducerConfig)
   }
   consumer-config = ${kafka-connection-config} {
     # more config can be added here from Kafka ConsumerConfig (see org.apache.kafka.clients.consumer.ConsumerConfig)
@@ -178,7 +179,7 @@ shared-config { //<3>
 
 
 In the snippet above, we are centralizing the common configuration for all topics in a `shared-config` configuration entry.
-We then use the HOCON configuration extension syntax, as in `${shared-config} {...}` to extend the common configuration with the specific values required for each topic definition.
+We then use the HOCON configuration extension syntax, as in +++${shared-config} {...}+++ to extend the common configuration with the specific values required for each topic definition.
 
 We are also using the explicit `topic.name` property instead of using the default name of the configuration object.
 
@@ -201,7 +202,7 @@ kafka-connection-config {
 
 Then, at deployment time, we provide our additional configuration file (`kafka-provider.conf`) to the deploy command.
 
-[sorce, bash]
+[source, bash]
 ----
 kubectl cloudflow deploy -u _json_key --password-stdin \
     /path/to/examples/taxi-ride/target/taxi-ride-fare.json  --conf kafka-provider.conf
@@ -209,7 +210,7 @@ kubectl cloudflow deploy -u _json_key --password-stdin \
 
 == Blueprint Verification
 
-As discussed earlier, inlets and outlets of streamlets are explicitly typed, i.e. they only handle data that conform to specific https://avro.apache.org/docs/current/[Avro,window=_blank] schemas. 
+As discussed earlier, inlets and outlets of streamlets are explicitly typed, i.e., they only handle data that conform to specific https://avro.apache.org/docs/current/[Avro,window=_blank] schemas. 
 Inlets and outlets can only be connected to a topic if their schemas are compatible. 
 
 Cloudflow provides a blueprint verification task as part of the `sbt-cloudflow` plugin.
@@ -220,4 +221,4 @@ You can explicitly verify if the blueprint connects all the streamlets correctly
   sbt verifyBlueprint
 ----
 
-The blueprint is automatically verified when application-level targets, like `buildApp` and `runLocal` are used.
+The blueprint is automatically verified when you use application-level targets, like `buildApp` and `runLocal`.
