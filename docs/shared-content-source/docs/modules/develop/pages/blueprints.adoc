@@ -9,7 +9,7 @@ To create a working application, we must define how the `Streamlet`{empty}s conn
 
 A blueprint specifies the streamlets used in an application and how they connect together.
 In practical terms, a blueprint is a text file that uses the HOCON format to declare the streamlets in an application, the topics used as communication channels, and the connections between streamlets and topics.
- the It must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
+ The blueprint must be defined in the file `src/main/blueprint/blueprint.conf` within the file structure of the Cloudflow application _sbt project_.
 
 An example of a blueprint is shown below:
 
