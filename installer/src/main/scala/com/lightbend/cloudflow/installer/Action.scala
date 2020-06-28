@@ -139,6 +139,7 @@ final case class CloudflowOperatorManagedStrimzi()(implicit cr: CloudflowInstanc
         "cloudflowOperator.persistentStorageClass"       -> spec.cloudflowOperator.persistentStorageClass,
         "kafkaClusterCr.kafkaPersistentStorageClass"     -> spec.kafkaClusterCR.kafkaPersistentStorageClass,
         "kafkaClusterCr.zookeeperPersistentStorageClass" -> spec.kafkaClusterCR.zooKeeperPersistentStorageClass,
+        "cloudflowOperator.imageName"                    -> spec.cloudflowOperator.imageName,
         "cloudflowOperator.imageTag"                     -> spec.cloudflowOperator.imageTag
       )
     )
@@ -150,7 +151,8 @@ final case class SparkOperator()(implicit cr: CloudflowInstance.CR) extends Kube
   override def overlayValues: Option[Map[String, String]] =
     Some(
       Map(
-        "sparkOperator.image" -> instance.spec.sparkOperator.image
+        "sparkOperator.imageName" -> instance.spec.sparkOperator.imageName,
+        "sparkOperator.imageTag" -> instance.spec.sparkOperator.imageTag
       )
     )
 }
@@ -159,7 +161,9 @@ final case class FlinkOperator()(implicit cr: CloudflowInstance.CR) extends Kube
   override def overlayValues: Option[Map[String, String]] =
     Some(
       Map(
-        "flinkOperator.serviceAccount" -> instance.spec.flinkOperator.serviceAccount
+        "flinkOperator.serviceAccount" -> instance.spec.flinkOperator.serviceAccount,
+        "flinkOperator.imageName" -> instance.spec.flinkOperator.imageName,
+        "flinkOperator.imageTag" -> instance.spec.flinkOperator.imageTag,
       )
     )
 }

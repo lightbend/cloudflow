@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
         - name: flinkoperator-gojson
-          image: lyft/flinkk8soperator:v0.4.0
+          image: __flinkOperator.imageName__:__flinkOperator.imageTag__
           resources:
             limits:
               cpu:     "2"

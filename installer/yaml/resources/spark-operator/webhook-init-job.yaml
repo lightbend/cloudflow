@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: main
-          image: lightbend/sparkoperator:__sparkOperator.image__
+          image: __sparkOperator.imageName__:__sparkOperator.imageTag__
           command:
             [
               "/usr/bin/gencerts.sh",

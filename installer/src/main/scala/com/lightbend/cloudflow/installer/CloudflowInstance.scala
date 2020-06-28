@@ -13,9 +13,9 @@ object CloudflowInstance {
                                   kafkaPersistentStorageClass: String,
                                   zooKeeperPersistentStorageClass: String)
 
-  final case class FlinkOperator(version: String, serviceAccount: String)
-  final case class SparkOperator(version: String, image: String)
-  final case class CloudflowOperator(imageTag: String, persistentStorageClass: String)
+  final case class FlinkOperator(version: String, serviceAccount: String, imageName: String, imageTag: String)
+  final case class SparkOperator(version: String, imageName: String, imageTag: String)
+  final case class CloudflowOperator(imageName: String, imageTag: String, persistentStorageClass: String)
 
   case class Status(status: String, message: Option[String] = None)
 

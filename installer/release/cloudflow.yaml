@@ -22,14 +22,18 @@ spec:
   flink_operator:
     version: 0.8.2
     service_account: cloudflow-operator
+    image_name: CLOUDFLOW_FLINK_OPERATOR_IMAGE_NAME_PH
+    image_tag: CLOUDFLOW_FLINK_OPERATOR_IMAGE_TAG_PH
   spark_operator:
     version: 0.6.7
-    image: CLOUDFLOW_SPARK_OPERATOR_IMAGE_PH
+    image_name: CLOUDFLOW_SPARK_OPERATOR_IMAGE_NAME_PH
+    image_tag: CLOUDFLOW_SPARK_OPERATOR_IMAGE_TAG_PH
   kafka_cluster_cr:
     name: strimzi
     zoo_keeper_persistent_storage_class: RWO_STORAGE_CLASS_PH
     version: 0.16.2
     kafka_persistent_storage_class: RWO_STORAGE_CLASS_PH
   cloudflow_operator:
+    image_name: CLOUDFLOW_OPERATOR_IMAGE_NAME_PH
     image_tag: CLOUDFLOW_OPERATOR_IMAGE_TAG_PH
     persistent_storage_class: RWM_STORAGE_CLASS_PH
