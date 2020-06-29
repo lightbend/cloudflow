@@ -33,6 +33,10 @@ spec:
     zoo_keeper_persistent_storage_class: RWO_STORAGE_CLASS_PH
     version: 0.16.2
     kafka_persistent_storage_class: RWO_STORAGE_CLASS_PH
+    kafka_image_name: KAFKA_IMAGE_NAME_PH
+    kafka_image_tag: KAFKA_IMAGE_TAG_PH
+    strimzi_operator_image_name: STRIMZI_OPERATOR_IMAGE_NAME_PH
+    strimzi_operator_image_tag: STRIMZI_OPERATOR_IMAGE_TAG_PH
   cloudflow_operator:
     image_name: CLOUDFLOW_OPERATOR_IMAGE_NAME_PH
     image_tag: CLOUDFLOW_OPERATOR_IMAGE_TAG_PH

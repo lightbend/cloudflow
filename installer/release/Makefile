@@ -51,6 +51,22 @@ bootstrap-install-script-${version}.sh: bootstrap-install-script.sh.template clo
 		print "CLOUDFLOW_FLINK_OPERATOR_IMAGE_TAG=\"${cloudflow_flink_operator_image_tag}\""; \
 		next \
 	}\
+	/KAFKA_IMAGE_NAME=""/ {\
+		print "KAFKA_IMAGE_NAME=\"${kafka_image_name}\""; \
+		next \
+	}\
+	/KAFKA_IMAGE_TAG=""/ {\
+		print "KAFKA_IMAGE_TAG=\"${kafka_image_tag}\""; \
+		next \
+	}\
+	/STRIMZI_OPERATOR_IMAGE_NAME=""/ {\
+		print "STRIMZI_OPERATOR_IMAGE_NAME=\"${strimzi_operator_image_name}\""; \
+		next \
+	}\
+	/STRIMZI_OPERATOR_IMAGE_TAG=""/ {\
+		print "STRIMZI_OPERATOR_IMAGE_TAG=\"${strimzi_operator_image_tag}\""; \
+		next \
+	}\
 	{ print } \
 	' bootstrap-install-script.sh.template > bootstrap-install-script-${version}.sh
 	chmod +x bootstrap-install-script-${version}.sh

@@ -9,7 +9,11 @@ metadata:
     app.kubernetes.io/version: __cloudflowOperator.imageTag__
     cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
 spec:
+
   kafka:
+    image: __kakfa.imageName__:__kafka.imageTag__
+    tlsSidecar:
+      image: __kakfa.imageName__:__kafka.imageTag__
     resources:
       requests:
         cpu: 500m
@@ -19,6 +23,9 @@ spec:
       class: __kafkaClusterCr.kafkaPersistentStorageClass__
 
   zookeeper:
+    image: __kakfa.imageName__:__kafka.imageTag__
+    tlsSidecar:
+      image: __kakfa.imageName__:__kafka.imageTag__
     resources:
       requests:
         cpu: 500m
@@ -26,3 +33,26 @@ spec:
     storage:
       type: persistent-claim
       class: __kafkaClusterCr.zookeeperPersistentStorageClass__
+
+  topicOperator:
+    image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+    tlsSidecar:
+      image: __kakfa.imageName__:__kafka.imageTag__
+
+  entityOperator:
+    image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+    userOperator:
+      image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+    tlsSidecar:
+      image: __kakfa.imageName__:__kafka.imageTag__
+
+  cruiseControl:
+    image: __kakfa.imageName__:__kafka.imageTag__
+    tlsSidecar:
+      image: __kakfa.imageName__:__kafka.imageTag__
+
+  jmxTrans:
+    image: __kakfa.imageName__:__kafka.imageTag__
+
+  kafkaExporter:
+    image: __kakfa.imageName__:__kafka.imageTag__

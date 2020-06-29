@@ -10,7 +10,12 @@ cloudflow_operator_chart_dir_in_repo := installer/cloudflow-environment
 
 cloudflow_operator_image_name        := lightbend/cloudflow-operator
 cloudflow_operator_image_tag         := 2.0.0
-spark_operator_image_name 			 := lightbend/sparkoperator
-spark_operator_image_tag 			 := 1.3.3-OpenJDK-2.4.5-1.1.0-cloudflow-2.12
-flink_operator_image_name			 := lyft/flinkk8soperator
-flink_operator_image_tag			 := v0.4.0
+spark_operator_image_name 	     := lightbend/sparkoperator
+spark_operator_image_tag 	     := 1.3.3-OpenJDK-2.4.5-1.1.0-cloudflow-2.12
+flink_operator_image_name	     := lyft/flinkk8soperator
+flink_operator_image_tag	     := v0.4.0
+kafka_image_name		     := strimzi/kafka
+kafka_image_tag			     := 0.16.2-kafka-2.4.0
+strimzi_operator_image_name	     := strimzi/operator
+strimzi_operator_image_tag	     := 0.16.2
+

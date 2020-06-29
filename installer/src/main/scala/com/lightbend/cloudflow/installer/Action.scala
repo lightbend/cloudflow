@@ -140,7 +140,11 @@ final case class CloudflowOperatorManagedStrimzi()(implicit cr: CloudflowInstanc
         "kafkaClusterCr.kafkaPersistentStorageClass"     -> spec.kafkaClusterCR.kafkaPersistentStorageClass,
         "kafkaClusterCr.zookeeperPersistentStorageClass" -> spec.kafkaClusterCR.zooKeeperPersistentStorageClass,
         "cloudflowOperator.imageName"                    -> spec.cloudflowOperator.imageName,
-        "cloudflowOperator.imageTag"                     -> spec.cloudflowOperator.imageTag
+        "cloudflowOperator.imageTag"                     -> spec.cloudflowOperator.imageTag,
+        "kafka.imageName"                                -> spec.kafkaClusterCR.kafkaImageName,
+        "kafka.imageTag"                                 -> spec.kafkaClusterCR.kafkaImageTag,
+        "strimziOperator.imageName"                      -> spec.kafkaClusterCR.strimziOperatorImageName,
+        "strimziOperator.imageTag"                       -> spec.kafkaClusterCR.strimziOperatorImageTag
       )
     )
   }
