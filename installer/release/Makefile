@@ -47,8 +47,8 @@ bootstrap-install-script-${version}.sh: bootstrap-install-script.sh.template clo
 		print "CLOUDFLOW_FLINK_OPERATOR_IMAGE_NAME=\"${cloudflow_flink_operator_image_name}\""; \
 		next \
 	}\
-	/CLOUDFLOW_FLINK_OPERATOR_IMAGE_NAME=""/ {\
-		print "CLOUDFLOW_FLINK_OPERATOR_IMAGE_NAME=\"${cloudflow_flink_operator_image_tag}\""; \
+	/CLOUDFLOW_FLINK_OPERATOR_IMAGE_TAG=""/ {\
+		print "CLOUDFLOW_FLINK_OPERATOR_IMAGE_TAG=\"${cloudflow_flink_operator_image_tag}\""; \
 		next \
 	}\
 	{ print } \

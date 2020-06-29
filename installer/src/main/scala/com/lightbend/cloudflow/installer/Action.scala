@@ -152,7 +152,7 @@ final case class SparkOperator()(implicit cr: CloudflowInstance.CR) extends Kube
     Some(
       Map(
         "sparkOperator.imageName" -> instance.spec.sparkOperator.imageName,
-        "sparkOperator.imageTag" -> instance.spec.sparkOperator.imageTag
+        "sparkOperator.imageTag"  -> instance.spec.sparkOperator.imageTag
       )
     )
 }
@@ -162,8 +162,8 @@ final case class FlinkOperator()(implicit cr: CloudflowInstance.CR) extends Kube
     Some(
       Map(
         "flinkOperator.serviceAccount" -> instance.spec.flinkOperator.serviceAccount,
-        "flinkOperator.imageName" -> instance.spec.flinkOperator.imageName,
-        "flinkOperator.imageTag" -> instance.spec.flinkOperator.imageTag,
+        "flinkOperator.imageName"      -> instance.spec.flinkOperator.imageName,
+        "flinkOperator.imageTag"       -> instance.spec.flinkOperator.imageTag
       )
     )
 }
