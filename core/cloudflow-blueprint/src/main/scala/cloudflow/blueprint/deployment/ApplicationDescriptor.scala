@@ -182,8 +182,8 @@ final case class Topic(
     id: String,
     config: Config = ConfigFactory.empty()
 ) {
-  def name: String     = Try(config.getString("topic.name")).getOrElse(id)
-  def managed: Boolean = Try(config.getBoolean("managed")).getOrElse(true)
+  def name: String     = Try(config.getString(Blueprint.TopicKey)).getOrElse(id)
+  def managed: Boolean = Try(config.getBoolean(Blueprint.ManagedKey)).getOrElse(true)
 }
 
 final case class Endpoint(
