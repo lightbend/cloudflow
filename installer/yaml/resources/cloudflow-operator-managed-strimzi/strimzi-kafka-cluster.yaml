@@ -34,13 +34,9 @@ spec:
       type: persistent-claim
       class: __kafkaClusterCr.zookeeperPersistentStorageClass__
 
-  topicOperator:
-    image: __strimziOperator.imageName__:__strimziOperator.imageTag__
-    tlsSidecar:
-      image: __kafka.imageName__:__kafka.imageTag__
-
   entityOperator:
-    image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+    topicOperator:
+      image: __strimziOperator.imageName__:__strimziOperator.imageTag__
     userOperator:
       image: __strimziOperator.imageName__:__strimziOperator.imageTag__
     tlsSidecar:
@@ -52,7 +48,4 @@ spec:
       image: __kafka.imageName__:__kafka.imageTag__
 
   jmxTrans:
-    image: __kafka.imageName__:__kafka.imageTag__
-
-  kafkaExporter:
     image: __kafka.imageName__:__kafka.imageTag__

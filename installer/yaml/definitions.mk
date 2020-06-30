@@ -18,4 +18,3 @@ kafka_image_name		     := strimzi/kafka
 kafka_image_tag			     := 0.16.2-kafka-2.4.0
 strimzi_operator_image_name	     := strimzi/operator
 strimzi_operator_image_tag	     := 0.16.2
-
