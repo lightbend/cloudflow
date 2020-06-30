@@ -157,12 +157,12 @@ final case class Blueprint(
     val volumeMountProblems     = verifyVolumeMounts(streamletDescriptors)
 
     val unconnectedPortProblems = verifyPortsConnected(verifiedStreamlets, verifiedTopics)
-
+    val portsBoundToManyTopics  = verifyPortsBoundToManyTopics(verifiedStreamlets, verifiedTopics)
     val globalProblems = Vector(
         emptyStreamletsProblem,
         emptyStreamletDescriptorsProblem,
         duplicatesProblem
-      ).flatten ++ unconnectedPortProblems ++ portNameProblems ++ configParameterProblems ++ volumeMountProblems
+      ).flatten ++ unconnectedPortProblems ++ portsBoundToManyTopics ++ portNameProblems ++ configParameterProblems ++ volumeMountProblems
 
     copy(
       streamlets = newStreamlets,
@@ -215,6 +215,22 @@ final case class Blueprint(
     if (inlets.nonEmpty) problems = problems :+ UnconnectedInlets(inlets)
     problems
   }
+  private def verifyPortsBoundToManyTopics(
+      verifiedStreamlets: Vector[VerifiedStreamlet],
+      verifiedTopics: Vector[VerifiedTopic]
+  ): Vector[PortBoundToManyTopics] =
+    // portPath to topic
+    verifiedTopics
+      .flatMap(vt => vt.connections.map(_ -> vt.id))
+      .groupBy { case (vpp, _) => vpp }
+      .flatMap {
+        case (vpp, groupedTopicIds) =>
+          val topicIds = groupedTopicIds.map { case (_, topic) => topic }.toIndexedSeq
+          if (topicIds.size > 1) Some(PortBoundToManyTopics(vpp.portPath.toString, topicIds))
+          else None
+      }
+      .toVector
+      .sortBy(_.path)
 
   private def validate =
     if (problems.isEmpty) Right(this)

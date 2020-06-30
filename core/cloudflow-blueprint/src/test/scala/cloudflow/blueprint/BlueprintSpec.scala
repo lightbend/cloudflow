@@ -252,7 +252,10 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       blueprint.problems.collect { case unconnected: UnconnectedInlets ⇒ unconnected }.size mustBe 0
       val paths = Vector(VerifiedPortPath(ingressRef.name, "out"), VerifiedPortPath(egress2Ref.name, "in"))
         .sortBy(_.toString)
-      blueprint.problems mustBe Vector(
+      blueprint.problems.filterNot {
+        case PortBoundToManyTopics(_, _) => true
+        case _                           => false
+      } mustBe Vector(
         IncompatibleSchema(
           paths(0),
           paths(1)
@@ -593,6 +596,27 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         UnconnectedInlets(Vector(UnconnectedPort(egressRef.name, egress.inlets(0)))),
         InvalidPortPath(ingressRef.name),
         InvalidPortPath(egressRef.name)
+      )
+    }
+
+    "fail when a port is bound to more than one topic" in {
+      val ingress      = randomStreamlet().asIngress[Foo]
+      val processor    = randomStreamlet().asProcessor[Foo, Foo]
+      val ingressRef   = ingress.ref("foo")
+      val processorRef = processor.ref("bar")
+
+      val blueprint = Blueprint()
+        .define(Vector(ingress, processor))
+        .use(ingressRef)
+        .use(processorRef)
+        .connect(Topic("foos"), ingressRef.out, processorRef.in)
+        .connect(Topic("fooos"), processorRef.in)
+        .connect(Topic("foos-processed"), processorRef.out)
+        .connect(Topic("foos-processed2"), processorRef.out)
+      println(blueprint.topics.map(_.verified))
+      blueprint.problems mustBe Vector(
+        PortBoundToManyTopics("bar.in", Vector("foos", "fooos")),
+        PortBoundToManyTopics("bar.out", Vector("foos-processed", "foos-processed2"))
       )
     }
   }
