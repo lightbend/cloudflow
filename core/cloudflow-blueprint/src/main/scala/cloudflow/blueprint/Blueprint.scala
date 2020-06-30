@@ -219,14 +219,13 @@ final case class Blueprint(
       verifiedStreamlets: Vector[VerifiedStreamlet],
       verifiedTopics: Vector[VerifiedTopic]
   ): Vector[PortBoundToManyTopics] =
-    // portPath to topic
     verifiedTopics
-      .flatMap(vt => vt.connections.map(_ -> vt.id))
-      .groupBy { case (vpp, _) => vpp }
+      .flatMap(verifiedTopic => verifiedTopic.connections.map(_ -> verifiedTopic.id))
+      .groupBy { case (verifiedPort, _) => verifiedPort }
       .flatMap {
-        case (vpp, groupedTopicIds) =>
+        case (verifiedPort, groupedTopicIds) =>
           val topicIds = groupedTopicIds.map { case (_, topic) => topic }.toIndexedSeq
-          if (topicIds.size > 1) Some(PortBoundToManyTopics(vpp.portPath.toString, topicIds))
+          if (topicIds.size > 1) Some(PortBoundToManyTopics(verifiedPort.portPath.toString, topicIds))
           else None
       }
       .toVector
