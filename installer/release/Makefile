@@ -23,6 +23,10 @@ bootstrap-install-script-${version}.sh: bootstrap-install-script.sh.template clo
 		print ")"; \
 		next \
 	} \
+	/WEBHOOK_PATCH_JOB_IMAGE=""/ { \
+		print "WEBHOOK_PATCH_JOB_IMAGE=\"${webhook_patch_job_image}\""; \
+		next \
+	} \
 	/CLOUDFLOW_INSTALLER_IMAGE_TAG=""/ { \
 		print "CLOUDFLOW_INSTALLER_IMAGE_TAG=\"${cloudflow_installer_image_tag}\""; \
 		next \

@@ -128,7 +128,16 @@ final case class CompositeAction(val name: String, availableClusterFeatures: Clu
 }
 
 final case class PatchOwnerReferenceOfSparkMutatingWebhookConfig()(implicit cr: CloudflowInstance.CR)
-    extends KubectlApply("patch-owner-reference-of-spark-mutatingwebhookconfig") {}
+    extends KubectlApply("patch-owner-reference-of-spark-mutatingwebhookconfig") {
+  override def overlayValues: Option[Map[String, String]] = {
+    val spec = instance.spec
+    Some(
+      Map(
+        "webhookPatchJob.image" -> spec.sparkOperator.webhookPatchJobImage
+      )
+    )
+  }
+}
 
 final case class CloudflowOperatorManagedStrimzi()(implicit cr: CloudflowInstance.CR)
     extends KubectlApply("cloudflow-operator-managed-strimzi") {

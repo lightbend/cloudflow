@@ -18,7 +18,7 @@ object CloudflowInstance {
                                   strimziOperatorImageTag: String)
 
   final case class FlinkOperator(version: String, serviceAccount: String, imageName: String, imageTag: String)
-  final case class SparkOperator(version: String, imageName: String, imageTag: String)
+  final case class SparkOperator(version: String, imageName: String, imageTag: String, webhookPatchJobImage: String)
   final case class CloudflowOperator(imageName: String, imageTag: String, persistentStorageClass: String)
 
   case class Status(status: String, message: Option[String] = None)

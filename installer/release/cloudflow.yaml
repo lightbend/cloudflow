@@ -28,6 +28,7 @@ spec:
     version: 0.6.7
     image_name: CLOUDFLOW_SPARK_OPERATOR_IMAGE_NAME_PH
     image_tag: CLOUDFLOW_SPARK_OPERATOR_IMAGE_TAG_PH
+    webhook_patch_job_image: WEBHOOK_PATCH_JOB_IMAGE_PH
   kafka_cluster_cr:
     name: strimzi
     zoo_keeper_persistent_storage_class: RWO_STORAGE_CLASS_PH
