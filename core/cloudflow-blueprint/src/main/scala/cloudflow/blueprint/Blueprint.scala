@@ -224,7 +224,7 @@ final case class Blueprint(
       .groupBy { case (verifiedPort, _) => verifiedPort }
       .flatMap {
         case (verifiedPort, groupedTopicIds) =>
-          val topicIds = groupedTopicIds.map { case (_, topic) => topic }.toIndexedSeq
+          val topicIds = groupedTopicIds.map { case (_, topic) => topic }
           if (topicIds.size > 1) Some(PortBoundToManyTopics(verifiedPort.portPath.toString, topicIds))
           else None
       }
