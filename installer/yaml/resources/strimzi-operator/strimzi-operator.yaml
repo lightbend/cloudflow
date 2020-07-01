@@ -50,6 +50,9 @@ spec:
               value: __kafka.imageName__:__kafka.imageTag__
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: __kafka.imageName__:__kafka.imageTag__
+            # Cloudflow uses Kafka 2.4.0 only.
+            # That's why only 2.4.0 image can be configurable
+            # 2.3.1 image, although not used, still needs to be provided or Strimzi will complain
             - name: STRIMZI_KAFKA_IMAGES
               value: |
                 2.3.1=strimzi/kafka:0.16.2-kafka-2.3.1
