@@ -372,10 +372,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   ): Try[Vector[StreamletInstance]] = {
 
     val updatedStreamlets = streamlets.map { streamlet ⇒
-      val streamletLocalConf = if (localConf.hasPath(streamlet.name)) localConf.getConfig(streamlet.name) else ConfigFactory.empty()
-      val volumeMounts       = streamlet.descriptor.volumeMounts
+      val streamletName       = streamlet.name
+      val confPath            = s"cloudflow.streamlets.$streamletName.volume-mounts"
+      val streamletVolumeConf = if (localConf.hasPath(confPath)) localConf.getConfig(confPath) else ConfigFactory.empty()
+      val volumeMounts        = streamlet.descriptor.volumeMounts
       val localVolumeMounts = volumeMounts.map { volumeMount ⇒
-        val tryLocalPath = streamletLocalConf
+        val tryLocalPath = streamletVolumeConf
           .as[Option[String]](volumeMount.name)
           .map(Success(_))
           .getOrElse {
