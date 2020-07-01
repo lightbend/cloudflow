@@ -252,9 +252,9 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       blueprint.problems.collect { case unconnected: UnconnectedInlets ⇒ unconnected }.size mustBe 0
       val paths = Vector(VerifiedPortPath(ingressRef.name, "out"), VerifiedPortPath(egress2Ref.name, "in"))
         .sortBy(_.toString)
-      blueprint.problems.filterNot {
-        case PortBoundToManyTopics(_, _) => true
-        case _                           => false
+      blueprint.problems.filter {
+        case PortBoundToManyTopics(_, _) => false
+        case _                           => true
       } mustBe Vector(
         IncompatibleSchema(
           paths(0),
