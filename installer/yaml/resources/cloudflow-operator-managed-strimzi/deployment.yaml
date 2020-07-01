@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: cloudflow-operator
-          image: "lightbend/cloudflow-operator:__cloudflowOperator.imageTag__"
+          image: "__cloudflowOperator.imageName__:__cloudflowOperator.imageTag__"
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "cloudflow-kafka-bootstrap.__namespace__:9092"

@@ -9,4 +9,4 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: sparkoperator
-    app.kubernetes.io/version: __sparkOperator.image__
+    app.kubernetes.io/version: __sparkOperator.imageTag__

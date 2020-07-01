@@ -7,15 +7,15 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/version: __sparkOperator.image__
+      app.kubernetes.io/version: __sparkOperator.imageTag__
   template:
     metadata:
       labels:
-        app.kubernetes.io/version: __sparkOperator.image__
+        app.kubernetes.io/version: __sparkOperator.imageTag__
     spec:
       containers:
         - name: sparkoperator
-          image: lightbend/sparkoperator:__sparkOperator.image__
+          image: __sparkOperator.imageName__:__sparkOperator.imageTag__
           args:
             - -v=2
             - -namespace=

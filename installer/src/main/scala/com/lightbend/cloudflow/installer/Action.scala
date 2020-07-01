@@ -128,7 +128,16 @@ final case class CompositeAction(val name: String, availableClusterFeatures: Clu
 }
 
 final case class PatchOwnerReferenceOfSparkMutatingWebhookConfig()(implicit cr: CloudflowInstance.CR)
-    extends KubectlApply("patch-owner-reference-of-spark-mutatingwebhookconfig") {}
+    extends KubectlApply("patch-owner-reference-of-spark-mutatingwebhookconfig") {
+  override def overlayValues: Option[Map[String, String]] = {
+    val spec = instance.spec
+    Some(
+      Map(
+        "webhookPatchJob.image" -> spec.sparkOperator.webhookPatchJobImage
+      )
+    )
+  }
+}
 
 final case class CloudflowOperatorManagedStrimzi()(implicit cr: CloudflowInstance.CR)
     extends KubectlApply("cloudflow-operator-managed-strimzi") {
@@ -139,18 +148,37 @@ final case class CloudflowOperatorManagedStrimzi()(implicit cr: CloudflowInstanc
         "cloudflowOperator.persistentStorageClass"       -> spec.cloudflowOperator.persistentStorageClass,
         "kafkaClusterCr.kafkaPersistentStorageClass"     -> spec.kafkaClusterCR.kafkaPersistentStorageClass,
         "kafkaClusterCr.zookeeperPersistentStorageClass" -> spec.kafkaClusterCR.zooKeeperPersistentStorageClass,
-        "cloudflowOperator.imageTag"                     -> spec.cloudflowOperator.imageTag
+        "cloudflowOperator.imageName"                    -> spec.cloudflowOperator.imageName,
+        "cloudflowOperator.imageTag"                     -> spec.cloudflowOperator.imageTag,
+        "kafka.imageName"                                -> spec.kafkaClusterCR.kafkaImageName,
+        "kafka.imageTag"                                 -> spec.kafkaClusterCR.kafkaImageTag,
+        "strimziOperator.imageName"                      -> spec.kafkaClusterCR.strimziOperatorImageName,
+        "strimziOperator.imageTag"                       -> spec.kafkaClusterCR.strimziOperatorImageTag
       )
     )
   }
 }
 
-final case class Strimzi()(implicit cr: CloudflowInstance.CR) extends KubectlApply("strimzi-operator")
+final case class Strimzi()(implicit cr: CloudflowInstance.CR) extends KubectlApply("strimzi-operator") {
+  override def overlayValues: Option[Map[String, String]] = {
+    val spec = instance.spec
+    Some(
+      Map(
+        "kafka.imageName"           -> spec.kafkaClusterCR.kafkaImageName,
+        "kafka.imageTag"            -> spec.kafkaClusterCR.kafkaImageTag,
+        "strimziOperator.imageName" -> spec.kafkaClusterCR.strimziOperatorImageName,
+        "strimziOperator.imageTag"  -> spec.kafkaClusterCR.strimziOperatorImageTag
+      )
+    )
+  }
+}
+
 final case class SparkOperator()(implicit cr: CloudflowInstance.CR) extends KubectlApply("spark-operator") {
   override def overlayValues: Option[Map[String, String]] =
     Some(
       Map(
-        "sparkOperator.image" -> instance.spec.sparkOperator.image
+        "sparkOperator.imageName" -> instance.spec.sparkOperator.imageName,
+        "sparkOperator.imageTag"  -> instance.spec.sparkOperator.imageTag
       )
     )
 }
@@ -159,7 +187,9 @@ final case class FlinkOperator()(implicit cr: CloudflowInstance.CR) extends Kube
   override def overlayValues: Option[Map[String, String]] =
     Some(
       Map(
-        "flinkOperator.serviceAccount" -> instance.spec.flinkOperator.serviceAccount
+        "flinkOperator.serviceAccount" -> instance.spec.flinkOperator.serviceAccount,
+        "flinkOperator.imageName"      -> instance.spec.flinkOperator.imageName,
+        "flinkOperator.imageTag"       -> instance.spec.flinkOperator.imageTag
       )
     )
 }

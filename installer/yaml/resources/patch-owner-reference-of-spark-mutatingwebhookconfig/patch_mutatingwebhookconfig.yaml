@@ -11,7 +11,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: main
-          image: ubuntu
+          image: __webhookPatchJob.image__
           command:
             - bash
             - "-c"
