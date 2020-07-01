@@ -29,7 +29,7 @@ lazy val app = (project in file("./app"))
   .settings(commonSettings)
   .settings(
     name := "swiss-knife",
-    runLocalConfigFile := Some("app/main/resources/local.conf"),
+    runLocalConfigFile := Some("app/src/main/resources/local.conf"),
   )
   
 lazy val datamodel = (project in file("datamodel"))

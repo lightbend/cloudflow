@@ -53,9 +53,6 @@ object LocalRunner extends StreamletLoader {
       }
     })
 
-  lazy val localConf = Option(this.getClass.getClassLoader.getResource("local.conf"))
-    .map(res ⇒ ConfigFactory.parseURL(res).resolve)
-    .getOrElse(ConfigFactory.empty())
   val BootstrapServersKey = "bootstrap.servers"
   val EmbeddedKafkaKey    = "embedded-kafka"
 
@@ -67,12 +64,13 @@ object LocalRunner extends StreamletLoader {
    *             args(1) must be the file to use for the output
    */
   def main(args: Array[String]): Unit = {
-    val usage = "Usage: localRunner <applicationFileJson> <outputFile>"
-    val (appDescriptorFilename, outputFilename) = args.toList match {
-      case app :: out :: Nil ⇒ (app, out)
-      case Nil               ⇒ throw new RuntimeException(s"Missing application configuration file and output file for Local Runner\n$usage")
-      case _ :: Nil          ⇒ throw new RuntimeException(s"Missing output file for Local Runner\n$usage")
-      case _                 ⇒ throw new RuntimeException(s"Invalid parameters for Local Runner. \n$usage")
+    val usage = "Usage: localRunner <applicationFileJson> <outputFile> [localConfigFile]"
+    val (appDescriptorFilename, outputFilename, localConfig) = args.toList match {
+      case app :: out :: conf :: Nil ⇒ (app, out, ConfigFactory.parseFile(new File(conf)).resolve)
+      case app :: out :: Nil         ⇒ (app, out, ConfigFactory.empty())
+      case Nil                       ⇒ throw new RuntimeException(s"Missing application configuration file and output file for Local Runner\n$usage")
+      case _ :: Nil                  ⇒ throw new RuntimeException(s"Missing output file for Local Runner\n$usage")
+      case _                         ⇒ throw new RuntimeException(s"Missing parameters for Local Runner. \n$usage")
     }
 
     val outputFile = new File(outputFilename)
@@ -85,7 +83,7 @@ object LocalRunner extends StreamletLoader {
       System.setOut(new PrintStream(fos))
       readDescriptorFile(appDescriptorFilename) match {
         case Success(applicationDescriptor) ⇒
-          run(applicationDescriptor)
+          run(applicationDescriptor, localConfig)
         case Failure(ex) ⇒
           log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
           System.exit(1)
@@ -93,27 +91,27 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
-  private def run(appDescriptor: ApplicationDescriptor): Unit = {
+  private def run(appDescriptor: ApplicationDescriptor, localConfig: Config): Unit = {
 
-    val kafkaPort        = 9093
-    val bootstrapServers = if (localConf.hasPath(BootstrapServersKey)) localConf.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
+    val kafkaPort = 9093
+    val bootstrapServers =
+      if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion
     val baseConfig = ConfigFactory.load()
-
-    val streamletParameterConfig = resolveLocalStreamletConf(appDescriptor.streamlets).recoverWith {
-      case missingConfEx: MissingConfigurationException ⇒
-        log.error("Missing streamlet configuration: \n" + missingConfEx.keys.mkString("\n"))
-        log.error("Configuration for local running is resolved from local.conf in the application's classpath")
-        Failure(missingConfEx)
-    }.get
 
     val streamlets = appDescriptor.streamlets.sortBy(_.name)
 
     var endpointIdx = 0
     val streamletsWithConf = streamlets.map { streamletInstance ⇒
       val streamletName = streamletInstance.name
+      val streamletParamConfig = resolveLocalStreamletConf(streamletInstance, localConfig).recoverWith {
+        case missingConfEx: MissingConfigurationException ⇒
+          log.error("Missing streamlet configuration: \n" + missingConfEx.keys.mkString("\n"))
+          log.error("Configuration for local running is resolved the configuration `runLocalConfigFile` in the build.sbt")
+          Failure(missingConfEx)
+      }.get
       // Make sure that we convert any backslash in the path to a forward slash since we want to store this in a JSON value
       val localStorageDirectory =
         Files.createTempDirectory(s"local-runner-storage-${streamletName}").toFile.getAbsolutePath.replace('\\', '/')
@@ -133,14 +131,14 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj      = RunnerConfig(appId, appVersion, deployment, bootstrapServers)
-      val runnerConfig         = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
-      val streamletParamConfig = streamletParameterConfig.atPath("cloudflow.streamlets")
+      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment, bootstrapServers)
+      val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig
         .withFallback(streamletParamConfig)
         .withFallback(baseConfig)
         .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
+
       (streamletInstance, patchedRunnerConfig)
     }
 
@@ -148,11 +146,12 @@ object LocalRunner extends StreamletLoader {
       case (streamletDescriptor, config) ⇒
         loadStreamletClass(streamletDescriptor.descriptor.className)
           .map { streamlet ⇒
-            log.info(s"Preparing streamlet: ${streamletDescriptor.name}")
+            log.info(s"Preparing to run streamlet: [${streamletDescriptor.name}]")
             streamlet.run(config)
           }
           .recoverWith {
             case NonFatal(ex) ⇒
+              log.error("Streamlet execution failed.", ex)
               Failure(StreamletLaunchFailure(streamletDescriptor.name, ex))
           }
     }
@@ -190,22 +189,22 @@ object LocalRunner extends StreamletLoader {
   case class StreamletLaunchFailure(streamletName: String, failure: Throwable)
       extends Exception(s"Streamlet [$streamletName] failed to launch. Reason: ${failure.getMessage}", failure)
 
-  private def resolveLocalStreamletConf(descriptors: Vector[StreamletInstance]): Try[Config] = {
-
-    val streamletConfig: Seq[(String, String, Option[String])] = descriptors.flatMap { streamletDescriptor ⇒
-      streamletDescriptor.descriptor.configParameters.map { configParamDescriptor ⇒
-        val key            = s"${streamletDescriptor.name}.${configParamDescriptor.key}"
+  private def resolveLocalStreamletConf(streamletDescriptor: StreamletInstance, localConf: Config): Try[Config] = {
+    // streamlet implementations read their parameter config from the path `cloudflow.streamlets.${streamletRef}`
+    val streamletParamConfig: Seq[(String, String, Option[String])] = streamletDescriptor.descriptor.configParameters.map {
+      configParamDescriptor ⇒
+        val sourceKey      = s"cloudflow.streamlets.${streamletDescriptor.name}.config-parameters.${configParamDescriptor.key}"
+        val targetKey      = s"cloudflow.streamlets.${streamletDescriptor.name}.${configParamDescriptor.key}"
         val validationType = configParamDescriptor.validationType
-        val value = if (localConf.hasPath(key)) {
-          Some(localConf.getString(key))
+        val value = if (localConf.hasPath(sourceKey)) {
+          Some(localConf.getString(sourceKey))
         } else {
           configParamDescriptor.defaultValue
         }
-        (key, validationType, value)
-      }
+        (targetKey, validationType, value)
     }
 
-    val missingValues = streamletConfig.collect { case (k, _, None) ⇒ k }
+    val missingValues = streamletParamConfig.collect { case (k, _, None) ⇒ k }
     if (missingValues.nonEmpty) {
       Failure(MissingConfigurationException(missingValues))
     } else {
@@ -213,7 +212,7 @@ object LocalRunner extends StreamletLoader {
         // I'll let the consumer of this configuration to parse the values as they want.
         // This quoting policy is here to preserve the type of the value in the resulting config obj
         ConfigFactory.parseString {
-          streamletConfig
+          streamletParamConfig
             .collect {
               case (key, validationType, Some(value)) ⇒
                 s"$key : ${quotePolicy(validationType)(value)}"
