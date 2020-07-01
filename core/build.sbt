@@ -407,7 +407,7 @@ lazy val operator =
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
       // skuber version 2.4.0 depends on akka-http 10.1.9 : hence overriding
-      // with akka-http 10.1.11 to use akka 2.6
+      // with akka-http 10.1.12 to use akka 2.6
       // remove this override once skuber is updated
       dependencyOverrides += AkkaHttp,
       buildOptions in docker := BuildOptions(

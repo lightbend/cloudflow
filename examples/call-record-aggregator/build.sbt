@@ -37,7 +37,7 @@ lazy val akkaCdrIngestor= appModule("akka-cdr-ingestor")
     .settings(
       commonSettings,
       libraryDependencies ++= Seq(
-        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.11",
+        "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.12",
         "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
         "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
       )
@@ -49,7 +49,7 @@ lazy val akkaJavaAggregationOutput= appModule("akka-java-aggregation-output")
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.11",
+      "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.12",
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )
@@ -81,7 +81,7 @@ def appModule(moduleID: String): Project = {
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.11",
   javacOptions += "-Xlint:deprecation",
   scalacOptions ++= Seq(
     "-encoding", "UTF-8",

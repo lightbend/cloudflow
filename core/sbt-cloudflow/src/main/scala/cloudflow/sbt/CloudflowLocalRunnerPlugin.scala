@@ -103,10 +103,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
             val projects = streamletDescriptorsByProject.keys
 
-            // setup local file scaffolding
-            val localConfMessage = configFile
-              .map(file => "Using Sandbox local configuration file: " + file)
-              .getOrElse("No local configuration provided.")
+            // load local config
+            val localConfig = LocalConfig.load(configFile)
 
             val (tempDir, configDir) = createDirs("cloudflow-local-run")
             val descriptorByProject = projects.map { pid =>
@@ -117,7 +115,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val runtimeDescriptorByProject = getDescriptorsOrFail {
               descriptorByProject.map {
                 case (pid, projectDescriptor) =>
-                  pid -> scaffoldRuntime(pid, projectDescriptor, configFile, tempDir, configDir)
+                  pid -> scaffoldRuntime(pid, projectDescriptor, localConfig, tempDir, configDir)
               }
             }
 
@@ -130,12 +128,13 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             setupKafka(KafkaPort, topics)
 
             printAppLayout(resolveConnections(appDescriptor))
-            printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfMessage)
+            printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
 
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
-                val cp = prepareLoggingInClasspath(cpByProject(pid), logDependencies)
-                runPipelineJVM(rd.appDescriptorFile, cp, rd.outputFile, rd.logConfig)
+                val classpath               = cpByProject(pid)
+                val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
+                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath)
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -196,7 +195,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                                appDescriptorFile: Path,
                                outputFile: File,
                                logConfig: Path,
-                               localConfMsg: String)
+                               localConfPath: Option[String])
 
   def setupKafka(port: Int, topics: Seq[String])(implicit log: Logger) = {
     implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
@@ -261,18 +260,17 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     println(GraphLayout.renderGraph(graph))
   }
 
-  def scaffoldRuntime(projectId: String, descriptor: ApplicationDescriptor, configFile: Option[String], targetDir: Path, configDir: Path)(
+  def scaffoldRuntime(projectId: String, descriptor: ApplicationDescriptor, localConfig: LocalConfig, targetDir: Path, configDir: Path)(
       implicit logger: Logger
   ): Try[RuntimeDescriptor] = {
     val log4jConfigFile = prepareLog4JFileFromResource(configDir, "local-run-log4j.properties", "local-run-log4j.properties")
     for {
-      (localConf, localConfMsg) ← loadCustomSandboxConfig(configFile)
-      appDescriptor             ← prepareApplicationDescriptor(descriptor, localConf, targetDir)
-      outputFile                ← createOutputFile(targetDir, projectId)
-      logFile                   <- log4jConfigFile
-      appDescriptorFile         ← prepareApplicationFile(appDescriptor)
+      appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
+      outputFile        ← createOutputFile(targetDir, projectId)
+      logFile           <- log4jConfigFile
+      appDescriptorFile ← prepareApplicationFile(appDescriptor)
     } yield {
-      RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfMsg)
+      RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfig.path)
     }
   }
 
@@ -325,12 +323,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     (workDir, configDir)
   }
 
-  def loadCustomSandboxConfig(configFile: Option[String]): Try[(Config, String)] = Try {
-    configFile
-      .map(filename ⇒ (ConfigFactory.parseFile(new File(filename)), s"Using sandbox configuration from $filename"))
-      .getOrElse((ConfigFactory.empty(), NoLocalConfFoundMsg))
-  }
-
   def prepareApplicationDescriptor(applicationDescriptor: ApplicationDescriptor,
                                    config: Config,
                                    tempDir: Path): Try[ApplicationDescriptor] = {
@@ -338,7 +330,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     updatedStreamlets.map(streamlets => applicationDescriptor.copy(streamlets = streamlets))
   }
 
-  def runPipelineJVM(applicationDescriptorFile: Path, classpath: Array[URL], outputFile: File, log4JConfigFile: Path)(
+  def runPipelineJVM(applicationDescriptorFile: Path,
+                     classpath: Array[URL],
+                     outputFile: File,
+                     log4JConfigFile: Path,
+                     localConfPath: Option[String])(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -354,7 +350,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
     val classpathStr = classpath.collect { case url if !url.toString.contains("logback") ⇒ new File(url.toURI) }.mkString(separator)
-    val options      = Seq(applicationDescriptorFile.toFile.getAbsolutePath, outputFile.getAbsolutePath)
+    val options: Seq[String] = Seq(
+      Some(applicationDescriptorFile.toFile.getAbsolutePath),
+      Some(outputFile.getAbsolutePath),
+      localConfPath
+    ).flatten
 
     val cmd = Seq(cp, classpathStr, LocalRunnerClass) ++ options
     Fork.java.fork(forkOptions, cmd)
@@ -372,10 +372,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   ): Try[Vector[StreamletInstance]] = {
 
     val updatedStreamlets = streamlets.map { streamlet ⇒
-      val streamletLocalConf = if (localConf.hasPath(streamlet.name)) localConf.getConfig(streamlet.name) else ConfigFactory.empty()
-      val volumeMounts       = streamlet.descriptor.volumeMounts
+      val streamletName       = streamlet.name
+      val confPath            = s"cloudflow.streamlets.$streamletName.volume-mounts"
+      val streamletVolumeConf = if (localConf.hasPath(confPath)) localConf.getConfig(confPath) else ConfigFactory.empty()
+      val volumeMounts        = streamlet.descriptor.volumeMounts
       val localVolumeMounts = volumeMounts.map { volumeMount ⇒
-        val tryLocalPath = streamletLocalConf
+        val tryLocalPath = streamletVolumeConf
           .as[Option[String]](volumeMount.name)
           .map(Success(_))
           .getOrElse {
@@ -444,8 +446,5 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         newLineIfNotEmpty(volumeMounts)
     }
   }
-
-  val NoLocalConfFoundMsg = "No local.conf file location configured. \n" +
-        "Set 'runLocalConfigFile' in your build to point to your local.conf location "
 
 }

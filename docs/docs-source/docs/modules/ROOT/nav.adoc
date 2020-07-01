@@ -16,7 +16,13 @@ include::partial$include.adoc[]
 ** xref:get-started:deploy-to-gke-cluster.adoc[Deploy to a GKE cluster]
 ** xref:get-started:exercise-example.adoc[Exercise the example]
 
+* xref:run-cloudflow-gcp-marketplace:index.adoc[Running Cloudflow on GCP Marketplace]
+** xref:run-cloudflow-gcp-marketplace:find-cloudflow-on-gcp-marketplace.adoc[Finding Cloudflow on GCP Marketplace]
+** xref:run-cloudflow-gcp-marketplace:deploy-cloudflow.adoc[Deploying Cloudflow on GCP Marketplace]
+** xref:run-cloudflow-gcp-marketplace:deploy-cloudflow.adoc[Running a Cloudflow application]
+
 * xref:develop:index.adoc[Developing Applications with Cloudflow]
+** xref:develop:project-structure.adoc[Project Structure]
 ** xref:develop:schema-first-approach.adoc[Schema-First approach]
 ** xref:develop:blueprints.adoc[Using Blueprints]
 ** xref:develop:message-delivery.adoc[Message Delivery Semantics]

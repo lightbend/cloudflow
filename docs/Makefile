@@ -16,6 +16,11 @@ javascaladoc_dir := ${staging_dir}/docs/current/api
 
 all: build
 
+local-preview: html-author-mode
+	@echo "Access the documentation on http://localhost:8000"
+	(cd target/staging/; python3 -m http.server)
+
+
 show:
 	echo work dir: ${work_dir}
 	echo ROOT_DIR: ${ROOT_DIR}
@@ -43,6 +48,7 @@ html-author-mode: clean
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
+		--cache-dir=./.cache/antora \
 		--stacktrace \
 		docs/docs-source/author-mode-site.yml
 	@echo "Done"
@@ -53,6 +59,7 @@ check-links:
 		--rm \
 		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
+		--cache-dir=./.cache/antora \
 		-c 'find /antora/docs-source -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check -p -c docs-source/asciidoc-link-check-config.json'
 
 list-todos: html
@@ -61,6 +68,7 @@ list-todos: html
 		--rm \
 		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
+		--cache-dir=./.cache/antora \
 		-c 'find /antora/docs-source/build/site/cloudflow/${version} -name "*.html" -print0 | xargs -0 grep -iE "TODO|FIXME|REVIEWERS|adoc"'
 
 # Generate the ScalaDoc and the JavaDoc, and put it in ${output}/scaladoc and ${output}/javadoc

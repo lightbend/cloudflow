@@ -11,11 +11,15 @@ object CloudflowInstance {
   final case class KafkaClusterCR(name: String,
                                   version: String,
                                   kafkaPersistentStorageClass: String,
-                                  zooKeeperPersistentStorageClass: String)
+                                  zooKeeperPersistentStorageClass: String,
+                                  kafkaImageName: String,
+                                  kafkaImageTag: String,
+                                  strimziOperatorImageName: String,
+                                  strimziOperatorImageTag: String)
 
-  final case class FlinkOperator(version: String, serviceAccount: String)
-  final case class SparkOperator(version: String, image: String)
-  final case class CloudflowOperator(imageTag: String, persistentStorageClass: String)
+  final case class FlinkOperator(version: String, serviceAccount: String, imageName: String, imageTag: String)
+  final case class SparkOperator(version: String, imageName: String, imageTag: String, webhookPatchJobImage: String)
+  final case class CloudflowOperator(imageName: String, imageTag: String, persistentStorageClass: String)
 
   case class Status(status: String, message: Option[String] = None)
 

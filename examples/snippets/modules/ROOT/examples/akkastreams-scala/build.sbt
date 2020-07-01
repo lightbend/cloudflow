@@ -8,9 +8,9 @@ lazy val sensorData =  (project in file("."))
 //end::docs-projectSetup-example[]
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
-        "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.11",
+        "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
-        "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.11" % "test",
+        "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 
 //tag::docs-projectName-example[]
@@ -20,7 +20,7 @@ lazy val sensorData =  (project in file("."))
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
-      scalaVersion := "2.12.10",
+      scalaVersion := "2.12.11",
       crossScalaVersions := Vector(scalaVersion.value),
       scalacOptions ++= Seq(
         "-encoding", "UTF-8",

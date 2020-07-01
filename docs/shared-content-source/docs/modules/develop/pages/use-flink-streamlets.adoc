@@ -1,5 +1,7 @@
 :page-partial:
 
+include::ROOT:partial$include.adoc[]
+
 A Flink streamlet has the following responsibilities:
 
 * It needs to capture your stream processing logic.
