@@ -157,7 +157,7 @@ final case class Blueprint(
     val volumeMountProblems     = verifyVolumeMounts(streamletDescriptors)
 
     val unconnectedPortProblems = verifyPortsConnected(verifiedStreamlets, verifiedTopics)
-    val portsBoundToManyTopics  = verifyPortsBoundToManyTopics(verifiedStreamlets, verifiedTopics)
+    val portsBoundToManyTopics  = verifyPortsBoundToManyTopics(verifiedTopics)
     val globalProblems = Vector(
         emptyStreamletsProblem,
         emptyStreamletDescriptorsProblem,
@@ -216,7 +216,6 @@ final case class Blueprint(
     problems
   }
   private def verifyPortsBoundToManyTopics(
-      verifiedStreamlets: Vector[VerifiedStreamlet],
       verifiedTopics: Vector[VerifiedTopic]
   ): Vector[PortBoundToManyTopics] =
     verifiedTopics
