@@ -127,9 +127,9 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
    */
   protected def createLogic(): AkkaStreamletLogic
 
-  private def readyAfterStart(): Boolean = if (attributes.contains(ServerAttribute)) false else true
+  private def readyAfterStart(): Boolean = !attributes.contains(ServerAttribute)
 
-  private val activateCluster: Boolean = if (attributes.contains(AkkaClusterAttribute)) true else false
+  private val activateCluster: Boolean = attributes.contains(AkkaClusterAttribute)
 
   private def signalReadyAfterStart(): Unit =
     if (readyAfterStart) context.signalReady

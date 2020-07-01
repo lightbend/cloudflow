@@ -151,8 +151,10 @@ final case class StringConfigParameter(key: String, description: String = "", de
    */
   def getValue(context: StreamletContext): String =
     context.streamletConfig.getString(key)
+
   def value(implicit context: StreamletContext) =
     context.streamletConfig.getString(key)
+
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }

@@ -26,6 +26,10 @@ class AkkaLogger extends AkkaStreamlet {
   val inlet = AvroInlet[Data]("in")
   val shape = StreamletShape.withInlets(inlet)
 
+  val configurableMessage = StringConfigParameter("configurable-message", "Configurable message.", Some("test-case"))
+
+  override def configParameters = Vector(configurableMessage)
+
   override def createLogic = new RunnableGraphStreamletLogic() {
     val flow = FlowWithCommittableContext[Data]
       .map { data ⇒
