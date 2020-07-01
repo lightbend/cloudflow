@@ -237,7 +237,7 @@ class CloudflowApplicationSpec
       .use(egress1Ref)
       .use(egress2Ref)
       .connect(Topic("foos1"), ingressRef.out, egress1Ref.in)
-      .connect(Topic("foos2"), ingressRef.out, egress2Ref.in)
+      .connect(Topic("foos2"), egress2Ref.in)
       .verified
       .right
       .value
@@ -261,7 +261,7 @@ class CloudflowApplicationSpec
       .use(sparkEgressRef)
       .use(flinkEgressRef)
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
-      .connect(Topic("foos2"), ingressRef.out, flinkEgressRef.in)
+      .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
       .right
       .value
