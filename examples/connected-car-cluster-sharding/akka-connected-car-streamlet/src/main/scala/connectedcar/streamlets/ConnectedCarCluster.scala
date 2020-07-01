@@ -13,6 +13,7 @@ import connectedcar.actors.{ConnectedCarActor, ConnectedCarERecordWrapper}
 
 import scala.concurrent.duration._
 import akka.pattern.ask
+import akka.stream.scaladsl.Sink
 import cloudflow.akkastream.{AkkaStreamlet, Clustering}
 import connectedcar.data.{ConnectedCarAgg, ConnectedCarERecord}
 
@@ -25,21 +26,25 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
     val groupId = "user-topic-group-id"
     val typeKey = EntityTypeKey[ConnectedCarERecordWrapper](groupId)
 
-    val (source, messageExtractor) = shardedSourceWithCommittableContext(in,
-                                      typeKey,
+    val source = shardedSourceWithCommittableContext(in,
+                                      typeKey: EntityTypeKey[ConnectedCarERecordWrapper],
                                       (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
                                     )
 
-    def runnableGraph = source.via(flow).to(committableSink(out))
-    val clusterSharding = ClusterSharding(system.toTyped)
-
-    messageExtractor.map(messageExtractor => {
+    def runnableGraph = source.map(kafkaEnvelope => {
       clusterSharding.init(
         Entity(typeKey)(createBehavior = _ => ConnectedCarActor())
           .withAllocationStrategy(new ExternalShardAllocationStrategy(system, typeKey.name))
-          .withMessageExtractor(messageExtractor)
+          .withMessageExtractor(kafkaEnvelope.kafkaShardingExtractor)
           .withSettings(ClusterShardingSettings(system.toTyped)))
-    })
+
+      kafkaEnvelope.source
+        .via(flow)
+        .to(committableSink(out))
+        .run()
+    }).to(Sink.ignore)
+
+    val clusterSharding = ClusterSharding(system.toTyped)
 
     implicit val timeout: Timeout = 3.seconds
     def flow =

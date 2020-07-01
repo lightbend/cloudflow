@@ -123,7 +123,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
       inlet: CodecInlet[T],
       typeKey: EntityTypeKey[E],
       entityIdExtractor: E => String
-  ): (SourceWithCommittableContext[T], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) =
+  ): Source[ShardedSourceEnvelope[T, E], _] =
     context.shardedSourceWithCommittableContext(inlet, typeKey, entityIdExtractor)
 
   /**

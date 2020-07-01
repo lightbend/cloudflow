@@ -43,7 +43,8 @@ final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem
 ) extends AkkaStreamletContext {
-  implicit val system: ActorSystem = sys
+  implicit val system: ActorSystem  = sys
+  implicit val ec: ExecutionContext = sys.dispatcher
 
   override def config: Config = streamletDefinition.config
 
@@ -89,16 +90,14 @@ final class AkkaStreamletContextImpl(
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet)
 
-  private[akkastream] def shardedSourceWithContext[T, E](
-      inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String
-  ): (SourceWithContext[T, CommittableOffset, _], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) = {
+  private[akkastream] def shardedSourceWithContext[T, E](inlet: CodecInlet[T],
+                                                         typeKey: EntityTypeKey[E],
+                                                         entityIdExtractor: E => String): Source[ShardedSourceEnvelope[T, E], _] = {
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletRef, inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(bootstrapServers))
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withProperties(topic.kafkaConsumerProperties)
@@ -134,10 +133,10 @@ final class AkkaStreamletContextImpl(
         settings = consumerSettings
       )
 
-    Source.futureSource {
-      messageExtractor.map(x => {
-        (x, consumer)
-      })
+    Source.future {
+      messageExtractor.map { messageExtractor =>
+        ShardedSourceEnvelope(consumer, messageExtractor)
+      }
     }
   }
 
@@ -145,7 +144,7 @@ final class AkkaStreamletContextImpl(
       inlet: CodecInlet[T],
       typeKey: EntityTypeKey[E],
       entityIdExtractor: E => String
-  ): (cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) =
+  ): Source[ShardedSourceEnvelope[T, E], _] =
     shardedSourceWithContext[T, E](inlet, typeKey, entityIdExtractor)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")

@@ -43,7 +43,7 @@ trait AkkaStreamletContext extends StreamletContext {
       inlet: CodecInlet[T],
       typeKey: EntityTypeKey[E],
       entityIdExtractor: E => String
-  ): (cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]])
+  ): Source[ShardedSourceEnvelope[T, E], _]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
@@ -129,3 +129,6 @@ case object Earliest extends ResetPosition {
 case object Latest extends ResetPosition {
   val autoOffsetReset = "latest"
 }
+
+case class ShardedSourceEnvelope[T, E](source: SourceWithContext[T, CommittableOffset, _],
+                                       kafkaShardingExtractor: KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E])
