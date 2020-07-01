@@ -1,4 +1,4 @@
-== Streamlet Configuration Parameters
+== Streamlet Configuration
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
