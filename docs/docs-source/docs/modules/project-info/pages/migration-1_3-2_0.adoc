@@ -237,7 +237,7 @@ topics {
 	...
 }
 ----
-<1> Having the same streamlet consume from two different topics is not allowed.
+<1> Having the same streamlet inlet consume from two different topics is not allowed.
 
 The `verifyBlueprint` stage built into the Cloudflow build system will report an error if such usage is found.
 
