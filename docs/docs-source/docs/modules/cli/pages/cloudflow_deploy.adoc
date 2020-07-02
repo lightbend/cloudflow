@@ -97,7 +97,7 @@ You can update the credentials with the "update-docker-credentials" command.
 
 [source,bash]
 ----
-$ kubectl cloudflow deploy call-record-aggregator.json valid-logger.log-level=info valid-logger.msg-prefix=valid
+$ kubectl cloudflow deploy call-record-aggregator.json
 ----
 
 == Options
