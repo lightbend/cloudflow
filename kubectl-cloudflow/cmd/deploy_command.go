@@ -103,7 +103,7 @@ the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
 `,
-		Example: `kubectl cloudflow deploy call-record-aggregator.json valid-logger.log-level=info valid-logger.msg-prefix=valid`,
+		Example: `kubectl cloudflow deploy call-record-aggregator.json`,
 		Args:    validateDeployCmdArgs,
 		Run:     deployOpts.deployImpl,
 	}
