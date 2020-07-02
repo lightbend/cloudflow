@@ -23,15 +23,17 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
   val shape = StreamletShape(in).withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    val groupId = "user-topic-group-id"
-    val typeKey = EntityTypeKey[ConnectedCarERecordWrapper](groupId)
+    val typeKey = EntityTypeKey[ConnectedCarERecordWrapper]("Car")
 
     val source = shardedSourceWithCommittableContext(in,
                                       typeKey: EntityTypeKey[ConnectedCarERecordWrapper],
                                       (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
                                     )
 
+    val clusterSharding = ClusterSharding(system.toTyped)
+
     def runnableGraph = source.map(kafkaEnvelope => {
+
       clusterSharding.init(
         Entity(typeKey)(createBehavior = _ => ConnectedCarActor())
           .withAllocationStrategy(new ExternalShardAllocationStrategy(system, typeKey.name))
@@ -44,14 +46,12 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering {
         .run()
     }).to(Sink.ignore)
 
-    val clusterSharding = ClusterSharding(system.toTyped)
-
     implicit val timeout: Timeout = 3.seconds
     def flow =
       FlowWithCommittableContext[ConnectedCarERecord]
         .mapAsync(5) {
           msg ⇒ ({
-            val carActor = clusterSharding.entityRefFor(typeKey, "counter-1")
+            val carActor = clusterSharding.entityRefFor(typeKey, msg.carId.toString)
             carActor.ask[ConnectedCarAgg](ref => ConnectedCarERecordWrapper(msg, ref))
           })
         }

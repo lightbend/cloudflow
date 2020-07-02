@@ -113,7 +113,7 @@ final class AkkaStreamletContextImpl(
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
     val consumer = Consumer
-      .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
+      .sourceWithOffsetContext(consumerSettings, subscription)
       // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
       .asSource
       .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
@@ -128,7 +128,7 @@ final class AkkaStreamletContextImpl(
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]] =
       KafkaClusterSharding(system).messageExtractorNoEnvelope(
         timeout = 10.seconds,
-        topic = "user-topic",
+        topic = topic.name,
         entityIdExtractor = entityIdExtractor,
         settings = consumerSettings
       )
