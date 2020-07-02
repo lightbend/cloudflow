@@ -8,6 +8,9 @@ This folder hosts the integration tests for Cloudflow.
 You must have a working installation of Go v1.14 or later.
 You must have `kubectl` installed and configured to talk to the target cluster.
 You must have an installed Cloudflow cluster available for the integration tests.
+You must build the swiss-knife app with `sbt buildApp` in the swiss-knife directory and copy the app CR file to `itest/resources`:
+
+    cp target/swiss-knife.json itest/resources
 
 ### Manual Execution
 From the `itest` sub-directory, run `ginkgo -v` or `go test`
