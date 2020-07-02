@@ -18,22 +18,40 @@ kubectl cloudflow configure [flags]
 
 [source,bash]
 ----
-kubectl cloudflow configure my-app mystreamlet.hostname=localhost
+$ kubectl cloudflow configure my-app --conf my-config.conf
 ----
 
-or to list all required configuration parameters:
+Configuration files in HOCON format can be passed through with the `--conf` flag.
+Configuration files are merged by concatenating the files passed with `--conf` flags.
+The last `--conf [file]` argument can override values specified in earlier `--conf [file]` arguments.
+In the example below, where the same configuration path is used in file1.conf and file2.conf,
+the configuration value in file2.conf takes precedence, overriding the value provided by file1.conf:
 
 [source,bash]
 ----
-kubectl cloudflow configure my-app
+$ kubectl cloudflow configure swiss-knife --conf file1.conf --conf file2.conf
 ----
+
+It is also possible to pass configuration values directly through the command-line as `[config-key]=value` pairs separated by
+a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file.
+Some examples:
+
+[source,bash]
+----
+$ kubectl cloudflow configure swiss-knife cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+$ kubectl cloudflow configure swiss-knife cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+----
+
+The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the --conf flag.
+
 
 == Options
 
 
 [source,bash]
 ----
-  -h, --help   help for configure
+  --conf stringArray       Accepts one or more files in HOCON format.
+  -h, --help               help for configure
 ----
 
 == SEE ALSO
