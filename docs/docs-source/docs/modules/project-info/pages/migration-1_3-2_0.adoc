@@ -219,7 +219,7 @@ connections {
 ----
 
 The same restriction applies to the new topic definition.
-We cannot have the same streamlet as a consumer of two different topics.
+We cannot have the same streamlet inlet as a consumer of two different topics.
 
 This is not allowed:
 
