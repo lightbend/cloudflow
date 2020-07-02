@@ -1,0 +1,118 @@
+= Migration Guide 1.3.x to 2.0.x
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+The 2.0 release contains several new features that require changes to the project structure, blueprint definition, and build process.
+
+In this guide, we describe the changes that you need to apply to a pre-2.0 Cloudflow application to make it compatible with the new model.
+
+WARNING: Be aware that the server-side components need to be updated to the Cloudflow 2.0 release to run a 2.0-compliant application.
+
+== Project Structure
+
+Cloudflow 2.0 introduces a strict separation of the classpath of the different supported runtimes (Akka, Spark, Flink, or any user-provided one). 
+This prevents conflicts between different versions of dependencies used by the runtimes.
+
+To achieve this isolation, an application that wants to use two or more different runtimes should separate the streamlets for each runtime in their own sub-project, making use of the multi-project support in sbt.
+
+In the following example, we show the relevant definitions in the `build.sbt` file.
+
+.`build.sbt` [Before v2.0]
+[source, scala]
+----
+lazy val application = (project in file("."))
+    .enablePlugins(CloudflowSparkApplicationPlugin, 
+      CloudflowAkkaStreamsApplicationPlugin, 
+      CloudflowFlinkApplicationPlugin, 
+      ScalafmtPlugin)
+...
+----
+
+.`build.sbt` [with v2.0]
+[source, scala]
+----   
+lazy val root = (project in file("."))
+    .enablePlugins(ScalafmtPlugin)
+    .settings(commonSettings)
+    .aggregate(
+      app,
+      datamodel,
+      flink,
+      akka,
+      spark
+    )
+
+lazy val app = (project in file("./app"))
+  .settings(
+    name:= "my-application"
+  )
+  .enablePlugins(CloudflowApplicationPlugin)
+  .settings(commonSettings)
+
+lazy val datamodel = (project in file("datamodel"))
+  .enablePlugins(CloudflowLibraryPlugin)
+  .settings(commonSettings)
+
+lazy val akka = (project in file("./akka"))
+  .enablePlugins(CloudflowAkkaPlugin)
+  .settings(commonSettings)
+  .dependsOn(datamodel)
+
+lazy val spark = (project in file("./spark"))
+  .enablePlugins(CloudflowSparkPlugin)
+  .settings(commonSettings)  
+  .dependsOn(datamodel)
+
+lazy val flink = (project in file("./flink"))
+  .enablePlugins(CloudflowFlinkPlugin)
+  .settings(commonSettings)
+  .dependsOn(datamodel)
+
+----
+
+The new structure might seem heavier, but it offers a headache-free build in terms of version conflicts and other classpath-driven problems.
+
+TIP: We use `.aggregate` on the `root` project to transitively build all the projects without mixing their dependencies.
+
+At build time, this project structure will result in a Docker image for every sub-project that contains streamlets. 
+The Akka, Spark, and Flink streamlets will be packaged in their own Docker image for deployment in a cluster.
+
+=== Single Runtime Applications
+
+It is possible to use a simplified project structure for applications that use a single runtime. 
+
+Before Cloudflow 2.0, we offered `-Application` plugins for this purpose. 
+Those plugins are deprecated in 2.0. 
+
+Instead, to create a Cloudflow application that uses a single runtime, activate the `CloudflowApplicationPlugin` together with the runtime of choice:
+
+- Akka: `CloudflowAkkaPlugin`
+- Spark: `CloudflowSparkPlugin`
+- Flink: `CloudflowFlinkPlugin`
+
+Let's explore the sbt declaration with a before/after example:
+
+.`build.sbt` [Before v2.0]
+[source, scala]
+----
+lazy val myApplication = (project in file("."))
+    .enablePlugins(CloudflowSparkApplicationPlugin)
+----
+
+.`build.sbt` [with v2.0]
+[source, scala]
+----
+lazy val myApplication = (project in file("."))
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowSparkPlugin)
+----
+
+As you would expect, a single-runtime application generates a single Docker image.
+
+For more details on the project definition, visit the xref:develop:project-structure.adoc[Project Structure] docs.
+
+== Blueprint Definition
+
+== Build Process
