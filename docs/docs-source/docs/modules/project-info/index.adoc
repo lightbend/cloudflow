@@ -1,5 +1,0 @@
-= Project Information
-
-This section contains project-related information, such as migration guides, contribution guidelines, and release notes.
-
-Browse the entries in the navigation bar to the left to access the specific content you are looking for.

@@ -11,12 +11,13 @@ In this guide, we describe the changes that you need to apply to a pre-2.0 Cloud
 
 WARNING: Be aware that the server-side components need to be updated to the Cloudflow 2.0 release to run a 2.0-compliant application.
 
+[[project-structure]]
 == Project Structure
 
 Cloudflow 2.0 introduces a strict separation of the classpath of the different supported runtimes (Akka, Spark, Flink, or any user-provided one). 
-This prevents conflicts between different versions of dependencies used by the runtimes.
+This separation prevents conflicts between different versions of dependencies used by the runtimes.
 
-To achieve this isolation, an application that wants to use two or more different runtimes should separate the streamlets for each runtime in their own sub-project, making use of the multi-project support in sbt.
+To achieve this isolation, an application that wants to use two or more runtimes should separate the streamlets for each runtime in their own sub-project, making use of the multi-project support in sbt.
 
 In the following example, we show the relevant definitions in the `build.sbt` file.
 
@@ -115,4 +116,190 @@ For more details on the project definition, visit the xref:develop:project-struc
 
 == Blueprint Definition
 
+Cloudflow 2.0 introduces _topics_ as first-class components in the blueprint definition.
+In earlier versions, Cloudflow fully managed the topics used to connect different streamlets. 
+While this was very convenient, it also limited the connectivity possibilities. 
+
+In the 2.0 version, the Cloudflow developer is in full control of the _topics_ used. 
+They can still be managed by Cloudflow, but they can also be existing topics in arbitrary Kafka brokers, including cloud-hosted.
+
+In practical terms, the `connections` section of the `blueprint` becomes now `topics`.
+The topics used by the application are defines as configuration entries in the `topics` section.
+
+Let's see a before/after example.
+
+.`build.sbt` [Before v2.0]
+[source, HOCON]
+----
+blueprint {
+  streamlets {
+    ingress = sensors.SparkRandomGenDataIngress
+    process = sensors.MovingAverageSparklet
+    egress = sensors.SparkConsoleEgress
+  }
+  connections {
+    ingress.out = [process.in]
+    process.out = [egress.in]
+  }
+}
+----
+
+.`build.sbt` [with v2.0]
+[source, HOCON]
+----
+blueprint {
+  streamlets {
+    ingress = sensors.SparkRandomGenDataIngress
+    process = sensors.MovingAverageSparklet
+    egress = sensors.SparkConsoleEgress
+  }
+  topics {
+    data {
+      producers = [ingress.out]
+      consumers = [process.in]
+    }
+    moving-averages {
+      producers = [process.out]
+      consumers = [egress.in]
+    }
+  }
+}
+----
+
+The migration strategy consists of:
+
+- Identify the topics in the application.
+- Name the topics as configuration entries.
+- streamlet outlets become producers for the topic.
+- streamlet inlets become consumers to the topic. 
+
+Taking the previous example, let's convert the following _connection_ definition into a _topic_ definition:
+
+[source, hocon]
+----
+connections {
+	ingress.out = [process.in]
+	...
+}
+----
+
+This connection needs a topic. 
+We call it `data` as this topic makes the _data_ from the `ingress` available to the `process`.
+The `ingress.out` _outlet_ becomes a producer for the topic.
+the `process.in` _inlet_ becomes a consumer to the topic.
+
+When we put this together, we have:
+
+[source, hocon]
+----
+topics {
+    data {
+      producers = [ingress.out]
+      consumers = [process.in]
+    }
+    ...
+}
+----
+
+You should migrate all streamlet connections to this new topic definition applying the same logic.
+
+=== Restrictions
+
+Before Cloudflow 2.0 it was not possible to have a streamlet inlet connected to multiple outlets.
+
+This was not allowed:
+
+[source, hocon]
+----
+connections {
+	ingress.out = [process.in]
+	another-ingress.out = [process.in]
+	...
+}
+----
+
+The same restriction applies to the new topic definition.
+We cannot have the same streamlet as a consumer of two different topics.
+
+This is not allowed:
+
+[source, hocon]
+----
+topics {
+	data1 {
+      producers = [ingress.out]
+      consumers = [process.in] //<1>
+    }
+    data2 {
+      producers = [another-ingress.out]
+      consumers = [process.in] //<1>
+    }
+	...
+}
+----
+<1> Having the same streamlet consume from two different topics is not allowed.
+
+The `verifyBlueprint` stage built into the Cloudflow build system will report an error if such usage is found.
+
+=== Learning More
+
+To learn more about the new blueprint structure and the new options to configure the topics, refer to  xref:develop:blueprints.adoc[].
+
+
 == Build Process
+
+As we mentioned in <<project-structure>>, with Cloudflow 2.0 we implemented a new way of managing projects that use multiple runtimes and potentially results in the generation of several Docker images.
+
+In previous versions of Cloudflow, the deployment unit was a Docker image. 
+It contained all the artifacts and an application descriptor that informed the Cloudflow operator how the application must be deployed.
+
+With Cloudflow 2.0, and its multiple Docker image support, the new deployable unit is a JSON descriptor generated by the build process.
+This application descriptor is used by the Cloudflow `kubectl` plugin to generate a custom resource definition (CR) that guides the application deployment on a Cloudflow-enabled Kubernetes cluster.
+
+In practical terms, we have deprecated the use of:
+
+.Building Cloudflow Applications before Cloudflow 2.0
+[source, bash]
+----
+sbt buildAndPublish
+----
+
+Instead, you should use:
+
+.Building Cloudflow Applications with Cloudflow 2.0
+[source, bash]
+----
+sbt buildApp
+----
+
+The output of the `buildApp` task will report the location of the JSON file that contains the application definition. 
+It also shows the command that you need to execute to deploy the application.
+
+.Result of a `buildApp` execution
+[source, bash]
+----
+$ sbt buildApp
+... 
+[success] Cloudflow application CR generated in /cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
+[success] Total time: 129 s (02:09), completed Jun 24, 2020 12:58:46 PM
+----
+
+This new model might have an impact in the CI/CD strategy for your project.
+The new JSON-file-based deployment is better aligned to the _gitops_ methodology.
+
+== _Sandbox_
+
+To support the new multi-project model of Cloudflow 2.0, we have updated the _sandbox_ to support the local execution of these multi-project setups into separate JVMs.
+In this way, we provide the same classpath isolation guarantee when you run your applications using `runLocal`.
+
+The new `runLocal` implementation reports the output of streamlets grouped by the sub-projects where they belong.
+As an additional improvement, the execution output also shows an ASCII-art representation of the application graph that connects streamlets and topics.
+
+See xref:ROOT:app-development-process.adoc#local-testing[Local Testing] to learn more about the _sandbox_ provided by Cloudflow.
+
+== Getting Help
+
+The Cloudflow community is there to help you out. 
+Find links to our different communication channels on the https://cloudflow.io/[Cloudflow Homepage]
