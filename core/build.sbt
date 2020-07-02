@@ -86,6 +86,7 @@ lazy val akkastream =
             AkkaStream,
             AkkaStreamKafka,
             AkkaStreamKafaSharding,
+            AkkaShardingTyped,
             AkkaCluster,
             AkkaManagement,
             AkkaHttp,

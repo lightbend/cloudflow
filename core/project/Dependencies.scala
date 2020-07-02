@@ -22,6 +22,7 @@ object Library {
   val AkkaHttpJackson        = "com.typesafe.akka"  %% "akka-http-jackson"         % Version.AkkaHttp
   val AkkaHttpSprayJson      = "com.typesafe.akka"  %% "akka-http-spray-json"      % Version.AkkaHttp
   val AkkaActor              = "com.typesafe.akka"  %% "akka-actor"                % Version.Akka
+  val AkkaShardingTyped      = "com.typesafe.akka"  %% "akka-cluster-sharding-typed"% Version.Akka
   val AkkaStream             = "com.typesafe.akka"  %% "akka-stream"               % Version.Akka
   val AkkaSlf4j              = "com.typesafe.akka"  %% "akka-slf4j"                % Version.Akka
   val AkkaStreamContrib      = "com.typesafe.akka"  %% "akka-stream-contrib"       % "0.10"
