@@ -19,7 +19,7 @@ The target-env.sbt in the swiss-knife directory should contain the following:
 This will setup sbt to push the swiss-knife app images to the `docker.io/lightbend` Docker registry. From within the `swiss-knife` directory, build the swiss-knife app and copy the app CR file with:
     
     sbt buildApp
-    cp target/swiss-knife.json itest/resources
+    cp target/swiss-knife.json ../itest/resources
 
 ### Manual Execution
 From the `itest` sub-directory, run `ginkgo -v` or `go test`
