@@ -1,6 +1,6 @@
 version := 2.0.4
 
-cloudflow_installer_image_tag := 491-f242fe8-dirty
+cloudflow_installer_image_tag := 2.0.4
 
 cloudflow_operator_image_name := lightbend/cloudflow-operator
 cloudflow_operator_image_tag := 2.0.4
