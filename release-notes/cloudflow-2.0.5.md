@@ -1,10 +1,10 @@
-# Cloudflow 2.0.0 Release Notes (June 10th, 2020)
+# Cloudflow 2.0.5 Release Notes (June 10th, 2020)
 
 Today we are happy to announce the availability of Cloudflow 2.0.5. 
 
 Highlights of Cloudflow 2.0.5 are improved documentation, installer improvements and support for Akka 2.6.6.
 
-# Highlights of Cloudflow 2.0.0
+# Highlights of Cloudflow 2.0.5
 - Documentation for 2.0 features including a migration guide from 1.3.x to 2.0.x.
 - More configurable installer, making it possible to modify the docker images that used.
 - Update to Akka 2.6.6
