@@ -9,7 +9,7 @@ cloudflow_operator_chart_repo_tag    := master
 cloudflow_operator_chart_dir_in_repo := installer/cloudflow-environment
 
 cloudflow_operator_image_name        := lightbend/cloudflow-operator
-cloudflow_operator_image_tag         := 2.0.4
+cloudflow_operator_image_tag         := 2.0.5
 spark_operator_image_name            := lightbend/sparkoperator
 spark_operator_image_tag             := 1.3.3-OpenJDK-2.4.5-1.1.0-cloudflow-2.12
 flink_operator_image_name            := lyft/flinkk8soperator
