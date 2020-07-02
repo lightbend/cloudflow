@@ -99,6 +99,7 @@ After verification, you can run the complete application.
 IMPORTANT: The verification task is usually performed as a pre-requisite of other tasks, like `runLocal` or `buildApp` that we see next. 
 While it's possible to run it independently as shown here, it is most often used indirectly as part of those larger build tasks.
 
+[[local-testing]]
 == Test Locally Using the Sandbox
 
 Cloudflow comes with a local execution mode called _sandbox_. The sandbox instantiates all streamlets of an application's blueprint with their connections in a  single, local JVM.
