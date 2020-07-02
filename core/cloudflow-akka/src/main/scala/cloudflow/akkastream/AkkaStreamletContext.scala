@@ -19,7 +19,7 @@ package cloudflow.akkastream
 import scala.concurrent.Future
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.cluster.sharding.typed.scaladsl.{ Entity, EntityTypeKey }
 import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 import akka.kafka.CommitterSettings
 import akka.kafka.cluster.sharding.KafkaClusterSharding
@@ -39,11 +39,11 @@ trait AkkaStreamletContext extends StreamletContext {
       inlet: CodecInlet[T]
   ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T]
 
-  private[akkastream] def shardedSourceWithCommittableContext[T, E](
+  private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String
-  ): Source[ShardedSourceEnvelope[T, E], _]
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String
+  ): SourceWithContext[T, CommittableOffset, _]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]

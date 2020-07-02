@@ -23,7 +23,9 @@ import scala.concurrent._
 import scala.util._
 import akka._
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.cluster.sharding.external.ExternalShardAllocationStrategy
+import akka.cluster.sharding.typed.ClusterShardingSettings
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
 import akka.kafka.cluster.sharding.KafkaClusterSharding
@@ -90,9 +92,9 @@ final class AkkaStreamletContextImpl(
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet)
 
-  private[akkastream] def shardedSourceWithContext[T, E](inlet: CodecInlet[T],
-                                                         typeKey: EntityTypeKey[E],
-                                                         entityIdExtractor: E => String): Source[ShardedSourceEnvelope[T, E], _] = {
+  private[akkastream] def shardedSourceWithContext[T, M, E](inlet: CodecInlet[T],
+                                                            shardEntity: Entity[M, E],
+                                                            entityIdExtractor: M => String): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
@@ -103,7 +105,7 @@ final class AkkaStreamletContextImpl(
       .withProperties(topic.kafkaConsumerProperties)
 
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
-      KafkaClusterSharding(system).rebalanceListener(typeKey)
+      KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
 
     import akka.actor.typed.scaladsl.adapter._
     val subscription = Subscriptions
@@ -112,20 +114,8 @@ final class AkkaStreamletContextImpl(
 
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
-    val consumer = Consumer
-      .sourceWithOffsetContext(consumerSettings, subscription)
-      // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
-      .asSource
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
-      .via(handleTermination)
-      .map {
-        case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
-      }
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
-
     import scala.concurrent.duration._
-    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]] =
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[M]] =
       KafkaClusterSharding(system).messageExtractorNoEnvelope(
         timeout = 10.seconds,
         topic = topic.name,
@@ -133,19 +123,39 @@ final class AkkaStreamletContextImpl(
         settings = consumerSettings
       )
 
-    Source.future {
-      messageExtractor.map { messageExtractor =>
-        ShardedSourceEnvelope(consumer, messageExtractor)
+    Source
+      .futureSource {
+        messageExtractor.map { m =>
+          ClusterSharding(system.toTyped).init(
+            shardEntity
+              .withAllocationStrategy(
+                shardEntity.allocationStrategy
+                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
+              )
+              .withMessageExtractor(m)
+          )
+
+          Consumer
+            .sourceWithOffsetContext(consumerSettings, subscription)
+            // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
+            .asSource
+            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .via(handleTermination)
+            .map {
+              case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+            }
+        }
       }
-    }
+      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
+      .map { case (record, _) ⇒ record }
   }
 
-  override def shardedSourceWithCommittableContext[T, E](
+  override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String
-  ): Source[ShardedSourceEnvelope[T, E], _] =
-    shardedSourceWithContext[T, E](inlet, typeKey, entityIdExtractor)
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String
+  ): SourceWithContext[T, CommittableOffset, _] =
+    shardedSourceWithContext[T, M, E](inlet, shardEntity, entityIdExtractor)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =

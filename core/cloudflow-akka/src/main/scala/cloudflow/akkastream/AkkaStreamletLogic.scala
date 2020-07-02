@@ -20,7 +20,7 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.cluster.sharding.typed.scaladsl.{ Entity, EntityTypeKey }
 import akka.stream.scaladsl._
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
@@ -119,12 +119,12 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def sourceWithCommittableContext[T](inlet: CodecInlet[T]): SourceWithCommittableContext[T] =
     context.sourceWithCommittableContext(inlet)
 
-  def shardedSourceWithCommittableContext[T, E](
+  def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String
-  ): Source[ShardedSourceEnvelope[T, E], _] =
-    context.shardedSourceWithCommittableContext(inlet, typeKey, entityIdExtractor)
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String
+  ): SourceWithContext[T, CommittableOffset, _] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor)
 
   /**
    * Java API
