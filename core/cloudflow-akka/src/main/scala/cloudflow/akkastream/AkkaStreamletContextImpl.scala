@@ -24,8 +24,7 @@ import scala.util._
 import akka._
 import akka.actor.ActorSystem
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
-import akka.cluster.sharding.typed.ClusterShardingSettings
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
 import akka.kafka.cluster.sharding.KafkaClusterSharding

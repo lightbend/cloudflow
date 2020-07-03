@@ -119,13 +119,6 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def sourceWithCommittableContext[T](inlet: CodecInlet[T]): SourceWithCommittableContext[T] =
     context.sourceWithCommittableContext(inlet)
 
-  def shardedSourceWithCommittableContext[T, M, E](
-      inlet: CodecInlet[T],
-      shardEntity: Entity[M, E],
-      entityIdExtractor: M => String
-  ): SourceWithContext[T, CommittableOffset, _] =
-    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor)
-
   /**
    * Java API
    */
@@ -140,6 +133,23 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.sourceWithCommittableContext(inlet).asJava
 
+
+  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
+                                                    shardEntity: Entity[M, E],
+                                                    entityIdExtractor: M => String
+                                                  ): SourceWithContext[T, CommittableOffset, _] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor)
+
+  /**
+   * Java API
+   * @see [[shardedSourceWithCommittableContext]]
+   */
+  def getShardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
+                                                      shardEntity: Entity[M, E],
+                                                      entityIdExtractor: M => String
+                                                     ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor).asJava
+
   /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
    *
@@ -148,14 +158,6 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
     context.plainSource(inlet, resetPosition)
-
-  def shardedPlainSource[T, M, E](
-      inlet: CodecInlet[T],
-      shardEntity: Entity[M, E],
-      entityIdExtractor: M => String,
-      resetPosition: ResetPosition = Latest
-  ): Source[T, _] =
-    context.shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition)
 
   /**
    * Java API
@@ -167,6 +169,33 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getPlainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): akka.stream.javadsl.Source[T, NotUsed] =
     plainSource(inlet, resetPosition).asJava
+
+
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  entityIdExtractor: M => String,
+                                  resetPosition: ResetPosition = Latest
+                                 ): Source[T, _] =
+    context.shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition)
+
+  /**
+   * Java API
+   */
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                     shardEntity: Entity[M, E],
+                                     entityIdExtractor: M => String
+                                    ): akka.stream.javadsl.Source[T, _] =
+    shardedPlainSource(inlet, shardEntity, entityIdExtractor, Latest).asJava
+
+  /**
+   * Java API
+   */
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                     shardEntity: Entity[M, E],
+                                     entityIdExtractor: M => String,
+                                     resetPosition: ResetPosition = Latest
+                                    ): akka.stream.javadsl.Source[T, _] =
+    shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition).asJava
 
   /**
    * Creates a sink for publishing `T` records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.
