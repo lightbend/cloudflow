@@ -8,31 +8,64 @@ Deploys a Cloudflow application to the cluster.
 == Synopsis
 
 Deploys a Cloudflow application to the cluster.
-The arguments to the command consists of a docker image path and optionally one
-or more '[streamlet-name].[configuration-parameter]=[value]' pairs, separated by
-a space.
 
-Streamlet volume mounts can be configured using the --volume-mount flag.
+[source,bash]
+----
+cloudflow deploy [flags]
+----
+
+Configuration files in HOCON format can be passed through with the `--conf` flag.
+Configuration files are merged by concatenating the files passed with `--conf` flags.
+The last `--conf [file]` argument can override values specified in earlier `--conf [file]` arguments.
+In the example below, where the same configuration path is used in file1.conf and file2.conf,
+the configuration value in file2.conf takes precedence, overriding the value provided by file1.conf:
+
+[source,bash]
+----
+$ kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
+----
+
+It is also possible to pass configuration values as command line arguments, as [config-key]=value pairs separated by
+a space. The [config-key] must be an absolute path to the value, exactly how it would be defined in a config file.
+Some examples:
+
+[source,bash]
+----
+$ kubectl cloudflow deploy target/swiss-knife.json cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+$ kubectl cloudflow deploy target/swiss-knife.json cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+----
+
+The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the `--conf` flag.
+
+The command supports a flag `--scale` to specify the scale of each streamlet on deploy in the form of key/value
+pairs ('streamlet-name=scale') separated by comma.
+
+[source,bash]
+----
+$ kubectl-cloudflow deploy call-record-aggregator.json --scale cdr-aggregator=3,cdr-generator1=3
+----
+
+Streamlet volume mounts can be configured using the `--volume-mount` flag.
 The flag accepts one or more key/value pair where the key is the name of the
-volume mount, specified as '[streamlet-name].[volume-mount-name]', and the value
+volume mount, specified as `[streamlet-name].[volume-mount-name]`, and the value
 is the name of a Kubernetes Persistent Volume Claim, which needs to be located
 in the same namespace as the Cloudflow application, e.g. the namespace with the
 same name as the application.
 
 [source,bash]
 ----
-kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name
+$ kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name
 ----
 
 It is also possible to specify more than one "volume-mount" parameter.
 
 [source,bash]
 ----
-kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
+$ kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name
 ----
 
 You can optionally provide credentials for the docker registry that hosts the
-specified image by using the `--username` flag in combination with either
+images of the application by using the `--username` flag in combination with either
 the `--password-stdin` or the `--password` flag.
 
 The `--password-stdin` flag is preferred because it is read from stdin, which
@@ -41,14 +74,14 @@ One way to provide the password via stdin is to pipe it from a file:
 
 [source,bash]
 ----
-cat key.json | kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key --password-stdin
+$ cat key.json | kubectl cloudflow deploy call-record-aggregator.json --username _json_key --password-stdin
 ----
 
 You can also use `--password`, which is less secure:
 
 [source,bash]
 ----
-kubectl cloudflow deploy docker.registry.com/my-company/sensor-data-scala:292-c183d80 --username _json_key -password "$(cat key.json)"
+$ kubectl cloudflow deploy call-record-aggregator.json --username _json_key -password "$(cat key.json)"
 ----
 
 If you do not provide a username and password, you will be prompted for them
@@ -59,25 +92,23 @@ the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
 
-[source,bash]
-----
-kubectl cloudflow deploy [flags]
-----
 
 == Examples
 
 [source,bash]
 ----
-kubectl cloudflow deploy registry.test-cluster.io/cloudflow/sensor-data-scala:292-c183d80 valid-logger.log-level=info valid-logger.msg-prefix=valid
+$ kubectl cloudflow deploy call-record-aggregator.json
 ----
 
 == Options
 
 [source,bash]
 ----
+  --conf stringArray               Accepts one or more files in HOCON format.
   -h, --help                       help for deploy
   -p, --password string            docker registry password.
       --password-stdin             Take the password from stdin
+      --scale stringToInt          Accepts key/value pairs for replicas per streamlet (default [])
   -u, --username string            docker registry username.
       --volume-mount stringArray   Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.
 ----

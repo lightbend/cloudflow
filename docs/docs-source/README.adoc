@@ -69,6 +69,7 @@ Change the internal version references to the new versions:
 * In `docs/shared-content-source/docs/modules/ROOT/partials/include.adoc` 
 ** update `:cloudflow-version:` to the new  `x.y.z` version
 ** update `:cloudflow-examples-version:` to the new `x.y.z` version
+** update `:cloudflow-branch-version:` to the exact tag of the released Cloudflow version (i.e vx.y.z)
 
 Note that internally, we use the actual version number to name our _modules_, while only the external-facing `docs-source` is called `current` to comply with the Lightbend conventions.
 

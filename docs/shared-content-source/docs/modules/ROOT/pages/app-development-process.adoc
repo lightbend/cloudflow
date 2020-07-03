@@ -99,6 +99,7 @@ After verification, you can run the complete application.
 IMPORTANT: The verification task is usually performed as a pre-requisite of other tasks, like `runLocal` or `buildApp` that we see next. 
 While it's possible to run it independently as shown here, it is most often used indirectly as part of those larger build tasks.
 
+[[local-testing]]
 == Test Locally Using the Sandbox
 
 Cloudflow comes with a local execution mode called _sandbox_. The sandbox instantiates all streamlets of an application's blueprint with their connections in a  single, local JVM.
@@ -224,7 +225,7 @@ $ sbt buildApp
 [success] /cloudflow/examples/call-record-aggregator/call-record-pipeline/src/main/blueprint/blueprint.conf verified.
 ... #<3>
 [info] Sending build context to Docker daemon  51.97MB
-[info] Step 1/4 : FROM lightbend/akka-base:2.0.0-cloudflow-akka-2.6.5-scala-2.12
+[info] Step 1/4 : FROM lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12
 [info]  ---> bbcdde34a60a
 [info] Step 2/4 : USER 185
 [info] Successfully built dc0b6c01246e

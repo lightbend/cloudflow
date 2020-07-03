@@ -21,7 +21,7 @@ The Cloudflow installer runs as a single-pod deployment and it creates a CustomR
 
 - NFS - a supporting component that provides a shareable file system to enable storage for stateful applications
 
-**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v2.0.0/bootstrap-install-script-2.0.0.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**:
+**Download and run the [bootstrap script](https://github.com/lightbend/cloudflow/releases/download/v2.0.5/bootstrap-install-script-2.0.5.sh) to deploy the installer and instantiate a `cloudflow` custom resource.**:
 
 ```bash
 $ ./bootstrap-install-script-<CLOUDFLOW_VERSION>.sh

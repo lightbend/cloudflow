@@ -45,9 +45,10 @@ To build the documentation, use `make` with the following commands:
 
 ### Updating a current version of the documentation
 
-T B W
+See docs-source/README.adoc 
 
 ### Adding a new version of the documentation
 
-TBW
+See docs-source/README.adoc 
+
 > **TODO**: copy the asciidoc help from the old `user-guide` README.
