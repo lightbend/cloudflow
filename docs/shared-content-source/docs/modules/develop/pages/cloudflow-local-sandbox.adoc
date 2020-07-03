@@ -231,7 +231,7 @@ The general syntax for a configuration entry is:
 ----
 cloudflow.streamlets.valid-logger.<config-scope>.<config-key>=value
 ----
-where the `config-facet` may be either `config-parameters` or `volume-mounts`.
+where the `config-scope` may be either `config-parameters` or `volume-mounts`.
 
 We can provide values for these two scopes as we explain in the following section.
 
