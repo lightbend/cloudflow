@@ -229,7 +229,7 @@ The general syntax for a configuration entry is:
 
 [source, HOCON]
 ----
-cloudflow.streamlets.valid-logger.<config-facet>.<config-key>=value
+cloudflow.streamlets.valid-logger.<config-scope>.<config-key>=value
 ----
 where the `config-facet` may be either `config-parameters` or `volume-mounts`.
 
