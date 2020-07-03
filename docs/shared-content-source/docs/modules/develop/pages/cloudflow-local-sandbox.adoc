@@ -220,7 +220,7 @@ cloudflow.streamlets.<streamlet-name>.<config-scope>.<config-key>=value
 
 === Supported Configuration Scopes
 
-In the sandbox runtime, only two configuration facets of streamlets are currently supported:
+In the sandbox runtime, only two configuration scopes of streamlets are currently supported:
 
 - configuration parameters, under the `config-parameters` facet.
 - volume mounts, under the `volume-mounts` scope.
