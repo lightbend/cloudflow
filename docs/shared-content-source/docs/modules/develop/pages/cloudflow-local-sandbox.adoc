@@ -233,7 +233,7 @@ cloudflow.streamlets.valid-logger.<config-facet>.<config-key>=value
 ----
 where the `config-facet` may be either `config-parameters` or `volume-mounts`.
 
-We can provide values for these two facets as we explain in the following section.
+We can provide values for these two scopes as we explain in the following section.
 
 ==== Using `config-parameters`
 
