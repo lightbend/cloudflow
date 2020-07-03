@@ -215,7 +215,7 @@ Note that because this file is in HOCON format, dot-notation is also supported.
 
 [source, HOCON]
 ----
-cloudflow.streamlets.<streamlet-name>.<config-facet>.<config-key>=value
+cloudflow.streamlets.<streamlet-name>.<config-scope>.<config-key>=value
 ----
 
 === Supported Configuration Scopes
