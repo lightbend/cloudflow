@@ -1,21 +1,23 @@
 import sbt._
 import sbt.Keys._
 
+//tag::local-conf[]
 lazy val sensorData =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin, ScalafmtPlugin)
     .settings(
       scalaVersion := "2.12.11",
+      runLocalConfigFile := Some("src/main/resources/local.conf"), //<1>
       scalafmtOnCompile := true,
+      name := "sensor-data-scala",
+//end::local-conf[]      
+
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-
-
       ),
-      name := "sensor-data-scala",
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
       
@@ -32,7 +34,7 @@ lazy val sensorData =  (project in file("."))
         "-language:_",
         "-unchecked"
       ),
-      runLocalConfigFile := Some("src/main/resources/local.conf"),
+      
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
