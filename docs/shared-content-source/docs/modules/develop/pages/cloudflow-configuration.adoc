@@ -1,0 +1,380 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+Cloudflow offers a flexible configuration model that lets you configure every aspect of the application deployment.
+
+In this section, we are going to first provide a description of this configuration model, explore how a configuration can be applied, and see several illustrative examples.
+
+== Configuration Scopes: The Cloudflow Configuration Model
+
+The Cloudflow configuration model is based on hierarchical scopes.
+These scopes range from broad settings for a runtime to specific settings for a streamlet instance. 
+
+Using this model, you can configure the following settings:
+
+    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
+    - Kubernetes container resource requirements
+    - Streamlet Configuration Parameters for a particular instance
+
+Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as syntax to specify the configuration.
+Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
+
+We have two main top-level scopes, one for streamlets and one for runtimes, as we can see here:
+
+|===
+| scope     | key
+| streamlet | `cloudflow.streamlets.[streamlet-name]`
+| runtime   | `cloudflow.runtimes.[runtime]`
+|===
+
+=== Configuring Streamlets Using the `streamlet` Scope
+
+The configuration for a specific streamlet instance must be specified in a `cloudflow.streamlets.[streamlet-name]` scope.
+This scope can optionally contain three sections to configure the following aspects of a streamlet instance: 
+
+.Sub-scopes for the a streamlet configuration 
+|===
+| scope     | key
+| configuration parameters | `config-parameters.[config-parameter-name]`
+| runtime-specific configuration | `config.[runtime].[runtime-specific-setting]`
+| kubernetes resources | `kubernetes.[kubernetes-object]`
+|===
+
+
+The example below shows this structure in action:
+
+[source, hocon]
+----
+cloudflow {
+  streamlets {
+    my-streamlet {
+      config-parameters {                   //<1>
+        // config parameter values go here  
+        my-config-parameter = "some-value"
+      }  
+      config {                              //<2>
+        // runtime settings go here
+        akka.loglevel = "DEBUG"
+      }
+      kubernetes {                          //<3>
+        pods.pod.containers.container {
+          // kubernetes container settings go here  
+          resources {
+            requests {
+              memory = "512M"
+            }
+            limits {
+              memory = "1024M"
+            }
+          }
+        }
+      }
+    }    
+  } 
+}
+----
+<1> `config-parameters` section
+<2> `config` section
+<3> `kubernetes` section
+
+You need to specify at least one of the sections shown above.
+
+==== Configuration Parameters Settings
+You can learn more about configuration parameters in xref:develop:streamlet-configuration.adoc[]
+
+==== Runtime Specific Settings
+For configuration settings specific to the runtime you are using, please refer to the configuration options of the specific runtime. 
+All settings provided under the `config` section are passed verbatim to the underlying runtime.
+
+For example, consider the following configuration snippet:
+
+[source, HOCON]
+----
+cloudflow {
+  streamlets {
+    my-streamlet {
+      config {                             
+        spark.broadcast.compress = "true"
+      }
+    //...
+    }
+  }
+}
+----
+
+With this configuration, the setting `spark.broadcast.compress = "true"` is passed to the Spark runtime session of the specific `my-streamlet` instance.  
+
+It follows, that the configuration options that you can use in this section are dependent of the runtime used. 
+Consult the documentation of your runtime of choice for more information.
+
+==== Kubernetes Container Settings
+
+Container resource requirements and environment variables can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes` section.
+The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod.containers.container {
+    env = [ 
+          { name = "JAVA_OPTS" 
+            value = "-XX:MaxRAMPercentage=40.0"
+          },{
+            name = "FOO"
+            value = "BAR"
+          }
+        ]
+    resources {
+      requests {
+        cpu = "500m"
+        memory = "512Mi"
+      }
+      limits {
+        memory = "4Gi"
+      }
+    }
+  }
+}
+----
+
+The above example shows that `500mcpu` is requested, as well as `512Mi` of memory. 
+The pod is limited to use `4Gi` of memory.
+It also shows how to set options to the JVM through an environment variable. 
+
+For runtimes that only deploy one pod per streamlet, the config path for the container settings is `kubernetes.pods.pod.containers.container`.
+
+Spark and Flink create two types of pods:
+
+- Spark creates Driver and Executor pods
+- Flink creates JobManager and TaskManager pods
+
+If you specify Kubernetes container settings via `kubernetes.pods.pod.containers.container`, the same settings will apply for all types of pods.
+
+For Spark you can use the following paths:
+  
+- For the Driver pods: `kubernetes.pods.driver.containers.container`      
+- For the Executor pods: `kubernetes.pods.executor.containers.container`      
+
+For Flink you can use the following paths:
+  
+- For the JobManager pods: `kubernetes.pods.job-manager.containers.container`      
+- For the TaskManager pods: `kubernetes.pods.task-manager.containers.container`      
+
+You can also specify the Kubernetes container settings for all streamlets using a particular runtime. 
+This is shown in the example below:
+
+[source, hocon]
+----
+cloudflow.runtimes.spark {
+  kubernetes.pods {
+    driver.containers.container {
+      resources {
+        requests {
+          cpu = "1"
+          memory = "1Gi"
+        }
+        limits {
+          memory = "2Gi"
+        }
+      }
+    }
+
+    executor.containers.container {
+      resources {
+        requests {
+          cpu = "2"
+          memory = "2Gi"
+        }
+        limits {
+          memory = "6Gi"
+        }
+      }
+    }
+  }
+}
+----
+
+The above example shows specific container settings for the Spark driver and executor pods. In this case the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi`.
+
+We explore the runtime configuration in more detail in the next section.
+
+=== Configuring a Runtime using the `runtime` Scope
+
+Configuration for all streamlets of a runtime can be specified in a `cloudflow.runtimes.[runtime].config` section.
+The configuration specified in `cloudflow.runtimes.[runtime].config` is merged as fallback, streamlet specific configuration takes precedence.
+An example is shown below:
+
+[source, hocon]
+----
+cloudflow {
+  runtimes {
+    akka {
+      config {
+        akka.loglevel = "DEBUG"
+      }
+      kubernetes {
+        pods.pod.containers.container {
+          // kubernetes container settings go here  
+          env = [ 
+            {
+              name = "JAVA_OPTS"
+              value = "-XX:MaxRAMPercentage=40.0 -Djdk.nio.maxCachedBufferSize=1048576"
+            }
+          ]
+
+          resources {
+            requests {
+              cpu = 2
+              memory = "512M"
+            }
+            limits {
+              memory = "1024M"
+            }
+          }
+        }
+      }
+    }    
+  } 
+}
+----
+
+Another example shows that you can provide configuration for all the runtimes your application uses, in this case Akka and Spark:
+[source, hocon]
+----
+cloudflow.runtimes {
+  spark.config {
+    spark.driver.memoryOverhead=384
+  }
+  akka.config {
+    akka { 
+      log-level = "INFO"  
+    }
+  }
+} 
+----
+
+=== Configuration Precedence
+
+As a general rule, a specific scope always has precendece over a more general one.
+
+A setting defined at the `runtime` scope will apply to all streamlets that use that runtime. 
+But if a streamlet-specific configuration redefines the same setting, the more specific configuration will apply for that particular instance.
+
+The combined example shown below specifies that by default the `akka.loglevel` setting should be set to `INFO`. 
+Specifically for `my-streamlet` the log-level overrides this default and is set to `DEBUG`.
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet.config {
+  akka { 
+    log-level = "DEBUG"  
+  }
+}
+cloudflow.runtimes.akka.config {
+  akka { 
+    log-level = "INFO"  
+  }
+}
+----
+
+=== Configuration Paths as Keys
+Paths can be used as keys in HOCON, which is shown in the example below:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  config-parameters {
+    // config parameter values go here  
+  }  
+  config {
+    // runtime settings go here
+  }
+  kubernetes.pods.pod.containers.container {
+    // kubernetes container settings go here  
+  }
+}
+----
+
+An example of only setting an Akka configuration value is shown below:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet.config {
+  akka { 
+    log-level = "DEBUG"  
+  }
+}
+----
+
+Which can be collapsed further as is shown in the example below:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet.config.akka.log-level = "DEBUG"  
+----
+
+== Applying a Configuration
+
+A streamlet can be configured at deployment time with `kubectl cloudflow deploy` or re-configured at runtime with `kubectl cloudflow configure`. 
+These commands deploy or restart streamlets as necessary.
+
+Configuration values can be set for all streamlets of a particular runtime at once, or they can be set for a specific streamlet.
+
+The configuration can be specified via file arguments or passed directly on the command line.
+
+=== Configuring a Streamlet using Configuration Files
+
+Let's look at an example of passing a configuration file to the deploy command:
+
+[source, bash]
+----
+$ kubectl cloudflow deploy target/my-app.json --conf my-config.conf
+----
+
+In the above example the `my-app` application is deployed with a `my-config.conf` configuration file.
+
+Configuration files are merged by concatenating the files passed with `--conf` flags. 
+The last `--conf [file]` argument can override values specified in earlier `--conf [file]` arguments.
+In the example below, where the same configuration path is used in `file1.conf` and `file2.conf`, 
+the configuration value in `file2.conf` takes precedence, overriding the value provided by `file1.conf`:
+
+[source, bash]
+----
+$ kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
+----
+
+=== Configuring a Streamlet using Command Line Arguments
+
+It is also possible to pass configuration values directly as command line arguments, as `[config-path]=value` pairs separated by
+a space. The `[config-path]` must be an absolute path to the value, exactly how it would be defined in a config file, using configuration paths. 
+
+Let's see some examples:
+
+.Set the `log-level` for the `akka` runtime for streamlet `akka-process` to `DEBUG`
+[source, bash]
+----
+$ {cli-plugin} cloudflow deploy target/swiss-knife.json \
+  cloudflow.streamlets.akka-process.config.akka.log-level = "DEBUG"
+----
+
+.Set the `memoryOverhead` of the Spark `driver` runtime configuration to `512` (Mb)
+[source, bash]
+----
+$ {cli-plugin} cloudflow deploy target/swiss-knife.json \
+  cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
+----
+
+.Set the streamlet configuration parameter `configurable-message` for streamlet `spark-process` to `SPARK-OUTPUT:`
+[source, bash]
+----
+$ {cli-plugin} cloudflow deploy target/swiss-knife.json \ 
+  cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512 \
+  cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
+----
+
+The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the `--conf` flags.
+
+== What's Next
+
+Now that we have mastered the configuration options in Cloudflow, we should learn about xref:develop:blueprints.adoc[] and how they help us to assemble streamlets into end-to-end applications.
