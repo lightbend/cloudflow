@@ -266,7 +266,7 @@ In the following example, we declare a volume mount with name `source-data-mount
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 ----
 
-In a Kubernetes deployment, that volume mount gets mapped to a permanent volume claim (PVC). 
+In a Kubernetes deployment, that volume mount gets mapped to a PersistentVolumeClaim (PVC). 
 
 When running in the _sandbox_, the requested mount path must be replaced by a local folder to run the application successfully in the local machine. 
 The local path assignment may be configured to point to a specific directory. 
