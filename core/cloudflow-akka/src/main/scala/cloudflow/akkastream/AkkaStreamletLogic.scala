@@ -149,13 +149,13 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
     context.plainSource(inlet, resetPosition)
 
-  def shardedPlainSource[T, E](
+  def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String,
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String,
       resetPosition: ResetPosition = Latest
-  ): (Source[T, NotUsed], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) =
-    context.shardedPlainSource(inlet, typeKey, entityIdExtractor, resetPosition)
+  ): Source[T, _] =
+    context.shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition)
 
   /**
    * Java API

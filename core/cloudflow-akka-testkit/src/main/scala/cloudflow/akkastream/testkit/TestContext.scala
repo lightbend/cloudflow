@@ -176,11 +176,10 @@ private[testkit] case class TestContext(
                                                                                 shardEntity: Entity[M, E],
                                                                                 entityIdExtractor: M => String) = ???
 
-  override private[akkastream] def shardedPlainSource[T, E](inlet: CodecInlet[T],
-                                                            typeKey: EntityTypeKey[E],
-                                                            entityIdExtractor: E => String,
-                                                            resetPosition: ResetPosition) =
-    ???
+  override private[akkastream] def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                                               shardEntity: Entity[M, E],
+                                                               entityIdExtractor: M => String,
+                                                               resetPosition: ResetPosition = Latest): Source[T, _] = ???
 }
 
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)

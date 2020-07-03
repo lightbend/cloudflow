@@ -222,6 +222,60 @@ final class AkkaStreamletContextImpl(
       }
   }
 
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  entityIdExtractor: M => String,
+                                  resetPosition: ResetPosition = Latest): Source[T, _] = {
+    val topic = findTopicForPort(inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withGroupId(gId)
+      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
+      .withProperties(topic.kafkaConsumerProperties)
+
+    val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
+      KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
+
+    import akka.actor.typed.scaladsl.adapter._
+    val subscription = Subscriptions
+      .topics(topic.name)
+      .withRebalanceListener(rebalanceListener.toClassic)
+
+    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
+
+    import scala.concurrent.duration._
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[M]] =
+      KafkaClusterSharding(system).messageExtractorNoEnvelope(
+        timeout = 10.seconds,
+        topic = topic.name,
+        entityIdExtractor = entityIdExtractor,
+        settings = consumerSettings
+      )
+
+    Source
+      .futureSource {
+        messageExtractor.map { m =>
+          ClusterSharding(system.toTyped).init(
+            shardEntity
+              .withAllocationStrategy(
+                shardEntity.allocationStrategy
+                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
+              )
+              .withMessageExtractor(m)
+          )
+
+          Consumer
+            .plainSource(consumerSettings, subscription)
+            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .via(handleTermination)
+            .map { record ⇒
+              inlet.codec.decode(record.value)
+            }
+        }
+      }
+  }
+
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
@@ -238,49 +292,6 @@ final class AkkaStreamletContextImpl(
       .via(handleTermination)
       .to(Producer.plainSink(producerSettings))
       .mapMaterializedValue(_ ⇒ NotUsed)
-  }
-
-  def shardedPlainSource[T, E](
-      inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String,
-      resetPosition: ResetPosition = Latest
-  ): (Source[T, NotUsed], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]]) = {
-    // TODO clean this up, lot of copying code, refactor.
-    val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
-      .withProperties(topic.kafkaConsumerProperties)
-
-    val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
-      KafkaClusterSharding(system).rebalanceListener(typeKey)
-
-    import akka.actor.typed.scaladsl.adapter._
-    val subscription = Subscriptions
-      .topics(topic.name)
-      .withRebalanceListener(rebalanceListener.toClassic)
-
-    val consumer = Consumer
-      .plainSource(consumerSettings, subscription)
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
-      .via(handleTermination)
-      .map { record ⇒
-        inlet.codec.decode(record.value)
-      }
-
-    import scala.concurrent.duration._
-    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]] =
-      KafkaClusterSharding(system).messageExtractorNoEnvelope(
-        timeout = 10.seconds,
-        topic = "user-topic",
-        entityIdExtractor = entityIdExtractor,
-        settings = consumerSettings
-      )
-
-    (consumer, messageExtractor)
   }
 
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {

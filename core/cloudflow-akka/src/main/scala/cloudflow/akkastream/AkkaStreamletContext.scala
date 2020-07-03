@@ -50,12 +50,12 @@ trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed]
   private[akkastream] def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed]
-  private[akkastream] def shardedPlainSource[T, E](
+  private[akkastream] def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
-      typeKey: EntityTypeKey[E],
-      entityIdExtractor: E => String,
-      resetPosition: ResetPosition
-  ): (Source[T, NotUsed], Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E]])
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String,
+      resetPosition: ResetPosition = Latest
+  ): Source[T, _]
 
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
