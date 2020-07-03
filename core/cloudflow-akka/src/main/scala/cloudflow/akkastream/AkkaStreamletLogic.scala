@@ -20,16 +20,13 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.{ Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.stream.scaladsl._
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
-import akka.kafka.cluster.sharding.KafkaClusterSharding
 import com.typesafe.config.Config
 import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
-
-import scala.concurrent.Future
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
@@ -133,21 +130,35 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.sourceWithCommittableContext(inlet).asJava
 
-
+  /**
+   * This source is designed to function the same as [[sourceWithCommittableContext]]
+   * while also leveraging Akka Kafka Cluster Sharding for stateful streaming.
+   *
+   * This source emits `T` records together with the committable context, thus makes it possible
+   * to commit offset positions to Kafka using `committableSink(outlet: CodecOutlet[T])`.
+   *
+   * It is required to use this source with Akka Cluster.  This source will start up
+   * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
+   * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
+   *
+   * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param shardEntity is used to specific the settings for the started shard region
+   * @param entityIdExtractor to pick a field from the Entity to use as the entity id for the hashing strategy
+   **/
   def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                    shardEntity: Entity[M, E],
-                                                    entityIdExtractor: M => String
-                                                  ): SourceWithContext[T, CommittableOffset, _] =
+                                                   shardEntity: Entity[M, E],
+                                                   entityIdExtractor: M => String): SourceWithContext[T, CommittableOffset, _] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor)
 
   /**
    * Java API
    * @see [[shardedSourceWithCommittableContext]]
    */
-  def getShardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                      shardEntity: Entity[M, E],
-                                                      entityIdExtractor: M => String
-                                                     ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+  def getShardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      entityIdExtractor: M => String
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor).asJava
 
   /**
@@ -170,12 +181,26 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getPlainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): akka.stream.javadsl.Source[T, NotUsed] =
     plainSource(inlet, resetPosition).asJava
 
-
+  /**
+   * This source is designed to function the same as [[plainSource]]
+   * while also leveraging Akka Kafka Cluster Sharding for stateful streaming.
+   *
+   * The `plainSource` emits `T` records (as received through the `inlet`).
+   *
+   * It has no support for committing offsets to Kafka.
+   *
+   * It is required to use this source with Akka Cluster.  This source will start up
+   * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
+   * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
+   *
+   * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param shardEntity is used to specific the settings for the started shard region
+   * @param entityIdExtractor to pick a field from the Entity to use as the entity id for the hashing strategy
+   **/
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
                                   entityIdExtractor: M => String,
-                                  resetPosition: ResetPosition = Latest
-                                 ): Source[T, _] =
+                                  resetPosition: ResetPosition = Latest): Source[T, _] =
     context.shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition)
 
   /**
@@ -183,8 +208,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
-                                     entityIdExtractor: M => String
-                                    ): akka.stream.javadsl.Source[T, _] =
+                                     entityIdExtractor: M => String): akka.stream.javadsl.Source[T, _] =
     shardedPlainSource(inlet, shardEntity, entityIdExtractor, Latest).asJava
 
   /**
@@ -193,8 +217,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
                                      entityIdExtractor: M => String,
-                                     resetPosition: ResetPosition = Latest
-                                    ): akka.stream.javadsl.Source[T, _] =
+                                     resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, _] =
     shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition).asJava
 
   /**
