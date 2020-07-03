@@ -223,7 +223,7 @@ cloudflow.streamlets.<streamlet-name>.<config-scope>.<config-key>=value
 In the sandbox runtime, only two configuration facets of streamlets are currently supported:
 
 - configuration parameters, under the `config-parameters` facet.
-- volume mounts, under the `volume-mounts` facet.
+- volume mounts, under the `volume-mounts` scope.
 
 The general syntax for a configuration entry is:
 
