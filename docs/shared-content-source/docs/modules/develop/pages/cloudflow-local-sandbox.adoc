@@ -183,36 +183,62 @@ In a Cloudflow application, Streamlets offer several customization options such 
 The Sandbox offers a local implementation of these options that are meaningful in a local environment.
 
 [[local-conf]]
-=== The local configuration file
+=== Using a Local Configuration File
 
-Applications running in the Sandbox can specify custom values for the local environment by making use of a local configuration file in HOCON format. 
-This file is called local.conf by default and is assumed to be available on the classpath, usually under the `application/src/main/resources` folder. 
-A custom local configuration file can be specified in the `build.sbt`, using the `runLocalConfigFile` key. 
-For example, in this `build.sbt` file, we change the local configuration to myruntime.conf in the root dir of the project
+Applications running in the _sandbox_ can specify custom values for the local environment by making use of a local configuration file in HOCON format.
 
-[source,conf]
+This file is usually located in the `src/main/resources` folder of your application project.
+The full relative path to this local configuration file must be specified in the `build.sbt`, using the `runLocalConfigFile` key, like we show in the following snippet: 
+
+.`build.sbt`
+[source, scala]
 ----
-runLocalConfigFile := Some("./myruntime.conf"),
-The contents of this file are organized by streamlet name, using the streamlet name that you specified in the blueprint.
-
-file-ingress {
-  //config-key = value  -- values for the file-ingress streamlet
-}
-
-rotor-avg-logger {
-  //config-key = value  -- values for the rotor-avg-logger streamlet
-}
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[tag=local-conf]
+...
 ----
 
-Note that because this file is in HOCON format, dot-notation is also supported:
+==== Providing Configuration Values
+
+With the local configuration file, you can provide values to streamlet configuration parameters and point volume mounts to locally available folders.
+
+The configuration provided in this file follows the same principles as the general streamlet configuration system in Cloudflow: It uses HOCON syntax to define configuration entries, and it's hierarchically structured by streamlet under the `cloudflow.streamlets.<streamlet-name>` key.
+
+For example, in the following configuration file, we give a local path to a `volume-mount` named `file-ingress` and provide a local value for a configuration parameter called `valid-logger`.
+
+.Example of a `local.conf` file
+[source, HOCON]
 ----
-file-ingress.<config-key>=value
-rotor-avg-logger.<config-key>=value
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/local.conf[]
 ----
 
-=== Using configuration values
+Note that because this file is in HOCON format, dot-notation is also supported.
 
-The Streamlet API lets us declare configuration parameters that can be specified at deployment time. For example, this declaration allows us to provide a custom prefix value as a String:
+[source, HOCON]
+----
+cloudflow.streamlets.<streamlet-name>.<config-facet>.<config-key>=value
+----
+
+=== Supported Configuration Facets
+
+In the sandbox runtime, only two configuration facets of streamlets are currently supported:
+
+- configuration parameters, under the `config-parameters` facet.
+- volume mounts, under the `volume-mounts` facet.
+
+The general syntax for a configuration entry is:
+
+[source, HOCON]
+----
+cloudflow.streamlets.valid-logger.<config-facet>.<config-key>=value
+----
+where the `config-facet` may be either `config-parameters` or `volume-mounts`.
+
+We can provide values for these two facets as we explain in the following section.
+
+==== Using `config-parameters`
+
+The Streamlet API lets us declare configuration parameters that can be specified at deployment time. 
+For example, this declaration allows us to provide a custom prefix value as a `String`:
 
 [source,scala]
 ----
@@ -223,37 +249,37 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 //...
 ----
 
-Let’s assume that we have declared a metric-logger streamlet in the blueprint of this application. When running in the Sandbox, we can specify a custom value for this configuration parameter in the local configuration file as:
+Let’s assume that we have declared a `valid-logger` streamlet in the blueprint of this application. 
+When running in the Sandbox, we can specify a custom value for this configuration parameter in the local configuration file as:
 
-[source]
+[source, HOCON]
 ----
-metric-logger {
-  msg-prefix = “local”
-}
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/local-alt.conf[tag=config-param]
 ----
 
 === Using Volume Mounts
-In the Streamlet API, Volume Mounts are declared in a similar way to configuration parameters, using a programmatic description of the Volume Mount that includes its desired mount path. In the following example, we declare a Volume Mount with name source-data-mount, requested to be mounted at /mnt/data, and it requires to have a ReadWriteMany access mode:
+In the Streamlet API, volume mounts --a Kubernets construct to access disk storage-- are declared in a similar way to configuration parameters, using a programmatic description of the volume mount that includes its desired mount path. 
+In the following example, we declare a volume mount with name `source-data-mount`, requested to be mounted at `/mnt/data` in the pod's filesystem, and it requires to have a `ReadWriteMany` access mode:
 
 [source,scala]
 ----
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount1]
 ----
 
-In a Kubernetes deployment, that Volume Mount gets mapped to a Permanent Volume Claim. The requested mount path is replaced by a local path when we use the Sandbox to run an application containing one or more streamlets that declare a Volume Mount. The local path assignment can be configured to point to a specific directory. Otherwise, the mount path will be assigned to a temporary directory, created on the fly.
+In a Kubernetes deployment, that volume mount gets mapped to a permanent volume claim (PVC). 
 
-The override configuration for volume mounts must be specified in the local configuration file that we discussed earlier.
+When running in the _sandbox_, the requested mount path must be replaced by a local folder to run the application successfully in the local machine. 
+The local path assignment may be configured to point to a specific directory. 
+If no explicit configuration is provided, the mount path will be assigned to a temporary directory, created at runtime.
 
-This example shows a configuration for the Volume Mount named source-data-mount, which we declared earlier in this section, and it points to the local directory /tmp/cloudflow
+This example shows a local configuration for the volume mount named `source-data-mount`, which we declared earlier in this section, and it points to the local directory `/tmp/cloudflow`
 
-[source]
+[source, HOCON]
 ----
-file-ingress {
-  source-data-mount="/tmp/cloudflow"
-}
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/local-alt.conf[tag=volume-mount]
 ----
 
-Note that for this feature to work properly, it’s important to request the assigned mount path from the StreamletContext, instead of relying on a hardcoded value, like this:
+Note that for this feature to work properly, it’s important to request the assigned mount path from the `StreamletContext`, instead of relying on a hardcoded value, like this:
 
 [source,scala]
 ----
@@ -265,7 +291,8 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/scala/sensordata/SensorDataFileIngress.scala[tag=volume-mount2]
 ----
 
-In the Streamlet programming, do not assume that the mounted path is the same as the requested path. Do not do this:
+In the Streamlet programming, do not assume that the mounted path is the same as the requested path. 
+Do not do this!
 
 [source,scala]
 ----
