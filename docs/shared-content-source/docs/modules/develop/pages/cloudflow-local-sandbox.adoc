@@ -258,7 +258,7 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 ----
 
 === Using Volume Mounts
-In the Streamlet API, volume mounts --a Kubernets construct to access disk storage-- are declared in a similar way to configuration parameters, using a programmatic description of the volume mount that includes its desired mount path. 
+In the Streamlet API, volume mounts--a Kubernetes construct to access disk storage--are declared in a similar way to configuration parameters, using a programmatic description of the volume mount that includes its desired mount path.
 In the following example, we declare a volume mount with name `source-data-mount`, requested to be mounted at `/mnt/data` in the pod's filesystem, and it requires to have a `ReadWriteMany` access mode:
 
 [source,scala]
