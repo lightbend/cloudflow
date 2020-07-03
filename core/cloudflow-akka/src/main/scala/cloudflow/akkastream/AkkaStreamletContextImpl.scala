@@ -155,7 +155,7 @@ final class AkkaStreamletContextImpl(
       shardEntity: Entity[M, E],
       entityIdExtractor: M => String
   ): SourceWithContext[T, CommittableOffset, _] =
-    shardedSourceWithContext[T, M, E](inlet, shardEntity, entityIdExtractor)
+    shardedSourceWithContext(inlet, shardEntity, entityIdExtractor)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =

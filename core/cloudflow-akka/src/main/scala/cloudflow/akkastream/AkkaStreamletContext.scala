@@ -129,6 +129,3 @@ case object Earliest extends ResetPosition {
 case object Latest extends ResetPosition {
   val autoOffsetReset = "latest"
 }
-
-case class ShardedSourceEnvelope[T, E](source: SourceWithContext[T, CommittableOffset, _],
-                                       kafkaShardingExtractor: KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[E])
