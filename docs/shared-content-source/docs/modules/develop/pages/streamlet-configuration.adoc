@@ -2,11 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-A streamlet can require dynamic configuration parameters at deployment time. Configuration parameters can be used to change the way the streamlet functions when it is run.
+The Streamlet API provides methods to declare configuration parameters for a streamlet.
+Configuration parameters can be used to indicate that a streamlet requires configuration before it is run. 
 
 Examples of configuration parameters are database connection strings, URLs, credentials, or anything else that you want to specify at deployment time.
 
-A streamlet specifies that it requires particular config parameters by expressing them in code. The values for these parameters will be requested, validated, and set when `kubectl cloudflow deploy` is used to deploy the Cloudflow application.
+A streamlet specifies that it requires particular config parameters by expressing them in code. 
+The values for these parameters will be requested, validated, and set when `kubectl cloudflow deploy` or `kubectl cloudflow configure` is used to deploy or configure the Cloudflow application.
 
 There are a number of predefined configuration parameter types:
 
@@ -108,43 +110,46 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/
 ----
 
 
-== Providing configuration parameters when deploying a Cloudflow application
+== Providing Configuration Parameters when Deploying a Cloudflow Application
 
-Configuration parameters will need to be provided with values during deployment of the application. The `deploy` command accepts these values as a set of key/value pairs.
+Configuration parameters will need to be provided with values during deployment of the application. 
+The `deploy` command accepts these values as a set of key/value pairs or in a configuration file.
 
 The format for specifying configuration parameter values is as follows:
 
-    [streamlet name].[configuration parameter name]="[value]"
+    [config-path]="[value]"
 
 Deploying an application without specifying values for all required configuration parameters will fail and result in an error message like the following.
 
-NOTE: Examples in this section show the OpenShift `oc plugin`, however you should substitute the correct command for your K8s distribution.
-
 [source,bash,subs=attributes+]
 ----
-$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/call-record-pipeline:292-c183d80 cdr-aggregator.group-by-window="7 minute" cdr-aggregator.watermark="1 minute"
+$ kubectl cloudflow deploy target/call-record-pipeline.json \
+  cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window="7 minute" \ 
+  cloudflow.streamlets.cdr-aggregator.config-parameters.watermark="1 minute"
 
 [Error] Please provide values for the following configuration parameter(s):
-- cdr-generator2.records-per-second - Records per second to process.
-- cdr-generator1.records-per-second - Records per second to process.
+- cloudflow.streamlets.cdr-generator1.config-parameters.records-per-second - Records per second to process.
+- cloudflow.streamlets.cdr-generator2.config-parameters.records-per-second - Records per second to process.
 ----
 
-To successfully deploy the application, all configuration parameter values have to be provided on the command line:
+To successfully deploy the application, all configuration parameter values have to be provided via a configuration file using `--conf file` or directly on the command line:
 
 [source,bash,subs=attributes+]
 ----
-$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/call-record-pipeline:292-c183d80 cdr-aggregator.group-by-window="7 minute" cdr-aggregator.watermark="1 minute" cdr-generator1.records-per-second="10" cdr-generator2.records-per-second="10"
+$ kubectl cloudflow deploy target/call-record-pipeline.json --conf test-config.conf
 
 [Done] Deployment of application `call-record-aggregator` has started.
 ----
 
-Configuration parameters can be omitted from the deployment command line as long as they have default values. 
+Configuration parameters can be omitted from the configuration file or the deployment command line as long as they have default values. 
 [source,bash,subs=attributes+]
 ----
-$ {cli-plugin} cloudflow deploy registry-default.my.kubernetes.cluster/cloudflow/sensor-data-java:439-a5837b5
+$ {cli-plugin} cloudflow deploy target/sensor-data-java.json
 
-Default value 'device-ids.txt' will be used for configuration parameter 'filter.filter-filename'
-Default value '10' will be used for configuration parameter 'filter.filter-pollinginterval'
+Default value 'device-ids.txt' will be used for configuration parameter 'cloudflow.streamlets.filter.config-parameters.filter-filename'
+Default value '10' will be used for configuration parameter 'cloudflow.streamlets.filter.config-parameters.filter-pollinginterval'
 
 [Done] Deployment of application `sensor-data-java` has started.
 ----
+
+For more information, see xref:develop:cloudflow-configuration.adoc[]
