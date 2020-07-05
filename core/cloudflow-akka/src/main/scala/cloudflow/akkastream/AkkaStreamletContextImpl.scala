@@ -23,6 +23,7 @@ import scala.concurrent._
 import scala.util._
 import akka._
 import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
@@ -61,6 +62,8 @@ final class AkkaStreamletContextImpl(
     def ready: Future[Dun]     = readyFuture
     def stop(): Future[Dun]    = AkkaStreamletContextImpl.this.stop()
   }
+
+  def clusterSharding: ClusterSharding = ClusterSharding(system.toTyped)
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {

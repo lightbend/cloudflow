@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 import cloudflow.akkastream.{AkkaStreamlet, Clustering}
 import connectedcar.data.{ConnectedCarAgg, ConnectedCarERecord}
 
-object ConnectedCarCluster extends AkkaStreamlet with Clustering {
+class ConnectedCarCluster extends AkkaStreamlet with Clustering {
   val in    = AvroInlet[ConnectedCarERecord]("in")
   val out   = AvroOutlet[ConnectedCarAgg]("out", m ⇒ m.driver.toString)
   val shape = StreamletShape(in).withOutlets(out)

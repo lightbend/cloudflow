@@ -17,7 +17,9 @@ object ConnectedCarActor {
           val newAverage = ((averageSpeed * numberOfRecords) + message.record.speed) / (numberOfRecords + 1)
           val newNumberOfRecords = numberOfRecords+1
 
-          message.sender ! ConnectedCarAgg(message.record.carId, message.record.driver, averageSpeed, newNumberOfRecords)
+          val newAgg = ConnectedCarAgg(message.record.carId, message.record.driver, newAverage, newNumberOfRecords)
+
+          message.sender ! newAgg
 
           updated(newNumberOfRecords, message.record.driver, carId, newAverage, message.record.speed)
         }

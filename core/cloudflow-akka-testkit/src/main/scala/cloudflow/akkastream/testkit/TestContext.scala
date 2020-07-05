@@ -21,7 +21,9 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent._
 import akka.NotUsed
 import akka.actor._
-import akka.cluster.sharding.typed.scaladsl.{ Entity, EntityTypeKey }
+import akka.actor.typed.scaladsl.adapter._
+import akka.cluster.sharding.typed.ShardingMessageExtractor
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.kafka.CommitterSettings
 import akka.kafka.ConsumerMessage._
 import akka.stream._
@@ -72,6 +74,11 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
+  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], entityIdExtractor: M => String) = {
+    ClusterSharding(system.toTyped).init(shardEntity)
+    sourceWithContext(inlet)
+  }
+
   private def flowWithCommittableContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
     val flow = Flow[T]
 
@@ -108,6 +115,15 @@ private[testkit] case class TestContext(
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
+
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  entityIdExtractor: M => String,
+                                  resetPosition: ResetPosition = Latest): Source[T, _] = {
+    ClusterSharding(system.toTyped).init(shardEntity)
+    plainSource(inlet, resetPosition)
+  }
+
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒
     (el, TestCommittableOffset())
   }
@@ -171,15 +187,6 @@ private[testkit] case class TestContext(
 
   def metricTags(): Map[String, String] =
     Map()
-
-  override private[akkastream] def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                                                shardEntity: Entity[M, E],
-                                                                                entityIdExtractor: M => String) = ???
-
-  override private[akkastream] def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                                               shardEntity: Entity[M, E],
-                                                               entityIdExtractor: M => String,
-                                                               resetPosition: ResetPosition = Latest): Source[T, _] = ???
 }
 
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)

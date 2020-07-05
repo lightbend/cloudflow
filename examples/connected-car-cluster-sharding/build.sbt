@@ -40,7 +40,8 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
-      "ch.qos.logback" %  "logback-classic" % "1.2.3"
+      "ch.qos.logback" %  "logback-classic" % "1.2.3",
+      "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )
   )
   .dependsOn(datamodel)
