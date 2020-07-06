@@ -6,7 +6,7 @@ Highlights of Cloudflow 2.0.5 are improved documentation, installer improvements
 
 # Highlights of Cloudflow 2.0.5
 - Documentation for 2.0 features including a migration guide from 1.3.x to 2.0.x.
-- More configurable installer, making it possible to modify the docker images that used.
+- More configurable installer, making it possible to modify the docker images that are used.
 - Update to Akka 2.6.6
 - Config for local runner now follows the new format introduced in 2.0.0 #552
 - Added missing check for port bound to many topics #547
