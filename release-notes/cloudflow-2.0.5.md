@@ -1,4 +1,4 @@
-# Cloudflow 2.0.5 Release Notes (June 10th, 2020)
+# Cloudflow 2.0.5 Release Notes (July 6th, 2020)
 
 Today we are happy to announce the availability of Cloudflow 2.0.5. 
 
