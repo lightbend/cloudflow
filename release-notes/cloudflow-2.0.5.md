@@ -7,9 +7,9 @@ Highlights of Cloudflow 2.0.5 are improved documentation, installer improvements
 # Highlights of Cloudflow 2.0.5
 - Documentation for 2.0 features including a migration guide from 1.3.x to 2.0.x.
 - More configurable installer, making it possible to modify the docker images that are used.
-- Update to Akka 2.6.6
-- Config for local runner now follows the new format introduced in 2.0.0 #552
-- Added missing check for port bound to many topics #547
+- Update to Akka 2.6.6 [#516](https://github.com/lightbend/cloudflow/issues/516) [#530](https://github.com/lightbend/cloudflow/pull/530)
+- Config for local runner now follows the new format introduced in 2.0.0 [#541](https://github.com/lightbend/cloudflow/issues/541)[#552](https://github.com/lightbend/cloudflow/pull/552)
+- Added missing check for port bound to many topics [#549](https://github.com/lightbend/cloudflow/issues/549) [#547](https://github.com/lightbend/cloudflow/pull/547)
 
 **The Cloudflow 2.0.5 `kubectl` plugin can be downloaded using one of the following links:**
 
