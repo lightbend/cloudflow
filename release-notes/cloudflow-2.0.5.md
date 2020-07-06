@@ -5,7 +5,7 @@ Today we are happy to announce the availability of Cloudflow 2.0.5.
 Highlights of Cloudflow 2.0.5 are improved documentation, installer improvements and support for Akka 2.6.6.
 
 # Highlights of Cloudflow 2.0.5
-- Documentation for 2.0 features including a migration guide from 1.3.x to 2.0.x.
+- [Documentation](https://cloudflow.io/docs/current/index.html) for 2.0 features including a [migration guide from 1.3.x to 2.0.x](https://cloudflow.io/docs/current/project-info/migration-1_3-2_0.html). 
 - More configurable installer, making it possible to modify the docker images that are used.
 - Update to Akka 2.6.6 [#516](https://github.com/lightbend/cloudflow/issues/516) [#530](https://github.com/lightbend/cloudflow/pull/530)
 - Config for local runner now follows the new format introduced in 2.0.0 [#541](https://github.com/lightbend/cloudflow/issues/541) [#552](https://github.com/lightbend/cloudflow/pull/552)
