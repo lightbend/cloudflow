@@ -86,6 +86,12 @@ object CloudflowBasePlugin extends AutoPlugin {
           )
           .value,
     buildAndPublish := Def.task {
+          val log = streams.value.log
+          log.err("""`buildAndPublish` is deprecated since Cloudflow v2.0. Use `buildApp` instead.
+                     | See https://cloudflow.io/docs/current/project-info/migration-1_3-2_0.html#_build_process for more info.
+                  """.stripMargin)
+        }.value,
+    buildAndPublishImage := Def.task {
           val _ = (checkUncommittedChanges.value, verifyDockerRegistry.value)
           Def.task {
             val streamletDescriptors = streamletDescriptorsInProject.value
