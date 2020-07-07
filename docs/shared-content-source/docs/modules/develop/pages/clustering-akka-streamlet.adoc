@@ -1,0 +1,65 @@
+:page-partial:
+:page-supergroup-scala-java: Language
+
+include::ROOT:partial$include.adoc[]
+
+https://doc.akka.io/docs/akka/current/typed/cluster.html[Akka Cluster] is a feature of Akka that
+allows Akka nodes to form a cluster and communicate.  This feature can be used within cloudflow to
+build stateful Akka Streamlets.
+
+== Akka Cluster
+
+=== Use Case
+
+Akka Clustering in a cloudflow Akka Streamlet gives you the ability to leverage existing Akka tools for managing
+data in-memory. Akka Cluster Sharding can be used to where data must be consistent and Akka Distributed Data
+can be used for eventually consistent highly-available data.  There exist many real world use cases where
+stateful stream are needed including model updates in real-time ML serving and sharding IOT Device State.
+
+To activate Clustering on a specific Akka Streamlet add the Clustering trait to your streamlet as show below.
+
+[source,scala]
+----
+object ConnectedCarCluster extends AkkaStreamlet with Clustering
+----
+
+By including the clustering Trait on you Akka Streamlet cloudflow will automatically setup all the
+configs your streamlet needs to form a cluster locally and deployed on kubernetes.
+
+== Kafka External Sharding Source
+
+When using Akka Cluster Sharding with a normal cloudflow source it is likely that the location of a specific
+Akka shard is not the same as the node assigned to that shard's corresponding Kafka partition.  In this case every
+message read from kafka would need to be sent over the network to the Shard node and back.
+
+To avoid this case and coordinate the location of Akka shards and Kafka partitions cloudflow users can
+you can use `shardedSourceWithCommittable` and `shardedPlainSource`.  These Sources use an an Akka feature
+called a
+https://doc.akka.io/docs/alpakka-kafka/current/cluster-sharding.html[Kafka ExternalShardAllocationStrategy].
+
+To use these Sources you must first implement Clustering on your Akka Streamlet then follow
+the examples below.
+
+`shardedSourceWithCommittableContext` like its non-sharded counterpart will include Kafka offset information
+as context as well as implementing the Kafka Sharding strategy
+
+[source,scala]
+----
+val messageExtractor = (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
+val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor(entityContext.entityId))
+
+val source:SourceWithContext[ConnectedCarERecord, CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity, messageExtractor)
+----
+
+`shardedPlainSource` does not include any Kafka offset information as context but also implements the Kafka
+Sharding Strategy in the same way
+
+[source,scala]
+----
+val messageExtractor = (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
+val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor(entityContext.entityId))
+
+val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity, messageExtractor)
+----
+
+
