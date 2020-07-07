@@ -63,8 +63,6 @@ final class AkkaStreamletContextImpl(
     def stop(): Future[Dun]    = AkkaStreamletContextImpl.this.stop()
   }
 
-  def clusterSharding: ClusterSharding = ClusterSharding(system.toTyped)
-
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
