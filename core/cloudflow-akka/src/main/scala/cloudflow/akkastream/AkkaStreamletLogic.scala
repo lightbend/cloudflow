@@ -20,7 +20,8 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.Entity
+import akka.actor.typed.scaladsl.adapter._
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.stream.scaladsl._
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
@@ -86,6 +87,12 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   def getExecutionContext() = executionContext
+
+  /**
+   * Helper method to make it easier to start typed cluster sharding
+   * with an classic actor system
+   */
+  def clusterSharding() = ClusterSharding(system.toTyped)
 
   /**
    * This source emits `T` records together with the offset position as context, thus makes it possible

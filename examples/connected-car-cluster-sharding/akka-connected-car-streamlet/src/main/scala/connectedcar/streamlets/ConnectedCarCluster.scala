@@ -1,8 +1,7 @@
 package connectedcar.streamlets
 
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
+import akka.cluster.sharding.typed.scaladsl.{Entity, EntityTypeKey}
 import akka.util.Timeout
-import akka.actor.typed.scaladsl.adapter._
 import akka.kafka.ConsumerMessage.CommittableOffset
 import akka.stream.scaladsl.SourceWithContext
 import cloudflow.akkastream.scaladsl.{FlowWithCommittableContext, RunnableGraphStreamletLogic}
@@ -29,7 +28,7 @@ class ConnectedCarCluster extends AkkaStreamlet with Clustering {
       ConnectedCarERecord,
       CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity, messageExtractor)
 
-    val clusterSharding = ClusterSharding(system.toTyped)
+    val sharding = clusterSharding()
 
     def runnableGraph = source.via(flow).to(committableSink(out))
 
@@ -37,7 +36,7 @@ class ConnectedCarCluster extends AkkaStreamlet with Clustering {
     def flow =
       FlowWithCommittableContext[ConnectedCarERecord]
         .mapAsync(5)(msg ⇒ {
-            val carActor = clusterSharding.entityRefFor(typeKey, msg.carId.toString)
+            val carActor = sharding.entityRefFor(typeKey, msg.carId.toString)
             carActor.ask[ConnectedCarAgg](ref => ConnectedCarERecordWrapper(msg, ref))
           })
   }
