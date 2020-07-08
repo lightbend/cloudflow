@@ -492,6 +492,7 @@ lazy val bintraySettings =
       publishMavenStyle := false,
       resolvers ++= Seq(
             "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
+            "Alpakka Shapshots".at("https://dl.bintray.com/akka/snapshots"),
             "com-mvn".at("https://repo.lightbend.com/cloudflow"),
             Resolver.url("com-ivy", url("https://repo.lightbend.com/cloudflow"))(Resolver.ivyStylePatterns)
           )

@@ -39,7 +39,6 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     commonSettings,
     name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
       "ch.qos.logback" %  "logback-classic" % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )
@@ -62,6 +61,7 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
+  resolvers ++= Seq("Alpakka Shapshots".at("https://dl.bintray.com/akka/snapshots")),
 
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
