@@ -41,8 +41,7 @@ trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E],
-      entityIdExtractor: M => String
+      shardEntity: Entity[M, E]
   ): SourceWithContext[T, CommittableOffset, _]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
@@ -53,7 +52,6 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      entityIdExtractor: M => String,
       resetPosition: ResetPosition = Latest
   ): Source[T, _]
 

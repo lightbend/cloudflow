@@ -21,12 +21,11 @@ class ConnectedCarCluster extends AkkaStreamlet with Clustering {
   override def createLogic = new RunnableGraphStreamletLogic() {
     val typeKey = EntityTypeKey[ConnectedCarERecordWrapper]("Car")
 
-    val messageExtractor = (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
     val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor(entityContext.entityId))
 
     val source:SourceWithContext[
       ConnectedCarERecord,
-      CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity, messageExtractor)
+      CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity)
 
     val sharding = clusterSharding()
 

@@ -150,12 +150,10 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    *
    * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
-   * @param entityIdExtractor to pick a field from the Entity to use as the entity id for the hashing strategy
    **/
   def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                   shardEntity: Entity[M, E],
-                                                   entityIdExtractor: M => String): SourceWithContext[T, CommittableOffset, _] =
-    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor)
+                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, _] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity)
 
   /**
    * Java API
@@ -163,10 +161,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E],
-      entityIdExtractor: M => String
+      shardEntity: Entity[M, E]
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
-    context.shardedSourceWithCommittableContext(inlet, shardEntity, entityIdExtractor).asJava
+    context.shardedSourceWithCommittableContext(inlet, shardEntity).asJava
 
   /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
@@ -202,30 +199,23 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    *
    * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
-   * @param entityIdExtractor to pick a field from the Entity to use as the entity id for the hashing strategy
    **/
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  entityIdExtractor: M => String,
-                                  resetPosition: ResetPosition = Latest): Source[T, _] =
-    context.shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition)
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] =
+    context.shardedPlainSource(inlet, shardEntity, resetPosition)
+
+  /**
+   * Java API
+   */
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]): akka.stream.javadsl.Source[T, _] =
+    shardedPlainSource(inlet, shardEntity, Latest).asJava
 
   /**
    * Java API
    */
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
-                                     entityIdExtractor: M => String): akka.stream.javadsl.Source[T, _] =
-    shardedPlainSource(inlet, shardEntity, entityIdExtractor, Latest).asJava
-
-  /**
-   * Java API
-   */
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                     shardEntity: Entity[M, E],
-                                     entityIdExtractor: M => String,
                                      resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, _] =
-    shardedPlainSource(inlet, shardEntity, entityIdExtractor, resetPosition).asJava
+    shardedPlainSource(inlet, shardEntity, resetPosition).asJava
 
   /**
    * Creates a sink for publishing `T` records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.

@@ -93,8 +93,7 @@ final class AkkaStreamletContextImpl(
     sourceWithContext[T](inlet)
 
   private[akkastream] def shardedSourceWithContext[T, M, E](inlet: CodecInlet[T],
-                                                            shardEntity: Entity[M, E],
-                                                            entityIdExtractor: M => String): SourceWithContext[T, CommittableOffset, _] = {
+                                                            shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
@@ -115,11 +114,10 @@ final class AkkaStreamletContextImpl(
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
     import scala.concurrent.duration._
-    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[M]] =
-      KafkaClusterSharding(system).messageExtractorNoEnvelope(
-        timeout = 10.seconds,
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
+      KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
-        entityIdExtractor = entityIdExtractor,
+        timeout = 10.seconds,
         settings = consumerSettings
       )
 
@@ -152,10 +150,9 @@ final class AkkaStreamletContextImpl(
 
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E],
-      entityIdExtractor: M => String
+      shardEntity: Entity[M, E]
   ): SourceWithContext[T, CommittableOffset, _] =
-    shardedSourceWithContext(inlet, shardEntity, entityIdExtractor)
+    shardedSourceWithContext(inlet, shardEntity)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
@@ -222,10 +219,7 @@ final class AkkaStreamletContextImpl(
       }
   }
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  entityIdExtractor: M => String,
-                                  resetPosition: ResetPosition = Latest): Source[T, _] = {
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
@@ -245,11 +239,10 @@ final class AkkaStreamletContextImpl(
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
     import scala.concurrent.duration._
-    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingNoEnvelopeExtractor[M]] =
-      KafkaClusterSharding(system).messageExtractorNoEnvelope(
-        timeout = 10.seconds,
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
+      KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
-        entityIdExtractor = entityIdExtractor,
+        timeout = 10.seconds,
         settings = consumerSettings
       )
 
