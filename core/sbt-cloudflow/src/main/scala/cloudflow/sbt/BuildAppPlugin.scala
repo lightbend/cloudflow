@@ -25,7 +25,7 @@ import sbt.Keys._
 import scala.util.control.NoStackTrace
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptor
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, CloudflowCR, Metadata, StreamletInstance }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, CloudflowCR, Metadata }
 import cloudflow.blueprint.deployment.CloudflowCRFormat.cloudflowCRFormat
 
 /**

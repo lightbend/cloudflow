@@ -41,7 +41,8 @@ lazy val ingestor = appModule("ingestor")
       "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.12",
       "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
       "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
-    )
+    ),
+    cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
   )
   .dependsOn(datamodel)
 
@@ -53,7 +54,8 @@ lazy val processor = appModule("processor")
     libraryDependencies ++= Seq(
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"  % "test"
-    )
+    ),
+    cloudflowDockerParentImage := "lightbend/flink:2.0.5-cloudflow-flink-1.10.0-scala-2.12"
   )
   .settings(
     parallelExecution in Test := false
@@ -67,7 +69,8 @@ lazy val ridelogger = appModule("logger")
     libraryDependencies ++= Seq(
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
-    )
+    ),
+    cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
   )
   .dependsOn(datamodel)
 

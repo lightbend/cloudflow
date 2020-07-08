@@ -20,6 +20,7 @@ lazy val sensorData =  (project in file("."))
       ),
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
+      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12",
       
       crossScalaVersions := Vector(scalaVersion.value),
       scalacOptions ++= Seq(

@@ -20,28 +20,32 @@ lazy val step0 = appModule("step0")
     .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
     )
 
 lazy val step1 = appModule("step1")
     .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
     )
 
 lazy val step2 = appModule("step2")
     .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
     )
 
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowSparkPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
     )
 
 lazy val app = appModule("app")

@@ -35,6 +35,7 @@ lazy val sensorData =  (project in file("."))
         "-unchecked"
       ),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
+      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12",
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value

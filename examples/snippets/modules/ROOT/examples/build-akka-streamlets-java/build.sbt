@@ -21,28 +21,32 @@ lazy val step0 = appModule("step0")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
     )
 
 lazy val step1 = appModule("step1")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
     )
 
 lazy val step2 = appModule("step2")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
     )
 
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
       Test / parallelExecution := false,
-      Test / fork := true
+      Test / fork := true,
+      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
     )
 
 lazy val app = appModule("app")
