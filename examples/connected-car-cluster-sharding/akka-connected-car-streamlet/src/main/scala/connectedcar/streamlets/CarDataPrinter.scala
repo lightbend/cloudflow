@@ -4,7 +4,7 @@ import cloudflow.akkastream.AkkaStreamlet
 import cloudflow.akkastream.scaladsl.{ FlowWithCommittableContext, RunnableGraphStreamletLogic }
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.avro.AvroInlet
-import connectedcar.data.{ ConnectedCarAgg }
+import connectedcar.data.ConnectedCarAgg
 
 object CarDataPrinter extends AkkaStreamlet {
   val in    = AvroInlet[ConnectedCarAgg]("in")
