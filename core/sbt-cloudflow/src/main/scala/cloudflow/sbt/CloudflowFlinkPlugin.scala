@@ -25,14 +25,19 @@ import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowFlinkPlugin extends AutoPlugin {
+  final val FlinkVersion = "1.10.0"
+  final val CloudflowFlinkDockerBaseImage =
+    s"lightbend/flink:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
+    cloudflowFlinkBaseImage := None,
     libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
         ),
-    cloudflowDockerParentImage := cloudflowDockerParentImage.value,
+    cloudflowDockerParentImage := cloudflowFlinkBaseImage.value.getOrElse(CloudflowFlinkDockerBaseImage),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
             val stagingDir  = stage.value
@@ -59,7 +64,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
       new Dockerfile {
-        from(cloudflowDockerParentImage.value)
+        from(cloudflowFlinkBaseImage.value.getOrElse(CloudflowFlinkDockerBaseImage))
         user(UserInImage)
 
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))

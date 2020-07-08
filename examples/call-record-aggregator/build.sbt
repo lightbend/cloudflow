@@ -40,8 +40,7 @@ lazy val akkaCdrIngestor= appModule("akka-cdr-ingestor")
         "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.12",
         "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
         "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
-      ),
-      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
+      )
     )
   .dependsOn(datamodel)
 
@@ -53,8 +52,7 @@ lazy val akkaJavaAggregationOutput= appModule("akka-java-aggregation-output")
       "com.typesafe.akka"      %% "akka-http-spray-json"   % "10.1.12",
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
       "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
-    ),
-    cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
+    )
   )
   .dependsOn(datamodel)
 
@@ -67,8 +65,7 @@ lazy val sparkAggregation = appModule("spark-aggregation")
       libraryDependencies ++= Seq(
         "ch.qos.logback" %  "logback-classic" % "1.2.3",
         "org.scalatest"  %% "scalatest"       % "3.0.8"  % "test"
-      ),
-      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
+      )
     )
   .dependsOn(datamodel)
 

@@ -29,6 +29,4 @@ lazy val sparkSensors = Project(id = "spark-sensors", base = file("."))
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
-
-      cloudflowDockerParentImage := "lightbend/spark:2.0.5-cloudflow-spark-2.4.5-scala-2.12"
     )

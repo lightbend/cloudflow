@@ -26,14 +26,19 @@ import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowSparkPlugin extends AutoPlugin {
+  final val SparkVersion = "2.4.5"
+  final val CloudflowSparkDockerBaseImage =
+    s"lightbend/spark:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-spark-$SparkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
+    cloudflowSparkBaseImage := None,
     libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" %% "cloudflow-spark"         % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
         ),
-    cloudflowDockerParentImage := cloudflowDockerParentImage.value,
+    cloudflowDockerParentImage := cloudflowSparkBaseImage.value.getOrElse(CloudflowSparkDockerBaseImage),
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
@@ -67,7 +72,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       new Dockerfile {
-        from(cloudflowDockerParentImage.value)
+        from(cloudflowSparkBaseImage.value.getOrElse(CloudflowSparkDockerBaseImage))
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))

@@ -41,8 +41,7 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-cluster-sharding" % AkkaVersion
-    ),
-    cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12"
+    )
   )
   .dependsOn(datamodel)
 

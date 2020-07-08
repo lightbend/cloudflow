@@ -36,7 +36,6 @@ lazy val sensorData =  (project in file("."))
         "-language:_",
         "-unchecked"
       ),
-      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12",
       javacOptions ++= Seq("-Xlint:deprecation"),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
       libraryDependencies ++= Seq(

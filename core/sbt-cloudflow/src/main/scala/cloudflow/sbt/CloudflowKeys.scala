@@ -41,6 +41,9 @@ trait CloudflowSettingKeys {
   }
 
   val cloudflowDockerParentImage = settingKey[String]("The parent Docker image to use for Cloudflow images.")
+  val cloudflowFlinkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Flink plugin")
+  val cloudflowSparkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Spark plugin")
+  val cloudflowAkkaBaseImage     = settingKey[Option[String]]("The base image for Cloudflow Akka plugin")
   val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")

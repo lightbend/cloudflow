@@ -36,9 +36,6 @@ lazy val tensorflowAkka =  (project in file("."))
       ),
 
       runLocalConfigFile := Some("src/main/resources/local.conf"),
-      cloudflowDockerParentImage := "lightbend/akka-base:2.0.5-cloudflow-akka-2.6.6-scala-2.12",
-
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
-
     )
