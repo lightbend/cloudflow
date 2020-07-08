@@ -37,7 +37,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
           "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
         ),
-    cloudflowDockerParentImage := cloudflowFlinkBaseImage.value.getOrElse(CloudflowFlinkDockerBaseImage),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
             val stagingDir  = stage.value

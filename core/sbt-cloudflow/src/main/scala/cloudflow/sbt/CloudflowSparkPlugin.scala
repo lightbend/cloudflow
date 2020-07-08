@@ -38,7 +38,6 @@ object CloudflowSparkPlugin extends AutoPlugin {
           "com.lightbend.cloudflow" %% "cloudflow-spark"         % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
         ),
-    cloudflowDockerParentImage := cloudflowSparkBaseImage.value.getOrElse(CloudflowSparkDockerBaseImage),
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
