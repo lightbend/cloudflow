@@ -74,7 +74,7 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
-  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], entityIdExtractor: M => String) = {
+  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]) = {
     ClusterSharding(system.toTyped).init(shardEntity)
     sourceWithContext(inlet)
   }
@@ -116,10 +116,7 @@ private[testkit] case class TestContext(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  entityIdExtractor: M => String,
-                                  resetPosition: ResetPosition = Latest): Source[T, _] = {
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] = {
     ClusterSharding(system.toTyped).init(shardEntity)
     plainSource(inlet, resetPosition)
   }
