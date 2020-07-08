@@ -55,7 +55,7 @@ object BuildAppPlugin extends AutoPlugin {
           .taskDyn {
             val filter = ScopeFilter(inProjects(allProjectsWithCloudflowBasePlugin.value: _*))
             Def.task {
-              val allValues = buildAndPublish.all(filter).value
+              val allValues = buildAndPublishImage.all(filter).value
               allValues
             }
           })
