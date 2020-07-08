@@ -45,10 +45,9 @@ as context as well as implementing the Kafka Sharding strategy
 
 [source,scala]
 ----
-val messageExtractor = (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
 val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor(entityContext.entityId))
 
-val source:SourceWithContext[ConnectedCarERecord, CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity, messageExtractor)
+val source:SourceWithContext[ConnectedCarERecord, CommittableOffset, _] = shardedSourceWithCommittableContext(in, entity)
 ----
 
 `shardedPlainSource` does not include any Kafka offset information as context but also implements the Kafka
@@ -56,10 +55,9 @@ Sharding Strategy in the same way
 
 [source,scala]
 ----
-val messageExtractor = (msg: ConnectedCarERecordWrapper) => msg.record.carId+""
 val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor(entityContext.entityId))
 
-val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity, messageExtractor)
+val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity)
 ----
 
 
