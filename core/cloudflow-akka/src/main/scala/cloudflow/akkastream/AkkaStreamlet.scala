@@ -18,14 +18,14 @@ package cloudflow.akkastream
 
 import java.nio.file.{ Files, Paths }
 import java.nio.charset.StandardCharsets
+
 import akka.actor.ActorSystem
+import akka.cluster.Cluster
 import akka.discovery.Discovery
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-
 import cloudflow.streamlets._
 import BootstrapInfo._
-
 import cloudflow.streamlets.StreamletRuntime
 import com.typesafe.config._
 
@@ -54,7 +54,10 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val clusterConfig              = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
         val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
+        val system  = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
+        val cluster = Cluster(system)
+        cluster.join(cluster.selfAddress)
+
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else if (activateCluster) {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
