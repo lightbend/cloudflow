@@ -54,7 +54,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val clusterConfig              = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
         val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system  = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
+        val system  = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
         val cluster = Cluster(system)
         cluster.join(cluster.selfAddress)
 
@@ -69,7 +69,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system = ActorSystem("akka_streamlet", ConfigFactory.load(fullConfig))
+        val system = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
         AkkaManagement(system).start()
         ClusterBootstrap(system).start()
         Discovery(system).loadServiceDiscovery("kubernetes-api")
@@ -77,7 +77,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else {
         val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-        val system                     = ActorSystem("akka_streamlet", updatedStreamletDefinition.config)
+        val system                     = ActorSystem(streamletDefinition.streamletRef, updatedStreamletDefinition.config)
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       }
     }).recoverWith {
