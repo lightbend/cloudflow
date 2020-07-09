@@ -33,6 +33,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
+    cloudflowAkkaBaseImage := None,
     libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" %% "cloudflow-akka-util"    % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-akka"         % BuildInfo.version,
@@ -63,7 +64,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       new Dockerfile {
-        from(AkkaDockerBaseImage)
+        from(cloudflowAkkaBaseImage.value.getOrElse(AkkaDockerBaseImage))
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))

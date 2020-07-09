@@ -20,7 +20,7 @@ lazy val sensorData =  (project in file("."))
       ),
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-      
+
       crossScalaVersions := Vector(scalaVersion.value),
       scalacOptions ++= Seq(
         "-encoding", "UTF-8",

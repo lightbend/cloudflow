@@ -21,7 +21,6 @@ import java.nio.file._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ Map ⇒ MMap }
-import scala.util.control.NonFatal
 import scala.util.Try
 
 import com.google.protobuf.Descriptors

@@ -35,9 +35,7 @@ lazy val sensorData =  (project in file("."))
         "-unchecked"
       ),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
-
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
-
     )
 
