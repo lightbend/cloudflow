@@ -80,12 +80,23 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       streamletDefinition ← StreamletDefinition.read(config)
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
-      new FlinkStreamletContextImpl(streamletDefinition, createExecutionEnvironment, updatedConfig)
+      new FlinkStreamletContextImpl(streamletDefinition, setupExecutionEnvironment(createExecutionEnvironment), updatedConfig)
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
-  private def createExecutionEnvironment: StreamExecutionEnvironment = {
+  /**
+   * Override this method to setup the StreamExecutionEnvironment. By default it does not modify the [[StreamExecutionEnvironment]] created 
+   * by [[createExecutionEnvironment]].
+   * @see [[createExecutionEnvironment]] which creates the StreamExecutionEnvironment used in this FlinkStreamlet.
+   */
+  protected def setupExecutionEnvironment(env: StreamExecutionEnvironment): StreamExecutionEnvironment = env
+
+  /**
+   * Creates the Flink StreamExecutionEnvironment and by default sets up exactly-once checkpointing.
+   * @see [[setupExecutionEnvironment]] to modify the StreamExecutionEnvironment that is created by this method.
+   */
+  protected def createExecutionEnvironment: StreamExecutionEnvironment = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val StartCheckpointIntervalInMillis       = 10000
