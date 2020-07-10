@@ -86,7 +86,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     }.get
 
   /**
-   * Override this method to setup the StreamExecutionEnvironment. By default it does not modify the [[StreamExecutionEnvironment]] created 
+   * Override this method to setup the StreamExecutionEnvironment. By default it does not modify the [[StreamExecutionEnvironment]] created
    * by [[createExecutionEnvironment]].
    * @see [[createExecutionEnvironment]] which creates the StreamExecutionEnvironment used in this FlinkStreamlet.
    */
