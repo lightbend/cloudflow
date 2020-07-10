@@ -431,7 +431,6 @@ lazy val operator =
 
         new Dockerfile {
           from("adoptopenjdk/openjdk8:alpine")
-
           entryPoint(s"$targetDir/bin/${executableScriptName.value}")
           copy(appDir, targetDir, chown = "daemon:daemon")
           addInstruction(
