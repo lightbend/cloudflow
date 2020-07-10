@@ -13,11 +13,11 @@ spec:
         - name: main
           image: __webhookPatchJob.image__
           command:
-            - bash
+            - /bin/ash
             - "-c"
             - |
-              apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
-              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.12.0/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
+              apk update && apk add wget
+              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
               NAME="cloudflow-sparkoperator"
               API_VERSION=$(kubectl get deployment -n __namespace__ $NAME -o jsonpath='{.apiVersion}')
               UUID=$(kubectl get deployment -n __namespace__ $NAME -o jsonpath='{.metadata.uid}')
