@@ -88,6 +88,7 @@ Before delving into that, here we list the runtime plugins:
 `CloudflowSparkPlugin`:: SBT plugin for creating Spark Structured Streaming based streamlets.
 `CloudflowFlinkPlugin`:: SBT plugin for creating Flink-based streamlets.
 
+NOTE: Each runtime plugin uses its own default base image. It's `lightbend/akka-base` for Akka, `lightbend/spark` for Spark and `lightbend/flink` for Flink. To customize the base images, set `cloudflowAkkaBaseImage`, `cloudflowSparkBaseImage`, and `cloudflowFlinkBaseImage` in `settings` of the respective runtime plugins in your application `build.sbt`.
 
 == Single Runtime Applications
 
