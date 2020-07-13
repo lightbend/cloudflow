@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-FROM adoptopenjdk/openjdk8
+FROM adoptopenjdk/openjdk8:alpine
 
 ARG spark_uid=185
 
@@ -41,9 +41,8 @@ ADD spark-entrypoint.sh /opt/spark-entrypoint.sh
 # docker build -t spark:latest -f kubernetes/dockerfiles/spark/Dockerfile .
 ENV TINI_VERSION v0.18.0
 RUN set -ex && \
-    apt-get update && \
     ln -s /lib /lib64 && \
-    apt install -y bash libc6 libpam-modules krb5-user libnss3 && \
+    apk add bash libc6 libpam-modules krb5-user libnss3 && \
     mkdir -p /opt/spark/work-dir && \
     touch /opt/spark/RELEASE && \
     rm /bin/sh && \
@@ -53,11 +52,11 @@ RUN set -ex && \
     rm -rf /var/cache/apt/* && \
     curl -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini -o /sbin/tini && \
     chmod +x /sbin/tini && \
-    groupadd -r cloudflow -g 185 && \
-    useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow \
-    -s /sbin/nologin -c CloudflowUser cloudflow && \
+    addgroup -S -g 185 cloudflow && \
+    adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow root && \
+    adduser cloudflow cloudflow && \
     mkdir -p /prometheus && \
-    curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar && \
+    curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar && \
     chmod ug+rwX /home/cloudflow && \
     mkdir -p /opt/spark/conf && \
     mv /opt/log4j.properties /opt/spark/conf/log4j.properties && \
@@ -72,14 +71,13 @@ RUN set -ex && \
     chown cloudflow:root /opt && \
     chmod 775 /opt
 
-
 ENV SPARK_HOME=/opt/spark \
     SPARK_VERSION=2.4.5
 
 WORKDIR /opt/spark/work-dir
 RUN chmod g+w /opt/spark/work-dir
 
-ENTRYPOINT [ "/opt/spark-entrypoint.sh" ]
+ENTRYPOINT ["bash", "/opt/spark-entrypoint.sh"]
 
 # Specify the User that the actual main process will run as
 USER ${spark_uid}
