@@ -17,17 +17,19 @@
 # limitations under the License.
 #
 
-FROM adoptopenjdk/openjdk8
+FROM adoptopenjdk/openjdk8:alpine
 
 USER root
 
-RUN mkdir -p /home/cloudflow && \
+RUN apk add bash curl && \
+    mkdir -p /home/cloudflow && \
     mkdir -p /opt && \
-    groupadd -r cloudflow -g 185 && \
-    useradd -u 185 -r -g root -G cloudflow -m -d /home/cloudflow -s /sbin/nologin -c CloudflowUser cloudflow && \
+    addgroup -g 185 -S cloudflow && \
+    adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow cloudflow && \
+    adduser cloudflow root && \
     mkdir -p /prometheus && \
-    curl  https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar 
+    curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar
 
 COPY akka-entrypoint.sh /opt/
 USER 185
-ENTRYPOINT ["/opt/akka-entrypoint.sh"]
+ENTRYPOINT ["bash", "/opt/akka-entrypoint.sh"]
