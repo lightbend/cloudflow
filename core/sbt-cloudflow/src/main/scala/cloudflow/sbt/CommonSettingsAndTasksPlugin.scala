@@ -64,8 +64,16 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
           }.value,
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
-      libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
-      libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
+      // Add Avro libraries
+      libraryDependencies ++= Seq(
+            "com.twitter"     %% "bijection-avro" % "0.9.7",
+            "org.apache.avro" % "avro"            % "1.8.2"
+          ),
+      // Add protoc libraries
+      libraryDependencies ++= Seq(
+            "io.grpc"              % "grpc-netty"            % scalapb.compiler.Version.grpcJavaVersion,
+            "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
+          ),
       // TODO move all of this to schema plugins, possibly specific for runtime (when specific versions of libraries are needed, like Spark and Avro 1.8.2)
       // Also needs some cleanup.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
@@ -133,7 +141,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
     protocbridge.Target(
       ScalaGenerator,
       targetPath,
-      Seq("flat_package")
+      Seq("grpc")
     )
   }
 }
