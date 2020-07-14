@@ -59,7 +59,7 @@ lazy val root = Project("cloudflow-installer", file("."))
       val appDir: File = stage.value
       val targetDir    = "/app"
       new Dockerfile {
-        from("marketplace.gcr.io/google/rbe-ubuntu18-04")
+        from("marketplace.gcr.io/google/ubuntu1804")
         entryPoint(s"$targetDir/bin/${executableScriptName.value}")
         copy(appDir, targetDir, chown = "daemon:daemon")
         copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
