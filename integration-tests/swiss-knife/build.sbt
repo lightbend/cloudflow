@@ -39,16 +39,25 @@ lazy val datamodel = (project in file("datamodel"))
 lazy val akka = (project in file("./akka"))
   .enablePlugins(CloudflowAkkaPlugin)
   .settings(commonSettings)
+  .settings(
+    name := "swiss-knife-akka"
+  )
   .dependsOn(datamodel)
 
 lazy val spark = (project in file("./spark"))
   .enablePlugins(CloudflowSparkPlugin)
   .settings(commonSettings)  
+  .settings(
+    name := "swiss-knife-spark"
+  )
   .dependsOn(datamodel)
 
 lazy val flink = (project in file("./flink"))
   .enablePlugins(CloudflowFlinkPlugin)
   .settings(commonSettings)
+  .settings(
+    name := "swiss-knife-flink"
+  )
   .dependsOn(datamodel)
 
 lazy val commonSettings = Seq(
