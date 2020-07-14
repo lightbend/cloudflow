@@ -2,4 +2,4 @@
 //
 resolvers += "Akka Snapshots" at "https://repo.akka.io/snapshots/"
 resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns)
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.6-RC10")
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.6-RC12")
