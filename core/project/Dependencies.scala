@@ -9,7 +9,7 @@ object Version {
   val AlpakkaKafka  = "2.0.3"
   val Scala         = "2.12.11"
   val Spark         = "2.4.5"
-  val Flink         = "1.10.0"
+  val Flink         = "1.11.0"
   val EmbeddedKafka = "2.5.0" 
   // skuber depends on 2.5.29
   val AkkaOperator  = "2.5.29"
@@ -64,6 +64,7 @@ object Library {
   val ScalaPbCompilerPlugin = "com.thesamet.scalapb"       %% "compilerplugin"       % scalapb.compiler.Version.scalapbVersion
 
   val Flink                  = "org.apache.flink"      %% "flink-scala"              % Version.Flink
+  val FlinkClients           = "org.apache.flink"      %% "flink-clients"            % Version.Flink
   val FlinkStreaming         = "org.apache.flink"      %% "flink-streaming-scala"    % Version.Flink
   val FlinkAvro              = "org.apache.flink"       % "flink-avro"               % Version.Flink
   val FlinkKafka             = "org.apache.flink"      %% "flink-connector-kafka"    % Version.Flink

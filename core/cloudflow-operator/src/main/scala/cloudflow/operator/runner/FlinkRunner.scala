@@ -29,7 +29,7 @@ import FlinkResource._
 import skuber.ResourceSpecification.Subresources
 
 /**
- * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Spark [[Runner]].
+ * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
  */
 object FlinkRunner extends Runner[CR] {
   def format = implicitly[Format[CR]]
@@ -319,7 +319,7 @@ object FlinkResource {
   )
 
   /*
-  https://github.com/lyft/flinkk8soperator/blob/v0.4.0/pkg/apis/app/v1beta1/types.go
+  https://github.com/lyft/flinkk8soperator/blob/v0.5.0/pkg/apis/app/v1beta1/types.go
 
   type FlinkApplicationSpec struct {
     Image                         string                       `json:"image,omitempty" protobuf:"bytes,2,opt,name=image"`
@@ -355,7 +355,7 @@ object FlinkResource {
   final case class Spec(
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
-      flinkVersion: String = "1.10",
+      flinkVersion: String = "1.11",
       serviceAccountName: String = Name.ofServiceAccount,
       jarName: String,
       parallelism: Int,

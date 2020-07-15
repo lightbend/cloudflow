@@ -19,7 +19,7 @@
 FROM adoptopenjdk/openjdk8:alpine
 
 # Prepare environment
-ENV FLINK_VERSION=1.10.0 \
+ENV FLINK_VERSION=1.11.0 \
     SCALA_VERSION=2.12
 
 ENV FLINK_HOME=/opt/flink

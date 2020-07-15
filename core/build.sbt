@@ -234,6 +234,7 @@ lazy val flink =
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
             Flink,
+            FlinkClients,
             FlinkStreaming,
             FlinkKafka,
             FlinkAvro,

@@ -25,7 +25,7 @@ import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowFlinkPlugin extends AutoPlugin {
-  final val FlinkVersion = "1.10.0"
+  final val FlinkVersion = "1.11.0"
   final val CloudflowFlinkDockerBaseImage =
     s"lightbend/flink:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
