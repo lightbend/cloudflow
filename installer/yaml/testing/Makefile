@@ -38,7 +38,7 @@ prepare-%: ${WORK_DIR}/%
 			-e 's/__cloudflowOperator.persistentStorageClass__/nfs-cloudflow/' \
 			-e 's/__kafkaClusterCr.kafkaPersistentStorageClass__/standard/' \
 			-e 's/__kafkaClusterCr.zookeeperPersistentStorageClass__/standard/' \
-			-e 's/__sparkOperator.image__/1.3.3-OpenJDK-2.4.5-1.1.0-cloudflow-2.12/' \
+			-e 's/__sparkOperator.image__/2.0.6-cloudflow-spark-2.4.5-1.1.2-scala-2.12/' \
 			-e 's/__cloudflowOperator.imageTag__/33-7703ce5/' \
 			$$i; \
 	done )

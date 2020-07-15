@@ -19,11 +19,12 @@
 #
 SCRIPT=`basename ${BASH_SOURCE[0]}`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-VERSION=2.4.5
+SPARK_VERSION=2.4.5
+SPARK_OPERATOR_VERSION=1.1.2
 DOCKER_USERNAME=lightbend
 CLOUDFLOW_VERSION=2.1.0-SNAPSHOT
-SPARK_IMAGE_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-2.4.5-scala-2.12
-SPARK_OPERATOR_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-2.4.5-1.1.0-scala-2.12
+SPARK_IMAGE_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-$SPARK_VERSION-scala-2.12
+SPARK_OPERATOR_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-$SPARK_VERSION-$SPARK_OPERATOR_VERSION-scala-2.12
 
 set -ex
 if [ "$(uname)" == "Darwin" ]; then
@@ -38,27 +39,26 @@ fi
 rm -rf $DIR/spark
 git clone https://github.com/lightbend/spark.git
 cd $DIR/spark
-git checkout lightbend-$VERSION
+git checkout lightbend-$SPARK_VERSION
 $DIR/spark/dev/change-scala-version.sh 2.12
 $DIR/spark/dev/make-distribution.sh --name cloudflow-2.12 --tgz -Pscala-2.12 -Phadoop-2.7 -Pkubernetes -Phive
 
 # build the Spark image
-tar -zxvf spark-$VERSION-bin-cloudflow-2.12.tgz
-cd $DIR/spark/spark-$VERSION-bin-cloudflow-2.12
-cp $DIR/metrics.properties $DIR/spark/spark-$VERSION-bin-cloudflow-2.12
-cp $DIR/prometheus.yaml $DIR/spark/spark-$VERSION-bin-cloudflow-2.12
-cp $DIR/log4j.properties $DIR/spark/spark-$VERSION-bin-cloudflow-2.12
-cp $DIR/spark-entrypoint.sh $DIR/spark/spark-$VERSION-bin-cloudflow-2.12
+tar -zxvf spark-$SPARK_VERSION-bin-cloudflow-2.12.tgz
+cd $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+cp $DIR/metrics.properties $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+cp $DIR/prometheus.yaml $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+cp $DIR/log4j.properties $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+cp $DIR/spark-entrypoint.sh $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
 docker build -f $DIR/Dockerfile -t $DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG .
 
 # build the Spark operator image
 cd $DIR
 rm -rf $DIR/spark-on-k8s-operator
-git clone https://github.com/GoogleCloudPlatform/spark-on-k8s-operator.git
+git clone https://github.com/lightbend/spark-on-k8s-operator.git
 cd $DIR/spark-on-k8s-operator
-git checkout f78361119976beb7a147df9cd64e1fdd317b9311 -b spark-operator-1.1.0
-sed -i -e '/RUN apk add --no-cache openssl curl tini/d' Dockerfile
-docker build --no-cache --build-arg SPARK_IMAGE=$DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG -t $DOCKER_USERNAME/sparkoperator:$SPARK_OPERATOR_TAG -f Dockerfile .
+git checkout lightbend-$SPARK_VERSION
+docker build --no-cache --build-arg SPARK_IMAGE=$DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG -t $DOCKER_USERNAME/sparkoperator:$SPARK_OPERATOR_TAG -f Dockerfile.alpine .
 
 docker push $DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG
 docker push $DOCKER_USERNAME/sparkoperator:$SPARK_OPERATOR_TAG
