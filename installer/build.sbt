@@ -83,7 +83,7 @@ lazy val root = Project("cloudflow-installer", file("."))
     buildInfoPackage := "cloudflow.installer"
   )
 
-lazy val googleImage = 
+lazy val googleImage = {
     imageNames in docker := Seq(
           ImageName(
             registry = Some("docker.io"),
@@ -115,10 +115,11 @@ lazy val googleImage =
         )
       }
     }
+  }
 
 
 //alpine implementation, currently default one
-lazy val alpineImage = 
+lazy val alpineImage = {
     imageNames in docker := Seq(
           ImageName(
             registry = Some("docker.io"),
@@ -147,3 +148,4 @@ lazy val alpineImage =
         )
       }
     } 
+  }
