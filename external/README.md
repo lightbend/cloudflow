@@ -3,9 +3,10 @@
 The current published artifacts are:
 
 * [Spark distribution file](https://github.com/lightbend/spark/releases/download/2.4.5-lightbend/spark-2.4.5-bin-cloudflow-2.12.tgz).
-* `lightbend/sparkoperator:2.0.6-OpenJDK-2.4.5-1.1.0-cloudflow-2.12`
+* `lightbend/sparkoperator:2.0.6-cloudflow-spark-2.4.5-1.1.2-scala-2.12`
 * `lightbend/spark:2.0.6-OpenJDK-2.4.5-cloudflow-2.12`
-* `lightbend/flink:2.0.6-cloudflow-flink-1.10.0-scala-2.12 `
+* `lightbend/flink:2.0.6-cloudflow-flink-1.10.0-scala-2.12`
+* `lightbend/akka-base:2.0.6-cloudflow-akka-2.6.6-scala-2.12`
 * Cloudflow jars: https://lightbend.bintray.com/cloudflow.
 * Cloudflow `kubectl` plugin: https://bintray.com/lightbend/cloudflow-cli.
 
