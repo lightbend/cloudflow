@@ -48,8 +48,8 @@ lazy val root = Project("cloudflow-installer", file("."))
           // pullBaseImage = BuildOptions.Pull.Always
         ),
     //creates a docker images
-    if (sys.props.get("google").isDefined) googleImage
-    else alpineImage,
+    imageTag(sys.props.get("distro")),
+    dockerfileDistro(sys.props.get("distro")),
     Test / fork := true,
     scalacOptions ++= Seq(
           "-encoding",
@@ -83,15 +83,31 @@ lazy val root = Project("cloudflow-installer", file("."))
     buildInfoPackage := "cloudflow.installer"
   )
 
-lazy val googleImage = {
+
+
+
+
+
+def imageTag(distro: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.ImageName]]] = {
+  val tag = if (distro.isDefined && distro.get == "google") "gcr"    
+            else "alpine"
+
     imageNames in docker := Seq(
           ImageName(
             registry = Some("docker.io"),
             namespace = Some("lightbend"),
             repository = "cloudflow-installer",
-            tag = Some(s"gcr-${buildNumber.value.asVersion}")
+            tag = Some(s"$tag-${buildNumber.value.asVersion}")
           )
-        )
+    )
+}
+
+def dockerfileDistro(distro: Option[String]): Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
+  if (distro.isDefined && distro.get == "google") googleDockerfile    
+  else alpineDockerfile  
+}
+
+lazy val googleDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
     dockerfile in docker := {
       val appDir: File = stage.value
       val targetDir    = "/app"
@@ -119,15 +135,7 @@ lazy val googleImage = {
 
 
 //alpine implementation, currently default one
-lazy val alpineImage = {
-    imageNames in docker := Seq(
-          ImageName(
-            registry = Some("docker.io"),
-            namespace = Some("lightbend"),
-            repository = "cloudflow-installer",
-            tag = Some(s"alpine-${buildNumber.value.asVersion}")
-          )
-        )
+lazy val alpineDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
     dockerfile in docker := {
       val appDir: File = stage.value
       val targetDir    = "/app"
