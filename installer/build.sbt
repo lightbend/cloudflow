@@ -47,37 +47,9 @@ lazy val root = Project("cloudflow-installer", file("."))
           // way to call `gcloud docker --` instead.
           // pullBaseImage = BuildOptions.Pull.Always
         ),
-    imageNames in docker := Seq(
-          ImageName(
-            registry = Some("docker.io"),
-            namespace = Some("lightbend"),
-            repository = "cloudflow-installer",
-            tag = Some(buildNumber.value.asVersion)
-          )
-        ),
-    dockerfile in docker := {
-      val appDir: File = stage.value
-      val targetDir    = "/app"
-      new Dockerfile {
-        from("marketplace.gcr.io/google/ubuntu1804")
-        entryPoint(s"$targetDir/bin/${executableScriptName.value}")
-        copy(appDir, targetDir, chown = "daemon:daemon")
-        copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
-        workDir(targetDir)
-        runRaw(
-            """apt-get update && apt-get install -y \
-               wget \
-               openjdk-8-jdk \
-               && rm -rf /var/lib/apt/lists/*"""
-        )
-        runRaw(
-          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
-        )
-        runRaw(
-          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
-        )
-      }
-    },
+    //creates a docker images
+    if (sys.props.get("google").isDefined) googleImage
+    else alpineImage,
     Test / fork := true,
     scalacOptions ++= Seq(
           "-encoding",
@@ -110,3 +82,68 @@ lazy val root = Project("cloudflow-installer", file("."))
         ),
     buildInfoPackage := "cloudflow.installer"
   )
+
+lazy val googleImage = 
+    imageNames in docker := Seq(
+          ImageName(
+            registry = Some("docker.io"),
+            namespace = Some("lightbend"),
+            repository = "cloudflow-installer",
+            tag = Some(s"gcr-${buildNumber.value.asVersion}")
+          )
+        )
+    dockerfile in docker := {
+      val appDir: File = stage.value
+      val targetDir    = "/app"
+      new Dockerfile {
+        from("marketplace.gcr.io/google/ubuntu1804")
+        entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+        copy(appDir, targetDir, chown = "daemon:daemon")
+        copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
+        workDir(targetDir)
+        runRaw(
+            """apt-get update && apt-get install -y \
+               wget \
+               openjdk-8-jdk \
+               && rm -rf /var/lib/apt/lists/*"""
+        )
+        runRaw(
+          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
+        )
+        runRaw(
+          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
+        )
+      }
+    }
+
+
+//alpine implementation, currently default one
+lazy val alpineImage = 
+    imageNames in docker := Seq(
+          ImageName(
+            registry = Some("docker.io"),
+            namespace = Some("lightbend"),
+            repository = "cloudflow-installer",
+            tag = Some(s"alpine-${buildNumber.value.asVersion}")
+          )
+        )
+    dockerfile in docker := {
+      val appDir: File = stage.value
+      val targetDir    = "/app"
+      new Dockerfile {
+        from("adoptopenjdk/openjdk8:alpine")
+        entryPoint(s"$targetDir/bin/${executableScriptName.value}")
+        copy(appDir, targetDir, chown = "daemon:daemon")
+        copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
+        workDir(targetDir)
+        runRaw(
+            "apk update && apk add wget bash curl"
+        )
+        runRaw(
+          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
+        )
+        runRaw(
+          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
+        )
+      }
+    } 
