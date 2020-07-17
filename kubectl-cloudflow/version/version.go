@@ -49,13 +49,13 @@ func FailOnProtocolVersionMismatch() {
 
 	operatorProtocolVersion := cm.Data[ProtocolVersionKey]
 	if operatorProtocolVersion != ProtocolVersion {
-		if version, err := strconv.Atoi(operatorProtocolVersion); err == nil {
-			if supportedVersion, err := strconv.Atoi(ProtocolVersion); err == nil {
-				if version < supportedVersion {
-					printutil.LogAndExit("This version of kubectl Cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
-				}
-				if version > supportedVersion {
+		if operatorVersionInt, err := strconv.Atoi(operatorProtocolVersion); err == nil {
+			if kubectlVersionInt, err := strconv.Atoi(ProtocolVersion); err == nil {
+				if operatorVersionInt < kubectlVersionInt {
 					printutil.LogAndExit("This version of kubectl Cloudflow is not compatible with the Cloudflow operator, please upgrade the Cloudflow operator")
+				}
+				if operatorVersionInt > kubectlVersionInt {
+					printutil.LogAndExit("This version of kubectl Cloudflow is not compatible with the Cloudflow operator, please upgrade kubectl cloudflow")
 				}
 			}
 		}
