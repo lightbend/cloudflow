@@ -11,13 +11,13 @@ Cloudflow makes use of a number of open source projects. This page summarizes th
 **Apache Spark**
 
 * https://github.com/apache/spark[Apache Spark]: `2.4.5`
-* https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/[spark-on-k8s-operator]: `v1beta2-1.1.1-2.4.5`
+* https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/[spark-on-k8s-operator]: `v1beta2-1.1.2-2.4.5`
 * https://github.com/helm/charts/tree/master/incubator/sparkoperator[Helm chart] of spark-on-k8s-operator: `0.6.7`
 
 **Apache Flink**
 
 * https://github.com/apache/flink[Apache Flink]: `1.10.0`
-* https://github.com/lyft/flinkk8soperator[flinkk8soperator]: `0.4.0`
+* https://github.com/lyft/flinkk8soperator[flinkk8soperator]: `0.5.0`
 * https://github.com/lightbend/flink-operator[Helm chart] of flinkk8soperator: `0.8.2`
 
 **Apache Kafka**

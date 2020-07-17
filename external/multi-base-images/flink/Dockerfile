@@ -29,7 +29,7 @@ USER root
 ENV FLINK_TGZ=flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
 ENV FLINK_TGZ_URL=https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/${FLINK_TGZ}
 
-RUN apk add curl bash
+RUN apk add curl bash snappy-dev
 
 RUN mkdir ${FLINK_HOME} && \
     addgroup -S -g 9999 flink &&\

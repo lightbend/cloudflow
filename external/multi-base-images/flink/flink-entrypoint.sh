@@ -33,14 +33,14 @@ drop_privs_cmd() {
 
 # Add in extra configs set by the operator
 if [ -n "$FLINK_PROPERTIES" ]; then
-    echo "$FLINK_PROPERTIES" >> "/usr/local/flink-conf.yaml"
+    echo "$FLINK_PROPERTIES" >> $FLINK_HOME/flink-conf-tmp.yaml
 fi
 
 export FLINK_PROMETHEUS_JMX_JAVA_OPTS="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
 export FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${FLINK_PROMETHEUS_JMX_JAVA_OPTS}"
 
-if [ -f "/usr/local/flink-conf.yaml" ]; then
-    envsubst < /usr/local/flink-conf.yaml > $FLINK_HOME/conf/flink-conf.yaml
+if [ -f "$FLINK_HOME/flink-conf-tmp.yaml" ]; then
+    envsubst < $FLINK_HOME/flink-conf-tmp.yaml > $FLINK_HOME/conf/flink-conf.yaml
 fi
 echo "web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
 echo "jobmanager.web.upload.dir: $FLINK_HOME" >> "$FLINK_HOME/conf/flink-conf.yaml"
