@@ -49,23 +49,11 @@ And then delete  `cloudflow` objects you found in the output. This will trigger 
 
 If you want to uninstall the installer, then simply delete the namespace where the installer was deployed.
 
-### Deprecated installer from prior to Cloudflow 1.3.3
-
-Prior to Cloudflow 1.3.3, there is a more primitive way of installing Cloudflow, that is by using the `install.sh` script:
-
-```bash
-$ install.sh <k8s-cluster-name> <eks/gke>
-```
-
-that supports installing Cloudflow on an EKS or GKE cluster.
-
-Uninstalling can be done via:
-
+Alternatively, uninstall via:
 ```bash
 $ uninstall.sh
 ```
-
-These scripts are now deprecated and may be removed in a future release.
+which will run the steps mentioned above for you, assuming Cloudflow was installed in `cloudflow` namespace.
 
 ## Development
 
