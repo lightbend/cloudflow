@@ -150,9 +150,9 @@ lazy val alpineDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
           "apk update && apk add wget bash curl"
         )
         addInstruction(
-            Instruction.Run("curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"),
+            Instructions.Run("curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"),
             //TODO add openshift
-            //TODO make upper runRaw as Instructions
+            //TODO make upper runRaw as Instructions/
             )
       }
     } 
