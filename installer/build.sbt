@@ -146,14 +146,13 @@ lazy val alpineDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
         copy(appDir, targetDir, chown = "daemon:daemon")
         copy(baseDirectory(_ / "yaml" / "kustomize").value, targetDir ++ "/yaml/kustomize")
         workDir(targetDir)
+        runRaw("apk update && apk add wget bash curl")
         runRaw(
-          "apk update && apk add wget bash curl"
+          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
         )
-        addInstruction(
-            Instructions.Run("curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"),
-            //TODO add openshift
-            //TODO make upper runRaw as Instructions/
-            )
+        runRaw(
+          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
+        )
       }
     } 
   }
