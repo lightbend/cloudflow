@@ -135,7 +135,6 @@ lazy val gcpMarketplaceDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase
   }
 
 
-//alpine implementation, currently default one
 lazy val ossDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
     dockerfile in docker := {
       val appDir: File = stage.value
