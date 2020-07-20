@@ -103,8 +103,8 @@ def imageTag(dockerfile: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.Ima
     )
 }
 
-def dockerfileDistro(distro: Option[String]): Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
-  if (distro.isDefined && distro.get == "google") gcpMarketplaceDockerfile    
+def dockerfileDistro(dockerfile: Option[String]): Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
+  if (dockerfile.isDefined && dockerfile.get == "gcp-marketplace")  gcpMarketplaceDockerfile    
   else ossDockerfile  
 }
 
@@ -137,14 +137,6 @@ lazy val gcpMarketplaceDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase
 
 //alpine implementation, currently default one
 lazy val ossDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
-    imageNames in docker := Seq(
-          ImageName(
-            registry = Some("docker.io"),
-            namespace = Some("lightbend"),
-            repository = "cloudflow-installer",
-            tag = Some(s"alpine-${buildNumber.value.asVersion}")
-          )
-        )
     dockerfile in docker := {
       val appDir: File = stage.value
       val targetDir    = "/app"
