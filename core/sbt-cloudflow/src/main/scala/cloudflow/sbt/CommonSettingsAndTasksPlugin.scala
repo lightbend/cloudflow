@@ -71,7 +71,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
           ),
       // Add protoc libraries
       libraryDependencies ++= Seq(
-            "io.grpc"              % "grpc-netty"            % scalapb.compiler.Version.grpcJavaVersion,
+            "io.grpc"              % "grpc-netty-shaded"     % scalapb.compiler.Version.grpcJavaVersion,
             "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
           ),
       // TODO move all of this to schema plugins, possibly specific for runtime (when specific versions of libraries are needed, like Spark and Avro 1.8.2)
