@@ -26,10 +26,10 @@ ENV FLINK_HOME=/opt/flink
 
 USER root
 
-ENV FLINK_TGZ=flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
-ENV FLINK_TGZ_URL=https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/${FLINK_TGZ}
+ENV FLINK_TGZ=lightbend-flink-$FLINK_VERSION.tgz
+ENV FLINK_TGZ_URL=https://github.com/lightbend/flink/releases/download/v$FLINK_VERSION-lightbend/$FLINK_TGZ
 
-RUN apk add curl bash snappy-dev
+RUN apk add curl wget bash snappy-dev
 
 RUN mkdir ${FLINK_HOME} && \
     addgroup -S -g 9999 flink &&\
@@ -40,7 +40,7 @@ RUN mkdir ${FLINK_HOME} && \
 
 # Note that gettext is for the envsubst command in the Flink entrypoint script.
 RUN set -ex; \
-  curl -O "$FLINK_TGZ_URL"; \
+  wget "$FLINK_TGZ_URL"; \
   tar -xvzf $FLINK_TGZ; \
   apk add gettext-dev; \
   rm -rf /var/lib/apt/lists/*; \
