@@ -49,8 +49,8 @@ lazy val root = Project("cloudflow-installer", file("."))
           // pullBaseImage = BuildOptions.Pull.Always
         ),
     //creates a docker images
-    imageTag(sys.props.get("distro")),
-    dockerfileDistro(sys.props.get("distro")),
+    imageTag(sys.props.get("dockerfile")),
+    dockerfileDistro(sys.props.get("dockerfile")),
     Test / fork := true,
     scalacOptions ++= Seq(
           "-encoding",
@@ -89,9 +89,9 @@ lazy val root = Project("cloudflow-installer", file("."))
 
 
 
-def imageTag(distro: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.ImageName]]] = {
-  val tag = if (distro.isDefined && distro.get == "google") "gcr"    
-            else "alpine"
+def imageTag(dockerfile: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.ImageName]]] = {
+  val tag = if (dockerfile.isDefined && dockerfile.get == "gcp-marketplace") "gcp-marketplace"    
+            else "oss"
 
     imageNames in docker := Seq(
           ImageName(
@@ -104,11 +104,11 @@ def imageTag(distro: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.ImageNa
 }
 
 def dockerfileDistro(distro: Option[String]): Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
-  if (distro.isDefined && distro.get == "google") googleDockerfile    
-  else alpineDockerfile  
+  if (distro.isDefined && distro.get == "google") gcpMarketplaceDockerfile    
+  else ossDockerfile  
 }
 
-lazy val googleDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
+lazy val gcpMarketplaceDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
     dockerfile in docker := {
       val appDir: File = stage.value
       val targetDir    = "/app"
@@ -136,7 +136,15 @@ lazy val googleDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
 
 
 //alpine implementation, currently default one
-lazy val alpineDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
+lazy val ossDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
+    imageNames in docker := Seq(
+          ImageName(
+            registry = Some("docker.io"),
+            namespace = Some("lightbend"),
+            repository = "cloudflow-installer",
+            tag = Some(s"alpine-${buildNumber.value.asVersion}")
+          )
+        )
     dockerfile in docker := {
       val appDir: File = stage.value
       val targetDir    = "/app"
