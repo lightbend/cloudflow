@@ -21,7 +21,8 @@ import java.nio.file.Path
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
+import akka.annotation.ApiMayChange
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.stream.scaladsl._
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
@@ -151,6 +152,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
    **/
+  @ApiMayChange
   def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
                                                    shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, _] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity)
@@ -159,6 +161,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    * @see [[shardedSourceWithCommittableContext]]
    */
+  @ApiMayChange
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E]
@@ -200,18 +203,21 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
    **/
+  @ApiMayChange
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] =
     context.shardedPlainSource(inlet, shardEntity, resetPosition)
 
   /**
    * Java API
    */
+  @ApiMayChange
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]): akka.stream.javadsl.Source[T, _] =
     shardedPlainSource(inlet, shardEntity, Latest).asJava
 
   /**
    * Java API
    */
+  @ApiMayChange
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
                                      resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, _] =
