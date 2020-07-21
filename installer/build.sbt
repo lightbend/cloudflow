@@ -128,7 +128,7 @@ lazy val gcpMarketplaceDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase
           "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
         )
         runRaw(
-          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
+          "wget -q https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-07-14-153706-ga/openshift-client-linux-4.5.0-0.okd-2020-07-14-153706-ga.tar.gz -O - | tar -zxf - --exclude kubectl -C /usr/local/bin"
         )
       }
     }
@@ -147,10 +147,10 @@ lazy val ossDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
         workDir(targetDir)
         runRaw("apk update && apk add wget bash curl")
         runRaw(
-          "wget -q https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz -O - | tar -zxf - --strip-components=1 --exclude kubectl -C /usr/local/bin"
+          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
         )
         runRaw(
-          "curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl"
+          "wget -q https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-07-14-153706-ga/openshift-client-linux-4.5.0-0.okd-2020-07-14-153706-ga.tar.gz -O - | tar -zxf - --exclude kubectl -C /usr/local/bin"
         )
       }
     } 
