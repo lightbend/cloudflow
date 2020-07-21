@@ -90,15 +90,15 @@ lazy val root = Project("cloudflow-installer", file("."))
 
 
 def imageTag(dockerfile: Option[String]): Def.Setting[sbt.Task[Seq[sbtdocker.ImageName]]] = {
-  val tag = if (dockerfile.isDefined && dockerfile.get == "gcp-marketplace") "gcp-marketplace"    
-            else "oss"
+  val tagSuffix = if (dockerfile.isDefined && dockerfile.get == "gcp-marketplace") "-gcp-marketplace"    
+            else ""
 
     imageNames in docker := Seq(
           ImageName(
             registry = Some("docker.io"),
             namespace = Some("lightbend"),
             repository = "cloudflow-installer",
-            tag = Some(s"$tag-${buildNumber.value.asVersion}")
+            tag = Some(s"${buildNumber.value.asVersion}$tagSuffix")
           )
     )
 }
@@ -135,6 +135,7 @@ lazy val gcpMarketplaceDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase
   }
 
 
+//alpine implementation, currently default one
 lazy val ossDockerfile: Def.Setting[sbt.Task[sbtdocker.DockerfileBase]] = {
     dockerfile in docker := {
       val appDir: File = stage.value
