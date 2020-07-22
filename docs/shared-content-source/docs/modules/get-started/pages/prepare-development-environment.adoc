@@ -21,11 +21,11 @@ First, make sure that you have the following installed:
 Using one the links below, download the Cloudflow CLI version appropriate for your development platform.
 Install it on your local system by unzipping the archive and moving the executable into your `PATH`.
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.5.510-18276ac-darwin-amd64.tar.gz[MacOS]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.7.604-c4feda6-linux-amd64.tar.gz[Linux]
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.5.510-18276ac-linux-amd64.tar.gz[Linux]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.7.604-c4feda6-darwin-amd64.tar.gz[MacOS]
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.5.510-18276ac-windows-amd64.tar.gz[Windows 64-bit]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.7.604-c4feda6-windows-amd64.tar.gz[Windows]
 
 Please make sure you have the executable in your path with proper permission settings. 
 For Linux or MacOS, put the executables in `/usr/local/bin` with permission settings of `755`.
