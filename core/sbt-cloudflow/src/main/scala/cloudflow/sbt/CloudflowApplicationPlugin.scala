@@ -16,12 +16,8 @@
 
 package cloudflow.sbt
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import sbt.Keys._
 import sbt._
-
-import scala.util.control.NoStackTrace
 
 import cloudflow.sbt.CloudflowKeys._
 
@@ -30,8 +26,6 @@ import cloudflow.sbt.CloudflowKeys._
  * It also verifies the blueprint and publishes it to the platform after a successful build of the docker image.
  */
 object CloudflowApplicationPlugin extends AutoPlugin {
-
-  private val cloudflowAppProjects: AtomicInteger = new AtomicInteger()
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = StreamletDescriptorsPlugin && BlueprintVerificationPlugin && BuildAppPlugin
@@ -47,24 +41,7 @@ object CloudflowApplicationPlugin extends AutoPlugin {
     runLocalConfigFile := None,
     packageOptions in (Compile, packageBin) +=
         Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
-    verifyBlueprint := verifyBlueprint.dependsOn(checkUsageCount()).andFinally(resetCount()).value,
+    verifyBlueprint := verifyBlueprint.value,
     buildApp := cloudflowApplicationCR.value
   )
-
-  /**
-   * Check that this plugin isn't defined more than once in the multi-project build.
-   */
-  private def checkUsageCount(): Def.Initialize[Task[Unit]] = Def.task {
-    val isCloudflowApp = thisProject.value.autoPlugins.exists(_.label.equals(CloudflowApplicationPlugin.label))
-    if (isCloudflowApp && cloudflowAppProjects.incrementAndGet() > 1) {
-      throw new MultipleCloudflowApplicationError(
-        "You can only define one project as a Cloudflow Application in a multi-project sbt build."
-      )
-    }
-  }
-
-  private def resetCount() =
-    cloudflowAppProjects.set(0)
 }
-
-class MultipleCloudflowApplicationError(msg: String) extends Exception(s"\n$msg") with NoStackTrace with sbt.FeedbackProvidedException
