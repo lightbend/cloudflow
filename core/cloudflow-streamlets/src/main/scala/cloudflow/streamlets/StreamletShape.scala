@@ -43,6 +43,7 @@ private[streamlets] final case class StreamletShapeImpl(
 }
 
 object StreamletShape {
+  def empty: StreamletShape = StreamletShapeImpl(immutable.IndexedSeq(), immutable.IndexedSeq())
   def apply(inlet: Inlet): StreamletShape =
     StreamletShapeImpl(immutable.IndexedSeq(inlet), immutable.IndexedSeq())
   def apply(outlet: Outlet): StreamletShape =
@@ -57,6 +58,9 @@ object StreamletShape {
   @varargs
   def withOutlets(outlet: Outlet, outlets: Outlet*): StreamletShapeImpl =
     StreamletShapeImpl(immutable.IndexedSeq(), outlet +: outlets.toIndexedSeq)
+
+  // Java API
+  def createEmpty(): StreamletShape = empty
 
   // Java API
   @varargs

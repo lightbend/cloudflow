@@ -38,7 +38,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   final val DepJarsDir: String               = "dep-jars"
   final val OptAppDir                        = "/opt/cloudflow/"
   final val ScalaVersion                     = "2.12"
-  final val CloudflowVersion                 = "2.0.5"
+  final val CloudflowVersion                 = "2.0.7"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow

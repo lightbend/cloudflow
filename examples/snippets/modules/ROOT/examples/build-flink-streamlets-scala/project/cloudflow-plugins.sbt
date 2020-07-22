@@ -1,1 +1,1 @@
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.5")
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.7-RC1")

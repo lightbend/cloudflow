@@ -33,11 +33,11 @@ object CloudflowSparkPlugin extends AutoPlugin {
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
+    cloudflowSparkBaseImage := None,
     libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" %% "cloudflow-spark"         % BuildInfo.version,
           "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % BuildInfo.version % "test"
         ),
-    cloudflowDockerParentImage := CloudflowSparkDockerBaseImage,
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
         }.value,
@@ -71,7 +71,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       new Dockerfile {
-        from(CloudflowSparkDockerBaseImage)
+        from(cloudflowSparkBaseImage.value.getOrElse(CloudflowSparkDockerBaseImage))
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))

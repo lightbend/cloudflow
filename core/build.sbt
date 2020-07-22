@@ -1,8 +1,7 @@
 import sbt._
 import sbt.Keys._
-
 import Library._
-
+import sbtdocker.Instructions
 import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
@@ -317,7 +316,7 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.5.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.6.0"),
       addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
       addSbtPlugin("com.thesamet"      % "sbt-protoc"          % "0.99.31"),
@@ -433,9 +432,11 @@ lazy val operator =
         val targetDir    = "/app"
 
         new Dockerfile {
-          from("adoptopenjdk/openjdk8:latest")
+          from("adoptopenjdk/openjdk8:alpine")
           entryPoint(s"$targetDir/bin/${executableScriptName.value}")
           copy(appDir, targetDir, chown = "daemon:daemon")
+          addInstruction(
+            Instructions.Run("apk add bash; \\"))
         }
       },
       Test / fork := true,
