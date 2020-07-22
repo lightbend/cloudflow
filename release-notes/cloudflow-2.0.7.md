@@ -5,7 +5,7 @@ Today we are happy to announce the availability of Cloudflow 2.0.7.
 This patch release significantly reduces known security vulnerabilities in Docker images and JAR dependencies used in Cloudflow.
 
 It also fixes some issues:
-- Updated sbt-docer plugin to v1.6.0 [#563](https://github.com/lightbend/cloudflow/issues/563) [#583](https://github.com/lightbend/cloudflow/pull/583)
+- Updated sbt-docker plugin to v1.6.0 [#563](https://github.com/lightbend/cloudflow/issues/563) [#583](https://github.com/lightbend/cloudflow/pull/583)
 - Made it possible to modify Flink StreamExecutionEnvironment in FlinkStreamlet [#573](https://github.com/lightbend/cloudflow/pull/573)
 - Allow Streamlet with empty StreamletShape [#572](https://github.com/lightbend/cloudflow/pull/572)
 - Made base docker images for Cloudflow applications configurable [#509](https://github.com/lightbend/cloudflow/issues/509) [#566](https://github.com/lightbend/cloudflow/pull/566)
