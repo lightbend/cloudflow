@@ -22,7 +22,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import akka.annotation.ApiMayChange
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.stream.scaladsl._
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
