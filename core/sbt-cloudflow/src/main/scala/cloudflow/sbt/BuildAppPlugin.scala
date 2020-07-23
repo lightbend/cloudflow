@@ -47,7 +47,7 @@ object BuildAppPlugin extends AutoPlugin {
   override def projectSettings = Seq(
     allProjectDependenciesWithCloudflowBasePlugin := Def.taskDyn {
           Def.task {
-            projectWithCloudflowBasePlugin.all(ScopeFilter(inDependencies(ThisProject, transitive = true))).value.flatten
+            projectWithCloudflowBasePlugin.all(ScopeFilter(inAnyProject)).value.flatten
           }
         }.value,
     cloudflowApplicationCR := buildApp.dependsOn(verifyBlueprint).value,
