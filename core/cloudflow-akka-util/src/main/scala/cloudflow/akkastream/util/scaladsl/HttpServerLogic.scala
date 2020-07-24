@@ -44,19 +44,19 @@ object HttpServerLogic {
       .handle {
         case RequestEntityExpectedRejection => {
           context.system.log.error("no data provided")
-          complete((StatusCodes.InternalServerError, "no data send"))
+          complete((StatusCodes.BadRequest, "no data send"))
         }
       }
       .handle {
         case MalformedRequestContentRejection(msg, _) => {
           context.system.log.error(s"Malformed content $msg")
-          complete((StatusCodes.InternalServerError, msg))
+          complete((StatusCodes.BadRequest, msg))
         }
       }
       .handle {
         case UnsupportedRequestContentTypeRejection(_) => {
           context.system.log.error("Unsupported content type")
-          complete((StatusCodes.InternalServerError, "unsupported content"))
+          complete((StatusCodes.BadRequest, "unsupported content"))
         }
       }
       .handleNotFound {
