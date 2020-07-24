@@ -36,9 +36,45 @@ import cloudflow.akkastream._
  * Creates [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
  */
 object HttpServerLogic {
+
+  // Rejection handler to report errors
+  def getRejectionHandler(context: AkkaStreamletContext): RejectionHandler =
+    RejectionHandler
+      .newBuilder()
+      .handle {
+        case RequestEntityExpectedRejection => {
+          context.system.log.error("no data provided")
+          complete((StatusCodes.InternalServerError, "no data send"))
+        }
+      }
+      .handle {
+        case MalformedRequestContentRejection(msg, _) => {
+          context.system.log.error(s"Malformed content $msg")
+          complete((StatusCodes.InternalServerError, msg))
+        }
+      }
+      .handle {
+        case UnsupportedRequestContentTypeRejection(_) => {
+          context.system.log.error("Unsupported content type")
+          complete((StatusCodes.InternalServerError, "unsupported content"))
+        }
+      }
+      .handleNotFound {
+        context.system.log.error("content is not found")
+        complete((StatusCodes.NotFound, "Oh man, what you are looking for is long gone."))
+      }
+      .handle {
+        case ValidationRejection(msg, _) => {
+          context.system.log.error(s"Validation exception $msg")
+          complete((StatusCodes.InternalServerError, msg))
+        }
+      }
+      .result()
+
   final def default[Out](
       server: Server,
-      outlet: CodecOutlet[Out]
+      outlet: CodecOutlet[Out],
+      tag: String = "" // Tag so that one can distinguish between multiple ports in local testing
   )(implicit
     context: AkkaStreamletContext,
     fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
@@ -46,8 +82,8 @@ object HttpServerLogic {
       PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
         .andThen(implicitly[FromByteStringUnmarshaller[Out]])
 
-    new HttpServerLogic(server) {
-      final override def route(): Route = defaultRoute(sinkRef(outlet))
+    new HttpServerLogic(server, tag) {
+      final override def route(): Route = defaultRoute(getRejectionHandler(context), sinkRef(outlet))
     }
   }
 
@@ -64,13 +100,15 @@ object HttpServerLogic {
       final override def route(): Route = defaultStreamingRoute(sinkRef(outlet))
     }
 
-  final def defaultRoute[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+  final def defaultRoute[Out](handler: RejectionHandler, writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
     logRequest("defaultRoute") {
       logResult("defaultRoute") {
-        (put | post) {
-          entity(as[Out]) { out ⇒
-            onSuccess(writer.write(out)) { _ ⇒
-              complete(StatusCodes.Accepted)
+        handleRejections(handler) {
+          (put | post) {
+            entity(as[Out]) { out ⇒
+              onSuccess(writer.write(out)) { _ ⇒
+                complete(StatusCodes.Accepted)
+              }
             }
           }
         }
@@ -127,7 +165,8 @@ object HttpServerLogic {
  * }}}
  */
 abstract class HttpServerLogic(
-    server: Server
+    server: Server,
+    tag: String = ""
 )(implicit context: AkkaStreamletContext)
     extends ServerStreamletLogic(server) {
 
@@ -143,19 +182,21 @@ abstract class HttpServerLogic(
     startServer(
       context,
       flow,
-      containerPort
+      containerPort,
+      tag
     )
 
   protected def startServer(
       context: AkkaStreamletContext,
       handler: Flow[HttpRequest, HttpResponse, _],
-      port: Int
+      port: Int,
+      tag: String
   ): Unit =
     Http()
       .bindAndHandle(handler, "0.0.0.0", port)
       .map { binding ⇒
         context.signalReady()
-        system.log.info(s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
+        system.log.info(s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} with tag $tag")
         // this only completes when StreamletRef executes cleanup.
         context.onStop { () ⇒
           system.log.info(s"Unbinding from ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
