@@ -148,7 +148,10 @@ In the following snippet, we declare a three topics that connect to an external 
 
 [source, HOCON]
 ----
-cloudflow {
+blueprint {
+
+  // streamlets omitted for brevity
+
   topics {
     rides = ${shared-config} {      //<1>
       topic.name = "incoming-rides" //<2>
