@@ -92,7 +92,7 @@ NOTE: Each runtime plugin uses its own default base image. It's `lightbend/akka-
 
 ##### Example:
 In an Akka-based streamlet the default base image value is `lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}` which is defined in https://github.com/lightbend/cloudflow/blob/7b02d027ed75eb49cfb80224cfa508575527b38e/core/sbt-cloudflow/src/main/scala/cloudflow/sbt/CloudflowAkkaPlugin.scala#L31[here].
-This maybe be instantiated (depending on your Cloudflow, Akka and Scala versions) to `lightbend/akka-base:2.0.7-cloudflow-akka-2.6.8-scala-2.12`. To override this base image in your cloudflow application go to its build.sbt and add new line in its settings such as `cloudflowAkkaBaseImage := myRepositoryUrl/myRepositoryPath:2.0.7-cloudflow-akka-2.6.8-scala-2.12`. https://github.com/lightbend/cloudflow/blob/7b02d027ed75eb49cfb80224cfa508575527b38e/examples/call-record-aggregator/build.sbt#L82[Here] would do.
+This may be set to `lightbend/akka-base:2.0.7-cloudflow-akka-2.6.8-scala-2.12` (depending on your Cloudflow, Akka and Scala versions). To override this base image in your cloudflow application go to its build.sbt and add a new line in its settings such as `cloudflowAkkaBaseImage := myRepositoryUrl/myRepositoryPath:2.0.7-cloudflow-akka-2.6.8-scala-2.12`. https://github.com/lightbend/cloudflow/blob/7b02d027ed75eb49cfb80224cfa508575527b38e/examples/call-record-aggregator/build.sbt#L82[Here] would do.
 
 
 == Single Runtime Applications
