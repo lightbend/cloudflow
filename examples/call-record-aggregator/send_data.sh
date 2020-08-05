@@ -10,7 +10,7 @@ fi
 
 echo "Using $RESOURCE"
 
-ROUTE_HOST=$(kubectl cloudflow status call-record-pipeline | grep /cdr-ingress | awk '{print $2}')
+ROUTE_HOST=$(kubectl cloudflow status call-record-aggregator | grep cdr-ingress | awk '{print $2}')
 
 for str in $( cat $RESOURCE ); do
   echo Sending $str
