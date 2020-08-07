@@ -393,10 +393,9 @@ func validateStreamletRunnersDependencies(applicatonSpec cfapp.CloudflowApplicat
 	}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
-		cmd := exec.Command("kubectl", "get", "crds", crdName, "-o jsonpath='{.spec.version}'")
-		version, err := cmd.Output()
+		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
 		if err != nil {
-			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing", prettyName, prettyName)
+			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing (%v)", prettyName, prettyName, err.Error())
 		}
 		if string(version) != expectedVersion {
 			return fmt.Errorf("%s is installed but the wrong version, required %s, installed %s", prettyName, requiredSparkVersion, string(version))
