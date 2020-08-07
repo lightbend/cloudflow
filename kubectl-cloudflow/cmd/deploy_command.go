@@ -380,6 +380,9 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 // The function validates that the operators for Spark and Flink is installed if the application uses any of those streamlet types
 func validateStreamletRunnersDependencies(applicatonSpec cfapp.CloudflowApplicationSpec) {
 
+	const requiredSparkVersion = "v1beta2"
+	const requiredFlinkVersion = "v1beta1"
+
 	runnerType := func(runnerTypeName string) bool {
 		for _, v := range applicatonSpec.Streamlets {
 			if v.Descriptor.Runtime == runnerTypeName {
@@ -389,19 +392,27 @@ func validateStreamletRunnersDependencies(applicatonSpec cfapp.CloudflowApplicat
 		return false
 	}
 
-	if runnerType("spark") {
-		cmd := exec.Command("kubectl", "get", "sparkapplications.sparkoperator.k8s.io")
-		_, err := cmd.Output()
+	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
+		cmd := exec.Command("kubectl", "get", "crds", crdName, "-o jsonpath='{.spec.version}'")
+		version, err := cmd.Output()
 		if err != nil {
-			printutil.LogAndExit("Cannot detect that Spark is installed, please install Spark before continuing.")
+			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing", prettyName, prettyName)
+		}
+		if string(version) != expectedVersion {
+			return fmt.Errorf("%s is installed but the wrong version, required %s, installed %s", prettyName, requiredSparkVersion, string(version))
+		}
+		return nil
+	}
+
+	if runnerType("spark") {
+		if err := validateRunnerType("sparkapplications.sparkoperator.k8s.io", "Spark", requiredSparkVersion); err != nil {
+			printutil.LogErrorAndExit(err)
 		}
 	}
 
 	if runnerType("flink") {
-		cmd := exec.Command("kubectl", "get", "flinkapplications.flink.k8s.io")
-		_, err := cmd.Output()
-		if err != nil {
-			printutil.LogAndExit("Cannot detect that Spark is installed, please install Spark before continuing.")
+		if err := validateRunnerType("flinkapplications.flink.k8s.io", "Flink", requiredFlinkVersion); err != nil {
+			printutil.LogErrorAndExit(err)
 		}
 	}
 }
