@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 
@@ -125,6 +126,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if err != nil {
 		printutil.LogAndExit("%s", err.Error())
 	}
+
+	validateStreamletRunnersDependencies(applicationSpec)
 
 	namespace := applicationSpec.AppID
 
@@ -372,4 +375,33 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// The function validates that the operators for Spark and Flink is installed if the application uses any of those streamlet types
+func validateStreamletRunnersDependencies(applicatonSpec cfapp.CloudflowApplicationSpec) {
+
+	runnerType := func(runnerTypeName string) bool {
+		for _, v := range applicatonSpec.Streamlets {
+			if v.Descriptor.Runtime == runnerTypeName {
+				return true
+			}
+		}
+		return false
+	}
+
+	if runnerType("spark") {
+		cmd := exec.Command("kubectl", "get", "sparkapplications.sparkoperator.k8s.io")
+		_, err := cmd.Output()
+		if err != nil {
+			printutil.LogAndExit("Cannot detect that Spark is installed, please install Spark before continuing.")
+		}
+	}
+
+	if runnerType("flink") {
+		cmd := exec.Command("kubectl", "get", "flinkapplications.flink.k8s.io")
+		_, err := cmd.Output()
+		if err != nil {
+			printutil.LogAndExit("Cannot detect that Spark is installed, please install Spark before continuing.")
+		}
+	}
 }
