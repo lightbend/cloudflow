@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 
@@ -125,6 +126,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if err != nil {
 		printutil.LogAndExit("%s", err.Error())
 	}
+
+	validateStreamletRunnersDependencies(applicationSpec)
 
 	namespace := applicationSpec.AppID
 
@@ -372,4 +375,43 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// The function validates that the operators for Spark and Flink are installed if the application uses any of those streamlet types
+func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplicationSpec) {
+
+	type RunnerRequirements struct {
+		crd     string
+		version string
+	}
+
+	runnerTypes := make(map[string]RunnerRequirements)
+	runnerTypes["Spark"] = RunnerRequirements{"sparkapplications.sparkoperator.k8s.io", version.RequiredSparkVersion}
+	runnerTypes["Flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
+
+	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
+		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
+		if err != nil {
+			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing (%v)", prettyName, prettyName, err.Error())
+		}
+		if string(version) != expectedVersion {
+			return fmt.Errorf("%s is installed but the wrong version, required %s, installed %s", prettyName, expectedVersion, string(version))
+		}
+		return nil
+	}
+
+	var result []error
+	for k, v := range runnerTypes {
+		if err := validateRunnerType(v.crd, strings.Title(k), v.version); err != nil {
+			result = append(result, err)
+		}
+	}
+
+	if len(result) != 0 {
+		for _, err := range result {
+			printutil.PrintError("%s", err.Error())
+		}
+		os.Exit(1)
+	}
+
 }
