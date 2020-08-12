@@ -380,14 +380,14 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 // The function validates that the operators for Spark and Flink are installed if the application uses any of those streamlet types
 func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplicationSpec) {
 
-	runnerType := func(runnerTypeName string) bool {
-		for _, v := range applicationSpec.Streamlets {
-			if v.Descriptor.Runtime == runnerTypeName {
-				return true
-			}
-		}
-		return false
+	type RunnerRequirements struct {
+		crd     string
+		version string
 	}
+
+	runnerTypes := make(map[string]RunnerRequirements)
+	runnerTypes["Spark"] = RunnerRequirements{"sparkapplications.sparkoperator.k8s.io", version.RequiredSparkVersion}
+	runnerTypes["Flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
 		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
@@ -400,15 +400,18 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 		return nil
 	}
 
-	if runnerType("spark") {
-		if err := validateRunnerType("sparkapplications.sparkoperator.k8s.io", "Spark", version.RequiredSparkVersion); err != nil {
-			printutil.LogErrorAndExit(err)
+	var result []error
+	for k, v := range runnerTypes {
+		if err := validateRunnerType(v.crd, strings.Title(k), v.version); err != nil {
+			result = append(result, err)
 		}
 	}
 
-	if runnerType("flink") {
-		if err := validateRunnerType("flinkapplications.flink.k8s.io", "Flink", version.RequiredFlinkVersion); err != nil {
-			printutil.LogErrorAndExit(err)
+	if len(result) != 0 {
+		for _, err := range result {
+			printutil.PrintError("%s", err.Error())
 		}
+		os.Exit(1)
 	}
+
 }
