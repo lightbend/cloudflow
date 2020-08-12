@@ -127,7 +127,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogAndExit("%s", err.Error())
 	}
 
-	validateStreamletRunnersDependencies(applicationSpec)
+	validateStreamletRunnersInstalled(applicationSpec)
 
 	namespace := applicationSpec.AppID
 
