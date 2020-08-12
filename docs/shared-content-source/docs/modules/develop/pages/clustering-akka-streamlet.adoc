@@ -25,7 +25,7 @@ Add the Clustering trait to your streamlet as shown below to activate Clustering
 object ConnectedCarCluster extends AkkaStreamlet with Clustering
 ----
 
-By including the clustering Trait on you Akka Streamlet cloudflow will automatically setup all the
+By including the Clustering trait on your Akka Streamlet, Cloudflow will automatically setup all the
 configuration your streamlet needs to form a cluster, both when running the application locally and when the application is deployed to a Kubernetes cluster.
 
 == Kafka External Sharding Source
