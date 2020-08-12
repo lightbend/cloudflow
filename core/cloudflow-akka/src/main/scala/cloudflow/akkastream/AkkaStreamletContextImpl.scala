@@ -111,7 +111,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded committable source for group: $gId topic: ${topic.name}")
 
     import scala.concurrent.duration._
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
@@ -238,7 +238,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded plain source for group: $gId topic: ${topic.name}")
 
     import scala.concurrent.duration._
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
