@@ -34,7 +34,7 @@ When using Akka Cluster Sharding with a normal Cloudflow source it is likely tha
 Akka shard is not the same as the node assigned to that shard's corresponding Kafka partition.  In this case every
 message read from kafka would need to be sent over the network to the Shard node and back.
 
-To avoid this case and coordinate the location of Akka shards and Kafka partitions cloudflow users can
+To avoid this case and coordinate the location of Akka shards and Kafka partitions you can
 use `shardedSourceWithCommittable` and `shardedPlainSource`.  These Sources use an Akka feature
 called a
 https://doc.akka.io/docs/alpakka-kafka/current/cluster-sharding.html[Kafka ExternalShardAllocationStrategy].
