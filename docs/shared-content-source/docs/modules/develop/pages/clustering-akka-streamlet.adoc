@@ -53,7 +53,7 @@ val source:SourceWithContext[ConnectedCarERecord, CommittableOffset, _] = sharde
 ----
 
 `shardedPlainSource` does not include any Kafka offset information as context but implements the Kafka
-Sharding Strategy in the same way
+Sharding Strategy in the same way.
 
 [source,scala]
 ----
