@@ -39,7 +39,7 @@ you can use `shardedSourceWithCommittable` and `shardedPlainSource`.  These Sour
 called a
 https://doc.akka.io/docs/alpakka-kafka/current/cluster-sharding.html[Kafka ExternalShardAllocationStrategy].
 
-To use these Sources you must first implement Clustering on your Akka Streamlet then follow
+To use these Sources you must first implement Clustering on your Akka Streamlet and then follow
 the examples below.
 
 Like its non-sharded counterpart, `shardedSourceWithCommittableContext` will include Kafka offset information
