@@ -42,7 +42,6 @@ const RequiredSparkVersion = "v1beta2"
 // RequiredFlinkVersion is the Flink version required by Cloudflow
 const RequiredFlinkVersion = "v1beta1"
 
-
 // FailOnProtocolVersionMismatch fails and exits if the protocol version of kubectl-cloudflow does not match with the cloudflow operator protocol version.
 func FailOnProtocolVersionMismatch() {
 	cm, err := getProtocolVersionConfigMap()
