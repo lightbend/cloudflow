@@ -206,7 +206,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * @param shardEntity is used to specific the settings for the started shard region
    **/
   @ApiMayChange
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] =
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] =
     context.shardedPlainSource(inlet, shardEntity, resetPosition)
 
   /**

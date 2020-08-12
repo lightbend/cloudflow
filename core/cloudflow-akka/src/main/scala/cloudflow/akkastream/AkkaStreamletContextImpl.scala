@@ -23,7 +23,6 @@ import scala.concurrent._
 import scala.util._
 import akka._
 import akka.actor.ActorSystem
-import akka.actor.typed.scaladsl.adapter._
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
@@ -45,8 +44,7 @@ final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem
 ) extends AkkaStreamletContext {
-  implicit val system: ActorSystem  = sys
-  implicit val ec: ExecutionContext = sys.dispatcher
+  implicit val system: ActorSystem = sys
 
   override def config: Config = streamletDefinition.config
 
@@ -92,8 +90,10 @@ final class AkkaStreamletContextImpl(
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet)
 
-  private[akkastream] def shardedSourceWithContext[T, M, E](inlet: CodecInlet[T],
-                                                            shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+  private[akkastream] def shardedSourceWithContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E]
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
@@ -142,7 +142,7 @@ final class AkkaStreamletContextImpl(
             .map {
               case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
             }
-        }
+        }(system.dispatcher)
       }
       .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
       .map { case (record, _) ⇒ record }
@@ -219,7 +219,9 @@ final class AkkaStreamletContextImpl(
       }
   }
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
@@ -265,7 +267,7 @@ final class AkkaStreamletContextImpl(
             .map { record ⇒
               inlet.codec.decode(record.value)
             }
-        }
+        }(system.dispatcher)
       }
   }
 

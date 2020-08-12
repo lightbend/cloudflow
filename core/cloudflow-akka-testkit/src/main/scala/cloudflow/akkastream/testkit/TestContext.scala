@@ -22,8 +22,7 @@ import scala.concurrent._
 import akka.NotUsed
 import akka.actor._
 import akka.actor.typed.scaladsl.adapter._
-import akka.cluster.sharding.typed.ShardingMessageExtractor
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka.CommitterSettings
 import akka.kafka.ConsumerMessage._
 import akka.stream._
@@ -74,9 +73,19 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
-  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]) = {
+  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
+                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
-    sourceWithContext(inlet)
+
+    Source
+      .futureSource(
+        Future {
+          sourceWithContext(inlet)
+            .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
+        }(system.dispatcher)
+      )
+      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
+      .map { case (record, _) ⇒ record }
   }
 
   private def flowWithCommittableContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
@@ -116,9 +125,15 @@ private[testkit] case class TestContext(
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] = {
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
-    plainSource(inlet, resetPosition)
+    Source.futureSource(
+      Future {
+        plainSource(inlet, resetPosition)
+      }(system.dispatcher)
+    )
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒
