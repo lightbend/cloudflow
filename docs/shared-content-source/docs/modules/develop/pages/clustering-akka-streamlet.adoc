@@ -42,7 +42,7 @@ https://doc.akka.io/docs/alpakka-kafka/current/cluster-sharding.html[Kafka Exter
 To use these Sources you must first implement Clustering on your Akka Streamlet then follow
 the examples below.
 
-`shardedSourceWithCommittableContext` like its non-sharded counterpart will include Kafka offset information
+Like its non-sharded counterpart, `shardedSourceWithCommittableContext` will include Kafka offset information
 as context as well as implementing the Kafka Sharding strategy.
 
 [source,scala]
