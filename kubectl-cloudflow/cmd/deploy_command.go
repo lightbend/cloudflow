@@ -127,7 +127,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogAndExit("%s", err.Error())
 	}
 
-	validateStreamletRunnersInstalled(applicationSpec)
+	validateStreamletRunnersDependencies(applicationSpec)
 
 	namespace := applicationSpec.AppID
 
@@ -381,7 +381,7 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplicationSpec) {
 
 	runnerType := func(runnerTypeName string) bool {
-		for _, v := range applicatonSpec.Streamlets {
+		for _, v := range applicationSpec.Streamlets {
 			if v.Descriptor.Runtime == runnerTypeName {
 				return true
 			}
