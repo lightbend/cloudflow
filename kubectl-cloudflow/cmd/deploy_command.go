@@ -378,7 +378,7 @@ func validateDeployCmdArgs(cmd *cobra.Command, args []string) error {
 }
 
 // The function validates that the operators for Spark and Flink are installed if the application uses any of those streamlet types
-func validateStreamletRunnersDependencies(applicatonSpec cfapp.CloudflowApplicationSpec) {
+func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplicationSpec) {
 
 	const requiredSparkVersion = "v1beta2"
 	const requiredFlinkVersion = "v1beta1"
