@@ -14,7 +14,7 @@ WARNING: The features on this page feature are experimental and may change.  It 
 === Use Case
 
 Akka Clustering in a cloudflow Akka Streamlet gives you the ability to leverage existing Akka tools for managing
-data in-memory. Akka Cluster Sharding can be used to where data must be consistent and Akka Distributed Data
+data in-memory. Akka Cluster Sharding can be used where data must be consistent and Akka Distributed Data
 can be used for eventually consistent highly-available data.  There exist many real world use cases where
 stateful streams are needed, including model updates in real-time ML serving and sharding IOT Device State.
 
