@@ -80,12 +80,13 @@ private[testkit] case class TestContext(
     Source
       .futureSource(
         Future {
-          sourceWithContext(inlet)
+          sourceWithContext(inlet).asSource
             .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
         }(system.dispatcher)
       )
       .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
       .map { case (record, _) ⇒ record }
+
   }
 
   private def flowWithCommittableContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
