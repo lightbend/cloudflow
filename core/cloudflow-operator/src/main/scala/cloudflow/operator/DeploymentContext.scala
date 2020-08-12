@@ -42,11 +42,11 @@ case class DeploymentContext(kafkaContext: KafkaContext,
 }
 
 case class KafkaContext(
-    strimziTopicOperatorNamespace: String,
-    strimziClusterName: String,
     bootstrapServers: String,
     partitionsPerTopic: Int,
-    replicationFactor: Int
+    replicationFactor: Int,
+    strimziTopicOperatorNamespace: Option[String] = None,
+    strimziClusterName: Option[String] = None
 )
 
 final case class Host(name: String, port: Option[Int]) {

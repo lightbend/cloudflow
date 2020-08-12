@@ -22,8 +22,8 @@ trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
       kafkaContext = KafkaContext(
-        strimziClusterName = "kafka",
-        strimziTopicOperatorNamespace = "strimzi",
+        strimziClusterName = Some("kafka"),
+        strimziTopicOperatorNamespace = Some("strimzi"),
         bootstrapServers = "localhost:9092",
         partitionsPerTopic = 3,
         replicationFactor = 1

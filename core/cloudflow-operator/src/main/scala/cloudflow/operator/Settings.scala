@@ -167,11 +167,11 @@ final case class Settings(config: Config) extends Extension {
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
   val kafka = KafkaSettings(
-    getNonEmptyString(config, s"$root.kafka.strimzi-topic-operator-namespace"),
-    getNonEmptyString(config, s"$root.kafka.strimzi-cluster-name"),
     getNonEmptyString(config, s"$root.kafka.bootstrap-servers"),
     partitionsPerTopic,
-    replicationFactor
+    replicationFactor,
+    config.as[Option[String]](s"$root.kafka.strimzi-topic-operator-namespace"),
+    config.as[Option[String]](s"$root.kafka.strimzi-cluster-name")
   )
 
   val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
@@ -187,11 +187,11 @@ final case class Settings(config: Config) extends Extension {
   val deploymentContext = {
     DeploymentContext(
       KafkaContext(
-        kafka.strimziTopicOperatorNamespace,
-        kafka.strimziClusterName,
         kafka.bootstrapServers,
         kafka.partitionsPerTopic,
-        kafka.replicationFactor
+        kafka.replicationFactor,
+        kafka.strimziTopicOperatorNamespace,
+        kafka.strimziClusterName
       ),
       akkaRunnerSettings,
       sparkRunnerSettings,
@@ -204,11 +204,11 @@ final case class Settings(config: Config) extends Extension {
 }
 
 final case class KafkaSettings(
-    strimziTopicOperatorNamespace: String,
-    strimziClusterName: String,
     bootstrapServers: String,
     partitionsPerTopic: Int,
-    replicationFactor: Int
+    replicationFactor: Int,
+    strimziTopicOperatorNamespace: Option[String] = None,
+    strimziClusterName: Option[String] = None
 )
 
 final case class Resources(request: String, limit: String)
