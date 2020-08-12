@@ -30,7 +30,7 @@ configuration your streamlet needs to form a cluster, both when running the appl
 
 == Kafka External Sharding Source
 
-When using Akka Cluster Sharding with a normal cloudflow source it is likely that the location of a specific
+When using Akka Cluster Sharding with a normal Cloudflow source it is likely that the location of a specific
 Akka shard is not the same as the node assigned to that shard's corresponding Kafka partition.  In this case every
 message read from kafka would need to be sent over the network to the Shard node and back.
 
