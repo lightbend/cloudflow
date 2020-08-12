@@ -26,7 +26,7 @@ object ConnectedCarCluster extends AkkaStreamlet with Clustering
 ----
 
 By including the clustering Trait on you Akka Streamlet cloudflow will automatically setup all the
-configs your streamlet needs to form a cluster locally and deployed on kubernetes.
+configuration your streamlet needs to form a cluster, both when running the application locally and when the application is deployed to a Kubernetes cluster.
 
 == Kafka External Sharding Source
 
@@ -61,5 +61,4 @@ val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor
 
 val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity)
 ----
-
 
