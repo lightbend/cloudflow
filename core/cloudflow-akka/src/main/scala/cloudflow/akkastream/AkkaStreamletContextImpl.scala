@@ -93,7 +93,7 @@ final class AkkaStreamletContextImpl(
     sourceWithContext[T](inlet)
 
   private[akkastream] def shardedSourceWithContext[T, M, E](inlet: CodecInlet[T],
-                                                            shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, _] = {
+                                                            shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
@@ -151,7 +151,7 @@ final class AkkaStreamletContextImpl(
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E]
-  ): SourceWithContext[T, CommittableOffset, _] =
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     shardedSourceWithContext(inlet, shardEntity)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
@@ -219,7 +219,7 @@ final class AkkaStreamletContextImpl(
       }
   }
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] = {
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)

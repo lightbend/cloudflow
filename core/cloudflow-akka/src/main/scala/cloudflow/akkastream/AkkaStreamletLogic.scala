@@ -30,6 +30,8 @@ import com.typesafe.config.Config
 import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 
+import scala.concurrent.Future
+
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
  * Override the `run` method to implement the specific logic / code that should be executed once the streamlet deployed
@@ -154,7 +156,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    **/
   @ApiMayChange
   def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, _] =
+                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity)
 
   /**
@@ -165,7 +167,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E]
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity).asJava
 
   /**
@@ -204,14 +206,14 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * @param shardEntity is used to specific the settings for the started shard region
    **/
   @ApiMayChange
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, _] =
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E], resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] =
     context.shardedPlainSource(inlet, shardEntity, resetPosition)
 
   /**
    * Java API
    */
   @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]): akka.stream.javadsl.Source[T, _] =
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]): akka.stream.javadsl.Source[T, Future[NotUsed]] =
     shardedPlainSource(inlet, shardEntity, Latest).asJava
 
   /**
@@ -220,7 +222,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @ApiMayChange
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
-                                     resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, _] =
+                                     resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, Future[NotUsed]] =
     shardedPlainSource(inlet, shardEntity, resetPosition).asJava
 
   /**

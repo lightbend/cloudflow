@@ -42,7 +42,7 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E]
-  ): SourceWithContext[T, CommittableOffset, _]
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
@@ -53,7 +53,7 @@ trait AkkaStreamletContext extends StreamletContext {
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest
-  ): Source[T, _]
+  ): Source[T, Future[NotUsed]]
 
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
