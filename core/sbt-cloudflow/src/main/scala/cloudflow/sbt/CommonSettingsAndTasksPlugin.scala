@@ -74,10 +74,11 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
             SchemaFormat.Avro  -> "src/main/avro",
             SchemaFormat.Proto -> "src/main/protobuf"
           ),
-      PB.targets in Compile := {
+      PB.targets in Compile ++= {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
-          case SchemaCodeGenerator.Java ⇒ Seq(PB.gens.java -> (sourceManaged in Compile).value)
+          case SchemaCodeGenerator.Java =>
+            Seq[protocbridge.Target](PB.gens.java -> (sourceManaged in Compile).value)
           case SchemaCodeGenerator.Scala =>
             Seq(scalaPbTarget((crossTarget in Compile).value / "scalapb"))
         }
