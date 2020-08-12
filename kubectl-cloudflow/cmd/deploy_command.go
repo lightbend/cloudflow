@@ -34,6 +34,7 @@ type deployOptions struct {
 	username                string
 	password                string
 	passwordStdin           bool
+	noRegistryCredentials   bool
 	volumeMounts            []string
 	replicasByStreamletName map[string]int
 	configFiles             []string
@@ -111,6 +112,7 @@ You can update the credentials with the "update-docker-credentials" command.
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.username, "username", "u", "", "docker registry username.")
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.password, "password", "p", "", "docker registry password.")
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin")
+	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noRegistryCredentials, "no-registry-credentials", "", false, "Use if no credentials is needed to pull the application docker image")
 
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
 	deployOpts.cmd.Flags().StringToIntVar(&deployOpts.replicasByStreamletName, "scale", map[string]int{}, "Accepts key/value pairs for replicas per streamlet")
@@ -141,7 +143,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogErrorAndExit(err)
 	}
 
-	firstPulledImage, applicationSpec := updateImageRefs(client, applicationSpec)
+	imageReference := getImageReferenceForDeployment(client, applicationSpec)
 
 	// Extract volume mounts and update the application spec with the name of the PVC's
 	applicationSpec, err = volume.ValidateVolumeMounts(k8sClient, applicationSpec, opts.volumeMounts)
@@ -149,8 +151,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogErrorAndExit(err)
 	}
 
-	if firstPulledImage.Authenticated {
-		handleAuth(k8sClient, namespace, opts, firstPulledImage)
+	if !opts.noRegistryCredentials {
+		handleAuth(k8sClient, namespace, opts, imageReference)
 	}
 
 	applicationSpec, err = scale.UpdateReplicas(appClient, applicationSpec, opts.replicasByStreamletName)
@@ -216,30 +218,18 @@ func getClientsOrExit(namespace string) (*kubernetes.Clientset, *client.Client, 
 	return k8sClient, client, cloudflowApplicationClient
 }
 
-// UpdateImageRefs updates the images refs in the application spec with image digests
-func updateImageRefs(client *client.Client, applicationSpec cfapp.CloudflowApplicationSpec) (*dockerclient.PulledImage, cfapp.CloudflowApplicationSpec) {
+// getImageReferenceForDeployment returns the image referenc for the image in the deployment
+func getImageReferenceForDeployment(client *client.Client, applicationSpec cfapp.CloudflowApplicationSpec) *dockerclient.ImageReference {
 	// Get the first available image, all images must be present in the same repository.
 	image := applicationSpec.Deployments[0].Image
 
 	imageReference, err := dockerclient.ParseImageReference(image)
 
 	if err != nil {
-		printutil.LogAndExit("%s", err.Error())
+		printutil.LogAndExit("Failed to parse the image reference '%s',%s", image, err.Error())
 	}
 
-	dockerRegistryURL := imageReference.Registry
-	dockerRepository := imageReference.Repository
-	var pulledImages = make(map[string]*dockerclient.PulledImage)
-	for _, deployment := range applicationSpec.Deployments {
-		if pulledImage, err := dockerclient.PullImage(client, deployment.Image, dockerRegistryURL); err == nil {
-			pulledImages[deployment.Name] = pulledImage
-		} else {
-			printutil.LogAndExit("Failed to pull image %s: %s", image, err.Error())
-		}
-	}
-	firstPulledImage := pulledImages[applicationSpec.Deployments[0].Name]
-
-	return firstPulledImage, updateImageRefsWithDigests(applicationSpec, pulledImages, dockerRegistryURL, dockerRepository)
+	return imageReference
 }
 
 // updateImageRefsWithDigests updates the imagesRefs to include the digest of the pulled images
@@ -261,8 +251,8 @@ func updateImageRefsWithDigests(spec cfapp.CloudflowApplicationSpec, pulledImage
 	return spec
 }
 
-func handleAuth(k8sClient *kubernetes.Clientset, namespace string, opts *deployOptions, firstPulledImage *dockerclient.PulledImage) {
-	dockerRegistryURL := firstPulledImage.DockerRegistryURL
+func handleAuth(k8sClient *kubernetes.Clientset, namespace string, opts *deployOptions, imageReference *dockerclient.ImageReference) {
+	dockerRegistryURL := imageReference.Registry
 	if err := verifyPasswordOptions(opts); err == nil {
 		if terminal.IsTerminal(int(os.Stdin.Fd())) && (opts.username == "" || opts.password == "") {
 			if !dockerConfigEntryExists(k8sClient, namespace, dockerRegistryURL) {

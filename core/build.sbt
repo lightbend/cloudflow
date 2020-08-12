@@ -314,7 +314,7 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.6.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.7.1-SNAPSHOT"),
       addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
       addSbtPlugin("com.thesamet"      % "sbt-protoc"          % "0.99.31"),
