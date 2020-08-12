@@ -149,7 +149,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
    * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
    *
-   * @param inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param inlet the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
    **/
   @ApiMayChange
