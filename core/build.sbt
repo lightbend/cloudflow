@@ -314,13 +314,14 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.7.1-SNAPSHOT"),
-      addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
-      addSbtPlugin("com.thesamet"      % "sbt-protoc"          % "0.99.31"),
-      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger"      % "2.0.0-RC18"),
-      addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent"       % "0.1.5"),
-      addSbtPlugin("de.heikoseeberger" % "sbt-header"          % "5.2.0"),
+      resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
+      addSbtPlugin("com.lightbend.cloudflow" % "sbt-docker"          % "1.7.1-image-digest-fix"),
+      addSbtPlugin("com.typesafe.sbt"        % "sbt-native-packager" % "1.3.25"),
+      addSbtPlugin("com.cavorite"            % "sbt-avro-1-8"        % "1.1.9"),
+      addSbtPlugin("com.thesamet"            % "sbt-protoc"          % "0.99.31"),
+      addSbtPlugin("com.julianpeeters"       % "sbt-avrohugger"      % "2.0.0-RC18"),
+      addSbtPlugin("com.lightbend.sbt"       % "sbt-javaagent"       % "0.1.5"),
+      addSbtPlugin("de.heikoseeberger"       % "sbt-header"          % "5.2.0"),
       libraryDependencies ++= Vector(
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
@@ -392,8 +393,8 @@ lazy val operator =
             Skuber,
             ScalaTest,
             AkkaStreamTestkitOperator % "test",
-            ScalaCheck        % "test",
-            Avro4sJson        % "test"
+            ScalaCheck                % "test",
+            Avro4sJson                % "test"
           )
     )
     .settings(
@@ -433,8 +434,7 @@ lazy val operator =
           from("adoptopenjdk/openjdk8:alpine")
           entryPoint(s"$targetDir/bin/${executableScriptName.value}")
           copy(appDir, targetDir, chown = "daemon:daemon")
-          addInstruction(
-            Instructions.Run("apk add bash; \\"))
+          addInstruction(Instructions.Run("apk add bash; \\"))
         }
       },
       Test / fork := true,

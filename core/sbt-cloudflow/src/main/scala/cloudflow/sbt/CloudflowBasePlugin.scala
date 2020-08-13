@@ -94,10 +94,10 @@ object CloudflowBasePlugin extends AutoPlugin {
     buildAndPublishImage := Def.task {
           val _ = (checkUncommittedChanges.value, verifyDockerRegistry.value)
           Def.task {
-            val streamletDescriptors             = streamletDescriptorsInProject.value
-            val imageId: Map[ImageName, ImageId] = dockerBuildAndPush.value
-            val log                              = streams.value.log
-            val imagesPushed                     = (imageNames in docker).value
+            val streamletDescriptors                 = streamletDescriptorsInProject.value
+            val imageId: Map[ImageName, ImageDigest] = dockerBuildAndPush.value
+            val log                                  = streams.value.log
+            val imagesPushed                         = (imageNames in docker).value
             if (imagesPushed.size > 1) throw TooManyImagesBuilt
             val imagePushed = imagesPushed.head
 
@@ -167,4 +167,4 @@ object TooManyImagesBuiltError {
     """.stripMargin
 }
 
-final case class ImageNameAndId(imageName: ImageName, imageId: ImageId)
+final case class ImageNameAndId(imageName: ImageName, imageId: ImageDigest)
