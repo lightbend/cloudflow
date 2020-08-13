@@ -60,8 +60,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependencies ++= Vector(
-          Slf4jLog4jBridge,
-          Log4J
+          Slf4jLog4jBridge % Runtime,
+          Log4J            % Runtime
         ),
     allApplicationClasspathByProject := (Def
           .taskDyn {
@@ -99,7 +99,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               throw new IllegalStateException("ApplicationDescriptor is not present")
             }
 
-            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Compile).value)
+            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Runtime).value)
 
             val projects = streamletDescriptorsByProject.keys
 
