@@ -19,20 +19,18 @@ package cloudflow.operator
 import scala.concurrent._
 import scala.util._
 import akka.actor._
-import akka.stream._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) = {
-    implicit val materializer = ActorMaterializer()
+  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) =
     Http()
-      .bindAndHandle(
-        route,
+      .newServerAt(
         settings.api.bindInterface,
         settings.api.bindPort
       )
+      .bind(route)
       .onComplete {
         case Success(serverBinding) ⇒
           system.log.info(s"Bound to ${serverBinding.localAddress}.")
@@ -43,7 +41,6 @@ object HealthChecks {
             sys.exit(-1)
           }
       }
-  }
   def route =
     // format: OFF
     path("robots.txt") {
