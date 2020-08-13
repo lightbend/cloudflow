@@ -11,8 +11,6 @@ object Version {
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
   val EmbeddedKafka = "2.5.0" 
-  // skuber depends on 2.5.29
-  val AkkaOperator  = "2.5.29"
 
 }
 
@@ -29,9 +27,9 @@ object Library {
   val AkkaStreamKafkaTestkit = ("com.typesafe.akka" %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka) .exclude("com.typesafe.akka", "akka-stream-testkit")
   val AkkaStreamTestkit      = "com.typesafe.akka"  %% "akka-stream-testkit"       % Version.Akka
   
-  val AkkaSlf4jOperator         = "com.typesafe.akka" %% "akka-slf4j"                % Version.AkkaOperator
-  val AkkaStreamOperator        = "com.typesafe.akka" %% "akka-stream"               % Version.AkkaOperator
-  val AkkaStreamTestkitOperator = "com.typesafe.akka" %% "akka-stream-testkit"       % Version.AkkaOperator
+  val AkkaSlf4jOperator         = "com.typesafe.akka" %% "akka-slf4j"                % Version.Akka
+  val AkkaStreamOperator        = "com.typesafe.akka" %% "akka-stream"               % Version.Akka
+  val AkkaStreamTestkitOperator = "com.typesafe.akka" %% "akka-stream-testkit"       % Version.Akka
 
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
   val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
