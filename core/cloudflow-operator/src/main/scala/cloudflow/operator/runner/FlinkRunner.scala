@@ -26,7 +26,6 @@ import skuber.json.format._
 import skuber.Resource._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
-import cloudflow.operator.runner.SparkRunner.{DriverPod, getJavaOptions}
 import skuber.ResourceSpecification.Subresources
 
 /**
@@ -72,16 +71,16 @@ object FlinkRunner extends Runner[CR] {
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod))
-    ))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
+    )
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)
-      )))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
+      )
 
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                  -> "filesystem",

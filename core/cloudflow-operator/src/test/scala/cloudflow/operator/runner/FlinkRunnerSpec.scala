@@ -152,9 +152,8 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         namespace = namespace
       )
 
-      crd.spec.flinkConfig mustBe Vector(
-        EnvVar("env.java.opts",EnvVar.StringValue("-XX:MaxRAMPercentage=40.0"))
-      )
+      crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:MaxRAMPercentage=40.0")
+
     }
 
     "create a valid FlinkApplication CR" in {
