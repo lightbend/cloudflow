@@ -68,28 +68,20 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
-    def combine(envVars: Option[List[EnvVar]], javaOptions: Option[String]): Option[List[EnvVar]] =
-      Some(envVars.toList.flatten ++ javaOptions.map(EnvVar("env.java.opts",_)))
 
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(combine(
-        getEnvironmentVariables(podsConfig, JobManagerPod),
-        getJavaOptions(podsConfig, JobManagerPod))
-    )))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod))
+    ))
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(combine(
-            getEnvironmentVariables(podsConfig, TaskManagerPod),
-            getJavaOptions(podsConfig, TaskManagerPod))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)
       )))
-
-
 
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                  -> "filesystem",

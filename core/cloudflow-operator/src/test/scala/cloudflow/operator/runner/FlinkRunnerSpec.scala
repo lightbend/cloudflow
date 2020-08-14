@@ -124,8 +124,10 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       )
       crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO",EnvVar.StringValue("BAR")))
       crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO",EnvVar.StringValue("BAR")))
-      crd.spec.taskManagerConfig.resources.get.requests mustBe Map("memory" -> "512M")
-      crd.spec.taskManagerConfig.resources.get.limits mustBe Map("memory" -> "1024M")
+      crd.spec.jobManagerConfig.resources.get.requests mustBe Map(Resource.memory -> "512M")
+      crd.spec.taskManagerConfig.resources.get.requests mustBe Map(Resource.memory -> "512M")
+      crd.spec.jobManagerConfig.resources.get.limits mustBe Map(Resource.memory -> "1024M")
+      crd.spec.taskManagerConfig.resources.get.limits mustBe Map(Resource.memory -> "1024M")
     }
 
     "read values from pod configuration in JAVA_OPTS and put it in Flink conf " +
@@ -142,9 +144,6 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |       env = [
               |          { name = "JAVA_OPTS"
               |            value = "-XX:MaxRAMPercentage=40.0"
-              |          },{
-              |            name = "FOO"
-              |            value = "BAR"
               |          }
               |        ]
               |}
