@@ -78,7 +78,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       replicas = None
     )
 
-    "read values from pod configuration and put it in both " in {
+    "read environment variables and resource requirements from pod configuration and configure taskmanager and jobmanager " in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
