@@ -226,7 +226,7 @@ func getImageReferenceForDeployment(client *client.Client, applicationSpec cfapp
 	imageReference, err := dockerclient.ParseImageReference(image)
 
 	if err != nil {
-		printutil.LogAndExit("Failed to parse the image reference '%s',%s", image, err.Error())
+		printutil.LogAndExit("Failed to parse the docker image reference '%s' while deploying the application,%s", image, err.Error())
 	}
 
 	return imageReference
