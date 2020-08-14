@@ -27,14 +27,14 @@ $ pwd
 .../taxi-ride
 $ sbt
 $ clean
-$ buildAndPublish
+$ buildApp
 ```
 
 The above command builds the application and publish application Docker images to the Docker registry, as configured in `target-env.sbt`.
 
 > **Note:** You need to copy `target-env.sbt.example` to `target-env.sbt` with appropriate settings for the Docker registry in order for the build and publish to go through.
 
-The `buildAndPublish` command, if successful, will publish the exact command to use for deployment in the cluster.
+The `buildApp` command, if successful, will publish the exact command to use for deployment in the cluster.
 
 ### Feeding data into the application
 
