@@ -67,7 +67,6 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
-
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
@@ -80,7 +79,7 @@ object FlinkRunner extends Runner[CR] {
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
-      )
+    )
 
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                  -> "filesystem",
