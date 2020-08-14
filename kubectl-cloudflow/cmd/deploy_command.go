@@ -111,8 +111,8 @@ You can update the credentials with the "update-docker-credentials" command.
 	}
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.username, "username", "u", "", "docker registry username.")
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.password, "password", "p", "", "docker registry password.")
-	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin")
-	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noRegistryCredentials, "no-registry-credentials", "", false, "Use if no credentials is needed to pull the application docker image")
+	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin.")
+	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noRegistryCredentials, "no-registry-credentials", "", false, "Use this flag if the Kubernetes cluster already has credentials configured for the Docker registry where the Cloudflow application image is located.")
 
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
 	deployOpts.cmd.Flags().StringToIntVar(&deployOpts.replicasByStreamletName, "scale", map[string]int{}, "Accepts key/value pairs for replicas per streamlet")
