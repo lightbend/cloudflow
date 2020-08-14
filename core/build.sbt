@@ -407,7 +407,7 @@ lazy val operator =
       // skuber version 2.4.0 depends on akka-http 10.1.9 : hence overriding
       // with akka-http 10.1.12 to use akka 2.6
       // remove this override once skuber is updated
-      dependencyOverrides += AkkaHttp,
+      dependencyOverrides += AkkaHttpOperator,
       buildOptions in docker := BuildOptions(
             cache = true,
             removeIntermediateContainers = BuildOptions.Remove.OnSuccess,

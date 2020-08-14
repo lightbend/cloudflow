@@ -137,22 +137,21 @@ abstract class HttpServerLogic(
    */
   def route(): Route
 
-  protected def flow = Route.handlerFlow(route())
-
   def run() =
     startServer(
       context,
-      flow,
+      route(),
       containerPort
     )
 
   protected def startServer(
       context: AkkaStreamletContext,
-      handler: Flow[HttpRequest, HttpResponse, _],
+      route: Route,
       port: Int
   ): Unit =
     Http()
-      .bindAndHandle(handler, "0.0.0.0", port)
+      .newServerAt("0.0.0.0", port)
+      .bind(route)
       .map { binding ⇒
         context.signalReady()
         system.log.info(s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
