@@ -155,7 +155,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:MaxRAMPercentage=40.0")
     }
 
-    "read env.java.opts from runtime Flink conf should override pod JAVA_OPTS value" in {
+    "configure env.java.opts from runtime Flink conf, overriding what is provided as JAVA_OPTS value in the pod configuration" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
