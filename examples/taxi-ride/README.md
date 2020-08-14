@@ -26,7 +26,7 @@ Here's the sequence of steps that you need to follow:
 $ pwd
 .../taxi-ride
 $ sbt
-> clean
+$ clean
 > buildApp
 ```
 
