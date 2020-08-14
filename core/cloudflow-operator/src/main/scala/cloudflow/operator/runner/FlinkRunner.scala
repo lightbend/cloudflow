@@ -317,7 +317,6 @@ object FlinkResource {
       taskSlots: Option[Int],
       resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig]
-
   )
 
   /*
