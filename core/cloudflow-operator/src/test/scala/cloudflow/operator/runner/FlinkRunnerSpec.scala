@@ -85,27 +85,29 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         app = app,
         configSecret = Secret(
           metadata = ObjectMeta(),
-          data = Map(cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
-            """
-              | kubernetes.pods.pod.containers.container {
-              |       env = [
-              |          { name = "JAVA_OPTS"
-              |            value = "-XX:MaxRAMPercentage=40.0"
-              |          },{
-              |            name = "FOO"
-              |            value = "BAR"
-              |          }
-              |        ]
-              |        resources {
-              |            requests {
-              |              memory = "512M"
-              |            }
-              |            limits {
-              |              memory = "1024M"
-              |            }
-              |         }
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    },{
+              |      name = "FOO"
+              |      value = "BAR"
+              |    }
+              |   ]
+              |  resources {
+              |    requests {
+              |      memory = "512M"
+              |    }
+              |    limits {
+              |      memory = "1024M"
+              |    }
+              |  }
               |}
-              |        """.stripMargin.getBytes())
+              |        """.stripMargin.getBytes()
+          )
         ),
         namespace = namespace
       )
@@ -122,32 +124,33 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
-      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO",EnvVar.StringValue("BAR")))
-      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO",EnvVar.StringValue("BAR")))
-      crd.spec.jobManagerConfig.resources.get.requests mustBe Map(Resource.memory -> "512M")
+      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.jobManagerConfig.resources.get.requests mustBe Map(Resource.memory  -> "512M")
       crd.spec.taskManagerConfig.resources.get.requests mustBe Map(Resource.memory -> "512M")
-      crd.spec.jobManagerConfig.resources.get.limits mustBe Map(Resource.memory -> "1024M")
-      crd.spec.taskManagerConfig.resources.get.limits mustBe Map(Resource.memory -> "1024M")
+      crd.spec.jobManagerConfig.resources.get.limits mustBe Map(Resource.memory    -> "1024M")
+      crd.spec.taskManagerConfig.resources.get.limits mustBe Map(Resource.memory   -> "1024M")
     }
 
-    "read values from pod configuration key JAVA_OPTS and " +
-      "put it in Flink conf in env.java.opts" in {
+    "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
           metadata = ObjectMeta(),
-          data = Map(cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
-            """
-              | kubernetes.pods.pod.containers.container {
-              |       env = [
-              |          { name = "JAVA_OPTS"
-              |            value = "-XX:MaxRAMPercentage=40.0"
-              |          }
-              |        ]
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    }
+              |  ]
               |}
-              |        """.stripMargin.getBytes())
+              |        """.stripMargin.getBytes()
+          )
         ),
         namespace = namespace
       )
@@ -164,19 +167,19 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
           metadata = ObjectMeta(),
           data = Map(
             cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
-            """
-              | kubernetes.pods.pod.containers.container {
-              |       env = [
-              |          { name = "JAVA_OPTS"
-              |            value = "-XX:MaxRAMPercentage=40.0"
-              |          }
-              |        ]
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    }
+              |   ]
               |}
               |        """.stripMargin.getBytes(),
             cloudflow.operator.event.ConfigInputChangeEvent.RuntimeConfigDataKey ->
-              """
+                """
                 |flink {
-                |            env.java.opts = "-XX:-DisableExplicitGC"
+                |  env.java.opts = "-XX:-DisableExplicitGC"
                 |}
                 |        """.stripMargin.getBytes()
           )

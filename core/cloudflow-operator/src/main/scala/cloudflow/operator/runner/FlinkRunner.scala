@@ -82,10 +82,10 @@ object FlinkRunner extends Runner[CR] {
     )
 
     val flinkConfig: Map[String, String] = Map(
-        "state.backend"                  -> "filesystem",
-        "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
-        "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
-        "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
+        "state.backend"                    -> "filesystem",
+        "state.backend.fs.checkpointdir"   -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
+        "state.checkpoints.dir"            -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
+        "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
       ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
     val _spec = Spec(
