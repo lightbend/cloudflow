@@ -26,6 +26,7 @@ import skuber.json.format._
 import skuber.Resource._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+import cloudflow.operator.runner.SparkRunner.{DriverPod, getJavaOptions}
 import skuber.ResourceSpecification.Subresources
 
 /**
@@ -44,7 +45,6 @@ object FlinkRunner extends Runner[CR] {
   final val runtime         = "flink"
   final val PVCMountPath    = "/mnt/flink/storage"
   final val DefaultReplicas = 2
-  final val JvmArgsEnvVar   = "JVM_ARGS"
 
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
@@ -58,6 +58,8 @@ object FlinkRunner extends Runner[CR] {
   )(implicit ctx: DeploymentContext): CR = {
     val podsConfig = getPodsConfig(configSecret)
 
+    val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
+
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
@@ -66,26 +68,35 @@ object FlinkRunner extends Runner[CR] {
 
     import ctx.flinkRunnerSettings._
 
+    def combine(envVars: Option[List[EnvVar]], javaOptions: Option[String]): Option[List[EnvVar]] =
+      Some(envVars.toList.flatten ++ javaOptions.map(EnvVar("env.java.opts",_)))
+
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
-    )
+      Some(EnvConfig(combine(
+        getEnvironmentVariables(podsConfig, JobManagerPod),
+        getJavaOptions(podsConfig, JobManagerPod))
+    )))
 
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
-    )
+      Some(EnvConfig(combine(
+            getEnvironmentVariables(podsConfig, TaskManagerPod),
+            getJavaOptions(podsConfig, TaskManagerPod))
+      )))
+
+
 
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                  -> "filesystem",
         "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
         "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
         "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
-      ) ++ getFlinkConfig(configSecret)
+      ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
     val _spec = Spec(
       image = image,
@@ -316,6 +327,7 @@ object FlinkResource {
       taskSlots: Option[Int],
       resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig]
+
   )
 
   /*
