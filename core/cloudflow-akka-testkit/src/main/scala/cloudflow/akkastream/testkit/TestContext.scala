@@ -31,6 +31,8 @@ import com.typesafe.config._
 import cloudflow.akkastream._
 import cloudflow.streamlets._
 
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+
 private[testkit] abstract class Completed
 
 private[testkit] case class TestContext(
@@ -73,8 +75,11 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
-  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+  def shardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
 
     Source
@@ -128,7 +133,8 @@ private[testkit] case class TestContext(
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
+                                  resetPosition: ResetPosition = Latest,
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
     Source.futureSource(
       Future {

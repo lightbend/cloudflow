@@ -19,12 +19,13 @@ package cloudflow.akkastream
 import scala.concurrent.Future
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.cluster.sharding.typed.scaladsl.{ Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 import akka.kafka.CommitterSettings
-import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.stream.scaladsl._
 import cloudflow.streamlets._
+
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 /**
  * Runtime context for [[AkkaStreamlet]]s, which provides means to create [[akka.stream.scaladsl.Source Source]]s and [[akka.stream.scaladsl.Sink Sink]]s respectively
@@ -41,7 +42,8 @@ trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E]
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
@@ -52,7 +54,8 @@ trait AkkaStreamletContext extends StreamletContext {
   private[akkastream] def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      resetPosition: ResetPosition = Latest
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds
   ): Source[T, Future[NotUsed]]
 
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]

@@ -31,6 +31,7 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 
 import scala.concurrent.Future
+import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
@@ -153,11 +154,15 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    *
    * @param inlet the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specify the settings for the started shard region
+   * @param kafkaTimeout is used to specify the amount of time the message extractor will wait for a response from kafka
    **/
   @ApiMayChange
-  def shardedSourceWithCommittableContext[T, M, E](inlet: CodecInlet[T],
-                                                   shardEntity: Entity[M, E]): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
-    context.shardedSourceWithCommittableContext(inlet, shardEntity)
+  def shardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout)
 
   /**
    * Java API
@@ -166,9 +171,10 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @ApiMayChange
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E]
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
   ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
-    context.shardedSourceWithCommittableContext(inlet, shardEntity).asJava
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout).asJava
 
   /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
@@ -202,21 +208,16 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
    * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
    *
-   * @param the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param inlet the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
    * @param shardEntity is used to specific the settings for the started shard region
+   * @param kafkaTimeout is used to specify the amount of time the message extractor will wait for a response from kafka
    **/
   @ApiMayChange
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] =
-    context.shardedPlainSource(inlet, shardEntity, resetPosition)
-
-  /**
-   * Java API
-   */
-  @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T], shardEntity: Entity[M, E]): akka.stream.javadsl.Source[T, Future[NotUsed]] =
-    shardedPlainSource(inlet, shardEntity, Latest).asJava
+                                  resetPosition: ResetPosition = Latest,
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
+    context.shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout)
 
   /**
    * Java API
@@ -224,8 +225,18 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @ApiMayChange
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
-                                     resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, Future[NotUsed]] =
-    shardedPlainSource(inlet, shardEntity, resetPosition).asJava
+                                     kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+    shardedPlainSource(inlet, shardEntity, Latest, kafkaTimeout).asJava
+
+  /**
+   * Java API
+   */
+  @ApiMayChange
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                     shardEntity: Entity[M, E],
+                                     resetPosition: ResetPosition = Latest,
+                                     kafkaTimeout: FiniteDuration = 10.seconds): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+    shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout).asJava
 
   /**
    * Creates a sink for publishing `T` records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.

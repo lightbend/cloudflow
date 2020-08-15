@@ -37,6 +37,8 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 import cloudflow.streamlets._
 
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+
 /**
  * Implementation of the StreamletContext trait.
  */
@@ -92,7 +94,8 @@ final class AkkaStreamletContextImpl(
 
   private[akkastream] def shardedSourceWithContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E]
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
@@ -113,11 +116,10 @@ final class AkkaStreamletContextImpl(
 
     system.log.info(s"Creating sharded committable source for group: $gId topic: ${topic.name}")
 
-    import scala.concurrent.duration._
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
-        timeout = 10.seconds,
+        timeout = kafkaTimeout,
         settings = consumerSettings
       )
 
@@ -150,7 +152,8 @@ final class AkkaStreamletContextImpl(
 
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      shardEntity: Entity[M, E]
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     shardedSourceWithContext(inlet, shardEntity)
 
@@ -221,7 +224,8 @@ final class AkkaStreamletContextImpl(
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest): Source[T, Future[NotUsed]] = {
+                                  resetPosition: ResetPosition = Latest,
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
@@ -240,11 +244,10 @@ final class AkkaStreamletContextImpl(
 
     system.log.info(s"Creating sharded plain source for group: $gId topic: ${topic.name}")
 
-    import scala.concurrent.duration._
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
-        timeout = 10.seconds,
+        timeout = kafkaTimeout,
         settings = consumerSettings
       )
 
