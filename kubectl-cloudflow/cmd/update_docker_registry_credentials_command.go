@@ -81,7 +81,12 @@ func validateAddDockerRegistryCredentialsCMDArgs(cmd *cobra.Command, args []stri
 }
 
 func promptCredentials(dockerRegistryURL string) (string, string) {
-	fmt.Printf("Please provide credentials for docker registry: %s\n", dockerRegistryURL)
+	if len(dockerRegistryURL) != 0 {
+		fmt.Printf("Please provide credentials for docker registry '%s'.\n", dockerRegistryURL)
+	} else {
+		fmt.Printf("Please provide credentials for the 'Docker Hub' account.\n")
+	}
+	fmt.Println("The credentials will be stored in a Kubernetes image pull secret, so that the application can successfully be deployed.")
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Username: ")
