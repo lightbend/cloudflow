@@ -44,7 +44,6 @@ object FlinkRunner extends Runner[CR] {
   final val runtime         = "flink"
   final val PVCMountPath    = "/mnt/flink/storage"
   final val DefaultReplicas = 2
-  final val JvmArgsEnvVar   = "JVM_ARGS"
 
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
@@ -57,6 +56,8 @@ object FlinkRunner extends Runner[CR] {
       updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val podsConfig = getPodsConfig(configSecret)
+
+    val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
 
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
@@ -81,11 +82,11 @@ object FlinkRunner extends Runner[CR] {
     )
 
     val flinkConfig: Map[String, String] = Map(
-        "state.backend"                  -> "filesystem",
-        "state.backend.fs.checkpointdir" -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
-        "state.checkpoints.dir"          -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
-        "state.savepoints.dir"           -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
-      ) ++ getFlinkConfig(configSecret)
+        "state.backend"                    -> "filesystem",
+        "state.backend.fs.checkpointdir"   -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
+        "state.checkpoints.dir"            -> s"file://${PVCMountPath}/externalized-checkpoints/${deployment.streamletName}",
+        "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
+      ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
     val _spec = Spec(
       image = image,

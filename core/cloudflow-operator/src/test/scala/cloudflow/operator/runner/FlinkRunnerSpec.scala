@@ -23,6 +23,7 @@ import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.runner.FlinkResource._
 import play.api.libs.json._
+import skuber.Resource.Quantity
 import skuber._
 
 class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
@@ -77,6 +78,126 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       volumeMounts = None,
       replicas = None
     )
+
+    "read environment variables and resource requirements from pod configuration and configure taskmanager and jobmanager " in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    },{
+              |      name = "FOO"
+              |      value = "BAR"
+              |    }
+              |   ]
+              |  resources {
+              |    requests {
+              |      memory = "512M"
+              |    }
+              |    limits {
+              |      memory = "1024M"
+              |    }
+              |  }
+              |}
+              |        """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.metadata.namespace mustBe namespace
+      crd.metadata.name mustBe appId
+      val imageWithoutRegistry = image.split("/").tail.mkString("/")
+      crd.spec.image must include(imageWithoutRegistry)
+      crd.spec.entryClass mustBe "cloudflow.runner.Runner"
+
+      crd.spec.volumes mustBe Vector(
+        Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
+        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-pvc")),
+        Volume("secret-vol", Volume.Secret("flink-streamlet")),
+        Runner.DownwardApiVolume
+      )
+      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.jobManagerConfig.resources.get.requests mustBe Map(
+        Resource.cpu    -> ctx.flinkRunnerSettings.jobManagerSettings.resources.cpuRequest.get,
+        Resource.memory -> Quantity("512M")
+      )
+      crd.spec.taskManagerConfig.resources.get.requests mustBe Map(
+        Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuRequest.get,
+        Resource.memory -> Quantity("512M")
+      )
+      crd.spec.jobManagerConfig.resources.get.limits mustBe Map(
+        Resource.cpu    -> ctx.flinkRunnerSettings.jobManagerSettings.resources.cpuLimit.get,
+        Resource.memory -> Quantity("1024M")
+      )
+      crd.spec.taskManagerConfig.resources.get.limits mustBe Map(
+        Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuLimit.get,
+        Resource.memory -> Quantity("1024M")
+      )
+    }
+
+    "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    }
+              |  ]
+              |}
+              |""".stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:MaxRAMPercentage=40.0")
+    }
+
+    "configure env.java.opts from runtime Flink conf, overriding what is provided as JAVA_OPTS value in the pod configuration" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod.containers.container {
+              |  env = [
+              |    { name = "JAVA_OPTS"
+              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    }
+              |   ]
+              |}
+              |        """.stripMargin.getBytes(),
+            cloudflow.operator.event.ConfigInputChangeEvent.RuntimeConfigDataKey ->
+                """flink.env.java.opts = "-XX:-DisableExplicitGC"""".getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:-DisableExplicitGC")
+    }
 
     "create a valid FlinkApplication CR" in {
 
