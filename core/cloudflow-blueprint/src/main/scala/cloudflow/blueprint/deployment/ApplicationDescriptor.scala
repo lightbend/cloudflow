@@ -44,7 +44,7 @@ object ApplicationDescriptor {
    * The version of the Application Descriptor Format.
    * This version is also hardcoded in (versions of) kubectl-cloudflow in `domain.SupportedApplicationDescriptorVersion`.
    */
-  val Version = "2"
+  val Version = "3"
 
   /*
    * The version of this library when it is built, which is also the version of sbt-cloudflow.

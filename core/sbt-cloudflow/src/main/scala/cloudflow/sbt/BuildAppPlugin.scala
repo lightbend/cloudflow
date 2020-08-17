@@ -94,7 +94,7 @@ object BuildAppPlugin extends AutoPlugin {
     // need to get the proper image name in `StreamletDeployment` s too
     val newDeployments = appDescriptor.deployments.map { deployment =>
       val image = streamletClassNamesToImageNameAndId.get(deployment.className).get
-      deployment.copy(image = s"${image.imageName.toString().split(":").head}@sha256:${image.imageId.toString()}")
+      deployment.copy(image = s"${image.imageName.toString().split(":").head}@${image.imageId.toString()}")
     }
 
     // the new shiny `ApplicationDescriptor`
