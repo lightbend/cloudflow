@@ -93,7 +93,7 @@ object Actions {
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    if (ctx.kafkaContext.strimziTopicOperatorNamespace.nonEmpty && ctx.kafkaContext.strimziClusterName.nonEmpty) {
+    if (ctx.kafkaContext.useStrimzi) {
       StrimziTopicActions(
         newApp = newApp,
         currentApp = currentApp,
