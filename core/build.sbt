@@ -84,6 +84,8 @@ lazy val akkastream =
       libraryDependencies ++= Vector(
             AkkaStream,
             AkkaStreamKafka,
+            AkkaStreamKafaSharding,
+            AkkaShardingTyped,
             AkkaCluster,
             AkkaManagement,
             AkkaHttp,

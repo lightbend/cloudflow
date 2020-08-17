@@ -21,22 +21,23 @@ import java.nio.file.{ Files, Paths }
 
 import scala.concurrent._
 import scala.util._
-
 import akka._
 import akka.actor.ActorSystem
+import akka.cluster.sharding.external.ExternalShardAllocationStrategy
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
+import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.kafka.scaladsl._
 import akka.stream._
 import akka.stream.scaladsl._
-
 import com.typesafe.config._
-
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
-
 import cloudflow.streamlets._
+
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 /**
  * Implementation of the StreamletContext trait.
@@ -90,6 +91,71 @@ final class AkkaStreamletContextImpl(
 
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet)
+
+  private[akkastream] def shardedSourceWithContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+    val topic = findTopicForPort(inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+
+    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withGroupId(gId)
+      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+      .withProperties(topic.kafkaConsumerProperties)
+
+    val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
+      KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
+
+    import akka.actor.typed.scaladsl.adapter._
+    val subscription = Subscriptions
+      .topics(topic.name)
+      .withRebalanceListener(rebalanceListener.toClassic)
+
+    system.log.info(s"Creating sharded committable source for group: $gId topic: ${topic.name}")
+
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
+      KafkaClusterSharding(system).messageExtractor(
+        topic = topic.name,
+        timeout = kafkaTimeout,
+        settings = consumerSettings
+      )
+
+    Source
+      .futureSource {
+        messageExtractor.map { m =>
+          ClusterSharding(system.toTyped).init(
+            shardEntity
+              .withAllocationStrategy(
+                shardEntity.allocationStrategy
+                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
+              )
+              .withMessageExtractor(m)
+          )
+
+          Consumer
+            .sourceWithOffsetContext(consumerSettings, subscription)
+            // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
+            .asSource
+            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .via(handleTermination)
+            .map {
+              case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+            }
+        }(system.dispatcher)
+      }
+      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
+      .map { case (record, _) ⇒ record }
+  }
+
+  override def shardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+    shardedSourceWithContext(inlet, shardEntity)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
@@ -153,6 +219,58 @@ final class AkkaStreamletContextImpl(
       .via(handleTermination)
       .map { record ⇒
         inlet.codec.decode(record.value)
+      }
+  }
+
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  resetPosition: ResetPosition = Latest,
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
+    val topic = findTopicForPort(inlet)
+    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
+      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withGroupId(gId)
+      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
+      .withProperties(topic.kafkaConsumerProperties)
+
+    val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
+      KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
+
+    import akka.actor.typed.scaladsl.adapter._
+    val subscription = Subscriptions
+      .topics(topic.name)
+      .withRebalanceListener(rebalanceListener.toClassic)
+
+    system.log.info(s"Creating sharded plain source for group: $gId topic: ${topic.name}")
+
+    val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
+      KafkaClusterSharding(system).messageExtractor(
+        topic = topic.name,
+        timeout = kafkaTimeout,
+        settings = consumerSettings
+      )
+
+    Source
+      .futureSource {
+        messageExtractor.map { m =>
+          ClusterSharding(system.toTyped).init(
+            shardEntity
+              .withAllocationStrategy(
+                shardEntity.allocationStrategy
+                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
+              )
+              .withMessageExtractor(m)
+          )
+
+          Consumer
+            .plainSource(consumerSettings, subscription)
+            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .via(handleTermination)
+            .map { record ⇒
+              inlet.codec.decode(record.value)
+            }
+        }(system.dispatcher)
       }
   }
 

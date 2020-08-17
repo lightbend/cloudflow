@@ -25,7 +25,6 @@ lazy val connectedCarExample = (project in file("./akka-connected-car"))
     commonSettings,
     name := "connected-car-akka-cluster",
     libraryDependencies ++= Seq(
-      "ch.qos.logback" %  "logback-classic" % "1.2.3",
       "org.scalatest"  %% "scalatest"       % "3.0.7"    % "test"
       )
   )
@@ -39,7 +38,8 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     commonSettings,
     name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-cluster-sharding" % AkkaVersion
+      "ch.qos.logback" %  "logback-classic" % "1.2.3",
+      "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
     )
   )
   .dependsOn(datamodel)

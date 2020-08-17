@@ -12,7 +12,7 @@ import scala.util.Random
 import scala.concurrent.duration._
 
 object RawCarDataGenerator extends AkkaStreamlet {
-  val out   = AvroOutlet[ConnectedCarERecord]("out", m ⇒ m.carId.toString + m.timestamp.toString)
+  val out   = AvroOutlet[ConnectedCarERecord]("out", m ⇒ m.carId.toString)
   val shape = StreamletShape.withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {

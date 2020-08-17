@@ -16,8 +16,10 @@
 
 package cloudflow.akkastream
 
+import akka.annotation.ApiMayChange
 import cloudflow.streamlets._
 
+@ApiMayChange
 trait Clustering { this: AkkaStreamlet ⇒
   protected[cloudflow] override def attributes = Set(AkkaClusterAttribute) ++ customAttributes
 }

@@ -20,15 +20,18 @@ import java.nio.file.Path
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
+import akka.annotation.ApiMayChange
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.stream.scaladsl._
-
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
-
 import com.typesafe.config.Config
-
 import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
+
+import scala.concurrent.Future
+import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.
@@ -90,6 +93,12 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getExecutionContext() = executionContext
 
   /**
+   * Helper method to make it easier to start typed cluster sharding
+   * with an classic actor system
+   */
+  def clusterSharding() = ClusterSharding(system.toTyped)
+
+  /**
    * This source emits `T` records together with the offset position as context, thus makes it possible
    * to commit offset positions to Kafka (as received through the `inlet`).
    * This is useful when "at-least once delivery" is desired, as each message will likely be
@@ -133,6 +142,41 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
     context.sourceWithCommittableContext(inlet).asJava
 
   /**
+   * This source is designed to function the same as [[sourceWithCommittableContext]]
+   * while also leveraging Akka Kafka Cluster Sharding for stateful streaming.
+   *
+   * This source emits `T` records together with the committable context, thus makes it possible
+   * to commit offset positions to Kafka using `committableSink(outlet: CodecOutlet[T])`.
+   *
+   * It is required to use this source with Akka Cluster.  This source will start up
+   * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
+   * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
+   *
+   * @param inlet the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param shardEntity is used to specify the settings for the started shard region
+   * @param kafkaTimeout is used to specify the amount of time the message extractor will wait for a response from kafka
+   **/
+  @ApiMayChange
+  def shardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout)
+
+  /**
+   * Java API
+   * @see [[shardedSourceWithCommittableContext]]
+   */
+  @ApiMayChange
+  def getShardedSourceWithCommittableContext[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
+    context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout).asJava
+
+  /**
    * The `plainSource` emits `T` records (as received through the `inlet`).
    *
    * It has no support for committing offsets to Kafka.
@@ -151,6 +195,48 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getPlainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): akka.stream.javadsl.Source[T, NotUsed] =
     plainSource(inlet, resetPosition).asJava
+
+  /**
+   * This source is designed to function the same as [[plainSource]]
+   * while also leveraging Akka Kafka Cluster Sharding for stateful streaming.
+   *
+   * The `plainSource` emits `T` records (as received through the `inlet`).
+   *
+   * It has no support for committing offsets to Kafka.
+   *
+   * It is required to use this source with Akka Cluster.  This source will start up
+   * Akka Cluster Sharding using the supplied `shardEntity` and configure the kafka external
+   * shard strategy to co-locate Kafka partition consumption with Akka Cluster shards.
+   *
+   * @param inlet the inlet to consume messages from. The inlet specifies a [[cloudflow.streamlets.Codec]] that is used to deserialize the records read from the underlying transport.
+   * @param shardEntity is used to specific the settings for the started shard region
+   * @param kafkaTimeout is used to specify the amount of time the message extractor will wait for a response from kafka
+   **/
+  @ApiMayChange
+  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  shardEntity: Entity[M, E],
+                                  resetPosition: ResetPosition = Latest,
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
+    context.shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout)
+
+  /**
+   * Java API
+   */
+  @ApiMayChange
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                     shardEntity: Entity[M, E],
+                                     kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+    shardedPlainSource(inlet, shardEntity, Latest, kafkaTimeout).asJava
+
+  /**
+   * Java API
+   */
+  @ApiMayChange
+  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                     shardEntity: Entity[M, E],
+                                     resetPosition: ResetPosition = Latest,
+                                     kafkaTimeout: FiniteDuration = 10.seconds): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+    shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout).asJava
 
   /**
    * Creates a sink for publishing `T` records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.

@@ -1,49 +1,31 @@
 package connectedcar.actors
 
-import akka.actor.{ Actor, ActorLogging, ActorRef }
-import akka.cluster.sharding.ShardRegion
-import connectedcar.data.{ ConnectedCarAgg, ConnectedCarERecord }
+import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.Behaviors
 
-import scala.concurrent.ExecutionContext
+import connectedcar.data.{ConnectedCarAgg, ConnectedCarERecord}
+
+case class ConnectedCarERecordWrapper(record: ConnectedCarERecord, sender:ActorRef[ConnectedCarAgg])
 
 object ConnectedCarActor {
-  val extractEntityId: ShardRegion.ExtractEntityId = {
-    case msg: ConnectedCarERecord ⇒ (msg.carId.toString, msg)
-  }
+  def apply(carId:String): Behavior[ConnectedCarERecordWrapper] = {
+    def updated(numberOfRecords: Int, driverName: String, carId:String, averageSpeed: Double, currentSpeed: Double): Behavior[ConnectedCarERecordWrapper] = {
+      Behaviors.receive { (context, message) => {
+          context.log.info("Update Received- CarId: {} MessageCarId: {} From Actor: {}", 
+            carId, message.record.carId, message.sender.path)
 
-  private val numberOfShards = 100
+          val newAverage = ((averageSpeed * numberOfRecords) + message.record.speed) / (numberOfRecords + 1)
+          val newNumberOfRecords = numberOfRecords+1
 
-  val extractShardId: ShardRegion.ExtractShardId = {
-    case msg: ConnectedCarERecord ⇒ (msg.carId % numberOfShards).toString
-  }
-}
+          val newAgg = ConnectedCarAgg(message.record.carId, message.record.driver, newAverage, newNumberOfRecords)
 
-class ConnectedCarActor extends Actor with ActorLogging {
+          message.sender ! newAgg
 
-  val carId: String      = "Car-" + self.path.name
-  var driverName: String = null
-  var currentSpeed       = 0.0
-  var averageSpeed       = 0.0
-  var numberOfRecords    = 0
-
-  var treeActor: ActorRef           = null
-  implicit val ec: ExecutionContext = context.dispatcher
-
-  override def receive: Receive = {
-    case record: ConnectedCarERecord ⇒ {
-      if (numberOfRecords == 0) {
-        driverName = record.driver
-        averageSpeed = record.speed
-      } else {
-        averageSpeed = ((averageSpeed * numberOfRecords) + record.speed) / (numberOfRecords + 1)
+          updated(newNumberOfRecords, message.record.driver, carId, newAverage, message.record.speed)
+        }
       }
-
-      numberOfRecords += 1
-      currentSpeed = record.speed
-
-      log.info("Updated CarId: " + carId + " Driver Name: " + driverName + " CarSpeed: " + currentSpeed + " From Actor:" + sender().path)
-
-      sender() ! ConnectedCarAgg(record.carId, record.driver, averageSpeed, numberOfRecords)
     }
+
+    updated(0, "", carId, 0, 0.0)
   }
 }
