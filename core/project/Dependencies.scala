@@ -4,16 +4,18 @@ import sbt._
 object Version {
 
   val Akka          = "2.6.6"
-  val AkkaHttp      = "10.1.12"
+  val AkkaHttp      = "10.2.0"
   val AkkaMgmt      = "1.0.8"
   val AlpakkaKafka  = "2.0.3"
   val Scala         = "2.12.11"
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
   val EmbeddedKafka = "2.5.0" 
-  // skuber depends on 2.5.29
-  val AkkaOperator  = "2.5.29"
 
+  // We've postponed updating Akka and Akka HTTP for the operator
+  // because of https://github.com/lightbend/cloudflow/issues/610
+  val AkkaOperator     = "2.5.29"
+  val AkkaHttpOperator = "10.1.12"
 }
 
 object Library {
@@ -32,6 +34,7 @@ object Library {
   val AkkaSlf4jOperator         = "com.typesafe.akka" %% "akka-slf4j"                % Version.AkkaOperator
   val AkkaStreamOperator        = "com.typesafe.akka" %% "akka-stream"               % Version.AkkaOperator
   val AkkaStreamTestkitOperator = "com.typesafe.akka" %% "akka-stream-testkit"       % Version.AkkaOperator
+  val AkkaHttpOperator          = "com.typesafe.akka" %% "akka-http"                 % Version.AkkaHttpOperator
 
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
   val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
