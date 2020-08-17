@@ -51,13 +51,13 @@ object Library {
   val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
   val Slf4jLog4jBridge      = "org.slf4j"              % "slf4j-log4j12"            % "1.7.30"            
 
-  val SprayJson              = "io.spray"              %% "spray-json"               % "1.3.5"
-  val Bijection              = "com.twitter"           %% "bijection-avro"           % "0.9.6"
+  val SprayJson             = "io.spray"              %% "spray-json"               % "1.3.5"
+  val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.6"
 
-  val JacksonScalaModule     = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
+  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
-  val Skuber                 = ("io.skuber"             %% "skuber"                   % "2.4.0") .exclude("com.fasterxml.jackson.core","jackson-databind")
-
+  val Skuber                = "io.skuber"                  %% "skuber"               % "2.4.1-cve-fix-a8d7617c"
+  
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
   val SparkJacksonDatabind  = "com.fasterxml.jackson.core"  % "jackson-databind"     % "2.6.7.3"
   val SparkMllib            = "org.apache.spark"           %% "spark-mllib"          % Version.Spark
