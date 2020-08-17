@@ -33,6 +33,7 @@ lazy val root = Project("cloudflow-installer", file("."))
   .settings(
     scalaVersion := "2.12.11",
     crossScalaVersions := Vector(scalaVersion.value),
+    resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
     organization := "com.lightbend.cloudflow",
     skip in publish := true,
     mainClass in Compile := Some("cloudflow.installer.Main"),

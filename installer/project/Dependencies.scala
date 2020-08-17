@@ -15,7 +15,7 @@ object Dependencies {
   lazy val OsLib             = "com.lihaoyi"       %% "os-lib"               % "0.4.2"
   lazy val ScalaCheck        = "org.scalacheck"    %% "scalacheck"           % "1.14.0"
   lazy val ScalaTest         = "org.scalatest"     %% "scalatest"            % "3.0.8"
-  lazy val Skuber            = "io.skuber"         %% "skuber"               % "2.4.0"
+  lazy val Skuber            = "io.skuber"         %% "skuber"               % "2.4.1-cve-fix-a8d7617c"
   lazy val TypesafeConfig    = "com.typesafe"       % "config"               % "1.4.0"
   lazy val ZtExec            = "org.zeroturnaround" % "zt-exec"              % "1.11"
 }
