@@ -93,7 +93,20 @@ object Actions {
       currentApp: Option[CloudflowApplication.CR],
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    TopicActions(newApp, currentApp, deleteOutdatedTopics)
+    if (ctx.kafkaContext.useStrimzi) {
+      StrimziTopicActions(
+        newApp = newApp,
+        currentApp = currentApp,
+        strimziTopicOperatorNamespace = ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        strimziClusterName = ctx.kafkaContext.strimziClusterName.get,
+        partitionsPerTopic = ctx.kafkaContext.partitionsPerTopic,
+        replicationFactor = ctx.kafkaContext.replicationFactor,
+        deleteOutdatedTopics = deleteOutdatedTopics
+      )
+    } else {
+      // TODO add Kafka AdminClient support
+      Seq.empty[Action[ObjectResource]]
+    }
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,

@@ -22,7 +22,7 @@ import org.scalatest._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._
 
-class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
+class StrimziTopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
   case class Foo(name: String)
   case class Bar(name: String)
   val namespace  = "ns"
@@ -30,14 +30,22 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
   val image      = "image-1"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
-  "TopicActions" should {
+  "StrimziTopicActions" should {
     "create topics when there is no previous application deployment" in {
 
       Given("no current app")
       val newApp = createApp()
 
       When("savepoint actions are created from a new app")
-      val actions = TopicActions(newApp, None, false)
+      val actions = StrimziTopicActions(
+        newApp,
+        None,
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        false
+      )
 
       Then("only create topic actions must be created between the streamlets")
       val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
@@ -51,7 +59,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
           .find(_.resource.metadata.name == topic.name)
           .value
           .resource
-          .asInstanceOf[TopicActions.TopicResource]
+          .asInstanceOf[StrimziTopicActions.TopicResource]
         assertTopic(topic, resource, newApp.spec.appId)
       }
     }
@@ -63,7 +71,15 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
-      val actions = TopicActions(newApp, currentApp, false)
+      val actions = StrimziTopicActions(
+        newApp,
+        currentApp,
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        false
+      )
 
       Then("no actions should be created")
       actions mustBe empty
@@ -104,7 +120,15 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
           .remove(processorRef.name)
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-      val actions = TopicActions(newApp, Some(currentApp), true)
+      val actions = StrimziTopicActions(
+        newApp,
+        Some(currentApp),
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        true
+      )
 
       Then("one delete action should be created for the processor outlet savepoint")
       actions.size mustBe 1
@@ -113,7 +137,15 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       actions(0) mustBe a[DeleteAction[_]]
 
       When("deleteExistingTopics is set to false")
-      val noActions = TopicActions(newApp, Some(currentApp), false)
+      val noActions = StrimziTopicActions(
+        newApp,
+        Some(currentApp),
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        false
+      )
       Then("no delete actions should be created")
       noActions mustBe empty
     }
@@ -152,24 +184,39 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("one create action should be created for the new savepoint between processor and egress")
-      val actions  = TopicActions(newApp, Some(currentApp), true)
-      val resource = actions(0).asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
+      val actions = StrimziTopicActions(
+        newApp,
+        Some(currentApp),
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        true
+      )
+      val resource = actions(0).asInstanceOf[ResourceAction[_]].resource.asInstanceOf[StrimziTopicActions.TopicResource]
 
-      resource mustBe TopicActions.resource(TopicActions.TopicInfo(savepoint), CloudflowLabels(newApp))
+      resource mustBe StrimziTopicActions.resource(
+        StrimziTopicActions.TopicInfo(savepoint),
+        CloudflowLabels(newApp),
+        ctx.kafkaContext.strimziTopicOperatorNamespace.get,
+        ctx.kafkaContext.strimziClusterName.get,
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor
+      )
       actions(0) mustBe a[CreateOrUpdateAction[_]]
       assertTopic(savepoint, resource, appId)
     }
   }
 
-  def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
+  def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic, resource: StrimziTopicActions.TopicResource, appId: String)(
       implicit ctx: DeploymentContext
   ) = {
-    resource.metadata.namespace mustBe ctx.kafkaContext.strimziTopicOperatorNamespace
+    resource.metadata.namespace mustBe ctx.kafkaContext.strimziTopicOperatorNamespace.get
     resource.metadata.name mustBe savepoint.name
     resource.spec.partitions mustBe ctx.kafkaContext.partitionsPerTopic
     resource.spec.replicas mustBe ctx.kafkaContext.replicationFactor
     resource.apiVersion mustBe "kafka.strimzi.io/v1beta1"
-    resource.metadata.labels("strimzi.io/cluster") mustBe Name.ofLabelValue(ctx.kafkaContext.strimziClusterName)
+    resource.metadata.labels("strimzi.io/cluster") mustBe Name.ofLabelValue(ctx.kafkaContext.strimziClusterName.get)
     resource.metadata.labels("app.kubernetes.io/name") mustBe Name.ofLabelValue(savepoint.name)
     resource.metadata.labels("app.kubernetes.io/part-of") mustBe Name.ofLabelValue(appId)
     resource.metadata.labels("app.kubernetes.io/managed-by") mustBe "cloudflow"

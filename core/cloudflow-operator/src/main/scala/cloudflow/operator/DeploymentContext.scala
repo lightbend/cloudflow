@@ -42,12 +42,14 @@ case class DeploymentContext(kafkaContext: KafkaContext,
 }
 
 case class KafkaContext(
-    strimziTopicOperatorNamespace: String,
-    strimziClusterName: String,
     bootstrapServers: String,
     partitionsPerTopic: Int,
-    replicationFactor: Int
-)
+    replicationFactor: Int,
+    strimziTopicOperatorNamespace: Option[String],
+    strimziClusterName: Option[String]
+) {
+  def useStrimzi = strimziTopicOperatorNamespace.nonEmpty && strimziClusterName.nonEmpty
+}
 
 final case class Host(name: String, port: Option[Int]) {
   override def toString = s"""$name:${port.getOrElse(80)}"""
