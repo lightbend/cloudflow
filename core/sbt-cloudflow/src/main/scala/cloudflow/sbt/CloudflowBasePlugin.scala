@@ -51,6 +51,8 @@ object CloudflowBasePlugin extends AutoPlugin {
   override def requires =
     StreamletDescriptorsPlugin && JavaAppPackaging && sbtdocker.DockerPlugin
 
+  import ImageNameExtensions._
+
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
           // this artifact needs to have `%` and not `%%` as we build the runner jar
@@ -102,7 +104,7 @@ object CloudflowBasePlugin extends AutoPlugin {
 
             log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
             log.info("Successfully built and published the following image:")
-            log.info(s"${imageName.toString().split(":").head}@$imageDigest")
+            log.info(imageName.referenceWithDigest(imageDigest))
             ImageNameAndDigest(imageName, imageDigest) -> streamletDescriptors
           }.value
         }.value,
