@@ -94,17 +94,16 @@ object CloudflowBasePlugin extends AutoPlugin {
     buildAndPublishImage := Def.task {
           val _ = (checkUncommittedChanges.value, verifyDockerRegistry.value)
           Def.task {
-            val streamletDescriptors                 = streamletDescriptorsInProject.value
-            val imageId: Map[ImageName, ImageDigest] = dockerBuildAndPush.value
-            val log                                  = streams.value.log
-            val imagesPushed                         = (imageNames in docker).value
-            if (imagesPushed.size > 1) throw TooManyImagesBuilt
-            val imagePushed = imagesPushed.head
+            val streamletDescriptors                           = streamletDescriptorsInProject.value
+            val imageNameToDigest: Map[ImageName, ImageDigest] = dockerBuildAndPush.value
+            val log                                            = streams.value.log
+            if (imageNameToDigest.size > 1) throw TooManyImagesBuilt
+            val (imageName, imageDigest) = imageNameToDigest.head
 
             log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
             log.info("Successfully built and published the following image:")
-            log.info(s"$imagePushed@sha256:${imageId(imagePushed)}")
-            ImageNameAndId(imagePushed, imageId(imagePushed)) -> streamletDescriptors
+            log.info(s"${imageName.toString().split(":").head}@$imageDigest")
+            ImageNameAndDigest(imageName, imageDigest) -> streamletDescriptors
           }.value
         }.value,
     fork in Compile := true,

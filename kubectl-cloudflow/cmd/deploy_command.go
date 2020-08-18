@@ -262,7 +262,7 @@ func handleAuth(k8sClient *kubernetes.Clientset, namespace string, opts *deployO
 		} else if opts.username != "" && opts.password != "" {
 			createOrUpdateImagePullSecret(k8sClient, namespace, dockerRegistryURL, opts.username, opts.password)
 		} else {
-			printutil.LogAndExit("Please provide username and password, by using both --username and --password-stdin, or, by using both --username and --password, or omit these flags to get prompted for username and password.")
+			printutil.LogAndExit("Please provide username and password, by using both --username and --password-stdin, or, by using both --username and --password, or omit these flags to get prompted for username and password. If no authentication is needed, use the '--no-registry-credentials' flag to skip this step.")
 		}
 	} else {
 		printutil.LogAndExit("%s", err)
@@ -293,7 +293,8 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 
 				var dockerConfig dockerclient.Config
 				if err := json.Unmarshal(secret.Data[".dockercfg"], &dockerConfig); err == nil {
-					_, exists := dockerConfig[dockerRegistryURL]
+					_,
+						exists := dockerConfig[dockerRegistryURL]
 					if exists == true {
 						return exists
 					}
@@ -376,8 +377,8 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 	}
 
 	runnerTypes := make(map[string]RunnerRequirements)
-	runnerTypes["Spark"] = RunnerRequirements{"sparkapplications.sparkoperator.k8s.io", version.RequiredSparkVersion}
-	runnerTypes["Flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
+	runnerTypes["spark"] = RunnerRequirements{"sparkapplications.sparkoperator.k8s.io", version.RequiredSparkVersion}
+	runnerTypes["flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
 		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
@@ -390,10 +391,21 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 		return nil
 	}
 
+	runnersInApplicationSpec := make(map[string]bool)
+	streamlets := applicationSpec.Streamlets
+	for _, v := range streamlets {
+		runtime := strings.ToLower(v.Descriptor.Runtime)
+		if runtime != "akka" {
+			runnersInApplicationSpec[runtime] = true
+		}
+	}
+
 	var result []error
 	for k, v := range runnerTypes {
-		if err := validateRunnerType(v.crd, strings.Title(k), v.version); err != nil {
-			result = append(result, err)
+		if runnersInApplicationSpec[k] == true {
+			if err := validateRunnerType(v.crd, strings.Title(k), v.version); err != nil {
+				result = append(result, err)
+			}
 		}
 	}
 

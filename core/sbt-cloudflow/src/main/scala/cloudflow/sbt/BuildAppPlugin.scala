@@ -76,10 +76,10 @@ object BuildAppPlugin extends AutoPlugin {
     val log = streams.value.log
     val _   = cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
 
-    val imageToStreamletDescriptorsMaps: Map[ImageNameAndId, Map[String, StreamletDescriptor]] = allBuildAndPublish.value
-    val streamletClassNamesToImageNameAndId: Map[String, ImageNameAndId] = imageToStreamletDescriptorsMaps
+    val imageToStreamletDescriptorsMaps: Map[ImageNameAndDigest, Map[String, StreamletDescriptor]] = allBuildAndPublish.value
+    val streamletClassNamesToImageNameAndId: Map[String, ImageNameAndDigest] = imageToStreamletDescriptorsMaps
       .map {
-        case (imageNameAndId, sMap) => sMap.keys.map { _ -> imageNameAndId }.toSeq
+        case (imageNameAndDigest, sMap) => sMap.keys.map { _ -> imageNameAndDigest }.toSeq
       }
       .flatten
       .toMap
@@ -93,8 +93,8 @@ object BuildAppPlugin extends AutoPlugin {
 
     // need to get the proper image name in `StreamletDeployment` s too
     val newDeployments = appDescriptor.deployments.map { deployment =>
-      val image = streamletClassNamesToImageNameAndId.get(deployment.className).get
-      deployment.copy(image = s"${image.imageName.toString().split(":").head}@${image.imageId.toString()}")
+      val ImageNameAndDigest(imageName, imageDigest) = streamletClassNamesToImageNameAndId.get(deployment.className).get
+      deployment.copy(image = s"${imageName.toString().split(":").head}@$imageDigest")
     }
 
     // the new shiny `ApplicationDescriptor`
