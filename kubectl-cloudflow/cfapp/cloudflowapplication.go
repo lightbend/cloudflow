@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
+	. "github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -102,10 +103,6 @@ type Streamlet struct {
 	Descriptor Descriptor `json:"descriptor"`
 	Name       string     `json:"name"`
 }
-
-// SupportedApplicationDescriptorVersion is the Application Descriptor Version that this version of kubectl-cloudflow supports.
-// This version must match up with the version that is added by sbt-cloudflow, which is hardcoded in `cloudflow.blueprint.deployment.ApplicationDescriptor`.
-const SupportedApplicationDescriptorVersion = "2"
 
 // CloudflowApplicationSpec contains the CR spec for a cloudflow application
 type CloudflowApplicationSpec struct {

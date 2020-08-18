@@ -1,3 +1,4 @@
+
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.5.0")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.2.1")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.11")
@@ -6,7 +7,8 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0-RC18")
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
 addSbtPlugin("com.lightbend" % "sbt-whitesource" % "0.1.16")
-addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.6.0")
+
+addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.8.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.24")
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0")

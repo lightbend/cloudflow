@@ -316,7 +316,7 @@ lazy val plugin =
       crossSbtVersions := Vector("1.2.8"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.6.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker"          % "1.8.0"),
       addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("com.cavorite"      % "sbt-avro-1-8"        % "1.1.9"),
       addSbtPlugin("com.thesamet"      % "sbt-protoc"          % "0.99.31"),
@@ -394,8 +394,8 @@ lazy val operator =
             Skuber,
             ScalaTest,
             AkkaStreamTestkitOperator % "test",
-            ScalaCheck        % "test",
-            Avro4sJson        % "test"
+            ScalaCheck                % "test",
+            Avro4sJson                % "test"
           )
     )
     .settings(
@@ -435,8 +435,7 @@ lazy val operator =
           from("adoptopenjdk/openjdk8:alpine")
           entryPoint(s"$targetDir/bin/${executableScriptName.value}")
           copy(appDir, targetDir, chown = "daemon:daemon")
-          addInstruction(
-            Instructions.Run("apk add bash; \\"))
+          addInstruction(Instructions.Run("apk add bash; \\"))
         }
       },
       Test / fork := true,
