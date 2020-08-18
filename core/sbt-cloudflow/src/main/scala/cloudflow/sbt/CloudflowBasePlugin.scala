@@ -167,4 +167,4 @@ object TooManyImagesBuiltError {
     """.stripMargin
 }
 
-final case class ImageNameAndId(imageName: ImageName, imageId: ImageDigest)
+final case class ImageNameAndDigest(imageName: ImageName, imageId: ImageDigest)
