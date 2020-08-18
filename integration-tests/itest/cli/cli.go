@@ -53,7 +53,7 @@ func logOutputIfFailure(command string, output []byte, err error) {
 
 // Deploy initiates the deployment of an application to the k8s cluster
 func Deploy(app App, user string, pwd string) (deployRes string, deployErr error) {
-	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.CRFile, "--username", user, "--password", pwd)
+	cmd := exec.Command("kubectl", "cloudflow", "deploy", app.CRFile, "--no-registry-credentials")
 	out, err := cmd.CombinedOutput()
 	logOutputIfFailure("deploy", out, err)
 	return string(out), err
