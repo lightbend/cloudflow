@@ -21,19 +21,18 @@ import java.util.Collections
 
 import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
-
-import scala.collection.immutable._
-import play.api.libs.json.Format
-import play.api.libs.json.Json
-import skuber._
 import cloudflow.blueprint.deployment._
 import com.typesafe.config.Config
-import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
+import org.apache.kafka.clients.admin.{Admin, AdminClientConfig, CreateTopicsOptions, NewTopic}
 import org.apache.kafka.common.KafkaFuture
+import play.api.libs.json.Format
+import skuber._
 import skuber.api.client.KubernetesClient
+import skuber.json.format._
 
+import scala.collection.immutable._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 /**
  * Creates a sequence of resource actions for the savepoint changes
@@ -67,20 +66,7 @@ object TopicActions {
     deleteActions ++ createActions
   }
 
-  final case class Condition(`type`: Option[String],
-                             status: Option[String],
-                             lastTransitionTime: Option[String],
-                             reason: Option[String],
-                             message: Option[String])
-
-  final case class Spec(partitions: Int, replicas: Int)
-
-  final case class Status(conditions: Option[List[Condition]], observedGeneration: Option[Int])
-
   type TopicResource = ConfigMap
-  private implicit val OwnerReferenceFmt: Format[OwnerReference] = Json.format[OwnerReference]
-  private implicit val ObjectMetaFmt: Format[ObjectMeta]         = Json.format[ObjectMeta]
-  private implicit val ConfigMapFmt: Format[ConfigMap]           = Json.format[ConfigMap]
 
   def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
 //    val ns = ctx.kafkaContext.strimziTopicOperatorNamespace
@@ -95,7 +81,7 @@ object TopicActions {
 
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers)
 
-    new CreateOrUpdateAction[ConfigMap](configMap, ConfigMapFmt, implicitly[ResourceDefinition[ConfigMap]], editor) {
+    new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
