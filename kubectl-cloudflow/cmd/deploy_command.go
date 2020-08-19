@@ -85,7 +85,11 @@ It is also possible to specify more than one "volume-mount" parameter.
 
 You can optionally provide credentials for the docker registry that hosts the
 images of the application by using the --username flag in combination with either
-the --password-stdin or the --password flag.
+the --password-stdin or the --password flag. 
+
+If no authentication is needed, for example,if the cluster already has credentials configured or
+if the registry does not require credentials to pull an image, use the '--no-registry-credentials' 
+flag to skip authentication.
 
 The --password-stdin flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
