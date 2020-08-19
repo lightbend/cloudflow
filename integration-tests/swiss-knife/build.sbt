@@ -14,8 +14,7 @@ lazy val swissKnife = (project in file("."))
       datamodel,
       flink,
       akka,
-      spark
-      
+      spark      
     )
 lazy val app = (project in file("./app"))
   .settings(
