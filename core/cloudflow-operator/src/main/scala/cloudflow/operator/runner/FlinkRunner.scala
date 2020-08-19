@@ -57,6 +57,7 @@ object FlinkRunner extends Runner[CR] {
   )(implicit ctx: DeploymentContext): CR = {
     val podsConfig = getPodsConfig(configSecret)
 
+
     val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
 
     val image             = deployment.image
@@ -116,6 +117,7 @@ object FlinkRunner extends Runner[CR] {
           ownerReferences = ownerReferences
         )
       )
+      .withLabels(getLabels(podsConfig,PodsConfig.CloudflowPodName):_*)
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)

@@ -145,6 +145,41 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       )
     }
 
+    "read labels for pod" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                  |kubernetes.pods.pod {
+                  | labels: {
+                  |            "key1" : "value1",
+                  |            "key2" : "value2"
+                  |          }
+                  | containers.container {
+                  |  env = [
+                  |    {
+                  |      name = "FOO"
+                  |      value = "BAR"
+                  |    }
+                  |   ]
+                  |}
+                  |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+
+    }
+
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
 
       val crd = FlinkRunner.resource(

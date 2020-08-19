@@ -171,6 +171,17 @@ trait Runner[T <: ObjectResource] {
           containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
         }
       }
+
+  def getLabels(podsConfig: PodsConfig, podName: String): List[(String, String)] = {
+    podsConfig.pods.
+      get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        Option(podConfig.labels.toList)
+      }.getOrElse(List())
+
+
+  }
 }
 
 import net.ceedubs.ficus.Ficus._
@@ -216,8 +227,14 @@ object PodsConfig {
     ContainerConfig(env.getOrElse(List()), resources)
   }
 
-  implicit val podConfMapReader = ValueReader.relative { config ⇒
+  implicit val containterConfMapReader = ValueReader.relative { config ⇒
     asConfigObjectToMap[PodConfig](config)
+  }
+
+  implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
+    val labels     = config.as[Map[String, String]]("labels")
+    val containers = config.as[Map[String, ContainerConfig]]("containers")
+    PodConfig(labels, containers)
   }
 
   /*
@@ -263,6 +280,7 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 }
 
 final case class PodConfig(
+    labels: Map[String, String],
     containers: Map[String, ContainerConfig]
 )
 
