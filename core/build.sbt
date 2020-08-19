@@ -108,6 +108,7 @@ lazy val akkastreamUtil =
       libraryDependencies ++= Vector(
             AkkaHttp,
             AkkaHttpJackson,
+            AkkaHttp2Support,
             AkkaGrpcRuntime,
             AkkaStreamContrib,
             AkkaHttpTestkit,
