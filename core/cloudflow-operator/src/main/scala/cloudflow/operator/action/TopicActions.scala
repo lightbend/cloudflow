@@ -23,7 +23,7 @@ import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import com.typesafe.config.Config
-import org.apache.kafka.clients.admin.{Admin, AdminClientConfig, CreateTopicsOptions, NewTopic}
+import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
 import org.apache.kafka.common.KafkaFuture
 import play.api.libs.json.Format
 import skuber._
@@ -32,7 +32,7 @@ import skuber.json.format._
 
 import scala.collection.immutable._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 
 /**
  * Creates a sequence of resource actions for the savepoint changes
