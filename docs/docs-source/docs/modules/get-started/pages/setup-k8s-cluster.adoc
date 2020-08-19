@@ -24,7 +24,7 @@ NOTE: This can be done once you have a valid account and have access to a projec
 * Create a Kubernetes cluster with a specific name on a cloud provider of your choosing. We provide cluster launching scripts for GKE, AKS and EKS. `./create-cluster-[gke|aks|eks].sh <cluster-name>`
 * Make sure your cluster has at least appropriate storage class that offers ReadWriteMany (RWM) capability. 
 Most cloud providers have their preferred storage class for that purpose (e.g. AzureFile on AKS and EFS CSI on EKS). We also provide a script `./install-nfs.sh` that you can run to install NFS that will satisfy the RWM characteristic for testing purposes.
-* Go to the Github release page for your chosen Cloudflow version and download the bootstrap script. It's in the list of assets. For example, this is the https://github.com/lightbend/cloudflow/releases/tag/v2.0.5[page] for Cloudflow 2.0.5.
+* Go to the Github release page for your chosen Cloudflow version and download the bootstrap script. It's in the list of assets. For example, this is the https://github.com/lightbend/cloudflow/releases/tag/v2.0.8[page] for Cloudflow 2.0.8.
 * Run the bootstrap script to initiate the installation Cloudflow.
 ```bash
 $./bootstrap-install-script-<CLOUDFLOW_VERSION>.sh
