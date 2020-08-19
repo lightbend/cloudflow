@@ -9,7 +9,7 @@ content:
       - docs/docs-source/docs
       - docs/shared-content-source/docs
       - examples/snippets
-    branches: [master, v1.3.3-docs, v2.0.0-docs, v2.0.5-docs, v2.0.7-docs]  # versioned content - add branches here 
+    branches: [master, v1.3.3-docs, v2.0.0-docs, v2.0.5-docs, v2.0.7-docs, v2.0.8-docs]  # versioned content - add branches here 
   - url: git@github.com:lightbend/cloudflow.git
     start-path: docs/homepage-source/docs
     branches: [master] # should always remain as master
