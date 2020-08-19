@@ -68,7 +68,8 @@ You can optionally provide credentials for the docker registry that hosts the
 images of the application by using the `--username` flag in combination with either
 the `--password-stdin` or the `--password` flag.
 
-If no credentials are needed, for example, if the cluster already has credentials configured or if the registry does not require authentication to pull an image, use the '--no-registry-credentials' flag.
+If no credentials are needed, for example, if the cluster already has credentials configured or if the registry
+does not require authentication to pull an image, use the '--no-registry-credentials' flag.
 
 The `--password-stdin` flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
