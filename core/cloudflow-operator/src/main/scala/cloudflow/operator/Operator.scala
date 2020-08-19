@@ -29,6 +29,7 @@ import skuber.api.client._
 import skuber.json.format._
 
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.util._
 
 object Operator {
@@ -73,7 +74,15 @@ object Operator {
         .via(AppEvent.fromWatchEvent(logAttributes))
         .via(AppEvent.toAction)
         .via(executeActions(actionExecutor, logAttributes))
-        .toMat(Sink.ignore)(Keep.right),
+        .toMat(Sink.ignore)(Keep.right)
+        .mapMaterializedValue {
+          _.flatMap { value =>
+            // close Kafka admin clients
+            TopicActions.KafkaAdmins
+              .close(10.seconds)
+              .map(_ => value)
+          }
+        },
       "The actions stream completed unexpectedly, terminating.",
       "The actions stream failed, terminating."
     )

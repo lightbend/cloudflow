@@ -104,8 +104,11 @@ object Actions {
         deleteOutdatedTopics = deleteOutdatedTopics
       )
     } else {
-      // TODO add Kafka AdminClient support
-      Seq.empty[Action[ObjectResource]]
+      TopicActions(
+        newApp = newApp,
+        currentApp = currentApp,
+        deleteOutdatedTopics = false
+      )
     }
 
   private def deployRunners(

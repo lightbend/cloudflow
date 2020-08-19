@@ -408,6 +408,7 @@ lazy val operator =
             Logback,
             Skuber,
             ScalaTest,
+            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
             AkkaStreamTestkitOperator % "test",
             ScalaCheck                % "test",
             Avro4sJson                % "test"
