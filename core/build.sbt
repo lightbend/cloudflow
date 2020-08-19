@@ -181,6 +181,9 @@ lazy val spark =
       dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Seq(
             AkkaActor,
+            AkkaDiscovery,
+            AkkaProtobuf,
+            AkkaStream,
             Ficus,
             Spark,
             SparkMllib,
