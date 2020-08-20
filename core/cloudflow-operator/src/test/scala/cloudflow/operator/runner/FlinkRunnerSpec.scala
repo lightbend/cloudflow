@@ -178,6 +178,8 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
       crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
 
+//      crd.spec.template.metadata.labels mustBe Map("key1" -> "value1", "key2" -> "value2")
+      println(Json.toJson(crd))
     }
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
