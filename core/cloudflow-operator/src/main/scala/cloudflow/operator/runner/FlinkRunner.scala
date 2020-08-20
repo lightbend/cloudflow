@@ -30,6 +30,7 @@ import skuber.ResourceSpecification.Subresources
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
+ * What's the equivalent to a Pod?
  */
 object FlinkRunner extends Runner[CR] {
   def format = implicitly[Format[CR]]
@@ -53,10 +54,9 @@ object FlinkRunner extends Runner[CR] {
       app: CloudflowApplication.CR,
       configSecret: Secret,
       namespace: String,
-      updateLabels: Map[String, String] = Map()
+      updateLabels: Map[String, String] = Map() //What is this naming?
   )(implicit ctx: DeploymentContext): CR = {
     val podsConfig = getPodsConfig(configSecret)
-
 
     val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
 
@@ -99,6 +99,7 @@ object FlinkRunner extends Runner[CR] {
       flinkConfig = flinkConfig,
       jobManagerConfig = jobManagerConfig,
       taskManagerConfig = taskManagerConfig
+//      template = Template(ObjectMeta(labels = getLabels(podsConfig, PodsConfig.CloudflowPodName)))
     )
 
     val name      = resourceName(deployment)
@@ -117,7 +118,7 @@ object FlinkRunner extends Runner[CR] {
           ownerReferences = ownerReferences
         )
       )
-      .withLabels(getLabels(podsConfig,PodsConfig.CloudflowPodName):_*)
+//      .withLabels(getLabels(podsConfig,PodsConfig.CloudflowPodName):_*)
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)
@@ -371,6 +372,11 @@ object FlinkResource {
       taskManagerConfig: TaskManagerConfig,
       volumeMounts: Seq[Volume.Mount] = Seq.empty,
       restartNonce: String = ""
+//      template: Template //TODO review
+  )
+
+  final case class Template(
+      metadata: ObjectMeta
   )
 
   final case class ApplicationState(state: String, errorMessage: Option[String])
@@ -403,6 +409,7 @@ object FlinkResource {
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
   implicit val specFmt: Format[Spec]                         = Json.format[Spec]
+  implicit val templateFmt: Format[Template]                 = Json.format[Template]
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
   implicit val statusFmt: Format[Status]                     = Json.format[Status]
 
