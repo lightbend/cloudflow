@@ -99,7 +99,6 @@ object FlinkRunner extends Runner[CR] {
       flinkConfig = flinkConfig,
       jobManagerConfig = jobManagerConfig,
       taskManagerConfig = taskManagerConfig
-//      template = Template(ObjectMeta(labels = getLabels(podsConfig, PodsConfig.CloudflowPodName)))
     )
 
     val name      = resourceName(deployment)
@@ -118,7 +117,7 @@ object FlinkRunner extends Runner[CR] {
           ownerReferences = ownerReferences
         )
       )
-//      .withLabels(getLabels(podsConfig,PodsConfig.CloudflowPodName):_*)
+      .withLabels(getLabels(podsConfig, PodsConfig.CloudflowPodName): _*) //TODO review this notation
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)

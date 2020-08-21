@@ -129,7 +129,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue) ++
+          getLabels(podsConfig, PodsConfig.CloudflowPodName)
 
     import ctx.sparkRunnerSettings._
 

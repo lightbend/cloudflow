@@ -172,14 +172,16 @@ trait Runner[T <: ObjectResource] {
         }
       }
 
-  def getLabels(podsConfig: PodsConfig, podName: String): Map[String, String] =
+  def getLabels(podsConfig: PodsConfig, podName: String): Seq[(String, String)] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
-        Option(podConfig.labels)
+        podConfig.labels.flatMap { innerMap =>
+          Some(innerMap.toList)
+        }
       }
-      .getOrElse(Map())
+      .getOrElse(List())
 
 //  def makeLabelsSpec(labels: Map[String, String]): TODO review approach is right
 //
@@ -230,12 +232,12 @@ object PodsConfig {
     ContainerConfig(env.getOrElse(List()), resources)
   }
 
-  implicit val containterConfMapReader = ValueReader.relative { config ⇒
+  implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config ⇒
     asConfigObjectToMap[PodConfig](config)
   }
 
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
-    val labels     = config.as[Map[String, String]]("labels")
+    val labels     = config.as[Option[Map[String, String]]]("labels")
     val containers = config.as[Map[String, ContainerConfig]]("containers")
     PodConfig(labels, containers)
   }
@@ -283,7 +285,7 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 }
 
 final case class PodConfig(
-    labels: Map[String, String],
+    labels: Option[Map[String, String]] = None,
     containers: Map[String, ContainerConfig]
 )
 
