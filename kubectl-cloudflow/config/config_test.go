@@ -311,6 +311,49 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.NotEmpty(t, validateConfig(unknownStreamletConfigSection, spec))
 
+	labelConfigSection := newConfig(`
+     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		 	 labels {
+		 	 	key1 = value1,
+		 	 	key2 = value2
+		 	 }
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+	}
+	`)
+
+	assert.Empty(t, validateConfig(labelConfigSection, spec))
+
+	labelConfigSectionEmpty := newConfig(`
+     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		 	 labels {
+		 	 	
+		 	 }
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+	}
+	`)
+
+	assert.NotEmpty(t, validateConfig(labelConfigSectionEmpty, spec))
+
 	unknownRuntimeConfigSection := newConfig(`
      cloudflow.runtimes {
 			 akka {
@@ -335,7 +378,7 @@ func Test_validateConfig(t *testing.T) {
      cloudflow.streamlets {
 			 my-streamlet {
 				 config-parameters {
-           my-parameter = "value"
+           			 my-parameter = "value"
 				 }
 				 config {
 					 akka.loglevel = "WARNING"
