@@ -113,8 +113,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.monitoring.exposeExecutorMetrics mustBe true
       crd.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths(CloudflowApplication.PrometheusAgentKey)
       crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-      println(Json.toJson(crd))
-
     }
 
     "convert the CRD to/from Json" in {
