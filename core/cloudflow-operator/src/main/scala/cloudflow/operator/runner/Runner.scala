@@ -183,9 +183,6 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
-//  def makeLabelsSpec(labels: Map[String, String]): TODO review approach is right
-//
-//  case class Template(metadata: ObjectMeta)  TODO better be here than in FlinkRunner?
 
 }
 
