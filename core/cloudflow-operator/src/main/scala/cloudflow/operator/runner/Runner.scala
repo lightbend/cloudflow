@@ -183,7 +183,6 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
-
 }
 
 import net.ceedubs.ficus.Ficus._
