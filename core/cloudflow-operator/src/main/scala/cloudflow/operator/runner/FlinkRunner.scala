@@ -54,7 +54,7 @@ object FlinkRunner extends Runner[CR] {
       app: CloudflowApplication.CR,
       configSecret: Secret,
       namespace: String,
-      updateLabels: Map[String, String] = Map() //What is this naming?
+      updateLabels: Map[String, String] = Map()
   )(implicit ctx: DeploymentContext): CR = {
     val podsConfig = getPodsConfig(configSecret)
 
@@ -371,14 +371,10 @@ object FlinkResource {
       taskManagerConfig: TaskManagerConfig,
       volumeMounts: Seq[Volume.Mount] = Seq.empty,
       restartNonce: String = ""
-//      template: Template //TODO review
-  )
-
-  final case class Template(
-      metadata: ObjectMeta
   )
 
   final case class ApplicationState(state: String, errorMessage: Option[String])
+
   final case class JobManagerInfo(
       podName: Option[String],
       webUIAddress: Option[String],
@@ -408,7 +404,6 @@ object FlinkResource {
   implicit val taskManagerFmt: Format[TaskManagerConfig] = Json.format[TaskManagerConfig]
 
   implicit val specFmt: Format[Spec]                         = Json.format[Spec]
-  implicit val templateFmt: Format[Template]                 = Json.format[Template]
   implicit val applicationStateFmt: Format[ApplicationState] = Json.format[ApplicationState]
   implicit val statusFmt: Format[Status]                     = Json.format[Status]
 
