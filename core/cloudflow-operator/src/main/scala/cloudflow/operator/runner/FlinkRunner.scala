@@ -30,7 +30,6 @@ import skuber.ResourceSpecification.Subresources
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
- * What's the equivalent to a Pod?
  */
 object FlinkRunner extends Runner[CR] {
   def format = implicitly[Format[CR]]
