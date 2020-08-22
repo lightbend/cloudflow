@@ -31,7 +31,6 @@ const configKey = "config"
 const kubernetesKey = "kubernetes"
 const podsKey = "pods"
 const cloudflowPodName = "pod"
-const podLabel = "labels"
 const cloudflowContainerName = "container"
 const containersKey = "containers"
 const resourcesKey = "resources"
@@ -308,16 +307,6 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
 		for podName := range podsConfig.Root().GetObject().Items() {
 			if podConfig := podsConfig.GetConfig(podName); podConfig != nil && podConfig.Root().IsObject() {
-				if labelsConfig := podConfig.GetConfig(podLabel); labelsConfig != nil && labelsConfig.Root().IsObject() {
-					if( len(labelsConfig.Root().GetObject().Items()) == 0) {
-							return fmt.Errorf("kubernetes configuration for pod '%s' at %s.%s.%s.%s. does not contain labels even though has been defined",
-								podName,
-								rootPath,
-								kubernetesKey,
-								podsKey,
-								podName)
-						}
-				}
 				if containersConfig := podConfig.GetConfig(containersKey); containersConfig != nil && containersConfig.Root().IsObject() {
 					for containerName := range containersConfig.Root().GetObject().Items() {
 						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
@@ -443,7 +432,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 						rootPath,
 						podName)
 				}
-			} 				else {
+			} else {
 				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
 					rootPath,
 					kubernetesKey,
