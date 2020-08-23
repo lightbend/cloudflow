@@ -112,11 +112,10 @@ object FlinkRunner extends Runner[CR] {
           name = name,
           namespace = namespace,
           annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
-          labels = labels,
+          labels = labels ++ getLabels(podsConfig, PodsConfig.CloudflowPodName),
           ownerReferences = ownerReferences
         )
       )
-      .withLabels(getLabels(podsConfig, PodsConfig.CloudflowPodName): _*) //TODO review this notation
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)

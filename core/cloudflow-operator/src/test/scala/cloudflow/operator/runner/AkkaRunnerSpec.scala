@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.runner
 
-import com.typesafe.config.ConfigFactory
-import org.scalatest._
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
 import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
+import com.typesafe.config.ConfigFactory
+import org.scalatest._
 import play.api.libs.json._
 import skuber._
 
-class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
+class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
@@ -69,7 +69,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       runtime = "spark",
       image = image,
       streamletName = "spark-streamlet",
-      className = "cloudflow.operator.runner.SparkRunner",
+      className = "cloudflow.operator.runner.AkkaRunner",
       endpoint = None,
       secretName = "spark-streamlet",
       config = ConfigFactory.empty(),
@@ -88,36 +88,9 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       Runner.DownwardApiVolumeMount
     )
 
-    "create a valid SparkApplication CR" in {
-
-      val crd = SparkRunner.resource(
-        deployment = deployment,
-        app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
-      )
-
-      crd.metadata.namespace mustBe namespace
-      crd.metadata.name mustBe appId
-      crd.spec.`type` mustBe "Scala"
-      crd.spec.mode mustBe "cluster"
-      val imageWithoutRegistry = image.split("/").tail.mkString("/")
-      crd.spec.image must include(imageWithoutRegistry)
-      crd.spec.mainClass mustBe "cloudflow.runner.Runner"
-      crd.spec.volumes mustBe volumes
-      crd.spec.driver.volumeMounts mustBe volumeMounts
-      crd.spec.executor.volumeMounts mustBe volumeMounts
-      crd.kind mustBe "SparkApplication"
-      crd.spec.restartPolicy mustBe a[AlwaysRestartPolicy]
-      crd.spec.monitoring.exposeDriverMetrics mustBe true
-      crd.spec.monitoring.exposeExecutorMetrics mustBe true
-      crd.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths(CloudflowApplication.PrometheusAgentKey)
-      crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
-    }
-
     "read labels for pod and adding them to driver and executor" in {
 
-      val crd = SparkRunner.resource(
+      val crd = AkkaRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -145,27 +118,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         namespace = namespace
       )
 
-      crd.spec.driver.labels.get("key1") mustBe Some("value1")
-      crd.spec.executor.labels.get("key1") mustBe Some("value1")
-    }
-
-    "convert the CRD to/from Json" in {
-
-      val crd = SparkRunner.resource(
-        deployment = deployment,
-        app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
-      )
-
-      val jsonString = Json.toJson(crd).toString()
-      val fromJson   = Json.parse(jsonString).validate[CR]
-      fromJson match {
-        case err: JsError ⇒ fail(err.toString)
-        case _            ⇒
-      }
+      crd.spec.get.template.metadata.labels.get("key1") mustBe Some("value1")
 
     }
-
   }
 }

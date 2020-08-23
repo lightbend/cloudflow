@@ -145,10 +145,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       )
     }
 
-    "read labels for pod" in {
-//https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-
-//     https://github.com/Azure/aad-pod-identity     how AAD expects it
+    "read labels for pod and adding them to jobmanager and taskmanager" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -181,7 +178,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
       crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
 
-      crd.metadata.labels.filter { case (k, _) => k == "key1" } mustBe Map("key1" -> "value1")
+      crd.metadata.labels.get("key1") mustBe Some("value1")
     }
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
