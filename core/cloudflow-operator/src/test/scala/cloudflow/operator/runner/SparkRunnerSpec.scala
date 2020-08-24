@@ -115,6 +115,78 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 
+    "read labels for pod and adding them to driver" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+              """
+                |kubernetes.pods.driver {
+                | labels: {
+                |            "key1" : "value1",
+                |            "key2" : "value2"
+                |          }
+                | containers.container {
+                |  env = [
+                |    {
+                |      name = "FOO"
+                |      value = "BAR"
+                |    }
+                |   ]
+                |}
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.driver.labels.get("key1") mustBe Some("value1")
+      crd.spec.executor.labels.get("key1") mustBe None
+      crd.spec.driver.labels.get("key2") mustBe Some("value2")
+      crd.spec.executor.labels.get("key2") mustBe None
+    }
+
+    "read labels for pod and adding them to executor" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+              """
+                |kubernetes.pods.executor {
+                | labels: {
+                |            "key1" : "value1",
+                |            "key2" : "value2"
+                |          }
+                | containers.container {
+                |  env = [
+                |    {
+                |      name = "FOO"
+                |      value = "BAR"
+                |    }
+                |   ]
+                |}
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.executor.labels.get("key1") mustBe Some("value1")
+      crd.spec.driver.labels.get("key1") mustBe None
+      crd.spec.executor.labels.get("key2") mustBe Some("value2")
+      crd.spec.driver.labels.get("key2") mustBe None
+    }
+
     "read labels for pod and adding them to driver and executor" in {
 
       val crd = SparkRunner.resource(
@@ -147,6 +219,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
       crd.spec.driver.labels.get("key1") mustBe Some("value1")
       crd.spec.executor.labels.get("key1") mustBe Some("value1")
+      crd.spec.driver.labels.get("key2") mustBe Some("value2")
+      crd.spec.executor.labels.get("key2") mustBe Some("value2")
     }
 
     "convert the CRD to/from Json" in {

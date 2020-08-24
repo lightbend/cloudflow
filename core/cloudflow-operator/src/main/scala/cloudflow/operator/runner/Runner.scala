@@ -172,16 +172,16 @@ trait Runner[T <: ObjectResource] {
         }
       }
 
-  def getLabels(podsConfig: PodsConfig, podName: String): Seq[(String, String)] =
+  def getLabels(podsConfig: PodsConfig, podName: String): Map[String, String] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
         podConfig.labels.flatMap { innerMap =>
-          Some(innerMap.toList)
+          Some(innerMap)
         }
       }
-      .getOrElse(List())
+      .getOrElse(Map())
 
 }
 

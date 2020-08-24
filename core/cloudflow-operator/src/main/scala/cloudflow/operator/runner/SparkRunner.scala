@@ -129,15 +129,14 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue) ++
-          getLabels(podsConfig, PodsConfig.CloudflowPodName)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> appId).mapValues(Name.ofLabelValue)
 
     import ctx.sparkRunnerSettings._
 
     val driver = addDriverResourceRequirements(
       Driver(
         javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
-        labels = labels,
+        labels = labels ++ getLabels(podsConfig, DriverPod),
         volumeMounts = volumeMounts,
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, DriverPod),
@@ -151,7 +150,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Executor(
         javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
         instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
-        labels = labels,
+        labels = labels ++ getLabels(podsConfig, ExecutorPod),
         volumeMounts = volumeMounts,
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, ExecutorPod),
