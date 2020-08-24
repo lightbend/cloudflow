@@ -1,0 +1,20 @@
+= Upgrading Cloudflow
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+
+//- TODO May want to move this to its own section
+
+Upgrading Cloudflow after a new release is simply done using the Helm upgrade command. This will upgrade Cloudflow to the latest version.
+
+	helm upgrade cloudflow cloudflow/Cloudflow --namespace cloudflow --set strimzi.enabled=true --set strimzi.persistentStorageClass=standard --set cloudflow_operator.persistentStorageClass="nfs"
+
+To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
+
+----
+helm upgrade cloudflow cloudflow/Cloudflow --namespace cloudflow --set strimzi.enabled=true --set strimzi.persistentStorageClass=standard --set cloudflow_operator.persistentStorageClass="nfs" --version=”2.0.8”
+----
+

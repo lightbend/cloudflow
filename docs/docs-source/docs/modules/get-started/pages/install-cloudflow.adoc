@@ -1,0 +1,271 @@
+= Installing Cloudflow
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+This document details how to install Cloudflow and dependencies on Cloudflow like the Spark and Flink operator, using the `Helm` and `kubectl` command-line tools. 
+
+== Prerequisites
+
+=== CLI Tools
+
+Make sure you have the following prerequisites installed before continuing:
+
+- Helm, version 3 or later
+- Kubectl 
+
+Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster where you want to install Cloudflow.
+
+=== Kafka
+
+Kafka is used by Cloudflow to store information, before installing Cloudflow, you need to make sure there is a Kafka cluster available and have the necessary broker bootstrap configuration at hand.
+
+The broker bootstrap configuration is a string with the address and port to each of the brokers in the Kafka cluster.
+
+It has the following format:
+
+broker-1-address:broker-1-port, broker-2-address;broker-2-port
+
+// - TODO more information about Kafka has to be added
+
+=== Storage requirements
+
+If you are planning to write applications using Spark or Flink the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the storage class will be used when installing Cloudflow.
+
+// - TODO I do not know how much guidance we need to provide here, can also expand over time.
+
+== Installing Cloudflow
+
+Cloudflow is installed using Helm and the Cloudflow Helm chart.
+
+The first step is to create the namespace we want to install Cloudflow into:
+
+	kubectl create ns cloudflow
+
+When the namespace has been created, we can install Cloudflow using Helm. 
+
+IMPORTANT: Many subsequent commands will assume that the namespace is `cloudflow`.
+
+First, we add the Cloudflow Helm repository:
+
+	helm repo add cloudflow https://lightbend.github.io/cloudflow-helm-charts/
+
+Then we run `update` to make sure Helm has an up-to-date index of Helm charts in all repositories it knows about.
+
+	helm repo update
+
+Now we install Cloudflow, but before you press enter, let’s go over the custom parameter we are supplying with the command:
+
+This parameter sets the storage class to use with Spark and Flink applications. This storage class as previously mentioned has to be of the type `ReadWriteMany`. In our example here we are using the `nfs` storage class which we have installed in our cluster using the NFS Server Provisioner chart.
+
+	cloudflow_operator.persistentStorageClass="nfs"
+
+Installing the Helm chart.
+
+	helm install cloudflow cloudflow/Cloudflow --namespace cloudflow --set
+  strimzi.enabled=true --set strimzi.persistentStorageClass=standard  --set cloudflow_operator.persistentStorageClass="nfs"
+
+// - TODO have to adjust this to fit with the reality when we remove Strimzi dependencies from the operator
+
+Cloudflow is now installed in the `Cloudflow` namespace.
+
+			<INSERT OUTPUT OF kubectl get pods -n cloudflow HERE>
+
+You can now deploy an Akka based Cloudflow application into the cluster. More on this in the development section of the documentation.
+
+== Installing the Spark operator
+
+If you plan to write applications that utilize Spark you will need to install the Spark operator before deploying your Cloudflow application.
+
+The Spark operator used is a version currently maintained by Lightbend and is the only Cloudflow compatible version currently.
+
+Add the Spark Helm chart repository
+
+helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+
+As we have seen before, we need to update the Helm repo before actually installing anything
+	
+	helm repo update
+
+Before installing the helm chart, we will need to prepare a `value.yaml` file, it contains overrides for the default values in the Spark Helm chart.
+
+----
+cat > spark-values.yaml << EOF
+rbac:
+  create: true
+serviceAccounts:
+  sparkoperator:
+    create: true
+    name: cloudflow-spark-operator
+  spark:
+    create: true
+    name: cloudflow-spark
+
+enableWebhook: true
+enableMetrics: true
+
+controllerThreads: 10
+installCrds: true
+metricsPort: 10254
+metricsEndpoint: "/metrics"
+metricsPrefix: ""
+resyncInterval: 30
+webhookPort: 8080
+sparkJobNamespace: ""
+operatorImageName: "lightbend/sparkoperator"
+operatorVersion: "2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: cloudflow-webhook
+  labels:
+    app.kubernetes.io/name: sparkoperator
+spec:
+  selector:
+    app.kubernetes.io/name: sparkoperator
+    app.kubernetes.io/version: 2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12
+EOF
+----
+
+Now we can install the Spark operator using Helm, note here that we use a specific version fo the Spark operator Helm chart.
+
+  helm install spark-operator incubator/sparkoperator --namespace cloudflow --values="spark-values.yaml"  --version "0.6.7"
+
+After the Spark operator has been installed, we need to adjust its webhook configuration.
+
+  <INSERT OUTPUT OF kubectl get pods -n cloudflow HERE>
+
+For this, we will create yet another Yaml file that we will apply to the cluster with `kubectl`.
+----
+cat > spark-mutating-webhook.yaml << ‘EOF2’
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudflow-patch-spark-mutatingwebhookconfig
+spec:
+  template:
+    spec:
+      serviceAccountName: cloudflow-operator
+      restartPolicy: OnFailure
+      containers:
+        - name: main
+          image: alpine:3.12
+          command:
+            - /bin/ash
+            - "-c"
+            - |
+              apk update && apk add wget
+              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
+              NAME="spark-operator-sparkoperator"
+              API_VERSION=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.apiVersion}')
+              UUID=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.metadata.uid}')
+              KIND=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.kind}')
+              HOOK_NAME="spark-operator-sparkoperator-webhook-config"
+              JSON=$(cat <<EOF
+              {
+                "metadata": {
+                  "ownerReferences": [
+                    {
+                      "apiVersion": "$API_VERSION",
+                      "blockOwnerDeletion": true,
+                      "controller": true,
+                      "kind": "$KIND",
+                      "name": "$NAME",
+                      "uid": "$UUID"
+                    }
+                  ]
+                }
+              }
+              EOF
+              )
+              echo $JSON
+              kubectl patch MutatingWebhookConfiguration $HOOK_NAME -n cloudflow -p "$JSON"
+EOF2
+----
+
+Now we can apply the changes to the webhook.
+
+  kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
+
+That completes the installation of the Spark operator. 
+
+<INSERT OUTPUT OF kubectl get pods -n cloudflow HERE>
+
+== Installing the Flink operator
+If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application. As we can see below, the CLI will not allow you to deploy an application that does not have all dependencies installed.
+
+  $ kubectl cloudflow deploy cloudflow/examples/taxi-ride/target/taxi-ride-fare.json
+  [Error] cannot detect that Flink is installed, please install Flink before continuing (exit status 1)
+
+The Flink operator used is a version currently maintained by Lightbend and is the only Cloudflow compatible version currently.
+
+Install the Flink operator using the following Helm command:
+
+----
+helm install flink-operator
+https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz
+--namespace cloudflow --set operatorImageName="lightbend/flinkk8soperator" --set
+operatorVersion="v0.5.0”
+----
+
+This completes the installation of the Flink operator. 
+
+== Installing Enterprise components
+If you have a commercial agreement with Lightbend you are eligible to install the Cloudflow Enterprise components. 
+
+Before installing you need to make sure you have the credentials needed to download the Helm chart from the Lightbend commercial repository.
+
+Add the Lightbend Helm repository
+
+  helm repo add lightbend https://repo.lightbend.com/helm-charts/
+
+Update Helm to make sure all charts are up-to-date
+
+  helm repo update
+
+Install the components, note that you set the `$USERNAME` and `$PASSWORD` environment variables before executing this command. 
+
+We recommend using the following command to create an environment variable for username and password. 
+*This is to avoid storing this information in the shell’s history file.*
+
+  read -a USERNAME
+  read -a PASSWORD
+
+Now when the variables have been set, we can execute the command.
+ 
+----
+helm upgrade cloudflow-enterprise-components lightbend/cloudflow-enterprise-components \
+  --install \
+  --namespace cloudflow \
+  --set enterpriseOperatorVersion=2.0.8 \
+  --set enterprise-suite.imageCredentials.username="$USERNAME" \
+  --set enterprise-suite.imageCredentials.password="$PASSWORD"
+----
+
+After we have used the username and password environment variables, we can clear them either by closing the shell or executing the following commands:
+
+	unset USERNAME
+	unset PASSWORD
+
+To quickly verify that the installation worked, you can open a proxy to the Lightbend console service and verify that you can access the Lightbend console UI.
+
+First create the port-forward.
+
+  kubectl port-forward -n cloudflow svc/console-server 5000:80
+
+Then open the following URL in your browser:
+
+	https://localhost:5000
+
+You should now see the Lightbend console in your browser.
+
+		<INSERT IMAGE HERE>
+
+== Upgrading Cloudflow
+
+== What's next
+
+Now, we are ready to xref:deploy-to-gke-cluster.adoc[deploy an example application to the cluster].
