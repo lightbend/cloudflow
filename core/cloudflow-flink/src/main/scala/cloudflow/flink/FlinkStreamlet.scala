@@ -19,15 +19,15 @@ package cloudflow.flink
 import java.nio.file.Path
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Try}
+import scala.concurrent.{ Future, Promise }
+import scala.util.{ Failure, Try }
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.client.program.OptimizerPlanEnvironment
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.apache.flink.streaming.api.datastream.{DataStreamSink, DataStream => JDataStream}
+import org.apache.flink.streaming.api.datastream.{ DataStreamSink, DataStream => JDataStream }
 import org.apache.flink.streaming.api.environment.CheckpointConfig
 import org.apache.flink.streaming.api.scala._
 import cloudflow.streamlets.BootstrapInfo._
@@ -96,12 +96,15 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       case true =>
         // Copy all of the Flink parameters to configuration
         val configuration = new Configuration()
-        config.atPath(ClusterFlinkJobExecutor.flinkConfigPrefix).entrySet().forEach(
-          // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
-          // Values can be Int, bool, duratio and String
-          // For now treat everything as String
-          entry => configuration.setString(entry.getKey, entry.getValue.toString)
-        )
+        config
+          .atPath(ClusterFlinkJobExecutor.flinkConfigPrefix)
+          .entrySet()
+          .forEach(
+            // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
+            // Values can be Int, bool, duratio and String
+            // For now treat everything as String
+            entry => configuration.setString(entry.getKey, entry.getValue.toString)
+          )
         // Ensures that filesystem is initialized with right configuration
         FileSystem.initialize(configuration, null)
         StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
