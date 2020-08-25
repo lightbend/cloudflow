@@ -44,7 +44,7 @@ public class HttpServerTest extends JUnitSuite {
     }
 
     public HttpServerLogic createLogic() {
-      return HttpServerLogic.createDefault(this, outlet, fbu, getContext(), null);
+      return HttpServerLogic.createDefault(this, outlet, fbu, getContext());
     }
   }
 

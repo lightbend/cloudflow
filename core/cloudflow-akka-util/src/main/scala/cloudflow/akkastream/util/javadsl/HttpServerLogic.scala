@@ -41,8 +41,7 @@ object HttpServerLogic {
       server: Server,
       outlet: CodecOutlet[Out],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
-      context: AkkaStreamletContext,
-      rejectionHandler: RejectionHandler
+      context: AkkaStreamletContext
   ): HttpServerLogic =
     new HttpServerLogic(server, context) {
       implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
@@ -51,14 +50,8 @@ object HttpServerLogic {
 
       final override def createRoute(): akka.http.javadsl.server.Route =
         RouteAdapter.asJava(
-          rejectionHandler match {
-            case r if r != null =>
-              akkastream.util.scaladsl.HttpServerLogic
-                .defaultRoute(Some(rejectionHandler), sinkRef(outlet))
-            case _ =>
-              akkastream.util.scaladsl.HttpServerLogic
-                .defaultRoute(None, sinkRef(outlet))
-          }
+          akkastream.util.scaladsl.HttpServerLogic
+            .defaultRoute(None, sinkRef(outlet))
         )
     }
 
