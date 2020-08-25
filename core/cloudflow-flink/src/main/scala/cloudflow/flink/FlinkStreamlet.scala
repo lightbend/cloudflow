@@ -160,6 +160,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
    * Different strategy for execution of Flink jobs in local mode and in cluster
    */
   sealed trait FlinkJobExecutor extends Serializable {
+    // Is this a path that we want to use?
     val flinkConfigPrefix = "cloudflow.runtimes.flink.config.flink"
     def execute(): StreamletExecution
   }
