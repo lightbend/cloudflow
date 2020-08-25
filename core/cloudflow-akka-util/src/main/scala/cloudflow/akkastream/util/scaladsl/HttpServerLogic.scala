@@ -37,7 +37,9 @@ import cloudflow.akkastream._
  */
 object HttpServerLogic {
 
-  // Rejection handler to report errors
+  /**
+   * An example of rejection handler that can be used here is presented below
+
   def getRejectionHandler(context: AkkaStreamletContext): RejectionHandler =
     RejectionHandler
       .newBuilder()
@@ -70,11 +72,11 @@ object HttpServerLogic {
         }
       }
       .result()
-
+   */
   final def default[Out](
       server: Server,
       outlet: CodecOutlet[Out],
-      tag: String = "" // Tag so that one can distinguish between multiple ports in local testing
+      rejectionHandler: Option[RejectionHandler] = None
   )(implicit
     context: AkkaStreamletContext,
     fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
@@ -82,8 +84,8 @@ object HttpServerLogic {
       PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
         .andThen(implicitly[FromByteStringUnmarshaller[Out]])
 
-    new HttpServerLogic(server, tag) {
-      final override def route(): Route = defaultRoute(getRejectionHandler(context), sinkRef(outlet))
+    new HttpServerLogic(server) {
+      final override def route(): Route = defaultRoute(rejectionHandler, sinkRef(outlet))
     }
   }
 
@@ -100,17 +102,28 @@ object HttpServerLogic {
       final override def route(): Route = defaultStreamingRoute(sinkRef(outlet))
     }
 
-  final def defaultRoute[Out](handler: RejectionHandler, writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+  final def defaultRoute[Out](handler: Option[RejectionHandler], writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
     logRequest("defaultRoute") {
       logResult("defaultRoute") {
-        handleRejections(handler) {
-          (put | post) {
-            entity(as[Out]) { out ⇒
-              onSuccess(writer.write(out)) { _ ⇒
-                complete(StatusCodes.Accepted)
+        handler match {
+          case Some(h) =>
+            handleRejections(h) {
+              (put | post) {
+                entity(as[Out]) { out ⇒
+                  onSuccess(writer.write(out)) { _ ⇒
+                    complete(StatusCodes.Accepted)
+                  }
+                }
               }
             }
-          }
+          case _ =>
+            (put | post) {
+              entity(as[Out]) { out ⇒
+                onSuccess(writer.write(out)) { _ ⇒
+                  complete(StatusCodes.Accepted)
+                }
+              }
+            }
         }
       }
     }
@@ -165,8 +178,7 @@ object HttpServerLogic {
  * }}}
  */
 abstract class HttpServerLogic(
-    server: Server,
-    tag: String = ""
+    server: Server
 )(implicit context: AkkaStreamletContext)
     extends ServerStreamletLogic(server) {
 
@@ -182,21 +194,21 @@ abstract class HttpServerLogic(
     startServer(
       context,
       flow,
-      containerPort,
-      tag
+      containerPort
     )
 
   protected def startServer(
       context: AkkaStreamletContext,
       handler: Flow[HttpRequest, HttpResponse, _],
-      port: Int,
-      tag: String
+      port: Int
   ): Unit =
     Http()
       .bindAndHandle(handler, "0.0.0.0", port)
       .map { binding ⇒
         context.signalReady()
-        system.log.info(s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} with tag $tag")
+        system.log.info(
+          s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} for the streamlet ${context.streamletRef}"
+        )
         // this only completes when StreamletRef executes cleanup.
         context.onStop { () ⇒
           system.log.info(s"Unbinding from ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")

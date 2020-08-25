@@ -51,7 +51,7 @@ object HttpServerLogic {
       final override def createRoute(): akka.http.javadsl.server.Route =
         RouteAdapter.asJava(
           akkastream.util.scaladsl.HttpServerLogic
-            .defaultRoute(akkastream.util.scaladsl.HttpServerLogic.getRejectionHandler(context), sinkRef(outlet))
+            .defaultRoute(None, sinkRef(outlet))
         )
     }
 
