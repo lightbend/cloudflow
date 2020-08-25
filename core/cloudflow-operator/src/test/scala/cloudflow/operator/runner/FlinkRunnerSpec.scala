@@ -79,7 +79,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       replicas = None
     )
 
-    "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods spec" in {
+    "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods specs" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -184,7 +184,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.taskManagerConfig.labels.get("key2") mustBe Some("value2")
     }
 
-    "read from config DIFFERENT custom labels and add them to the jobmanager and taskmanager pods spec" in {
+    "read from config DIFFERENT custom labels and add them to the jobmanager and taskmanager pods specs" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -239,7 +239,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.taskManagerConfig.labels.get("key4") mustBe Some("value4")
     }
 
-    "read from config custom labels and add them to the jobmanager pods spec" in {
+    "read from config custom labels and add them to the jobmanager pod's spec" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -277,7 +277,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.taskManagerConfig.envConfig.get.env mustBe None
     }
 
-    "read from config custom labels and add them to the taskmanager pods spec" in {
+    "read from config custom labels and add them to the taskmanager pod's spec" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,

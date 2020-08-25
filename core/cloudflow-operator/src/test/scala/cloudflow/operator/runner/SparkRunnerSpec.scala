@@ -115,7 +115,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 
-    "read from config custom labels and add them to the driver pods specs" in {
+    "read from config custom labels and add them to the driver pod's spec" in {
 
       val crd = SparkRunner.resource(
         deployment = deployment,
@@ -151,7 +151,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.executor.labels.get("key2") mustBe None
     }
 
-    "read from config custom labels and add them to the executor pods specs" in {
+    "read from config custom labels and add them to the executor pod's spec" in {
 
       val crd = SparkRunner.resource(
         deployment = deployment,
