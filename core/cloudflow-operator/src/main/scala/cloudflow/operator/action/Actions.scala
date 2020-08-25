@@ -44,7 +44,7 @@ object Actions {
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
-      deployTopics(newApp, currentApp, deleteOutdatedTopics) ++
+      deployTopics(newApp, currentApp, namespace, deleteOutdatedTopics) ++
       deployRunners(newApp, currentApp, namespace) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
@@ -70,7 +70,7 @@ object Actions {
     val currentApp = None
 
     val savepointActions = if (deleteExistingTopics) {
-      deployTopics(app, currentApp)
+      deployTopics(app, currentApp, namespace)
     } else Seq()
 
     val actions = savepointActions ++ deployRunners(app, currentApp, namespace)
@@ -91,25 +91,15 @@ object Actions {
   private def deployTopics(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
+      namespace: String,
       deleteOutdatedTopics: Boolean = false
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    if (ctx.kafkaContext.useStrimzi) {
-      StrimziTopicActions(
-        newApp = newApp,
-        currentApp = currentApp,
-        strimziTopicOperatorNamespace = ctx.kafkaContext.strimziTopicOperatorNamespace.get,
-        strimziClusterName = ctx.kafkaContext.strimziClusterName.get,
-        partitionsPerTopic = ctx.kafkaContext.partitionsPerTopic,
-        replicationFactor = ctx.kafkaContext.replicationFactor,
-        deleteOutdatedTopics = deleteOutdatedTopics
-      )
-    } else {
-      TopicActions(
-        newApp = newApp,
-        currentApp = currentApp,
-        deleteOutdatedTopics = false
-      )
-    }
+    TopicActions(
+      newApp = newApp,
+      currentApp = currentApp,
+      namespace,
+      deleteOutdatedTopics
+    )
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,

@@ -42,6 +42,7 @@ object TopicActions {
   def apply(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
+      namespace: String,
       deleteOutdatedTopics: Boolean
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
@@ -55,7 +56,7 @@ object TopicActions {
     val deleteActions =
       if (deleteOutdatedTopics) {
         (currentTopics -- newTopics).toVector
-          .flatMap(topic => if (topic.managed) Some(deleteAction(labels)(topic)) else None)
+          .flatMap(topic => if (topic.managed) Some(deleteAction(namespace)(topic)) else None)
       } else {
         Vector.empty[Action[ObjectResource]]
       }
@@ -68,10 +69,9 @@ object TopicActions {
 
   type TopicResource = ConfigMap
 
-  def deleteAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) =
-//    val ns = ctx.kafkaContext.strimziTopicOperatorNamespace
-//    Action.delete[TopicResource](topic.name, ns)
-    ???
+  def deleteAction(namespace: String)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
+    Action.delete[ConfigMap](topicMetaName(topic), namespace)
+  }
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
     val bootstrapServers  = topic.bootstrapServers.getOrElse(ctx.kafkaContext.bootstrapServers)
@@ -86,26 +86,33 @@ object TopicActions {
           client: KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
         super.execute(client).flatMap { resourceCreatedAction =>
-          val options = new CreateTopicsOptions()
-          val result =
-            adminClient.createTopics(Collections.singleton(new NewTopic(topic.name, partitions, replicationFactor.toShort)), options)
-          result.all().asScala.map(_ => resourceCreatedAction)
+          createTopic().map(_ => resourceCreatedAction)
         }
+
+      private def createTopic() = {
+        val options = new CreateTopicsOptions()
+        val result =
+          adminClient.createTopics(Collections.singleton(new NewTopic(topic.name, partitions, replicationFactor.toShort)), options)
+        result.all().asScala
+      }
     }
   }
 
   def resource(topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): ConfigMap = {
-    val metadata = ObjectMeta(name = s"topic-${topic.name}", labels = labels(topic.name))
     ConfigMap(
-      metadata = metadata,
+      metadata = ObjectMeta(name = topicMetaName(topic), labels = labels(topic.name)),
       data = Map(
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
           "replicationFactor" -> replicationFactor.toString
         ) ++ topic.configMap
     )
+  }
+
+  private def topicMetaName(topic: TopicInfo) = {
+    s"topic-${topic.name}"
   }
 
   private val editor = new ObjectEditor[ConfigMap] {
