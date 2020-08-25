@@ -71,7 +71,7 @@ object FlinkRunner extends Runner[CR] {
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod))),
-      getLabels(podsConfig,TaskManagerPod)
+      getLabels(podsConfig, JobManagerPod)
     )
 
     val scale = deployment.replicas
@@ -80,7 +80,7 @@ object FlinkRunner extends Runner[CR] {
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod))),
-      getLabels(podsConfig,TaskManagerPod)
+      getLabels(podsConfig, TaskManagerPod)
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -313,14 +313,14 @@ object FlinkResource {
       replicas: Option[Int],
       resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig],
-      labels: Map[String,String] = Map()
+      labels: Map[String, String] = Map()
   )
 
   final case class TaskManagerConfig(
       taskSlots: Option[Int],
       resources: Option[Requirements] = None,
       envConfig: Option[EnvConfig],
-      labels: Map[String,String] = Map()
+      labels: Map[String, String] = Map()
   )
 
   /*
