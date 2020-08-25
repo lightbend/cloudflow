@@ -96,9 +96,9 @@ object HttpServerLogic {
 }
 
 /**
- * [[ServerStreamletLogic]] for accepting HTTP requests.
+ * [[cloudflow.akkastream.ServerStreamletLogic]] for accepting HTTP requests.
  * The HttpServerLogic requires a `Server` to be passed in when it is created. You need to pass in a Server to create it
- * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
+ * [[cloudflow.akkastream.AkkaServerStreamlet]] extends [[cloudflow.akkastream.Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
  * {{{
  *  import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._

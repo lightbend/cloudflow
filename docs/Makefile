@@ -73,7 +73,7 @@ list-todos: html
 
 # Generate the ScalaDoc and the JavaDoc, and put it in ${output}/scaladoc and ${output}/javadoc
 javascaladoc: 
-	-(cd ${ROOT_DIR}/core && sbt clean unidoc )
+	cd ${ROOT_DIR}/core && sbt clean unidoc
 
 javascaladoc_staged: ${javascaladoc_dir} javascaladoc
 	cp -r ${ROOT_DIR}/core/target/scala-2.12/unidoc ${javascaladoc_dir}/scaladoc

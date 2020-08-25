@@ -90,9 +90,9 @@ object HttpServerLogic {
 }
 
 /**
- * [[ServerStreamletLogic]] for accepting HTTP requests.
+ * [[cloudflow.akkastream.ServerStreamletLogic]] for accepting HTTP requests.
  * Requires a `Server` to be passed in when it is created.
- * [[AkkaServerStreamlet]] extends [[Server]], which can be used for this purpose.
+ * [[cloudflow.akkastream.AkkaServerStreamlet]] extends [[cloudflow.akkastream.Server]], which can be used for this purpose.
  * When you define the logic inside the streamlet, you can just pass in `this`:
  *
  * [[HttpServerLogic]] also predefined logics (`HttpServerLogic.createDefault` and `HttpServerLogic.createDefaultStreaming`)
