@@ -85,10 +85,10 @@ trait AkkaStreamletContext extends StreamletContext {
   /**
    * Signals that the streamlet is ready to process data.
    *
-   * When a streamlet is run using `AkkaStreamletTestkit.run`, a [[cloudflow.akkastream.StreamletExecution StreamletExecution]] is returned.
-   * `signalReady` completes the [[cloudflow.akkastream.StreamletExecution.ready ready]] future.
-   * [[cloudflow.akkastream.StreamletExecution.ready ready]] can be used for instance to wait
-   * for a [[cloudflow.akkastream.Server Server]] streamlet to signal that it is ready to accept requests.
+   * When a streamlet is run using `AkkaStreamletTestkit.run`, a [[cloudflow.streamlets.StreamletExecution StreamletExecution]] is returned.
+   * `signalReady` completes the [[cloudflow.streamlets.StreamletExecution#ready ready]] future.
+   * [[cloudflow.streamlets.StreamletExecution#ready ready]] can be used for instance to wait
+   * for a [[cloudflow.akkastream.Server Server]] to signal that it is ready to accept requests.
    *
    * @return {@code true} if and only if successfully signalled. Otherwise {@code false}.
    */

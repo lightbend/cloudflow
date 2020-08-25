@@ -4,6 +4,18 @@ import Library._
 import sbtdocker.Instructions
 import sbtrelease.ReleaseStateTransformations._
 
+val javadocDisabledFor = Set(
+  // link to URL is not correctly mapped by genjavadoc (https://github.com/lightbend/genjavadoc/issues/43#issuecomment-60261931)
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/RegExpConfigParameter$.java",
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/DurationConfigParameter$.java",
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/MemorySizeConfigParameter$.java",
+
+  // '@throws' in scaladoc but there is now 'throws' clause on the method
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletContext.java",
+  "/cloudflow-akka/target/java/cloudflow/akkastream/AkkaStreamletLogic.java",
+  "/cloudflow-spark/target/java/cloudflow/spark/SparkStreamletLogic.java",
+)
+
 lazy val root =
   Project(id = "root", base = file("."))
     .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, ScalafmtPlugin)
@@ -12,6 +24,9 @@ lazy val root =
       skip in publish := true,
       scalafmtOnCompile := true,
       commands += InternalReleaseCommand.command,
+      unidocAllSources in (JavaUnidoc, unidoc) ~= { v =>
+        v.map(_.filterNot(f => javadocDisabledFor.exists(f.getAbsolutePath.endsWith(_))))
+      },
       unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
             streamlets,
             akkastream,

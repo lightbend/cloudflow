@@ -38,10 +38,6 @@ import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
  * Override the `run` method to implement the specific logic / code that should be executed once the streamlet deployed
  * as part of a running cloudflow application.
  * See `RunnableGraphStreamletLogic` if you just want to create a RunnableGraph.
- *
- * The usual process consists of getting akka stream Sources to inlets with [[atLeastOnceSource]] or [[atMostOnceSource]],
- * consuming elements from these using akka stream operators, and writing to outlets via Sinks that are provided by
- * [[[atLeastOnceSink[T](outlet* atLeastOnceSink]]] or [[atMostOnceSink]].
  */
 abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) extends StreamletLogic[AkkaStreamletContext] {
 
@@ -66,8 +62,8 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
 
   /**
    * Signals that the streamlet is ready to process data.
-   * `signalReady` completes the [[StreamletExecution.ready]] future. When a streamlet is run using the testkit, a [[StreamletExecution]] is returned.
-   * [[StreamletExecution.ready]] can be used for instance to wait
+   * `signalReady` completes the [[cloudflow.streamlets.StreamletExecution#ready]] future. When a streamlet is run using the testkit, a [[cloudflow.streamlets.StreamletExecution]] is returned.
+   * [[cloudflow.streamlets.StreamletExecution#ready]] can be used for instance to wait
    * for a server streamlet to signal that it is ready to accept requests.
    */
   final def signalReady() = context.signalReady()
@@ -104,7 +100,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * This is useful when "at-least once delivery" is desired, as each message will likely be
    * delivered one time, but in failure cases, they can be duplicated.
    *
-   * It is intended to be used with `sinkWithOffsetContext(outlet: CodecOutlet[T])` or [[Committer.sinkWithOffsetContext]],
+   * It is intended to be used with `sinkWithOffsetContext(outlet: CodecOutlet[T])` or [[akka.kafka.scaladsl.Committer#sinkWithOffsetContext]],
    * which both commit the offset positions that accompany the records, read from this source.
    * `sinkWithOffsetContext(outlet: CodecOutlet[T])` should be used if you want to commit the offset positions after records have been written to the specified `outlet`.
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
@@ -250,7 +246,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getPlainSink[T](outlet: CodecOutlet[T]): akka.stream.javadsl.Sink[T, NotUsed] = plainSink(outlet).asJava
 
   /**
-   * The [[CommitterSettings]] that have been configured
+   * The [[akka.kafka.CommitterSettings]] that have been configured
    * from the default configuration
    * `akka.kafka.committer`.
    */
@@ -401,7 +397,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    *
    * A [[cloudflow.streamlets.Streamlet]] can specify the set of environment-
    * and instance-specific configuration keys it will use during runtime
-   * through [[cloudflow.streamlets.Streamlet.configParameters]]. Those keys will
+   * through [[cloudflow.streamlets.Streamlet#configParameters]]. Those keys will
    * then be made available through this configuration.
    */
   final def streamletConfig: Config = context.streamletConfig
