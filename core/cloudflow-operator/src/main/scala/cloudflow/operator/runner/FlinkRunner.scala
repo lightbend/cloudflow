@@ -70,7 +70,8 @@ object FlinkRunner extends Runner[CR] {
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod))),
+      getLabels(podsConfig,TaskManagerPod)
     )
 
     val scale = deployment.replicas
@@ -78,7 +79,8 @@ object FlinkRunner extends Runner[CR] {
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod))),
+      getLabels(podsConfig,TaskManagerPod)
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -112,7 +114,7 @@ object FlinkRunner extends Runner[CR] {
           name = name,
           namespace = namespace,
           annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
-          labels = labels ++ getLabels(podsConfig, PodsConfig.CloudflowPodName),
+          labels = labels,
           ownerReferences = ownerReferences
         )
       )
@@ -310,13 +312,15 @@ object FlinkResource {
   final case class JobManagerConfig(
       replicas: Option[Int],
       resources: Option[Requirements] = None,
-      envConfig: Option[EnvConfig]
+      envConfig: Option[EnvConfig],
+      labels: Map[String,String] = Map()
   )
 
   final case class TaskManagerConfig(
       taskSlots: Option[Int],
       resources: Option[Requirements] = None,
-      envConfig: Option[EnvConfig]
+      envConfig: Option[EnvConfig],
+      labels: Map[String,String] = Map()
   )
 
   /*
