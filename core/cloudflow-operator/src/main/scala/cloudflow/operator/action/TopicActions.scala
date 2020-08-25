@@ -23,8 +23,9 @@ import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import com.typesafe.config.Config
-import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
+import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, ListTopicsOptions, NewTopic }
 import org.apache.kafka.common.KafkaFuture
+import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
 import skuber._
 import skuber.api.client.KubernetesClient
@@ -33,45 +34,28 @@ import skuber.json.format._
 import scala.collection.immutable._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.jdk.CollectionConverters._
 
 /**
- * Creates a sequence of resource actions for the savepoint changes
- * between a current application and a new application.
+ * Creates topic actions for managed topics.
  */
 object TopicActions {
-  def apply(
-      newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      namespace: String,
-      deleteOutdatedTopics: Boolean
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+
+  private val log = LoggerFactory.getLogger(TopicActions.getClass)
+
+  def apply(newApp: CloudflowApplication.CR)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
-      app.deployments.flatMap(_.portMappings.values.map(topic => TopicInfo(topic))).toSet
+      app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
+
+    val managedTopics = distinctTopics(newApp.spec)
 
     val labels = CloudflowLabels(newApp)
-
-    val currentTopics = currentApp.map(cr => distinctTopics(cr.spec)).getOrElse(Set.empty[TopicInfo])
-    val newTopics     = distinctTopics(newApp.spec)
-
-    val deleteActions =
-      if (deleteOutdatedTopics) {
-        (currentTopics -- newTopics).toVector
-          .flatMap(topic => if (topic.managed) Some(deleteAction(namespace)(topic)) else None)
-      } else {
-        Vector.empty[Action[ObjectResource]]
-      }
-
-    val createActions =
-      (newTopics -- currentTopics).toVector
-        .flatMap(topic => if (topic.managed) Some(createAction(labels)(topic)) else None)
-    deleteActions ++ createActions
+    val actions =
+      managedTopics.toVector.map(topic => createAction(labels)(topic))
+    actions
   }
 
   type TopicResource = ConfigMap
-
-  def deleteAction(namespace: String)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
-    Action.delete[ConfigMap](topicMetaName(topic), namespace)
-  }
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
     val bootstrapServers  = topic.bootstrapServers.getOrElse(ctx.kafkaContext.bootstrapServers)
@@ -89,31 +73,36 @@ object TopicActions {
           createTopic().map(_ => resourceCreatedAction)
         }
 
-      private def createTopic() = {
-        val options = new CreateTopicsOptions()
-        val result =
-          adminClient.createTopics(Collections.singleton(new NewTopic(topic.name, partitions, replicationFactor.toShort)), options)
-        result.all().asScala
-      }
+      private def topicExists(name: String)(implicit executionContext: ExecutionContext) =
+        adminClient.listTopics().namesToListings().asScala.map(_.asScala.toMap).map(_.contains(name))
+
+      private def createTopic()(implicit ec: ExecutionContext) =
+        topicExists(topic.name).flatMap { exists =>
+          if (exists) {
+            log.info("Managed topic [{}] exists already, ignoring", topic.name)
+            Future.successful(akka.Done)
+          } else {
+            log.info("Creating managed topic [{}]", topic.name)
+            val result =
+              adminClient.createTopics(Collections.singleton(new NewTopic(topic.name, partitions, replicationFactor.toShort)),
+                                       new CreateTopicsOptions())
+            result.all().asScala.map(_ => akka.Done)
+          }
+        }
     }
   }
 
   def resource(topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
-  ): ConfigMap = {
+  ): ConfigMap =
     ConfigMap(
-      metadata = ObjectMeta(name = topicMetaName(topic), labels = labels(topic.name)),
+      metadata = ObjectMeta(name = s"topic-${topic.name}", labels = labels(topic.name)),
       data = Map(
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
           "replicationFactor" -> replicationFactor.toString
         ) ++ topic.configMap
     )
-  }
-
-  private def topicMetaName(topic: TopicInfo) = {
-    s"topic-${topic.name}"
-  }
 
   private val editor = new ObjectEditor[ConfigMap] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
