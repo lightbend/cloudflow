@@ -115,7 +115,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 
-    "read labels for pod and adding them to driver" in {
+    "read from config custom labels and add them to the driver pods specs" in {
 
       val crd = SparkRunner.resource(
         deployment = deployment,
@@ -124,7 +124,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
           metadata = ObjectMeta(),
           data = Map(
             cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
-              """
+                """
                 |kubernetes.pods.driver {
                 | labels: {
                 |            "key1" : "value1",
@@ -151,7 +151,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.executor.labels.get("key2") mustBe None
     }
 
-    "read labels for pod and adding them to executor" in {
+    "read from config custom labels and add them to the executor pods specs" in {
 
       val crd = SparkRunner.resource(
         deployment = deployment,
@@ -160,7 +160,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
           metadata = ObjectMeta(),
           data = Map(
             cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
-              """
+                """
                 |kubernetes.pods.executor {
                 | labels: {
                 |            "key1" : "value1",
@@ -187,7 +187,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.driver.labels.get("key2") mustBe None
     }
 
-    "read labels for pod and adding them to driver and executor" in {
+    "read from config custom labels and add them to the driver and executor pods specs" in {
 
       val crd = SparkRunner.resource(
         deployment = deployment,
@@ -221,6 +221,61 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.executor.labels.get("key1") mustBe Some("value1")
       crd.spec.driver.labels.get("key2") mustBe Some("value2")
       crd.spec.executor.labels.get("key2") mustBe Some("value2")
+    }
+
+    "read from config DIFFERENT custom labels and add them to the driver and executor pods specs" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods {
+                |  driver {
+                |    labels: {
+                |            "key1" : "value1",
+                |            "key2" : "value2"
+                |            }
+                |    containers.container {
+                |      env = [
+                |       {
+                |        name = "FOO"
+                |        value = "BAR"
+                |        }
+                |      ]
+                |     }
+                |  }
+                |  executor {
+                |     labels: {
+                |            "key3" : "value3",
+                |            "key4" : "value4"
+                |             }
+                |     containers.container {
+                |        env = [
+                |         {
+                |           name = "FFF"
+                |           value = "BBB"
+                |          }
+                |        ]
+                |     }
+                |  }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.driver.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.executor.env.get mustBe Vector(EnvVar("FFF", EnvVar.StringValue("BBB")))
+
+      crd.spec.driver.labels.get("key1") mustBe Some("value1")
+      crd.spec.driver.labels.get("key2") mustBe Some("value2")
+      crd.spec.executor.labels.get("key3") mustBe Some("value3")
+      crd.spec.executor.labels.get("key4") mustBe Some("value4")
     }
 
     "convert the CRD to/from Json" in {

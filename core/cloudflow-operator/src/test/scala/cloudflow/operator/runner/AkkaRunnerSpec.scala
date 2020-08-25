@@ -19,7 +19,6 @@ package cloudflow.operator.runner
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
-import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import play.api.libs.json._
@@ -39,7 +38,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
 
-  "SparkRunner" should {
+  "AkkaRunner" should {
 
     val appId      = "some-app-id"
     val appVersion = "42-abcdef0"
@@ -78,17 +77,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
       replicas = None
     )
 
-    val volumes = List(
-      Volume("persistent-storage", Volume.PersistentVolumeClaimRef(s"$appId-pvc")),
-      Runner.DownwardApiVolume
-    )
-
-    val volumeMounts = List(
-      Volume.Mount("persistent-storage", "/mnt/spark/storage"),
-      Runner.DownwardApiVolumeMount
-    )
-
-    "read labels for pod and adding them to driver and executor" in {
+    "read from config custom labels and add them to the pod spec" in {
 
       val crd = AkkaRunner.resource(
         deployment = deployment,
@@ -119,6 +108,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
       )
 
       crd.spec.get.template.metadata.labels.get("key1") mustBe Some("value1")
+      crd.spec.get.template.metadata.labels.get("key2") mustBe Some("value2")
 
     }
   }
