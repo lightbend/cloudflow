@@ -70,8 +70,7 @@ object FlinkRunner extends Runner[CR] {
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerSettings.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod))),
-      getLabels(podsConfig, JobManagerPod)
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
     )
 
     val scale = deployment.replicas
@@ -79,8 +78,7 @@ object FlinkRunner extends Runner[CR] {
     val taskManagerConfig = TaskManagerConfig(
       Some(taskManagerSettings.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod))),
-      getLabels(podsConfig, TaskManagerPod)
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
     )
 
     val flinkConfig: Map[String, String] = Map(
@@ -105,7 +103,9 @@ object FlinkRunner extends Runner[CR] {
     val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId).mapValues(Name.ofLabelValue)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
+            .mapValues(Name.ofLabelValue) ++
+          getLabels(podsConfig, PodsConfig.CloudflowPodName)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
     CustomResource[Spec, Status](_spec)
@@ -312,15 +312,13 @@ object FlinkResource {
   final case class JobManagerConfig(
       replicas: Option[Int],
       resources: Option[Requirements] = None,
-      envConfig: Option[EnvConfig],
-      labels: Map[String, String] = Map()
+      envConfig: Option[EnvConfig]
   )
 
   final case class TaskManagerConfig(
       taskSlots: Option[Int],
       resources: Option[Requirements] = None,
-      envConfig: Option[EnvConfig],
-      labels: Map[String, String] = Map()
+      envConfig: Option[EnvConfig]
   )
 
   /*
