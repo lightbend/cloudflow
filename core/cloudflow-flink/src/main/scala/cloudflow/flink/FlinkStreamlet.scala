@@ -21,7 +21,7 @@ import java.nio.file.Path
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ Future, Promise }
 import scala.util.{ Failure, Try }
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigValueType }
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -80,33 +80,47 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       streamletDefinition ← StreamletDefinition.read(config)
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
-      new FlinkStreamletContextImpl(streamletDefinition, createExecutionEnvironment(updatedConfig), updatedConfig)
+      new FlinkStreamletContextImpl(streamletDefinition,
+                                    createExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef),
+                                    updatedConfig)
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
   /**
+   * Populate Flink configuration from Streamlet Flink configuration
+   */
+  private def populateFlinkConfiguration(configuration: Configuration, config: Config): Unit =
+    config
+      .entrySet()
+      .forEach {
+        // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
+        // Values can be Int, bool, duratio and String
+        // We are not supporting Duration here
+        entry =>
+          entry.getValue.valueType() match {
+            case ConfigValueType.BOOLEAN => configuration.setBoolean(entry.getKey, entry.getValue.asInstanceOf[Boolean])
+            case ConfigValueType.NUMBER  => configuration.setInteger(entry.getKey, entry.getValue.asInstanceOf[Int])
+            case _                       => configuration.setString(entry.getKey, entry.getValue.toString)
+          }
+      }
+
+  /**
    * Creates the Flink StreamExecutionEnvironment and by default sets up exactly-once checkpointing.
    * @see [[setupExecutionEnvironment]] to modify the StreamExecutionEnvironment that is created by this method.
    */
-  protected def createExecutionEnvironment(config: Config): StreamExecutionEnvironment = {
+  protected def createExecutionEnvironment(config: Config, streamlet: String): StreamExecutionEnvironment = {
 
     val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
     val env = localMode match {
       case true =>
-        // Copy all of the Flink parameters to configuration
         val configuration = new Configuration()
-        config
-          .atPath(ClusterFlinkJobExecutor.flinkConfigPrefix)
-          .entrySet()
-          .forEach(
-            // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
-            // Values can be Int, bool, duratio and String
-            // For now treat everything as String
-            entry => configuration.setString(entry.getKey, entry.getValue.toString)
-          )
+        // Copy all of the Flink parameters to configuration
+        populateFlinkConfiguration(configuration, config.atPath(ClusterFlinkJobExecutor.flinkRuntime))
+        populateFlinkConfiguration(configuration, config.atPath(ClusterFlinkJobExecutor.streamletRuntimeConfigPath(streamlet)))
         // Ensures that filesystem is initialized with right configuration
         FileSystem.initialize(configuration, null)
+        // Create local Flink environment
         StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
       case false =>
         StreamExecutionEnvironment.getExecutionEnvironment
@@ -161,7 +175,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
    */
   sealed trait FlinkJobExecutor extends Serializable {
     // Is this a path that we want to use?
-    val flinkConfigPrefix = "cloudflow.runtimes.flink.config.flink"
+    val flinkRuntime                                      = "cloudflow.runtimes.flink.config.flink"
+    def streamletRuntimeConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.config"
     def execute(): StreamletExecution
   }
 
