@@ -305,24 +305,26 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
 	if labelsConfig := podConfig.GetConfig("labels"); labelsConfig != nil && labelsConfig.Root().IsObject() {
-						for k,v := range labelsConfig.Root().GetObject().Items(){
-							if(strings.ContainsAny(v.String(),"{") || v.IsEmpty()) {
-								return fmt.Errorf("key %s has an invalid value %s",k,v)
-							}
-						}
-						if(podName == "task-manager"  || podName == "job-manager"){
-							return fmt.Errorf("`flink.pods.%s.labels` is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as `flink.pods.pod.labels`", podName, podName)
-						}
+		for k, v := range labelsConfig.Root().GetObject().Items() {
+			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
+				return fmt.Errorf("key %s has an invalid value %s", k, v)
+			}
+		}
+		if podName == "task-manager" || podName == "job-manager" {
+			return fmt.Errorf("`flink.pods.%s.labels` is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as `flink.pods.pod.labels`", podName, podName)
+		}
 	}
-	return nil	
-				
+	return nil
+
 }
 
 func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string) error {
 	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
 		for podName := range podsConfig.Root().GetObject().Items() {
 			if podConfig := podsConfig.GetConfig(podName); podConfig != nil && podConfig.Root().IsObject() {
-				if err := validateLabels(podConfig,podName); err != nil { return err } 
+				if err := validateLabels(podConfig, podName); err != nil {
+					return err
+				}
 				if containersConfig := podConfig.GetConfig(containersKey); containersConfig != nil && containersConfig.Root().IsObject() {
 					for containerName := range containersConfig.Root().GetObject().Items() {
 						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
