@@ -371,9 +371,6 @@ func Test_validateConfig(t *testing.T) {
 	}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty, spec))
-	//The error we get is not the correct one but https://github.com/go-akka/configuration
-	// lacks the capabilities to find the config above shouldn't pass basic parsing. It should get the following error:
-	//String: 4: Key 'key1' may not be followed by token: '}' (if you intended '}' to be part of a key or string value, try enclosing the key or value in double quotes)
 	fmt.Println(validateConfig(badLabelConfigSectionEmpty, spec))
 
 	badLabelConfigSectionEmpty2 := newConfig(`
