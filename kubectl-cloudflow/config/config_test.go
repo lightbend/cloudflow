@@ -312,8 +312,8 @@ func Test_validateConfig(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(unknownStreamletConfigSection, spec))
 
 	labelConfigSection := newConfig(`
-     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
-		 	 labels {
+     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {		 	
+			 labels {
 		 	 	key1 = value1
 		 	 	key2 = value2
 		 	 }
@@ -328,15 +328,80 @@ func Test_validateConfig(t *testing.T) {
 		            }
 		        }
 			 }
+			 
 	}
 	`)
 
 	assert.Empty(t, validateConfig(labelConfigSection, spec))
 
 	badLabelConfigSectionEmpty := newConfig(`
-     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
-		 	 labels {
-		 	 	key1
+     cloudflow.runtimes.flink.kubernetes.pods{
+     		task-manager {	 	 
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	key1 
+		 	 }
+		 	}
+		 	job-manager {	 	 
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	key2 : value2
+		 	 }
+		 	}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty, spec))
+	//The error we get is not the correct one but https://github.com/go-akka/configuration
+	// lacks the capabilities to find the config above shouldn't pass basic parsing. It should get the following error:
+	//String: 4: Key 'key1' may not be followed by token: '}' (if you intended '}' to be part of a key or string value, try enclosing the key or value in double quotes)
+	fmt.Println(validateConfig(badLabelConfigSectionEmpty, spec))
+
+	badLabelConfigSectionEmpty2 := newConfig(`
+     cloudflow.runtimes.flink.kubernetes.pods.pod {
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	key1 
+		 	 }
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty2, spec))
+	fmt.Println(validateConfig(badLabelConfigSectionEmpty2, spec))
+
+	badLabelTooSpecific := newConfig(`
+     cloudflow.runtimes.flink.kubernetes.pods{
+     		task-manager {	 	 
+     		 labels {
+		 	 	key1 : value1
 		 	 }
 			 containers.container {
 			 	resources {
@@ -349,13 +414,30 @@ func Test_validateConfig(t *testing.T) {
 		            }
 		        }
 			 }
+			
+		 	}
+		 	job-manager {	 	 
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	key1 : value1
+		 	 }
+		 	}
 	}
 	`)
-	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty, spec))
-	//The error we get is not the correct one but https://github.com/go-akka/configuration
-	// lacks the capabilities to find the config above shouldn't pass basic parsing. It should get the following error:
-	//String: 4: Key 'key1' may not be followed by token: '}' (if you intended '}' to be part of a key or string value, try enclosing the key or value in double quotes)
-	fmt.Println(validateConfig(badLabelConfigSectionEmpty, spec))
+	assert.NotEmpty(t, validateConfig(badLabelTooSpecific, spec))
+	// more info in https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1beta1/types.go
+	// metav1.ObjectMeta only exists in type `FlinkApplication` not in `TaskManagerConfig` nor `JobManagerConfig`
+	fmt.Println(validateConfig(badLabelTooSpecific, spec))
 
 	unknownRuntimeConfigSection := newConfig(`
      cloudflow.runtimes {
