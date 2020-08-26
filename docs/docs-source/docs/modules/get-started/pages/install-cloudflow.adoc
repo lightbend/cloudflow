@@ -321,8 +321,6 @@ Then open the following URL in your browser:
 
 You should now see the Lightbend console in your browser.
 
-		<INSERT IMAGE HERE>
-
 == Upgrading Cloudflow
 
 == What's next
