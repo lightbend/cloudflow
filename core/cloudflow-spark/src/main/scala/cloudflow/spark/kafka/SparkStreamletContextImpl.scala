@@ -21,7 +21,7 @@ import java.io.File
 import com.typesafe.config.Config
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.{ ExpressionEncoder, RowEncoder }
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.spark.SparkStreamletContext
 import cloudflow.spark.avro.{ SparkAvroDecoder, SparkAvroEncoder }
 import cloudflow.spark.sql.SQLImplicits._
@@ -73,8 +73,13 @@ class SparkStreamletContextImpl(
     case (key, value) => s"kafka.$key" -> value
   }
 
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(implicit encoder: Encoder[Out],
-                                                                                                typeTag: TypeTag[Out]): StreamingQuery = {
+  def writeStream[Out](stream: Dataset[Out],
+                       outPort: CodecOutlet[Out],
+                       outputMode: OutputMode,
+                       trigger: Trigger = Trigger.ProcessingTime(0L))(
+      implicit encoder: Encoder[Out],
+      typeTag: TypeTag[Out]
+  ): StreamingQuery = {
 
     val avroEncoder   = new SparkAvroEncoder[Out](outPort.schemaAsString)
     val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
@@ -95,6 +100,7 @@ class SparkStreamletContextImpl(
       .options(kafkaProducerMap(topic))
       .option("topic", destTopic)
       .option("checkpointLocation", checkpointLocation)
+      .trigger(trigger)
       .start()
   }
 
