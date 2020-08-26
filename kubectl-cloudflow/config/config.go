@@ -32,6 +32,7 @@ const kubernetesKey = "kubernetes"
 const podsKey = "pods"
 const cloudflowPodName = "pod"
 const labels = "labels"
+const maxLabelLength = 63
 const cloudflowContainerName = "container"
 const containersKey = "containers"
 const resourcesKey = "resources"
@@ -310,7 +311,13 @@ func validateLabels(podConfig *configuration.Config, podName string) error {
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
 		for k, v := range labelsConfig.Root().GetObject().Items() {
 			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
-				return fmt.Errorf("key '%s' has an invalid value '%s'", k, v)
+				return fmt.Errorf("label with key '%s' has a value that can't be parsed: '%s'", k, v)
+			}
+			if len(v.String()) > maxLabelLength {
+				return fmt.Errorf("label with value '%s' is longer than 63 characters", v)
+			}
+			if len(k) > maxLabelLength {
+				return fmt.Errorf("label with key '%s' is longer than 63 characters", k)
 			}
 		}
 		if podName == taskManager || podName == jobManager {

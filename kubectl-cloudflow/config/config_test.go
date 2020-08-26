@@ -394,6 +394,48 @@ func Test_validateConfig(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty2, spec))
 	fmt.Println(validateConfig(badLabelConfigSectionEmpty2, spec))
 
+	badLabelTooLong := newConfig(`
+     cloudflow.runtimes.flink.kubernetes.pods.pod {
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	keyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz :  value2
+		 	 }
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelTooLong, spec))
+	fmt.Println(validateConfig(badLabelTooLong, spec))
+
+	badLabelTooLong2 := newConfig(`
+     cloudflow.runtimes.flink.kubernetes.pods.pod {
+			 containers.container {
+			 	resources {
+		            requests {
+		              cpu = 2
+		              memory = "512M"
+		            }
+		            limits {
+		              memory = "1024M"
+		            }
+		        }
+			 }
+			 labels {
+		 	 	key1 : valueabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+		 	 }
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelTooLong2, spec))
+	fmt.Println(validateConfig(badLabelTooLong2, spec))
+
 	badLabelTooSpecific := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods{
      		task-manager {	 	 
