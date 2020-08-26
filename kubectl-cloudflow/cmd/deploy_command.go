@@ -384,14 +384,21 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 	runnerTypes["flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
-		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
+		versionBytes, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath='{$.spec.versions[*].name}'").Output()
+		versions := strings.Trim(string(versionBytes), " ")
 		if err != nil {
-			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing (%v)", prettyName, prettyName, err.Error())
+			return fmt.Errorf("cannot detect that '%s' is installed, please install '%s' before continuing (%v)", prettyName, prettyName, err.Error())
 		}
-		if string(version) != expectedVersion {
-			return fmt.Errorf("%s is installed but the wrong version, required %s, installed %s", prettyName, expectedVersion, string(version))
+		versionsArray := strings.Split(versions, " ")
+		for _, v := range versionsArray {
+			if v == expectedVersion {
+				return nil
+			}
 		}
-		return nil
+		if len(versions) == 0 {
+			return fmt.Errorf("cannot detect the installed version of the CRD '%s'", prettyName)
+		}
+		return fmt.Errorf("'%s' is installed but the wrong version, required '%s', installed '%s'", prettyName, expectedVersion, strings.Join(versionsArray, (",")))
 	}
 
 	runnersInApplicationSpec := make(map[string]bool)
