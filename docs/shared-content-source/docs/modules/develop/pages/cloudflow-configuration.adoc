@@ -147,7 +147,7 @@ cloudflow.streamlets.my-streamlet {
 The above example shows that `500mcpu` is requested, as well as `512Mi` of memory. 
 The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable
-and how to set labels to pod's first level section `metadata.labels`. 
+and how to add labels to a pod. 
 
 For runtimes that only deploy one pod per streamlet, the config path for the container settings is `kubernetes.pods.pod.containers.container`.
 
