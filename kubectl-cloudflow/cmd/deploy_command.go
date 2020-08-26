@@ -398,7 +398,7 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 		if len(versions) == 0 {
 			return fmt.Errorf("cannot detect the installed version of the CRD '%s'", prettyName)
 		}
-		return fmt.Errorf("'%s' is installed but the wrong version, required '%s', installed '%s'", prettyName, expectedVersion, strings.Join(versionsArray, (",")))
+		return fmt.Errorf("'%s' is installed but does not support the required version of the CRD, required '%s', installed '%s'", prettyName, expectedVersion, strings.Join(versionsArray, (",")))
 	}
 
 	runnersInApplicationSpec := make(map[string]bool)
