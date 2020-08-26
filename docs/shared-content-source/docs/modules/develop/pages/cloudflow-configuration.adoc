@@ -172,7 +172,7 @@ For Flink you can use the following paths:
 
 You can also specify the Kubernetes container settings for all streamlets using a particular runtime. 
 
-Is important to clarify that flink configuration will not be able to set different labels to its pods. This is `task-manager` and `job-manager`. Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. Spark on the other hand can deal with different labeling for `driver` and `executor`.
+Is important to clarify that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. For Spark you can add labels specifically for a `driver` and/or `executor` pod.
  
 This is shown in the example below:
 
