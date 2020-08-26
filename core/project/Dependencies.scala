@@ -72,6 +72,7 @@ object Library {
   val FlinkStreaming         = "org.apache.flink"      %% "flink-streaming-scala"    % Version.Flink
   val FlinkAvro              = "org.apache.flink"       % "flink-avro"               % Version.Flink
   val FlinkKafka             = "org.apache.flink"      %% "flink-connector-kafka"    % Version.Flink
+  val FlinkWeb               = "org.apache.flink"      %% "flink-runtime-web"        % Version.Flink
 
   val FastClasspathScanner  = "io.github.lukehutch"   %  "fast-classpath-scanner"   % "2.21"
   val ScalaCheck            = "org.scalacheck"        %% "scalacheck"               % "1.14.0"

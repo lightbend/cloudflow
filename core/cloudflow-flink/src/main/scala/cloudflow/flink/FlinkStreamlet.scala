@@ -90,20 +90,27 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
   /**
    * Populate Flink configuration from Streamlet Flink configuration
    */
-  private def populateFlinkConfiguration(configuration: Configuration, config: Config): Unit =
+  private def populateFlinkConfiguration(configuration: Configuration, config: Config, path: String): Boolean = {
+    var enableWeb = false
     config
+      .atPath(path)
       .entrySet()
       .forEach {
         // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
         // Values can be Int, bool, duratio and String
         // We are not supporting Duration here
         entry =>
+          // Remove the path from the key
+          val key = entry.getKey.replace(path, "")
           entry.getValue.valueType() match {
-            case ConfigValueType.BOOLEAN => configuration.setBoolean(entry.getKey, entry.getValue.asInstanceOf[Boolean])
-            case ConfigValueType.NUMBER  => configuration.setInteger(entry.getKey, entry.getValue.asInstanceOf[Int])
-            case _                       => configuration.setString(entry.getKey, entry.getValue.toString)
+            case ConfigValueType.BOOLEAN => configuration.setBoolean(key, entry.getValue.asInstanceOf[Boolean])
+            case ConfigValueType.NUMBER  => configuration.setInteger(key, entry.getValue.asInstanceOf[Int])
+            case _                       => configuration.setString(key, entry.getValue.toString)
           }
+          if (key == ClusterFlinkJobExecutor.enableLocalWeb) enableWeb = true;
       }
+    enableWeb
+  }
 
   /**
    * Creates the Flink StreamExecutionEnvironment and by default sets up exactly-once checkpointing.
@@ -116,12 +123,18 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       case true =>
         val configuration = new Configuration()
         // Copy all of the Flink parameters to configuration
-        populateFlinkConfiguration(configuration, config.atPath(ClusterFlinkJobExecutor.flinkRuntime))
-        populateFlinkConfiguration(configuration, config.atPath(ClusterFlinkJobExecutor.streamletRuntimeConfigPath(streamlet)))
+        val enableWeb = populateFlinkConfiguration(configuration, config, ClusterFlinkJobExecutor.flinkRuntime) ||
+            populateFlinkConfiguration(configuration, config, ClusterFlinkJobExecutor.streamletRuntimeConfigPath(streamlet))
         // Ensures that filesystem is initialized with right configuration
         FileSystem.initialize(configuration, null)
         // Create local Flink environment
-        StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
+        // Note here that a local web support is set through configuration by setting
+        // "local.web" either in the streamlet or Flink runtime context. We are not checking the value, but rather
+        // the fact that variable is defines.
+        enableWeb match {
+          case true => StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration)
+          case _    => StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
+        }
       case false =>
         StreamExecutionEnvironment.getExecutionEnvironment
     }
@@ -177,6 +190,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     // Is this a path that we want to use?
     val flinkRuntime                                      = "cloudflow.runtimes.flink.config.flink"
     def streamletRuntimeConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.config"
+    val enableLocalWeb                                    = "local.web"
     def execute(): StreamletExecution
   }
 
