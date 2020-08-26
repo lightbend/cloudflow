@@ -1,0 +1,66 @@
+:page-partial:
+:page-supergroup-scala-java: Language
+
+include::ROOT:partial$include.adoc[]
+
+== GrpcServerLogic
+
+=== Use case
+
+An `GrpcServerLogic` can be used to handle gRPC requests.
+You need to extend your streamlet from `AkkaServerStreamlet`
+so that Cloudflow will expose an HTTP endpoint in Kubernetes.
+
+Additionally, you need to enable HTTP/2 by adding the following
+to your configuration:
+
+[source,hocon]
+----
+akka.http.server.preview.enable-http2 = on
+----
+
+=== Example
+
+gRPC is a contract-first technology, so you start by adding
+the protobuf definition for the service you want to expose
+to `src/main/protobuf`. In this example we will implement a
+simple request-response service:
+
+[source,protobuf]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-scala/src/main/protobuf/sensordata.proto[tag=proto]
+----
+
+Because the https://doc.akka.io/docs/akka-grpc[Akka gRPC plugin] is embedded in
+Cloudflow, the code for the service will automatically be generated when you
+compile this service. In this case, a `sensordata.grpc.SensorDataService` will be
+generated that you can implement.
+
+To expose your implementation,  extend `AkkaServerStreamlet`
+and use `GrpcServerLogic` to add your gRPC handlers:
+
+[.tabset]
+Scala::
++
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-scala/src/main/scala/SensorDataIngress.scala[tag=logic]
+----
+
+Java::
++
+[source,java]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-java/src/main/java/sensordata/SensorDataIngress.java[tag=logic]
+----
+
+=== Exposing through an ingress
+
+gRPC services use HTTP/2 as a transport mechanism. Cloudflow supports
+both HTTP and HTTP/2 on the port exposed by the pod.
+
+When you want to expose your gRPC service to external clients,
+you will need to expose it as a HTTP/2 service to the outside.
+Configuring an ingress to support HTTP/2 might be possible
+with the correct additional configuration, but is currently not
+officially supported, and might even require code changes.
