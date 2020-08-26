@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This document details how to install Cloudflow and dependencies on Cloudflow like the Spark and Flink operator, using the `Helm` and `kubectl` command-line tools. 
+This document shows how to install Cloudflow and dependencies on Cloudflow like the Spark and Flink operator, using the `Helm` and `kubectl` command-line tools. 
 
 == Prerequisites
 
@@ -28,7 +28,11 @@ It has the following format:
 
 broker-1-address:broker-1-port, broker-2-address;broker-2-port
 
-// - TODO more information about Kafka has to be added
+If you want to test Cloudflow we recommend to use Strimzi, a third-party Kafka operator that can create and manage Kafka clusters. 
+
+Please read the following chapter on how to configure and install a Kafka cluster using Strimzi. 
+
+. xref:install-and-use-strimzi.adoc[How to install Strimzi and create a Kafka cluster]
 
 === Storage requirements
 
@@ -62,10 +66,15 @@ This parameter sets the storage class to use with Spark and Flink applications. 
 
 	cloudflow_operator.persistentStorageClass="nfs"
 
-Installing the Helm chart.
+Installing the Helm chart on GKE, EKS or AKS.
 
 	helm install cloudflow cloudflow/Cloudflow --namespace cloudflow --set
   strimzi.enabled=true --set strimzi.persistentStorageClass=standard  --set cloudflow_operator.persistentStorageClass="nfs"
+
+Installing the Helm chart on OpenShift
+
+	helm install cloudflow cloudflow/Cloudflow --namespace cloudflow --set
+  strimzi.enabled=true --set strimzi.persistentStorageClass=standard  --set cloudflow_operator.persistentStorageClass="nfs" --set openShift.enabled=true
 
 // - TODO have to adjust this to fit with the reality when we remove Strimzi dependencies from the operator
 
@@ -83,7 +92,7 @@ The Spark operator used is a version currently maintained by Lightbend and is th
 
 Add the Spark Helm chart repository
 
-helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+  helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
 
 As we have seen before, we need to update the Helm repo before actually installing anything
 	
@@ -134,9 +143,46 @@ Now we can install the Spark operator using Helm, note here that we use a specif
 
   helm install spark-operator incubator/sparkoperator --namespace cloudflow --values="spark-values.yaml"  --version "0.6.7"
 
+
+IMPORTANT: If you are installing the Spark operator on *OpenShift*, you need to apply the following rolebinding to the cluster.
+
+----
+cat > spark-rolebinding.yaml << EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: system:openshift:scc:anyuid
+  namespace: cloudflow
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:anyuid
+subjects:
+- kind: ServiceAccount
+  name: cloudflow-spark
+  namespace: cloudflow
+EOF
+----
+
+To apply the `spark-rolebinding.yaml` file do the following. Note that this has *only* to be performed if you are installing Cloudflow on Openshift.
+
+  oc apply -f spark-rolebinding.yaml
+
 After the Spark operator has been installed, we need to adjust its webhook configuration.
 
-  <INSERT OUTPUT OF kubectl get pods -n cloudflow HERE>
+----
+$ kubectl get pods -n cloudflow
+NAME                                                READY   STATUS    RESTARTS   AGE
+cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running   0          109s
+cloudflow-strimzi-entity-operator-8c7b4c784-6rc6x   2/2     Running   0          109s
+cloudflow-strimzi-kafka-0                           2/2     Running   0          109s
+cloudflow-strimzi-kafka-1                           2/2     Running   0          109s
+cloudflow-strimzi-kafka-2                           2/2     Running   0          109s
+cloudflow-strimzi-zookeeper-0                       1/1     Running   0          109s
+cloudflow-strimzi-zookeeper-1                       1/1     Running   0          109s
+cloudflow-strimzi-zookeeper-2                       1/1     Running   0          109s
+spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running   0          109s
+----
 
 For this, we will create yet another Yaml file that we will apply to the cluster with `kubectl`.
 ----
@@ -192,7 +238,20 @@ Now we can apply the changes to the webhook.
 
 That completes the installation of the Spark operator. 
 
-<INSERT OUTPUT OF kubectl get pods -n cloudflow HERE>
+----
+$ kubectl get pods -n cloudflow
+NAME                                                READY   STATUS      RESTARTS   AGE
+cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running     0          3m29s
+cloudflow-patch-spark-mutatingwebhookconfig-66xxb   0/1     Completed   0          21s
+cloudflow-strimzi-entity-operator-8c7b4c784-6rc6x   2/2     Running     0          3m29s
+cloudflow-strimzi-kafka-0                           2/2     Running     0          3m29s
+cloudflow-strimzi-kafka-1                           2/2     Running     0          3m29s
+cloudflow-strimzi-kafka-2                           2/2     Running     0          3m29s
+cloudflow-strimzi-zookeeper-0                       1/1     Running     0          3m29s
+cloudflow-strimzi-zookeeper-1                       1/1     Running     0          3m29s
+cloudflow-strimzi-zookeeper-2                       1/1     Running     0          3m29s
+spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0          3m29s
+----
 
 == Installing the Flink operator
 If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application. As we can see below, the CLI will not allow you to deploy an application that does not have all dependencies installed.
