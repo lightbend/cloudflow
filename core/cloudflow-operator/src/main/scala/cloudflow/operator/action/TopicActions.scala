@@ -23,7 +23,7 @@ import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import com.typesafe.config.Config
-import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, ListTopicsOptions, NewTopic }
+import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
 import org.apache.kafka.common.KafkaFuture
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
@@ -58,12 +58,16 @@ object TopicActions {
   type TopicResource = ConfigMap
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
-    val bootstrapServers  = topic.bootstrapServers.getOrElse(ctx.kafkaContext.bootstrapServers)
+
+    val (bootstrapServers, properties) = topic.bootstrapServers match {
+      case Some(bootstrapServers) => bootstrapServers                  -> topic.properties
+      case None                   => ctx.kafkaContext.bootstrapServers -> ctx.kafkaContext.properties
+    }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
     val configMap         = resource(topic, partitions, replicationFactor, labels)
 
-    val adminClient = KafkaAdmins.getOrCreate(bootstrapServers)
+    val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, properties)
 
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
@@ -101,7 +105,7 @@ object TopicActions {
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
           "replicationFactor" -> replicationFactor.toString
-        ) ++ topic.configMap
+        ) ++ topic.properties
     )
 
   private val editor = new ObjectEditor[ConfigMap] {
@@ -127,19 +131,18 @@ object TopicActions {
   case class TopicInfo(name: String,
                        partitions: Option[Int],
                        replicationFactor: Option[Int],
-                       configMap: Map[String, String],
+                       properties: Map[String, String],
                        managed: Boolean,
                        bootstrapServers: Option[String])
 
   object KafkaAdmins {
     private var admins = Map.empty[String, Admin]
 
-    def getOrCreate(bootstrapServers: String): Admin =
+    def getOrCreate(bootstrapServers: String, properties: Map[String, AnyRef]): Admin =
       if (admins.contains(bootstrapServers)) admins(bootstrapServers)
       else {
-        val conf = new java.util.HashMap[String, AnyRef]()
-        conf.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers)
-        val a = Admin.create(conf)
+        val conf = properties + (AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> bootstrapServers)
+        val a    = Admin.create(conf.asJava)
         admins = admins + (bootstrapServers -> a)
         a
       }

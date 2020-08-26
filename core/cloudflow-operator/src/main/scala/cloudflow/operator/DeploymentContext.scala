@@ -16,6 +16,8 @@
 
 package cloudflow.operator
 
+import cloudflow.blueprint.deployment.Topic
+import com.typesafe.config.Config
 import skuber.Resource._
 
 /**
@@ -36,8 +38,6 @@ case class DeploymentContext(kafkaContext: KafkaContext,
    | pod-namespace                     ${podNamespace}
    |
    | kafka-bootstrap-servers:          ${bootstrapServers}
-   | strimzi-cluster-name:             ${strimziClusterName}
-   | strimzi-topic-operator-namespace: ${strimziTopicOperatorNamespace}
   """
 }
 
@@ -45,10 +45,9 @@ case class KafkaContext(
     bootstrapServers: String,
     partitionsPerTopic: Int,
     replicationFactor: Int,
-    strimziTopicOperatorNamespace: Option[String],
-    strimziClusterName: Option[String]
+    config: Config
 ) {
-  def useStrimzi = strimziTopicOperatorNamespace.nonEmpty && strimziClusterName.nonEmpty
+  val properties: Map[String, AnyRef] = Topic.pathAsMap(config, "kafka-clients")
 }
 
 final case class Host(name: String, port: Option[Int]) {

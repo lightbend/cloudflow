@@ -190,8 +190,7 @@ final case class Settings(config: Config) extends Extension {
         kafka.bootstrapServers,
         kafka.partitionsPerTopic,
         kafka.replicationFactor,
-        kafka.strimziTopicOperatorNamespace,
-        kafka.strimziClusterName
+        ConfigFactory.empty()
       ),
       akkaRunnerSettings,
       sparkRunnerSettings,
