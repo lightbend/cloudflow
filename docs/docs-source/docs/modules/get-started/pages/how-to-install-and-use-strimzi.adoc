@@ -108,6 +108,6 @@ TIP: If you want to change any parameters of the Kafka cluster, edit the `kafka-
 
 === Removing Strimzi 
 
-If you want to remove Strimzi, you can do that with the following Helm command.
+If you want to remove Strimzi, you can do that with the following Helm command:
 
   helm delete strimzi -n cloudflow
