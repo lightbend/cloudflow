@@ -143,9 +143,19 @@ generated that you can implement.
 To expose your implementation,  extend `AkkaServerStreamlet`
 and use `GrpcServerLogic` to add your gRPC handlers:
 
+[.tabset]
+Scala::
++
 [source,scala]
 ----
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-scala/src/main/scala/SensorDataIngress.scala[tag=logic]
+----
+
+Java::
++
+[source,java]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-java/src/main/java/sensordata/SensorDataIngress.java[tag=logic]
 ----
 
 === Exposing through an ingress

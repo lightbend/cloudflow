@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package cloudflow.akkastream.util.scaladsl
+package cloudflow.akkastream.util.javadsl
+
+import java.util.concurrent.CompletionStage
+import java.util.{ List => JList }
 
 import akka.annotation.ApiMayChange
-import akka.grpc.scaladsl.ServiceHandler
-
-import scala.collection.immutable
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.RouteDirectives
+import akka.japi.Function
+import akka.grpc.javadsl.ServiceHandler
+import akka.http.javadsl.model.{ HttpRequest, HttpResponse }
+import akka.http.javadsl.server.{ Directives, Route }
 import cloudflow.akkastream.{ AkkaStreamletContext, Server }
 
-import scala.concurrent.Future
-
 @ApiMayChange
-abstract class GrpcServerLogic(server: Server)(implicit context: AkkaStreamletContext) extends HttpServerLogic(server) {
-  def handlers(): immutable.Seq[PartialFunction[HttpRequest, Future[HttpResponse]]]
+abstract class GrpcServerLogic(server: Server, context: AkkaStreamletContext) extends HttpServerLogic(server, context) {
+  def handlers(): JList[Function[HttpRequest, CompletionStage[HttpResponse]]]
 
-  override def route(): Route = RouteDirectives.handle(ServiceHandler.concatOrNotFound(handlers(): _*))
+  override def createRoute(): Route = {
+    import scala.collection.JavaConverters._
+    val handler = ServiceHandler.concatOrNotFound(handlers().asScala: _*)
+    Directives.handle(request => handler(request))
+  }
 }
