@@ -18,14 +18,26 @@ Make sure you have the following prerequisites installed before continuing:
 
 == Installing Strimzi
 
-Strimzi can be installed using Helm. 
+In this guide, we will use Helm to install Strimzi.
 
+Add the Strimzi Helm repository.
+  helm repo add strimzi https://strimzi.io/charts/
 
-== Creating a Kafka cluster using Strimzi
+Update the repository list
 
-To create a Kafka cluster using Strimzi we have to create a `CustomResource` of the kind `Kafka` in the namespace `cloudflow`. Creating the resource in the right namespace is important since we told Strimzi to only watch the `cloudflow` namespace when installing.
+  helm repo update
 
-Create the file using the following snippet.
+Install the latest version of Strimzi
+
+  helm install strimzi/strimzi-kafka-operator --namespace default --generate-name --set watchNamespaces="{cloudflow}"
+
+=== Creating a Kafka cluster using Strimzi
+
+To create a Kafka cluster using Strimzi, we have to create a `CustomResource` of the kind `Kafka` in the namespace `cloudflow`. 
+
+IMPORTANT: Make sure that the namespace 'cloudflow' exists before continuing.
+
+Create the yaml file containing the custom resource using the following snippet:
 
 ----
 cat > kafka-cluster.yaml << EOF
@@ -35,9 +47,6 @@ metadata:
   name: cloudflow-strimzi
   namespace: cloudflow
 spec:
-  entityOperator:
-    topicOperator:
-      resources: {}
   kafka:
     config:
       auto.create.topics.enable: false
@@ -83,11 +92,22 @@ Apply the yaml file with the Kafka custom resource to the cluster:
 
   kubectl apply -f kafka-cluster.yaml
 
-TIP: If you want to change any parameters of the Kafka cluster, just edit the `kafka-cluster.yaml` file and apply it again to the cluster as shown above. The Strimzi Kafka cluster operator will make the necessary changes when it detects a change in the custom resource.
+When the Strimzi Kafka operator have processed the CR, there should be 6 new pods in the `cloudflow` namespace. Three brokers pods and three zookeeper pods.
 
-== Removing Strimzi 
+----
+$ kubectl get pods -n cloudflow | grep strimzi
+cloudflow-strimzi-kafka-0                           2/2     Running     0          20s
+cloudflow-strimzi-kafka-1                           2/2     Running     0          20s
+cloudflow-strimzi-kafka-2                           2/2     Running     0          20s
+cloudflow-strimzi-zookeeper-0                       1/1     Running     0          20s
+cloudflow-strimzi-zookeeper-1                       1/1     Running     0          20s
+cloudflow-strimzi-zookeeper-2                       1/1     Running     0          20s
+----
+
+TIP: If you want to change any parameters of the Kafka cluster, edit the `kafka-cluster.yaml` file and apply it again to the cluster, as shown above. The Strimzi Kafka cluster operator will make the necessary changes when detecting a change in the custom resource.
+
+=== Removing Strimzi 
 
 If you want to remove Strimzi, you can do that with the following Helm command.
 
   helm delete strimzi -n cloudflow
-
