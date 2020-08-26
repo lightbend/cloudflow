@@ -384,7 +384,7 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 	runnerTypes["flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
-		versionBytes, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath='{$.spec.versions[*].name}'").Output()
+		versionBytes, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={$.spec.versions[*].name}").Output()
 		versions := strings.Trim(string(versionBytes), " ")
 		if err != nil {
 			return fmt.Errorf("cannot detect that '%s' is installed, please install '%s' before continuing (%v)", prettyName, prettyName, err.Error())
