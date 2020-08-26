@@ -31,6 +31,7 @@ const configKey = "config"
 const kubernetesKey = "kubernetes"
 const podsKey = "pods"
 const cloudflowPodName = "pod"
+const labels = "labels"
 const cloudflowContainerName = "container"
 const containersKey = "containers"
 const resourcesKey = "resources"
@@ -39,6 +40,8 @@ const limitsKey = "limits"
 const envKey = "env"
 const envNameKey = "name"
 const envValueKey = "value"
+const taskManager = "task-manager"
+const jobManager = "job-manager"
 
 const runtimeKey = "runtime"
 const runtimesKey = "runtimes"
@@ -304,14 +307,14 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 }
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
-	if labelsConfig := podConfig.GetConfig("labels"); labelsConfig != nil && labelsConfig.Root().IsObject() {
+	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
 		for k, v := range labelsConfig.Root().GetObject().Items() {
 			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
-				return fmt.Errorf("key %s has an invalid value %s", k, v)
+				return fmt.Errorf("key '%s' has an invalid value '%s'", k, v)
 			}
 		}
-		if podName == "task-manager" || podName == "job-manager" {
-			return fmt.Errorf("`flink.pods.%s.labels` is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as `flink.pods.pod.labels`", podName, podName)
+		if podName == taskManager || podName == jobManager {
+			return fmt.Errorf("'flink.pods.%s.labels' is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as 'flink.pods.pod.labels'", podName, podName)
 		}
 	}
 	return nil
