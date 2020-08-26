@@ -1,0 +1,22 @@
+{
+    "namespace": "shoppingcart.data",
+    "type": "record",
+    "name": "ShoppingCartEvent",
+    "fields":[
+        {
+            "name": "cartId", "type": "string"
+        },
+        {
+            "name": "itemId", "type": "string"
+        },
+        {
+            "name": "newQuantity", "type": "int"
+        },
+        {
+            "name": "eventTime", "type": "long"
+        },
+        {
+            "name": "eventType", "type": "string"
+        }
+    ]
+}
