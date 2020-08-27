@@ -308,17 +308,34 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 }
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
+	labelAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	prefixAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,251}[a-z0-9A-Z]{1}$`)
+
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
 		for k, v := range labelsConfig.Root().GetObject().Items() {
 			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
 				return fmt.Errorf("label with key '%s' has a value that can't be parsed: '%s'", k, v)
 			}
-			if len(v.String()) > maxLabelLength {
-				return fmt.Errorf("label with value '%s' is longer than 63 characters", v)
+			if strings.Count(k, "/") == 1 {
+				splitted := strings.Split(k, "/")
+				prefix := splitted[0]
+				name := splitted[1]
+				if prefixAllowedFormat.Match([]byte(prefix)) == false {
+					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
+				}
+				if labelAllowedFormat.Match([]byte(name)) == false {
+					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
+				}
+			} else {
+				// fmt.Printf("matching %s , result %t ",k,labelAllowedFormat.Match([]byte(k)))
+				if labelAllowedFormat.Match([]byte(k)) == false {
+					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", k)
+				}
+				if labelAllowedFormat.Match([]byte(v.String())) == false {
+					return fmt.Errorf("label with value '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", v)
+				}
 			}
-			if len(k) > maxLabelLength {
-				return fmt.Errorf("label with key '%s' is longer than 63 characters", k)
-			}
+
 		}
 		if podName == taskManager || podName == jobManager {
 			return fmt.Errorf("'flink.pods.%s.labels' is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as 'flink.pods.pod.labels'", podName, podName)
