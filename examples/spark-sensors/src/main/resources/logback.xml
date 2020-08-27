@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <logger name="akka" level="WARN" />
+  <logger name="akka" level="INFO" />
   <logger name="org.apache" level="WARN" />
   <logger name="kafka" level="WARN" />
   <logger name="org.spark_project.jetty" level="WARN" />

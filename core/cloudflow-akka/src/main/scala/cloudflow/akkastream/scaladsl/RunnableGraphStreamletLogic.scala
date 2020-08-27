@@ -21,13 +21,13 @@ import akka.stream.scaladsl.RunnableGraph
 import cloudflow.akkastream._
 
 /**
- * Can be used to define a [[AkkaStreamletLogic]] from a `RunnableGraph[_]`, which will be materialized and instrumented when the [[AkkaStreamlet]] is run.
+ * Can be used to define a [[cloudflow.akkastream.AkkaStreamletLogic]] from a `RunnableGraph[_]`, which will be materialized and instrumented when the [[cloudflow.akkastream.AkkaServerStreamlet]] is run.
  */
 abstract class RunnableGraphStreamletLogic(implicit context: AkkaStreamletContext) extends AkkaStreamletLogic {
 
   /**
    * This method needs to return a `RunnableGraph` that is connected to inlet(s) and/or outlet(s) of the streamlet.
-   * See [[AkkaStreamletLogic]] for more information how to create `akka.stream.javadsl.Source`s and `akka.stream.javadsl.Sink`s to inlets and outlets respectively.
+   * See [[cloudflow.akkastream.AkkaStreamletLogic]] for more information how to create `akka.stream.javadsl.Source`s and `akka.stream.javadsl.Sink`s to inlets and outlets respectively.
    */
   def runnableGraph(): RunnableGraph[_]
 

@@ -56,8 +56,6 @@ case class SparkAvroDecoder[T: Encoder: TypeTag](avroSchema: String) {
  * using an AVRO schema in its String JSON representation for the type T being encoded.
  * The type T must have a matching implicit Spark Encoder in scope.
  * Note that most supported Encoders can be imported from [[cloudflow.spark.sql.SQLImplicits]]
- * @param avroSchema
- * @tparam T
  */
 case class SparkAvroEncoder[T: Encoder: TypeTag](avroSchema: String) {
 

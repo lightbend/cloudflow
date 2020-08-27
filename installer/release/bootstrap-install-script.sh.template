@@ -81,7 +81,7 @@ fi
 kubectlOutput=$(kubectl get sc -o jsonpath='{ range .items[*]}{.metadata.name}{"\t"}{.provisioner}{"\t"}{.metadata.annotations.storageclass\.kubernetes\.io/is-default-class}{"\n"}{end}')
 
 # A map where `key` is storage class and `value` is provisioner
-declare -A clusterStorageClassProvisioner=(); while read -r a b c; do clusterStorageClassProvisioner["$a"]="$b"; done <<< $kubectlOutput
+declare -A clusterStorageClassProvisioner=(); while read -r a b c; do clusterStorageClassProvisioner["$a"]="$b"; done <<< "$kubectlOutput"
 if [ $? -ne 0 ]; then
     print_error_message "The bootstrap install script has failed to connect to the cluster; please check your connect and try again."
     exit 1

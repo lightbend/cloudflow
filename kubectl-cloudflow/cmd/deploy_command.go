@@ -85,7 +85,10 @@ It is also possible to specify more than one "volume-mount" parameter.
 
 You can optionally provide credentials for the docker registry that hosts the
 images of the application by using the --username flag in combination with either
-the --password-stdin or the --password flag.
+the --password-stdin or the --password flag. 
+
+If no credentials are needed, for example, if the cluster already has credentials configured or if the registry does not require authentication to 
+pull an image, use the '--no-registry-credentials' flag.
 
 The --password-stdin flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
@@ -381,14 +384,21 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 	runnerTypes["flink"] = RunnerRequirements{"flinkapplications.flink.k8s.io", version.RequiredFlinkVersion}
 
 	validateRunnerType := func(crdName string, prettyName string, expectedVersion string) error {
-		version, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={.spec.version}").Output()
+		versionBytes, err := exec.Command("kubectl", "get", "crds", crdName, "-o", "jsonpath={$.spec.versions[*].name}").Output()
+		versions := strings.Trim(string(versionBytes), " ")
 		if err != nil {
-			return fmt.Errorf("cannot detect that %s is installed, please install %s before continuing (%v)", prettyName, prettyName, err.Error())
+			return fmt.Errorf("cannot detect that '%s' is installed, please install '%s' before continuing (%v)", prettyName, prettyName, err.Error())
 		}
-		if string(version) != expectedVersion {
-			return fmt.Errorf("%s is installed but the wrong version, required %s, installed %s", prettyName, expectedVersion, string(version))
+		versionsArray := strings.Split(versions, " ")
+		for _, v := range versionsArray {
+			if v == expectedVersion {
+				return nil
+			}
 		}
-		return nil
+		if len(versions) == 0 {
+			return fmt.Errorf("cannot detect the installed version of the CRD '%s'", prettyName)
+		}
+		return fmt.Errorf("'%s' is installed but does not support the required version of the CRD, required '%s', installed '%s'", prettyName, expectedVersion, strings.Join(versionsArray, (",")))
 	}
 
 	runnersInApplicationSpec := make(map[string]bool)

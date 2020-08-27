@@ -66,7 +66,7 @@ trait StreamletContext {
    *
    * A [[Streamlet]] can specify the set of environment-
    * and instance-specific configuration keys it will use during runtime
-   * through [[cloudflow.streamlets.Streamlet.configParameters configParameters]]. Those keys will
+   * through [[cloudflow.streamlets.Streamlet#configParameters configParameters]]. Those keys will
    * then be made available through this configuration.
    *
    * An empty configuration will be returned if the streamlet doesn't contain any configuration parameters.

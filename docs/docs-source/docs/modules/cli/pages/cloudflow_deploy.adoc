@@ -68,6 +68,9 @@ You can optionally provide credentials for the docker registry that hosts the
 images of the application by using the `--username` flag in combination with either
 the `--password-stdin` or the `--password` flag.
 
+If no credentials are needed, for example, if the cluster already has credentials configured or if the registry
+does not require authentication to pull an image, use the '--no-registry-credentials' flag.
+
 The `--password-stdin` flag is preferred because it is read from stdin, which
 means that the password does not end up in the history of your shell.
 One way to provide the password via stdin is to pipe it from a file:
@@ -106,6 +109,7 @@ $ kubectl cloudflow deploy call-record-aggregator.json
 ----
   --conf stringArray               Accepts one or more files in HOCON format.
   -h, --help                       help for deploy
+  --no-registry-credentials        Use this flag if the Kubernetes cluster already has credentials configured for the Docker registry where the Cloudflow application images are located, or if the registry is public and requires no authentication.  
   -p, --password string            docker registry password.
       --password-stdin             Take the password from stdin
       --scale stringToInt          Accepts key/value pairs for replicas per streamlet (default [])
