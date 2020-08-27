@@ -102,6 +102,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
           |    metrics {
           |      topic {
           |        // See org.apache.kafka.common.config.TopicConfig
+          |        // This sections uses Java properties, HOCON units (s, kb) are not available
           |        retention.ms = 3600000
           |        cleanup.policy = compact
           |      }

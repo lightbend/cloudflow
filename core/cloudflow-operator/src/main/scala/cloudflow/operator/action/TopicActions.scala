@@ -51,13 +51,13 @@ object TopicActions {
 
     val labels = CloudflowLabels(newApp)
     val actions =
-      managedTopics.toVector.map(topic => createAction(labels)(topic))
+      managedTopics.toVector.map(topic => createAction(newApp.namespace, labels)(topic))
     actions
   }
 
   type TopicResource = ConfigMap
 
-  def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
+  def createAction(appNamespace: String, labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
 
     val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
       case Some(bootstrapServers) => bootstrapServers                  -> topic.brokerConfig
@@ -65,7 +65,7 @@ object TopicActions {
     }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
-    val configMap         = resource(topic, partitions, replicationFactor, labels)
+    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, labels)
 
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
@@ -99,11 +99,11 @@ object TopicActions {
     }
   }
 
-  def resource(topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
+  def resource(namespace: String, topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): ConfigMap =
     ConfigMap(
-      metadata = ObjectMeta(name = s"topic-${topic.name}", labels = labels(topic.name)),
+      metadata = ObjectMeta(name = s"topic-${topic.name}", labels = labels(topic.name), namespace = namespace),
       data = Map(
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
