@@ -176,8 +176,10 @@ trait Runner[T <: ObjectResource] {
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-      .map { podConfig =>
-        podConfig.labels
+      .flatMap { podConfig =>
+        podConfig.labels.flatMap { innerMap =>
+          Some(innerMap)
+        }
       }
       .getOrElse(Map())
 
@@ -231,7 +233,7 @@ object PodsConfig {
   }
 
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
-    val labels     = config.as[Map[String, String]]("labels")
+    val labels     = config.as[Option[Map[String, String]]]("labels")
     val containers = config.as[Map[String, ContainerConfig]]("containers")
     PodConfig(containers, labels)
   }
@@ -280,7 +282,7 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 
 final case class PodConfig(
     containers: Map[String, ContainerConfig],
-    labels: Map[String, String] = Map()
+    labels: Option[Map[String, String]] = None
 )
 
 final case class ContainerConfig(
