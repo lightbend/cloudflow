@@ -83,13 +83,15 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val newAppVersion = "43-abcdef0"
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
+          .withNamespace("testing-app")
       val in        = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.in.name)
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
       val Seq(foosAction, barsAction) = TopicActions(newApp)
       val configMap0                  = foosAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
-      configMap0 mustBe TopicActions.resource(TopicActions.TopicInfo(in),
+      configMap0 mustBe TopicActions.resource(newApp.namespace,
+                                              TopicActions.TopicInfo(in),
                                               ctx.kafkaContext.partitionsPerTopic,
                                               ctx.kafkaContext.replicationFactor,
                                               CloudflowLabels(newApp))
@@ -97,7 +99,8 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
 
       val configMap1 = barsAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
 
-      configMap1 mustBe TopicActions.resource(TopicActions.TopicInfo(savepoint),
+      configMap1 mustBe TopicActions.resource(newApp.namespace,
+                                              TopicActions.TopicInfo(savepoint),
                                               ctx.kafkaContext.partitionsPerTopic,
                                               ctx.kafkaContext.replicationFactor,
                                               CloudflowLabels(newApp))
@@ -109,7 +112,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
   def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
       implicit ctx: DeploymentContext
   ) = {
-    resource.metadata.namespace mustBe ""
+    resource.metadata.namespace mustBe "testing-app"
     resource.metadata.name mustBe s"topic-${savepoint.name}"
     resource.data("partitions") mustBe ctx.kafkaContext.partitionsPerTopic.toString
     resource.data("replicationFactor") mustBe ctx.kafkaContext.replicationFactor.toShort.toString
@@ -145,5 +148,6 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
     val image      = "image-1"
 
     CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
+      .withNamespace("testing-app")
   }
 }
