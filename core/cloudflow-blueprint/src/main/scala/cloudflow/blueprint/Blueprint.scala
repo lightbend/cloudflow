@@ -41,6 +41,7 @@ object Blueprint {
   val PartitionsKey       = "partitions"
   val ReplicasKey         = "replicas"
   val TopicConfigKey      = "topic"
+  val BrokerConfigKey     = "kafka-clients"
 
   /**
    * Parses the blueprint from a String.

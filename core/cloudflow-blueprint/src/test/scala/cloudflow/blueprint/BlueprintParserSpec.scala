@@ -17,6 +17,7 @@
 package cloudflow.blueprint
 
 import cloudflow.blueprint.deployment.ApplicationDescriptor
+import org.apache.kafka.common.config.TopicConfig
 import org.scalatest._
 
 class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues with OptionValues {
@@ -89,6 +90,34 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
       val metricsTopic = blueprint.topics.head
       metricsTopic.id mustBe "metrics"
       metricsTopic.name mustBe "ere"
+    }
+
+    "keep topic config" in {
+      val blueprint = Blueprint
+        .parseString(
+          """blueprint {
+          |  streamlets {
+          |  }
+          |  topics {
+          |    metrics {
+          |      topic {
+          |        // See org.apache.kafka.common.config.TopicConfig
+          |        retention.ms = 3600000
+          |        cleanup.policy = compact
+          |      }
+          |    }
+          |  }
+          |}
+          |""".stripMargin,
+          Vector.empty
+        )
+        .verify
+
+      val metricsTopic = blueprint.topics.head
+      metricsTopic.id mustBe "metrics"
+      metricsTopic.name mustBe "metrics"
+      metricsTopic.kafkaConfig.getString(TopicConfig.RETENTION_MS_CONFIG) mustBe "3600000"
+      metricsTopic.kafkaConfig.getString(TopicConfig.CLEANUP_POLICY_CONFIG) mustBe TopicConfig.CLEANUP_POLICY_COMPACT
     }
   }
 }

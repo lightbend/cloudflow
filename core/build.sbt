@@ -309,7 +309,8 @@ lazy val blueprint =
             Logback % Test,
             Avro4sTest,
             ScalaTest,
-            ScalaPbRuntime
+            ScalaPbRuntime,
+            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients % Test
           ),
       publishArtifact in Test := true
     )
@@ -408,7 +409,7 @@ lazy val operator =
             Logback,
             Skuber,
             ScalaTest,
-            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
+            "org.apache.kafka"        % "kafka-clients" % Version.KafkaClients,
             AkkaStreamTestkitOperator % "test",
             ScalaCheck                % "test",
             Avro4sJson                % "test"

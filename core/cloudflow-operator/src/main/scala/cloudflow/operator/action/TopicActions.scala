@@ -59,15 +59,15 @@ object TopicActions {
 
   def createAction(labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
 
-    val (bootstrapServers, properties) = topic.bootstrapServers match {
-      case Some(bootstrapServers) => bootstrapServers                  -> topic.properties
+    val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
+      case Some(bootstrapServers) => bootstrapServers                  -> topic.brokerConfig
       case None                   => ctx.kafkaContext.bootstrapServers -> ctx.kafkaContext.properties
     }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
     val configMap         = resource(topic, partitions, replicationFactor, labels)
 
-    val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, properties)
+    val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
@@ -87,9 +87,12 @@ object TopicActions {
             Future.successful(akka.Done)
           } else {
             log.info("Creating managed topic [{}]", topic.name)
+            val newTopic = new NewTopic(topic.name, partitions, replicationFactor.toShort).configs(topic.properties.asJava)
             val result =
-              adminClient.createTopics(Collections.singleton(new NewTopic(topic.name, partitions, replicationFactor.toShort)),
-                                       new CreateTopicsOptions())
+              adminClient.createTopics(
+                Collections.singleton(newTopic),
+                new CreateTopicsOptions()
+              )
             result.all().asScala.map(_ => akka.Done)
           }
         }
@@ -119,7 +122,8 @@ object TopicActions {
       intOrEmpty(sp.config, Blueprint.ReplicasKey),
       Topic.pathAsMap(sp.config, Blueprint.TopicConfigKey),
       sp.managed,
-      stringOrEmpty(sp.config, Blueprint.BootstrapServersKey)
+      stringOrEmpty(sp.config, Blueprint.BootstrapServersKey),
+      Topic.pathAsMap(sp.config, Blueprint.BrokerConfigKey)
     )
 
     private def intOrEmpty(config: Config, key: String): Option[Int] =
@@ -133,15 +137,16 @@ object TopicActions {
                        replicationFactor: Option[Int],
                        properties: Map[String, String],
                        managed: Boolean,
-                       bootstrapServers: Option[String])
+                       bootstrapServers: Option[String],
+                       brokerConfig: Map[String, String])
 
   object KafkaAdmins {
     private var admins = Map.empty[String, Admin]
 
-    def getOrCreate(bootstrapServers: String, properties: Map[String, AnyRef]): Admin =
+    def getOrCreate(bootstrapServers: String, brokerConfig: Map[String, AnyRef]): Admin =
       if (admins.contains(bootstrapServers)) admins(bootstrapServers)
       else {
-        val conf = properties + (AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> bootstrapServers)
+        val conf = brokerConfig + (AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> bootstrapServers)
         val a    = Admin.create(conf.asJava)
         admins = admins + (bootstrapServers -> a)
         a
