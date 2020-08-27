@@ -689,7 +689,6 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.NotEmpty(t, validateConfig(badK8sPath3, spec))
 	fmt.Printf("badK8sPath3: %s\n", validateConfig(badK8sPath3, spec))
-
 }
 
 func Test_validateConfigEmptyDefault(t *testing.T) {
