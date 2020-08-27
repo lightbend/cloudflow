@@ -117,8 +117,9 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
       val metricsTopic = blueprint.topics.head
       metricsTopic.id mustBe "metrics"
       metricsTopic.name mustBe "metrics"
-      metricsTopic.kafkaConfig.getString(TopicConfig.RETENTION_MS_CONFIG) mustBe "3600000"
-      metricsTopic.kafkaConfig.getString(TopicConfig.CLEANUP_POLICY_CONFIG) mustBe TopicConfig.CLEANUP_POLICY_COMPACT
+      val topicConfig = cloudflow.blueprint.deployment.Topic.pathAsMap(metricsTopic.kafkaConfig, "topic")
+      topicConfig(TopicConfig.RETENTION_MS_CONFIG) mustBe "3600000"
+      topicConfig(TopicConfig.CLEANUP_POLICY_CONFIG) mustBe TopicConfig.CLEANUP_POLICY_COMPACT
     }
   }
 }
