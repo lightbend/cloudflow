@@ -7,8 +7,8 @@ include::ROOT:partial$include.adoc[]
 
 Upgrading Cloudflow after a new release is done using the Helm upgrade command, the command will upgrade Cloudflow to the latest version.
 
-	helm upgrade cloudflow cloudflow/Cloudflow --namespace cloudflow --set strimzi.enabled=true --set strimzi.persistentStorageClass=standard --set cloudflow_operator.persistentStorageClass="nfs"
+	helm upgrade cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow --set cloudflow_operator.persistentStorageClass=nfs --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 
 To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
 
-	helm upgrade cloudflow cloudflow/Cloudflow --namespace cloudflow --set strimzi.enabled=true --set strimzi.persistentStorageClass=standard --set cloudflow_operator.persistentStorageClass="nfs" --version="2.0.8"
+	helm upgrade cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow --set cloudflow_operator.persistentStorageClass=nfs --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 --version="2.0.8"

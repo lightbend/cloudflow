@@ -48,7 +48,7 @@ IMPORTANT: Many subsequent commands will assume that the namespace is `cloudflow
 
 First, we add the Cloudflow Helm repository:
 
-  helm repo add cloudflow https://lightbend.github.io/cloudflow-helm-charts/
+  helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
 
 The `repo update` command is to make sure Helm has an up-to-date index of all Helm charts.
 
@@ -66,7 +66,7 @@ The `kafkaBootstrapservers` parameter sets the address and port of the Kafka clu
 
 Installing the Cloudflow Helm chart.
 
-  helm install cloudflow cloudflow/Cloudflow --namespace cloudflow --set
+  helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow --set
   strimzi.enabled=true --set cloudflow_operator.persistentStorageClass="nfs" --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 
 Check the status of the install process using `kubectl`. When the Cloudflow operator pod is in `Running` status, the installation is complete.
