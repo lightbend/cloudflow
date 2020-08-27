@@ -118,6 +118,8 @@ object ShoppingCart {
     def cartId: String
   }
 
+  final case class NewCart(cartId: String) extends Event
+
   final case class ItemAdded(cartId: String, itemId: String, quantity: Int) extends Event
 
   final case class ItemRemoved(cartId: String, itemId: String) extends Event

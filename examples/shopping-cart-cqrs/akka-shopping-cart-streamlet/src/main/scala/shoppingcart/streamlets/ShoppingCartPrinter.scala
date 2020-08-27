@@ -13,8 +13,7 @@ object ShoppingCartPrinter extends AkkaStreamlet {
   override def createLogic() = new RunnableGraphStreamletLogic() {
     val flow = FlowWithCommittableContext[ShoppingCartEvent]
       .map { record ⇒
-        log.info("CartId: " + record.cartId+" EventType: "+record.eventTime)
-        println("CartId: " + record.cartId+" EventType: "+record.eventTime)
+        log.info("CartId: " + record.cartId+" EventType: "+record.eventType)
       }
 
     def runnableGraph =

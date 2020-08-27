@@ -13,23 +13,24 @@ import akka.projection.cassandra.scaladsl.CassandraProjection
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.AtLeastOnceFlowProjection
-import akka.stream.scaladsl.{FlowWithContext, Sink, Source}
+import akka.stream.scaladsl.{FlowWithContext, Sink, Source, SourceWithContext}
 import cloudflow.akkastream.scaladsl.RunnableGraphStreamletLogic
 import cloudflow.streamlets.StreamletShape
-import cloudflow.streamlets.avro.AvroOutlet
+import cloudflow.streamlets.avro.{AvroInlet, AvroOutlet}
 import akka.persistence.query.Offset
 import akka.util.Timeout
 
 import scala.concurrent.duration._
 import cloudflow.akkastream.{AkkaStreamlet, Clustering}
-import sample.cqrs.ShoppingCart.{CheckedOut, ItemAdded, ItemQuantityAdjusted, ItemRemoved}
+import sample.cqrs.ShoppingCart.{CheckedOut, ItemAdded, ItemQuantityAdjusted, ItemRemoved, NewCart}
 import sample.cqrs.ShoppingCart
 import shoppingcart.cqrs.{EventProcessorSettings, Main}
 import shoppingcart.data.ShoppingCartEvent
 
 class ShoppingCartStreamlet extends AkkaStreamlet with Clustering {
+  val in   = AvroInlet[ShoppingCartEvent]("in")
   val out   = AvroOutlet[ShoppingCartEvent]("out")
-  val shape = StreamletShape.withOutlets(out)
+  val shape: StreamletShape = StreamletShape(in).withOutlets(out)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
     val settings = EventProcessorSettings(system.toTyped)
@@ -50,15 +51,22 @@ class ShoppingCartStreamlet extends AkkaStreamlet with Clustering {
 
     implicit val timeout:Timeout = 5.seconds
 
-    def runnableGraph = Source.repeat(UUID.randomUUID().toString)
-      .throttle(1, 2.second)
-      .mapAsync(1)(id => {
-        val entityRef =
-          sharding.entityRefFor(ShoppingCart.EntityKey, id)
-        entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.AddItem("socks",1, ref))
-          .map(x=> {
-            entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.AdjustItemQuantity("socks", 10, ref))
-          })
+    def runnableGraph = sourceWithCommittableContext(in)
+      .filter(_.eventType != "NewCart")
+      .mapAsync(1)(event => {
+        val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, event.cartId)
+
+        log.info("Event Received: "+event.eventType+" ID: "+event.cartId)
+        event.eventType match {
+          case "ItemAdded" =>
+            entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.AddItem(event.itemId, event.newQuantity, ref))
+          case "ItemRemoved" =>
+            entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.RemoveItem(event.itemId, ref))
+          case "ItemQuantityAdjusted" =>
+            entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.AdjustItemQuantity(event.itemId, event.newQuantity, ref))
+          case "CheckedOut" =>
+            entityRef.ask[ShoppingCart.Confirmation](ref => ShoppingCart.Checkout(ref))
+        }
       })
       .to(Sink.ignore)
 
@@ -80,6 +88,7 @@ class ShoppingCartStreamlet extends AkkaStreamlet with Clustering {
         })
         .map( x =>
           x.event match {
+            case e: NewCart => ShoppingCartEvent(e.cartId, "", 0, 0, "NewCart")
             case e: ItemAdded => ShoppingCartEvent(e.cartId, e.itemId, e.quantity, 0, "ItemAdded")
             case e: ItemRemoved => ShoppingCartEvent(e.cartId, e.itemId, 0, 0, "ItemRemoved")
             case e: ItemQuantityAdjusted => ShoppingCartEvent(e.cartId, e.itemId, e.newQuantity, 0, "ItemQuantityAdjusted")
