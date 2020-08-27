@@ -73,11 +73,14 @@ final case class Topic(
     else base
   }
 
+  def kafkaConnectionProperties: Map[String, String] =
+    Topic.pathAsMap(config, "connection-config")
+
   def kafkaProducerProperties: Map[String, String] =
-    Topic.pathAsMap(config, "producer-config")
+    kafkaConnectionProperties ++ Topic.pathAsMap(config, "producer-config")
 
   def kafkaConsumerProperties: Map[String, String] =
-    Topic.pathAsMap(config, "consumer-config")
+    kafkaConnectionProperties ++ Topic.pathAsMap(config, "consumer-config")
 }
 
 /**

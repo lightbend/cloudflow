@@ -123,7 +123,7 @@ object TopicActions {
       Topic.pathAsMap(sp.config, Blueprint.TopicConfigKey),
       sp.managed,
       stringOrEmpty(sp.config, Blueprint.BootstrapServersKey),
-      Topic.pathAsMap(sp.config, Blueprint.BrokerConfigKey)
+      Topic.pathAsMap(sp.config, Blueprint.ConnectionConfigKey)
     )
 
     private def intOrEmpty(config: Config, key: String): Option[Int] =
