@@ -131,7 +131,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         // Note here that a local web support is set through configuration by setting
         // "local.web" either in the streamlet or Flink runtime context. We are not checking the value, but rather
         // the fact that variable is defines.
-        if(enableWeb)
+        if (enableWeb)
           StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration)
         else
           StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
