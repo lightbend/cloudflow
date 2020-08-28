@@ -91,11 +91,12 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
-              |    { name = "JAVA_OPTS"
-              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    { 
+              |       name = "JAVA_OPTS"
+              |       value = "-XX:MaxRAMPercentage=40.0"
               |    },{
-              |      name = "FOO"
-              |      value = "BAR"
+              |       name = "FOO"
+              |       value = "BAR"
               |    }
               |   ]
               |  resources {
@@ -157,9 +158,9 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
                   |kubernetes.pods.pod {
                   | labels: {
-                  |            "key1" : "value1",
-                  |            "key2" : "value2"
-                  |          }
+                  |     "key1" : "value1",
+                  |     "key2" : "value2"
+                  | }
                   | containers.container {
                   |  env = [
                   |    {

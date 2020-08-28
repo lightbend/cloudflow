@@ -163,8 +163,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
                 |kubernetes.pods.executor {
                 | labels: {
-                |            "key1" : "value1",
-                |            "key2" : "value2"
+                |    "key1" : "value1",
+                |    "key2" : "value2"
                 |          }
                 | containers.container {
                 |  env = [
@@ -199,8 +199,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
                 |kubernetes.pods.pod {
                 | labels: {
-                |            "key1" : "value1",
-                |            "key2" : "value2"
+                |    "key1" : "value1",
+                |    "key2" : "value2"
                 |          }
                 | containers.container {
                 |  env = [
@@ -236,8 +236,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |kubernetes.pods {
                 |  driver {
                 |    labels: {
-                |            "key1" : "value1",
-                |            "key2" : "value2"
+                |       "key1" : "value1",
+                |       "key2" : "value2"
                 |            }
                 |    containers.container {
                 |      env = [
