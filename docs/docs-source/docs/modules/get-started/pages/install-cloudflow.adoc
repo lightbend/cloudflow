@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This document shows how to install Cloudflow and dependencies on Cloudflow like the Spark and Flink operator, using the `Helm` and `kubectl` command-line tools. 
+This guide shows how to install Cloudflow and dependencies on Cloudflow like the Spark and Flink operator, using the `Helm` and `kubectl` command-line tools. 
 
 == Prerequisites
 
@@ -22,7 +22,7 @@ Before proceeding, make sure that `kubectl` is correctly installed and access th
 
 Kafka is used by Cloudflow to store information. Before installing Cloudflow, you need to make sure there is a Kafka cluster available and have the necessary broker bootstrap configuration.
 
-The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs to establish the connection to the Kafka cluster that Cloudflow will use. The configuration string should have the following format>
+The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs used by Cloudflow to establish the connection to the Kafka cluster. The configuration string should have the following format:
 
 broker-1-address:broker-1-port, broker-2-address;broker-2-port
 
@@ -34,7 +34,7 @@ The following chapter is a guide on how to configure and install a Kafka cluster
 
 === Storage requirements
 
-If you plan to write applications using Spark or Flink, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. This storage class name will be used when installing Cloudflow.
+If you plan to write applications using Spark or Flink, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the `ReadWriteMany` storage class name is needed when installing Cloudflow.
 
 == Installing Cloudflow
 
