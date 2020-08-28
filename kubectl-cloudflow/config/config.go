@@ -307,7 +307,7 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 }
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
-	labelAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	labelAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}$`)
 	DNSAllowedFormatNotInit := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
 	DNSNotAllowedInit := regexp.MustCompile(`^[0-9\-]`)
 
@@ -453,7 +453,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 								}
 							}
 						} else {
-							return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
+							return fmt.Errorf("dkubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
 								podName,
 								containerName,
 								rootPath,
@@ -464,8 +464,8 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 								containerName)
 						}
 					}
-				} else {
-					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section. The '%s' section should be at %s.kubernetes.pods.%s.containers",
+				} else if labelsConfig := podConfig.GetConfig(labels); labelsConfig == nil {
+					return fmt.Errorf("ckubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section. The '%s' section should be at %s.kubernetes.pods.%s.containers",
 						rootPath,
 						kubernetesKey,
 						podsKey,
@@ -477,7 +477,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 						podName)
 				}
 			} else {
-				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
+				return fmt.Errorf("bkubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
 					rootPath,
 					kubernetesKey,
 					podsKey,
@@ -487,7 +487,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 			}
 		}
 	} else {
-		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
+		return fmt.Errorf("akubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
 			rootPath,
 			kubernetesKey,
 			podsKey,
