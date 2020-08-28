@@ -118,7 +118,7 @@ The example below shows how resource requirements are set specifically for a `my
 cloudflow.streamlets.my-streamlet {
   kubernetes.pods.pod {
     labels {
-      key1 = value1,
+      key1 = value1
       key2 = value2
     }
     containers.container {
