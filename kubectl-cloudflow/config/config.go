@@ -340,12 +340,13 @@ func labelHasPrefix(label string) bool {
 }
 
 func validateLabel(name string, prefix string) error {
-	labelPattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	// See https://github.com/kubernetes/kubernetes/issues/71140, IsDNS1123Subdomain and IsDNS1123Label do not allow uppercase letters.
+	labelPattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
 
 	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
 	// TODO it looks like even though the docs say so, only lower case is acceptable for kubernetes labels and values.
-	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
-	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
 	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
 
@@ -360,8 +361,8 @@ func validateLabel(name string, prefix string) error {
 }
 
 func validateLabelValue(labelValue string, label string) error {
-	labelValuePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
-	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
+	labelValuePattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
+	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9]{1}$`)
 	// check for HOCON error that is not caught by go/akka library
 	if strings.ContainsAny(labelValue, "{") || len(labelValue) == 0 {
 		return fmt.Errorf("label '%s' has a value that can't be parsed: '%s'", label, labelValue)
