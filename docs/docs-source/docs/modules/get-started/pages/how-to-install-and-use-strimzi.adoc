@@ -29,7 +29,9 @@ Add the Strimzi Helm repository.
 Update the repository list
 
   helm repo update
-
+If you have not created a `cloudflow` namespace yet, first execute the following command:
+  
+    kubectl create ns cloudflow
 Install the latest version of Strimzi.
 
   helm install strimzi/strimzi-kafka-operator --namespace default --generate-name --set watchNamespaces="{cloudflow}"
