@@ -231,10 +231,11 @@ object PodsConfig {
   }
 
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
-  val labels = config.as[Option[Map[String, String]]]("labels")
-    .getOrElse(Map.empty[String, String])
+    val labels = config
+      .as[Option[Map[String, String]]]("labels")
+      .getOrElse(Map.empty[String, String])
     val containers = config.as[Map[String, ContainerConfig]]("containers")
-    PodConfig(containers, labels.getOrElse(Map()))
+    PodConfig(containers, labels)
   }
 
   /*
