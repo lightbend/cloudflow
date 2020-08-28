@@ -314,208 +314,206 @@ func Test_validateConfig(t *testing.T) {
 	fmt.Printf("unknownStreamletConfigSection: %s\n", validateConfig(unknownStreamletConfigSection, spec))
 
 	labelConfigSection := newConfig(`
-     cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {		 	
-			 labels {
-		 	 	key1 = value1
-		 	 	key2 = value2
-		 	 }
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 
-	}
+		cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		  labels {
+		    key1 = value1
+		    key2 = value2
+		  } containers.container {
+		    resources {
+		      requests {
+		        cpu = 2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }
+		}
 	`)
 
 	assert.Empty(t, validateConfig(labelConfigSection, spec))
 
 	badLabelConfigSectionEmpty := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods{
-     		task-manager {	 	 
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
+		cloudflow.runtimes.flink.kubernetes.pods {
+		  task-manager {
+		    containers.container {
+		      resources {
+		        requests {
+		          cpu = 2
+		          memory = "512M"
+		        }limits {
+		          memory = "1024M"
 		        }
-			 }
-			 labels {
-		 	 	key1 
-		 	 }
-		 	}
-		 	job-manager {	 	 
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
+		      }
+		    }labels {
+		      key1
+		    }
+		  }job-manager {
+		    containers.container {
+		      resources {
+		        requests {
+		          cpu = 2
+		          memory = "512M"
+		        }limits {
+		          memory = "1024M"
 		        }
-			 }
-			 labels {
-		 	 	key2 : value2
-		 	 }
-		 	}
-	}
+		      }
+		    }labels {
+		      key2: value2
+		    }
+		  }
+		}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty, spec))
 	fmt.Printf("badLabelConfigSectionEmpty: %s\n", validateConfig(badLabelConfigSectionEmpty, spec))
 
 	badLabelConfigSectionEmpty2 := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	key1 
-		 	 }
-	}
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu=2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    key1
+		  }
+		}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelConfigSectionEmpty2, spec))
 	fmt.Printf("badLabelConfigSectionEmpty2: %s\n", validateConfig(badLabelConfigSectionEmpty2, spec))
 
 	badLabelKeyTooLong := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	keyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz :  value2
-		 	 }
-	}
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu = 2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    keyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz: value2
+		  }
+		}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelKeyTooLong, spec))
 	fmt.Printf("badLabelKeyTooLong: %s\n", validateConfig(badLabelKeyTooLong, spec))
 
-	badLabelKeyIllFormed := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	"keyabcdefstuv+zabcdefghijklmnopqrstuvwxyz" :  value2
-		 	 }
-	}
+	badLabelKeyMalformed := newConfig(`
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu = 2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    "keyabcdefstuv+zabcdefghijklmnopqrstuvwxyz": value2
+		  }
+		}
 	`)
-	assert.NotEmpty(t, validateConfig(badLabelKeyIllFormed, spec))
-	fmt.Printf("badLabelKeyIllFormed: %s\n", validateConfig(badLabelKeyIllFormed, spec))
+	assert.NotEmpty(t, validateConfig(badLabelKeyMalformed, spec))
+	fmt.Printf("badLabelKeyMalformed: %s\n", validateConfig(badLabelKeyMalformed, spec))
 
-	badLabelKeyIllFormed2 := newConfig(`
+	badLabelKeyMalformed2 := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	"lkjsdfsdf..sdfsfd//keyabcdefstuvzabcdefghijklmnopqrstuvwxyz" :  value2
-		 	 }
+		labels {
+		 	"lkjsdfsdf..sdfsfd//keyabcdefstuvzabcdefghijklmnopqrstuvwxyz" :  value2
+		 }
 	}
 	`)
-	assert.NotEmpty(t, validateConfig(badLabelKeyIllFormed2, spec))
-	fmt.Printf("badLabelKeyIllFormed2: %s\n", validateConfig(badLabelKeyIllFormed2, spec))
+	assert.NotEmpty(t, validateConfig(badLabelKeyMalformed2, spec))
+	fmt.Printf("badLabelKeyMalformed2: %s\n", validateConfig(badLabelKeyMalformed2, spec))
 
-	badLabelKeyIllFormed3 := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	"lkjsdfsdfsdfs+fd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz" :  value2
-		 	 }
-	}
+	badLabelKeyMalformed3 := newConfig(`
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu=2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    "lkjsdfsdfsdfs+fd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz": value2
+		  }
+		}
 	`)
-	assert.NotEmpty(t, validateConfig(badLabelKeyIllFormed3, spec))
-	fmt.Printf("badLabelKeyIllFormed3: %s\n", validateConfig(badLabelKeyIllFormed3, spec))
+	assert.NotEmpty(t, validateConfig(badLabelKeyMalformed3, spec))
+	fmt.Printf("badLabelKeyMalformed3: %s\n", validateConfig(badLabelKeyMalformed3, spec))
 
-	labelKeyellFormed2 := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	"lkjsdfsdfsdfsfd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz" :  value2
-		 	 }
-	}
+	badLabelKeyPrefixMalformed := newConfig(`
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu=2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    "0lkjsdfsdfsdfsfd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz": value2
+		  }
+		}
 	`)
-	assert.Empty(t, validateConfig(labelKeyellFormed2, spec))
+	assert.NotEmpty(t, validateConfig(badLabelKeyPrefixMalformed, spec))
+	fmt.Printf("badLabelKeyPrefixMalformed: %s\n", validateConfig(badLabelKeyPrefixMalformed, spec))
+
+	badLabelKeyPrefixTooLong := newConfig(`
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu=2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    "flkjsdfsdfsdfsfdkeyabcdefstuvzabcdefghijklmnopqrstuvwxyzkeyghijklmnopqrstuvwxyzkeyghijklmnopqrstuvwxyzkeyghijklmnopqrstuvwxyzkeyghijklmnopqrstuvwxyzkeyghijklmnopqrstuvwxyzkeyabcdefstuvzabcdefghijklmnopqrstuvwxyzkeyabcdefstuvzabcdefghijklmnopqrstuvwxyzkeyabcdefstuvzabcdefghijklmnopqrstuvwxyz/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz": value2
+		  }
+		}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelKeyPrefixTooLong, spec))
+	fmt.Printf("badLabelKeyPrefixTooLong: %s\n", validateConfig(badLabelKeyPrefixTooLong, spec))
+
+	labelKeyWellFormed2 := newConfig(`
+		cloudflow.runtimes.flink.kubernetes.pods.pod {
+		  containers.container {
+		    resources {
+		      requests {
+		        cpu = 2
+		        memory = "512M"
+		      }limits {
+		        memory = "1024M"
+		      }
+		    }
+		  }labels {
+		    "lkjsdfsdfsdfsfd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz": value2
+		  }
+		}	
+	`)
+	assert.Empty(t, validateConfig(labelKeyWellFormed2, spec))
 
 	labelWellFormed := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	keyabcdefstuv=jzabcdefghijklmnopqrstuvwxyz :  value2
-		 	 }
+		labels {
+		 	keyabcdefstuv=jzabcdefghijklmnopqrstuvwxyz : value2
+		 }
 	}
 	`)
 	assert.NotEmpty(t, validateConfig(labelWellFormed, spec))
@@ -523,82 +521,76 @@ func Test_validateConfig(t *testing.T) {
 
 	badLabelValueTooLong := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	key1 : valueabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
-		 	 }
+		labels {
+		 	key1 : valueabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+		 }
 	}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelValueTooLong, spec))
 	fmt.Printf("badLabelValueTooLong: %s\n", validateConfig(badLabelValueTooLong, spec))
 
-	badLabelValueIllFormed := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods.pod {
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	key1 : "stuvwxyzabcde*fghijkl*mnopqrstuvwxyz"
-		 	 }
-	}
+	badLabelValueMalformed := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		   labels {
+		     key1 : "stuvwxyzabcde*fghijkl*mnopqrstuvwxyz"
+		   }
+		}
 	`)
-	assert.NotEmpty(t, validateConfig(badLabelValueIllFormed, spec))
-	fmt.Printf("badLabelValueIllFormed: %s\n", validateConfig(badLabelValueIllFormed, spec))
+	assert.NotEmpty(t, validateConfig(badLabelValueMalformed, spec))
+	fmt.Printf("badLabelValueMalformed: %s\n", validateConfig(badLabelValueMalformed, spec))
+
+	badLabelKeyMalformed22 := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		   labels {
+		     "/key1" : "stuvwxyzabcdefghijklmnopqrstuvwxyz"
+		   }
+		}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelKeyMalformed22, spec))
+	fmt.Printf("badLabelKeyMalformed22: %s\n", validateConfig(badLabelKeyMalformed22, spec))
+
+	badLabelKeyMalformed33 := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		   labels {
+		     "key1/" : "stuvwxyzabcde*fghijkl*mnopqrstuvwxyz"
+		   }
+		}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelKeyMalformed33, spec))
+	fmt.Printf("badLabelKeyMalformed33: %s\n", validateConfig(badLabelKeyMalformed33, spec))
+
+	badLabelValueMalFormed4 := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		   labels {
+		     "/k" : "stuvwxyzarstuvwxyz"
+		   }
+		}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelValueMalFormed4, spec))
+	fmt.Printf("badLabelValueMalFormed4: %s\n", validateConfig(badLabelValueMalFormed4, spec))
+
+	badLabelValueMalFormed5 := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		     labels {
+		       "h/" : "stuvwxyzarstuvwxyz"
+		     }
+		}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelValueMalFormed5, spec))
+	fmt.Printf("badLabelValueMalFormed5: %s\n", validateConfig(badLabelValueMalFormed5, spec))
 
 	badLabelTooSpecific := newConfig(`
-     cloudflow.runtimes.flink.kubernetes.pods{
-     		task-manager {	 	 
-     		 labels {
-		 	 	key1 : value1
-		 	 }
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			
-		 	}
-		 	job-manager {	 	 
-			 containers.container {
-			 	resources {
-		            requests {
-		              cpu = 2
-		              memory = "512M"
-		            }
-		            limits {
-		              memory = "1024M"
-		            }
-		        }
-			 }
-			 labels {
-		 	 	key1 : value1
-		 	 }
-		 	}
-	}
+	    cloudflow.runtimes.flink.kubernetes.pods{
+		  task-manager{
+		    labels{
+		      key1: value1
+		    }
+		  }job-manager{
+		    labels{
+		      key1: value1
+		    }
+		  }
+		}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelTooSpecific, spec))
 	// more info in https://github.com/lyft/flinkk8soperator/blob/master/pkg/apis/app/v1beta1/types.go

@@ -32,7 +32,6 @@ const kubernetesKey = "kubernetes"
 const podsKey = "pods"
 const cloudflowPodName = "pod"
 const labels = "labels"
-const maxLabelLength = 63
 const cloudflowContainerName = "container"
 const containersKey = "containers"
 const resourcesKey = "resources"
@@ -309,30 +308,31 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
 	labelAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
-	prefixAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,251}[a-z0-9A-Z]{1}$`)
+	DNSAllowedFormatNotInit := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+	DNSNotAllowedInit := regexp.MustCompile(`^[0-9\-]`)
 
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
 		for k, v := range labelsConfig.Root().GetObject().Items() {
 			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
 				return fmt.Errorf("label with key '%s' has a value that can't be parsed: '%s'", k, v)
 			}
-			if strings.Count(k, "/") == 1 {
+			if strings.Count(k, "/") == 1 && !(regexp.MustCompile(`^/`).Match([]byte(k))) && !(regexp.MustCompile(`/$`).Match([]byte(k))) {
 				splitted := strings.Split(k, "/")
 				prefix := splitted[0]
 				name := splitted[1]
-				if prefixAllowedFormat.Match([]byte(prefix)) == false {
-					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
+				if DNSNotAllowedInit.Match([]byte(prefix)) || DNSAllowedFormatNotInit.Match([]byte(prefix)) == false {
+					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
 				}
 				if labelAllowedFormat.Match([]byte(name)) == false {
-					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
+					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
 				}
 			} else {
 				// fmt.Printf("matching %s , result %t ",k,labelAllowedFormat.Match([]byte(k)))
 				if labelAllowedFormat.Match([]byte(k)) == false {
-					return fmt.Errorf("label with key '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", k)
+					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", k)
 				}
 				if labelAllowedFormat.Match([]byte(v.String())) == false {
-					return fmt.Errorf("label with value '%s' is ill-formed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", v)
+					return fmt.Errorf("label with value '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", v)
 				}
 			}
 
