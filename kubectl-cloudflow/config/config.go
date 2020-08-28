@@ -327,7 +327,6 @@ func validateLabels(podConfig *configuration.Config, podName string) error {
 					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
 				}
 			} else {
-				// fmt.Printf("matching %s , result %t ",k,labelAllowedFormat.Match([]byte(k)))
 				if labelAllowedFormat.Match([]byte(k)) == false {
 					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", k)
 				}
