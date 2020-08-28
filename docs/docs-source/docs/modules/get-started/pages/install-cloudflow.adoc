@@ -173,7 +173,7 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running   0         
 
 For this, we will create yet another YAML file that we will apply to the cluster with `kubectl`.
 ----
-cat > spark-mutating-webhook.yaml << ‘EOF2’
+cat > spark-mutating-webhook.yaml << 'EOF2'
 apiVersion: batch/v1
 kind: Job
 metadata:
