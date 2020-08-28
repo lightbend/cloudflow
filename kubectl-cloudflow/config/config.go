@@ -307,41 +307,69 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 }
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
-	labelAllowedFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}$`)
-	DNSAllowedFormatNotInit := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
-	DNSNotAllowedInit := regexp.MustCompile(`^[0-9\-]`)
-
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
-		for k, v := range labelsConfig.Root().GetObject().Items() {
-			if strings.ContainsAny(v.String(), "{") || v.IsEmpty() {
-				return fmt.Errorf("label with key '%s' has a value that can't be parsed: '%s'", k, v)
-			}
-			if strings.Count(k, "/") == 1 && !(regexp.MustCompile(`^/`).Match([]byte(k))) && !(regexp.MustCompile(`/$`).Match([]byte(k))) {
-				splitted := strings.Split(k, "/")
-				prefix := splitted[0]
-				name := splitted[1]
-				if DNSNotAllowedInit.Match([]byte(prefix)) || DNSAllowedFormatNotInit.Match([]byte(prefix)) == false {
-					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
-				}
-				if labelAllowedFormat.Match([]byte(name)) == false {
-					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", prefix)
-				}
-			} else {
-				if labelAllowedFormat.Match([]byte(k)) == false {
-					return fmt.Errorf("label with key '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", k)
-				}
-				if labelAllowedFormat.Match([]byte(v.String())) == false {
-					return fmt.Errorf("label with value '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", v)
-				}
-			}
-
-		}
 		if podName == taskManager || podName == jobManager {
-			return fmt.Errorf("'flink.pods.%s.labels' is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as 'flink.pods.pod.labels'", podName, podName)
+			return fmt.Errorf("'pods.%s.labels' is not allowed. Labels can NOT be applied specifically to a %s. They can only be used in a generic flink pod as 'pods.pod.labels'", podName, podName)
+		}
+
+		for key, value := range labelsConfig.Root().GetObject().Items() {
+			label := strings.TrimSpace(key)
+			labelValue := strings.TrimSpace(value.String())
+
+			if labelHasPrefix(label) {
+				splitted := strings.Split(label, "/")
+				prefix := splitted[0]
+				label := splitted[1]
+
+				if err := validateLabel(label, prefix); err != nil {
+					return err
+				}
+				return validateLabelValue(labelValue, label)
+			}
+			if err := validateLabel(label, ""); err != nil {
+				return err
+			}
+			return validateLabelValue(labelValue, label)
 		}
 	}
 	return nil
+}
 
+func labelHasPrefix(label string) bool {
+	return strings.Count(label, "/") == 1 && !strings.HasPrefix(label, "/") && !strings.HasSuffix(label, "/")
+}
+
+func validateLabel(name string, prefix string) error {
+	labelPattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+
+	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
+	// TODO it looks like even though the docs say so, only lower case is acceptable for kubernetes labels and values.
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
+	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
+	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
+
+	if len(prefix) > 0 && illegalLabelPrefixPattern.MatchString(prefix) || labelPrefixPattern.MatchString(prefix) == false {
+		return fmt.Errorf(malformedLabelMsg, fmt.Sprintf("%s/%s", prefix, name))
+	}
+
+	if labelPattern.MatchString(name) || labelSingleCharFormat.MatchString(name) {
+		return nil
+	}
+	return fmt.Errorf(malformedLabelMsg, name)
+}
+
+func validateLabelValue(labelValue string, label string) error {
+	labelValuePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
+	// check for HOCON error that is not caught by go/akka library
+	if strings.ContainsAny(labelValue, "{") || len(labelValue) == 0 {
+		return fmt.Errorf("label '%s' has a value that can't be parsed: '%s'", label, labelValue)
+	}
+	if labelValuePattern.MatchString(labelValue) || labelValueSingleCharFormat.MatchString(labelValue) {
+		return nil
+	}
+	return fmt.Errorf("The value of label %s is malformed: '%s'. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", label, labelValue)
 }
 
 func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string) error {
@@ -351,7 +379,19 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 				if err := validateLabels(podConfig, podName); err != nil {
 					return err
 				}
-				if containersConfig := podConfig.GetConfig(containersKey); containersConfig != nil && containersConfig.Root().IsObject() {
+				containersConfig := podConfig.GetConfig(containersKey)
+
+				if containersConfig == nil && podConfig.GetConfig(labels) == nil {
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section or a labels section",
+						rootPath,
+						kubernetesKey,
+						podsKey,
+						podName,
+						podName,
+						containersKey)
+				}
+
+				if containersConfig != nil && containersConfig.Root().IsObject() {
 					for containerName := range containersConfig.Root().GetObject().Items() {
 						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
 							for containerKey := range containerConfig.Root().GetObject().Items() {
@@ -453,7 +493,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 								}
 							}
 						} else {
-							return fmt.Errorf("dkubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
+							return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s is not a container section",
 								podName,
 								containerName,
 								rootPath,
@@ -464,20 +504,9 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 								containerName)
 						}
 					}
-				} else if labelsConfig := podConfig.GetConfig(labels); labelsConfig == nil {
-					return fmt.Errorf("ckubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section. The '%s' section should be at %s.kubernetes.pods.%s.containers",
-						rootPath,
-						kubernetesKey,
-						podsKey,
-						podName,
-						podName,
-						containersKey,
-						containersKey,
-						rootPath,
-						podName)
 				}
 			} else {
-				return fmt.Errorf("bkubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
+				return fmt.Errorf("kubernetes configuration %s.%s.%s does not contain a pod section. The pod section should be at %s.%s.%s.pod",
 					rootPath,
 					kubernetesKey,
 					podsKey,
@@ -487,7 +516,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 			}
 		}
 	} else {
-		return fmt.Errorf("akubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
+		return fmt.Errorf("kubernetes configuration %s.%s does not contain a '%s' section. The pods sections should be at %s.%s.%s",
 			rootPath,
 			kubernetesKey,
 			podsKey,
