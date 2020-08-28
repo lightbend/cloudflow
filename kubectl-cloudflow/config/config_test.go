@@ -509,15 +509,15 @@ func Test_validateConfig(t *testing.T) {
 	`)
 	assert.Empty(t, validateConfig(labelKeyWellFormed2, spec))
 
-	labeKeylMalFormed := newConfig(`
+	labelKeyMalformed := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods.pod {
 		labels {
 		 	keyabcdefstuv=jzabcdefghijklmnopqrstuvwxyz : value2
 		}
 	}
 	`)
-	assert.NotEmpty(t, validateConfig(labeKeylMalFormed, spec))
-	fmt.Printf("labeKeylMalFormed: %s\n", validateConfig(labeKeylMalFormed, spec))
+	assert.NotEmpty(t, validateConfig(labelKeyMalformed, spec))
+	fmt.Printf("labelKeyMalformed: %s\n", validateConfig(labelKeyMalformed, spec))
 
 	badLabelValueTooLong := newConfig(`
      cloudflow.runtimes.flink.kubernetes.pods.pod {
