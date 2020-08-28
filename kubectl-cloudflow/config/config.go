@@ -344,7 +344,6 @@ func validateLabel(name string, prefix string) error {
 	labelPattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
 
 	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	// TODO it looks like even though the docs say so, only lower case is acceptable for kubernetes labels and values.
 	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
 	labelSingleCharFormat := regexp.MustCompile(`^[a-z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
