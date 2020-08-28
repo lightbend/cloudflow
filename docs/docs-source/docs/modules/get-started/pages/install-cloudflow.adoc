@@ -93,7 +93,7 @@ As we have seen before, we need to update the Helm repo before installing Spark.
   
   helm repo update
 
-Before installing the helm chart, we will need to prepare a `value.yaml` file, it overrides the default values in the Spark Helm chart.
+Before installing the Helm chart, we will need to prepare a `value.yaml` file, it overrides the default values in the Spark Helm chart.
 
 ----
 cat > spark-values.yaml << EOF
