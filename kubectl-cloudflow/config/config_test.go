@@ -579,6 +579,16 @@ func Test_validateConfig(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(badLabelValueMalFormed5, spec))
 	fmt.Printf("badLabelValueMalFormed5: %s\n", validateConfig(badLabelValueMalFormed5, spec))
 
+	okShortLabel := newConfig(`
+	    cloudflow.runtimes.flink.kubernetes.pods.pod {
+		     labels {
+		       a = b
+		     }
+		}
+	`)
+	assert.Empty(t, validateConfig(okShortLabel, spec))
+	fmt.Printf("okShortLabel: %s\n", validateConfig(okShortLabel, spec))
+
 	badLabelTooSpecific := newConfig(`
 	    cloudflow.runtimes.flink.kubernetes.pods{
 		  task-manager{
