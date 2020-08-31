@@ -13,7 +13,7 @@ This guide shows how to install Cloudflow and dependencies on Cloudflow like the
 
 Make sure you have the following prerequisites installed before continuing:
 
-- Helm, version 3 or later
+- Helm, version 3 or later (check with `helm version`)
 - Kubectl 
 
 Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster to install Cloudflow.
