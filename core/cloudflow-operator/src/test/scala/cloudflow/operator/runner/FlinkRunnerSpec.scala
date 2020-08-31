@@ -79,7 +79,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       replicas = None
     )
 
-    "read environment variables and resource requirements from pod configuration and configure taskmanager and jobmanager " in {
+    "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods specs" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -91,11 +91,12 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
-              |    { name = "JAVA_OPTS"
-              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    { 
+              |       name = "JAVA_OPTS"
+              |       value = "-XX:MaxRAMPercentage=40.0"
               |    },{
-              |      name = "FOO"
-              |      value = "BAR"
+              |       name = "FOO"
+              |       value = "BAR"
               |    }
               |   ]
               |  resources {
@@ -107,7 +108,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |    }
               |  }
               |}
-              |        """.stripMargin.getBytes()
+              |""".stripMargin.getBytes()
           )
         ),
         namespace = namespace
@@ -143,6 +144,43 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
+    }
+
+    "read from config custom labels and add them to the jobmanager and taskmanager pods specs" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                  |kubernetes.pods.pod {
+                  | labels: {
+                  |     "key1" : "value1",
+                  |     "key2" : "value2"
+                  | }
+                  | containers.container {
+                  |  env = [
+                  |    {
+                  |      name = "FOO"
+                  |      value = "BAR"
+                  |    }
+                  |   ]
+                  |}
+                  |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+
+      crd.metadata.labels.get("key1") mustBe Some("value1")
+      crd.metadata.labels.get("key2") mustBe Some("value2")
     }
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {

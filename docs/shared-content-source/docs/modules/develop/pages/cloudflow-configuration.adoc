@@ -116,22 +116,28 @@ The example below shows how resource requirements are set specifically for a `my
 [source, hocon]
 ----
 cloudflow.streamlets.my-streamlet {
-  kubernetes.pods.pod.containers.container {
-    env = [ 
-          { name = "JAVA_OPTS" 
-            value = "-XX:MaxRAMPercentage=40.0"
-          },{
-            name = "FOO"
-            value = "BAR"
-          }
-        ]
-    resources {
-      requests {
-        cpu = "500m"
-        memory = "512Mi"
-      }
-      limits {
-        memory = "4Gi"
+  kubernetes.pods.pod {
+    labels {
+      key1 = value1
+      key2 = value2
+    }
+    containers.container {
+      env = [ 
+            { name = "JAVA_OPTS" 
+              value = "-XX:MaxRAMPercentage=40.0"
+            },{
+              name = "FOO"
+              value = "BAR"
+            }
+          ]
+      resources {
+        requests {
+          cpu = "500m"
+          memory = "512Mi"
+        }
+        limits {
+          memory = "4Gi"
+        }
       }
     }
   }
@@ -140,7 +146,8 @@ cloudflow.streamlets.my-streamlet {
 
 The above example shows that `500mcpu` is requested, as well as `512Mi` of memory. 
 The pod is limited to use `4Gi` of memory.
-It also shows how to set options to the JVM through an environment variable. 
+It also shows how to set options to the JVM through an environment variable
+and how to add labels to a pod. 
 
 For runtimes that only deploy one pod per streamlet, the config path for the container settings is `kubernetes.pods.pod.containers.container`.
 
@@ -153,41 +160,57 @@ If you specify Kubernetes container settings via `kubernetes.pods.pod.containers
 
 For Spark you can use the following paths:
   
-- For the Driver pods: `kubernetes.pods.driver.containers.container`      
-- For the Executor pods: `kubernetes.pods.executor.containers.container`      
+- For the Driver pods: `kubernetes.pods.driver.containers.container` and `kubernetes.pods.driver.labels`     
+- For the Executor pods: `kubernetes.pods.executor.containers.container` and `kubernetes.pods.executor.labels`     
 
 For Flink you can use the following paths:
   
 - For the JobManager pods: `kubernetes.pods.job-manager.containers.container`      
 - For the TaskManager pods: `kubernetes.pods.task-manager.containers.container`      
+- For both pods: 
+`kubernetes.pods.pod.labels`
 
 You can also specify the Kubernetes container settings for all streamlets using a particular runtime. 
+
+Is important to clarify that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not.
+ 
 This is shown in the example below:
 
 [source, hocon]
 ----
 cloudflow.runtimes.spark {
   kubernetes.pods {
-    driver.containers.container {
-      resources {
-        requests {
-          cpu = "1"
-          memory = "1Gi"
-        }
-        limits {
-          memory = "2Gi"
+    driver {
+      labels {
+        key1 = value1
+        key2 = value2
+      }
+      containers.container {
+        resources {
+          requests {
+            cpu = "1"
+            memory = "1Gi"
+          }
+          limits {
+            memory = "2Gi"
+          }
         }
       }
     }
 
-    executor.containers.container {
-      resources {
-        requests {
-          cpu = "2"
-          memory = "2Gi"
-        }
-        limits {
-          memory = "6Gi"
+    executor {
+      labels {
+        key3 = value3
+      }
+      containers.container {
+        resources {
+          requests {
+            cpu = "2"
+            memory = "2Gi"
+          }
+          limits {
+            memory = "6Gi"
+          }
         }
       }
     }
@@ -195,7 +218,10 @@ cloudflow.runtimes.spark {
 }
 ----
 
-The above example shows specific container settings for the Spark driver and executor pods. In this case the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi`.
+The above example shows specific container settings for the Spark driver and executor pods. In this case the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory and will be labeled with `key1 : value1` and 
+`key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
+
+
 
 We explore the runtime configuration in more detail in the next section.
 

@@ -136,7 +136,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     val driver = addDriverResourceRequirements(
       Driver(
         javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
-        labels = labels,
+        labels = labels ++ getLabels(podsConfig, DriverPod),
         volumeMounts = volumeMounts,
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, DriverPod),
@@ -150,7 +150,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Executor(
         javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
         instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
-        labels = labels,
+        labels = labels ++ getLabels(podsConfig, ExecutorPod),
         volumeMounts = volumeMounts,
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, ExecutorPod),

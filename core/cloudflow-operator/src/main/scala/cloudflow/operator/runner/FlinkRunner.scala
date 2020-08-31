@@ -103,7 +103,9 @@ object FlinkRunner extends Runner[CR] {
     val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId).mapValues(Name.ofLabelValue)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
+            .mapValues(Name.ofLabelValue) ++
+          getLabels(podsConfig, PodsConfig.CloudflowPodName)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
     CustomResource[Spec, Status](_spec)
@@ -372,6 +374,7 @@ object FlinkResource {
   )
 
   final case class ApplicationState(state: String, errorMessage: Option[String])
+
   final case class JobManagerInfo(
       podName: Option[String],
       webUIAddress: Option[String],
