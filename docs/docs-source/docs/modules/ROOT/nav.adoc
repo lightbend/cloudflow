@@ -53,7 +53,11 @@ include::partial$include.adoc[]
 ** xref:cli:cloudflow_version.adoc[version]
 
 * xref:administration:index.adoc[Cloudflow administration]
-** xref:get-started:installing-cloudflow.adoc[Installing Cloudflow]
+
+** xref:administration:installing-cloudflow.adoc[Installing Cloudflow]
+** xref:administration:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi]
+** xref:administration:installing-spark-operator.adoc[Adding Spark Support]
+** xref:administration:installing-flink-operator.adoc[Adding Flink Support]
 ** xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow]
 ** xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
 
