@@ -56,7 +56,7 @@ abstract case class SparkStreamletContext(
    *
    * @return the `StreamingQuery` that starts executing
    */
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, trigger: Trigger)(
+  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, trigger: Option[Trigger])(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
   ): StreamingQuery

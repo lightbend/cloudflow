@@ -224,10 +224,10 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   final def writeStream[Out](stream: Dataset[Out],
                              outPort: CodecOutlet[Out],
                              outputMode: OutputMode,
-                             trigger: Trigger = Trigger.ProcessingTime(0L))(
+                             optional_trigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
-  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, trigger)
+  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optional_trigger)
 
   final def config: Config = context.config
 

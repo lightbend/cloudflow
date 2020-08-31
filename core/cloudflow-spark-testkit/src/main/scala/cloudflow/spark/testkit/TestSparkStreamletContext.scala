@@ -57,15 +57,18 @@ class TestSparkStreamletContext(override val streamletRef: String,
       stream: Dataset[Out],
       outPort: CodecOutlet[Out],
       outputMode: OutputMode,
-      trigger: Trigger = Trigger.ProcessingTime(0L)
+      optional_trigger: Option[Trigger] = None
   )(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = {
     // RateSource can only work with a microBatch query because it contains no data at time zero.
     // Trigger.Once requires data at start to work.
-    var etrigger = trigger
-    etrigger = if (isRateSource(stream)) {
-      Trigger.ProcessingTime(ProcessingTimeInterval)
-    } else {
-      Trigger.Once()
+    val trigger = optional_trigger match {
+      case Some(t) => t
+      case _ =>
+        if (isRateSource(stream)) {
+          Trigger.ProcessingTime(ProcessingTimeInterval)
+        } else {
+          Trigger.Once()
+        }
     }
     val streamingQuery = outletTaps
       .find(_.portName == outPort.name)
@@ -73,7 +76,7 @@ class TestSparkStreamletContext(override val streamletRef: String,
         stream.writeStream
           .outputMode(outputMode)
           .format("memory")
-          .trigger(etrigger)
+          .trigger(trigger)
           .queryName(outletTap.queryName)
           .start()
       }
