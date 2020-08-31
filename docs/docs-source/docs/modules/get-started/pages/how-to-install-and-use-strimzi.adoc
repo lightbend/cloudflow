@@ -34,9 +34,9 @@ Update the repository list
 
 Install the latest version of Strimzi.
 
-  helm install strimzi strimzi/strimzi-kafka-operator --namespace clodflow
+  helm install strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
 
-After the install complete, the Strimzi Kafka operator should be running the in the `cloudflow` namespace.
+After the install complete, the Strimzi Kafka operator should be running in the `cloudflow` namespace.
 
 ----
 $ kubectl get pods -n cloudflow
