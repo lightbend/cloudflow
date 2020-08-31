@@ -1,4 +1,4 @@
-= Installing Spark Operator
+= Adding Spark Support
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

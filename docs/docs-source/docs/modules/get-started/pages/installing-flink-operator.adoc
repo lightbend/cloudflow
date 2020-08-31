@@ -1,4 +1,4 @@
-= Installing Spark Operator
+= Adding Flink Support
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
