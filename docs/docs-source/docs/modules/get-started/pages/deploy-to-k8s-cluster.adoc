@@ -6,8 +6,9 @@
 include::ROOT:partial$include.adoc[]
 
 If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:installing-cloudflow.adoc[install Cloudflow] first.
-Once the application is built you need to publish the docker images to some registry that stores, manages and secures your application images. 
-In this example we will use a Docker Hub (docker.io) registry.
+
+Once the application is built you need to publish the docker images to a container registry that stores, manages and secures your application images. 
+In this example we will use a Docker Hub registry.
 
 Follow these steps to complete the process of publishing:
 
