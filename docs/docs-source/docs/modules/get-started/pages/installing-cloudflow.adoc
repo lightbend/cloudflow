@@ -171,7 +171,7 @@ spec:
 EOF
 ----
 
-Now we can install the Spark operator using Helm. Note that we use a specific version fo the Spark operator Helm chart.
+Now we can install the Spark operator using Helm. Note that we use a specific version of the Spark operator Helm chart.
 
   helm install spark-operator incubator/sparkoperator --namespace cloudflow --values="spark-values.yaml"  --version "0.6.7"
 
