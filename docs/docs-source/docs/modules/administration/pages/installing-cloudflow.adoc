@@ -200,7 +200,3 @@ You should now see the Lightbend console in your browser.
 If you need to upgrade Cloudflow to a newer version, the following chapter in the administration section will show you how.
 
 . xref::administration:upgrading-cloudflow.adoc[upgrading Cloudflow].
-
-== What's next
-
-Now, we are ready to xref:deploy-to-gke-cluster.adoc[deploy an example application to the cluster].
