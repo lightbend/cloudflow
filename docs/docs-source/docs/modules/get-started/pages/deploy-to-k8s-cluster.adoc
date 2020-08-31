@@ -43,14 +43,14 @@ We use the Cloudflow CLI to deploy that application description to a cluster.
 == Deploy Application to the Cluster
 
 This is quite straightforward and the output of `buildApp` actually tells you what command to run for deployment. 
-If your Docker Hub is private, you need to supply the credentials to the Docker repository along with the CLI `deploy` command.
+If your Docker Hub repository is private, you need to supply the credentials along with the CLI `deploy` command, so that Kubernetes can pull the images when the containers are created.
 The following example reads a password from a file, and passes it to the `kubectl cloudflow deploy` command using STDIN:
 
 ```
-$ cat my-password.txt | kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json -u <docker hub username> --password-stdin
+$ cat my-dockerhub-password.txt | kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json -u <your docker hub username> --password-stdin
 ```
 
-If your docker registry is public you can omit credentials with the `--no-registry-credentials` flag, which is shown in the following example:
+If your docker repository is public you can omit credentials with the `--no-registry-credentials` flag, which is shown in the following example:
 
 ```
 $ kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json --no-registry-credentials
