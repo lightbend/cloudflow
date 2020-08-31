@@ -124,7 +124,10 @@ You can now deploy an Akka-based Cloudflow application into the cluster as it on
 
 == Adding Spark support
 
-If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application.
+If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application. As we can see below, the CLI will not allow you to deploy an application that does not have all dependencies installed:
+
+  $ kubectl cloudflow deploy cloudflow/examples/call-record-aggregator/target/call-record-aggregator.json
+  [Error] cannot detect that 'Spark' is installed, please install 'Spark' before continuing (exit status 1)
 
 The following chapter is a guide on how to configure and install the Spark Operator: 
 
@@ -132,7 +135,7 @@ The following chapter is a guide on how to configure and install the Spark Opera
 
 == Adding Flink support
 
-If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application. As we can see below, the CLI will not allow you to deploy an application that does not have all dependencies installed.
+If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application. As we can see below, the CLI will not allow you to deploy an application that does not have all dependencies installed:
 
   $ kubectl cloudflow deploy cloudflow/examples/taxi-ride/target/taxi-ride-fare.json
   [Error] cannot detect that Flink is installed, please install Flink before continuing (exit status 1)
