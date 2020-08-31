@@ -1,4 +1,4 @@
-= Deploy the Example to a Kubernetes cluster
+= Deploy the Example to a Kubernetes Cluster
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:installing-cloudflow.adoc[install Cloudflow] first.
 Once the application is built you need to publish the docker images to some registry that stores, manages and secures your application images. 
-In this example we will use the GCloud registry `eu.gcr.io`.
+In this example we will use the Google Cloud Container Registry `eu.gcr.io`.
 
 Follow these steps to complete the process of publishing:
 
