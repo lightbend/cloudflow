@@ -358,4 +358,4 @@ If you need to upgrade Cloudflow to a newer version, the following chapter in th
 
 == What's next
 
-Now, we are ready to xref:deploy-to-gke-cluster.adoc[deploy an example application to the cluster].
+Now, we are ready to xref:deploy-to-k8s-cluster.adoc[deploy an example application to the cluster].

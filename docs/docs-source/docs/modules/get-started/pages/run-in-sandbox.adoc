@@ -139,4 +139,4 @@ To terminate, press [ENTER]
 
 == What's next
 
-Now, we are ready to xref:setup-k8s-cluster.adoc[Set up a Kubernetes cluster].
+Now, we are ready to xref:deploy-to-k8s-cluster.adoc[Deploy to a Kubernetes Cluster].

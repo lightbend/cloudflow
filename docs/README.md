@@ -42,6 +42,9 @@ To build the documentation, use `make` with the following commands:
 
     List all the TODOs, review comments, unresolve references, etc. from the documentation.
 
+* `make local-preview`
+
+   Builds the documentation and starts a local HTTP server, useful for writing docs and verifying the documentation. Point your browser to `http://127.0.0.1:8000/docs/dev/` and check the docs.
 
 ### Updating a current version of the documentation
 
