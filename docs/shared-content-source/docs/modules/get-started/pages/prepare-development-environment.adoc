@@ -1,9 +1,8 @@
 :page-partial:
 
-To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes-based cluster. 
+To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes cluster. 
 This page describes the required environment to prepare for development. 
-A a later page covers the Kubernetes requirements.
-//TODO: Link the page to Kubernetes installation
+Please see xref:installing-cloudflow.adoc[Installing Cloudflow] for instructions to install Cloudflow on a Kubernetes cluster.
 
 == Prerequisites
 

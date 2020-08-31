@@ -18,8 +18,8 @@ Follow the main topics in order:
 .. xref:develop-example-streamlets.adoc[Develop example streamlets]
 . xref:create-example-blueprint.adoc[Create the example blueprint]
 . xref:run-in-sandbox.adoc[Run in a local sandbox]
-. xref:setup-k8s-cluster.adoc[Set up a Kubernetes cluster]
-. xref:deploy-to-gke-cluster.adoc[Deploy to a GKE cluster]
+. xref:administration:installing-cloudflow.adoc[Installing Cloudflow]
+. xref:deploy-to-k8s-cluster.adoc[Deploy to a Kubernetes cluster]
 . xref:exercise-example.adoc[Exercise the example]
 .. Use CLI helpers such as `status` and `list`
 .. Deal with http ingress and push some data to the application

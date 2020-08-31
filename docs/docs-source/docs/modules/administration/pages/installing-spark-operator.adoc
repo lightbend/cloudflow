@@ -1,0 +1,157 @@
+= Adding Spark Support
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+The Spark operator image used is a fork maintained by Lightbend and is presently the only Cloudflow compatible version.
+See https://github.com/apache/spark/pull/24748[Backported Fix for Spark 2.4.5] for more details.
+
+Add the Spark Helm chart repository.
+
+  helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+
+As we have seen before, we need to update the Helm repo before installing Spark.
+  
+  helm repo update
+
+Before installing the Helm chart, we will need to prepare a `value.yaml` file, it overrides the default values in the Spark Helm chart.
+
+----
+cat > spark-values.yaml << EOF
+rbac:
+  create: true
+serviceAccounts:
+  sparkoperator:
+    create: true
+    name: cloudflow-spark-operator
+  spark:
+    create: true
+    name: cloudflow-spark
+
+enableWebhook: true
+enableMetrics: true
+
+controllerThreads: 10
+installCrds: true
+metricsPort: 10254
+metricsEndpoint: "/metrics"
+metricsPrefix: ""
+resyncInterval: 30
+webhookPort: 8080
+sparkJobNamespace: ""
+operatorImageName: "lightbend/sparkoperator"
+operatorVersion: "2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: cloudflow-webhook
+  labels:
+    app.kubernetes.io/name: sparkoperator
+spec:
+  selector:
+    app.kubernetes.io/name: sparkoperator
+    app.kubernetes.io/version: 2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12
+EOF
+----
+
+Now we can install the Spark operator using Helm. Note that we use a specific version of the Spark operator Helm chart.
+
+  helm install spark-operator incubator/sparkoperator --namespace cloudflow --values="spark-values.yaml"  --version "0.6.7"
+
+IMPORTANT: If you are installing the Spark operator on *OpenShift*, you need to apply the following `rolebinding` to the cluster:
+
+----
+cat > spark-rolebinding.yaml << EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: system:openshift:scc:anyuid
+  namespace: cloudflow
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:anyuid
+subjects:
+- kind: ServiceAccount
+  name: cloudflow-spark
+  namespace: cloudflow
+EOF
+----
+
+To apply the `spark-rolebinding.yaml` file execute the following command. Note that this has *only* to be performed if you are installing Cloudflow on Openshift:
+
+  oc apply -f spark-rolebinding.yaml
+
+After the Spark operator installation completes, we need to adjust its webhook configuration:
+
+----
+$ kubectl get pods -n cloudflow
+NAME                                                READY   STATUS    RESTARTS   AGE
+cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running   0          109s
+spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running   0          109s
+----
+
+For this, we will create yet another YAML file that we will apply to the cluster with `kubectl`:
+----
+cat > spark-mutating-webhook.yaml << 'EOF2'
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudflow-patch-spark-mutatingwebhookconfig
+spec:
+  template:
+    spec:
+      serviceAccountName: cloudflow-operator
+      restartPolicy: OnFailure
+      containers:
+        - name: main
+          image: alpine:3.12
+          command:
+            - /bin/ash
+            - "-c"
+            - |
+              apk update && apk add wget
+              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
+              NAME="spark-operator-sparkoperator"
+              API_VERSION=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.apiVersion}')
+              UUID=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.metadata.uid}')
+              KIND=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.kind}')
+              HOOK_NAME="spark-operator-sparkoperator-webhook-config"
+              JSON=$(cat <<EOF
+              {
+                "metadata": {
+                  "ownerReferences": [
+                    {
+                      "apiVersion": "$API_VERSION",
+                      "blockOwnerDeletion": true,
+                      "controller": true,
+                      "kind": "$KIND",
+                      "name": "$NAME",
+                      "uid": "$UUID"
+                    }
+                  ]
+                }
+              }
+              EOF
+              )
+              echo $JSON
+              kubectl patch MutatingWebhookConfiguration $HOOK_NAME -n cloudflow -p "$JSON"
+EOF2
+----
+
+Now we can apply the changes to the webhook:
+
+  kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
+
+That completes the installation of the Spark operator. You can check the result with the following command: 
+
+----
+$ kubectl get pods -n cloudflow
+NAME                                                READY   STATUS      RESTARTS   AGE
+cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running     0          3m29s
+cloudflow-patch-spark-mutatingwebhookconfig-66xxb   0/1     Completed   0          21s
+spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0          3m29s
+----

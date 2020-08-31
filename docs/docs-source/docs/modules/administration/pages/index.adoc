@@ -7,4 +7,9 @@ include::ROOT:partial$include.adoc[]
 
 This chapter describes common Cloudflow and Kubernetes administration tasks.
 
+. xref:installing-cloudflow.adoc[Installing Cloudflow]
+. xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi]
+. xref:installing-spark-operator.adoc[Adding Spark Support]
+. xref:installing-flink-operator.adoc[Adding Flink Support]
+. xref:upgrading-cloudflow.adoc[Upgrading Cloudflow]
 . xref:providing-external-access-to-cloudflow-services.adoc[Providing External Access to Cloudflow Services]

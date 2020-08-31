@@ -1,6 +1,8 @@
 # Cloudflow Installer
 ## Introduction
 
+**NOTE** Please use https://github.com/lightbend/cloudflow-helm-charts instead, which supercedes this project. The Cloudflow Installer operator project is going to be removed in the near future.
+
 ### Prerequisite
 
 First you need to have a running Kubernetes cluster. If you don't, refer to [Starting a Kubernetes Cluster](start-cluster.md) on how to do it on GKE, EKS or AKS.
