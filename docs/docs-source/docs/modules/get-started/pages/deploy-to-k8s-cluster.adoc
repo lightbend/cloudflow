@@ -17,10 +17,12 @@ Create a file named `target-env.sbt` in the root of your project folder (the sam
 ```
 // Google Cloud Registry
 ThisBuild / cloudflowDockerRegistry := Some("docker.io")
-ThisBuild / cloudflowDockerRepository := Some("<docker hub username>")
+ThisBuild / cloudflowDockerRepository := Some("<your docker hub username>")
 ```
 
-Publish the docker image of your project to the above registry. Make sure you are logged in with `docker login --username <docker hub username>` and then build and publish the application with `sbt buildApp`
+Replace `<docker hub username>` with your Docker Hub username.
+Publish the docker image of your project to the above registry. 
+Make sure you are logged in with `docker login --username <your docker hub username>` and then build and publish the application with `sbt buildApp`.
 
 Once the images are successfully published, you will see something like the following as output of `buildApp` in your console:
 
