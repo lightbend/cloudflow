@@ -41,6 +41,11 @@ If you plan to write Cloudflow applications using Spark or Flink, the Kubernetes
 
 For testing purposes, we suggest using the NFS Server Provisioner, which can be found here: https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner[NFS Server Provisioner Helm chart]
 
+We'll install the nfs chart in the `cloudflow` namespace, so create the namespace first:
+
+  kubectl create ns cloudflow
+
+
 Add the `Stable` Helm repository:
 
   helm repo add stable https://kubernetes-charts.storage.googleapis.com/
@@ -78,7 +83,7 @@ NOTE: When installing Cloudflow, we will use the name `nfs` to indicate that Clo
 
 In this guide, we will use Helm to install Cloudflow.
 
-The first step is to create the namespace we want to install Cloudflow into:
+The first step is to create the namespace, if it does not exist yet, to install Cloudflow into:
 
   kubectl create ns cloudflow
 
