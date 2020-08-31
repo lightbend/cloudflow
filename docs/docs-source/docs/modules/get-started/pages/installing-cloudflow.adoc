@@ -34,7 +34,7 @@ The following chapter is a guide on how to configure and install a Kafka cluster
 
 === Storage requirements
 
-If you plan to write applications using Spark or Flink, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the `ReadWriteMany` storage class name is required when installing Cloudflow.
+If you plan to write Cloudflow applications using Spark or Flink, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the `ReadWriteMany` storage class name is required when installing Cloudflow.
 
 For testing purposes, we suggest using the NFS Server Provisioner.
 
