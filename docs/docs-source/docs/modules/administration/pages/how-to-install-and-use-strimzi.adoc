@@ -1,4 +1,4 @@
-= How to install Strimzi and create a Kafka cluster
+= Installing Kafka with Strimzi
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

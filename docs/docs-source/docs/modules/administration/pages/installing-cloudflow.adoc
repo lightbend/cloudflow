@@ -33,7 +33,7 @@ If you want to test Cloudflow and need a Kafka cluster, we recommend using Strim
 
 The following chapter is a guide on how to configure and install a Kafka cluster using Strimzi: 
 
-. xref:how-to-install-and-use-strimzi.adoc[How to install Strimzi and create a Kafka cluster]
+. xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi]
 
 === Storage requirements
 
