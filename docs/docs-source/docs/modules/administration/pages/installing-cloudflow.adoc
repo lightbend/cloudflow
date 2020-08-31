@@ -123,7 +123,7 @@ If you plan to write applications that utilize Spark, you will need to install t
 
 The following chapter is a guide on how to configure and install the Spark Operator: 
 
-. xref:installing-spark-operator.adoc[Installing the Spark Operator]
+. xref:installing-spark-operator.adoc[Adding Spark Support]
 
 == Adding Flink support
 
@@ -134,7 +134,7 @@ If you plan to write applications that utilize Flink you will need to install th
 
 The following chapter is a guide on how to configure and install the Spark Operator: 
 
-. xref:installing-flink-operator.adoc[Installing the Flink Operator]
+. xref:installing-flink-operator.adoc[Adding Flink Support]
 
 == Installing Enterprise components
 If you have a commercial agreement with Lightbend, you are eligible to install the Cloudflow Enterprise components. 
