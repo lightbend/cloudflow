@@ -39,41 +39,23 @@ object HttpServerLogic {
 
   /**
    * Creates a default HttpServerLogic that writes requests to an outlet.
-    
-    An example of a rejection handler that can be used here is presented below
-
-  def getRejectionHandler(context: AkkaStreamletContext): RejectionHandler =
-    RejectionHandler
-      .newBuilder()
-      .handle {
-        case RequestEntityExpectedRejection => {
-          context.system.log.error("no data provided")
-          complete((StatusCodes.BadRequest, "no data send"))
-        }
-      }
-      .handle {
-        case MalformedRequestContentRejection(msg, _) => {
-          context.system.log.error(s"Malformed content $msg")
-          complete((StatusCodes.BadRequest, msg))
-        }
-      }
-      .handle {
-        case UnsupportedRequestContentTypeRejection(_) => {
-          context.system.log.error("Unsupported content type")
-          complete((StatusCodes.BadRequest, "unsupported content"))
-        }
-      }
-      .handleNotFound {
-        context.system.log.error("content is not found")
-        complete((StatusCodes.NotFound, "Oh man, what you are looking for is long gone."))
-      }
-      .handle {
-        case ValidationRejection(msg, _) => {
-          context.system.log.error(s"Validation exception $msg")
-          complete((StatusCodes.InternalServerError, msg))
-        }
-      }
-      .result()
+   *
+   *  An example of a rejection handler that can be used here is presented below:
+   *
+   *  {{{
+   *  val rejectionHandler =
+   *    RejectionHandler
+   *      .newBuilder()
+   *      .handle {
+   *        case RequestEntityExpectedRejection => {
+   *          complete((StatusCodes.BadRequest, "no data sent"))
+   *        }
+   *      }
+   *      .handleNotFound {
+   *        complete((StatusCodes.NotFound, "What you are looking for is gone."))
+   *      }
+   *      .result()
+   *  }}}
    */
   final def default[Out](
       server: Server,
