@@ -97,8 +97,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         .entrySet()
         .forEach {
           // According to https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html
-          // Values can be Int, Bool, Duration and String
-          // TODO We are not supporting Duration yet
+          // Values can be Int, Bool, Duration and String (Duration can be passed as String, like "1 s", "1 m", etc)
           entry =>
             val key = entry.getKey
             entry.getValue.valueType() match {
