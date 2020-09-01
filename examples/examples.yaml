@@ -25,6 +25,10 @@ examples:
     path: "snippets/modules/ROOT/examples/akkastreams-java"
     description: |
       Set of files containing the Java Akka streams code snippets used in the documentation
+  - id: "akkastreams-grpc-scala"
+    path: "snippets/modules/ROOT/examples/akkastreams-grpc-scala"
+    description: |
+      Set of files containing the Scala Akka streams code snippets used in the documentation for providing gRPC services
   - id: "spark-scala-snippets"
     path: "snippets/modules/ROOT/examples/spark-scala"
     description: |

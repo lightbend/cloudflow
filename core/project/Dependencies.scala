@@ -6,6 +6,7 @@ object Version {
   val Akka          = "2.6.6"
   val AkkaHttp      = "10.2.0"
   val AkkaMgmt      = "1.0.8"
+  val AkkaGrpc      = "1.0.1"
   val AlpakkaKafka  = "2.0.4"
   val Scala         = "2.12.11"
   val Spark         = "2.4.5"
@@ -23,7 +24,9 @@ object Library {
   val AkkaHttp               = "com.typesafe.akka"  %% "akka-http"                 % Version.AkkaHttp
   val AkkaHttpJackson        = "com.typesafe.akka"  %% "akka-http-jackson"         % Version.AkkaHttp
   val AkkaHttpSprayJson      = "com.typesafe.akka"  %% "akka-http-spray-json"      % Version.AkkaHttp
+  val AkkaHttp2Support       = "com.typesafe.akka"  %% "akka-http2-support"        % Version.AkkaHttp
   val AkkaActor              = "com.typesafe.akka"  %% "akka-actor"                % Version.Akka
+  val AkkaProtobuf           = "com.typesafe.akka"  %% "akka-protobuf"             % Version.Akka
   val AkkaShardingTyped      = "com.typesafe.akka"  %% "akka-cluster-sharding-typed"% Version.Akka
   val AkkaStream             = "com.typesafe.akka"  %% "akka-stream"               % Version.Akka
   val AkkaSlf4j              = "com.typesafe.akka"  %% "akka-slf4j"                % Version.Akka
@@ -43,6 +46,9 @@ object Library {
   val AkkaClusterBootstrap  = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
   val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
+
+  val AkkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Version.AkkaGrpc
+
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.EmbeddedKafka 
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"

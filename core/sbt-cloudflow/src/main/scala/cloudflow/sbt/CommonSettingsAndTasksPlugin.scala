@@ -16,6 +16,8 @@
 
 package cloudflow.sbt
 
+import akka.grpc.sbt.AkkaGrpcPlugin.autoImport.akkaGrpcGeneratedLanguages
+import akka.grpc.sbt.AkkaGrpcPlugin.autoImport.AkkaGrpc
 import sbt.Keys._
 import sbt._
 import scalapb.ScalaPbCodeGenerator
@@ -33,7 +35,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
     BuildNumberPlugin &&
       sbtavrohugger.SbtAvrohugger &&
       sbtavro.SbtAvro &&
-      sbtprotoc.ProtocPlugin
+      sbtprotoc.ProtocPlugin &&
+      akka.grpc.sbt.AkkaGrpcPlugin
 
   /** Make public keys available. */
   object autoImport extends CloudflowKeys
@@ -74,12 +77,11 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
             SchemaFormat.Avro  -> "src/main/avro",
             SchemaFormat.Proto -> "src/main/protobuf"
           ),
-      PB.targets in Compile := {
+      akkaGrpcGeneratedLanguages := {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
-          case SchemaCodeGenerator.Java ⇒ Seq(PB.gens.java -> (sourceManaged in Compile).value)
-          case SchemaCodeGenerator.Scala =>
-            Seq(scalaPbTarget((crossTarget in Compile).value / "scalapb"))
+          case SchemaCodeGenerator.Java  => Seq(AkkaGrpc.Java)
+          case SchemaCodeGenerator.Scala => Seq(AkkaGrpc.Scala)
         }
       },
       AvroConfig / generate := Def.taskDyn {

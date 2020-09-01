@@ -1,0 +1,10 @@
+= Akka streamlet utilities
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+:page-supergroup-scala-java: Language
+
+include::ROOT:partial$include.adoc[]
+include::{cloudflow-version}@shared-content:develop:page$akka-grpc-streamlet.adoc[]
+
+// Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.
