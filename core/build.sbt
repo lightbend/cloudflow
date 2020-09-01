@@ -546,7 +546,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
               "-language:_",
               "-unchecked"
             ),
-        Compile / doc / scalacOptions := scalacOptions.value ++ Seq(
+        Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value ++ Seq(
                   "-doc-title",
                   "Cloudflow",
                   "-doc-version",
