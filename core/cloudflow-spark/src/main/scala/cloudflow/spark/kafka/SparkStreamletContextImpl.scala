@@ -89,7 +89,7 @@ class SparkStreamletContextImpl(
     val checkpointLocation = checkpointDir(outPort.name)
     val queryName          = s"$streamletRef.$outPort"
 
-    optional_trigger match {
+    optionalTrigger match {
       case Some(trigger) =>
         encodedStream.writeStream
           .outputMode(outputMode)
