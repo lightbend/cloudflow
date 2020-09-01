@@ -36,9 +36,31 @@ import cloudflow.akkastream._
  * Creates [[HttpServerLogic]]s that can be used to write data to an outlet that has been received by PUT or POST requests.
  */
 object HttpServerLogic {
+
+  /**
+   * Creates a default HttpServerLogic that writes requests to an outlet.
+   *
+   *  An example of a rejection handler that can be used here is presented below:
+   *
+   *  {{{
+   *  val rejectionHandler =
+   *    RejectionHandler
+   *      .newBuilder()
+   *      .handle {
+   *        case RequestEntityExpectedRejection => {
+   *          complete((StatusCodes.BadRequest, "no data sent"))
+   *        }
+   *      }
+   *      .handleNotFound {
+   *        complete((StatusCodes.NotFound, "What you are looking for is gone."))
+   *      }
+   *      .result()
+   *  }}}
+   */
   final def default[Out](
       server: Server,
-      outlet: CodecOutlet[Out]
+      outlet: CodecOutlet[Out],
+      rejectionHandler: Option[RejectionHandler] = None
   )(implicit
     context: AkkaStreamletContext,
     fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
@@ -47,7 +69,7 @@ object HttpServerLogic {
         .andThen(implicitly[FromByteStringUnmarshaller[Out]])
 
     new HttpServerLogic(server) {
-      final override def route(): Route = defaultRoute(sinkRef(outlet))
+      final override def route(): Route = defaultRoute(rejectionHandler, sinkRef(outlet))
     }
   }
 
@@ -64,15 +86,24 @@ object HttpServerLogic {
       final override def route(): Route = defaultStreamingRoute(sinkRef(outlet))
     }
 
-  final def defaultRoute[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+  final def defaultRoute[Out](handler: Option[RejectionHandler], writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
     logRequest("defaultRoute") {
       logResult("defaultRoute") {
-        (put | post) {
-          entity(as[Out]) { out ⇒
-            onSuccess(writer.write(out)) { _ ⇒
-              complete(StatusCodes.Accepted)
+        handler
+          .map { h =>
+            handleRejections(h) {
+              putOrPost(writer)
             }
           }
+          .getOrElse(putOrPost(writer))
+      }
+    }
+
+  private def putOrPost[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+    (put | post) {
+      entity(as[Out]) { out ⇒
+        onSuccess(writer.write(out)) { _ ⇒
+          complete(StatusCodes.Accepted)
         }
       }
     }
@@ -154,7 +185,9 @@ abstract class HttpServerLogic(
       .bind(route)
       .map { binding ⇒
         context.signalReady()
-        system.log.info(s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
+        system.log.info(
+          s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} for the streamlet ${context.streamletRef}"
+        )
         // this only completes when StreamletRef executes cleanup.
         context.onStop { () ⇒
           system.log.info(s"Unbinding from ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")

@@ -43,13 +43,38 @@ object HttpServerLogic {
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       context: AkkaStreamletContext
   ): HttpServerLogic =
+    createDefault(server, outlet, None, fromByteStringUnmarshaller, context)
+
+  /**
+   * Creates a HttpServerLogic that receives POST or PUT requests, unmarshals using the `fromByteStringUnmarshaller` and
+   * writes the data to the providec `outlet`.
+   * A rejection handler can be provided to deal with rejections.
+   */
+  final def createDefault[Out](
+      server: Server,
+      outlet: CodecOutlet[Out],
+      rejectionHandler: akka.http.javadsl.server.RejectionHandler,
+      fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
+      context: AkkaStreamletContext
+  ): HttpServerLogic =
+    createDefault(server, outlet, Some(rejectionHandler.asScala), fromByteStringUnmarshaller, context)
+
+  private def createDefault[Out](
+      server: Server,
+      outlet: CodecOutlet[Out],
+      rejectionHandler: Option[RejectionHandler],
+      fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
+      context: AkkaStreamletContext
+  ): HttpServerLogic =
     new HttpServerLogic(server, context) {
       implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
         PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
           .andThen(fromByteStringUnmarshaller.asScala)
-
       final override def createRoute(): akka.http.javadsl.server.Route =
-        RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultRoute(sinkRef(outlet)))
+        RouteAdapter.asJava(
+          akkastream.util.scaladsl.HttpServerLogic
+            .defaultRoute(rejectionHandler, sinkRef(outlet))
+        )
     }
 
   /**
