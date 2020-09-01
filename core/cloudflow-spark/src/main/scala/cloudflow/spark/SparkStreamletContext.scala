@@ -18,7 +18,7 @@ package cloudflow.spark
 
 import scala.reflect.runtime.universe._
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.streamlets.{ CodecInlet, CodecOutlet }
 import cloudflow.streamlets._
 
@@ -52,10 +52,13 @@ abstract case class SparkStreamletContext(
    * @param stream stream used to write the result of execution of the `StreamingQuery`
    * @param outPort the port used to write the result of execution of the `StreamingQuery`
    * @param outputMode the output mode used to write. Valid values Append, Update, Complete
+   * @param trigger Execution trigger (see http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers for details)
    *
    * @return the `StreamingQuery` that starts executing
    */
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(implicit encoder: Encoder[Out],
-                                                                                                typeTag: TypeTag[Out]): StreamingQuery
+  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, trigger: Option[Trigger])(
+      implicit encoder: Encoder[Out],
+      typeTag: TypeTag[Out]
+  ): StreamingQuery
 
 }

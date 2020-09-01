@@ -21,7 +21,7 @@ import java.io.File
 import com.typesafe.config.Config
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.{ ExpressionEncoder, RowEncoder }
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.spark.SparkStreamletContext
 import cloudflow.spark.avro.{ SparkAvroDecoder, SparkAvroEncoder }
 import cloudflow.spark.sql.SQLImplicits._
@@ -73,8 +73,10 @@ class SparkStreamletContextImpl(
     case (key, value) => s"kafka.$key" -> value
   }
 
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(implicit encoder: Encoder[Out],
-                                                                                                typeTag: TypeTag[Out]): StreamingQuery = {
+  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
+      implicit encoder: Encoder[Out],
+      typeTag: TypeTag[Out]
+  ): StreamingQuery = {
 
     val avroEncoder   = new SparkAvroEncoder[Out](outPort.schemaAsString)
     val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
@@ -87,7 +89,7 @@ class SparkStreamletContextImpl(
     val checkpointLocation = checkpointDir(outPort.name)
     val queryName          = s"$streamletRef.$outPort"
 
-    encodedStream.writeStream
+    val writeStreamWithOptions = encodedStream.writeStream
       .outputMode(outputMode)
       .format("kafka")
       .queryName(queryName)
@@ -95,7 +97,17 @@ class SparkStreamletContextImpl(
       .options(kafkaProducerMap(topic))
       .option("topic", destTopic)
       .option("checkpointLocation", checkpointLocation)
-      .start()
+
+    optionalTrigger
+      .map { trigger =>
+        writeStreamWithOptions
+          .trigger(trigger)
+          .start()
+      }
+      .getOrElse {
+        writeStreamWithOptions
+          .start()
+      }
   }
 
   def checkpointDir(dirName: String): String = {

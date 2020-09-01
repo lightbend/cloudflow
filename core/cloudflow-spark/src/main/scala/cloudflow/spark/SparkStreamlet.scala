@@ -27,7 +27,7 @@ import scala.util.{ Failure, Try }
 import akka.actor.{ ActorSystem, Cancellable, Scheduler }
 import com.typesafe.config.Config
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
@@ -221,10 +221,13 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   /**
    * Write a `StreamingQuery` into outlet using the specified `OutputMode`
    */
-  final def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(
+  final def writeStream[Out](stream: Dataset[Out],
+                             outPort: CodecOutlet[Out],
+                             outputMode: OutputMode,
+                             optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
-  ): StreamingQuery = context.writeStream(stream, outPort, outputMode)
+  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optionalTrigger)
 
   final def config: Config = context.config
 
