@@ -137,6 +137,7 @@ object LocalRunner extends StreamletLoader {
       val patchedRunnerConfig = runnerConfig
         .withFallback(streamletParamConfig)
         .withFallback(baseConfig)
+        .withFallback(localConfig)
         .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
 
       (streamletInstance, patchedRunnerConfig)
