@@ -9,11 +9,10 @@ val javadocDisabledFor = Set(
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/RegExpConfigParameter$.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/DurationConfigParameter$.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/MemorySizeConfigParameter$.java",
-
   // '@throws' in scaladoc but there is now 'throws' clause on the method
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletContext.java",
   "/cloudflow-akka/target/java/cloudflow/akkastream/AkkaStreamletLogic.java",
-  "/cloudflow-spark/target/java/cloudflow/spark/SparkStreamletLogic.java",
+  "/cloudflow-spark/target/java/cloudflow/spark/SparkStreamletLogic.java"
 )
 
 lazy val root =
@@ -547,6 +546,22 @@ lazy val commonSettings = bintraySettings ++ Seq(
               "-language:_",
               "-unchecked"
             ),
+        Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value ++ Seq(
+                  "-doc-title",
+                  "Cloudflow",
+                  "-doc-version",
+                  version.value,
+                  "-sourcepath",
+                  (baseDirectory in ThisBuild).value.toString,
+                  "-skip-packages",
+                  "akka.pattern:scala", // for some reason Scaladoc creates this
+                  "-doc-source-url", {
+                    val branch = if (isSnapshot.value) "master" else s"v${version.value}"
+                    s"https://github.com/lightbend/cloudflow/tree/${branch}€{FILE_PATH_EXT}#L€{FILE_LINE}"
+                  },
+                  "-doc-canonical-base-url",
+                  "https://cloudflow.io/docs/current/api/scaladoc/"
+                ),
         resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
         resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
         scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
