@@ -38,7 +38,9 @@ import cloudflow.akkastream._
 object HttpServerLogic {
 
   /**
-   * An example of rejection handler that can be used here is presented below
+   * Creates a default HttpServerLogic that writes requests to an outlet.
+    
+    An example of a rejection handler that can be used here is presented below
 
   def getRejectionHandler(context: AkkaStreamletContext): RejectionHandler =
     RejectionHandler

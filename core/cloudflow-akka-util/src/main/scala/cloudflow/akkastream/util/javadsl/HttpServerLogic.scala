@@ -47,7 +47,7 @@ object HttpServerLogic {
       implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
         PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
           .andThen(fromByteStringUnmarshaller.asScala)
-
+      // TODO Java API for optional RejectionHandler
       final override def createRoute(): akka.http.javadsl.server.Route =
         RouteAdapter.asJava(
           akkastream.util.scaladsl.HttpServerLogic
