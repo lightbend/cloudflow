@@ -147,7 +147,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
           else if (configuration.contains(RestOptions.PORT)) {
             configuration.getInteger(RestOptions.PORT)
           } else RestOptions.PORT.defaultValue()
-        val host = configuration.getString(RestOptions.BIND_ADDRESS)
+        val host = Option(configuration.getString(RestOptions.BIND_ADDRESS)).getOrElse("localhost")
+
         log.info(s"Enabled local Flink Web UI at port $host:$port")
         localEnv
       } else {
@@ -188,9 +189,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     checkpointConfig
   }
 
-  private def isWebEnabled(config: Config, path: String): Boolean = {
+  private def isWebEnabled(config: Config, path: String): Boolean =
     config.as[Option[Boolean]](s"$path.${ClusterFlinkJobExecutor.enableLocalWeb}").getOrElse(false)
-  }
 
   protected def createLogic(): FlinkStreamletLogic
 
