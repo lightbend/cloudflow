@@ -224,7 +224,7 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   final def writeStream[Out](stream: Dataset[Out],
                              outPort: CodecOutlet[Out],
                              outputMode: OutputMode,
-                             optional_trigger: Option[Trigger] = None)(
+                             optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
   ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optional_trigger)
