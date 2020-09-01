@@ -73,7 +73,7 @@ class SparkStreamletContextImpl(
     case (key, value) => s"kafka.$key" -> value
   }
 
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optional_trigger: Option[Trigger] = None)(
+  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
   ): StreamingQuery = {
