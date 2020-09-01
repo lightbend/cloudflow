@@ -4,8 +4,6 @@ In K8s you can allow external (HTTP) network traffic to reach your services by c
 
 This section shows how to install an Ingress controller and how to create an Ingress for your services.
 
-NOTE: An _Ingress_ opens up a permanent, unauthenticated route by default. Kubernetes does not provide any authentication on ingresses. Authentication has to be implemented by the exposed service or by the ingress controller.
-
 An https://kubernetes.io/docs/concepts/services-networking/ingress/[ingress] is a Kubernetes resource that defines a set of routing rules and is serviced by an ingress controller. 
 
 There is a wide selection of ingress controllers available. The following link contains a list of the most common ones.
@@ -63,6 +61,16 @@ sensor-data-http-ingress   *       82.196.11.250       80        59s
 ----
 
 The ingress now has an address and data can be sent to the ingress on the address `82.196.11.250/sensor-data`
+
+== Authenticated ingress
+An _Ingress_ opens up a permanent, unauthenticated route by default. Kubernetes does not provide any authentication on ingresses. Authentication has to be implemented by the exposed service or by the ingress controller.
+
+The following section in the Nginx ingress controller documentation shows how to use basic authentication or an `OAuth` sign-in:
+
+
+https://kubernetes.github.io/ingress-nginx/examples/auth/basic/
+
+For more fine-grained access control or alternative authorisation mechanisms, alternative ingress controllers such as https://www.nginx.com/products/nginx/kubernetes-ingress-controller/[NGINX plus] can be deployed.
 
 == Removing an ingress 
 If you want to disable the route to the application created by the ingress, delete the ingress using the following command.
