@@ -227,7 +227,7 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
                              optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
-  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optional_trigger)
+  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optionalTrigger)
 
   final def config: Config = context.config
 
