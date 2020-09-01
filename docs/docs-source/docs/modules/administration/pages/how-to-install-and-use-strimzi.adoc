@@ -22,14 +22,13 @@ Make sure you have the following prerequisites installed before continuing:
 
 In this guide, we will use Helm to install Strimzi.
 
-IMPORTANT: We are going to create Strimzi in the `cloudflow` namespace in this guide. Make sure that the namespace 'cloudflow' exists before continuing. To create the `cloudflow` namespace, execute `kubectl create ns cloudflow`.
+We are going to create Strimzi in the `cloudflow` namespace in this guide. Make sure that the namespace `cloudflow` exists before continuing. To create the `cloudflow` namespace, execute
 
-Add the Strimzi Helm repository.
+  kubectl create ns cloudflow
+
+Add the Strimzi Helm repository and update the local index.
 
   helm repo add strimzi https://strimzi.io/charts/
-
-Update the repository list
-
   helm repo update
 
 Install the latest version of Strimzi.
@@ -50,6 +49,7 @@ To create a Kafka cluster using Strimzi, we have to create a `CustomResource` of
 
 Create the YAML file containing the custom resource using the following snippet:
 
+[source,shell script]
 ----
 cat > kafka-cluster.yaml << EOF
 apiVersion: kafka.strimzi.io/v1beta1

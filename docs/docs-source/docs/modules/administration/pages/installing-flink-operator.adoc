@@ -5,15 +5,16 @@
 
 include::ROOT:partial$include.adoc[]
 
-The Flink operator used is a fork currently maintained by Lightbend and is the only Cloudflow compatible version.
+The only Cloudflow compatible Flink operator is a fork currently maintained by Lightbend.
 
 Install the Flink operator using the following Helm command:
 
 ----
 helm install flink-operator \
-https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
---namespace cloudflow --set operatorImageName="lightbend/flinkk8soperator" --set \
-operatorVersion="v0.5.0"
+  https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
+  --namespace cloudflow \
+  --set operatorImageName="lightbend/flinkk8soperator" \
+  --set operatorVersion="v0.5.0"
 ----
 
 This completes the installation of the Flink operator. 
