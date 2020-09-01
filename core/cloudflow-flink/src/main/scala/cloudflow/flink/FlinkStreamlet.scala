@@ -149,7 +149,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
           } else RestOptions.PORT.defaultValue()
         val host = Option(configuration.getString(RestOptions.BIND_ADDRESS)).getOrElse("localhost")
 
-        log.info(s"Enabled local Flink Web UI at port $host:$port")
+        log.info(s"Enabled local Flink Web UI at $host:$port")
         localEnv
       } else {
         StreamExecutionEnvironment.createLocalEnvironment(1, configuration)
