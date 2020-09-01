@@ -57,7 +57,7 @@ class TestSparkStreamletContext(override val streamletRef: String,
       stream: Dataset[Out],
       outPort: CodecOutlet[Out],
       outputMode: OutputMode,
-      optional_trigger: Option[Trigger] = None
+      optionalTrigger: Option[Trigger] = None
   )(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = {
     // RateSource can only work with a microBatch query because it contains no data at time zero.
     // Trigger.Once requires data at start to work.
