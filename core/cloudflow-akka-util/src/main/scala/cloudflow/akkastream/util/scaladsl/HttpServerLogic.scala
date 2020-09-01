@@ -105,25 +105,21 @@ object HttpServerLogic {
   final def defaultRoute[Out](handler: Option[RejectionHandler], writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
     logRequest("defaultRoute") {
       logResult("defaultRoute") {
-        handler match {
-          case Some(h) =>
+        handler
+          .map { h =>
             handleRejections(h) {
-              (put | post) {
-                entity(as[Out]) { out ⇒
-                  onSuccess(writer.write(out)) { _ ⇒
-                    complete(StatusCodes.Accepted)
-                  }
-                }
-              }
+              putOrPost(writer)
             }
-          case _ =>
-            (put | post) {
-              entity(as[Out]) { out ⇒
-                onSuccess(writer.write(out)) { _ ⇒
-                  complete(StatusCodes.Accepted)
-                }
-              }
-            }
+          }
+          .getOrElse(putOrPost(writer))
+      }
+    }
+
+  private def putOrPost[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+    (put | post) {
+      entity(as[Out]) { out ⇒
+        onSuccess(writer.write(out)) { _ ⇒
+          complete(StatusCodes.Accepted)
         }
       }
     }
