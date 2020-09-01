@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:installing-cloudflow.adoc[install Cloudflow] first.
+If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:administration:installing-cloudflow.adoc[install Cloudflow] first.
 
 Once the application is built you need to publish the docker images to a container registry that stores, manages and secures your application images. 
 In this example we will use a Docker Hub registry.
@@ -15,11 +15,11 @@ Follow these steps to complete the process of publishing:
 * Set up the target environment of publishing in your local build process. 
 Create a file named `target-env.sbt` in the root of your project folder (the same level where you have `build.sbt`). The file needs to have the following 2 lines:
 
-```
-// Google Cloud Registry
+[source,sbt]
+----
 ThisBuild / cloudflowDockerRegistry := Some("docker.io")
 ThisBuild / cloudflowDockerRepository := Some("<your docker hub username>")
-```
+----
 
 Replace `<docker hub username>` with your Docker Hub username.
 Publish the docker image of your project to the above registry. 

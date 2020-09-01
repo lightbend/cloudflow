@@ -5,15 +5,12 @@
 
 include::ROOT:partial$include.adoc[]
 
-The Spark operator image used is a fork maintained by Lightbend and is presently the only Cloudflow compatible version.
+The only Cloudflow compatible Spark operator is a fork maintained by Lightbend.
 See https://github.com/apache/spark/pull/24748[Backported Fix for Spark 2.4.5] for more details.
 
-Add the Spark Helm chart repository.
+Add the Spark Helm chart repository and update the local index.
 
   helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
-
-As we have seen before, we need to update the Helm repo before installing Spark.
-  
   helm repo update
 
 Before installing the Helm chart, we will need to prepare a `value.yaml` file, it overrides the default values in the Spark Helm chart.
@@ -59,9 +56,18 @@ EOF
 
 Now we can install the Spark operator using Helm. Note that we use a specific version of the Spark operator Helm chart.
 
-  helm install spark-operator incubator/sparkoperator --namespace cloudflow --values="spark-values.yaml"  --version "0.6.7"
+[source,shell script,subs="attributes"]
+----
+  helm install spark-operator incubator/sparkoperator \
+    --namespace cloudflow
+    --values="spark-values.yaml"
+    --version "0.6.7"
+----
 
-IMPORTANT: If you are installing the Spark operator on *OpenShift*, you need to apply the following `rolebinding` to the cluster:
+[IMPORTANT]
+.*OpenShift* requires a role-binding
+====
+If you are installing the Spark operator on *OpenShift*, you need to apply the following `rolebinding` to the cluster:
 
 ----
 cat > spark-rolebinding.yaml << EOF
@@ -84,6 +90,7 @@ EOF
 To apply the `spark-rolebinding.yaml` file execute the following command. Note that this has *only* to be performed if you are installing Cloudflow on Openshift:
 
   oc apply -f spark-rolebinding.yaml
+====
 
 After the Spark operator installation completes, we need to adjust its webhook configuration:
 
