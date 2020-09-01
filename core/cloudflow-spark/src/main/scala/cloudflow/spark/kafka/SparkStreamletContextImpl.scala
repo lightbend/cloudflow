@@ -89,29 +89,25 @@ class SparkStreamletContextImpl(
     val checkpointLocation = checkpointDir(outPort.name)
     val queryName          = s"$streamletRef.$outPort"
 
-    optionalTrigger match {
-      case Some(trigger) =>
-        encodedStream.writeStream
-          .outputMode(outputMode)
-          .format("kafka")
-          .queryName(queryName)
-          .option("kafka.bootstrap.servers", brokers)
-          .options(kafkaProducerMap(topic))
-          .option("topic", destTopic)
-          .option("checkpointLocation", checkpointLocation)
+    val writeStreamWithOptions = encodedStream.writeStream
+      .outputMode(outputMode)
+      .format("kafka")
+      .queryName(queryName)
+      .option("kafka.bootstrap.servers", brokers)
+      .options(kafkaProducerMap(topic))
+      .option("topic", destTopic)
+      .option("checkpointLocation", checkpointLocation)
+
+    optionalTrigger
+      .map { trigger =>
+        writeStreamWithOptions
           .trigger(trigger)
           .start()
-      case _ =>
-        encodedStream.writeStream
-          .outputMode(outputMode)
-          .format("kafka")
-          .queryName(queryName)
-          .option("kafka.bootstrap.servers", brokers)
-          .options(kafkaProducerMap(topic))
-          .option("topic", destTopic)
-          .option("checkpointLocation", checkpointLocation)
+      }
+      .getOrElse {
+        writeStreamWithOptions
           .start()
-    }
+      }
   }
 
   def checkpointDir(dirName: String): String = {
