@@ -65,9 +65,8 @@ The ingress now has an address and data can be sent to the ingress on the addres
 == Authenticated ingress
 An _Ingress_ opens up a permanent, unauthenticated route by default. Kubernetes does not provide any authentication on ingresses. Authentication has to be implemented by the exposed service or by the ingress controller.
 
-To secure an Ingress for an otherwise open service to only allow access to authenticated users, the ingress resource (and in some cases the ingress controller itself) can be customised.
+The following section in the Nginx ingress controller documentation shows how to use basic authentication or an `OAuth` sign-in:
 
-For basic authentication or simple oauth sign-in, the ingress resource can be customised following the Kubernetes examples found at the following link.
 
 https://kubernetes.github.io/ingress-nginx/examples/auth/basic/
 
