@@ -47,6 +47,18 @@ case class StreamletDefinition(appId: String,
 
 object Topic {
   def apply(name: String): Topic = Topic(name, ConfigFactory.parseString("managed=true"))
+
+  private def pathAsMap(config: Config, path: String): Map[String, String] = {
+    import scala.jdk.CollectionConverters._
+    if (config.hasPath(path)) {
+      config
+        .getConfig(path)
+        .entrySet()
+        .asScala
+        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+        .toMap
+    } else Map.empty[String, String]
+  }
 }
 
 final case class Topic(
@@ -61,26 +73,14 @@ final case class Topic(
     else base
   }
 
-  import scala.collection.JavaConverters._
+  def kafkaConnectionProperties: Map[String, String] =
+    Topic.pathAsMap(config, "connection-config")
+
   def kafkaProducerProperties: Map[String, String] =
-    if (config.hasPath("producer-config")) {
-      config
-        .getConfig("producer-config")
-        .entrySet()
-        .asScala
-        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
-        .toMap
-    } else Map.empty[String, String]
+    kafkaConnectionProperties ++ Topic.pathAsMap(config, "producer-config")
 
   def kafkaConsumerProperties: Map[String, String] =
-    if (config.hasPath("consumer-config")) {
-      config
-        .getConfig("consumer-config")
-        .entrySet()
-        .asScala
-        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
-        .toMap
-    } else Map.empty[String, String]
+    kafkaConnectionProperties ++ Topic.pathAsMap(config, "consumer-config")
 }
 
 /**

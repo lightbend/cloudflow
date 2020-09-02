@@ -178,6 +178,20 @@ object StreamletDeployment {
       .getOrElse((ConfigFactory.empty(), None))
 }
 
+object Topic {
+  def pathAsMap(config: Config, section: String): Map[String, String] = {
+    import scala.collection.JavaConverters._
+    if (config.hasPath(section)) {
+      config
+        .getConfig(section)
+        .entrySet()
+        .asScala
+        .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+        .toMap
+    } else Map.empty[String, String]
+  }
+}
+
 final case class Topic(
     id: String,
     config: Config = ConfigFactory.empty()

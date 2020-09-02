@@ -16,17 +16,17 @@
 
 package cloudflow.operator
 
+import com.typesafe.config.ConfigFactory
 import skuber.Resource.Quantity
 
 trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
       kafkaContext = KafkaContext(
-        strimziClusterName = Some("kafka"),
-        strimziTopicOperatorNamespace = Some("strimzi"),
         bootstrapServers = "localhost:9092",
         partitionsPerTopic = 3,
-        replicationFactor = 1
+        replicationFactor = 1,
+        config = ConfigFactory.empty()
       ),
       akkaRunnerSettings = AkkaRunnerSettings(
         resourceConstraints = ResourceConstraints(

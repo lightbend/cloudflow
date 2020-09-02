@@ -35,7 +35,9 @@ object Blueprint {
   val ConsumersKey                     = "consumers"
 
   // kafka config items
+  // must align with cloudflow.streamlets.Topic
   val BootstrapServersKey = "bootstrap.servers"
+  val ConnectionConfigKey = "connection-config"
   val ProducerConfigKey   = "producer-config"
   val ConsumerConfigKey   = "consumer-config"
   val PartitionsKey       = "partitions"
@@ -89,6 +91,7 @@ object Blueprint {
             // validate at least that producer and consumer sections are objects.
             // TODO It is possible to create a ConsumerConfig and ProducerConfig from properties and check unused,
             // TODO if badly spelled or unknown settings need to be prevented.
+            if (kafkaConfig.hasPath(ConnectionConfigKey)) kafkaConfig.getObject(ConnectionConfigKey)
             if (kafkaConfig.hasPath(ProducerConfigKey)) kafkaConfig.getObject(ProducerConfigKey)
             if (kafkaConfig.hasPath(ConsumerConfigKey)) kafkaConfig.getObject(ConsumerConfigKey)
             if (kafkaConfig.hasPath(TopicConfigKey)) {

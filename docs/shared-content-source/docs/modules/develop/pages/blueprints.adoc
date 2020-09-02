@@ -164,10 +164,11 @@ cloudflow {
 }
 shared-config {                      //<3>                    
   managed = no                       //<4>
-  producer-config = ${kafka-connection-config} {
+  connection-config = ${kafka-connection-config} //<5>
+  producer-config = {
     # more config can be added here from Kafka ProducerConfig (see org.apache.kafka.clients.producer.ProducerConfig)
   }
-  consumer-config = ${kafka-connection-config} {
+  consumer-config = {
     # more config can be added here from Kafka ConsumerConfig (see org.apache.kafka.clients.consumer.ConsumerConfig)
   }
 }
@@ -176,6 +177,7 @@ shared-config {                      //<3>
 <2> Sets the topic name explicitly, using the `topic.name` configuration key.
 <3> Adds an arbitrary configuration section to the blueprint definition.
 <4> Sets the `managed` topic flag to false.
+<5> Sets connection details from the config section `kafka-connection-config` (see below), these settings get automatically added to both the `producer-config` and the `consumer-config`.
 
 
 In the snippet above, we are centralizing the common configuration for all topics in a `shared-config` configuration entry.
