@@ -161,3 +161,55 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
 NOTE: If you set `execution.checkpointing.interval` you need to set all other relevant checkpointing settings, the default checkpointing will not be used if `execution.checkpointing.interval` is set.
 
 In the above example the `runLocalConfigFile` setting is shown to point to a local.conf in the taxi-ride-fare example project.
+
+== Azure Blob Storage
+
+Flink supports a number of file systems for reading and writing data and for its state backend. In this section we will look at how to use Microsoft's Azure Blob Storage for these purposes.
+
+Please refer to the Flink documentation here https://ci.apache.org/projects/flink/flink-docs-stable/ops/filesystems/azure.html
+
+To make this work in a Cloudflow context there are a couple of things you need to do as follows.
+
+=== Checkpoints
+
+In the configuration file you need to specify that the `state.backend` is `filesystem`, set `state.checkpoints.dir` to match the the location of your Blob, and provide your access key.
+
+[source,hocon]
+----
+cloudflow.runtimes.flink.config {
+  flink.state.backend = filesystem
+  flink.state.checkpoints.dir = "<your-container>@$<your-azure-account>.blob.core.windows.net/<object-path>"
+  flink.fs.azure.account.key.<your-azure-acount>.blob.core.windows.net = "<blob-access-key>"
+}
+----
+
+Whether you are running locally or deploying to a Cloudflow cluster, this part of the configuration is the same.
+
+==== Deployment
+
+When your Flink streamlet is deployed it will run in a Docker container which includes a normal Flink installation. In order to use Azure Blob Storage as filesystem we need to enable a plugin `flink-azure-fs-hadoop`. As detailed in the Flink documentation, all plugins need to be copied from the `/opt/` folder into a directory of their own in `/plugins.`.
+
+To facilitate this, in your _Streamlet_ `build.sbt` you must add the following instructions to make sure that the plugin is copied to the right place when the container is built.
+
+[source, scala]
+----
+lazy val yourStreamlet = appModule("yourStreamlet")
+  .enablePlugins(CloudflowFlinkPlugin)
+  .settings(
+    extraDockerInstructions ++= Seq(
+      sbtdocker.Instructions.User("root"),
+      sbtdocker.Instructions.Run("mkdir -p ./plugins/azure-fs-hadoop"),
+      sbtdocker.Instructions.Run("cp /opt/flink/opt/flink-azure-fs-hadoop-1.10.0.jar ./plugins/azure-fs-hadoop/"),
+      sbtdocker.Instructions.Run("chown -R flink:flink ./plugins/azure-fs-hadoop"))
+  )
+  ...
+----
+
+==== Running Locally
+
+Cloudflow does not build containers for running locally, instead it will run Flink embedded in the JVM. In order to make sure the `flink-fs-azure-hadoop.jar` is included in the application you need to explicitly add it to your build file as follows.
+
+[source, scala]
+----
+libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % "1.11.1"
+----
