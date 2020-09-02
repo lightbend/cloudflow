@@ -68,7 +68,7 @@ It contains the following context data and contracts:
 Spark Structured streaming provides a mechanism for controlling timing of streaming data processing in the form of
 https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[triggers].
 The trigger settings of a streaming query define whether the query is going to be executed as micro-batch query with a fixed
-batch interval or as a continuous processing query. Different kinds of triggers that are supported by Spark are https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[here]
+batch interval or as a continuous processing query. Different kinds of triggers that are supported by Spark are https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[here].
 
 'writeStream' method in stream logic allows to specify trigger used for Streamlet execution.
 
