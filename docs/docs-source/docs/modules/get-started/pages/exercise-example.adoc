@@ -102,7 +102,7 @@ The streamlet exposes its HTTP endpoint for uploading data on port `3000` - let'
 
 [source, text]
 ----
-$ kubectl port-forward sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data-scala 3000:3000
+$ kubectl port-forward svc/sensor-data-http-ingress-service -n sensor-data-scala 3000:3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 Handling connection for 3000
