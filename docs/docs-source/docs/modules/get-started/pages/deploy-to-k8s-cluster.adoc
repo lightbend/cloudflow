@@ -16,6 +16,7 @@ Follow these steps to complete the process of publishing:
 Create a file named `target-env.sbt` in the root of your project folder (the same level where you have `build.sbt`). The file needs to have the following 2 lines:
 
 [source,sbt]
+.Configure your Docker repository
 ----
 ThisBuild / cloudflowDockerRegistry := Some("docker.io")
 ThisBuild / cloudflowDockerRepository := Some("<your docker hub username>")
@@ -23,7 +24,13 @@ ThisBuild / cloudflowDockerRepository := Some("<your docker hub username>")
 
 Replace `<docker hub username>` with your Docker Hub username.
 Publish the docker image of your project to the above registry. 
-Make sure you are logged in with `docker login --username <your docker hub username>` and then build and publish the application with `sbt buildApp`.
+Make sure you are logged in with `
+
+  docker login --username <your docker hub username>`
+
+and then build and publish the application with
+
+  sbt buildApp
 
 Once the images are successfully published, you will see something like the following as output of `buildApp` in your console:
 
@@ -34,8 +41,8 @@ Once the images are successfully published, you will see something like the foll
 [success] Use the following command to deploy the Cloudflow application:
 [success] kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json
 [success] Total time: 41 s, completed Jun 10, 2020 10:10:10 PM
-
 ```
+
 At this point, the Docker image containing the streamlets has been published to the Docker repository.
 The `sensor-data-scala.json` file that the build produces contains the application descriptor.
 We use the Cloudflow CLI to deploy that application description to a cluster.

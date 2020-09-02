@@ -9,7 +9,7 @@ Once you have the `sensor-data` Cloudflow application deployed, you can use some
 
 * **--help** to see all options available
 
-```
+----
 $ kubectl cloudflow --help
 
 This command line tool can be used to deploy and operate Cloudflow applications.
@@ -32,19 +32,19 @@ Flags:
   -h, --help   help for cloudflow
 
 Use "cloudflow [command] --help" for more information about a command.
-```
+----
 
 * **list** shows all applications deployed in the cluster
 
-```
+----
 $ kubectl cloudflow list
 NAME              NAMESPACE         VERSION           CREATION-TIME     
 sensor-data-scala sensor-data-scala 484-199a3c1       2020-06-10 22:28:32 +0200 CEST
-```
+----
 
 * **status** shows details of a running application
 
-```
+----
 $ kubectl cloudflow status sensor-data-scala
 Name:             sensor-data-scala
 Namespace:        sensor-data-scala
@@ -58,9 +58,9 @@ invalid-logger    sensor-data-scala-invalid-logger-789d679855-9l7qz   1/1       
 metrics           sensor-data-scala-metrics-6b7475c4f9-sxxw6          1/1               Running           0
 valid-logger      sensor-data-scala-valid-logger-78594f47ff-v82zt     1/1               Running           0
 validation        sensor-data-scala-validation-d8858dff-6xswj         1/1               Running           0
-```
+----
 
-## Push data to the Application
+== Push data to the Application
 
 Our application uses an http based ingress to ingest data. Follow the following steps to push JSON data through the ingress into the application.
 
@@ -68,7 +68,7 @@ Our application uses an http based ingress to ingest data. Follow the following 
 
 [source, text]
 ----
-$ kubectl describe pod sensor-data-http-ingress-fd9cdb66f-jbsrm -n sensor-data-scala
+$ kubectl describe pod -n sensor-data-scala sensor-data-http-ingress-fd9cdb66f-jbsrm
 Name:               sensor-data-http-ingress-fd9cdb66f-jbsrm
 Namespace:          sensor-data-scala
 Priority:           0
@@ -98,11 +98,18 @@ Containers:
 
 The streamlet exposes its HTTP endpoint for uploading data on port `3000` - let's set up a port forwarding on it.
 
-* Setup port forwarding for the Pod port
+Check the created svc
+----
+$ kubectl get svc -n sensor-data-scala
+NAME                                     TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+sensor-data-scala-http-ingress-service   ClusterIP   10.0.22.206   <none>        3000/TCP   1m
+----
+
+Setup local port forwarding for the Pod port
 
 [source, text]
 ----
-$ kubectl port-forward svc/sensor-data-http-ingress-service -n sensor-data-scala 3000:3000
+$ kubectl port-forward svc/sensor-data-scala-http-ingress-service -n sensor-data-scala 3000:3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 Handling connection for 3000
@@ -130,7 +137,7 @@ NOTE: The port-forward solution used here is a temporary route to the applicatio
 +
 [source, bash]
 ----
-$curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data @data.json
+curl -i -X POST http://localhost:3000 -H "Content-Type: application/json" --data @data.json
 ----
 
 Note that we are using the port number `3000` of `localhost` to which we forward the pod port. This JSON record will pass through the stages of transformation within the pipeline that we defined in the blueprint.
@@ -140,7 +147,7 @@ For that, run the following command:
 
 [source, bash]
 ----
-$./send-local-data.sh 
+./send-local-data.sh
 ----
 
 And you should see output similar to the following:
@@ -161,13 +168,13 @@ Content-Type: text/plain; charset=UTF-8
 Content-Length: 88
 ----
 
-## Verify the Application works
+== Verify the Application works
 
 Check the log of the streamlet `valid-logger` to verify that you get the proper transformed metric.
 
 [source, bash]
 ----
-$ kubectl logs sensor-data-valid-logger-76884bb775-86pwh -n sensor-data
+kubectl logs -n sensor-data-scala sensor-data-valid-logger-76884bb775-86pwh
 ----
 
 Towards the end of the log you will see something like the following getting printed out:
@@ -183,5 +190,5 @@ When we are done experimenting with the application, we can undeploy it to termi
 
 [source, bash]
 ----
-$kubectl cloudflow undeploy sensor-data-scala
+kubectl cloudflow undeploy sensor-data-scala
 ----
