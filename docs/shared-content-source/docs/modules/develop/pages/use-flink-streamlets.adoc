@@ -133,3 +133,29 @@ when using `runLocal`. If the parameter `local.web` is set in the configuration
 (for the Flink runtime or a particular streamlet), the Flink execution is started with the Web UI, as shown
 https://ci.apache.org/projects/flink/flink-docs-release-1.11/ops/deployment/local.html#start-a-local-flink-cluster[here]. By default the Web UI is available
 at `http://localhost:8081`, but the port can be overwritten using the configuration system with `rest.port` under `cloudflow.runtimes.flink.config.flink` or specifically for a streamlet under `cloudflow.streamlets.<streamlet>.config`.
+
+An example of modifying some flink configuration is shown below:
+
+[source,hocon]
+----
+cloudflow.streamlets.processor.config {
+  local.web = on
+  rest.port = 5000
+}
+----
+
+In the above example the Web UI is enabled for the processors streamlet. which will listen on port 5000.
+You need to provide the location of the local configuration in your sbt build file:
+
+[source,hocon]
+----
+lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
+  .enablePlugins(CloudflowApplicationPlugin)
+  .settings(commonSettings)
+  .settings(
+    name := "taxi-ride-fare",
+    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
+  )
+----
+
+In the above example the `runLocalConfigFile` setting is shown to point to a local.conf in the taxi-ride-fare example project.
