@@ -113,7 +113,7 @@ az aks create --resource-group "$RESOURCE_GROUP_NAME" \
   --enable-addons monitoring \
   --enable-cluster-autoscaler \
   --generate-ssh-keys \
-  --kubernetes-version "$CLUSTER_VERSION" \
+  --kubernetes-version "$K8S_VERSION" \
   --node-vm-size $NODE_VM_SIZE \
   --min-count 1 \
   --max-count 7
