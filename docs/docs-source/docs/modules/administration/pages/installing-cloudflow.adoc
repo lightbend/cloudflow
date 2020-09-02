@@ -152,7 +152,7 @@ To install the Flink Operator see xref:installing-flink-operator.adoc[Adding Fli
 == Installing Enterprise components
 If you have a commercial agreement with Lightbend, you are eligible to install the Cloudflow Enterprise components. 
 
-Before installing, you need to make sure you have the credentials required to download the Helm chart from the Lightbend commercial repository.
+Before installing, you need to make sure you have the credentials required to download the cloudflow-enterprise components from the Lightbend commercial repository.
 
 Add the Lightbend Helm repository and update the local index:
 
@@ -173,7 +173,7 @@ Once configured, we can execute the Helm command to install the Cloudflow enterp
 
 [source,shell script,subs="attributes+"]
 ----
-helm upgrade cloudflow-enterprise-components lightbend/cloudflow-enterprise-components \
+helm upgrade cloudflow-enterprise-components cloudflow-helm-charts/cloudflow-enterprise-components \
   --install \
   --namespace cloudflow \
   --set enterpriseOperatorVersion={cloudflow-version} \
