@@ -159,17 +159,17 @@ Add the Lightbend Helm repository and update the local index:
   helm repo add lightbend https://repo.lightbend.com/helm-charts/
   helm repo update
 
-Install the components, note that you set the `$USERNAME` and `$PASSWORD` environment variables before executing this command. 
+Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. 
 
 We recommend using the following command to create an environment variable for username and password. 
 *This is to avoid storing this information in the shell's history file.*
 
-  read USERNAME
-  read -s PASSWORD
+  read DOCKER_USERNAME
+  read -s DOCKER_PASSWORD
 
 TIP: If you want to see the password typed in, remove the `-s` (for silent) flag.
 
-Once configured, we can execute the Helm command to install the Cloudflow enterprise components. Note how we use the `$USERNAME` and `$PASSWORD` in the Helm command.
+Once configured, we can execute the Helm command to install the Cloudflow enterprise components. Note how we use the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` in the Helm command.
 
 [source,shell script,subs="attributes+"]
 ----
@@ -177,14 +177,14 @@ helm upgrade cloudflow-enterprise-components lightbend/cloudflow-enterprise-comp
   --install \
   --namespace cloudflow \
   --set enterpriseOperatorVersion={cloudflow-version} \
-  --set enterprise-suite.imageCredentials.username="$USERNAME" \
-  --set enterprise-suite.imageCredentials.password="$PASSWORD"
+  --set enterprise-suite.imageCredentials.username="$DOCKER_USERNAME" \
+  --set enterprise-suite.imageCredentials.password="$DOCKER_PASSWORD"
 ----
 
 After we have used the username and password environment variables, we can clear them by closing the shell or executing the following commands:
 
-  unset USERNAME
-  unset PASSWORD
+  unset DOCKER_USERNAME
+  unset DOCKER_PASSWORD
 
 To quickly verify that the installation worked, you can open a proxy to the Lightbend console service and confirm that you can access the Lightbend console UI.
 
