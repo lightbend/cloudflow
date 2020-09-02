@@ -126,7 +126,7 @@ of several things:
 
 The checkpointing behaviour in this case (along with many other parameters) can be overwritten
 using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
-A complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
+Complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
 
 In addition to "standard" Flink parameters, you can enable the Web UI
 when using `runLocal`. If the parameter `local.web` is set in the configuration
