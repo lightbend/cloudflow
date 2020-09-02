@@ -192,11 +192,9 @@ First, create the port-forward.
 
   kubectl port-forward -n cloudflow svc/console-server 5000:80
 
-Then open the following URL in your browser:
+Then open the following URL in your browser: https://localhost:5000
 
-  https://localhost:5000
-
-You should now see the Lightbend console in your browser.
+This opens the Lightbend Console in your browser.
 
 == Upgrading Cloudflow
 

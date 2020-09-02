@@ -59,8 +59,8 @@ Now we can install the Spark operator using Helm. Note that we use a specific ve
 [source,shell script,subs="attributes"]
 ----
   helm install spark-operator incubator/sparkoperator \
-    --namespace cloudflow
-    --values="spark-values.yaml"
+    --namespace cloudflow \
+    --values="spark-values.yaml" \
     --version "0.6.7"
 ----
 
@@ -103,7 +103,7 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running   0         
 
 For this, we will create yet another YAML file that we will apply to the cluster with `kubectl`:
 ----
-cat > spark-mutating-webhook.yaml << 'EOF2'
+cat > spark-mutating-webhook.yaml << EOF
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -146,7 +146,7 @@ spec:
               )
               echo $JSON
               kubectl patch MutatingWebhookConfiguration $HOOK_NAME -n cloudflow -p "$JSON"
-EOF2
+EOF
 ----
 
 Now we can apply the changes to the webhook:

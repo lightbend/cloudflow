@@ -7,17 +7,17 @@ include::ROOT:partial$include.adoc[]
 
 Upgrading Cloudflow after a new release is done using the Helm upgrade command, the command will upgrade Cloudflow to the latest version.
 
-=== Upgrading (with support for Spark or Flink)
+== Upgrading (with support for Spark or Flink)
 
 If the the Cloudflow installation uses Spark or Flink, pass the persistent storage option:
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --set cloudflow_operator.persistentStorageClass=nfs
+    --set cloudflow_operator.persistentStorageClass=nfs \
     --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 ----
 
-=== Upgrading (no support for Spark or Flink)
+== Upgrading (no support for Spark or Flink)
 
 Upgrade a Cloudflow installation without support for Spark or Flink with:
 ----
