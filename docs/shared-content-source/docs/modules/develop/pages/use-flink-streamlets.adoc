@@ -147,7 +147,7 @@ cloudflow.streamlets.processor.config {
 In the above example the Web UI is enabled for the processors streamlet. which will listen on port 5000.
 You need to provide the location of the local configuration in your sbt build file:
 
-[source,hocon]
+[source,scala]
 ----
 lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
