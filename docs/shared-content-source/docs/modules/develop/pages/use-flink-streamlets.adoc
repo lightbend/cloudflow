@@ -118,7 +118,7 @@ Flink's runtime encodes all state and writes them into checkpoints. And since ch
 
 == Flink local execution
 
-If you are testing Flink streamlet locally <<Using the Local Sandbox>> you should be aware
+If you are testing Flink streamlets locally <<Using the Local Sandbox>> you should be aware
 of the several things:
 
 * Restartability. Unlike cluster deployment, local Flink execution will not restart in the case of crashes.
