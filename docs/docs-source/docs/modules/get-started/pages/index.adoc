@@ -18,7 +18,7 @@ Follow the main topics in order:
 .. xref:develop-example-streamlets.adoc[Develop example streamlets]
 . xref:create-example-blueprint.adoc[Create the example blueprint]
 . xref:run-in-sandbox.adoc[Run in a local sandbox]
-. xref:administration:installing-cloudflow.adoc[Installing Cloudflow]
+. xref:administration:index.adoc[Installing Cloudflow]
 . xref:deploy-to-k8s-cluster.adoc[Deploy to a Kubernetes cluster]
 . xref:exercise-example.adoc[Exercise the example]
 .. Use CLI helpers such as `status` and `list`
