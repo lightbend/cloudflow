@@ -63,6 +63,16 @@ It contains the following context data and contracts:
 * The name used in the blueprint for the specific instance of this streamlet being run.
 * A function `checkpointDir` which returns a directory on a persistent storage where checkpoints can be safely kept, making them available across restarts.
 
+== Controlling Streaming Query execution
+
+Spark Structured streaming provides a mechanism for controlling the timing of streaming data processing in the form of
+https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[triggers].
+The trigger settings of a streaming query define whether the query is going to be executed as micro-batch query with a fixed
+batch interval or as a continuous processing query. Different kinds of triggers that are supported by Spark are https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[here].
+
+The `writeStream` method in stream logic allows to specify trigger used for Streamlet execution.
+
+
 == Lifecycle
 
 In general terms, when you publish and deploy a Cloudflow application, each streamlet definition becomes a physical deployment as one or more Kubernetes artifacts.

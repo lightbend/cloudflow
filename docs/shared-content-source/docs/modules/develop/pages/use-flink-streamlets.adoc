@@ -99,13 +99,13 @@ The next section about message delivery semantics explains the options that are 
 The message processing semantics provided by Flink streamlets are determined by the guarantees provided by the underlying sources, sinks and connectors. Flink offers _at-least-once_ or _exactly_once_ semantics depending on whether checkpointing is enabled. 
 
 If checkpointing is enabled, Flink guarantees end to end exactly-once processing with supported sources, sinks and connectors.
+Checkpointing is enabled by default in Cloudflow, using `exactly_once` checkpointing mode. You can override this using the Configuration system by specific `execution.checkpointing` settings, as shown https://ci.apache.org/projects/flink/flink-docs-release-1.10/ops/config.html#checkpointing[here]. 
 
 When we say “exactly-once semantics”, what we mean is that each incoming event affects the final results exactly once. Even in case of a machine or software failure, there’s no duplicate data and no data that goes unprocessed. This  https://flink.apache.org/features/2018/03/01/end-to-end-exactly-once-apache-flink.html[post] explains in detail how `TwoPhaseCommitSinkFunction` implements the two-phase commit protocol and makes it possible to build end-to-end exactly-once applications with Flink and a selection of data sources and sinks, including Apache Kafka versions 0.11 and beyond.
 
 For more details of how the various types of processing semantics impact Kafka producers and consumers when interacting with Flink, please refer to this https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html[guide].
 
 In Cloudflow, streamlets communicate with each other through Kafka - hence the semantics here depends on the settings that we use in our streamlets implementation. For Flink we use _at-least-once_ in `FlinkKafkaProducer`. To use _exactly-once_ the Kafka broker needs to have the value of `transaction.max.timeout.ms` set to at least _1 hour_, which can have an impact on other runtimes in the application.
-
 
 == Reliable restart of stateful processes
 
@@ -115,3 +115,49 @@ PVCs are automatically provisioned for each Cloudflow application.
 The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
 
 Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
+
+== Flink local execution
+
+If you are testing Flink streamlets locally <<Using the Local Sandbox>> you should be aware
+of several things:
+
+* Restartability. Unlike cluster deployment, a local Flink execution will not restart in the case of crashes.
+* Checkpointing. By default, in the case of local runs, checkpointing is done in memory, which means that in the case of local runs, checkpointing does not survive beyond an individual execution.
+
+The checkpointing behaviour in this case (along with many other parameters) can be overwritten
+using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
+Complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
+
+In addition to "standard" Flink parameters, you can enable the Web UI
+when using `runLocal`. If the parameter `local.web` is set in the configuration
+(for the Flink runtime or a particular streamlet), the Flink execution is started with the Web UI, as shown in
+https://ci.apache.org/projects/flink/flink-docs-release-1.11/ops/deployment/local.html#start-a-local-flink-cluster[here]. By default the Web UI is available
+at `http://localhost:8081`, but the port can be overwritten using the configuration system with `rest.port` under `cloudflow.runtimes.flink.config.flink` or specifically for a streamlet under `cloudflow.streamlets.<streamlet>.config`.
+
+An example of modifying some flink configuration is shown below:
+
+[source,hocon]
+----
+cloudflow.streamlets.processor.config {
+  local.web = on
+  rest.port = 5000
+}
+----
+
+In the above example the Web UI is enabled for the processors streamlet. which will listen on port 5000.
+You need to provide the location of the local configuration in your sbt build file:
+
+[source,scala]
+----
+lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
+  .enablePlugins(CloudflowApplicationPlugin)
+  .settings(commonSettings)
+  .settings(
+    name := "taxi-ride-fare",
+    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
+  )
+----
+
+NOTE: If you set `execution.checkpointing.interval` you need to set all other relevant checkpointing settings, the default checkpointing will not be used if `execution.checkpointing.interval` is set.
+
+In the above example the `runLocalConfigFile` setting is shown to point to a local.conf in the taxi-ride-fare example project.
