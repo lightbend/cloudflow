@@ -115,3 +115,22 @@ PVCs are automatically provisioned for each Cloudflow application.
 The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
 
 Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
+
+== Flink local execution
+
+If you are testing Flink streamlet locally <<Using the Local Sandbox>> you should be aware
+of the several things:
+
+* Restartability. Unlike cluster deployment, local Flink execution will not restart in the case of crashes.
+* Checkpointing. By default, in the case of local runs, checkpointing is done to memory, which means that in the case of local runs checkpointing is does not survive individual execution.
+
+The checkpointing behaviour in this case (along with many otherparameters) can be overwritten
+using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
+A complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
+
+In addition to "standard" Flink parameters, Cloudflow introduce an option of enabling Web UI
+when using local execution. If the parameter `local.web` is set in the configuration
+(for Flink runtime or particular streamlet), the Flink execution is started with Web UI, as shown
+https://ci.apache.org/projects/flink/flink-docs-release-1.11/ops/deployment/local.html#start-a-local-flink-cluster[here]. By default UI is available
+at `http://localhost:8081`, but the port can be overwritten using configuration
+
