@@ -5,6 +5,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
+
 The only Cloudflow compatible Flink operator is a fork currently maintained by Lightbend.
 
 Install the Flink operator using the following Helm command:
@@ -27,3 +29,7 @@ cloudflow-patch-spark-mutatingwebhookconfig-66xxb   0/1     Completed   0       
 spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0          2m29s
 flink-operator-7999fdd879-phqlg                     1/1     Running     0          1m29s
 ----
+
+== Next: Installing Enterprise components
+
+Continue with xref:installing-enterprise.adoc[]
