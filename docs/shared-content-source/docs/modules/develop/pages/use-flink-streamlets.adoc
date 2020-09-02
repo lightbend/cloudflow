@@ -124,7 +124,7 @@ of several things:
 * Restartability. Unlike cluster deployment, local Flink execution will not restart in the case of crashes.
 * Checkpointing. By default, in the case of local runs, checkpointing is done in memory, which means that in the case of local runs, checkpointing does not survive an individual execution.
 
-The checkpointing behaviour in this case (along with many otherparameters) can be overwritten
+The checkpointing behaviour in this case (along with many other parameters) can be overwritten
 using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
 A complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
 
