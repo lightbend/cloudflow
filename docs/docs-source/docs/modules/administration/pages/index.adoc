@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 This chapter describes common Cloudflow and Kubernetes administration tasks.
 
-It contains the steps install Cloudflow, using the `Helm` and `kubectl` command-line tools.
+It contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
 It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
 
 - Installation
