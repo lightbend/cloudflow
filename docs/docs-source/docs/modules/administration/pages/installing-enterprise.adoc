@@ -1,0 +1,59 @@
+= Installing Cloudflow Enterprise components
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+
+This instruction shows how to install the Cloudflow Enterprise components. These components are available to https://www.lightbend.com/lightbend-subscription[Lightbend Subscription] customers.
+
+== Installing Enterprise components
+
+Before installing, you need to make sure you have the credentials required to download the cloudflow-enterprise components from the Lightbend commercial repository.
+
+Add the Lightbend Helm repository and update the local index:
+
+  helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
+  helm repo update
+
+Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. 
+
+We recommend using the following command to create an environment variable for username and password. 
+*This is to avoid storing this information in the shell's history file.*
+
+  read DOCKER_USERNAME
+  read -s DOCKER_PASSWORD
+
+TIP: If you want to see the password typed in, remove the `-s` (for silent) flag.
+
+Once configured, we can execute the Helm command to install the Cloudflow enterprise components. Note how we use the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` in the Helm command.
+
+[source,shell script,subs="attributes+"]
+----
+helm upgrade cloudflow-enterprise-components cloudflow-helm-charts/cloudflow-enterprise-components \
+  --install \
+  --namespace cloudflow \
+  --set enterpriseOperatorVersion={cloudflow-version} \
+  --set enterprise-suite.imageCredentials.username="$DOCKER_USERNAME" \
+  --set enterprise-suite.imageCredentials.password="$DOCKER_PASSWORD"
+----
+
+After we have used the username and password environment variables, we can clear them by closing the shell or executing the following commands:
+
+  unset DOCKER_USERNAME
+  unset DOCKER_PASSWORD
+
+To quickly verify that the installation worked, you can open a proxy to the Lightbend console service and confirm that you can access the Lightbend console UI.
+
+First, create the port-forward.
+
+  kubectl port-forward -n cloudflow svc/console-server 5000:80
+
+Then open the following URL in your browser: https://localhost:5000
+
+This opens the Lightbend Console in your browser.
+
+== Upgrading Cloudflow
+
+If you need to upgrade Cloudflow to a newer version, xref:upgrading-cloudflow.adoc[upgrading Cloudflow] in the administration section will show you how.

@@ -1,0 +1,79 @@
+= Installation Prerequisites
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+This guide shows how to prepare your environment to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
+It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
+
+== Prerequisites
+
+=== CLI Tools
+
+Make sure you have the following prerequisites installed before continuing:
+
+- Helm, version 3 or later (check with `helm version`)
+- Kubectl 
+
+Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster to install Cloudflow. This can be done with the following command:
+
+    kubectl version
+
+=== Kafka
+
+Kafka is used by Cloudflow to store data streams. Before installing Cloudflow, you need to make sure there is a Kafka cluster available and have the necessary broker bootstrap configuration.
+
+The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs used by Cloudflow to establish the connection to the Kafka cluster. The configuration string should have the following format:
+
+    broker-1-address:broker-1-port, broker-2-address;broker-2-port
+
+If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi, a third-party Kafka operator that can create and manage Kafka clusters. 
+
+See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a guide on how to configure and install a Kafka cluster using Strimzi.
+
+=== Storage requirements (for use with Spark or Flink)
+
+**If you plan to write Cloudflow applications using Spark or Flink**, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the `ReadWriteMany` storage class name is required when installing Cloudflow.
+
+For testing purposes, we suggest using the NFS Server Provisioner, which can be found here: https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner[NFS Server Provisioner Helm chart]
+
+We'll install the nfs chart in the `cloudflow` namespace, if it does not exist yet, create the `cloudflow` namespace:
+
+  kubectl create ns cloudflow
+
+
+Add the `Stable` Helm repository and update the local index:
+
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  helm repo update
+
+Install the NFS Server Provisioner using the following command:
+
+IMPORTANT: Depending on your Kubernetes configuration, you may want to adjust the values used during the install. 
+Please see https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner#configuration[NFS Server Provisioner configuration options].
+
+  helm upgrade nfs-server-provisioner stable/nfs-server-provisioner \
+    --install \
+    --set storageClass.provisionerName=cloudflow-nfs \
+    --namespace cloudflow
+
+The result of the installation is shown below, the NFS Server provisioner pod is running and the new storage class exists.
+
+----
+$ kubectl get pods -n cloudflow
+NAME                       READY   STATUS    RESTARTS   AGE
+nfs-server-provisioner-0   1/1     Running   0          25s
+
+$ kubectl get sc
+NAME                 PROVISIONER            AGE
+nfs                  cloudflow-nfs          29s
+standard (default)   kubernetes.io/gce-pd   2m57s
+----
+
+NOTE: When installing Cloudflow, we will use the name `nfs` to indicate that Cloudflow should use the NFS storage class.
+
+== Next: Installing Cloudflow
+
+Continue with xref:installing-cloudflow.adoc[]

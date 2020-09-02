@@ -5,32 +5,29 @@
 
 include::ROOT:partial$include.adoc[]
 
-Upgrading Cloudflow after a new release is done using the Helm upgrade command, the command will upgrade Cloudflow to the latest version.
+To upgrade Cloudflow after a new release use the Helm upgrade command.
 
-=== Upgrading (with support for Spark or Flink)
+== Upgrading
 
-If the the Cloudflow installation uses Spark or Flink, pass the persistent storage option:
+To upgrade Cloudflow in your cluster to the latest version run
+
+[source,shell script]
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --set cloudflow_operator.persistentStorageClass=nfs
-    --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
+    --reuse-values
 ----
 
-=== Upgrading (no support for Spark or Flink)
-
-Upgrade a Cloudflow installation without support for Spark or Flink with:
-----
-  helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
-    --namespace cloudflow \
-    --set cloudflow_operator.kafkaBootstrapservers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
-----
+== Selecting a specific version
 
 To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
 
 [source,shell script,subs="attributes"]
 ----
-  --version="{cloudflow-version}"
+  helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
+    --namespace cloudflow \
+    --reuse-values \
+    --version="{cloudflow-version}"
 ----
 
-IMPORTANT: A typical upgrade of Cloudflow does not affect the running Cloudflow applications. However, it is essential to make sure to read the release notes to make sure there are no breaking changes.
+IMPORTANT: A typical upgrade of Cloudflow does not affect the running Cloudflow applications. However, always check the release notes to be sure there are no breaking changes.

@@ -1,30 +1,27 @@
 :page-partial:
 
-In K8s you can allow external (HTTP) network traffic to reach your services by creating Ingresses and adding an Ingress Controller to your cluster.
+In Kubernetes you can allow external (HTTP) network traffic to reach your services by creating _Ingresses_ and adding an _Ingress Controller_ to your cluster.
 
 This section shows how to install an Ingress controller and how to create an Ingress for your services.
 
 An https://kubernetes.io/docs/concepts/services-networking/ingress/[ingress] is a Kubernetes resource that defines a set of routing rules and is serviced by an ingress controller. 
 
-There is a wide selection of ingress controllers available. The following link contains a list of the most common ones.
+Kubernetes offers a wide selection of ingress controllers available. https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/[Ingress Controllers] lists the most common ones.
 
-https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/[Ingress Controllers] 
-
-Before creating an ingress resource, there must be an enabled ingress controller in the cluster. 
+IMPORTANT: In order for the Ingress resource to work, the cluster must have an ingress controller running.
 
 == Deploying an ingress controller
 The Kubernetes project directly supports and maintains two ingress controllers, `Nginx-ingress` and `gce`. In this example, we will use the `Nginx-ingress` ingress controller since it is compatible with all major cloud vendors (GCP, AWS, and Azure). 
 
-The following link shows how to deploy the `Nginx-ingress` ingress controller.
-
-https://kubernetes.github.io/ingress-nginx/deploy/
+Follow the instructions in the https://kubernetes.github.io/ingress-nginx/deploy/[
+NGINX Ingress Controller Installation Guide] to deploy the `Nginx-ingress` ingress controller in your cluster.
 
 == Creating the ingress resource
 The ingress resource defines routes between the outside of the cluster to an application running in the cluster.
 
 In the example below, we create an ingress that exposes the `sensor-data-scala-http-ingress-service` service in the namespace `sensor-data-scala`. 
 
-NOTE: When the Cloudflow operator deploys an application that has one or more streamlets with a server attribute, the operator will create a Kubernetes Service resource for each of these streamlet. The Service resource is what we will use below to create a route using an ingress from the outside to the streamlet.
+NOTE: When the Cloudflow operator deploys an application that has one or more streamlets with a server attribute, the operator will create a Kubernetes *Service Resource* for each of these streamlets. We will use that Service Resource to create a route using an ingress from the outside to the streamlet.
 
 The annotation `kubernetes.io/ingress.class` in the ingress resource below is the selector used by the ingress controller. If you installed another ingress controller, review its documentation to learn how it selects ingress resources.
 
@@ -65,10 +62,7 @@ The ingress now has an address and data can be sent to the ingress on the addres
 == Authenticated ingress
 An _Ingress_ opens up a permanent, unauthenticated route by default. Kubernetes does not provide any authentication on ingresses. Authentication has to be implemented by the exposed service or by the ingress controller.
 
-The following section in the Nginx ingress controller documentation shows how to use basic authentication or an `OAuth` sign-in:
-
-
-https://kubernetes.github.io/ingress-nginx/examples/auth/basic/
+To use basic authentication or an `OAuth` sign-in, see https://kubernetes.github.io/ingress-nginx/examples/auth/basic/[Basic Authentication] in the Nginx ingress controller documentation.
 
 For more fine-grained access control or alternative authorisation mechanisms, alternative ingress controllers such as https://www.nginx.com/products/nginx/kubernetes-ingress-controller/[NGINX plus] can be deployed.
 
