@@ -14,7 +14,7 @@ Before installing, you need to make sure you have the credentials required to do
 
 Add the Lightbend Helm repository and update the local index:
 
-  helm repo add lightbend https://repo.lightbend.com/helm-charts/
+  helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
   helm repo update
 
 Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. 
