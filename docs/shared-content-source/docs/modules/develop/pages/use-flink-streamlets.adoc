@@ -122,7 +122,7 @@ If you are testing Flink streamlets locally <<Using the Local Sandbox>> you shou
 of the several things:
 
 * Restartability. Unlike cluster deployment, local Flink execution will not restart in the case of crashes.
-* Checkpointing. By default, in the case of local runs, checkpointing is done to memory, which means that in the case of local runs checkpointing is does not survive individual execution.
+* Checkpointing. By default, in the case of local runs, checkpointing is done in memory, which means that in the case of local runs, checkpointing does not survive an individual execution.
 
 The checkpointing behaviour in this case (along with many otherparameters) can be overwritten
 using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
