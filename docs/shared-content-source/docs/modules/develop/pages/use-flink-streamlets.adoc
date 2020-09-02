@@ -132,5 +132,4 @@ In addition to "standard" Flink parameters, Cloudflow introduce an option of ena
 when using local execution. If the parameter `local.web` is set in the configuration
 (for Flink runtime or particular streamlet), the Flink execution is started with Web UI, as shown
 https://ci.apache.org/projects/flink/flink-docs-release-1.11/ops/deployment/local.html#start-a-local-flink-cluster[here]. By default UI is available
-at `http://localhost:8081`, but the port can be overwritten using configuration
-
+at `http://localhost:8081`, but the port can be overwritten using the configuration system with `rest.port` under `cloudflow.runtimes.flink.config.flink` or specifically for a streamlet under `cloudflow.streamlets.<streamlet>.config`.
