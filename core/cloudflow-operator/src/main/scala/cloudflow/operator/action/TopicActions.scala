@@ -57,8 +57,8 @@ object TopicActions {
 
   type TopicResource = ConfigMap
 
-  def createAction(appNamespace: String, labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext) = {
-
+  def createAction(appNamespace: String,
+                   labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext): CreateOrUpdateAction[ConfigMap] = {
     val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
       case Some(bootstrapServers) => bootstrapServers                  -> topic.brokerConfig
       case None                   => ctx.kafkaContext.bootstrapServers -> ctx.kafkaContext.properties
@@ -103,8 +103,9 @@ object TopicActions {
       implicit ctx: DeploymentContext
   ): ConfigMap =
     ConfigMap(
-      metadata = ObjectMeta(name = s"topic-${topic.name}", labels = labels(topic.name), namespace = namespace),
+      metadata = ObjectMeta(name = s"topic-${topic.id}", labels = labels(topic.id), namespace = namespace),
       data = Map(
+          "id"                -> topic.id,
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
           "replicationFactor" -> replicationFactor.toString
@@ -116,14 +117,18 @@ object TopicActions {
   }
 
   object TopicInfo {
-    def apply(sp: Topic): TopicInfo = TopicInfo(
-      sp.name,
-      intOrEmpty(sp.config, Blueprint.PartitionsKey),
-      intOrEmpty(sp.config, Blueprint.ReplicasKey),
-      Topic.pathAsMap(sp.config, Blueprint.TopicConfigKey),
-      sp.managed,
-      stringOrEmpty(sp.config, Blueprint.BootstrapServersKey),
-      Topic.pathAsMap(sp.config, Blueprint.ConnectionConfigKey)
+    def apply(t: Topic): TopicInfo = TopicInfo(
+      t.id,
+      t.name,
+      intOrEmpty(t.config, Blueprint.PartitionsKey),
+      intOrEmpty(t.config, Blueprint.ReplicasKey),
+      Topic
+        .pathAsMap(t.config, Blueprint.TopicConfigKey)
+        // filter out config Kafka doesn't understand
+        .filterNot(_._1 == "name"),
+      t.managed,
+      stringOrEmpty(t.config, Blueprint.BootstrapServersKey),
+      Topic.pathAsMap(t.config, Blueprint.ConnectionConfigKey)
     )
 
     private def intOrEmpty(config: Config, key: String): Option[Int] =
@@ -132,7 +137,8 @@ object TopicActions {
       if (config.hasPath(key)) Some(config.getString(key)) else None
   }
 
-  case class TopicInfo(name: String,
+  case class TopicInfo(id: String,
+                       name: String,
                        partitions: Option[Int],
                        replicationFactor: Option[Int],
                        properties: Map[String, String],
