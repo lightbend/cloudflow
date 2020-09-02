@@ -5,18 +5,20 @@
 
 include::ROOT:partial$include.adoc[]
 
-Upgrading Cloudflow after a new release is done using the Helm upgrade command, the command will upgrade Cloudflow to the latest version.
+To upgrade Cloudflow after a new release use the Helm upgrade command.
 
 == Upgrading
 
-To upgrade Cloudflow in your cluster run
+To upgrade Cloudflow in your cluster to the latest version run
+
+[source,shell script]
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
     --reuse-values
 ----
 
-== Selection a specific version
+== Selecting a specific version
 
 To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
 
