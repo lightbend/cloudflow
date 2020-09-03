@@ -166,7 +166,7 @@ In the above example the `runLocalConfigFile` setting is shown to point to a loc
 
 Flink supports several file systems for reading and writing data and for its state backend. In this section, we will look at how to use Microsoft's Azure Blob Storage for these purposes.
 
-Please refer to the Flink documentation here https://ci.apache.org/projects/flink/flink-docs-stable/ops/filesystems/azure.html
+Please refer to the Flink documentation https://ci.apache.org/projects/flink/flink-docs-stable/ops/filesystems/azure.html[Azure Blob Storage]
 
 To make this work in a Cloudflow context there are a couple of things you need to do as follows.
 
@@ -178,7 +178,7 @@ In the configuration file, you need to specify that the `state.backend` is `file
 ----
 cloudflow.runtimes.flink.config {
   flink.state.backend = filesystem
-  flink.state.checkpoints.dir = "<your-container>@$<your-azure-account>.blob.core.windows.net/<object-path>"
+  flink.state.checkpoints.dir = "wasbs://<your-container>@$<your-azure-account>.blob.core.windows.net/<object-path>"
   flink.fs.azure.account.key.<your-azure-acount>.blob.core.windows.net = "<blob-access-key>"
 }
 ----
