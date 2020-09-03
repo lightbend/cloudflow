@@ -200,8 +200,8 @@ lazy val yourStreamlet = appModule("yourStreamlet")
       sbtdocker.Instructions.User("root"),
       sbtdocker.Instructions.Run("mkdir -p ./plugins/azure-fs-hadoop"),
       sbtdocker.Instructions.Run("cp /opt/flink/opt/flink-azure-fs-hadoop-1.10.0.jar ./plugins/azure-fs-hadoop/"),
-      sbtdocker.Instructions.Run("chown -R flink:flink ./plugins/azure-fs-hadoop"))
-  )
+      sbtdocker.Instructions.Run("chown -R flink:flink ./plugins/azure-fs-hadoop"),
+      sbtdocker.Instructions.User("cloudflow")))
   ...
 ----
 
