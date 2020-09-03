@@ -137,6 +137,6 @@ object Name {
     "cloudflow-app-pvc"
   }
 
-  def ofPVCInstance(appId: String): String =
-    truncateTo63CharactersWithSuffix(appId, "-pvc")
+  def ofPVCInstance(appId: String, runtime: String): String =
+    truncateTo63CharactersWithSuffix(appId, s"-$runtime-pvc")
 }

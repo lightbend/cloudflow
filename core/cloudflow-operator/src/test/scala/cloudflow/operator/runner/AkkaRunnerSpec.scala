@@ -21,7 +21,6 @@ import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
 import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
-import play.api.libs.json._
 import skuber._
 
 class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {

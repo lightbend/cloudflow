@@ -20,13 +20,23 @@ package runner
 import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 import scala.util._
-
+import scala.concurrent._
+import akka.actor._
 import com.typesafe.config._
-import cloudflow.blueprint.deployment._
 import play.api.libs.json._
 import org.slf4j._
+import skuber.api.client._
+import skuber.json.format._
+import skuber.json.rbac.format._
+import skuber.rbac._
 import skuber._
+import skuber.PersistentVolume.AccessMode
+import skuber.PersistentVolumeClaim.VolumeMode
+import skuber._
+
+import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
+import cloudflow.operator.action._
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -72,6 +82,118 @@ trait Runner[T <: ObjectResource] {
   def resourceDefinition: ResourceDefinition[T]
 
   def runtime: String
+
+  def prepareNamespaceActions(app: CloudflowApplication.CR,
+                              namespace: String,
+                              labels: CloudflowLabels,
+                              ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ) =
+    appActions(app, namespace, labels, ownerReferences) ++
+        persistentVolumeActions(app, namespace, labels, ownerReferences) ++
+        serviceAccountAction(namespace, labels, ownerReferences)
+
+  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]]
+
+  def persistentVolumeActions(app: CloudflowApplication.CR,
+                              namespace: String,
+                              labels: CloudflowLabels,
+                              ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] = {
+    val _ = (app, namespace, labels, ownerReferences) // to remove warning.
+    Seq()
+  }
+
+  def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
+    Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
+
+  def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): PersistentVolumeClaim = {
+    val metadata = ObjectMeta(
+      name = Name.ofPVCInstance(appId, runtime),
+      namespace = namespace,
+      labels = labels(Name.ofPVCComponent),
+      ownerReferences = ownerReferences
+    )
+
+    val pvcSpec = PersistentVolumeClaim.Spec(
+      accessModes = List(AccessMode.ReadWriteMany),
+      volumeMode = Some(VolumeMode.Filesystem),
+      resources = Some(
+        Resource.Requirements(
+          limits = Map(Resource.storage   -> ctx.persistentStorageSettings.resources.limit),
+          requests = Map(Resource.storage -> ctx.persistentStorageSettings.resources.request)
+        )
+      ),
+      storageClassName = Some(ctx.persistentStorageSettings.storageClassName),
+      selector = None
+    )
+    PersistentVolumeClaim(metadata = metadata, spec = Some(pvcSpec), status = None)
+  }
+
+  /**
+   * Creates an action for creating a Persistent Volume Claim.
+   */
+  object CreatePersistentVolumeClaimAction {
+    def apply(service: PersistentVolumeClaim)(implicit format: Format[PersistentVolumeClaim],
+                                              resourceDefinition: ResourceDefinition[PersistentVolumeClaim]) =
+      new CreatePersistentVolumeClaimAction(service, format, resourceDefinition)
+  }
+
+  class CreatePersistentVolumeClaimAction(
+      override val resource: PersistentVolumeClaim,
+      format: Format[PersistentVolumeClaim],
+      resourceDefinition: ResourceDefinition[PersistentVolumeClaim]
+  ) extends CreateOrUpdateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
+    override def execute(
+        client: KubernetesClient
+    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
+      for {
+        pvcResult ← client.getOption[PersistentVolumeClaim](resource.name)(format, resourceDefinition, lc)
+        res ← pvcResult
+          .map(_ ⇒ Future.successful(CreatePersistentVolumeClaimAction(resource)))
+          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreatePersistentVolumeClaimAction(o)))
+      } yield res
+  }
+
+  def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  def persistentVolumeClaimEditor: ObjectEditor[PersistentVolumeClaim] =
+    (obj: PersistentVolumeClaim, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+
+  def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
+    RoleBinding(
+      metadata = ObjectMeta(
+        name = Name.ofRoleBinding(),
+        namespace = namespace,
+        labels = labels(Name.ofRoleBinding()),
+        ownerReferences = ownerReferences
+      ),
+      kind = "RoleBinding",
+      roleRef = RoleRef("rbac.authorization.k8s.io", "Role", BasicUserRole),
+      subjects = List(
+        Subject(
+          None,
+          "ServiceAccount",
+          Name.ofServiceAccount,
+          Some(namespace)
+        )
+      )
+    )
+
+  val createEventPolicyRule = PolicyRule(
+    apiGroups = List(""),
+    attributeRestrictions = None,
+    nonResourceURLs = List(),
+    resourceNames = List(),
+    resources = List("events"),
+    verbs = List("get", "create", "update")
+  )
+  val BasicUserRole = "system:basic-user"
 
   final val RuntimeMainClass   = "cloudflow.runner.Runner"
   final val RunnerJarName      = "cloudflow-runner.jar"
