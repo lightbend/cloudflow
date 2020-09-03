@@ -183,31 +183,7 @@ cloudflow.runtimes.flink.config {
 }
 ----
 
-Whether you are running locally or deploying to a Cloudflow cluster, this part of the configuration is the same.
-
-==== Deployment
-
-When your Flink streamlet is deployed it will run in a Docker container which includes a normal Flink installation. To use Azure Blob Storage as filesystem we need to enable a plugin `flink-azure-fs-hadoop`. As detailed in the Flink documentation, all plugins need to be copied from the `/opt/` folder into a directory of their own in `/plugins.`.
-
-To facilitate this, in your _Streamlet_ `build.sbt` you must add the following instructions to make sure that the plugin is copied to the right place when the container is built.
-
-[source, scala]
-----
-lazy val yourStreamlet = appModule("yourStreamlet")
-  .enablePlugins(CloudflowFlinkPlugin)
-  .settings(
-    extraDockerInstructions ++= Seq(
-      sbtdocker.Instructions.User("root"),
-      sbtdocker.Instructions.Run("mkdir -p ./plugins/azure-fs-hadoop"),
-      sbtdocker.Instructions.Run("cp /opt/flink/opt/flink-azure-fs-hadoop-1.10.0.jar ./plugins/azure-fs-hadoop/"),
-      sbtdocker.Instructions.Run("chown -R flink:flink ./plugins/azure-fs-hadoop"),
-      sbtdocker.Instructions.User("cloudflow")))
-  ...
-----
-
-==== Running Locally
-
-Cloudflow does not build containers when running locally and it will instead embed Flink directly into the sandbox application. To include the `flink-fs-azure-hadoop.jar` you need to explicitly add it to your _Streamlet_ build file as follows.
+Flink needs `flink-azure-fs-hadoop` support to be built into your Streamlet in order to be able to use Azure as a filesystem backend. To faciliate this simply add the following library dependency to the `build.sbt`.
 
 [source, scala]
 ----
