@@ -17,11 +17,10 @@
 package cloudflow.operator.runner
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
-import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
+import cloudflow.blueprint.deployment.{PrometheusConfig, StreamletDeployment}
+import cloudflow.operator.{CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext}
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
-import play.api.libs.json._
 import skuber._
 
 class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
@@ -65,12 +64,12 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
 
     val deployment = StreamletDeployment(
       name = appId,
-      runtime = "spark",
+      runtime = "akka",
       image = image,
-      streamletName = "spark-streamlet",
+      streamletName = "akka-streamlet",
       className = "cloudflow.operator.runner.AkkaRunner",
       endpoint = None,
-      secretName = "spark-streamlet",
+      secretName = "akka-streamlet",
       config = ConfigFactory.empty(),
       portMappings = Map.empty,
       volumeMounts = None,
