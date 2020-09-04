@@ -240,6 +240,10 @@ object ConfigInputChangeEvent extends Event {
             .getConfig(s"$TopicsConfigPath.${topic.id}")
             .withFallback(topic.config)
             .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
+            // Need to retain the topic.id
+            .withFallback(ConfigFactory.parseString(s"""
+                cloudflow.runner.streamlet.context.port_mappings.$port.id = ${topic.id}
+              """))
         ).toOption
     }
     portMappingConfigs.foldLeft(streamletConfig) { (acc, el) =>

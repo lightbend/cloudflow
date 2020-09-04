@@ -46,9 +46,14 @@ class TopicActionsSpec
       val actions = TopicActions(newApp)
 
       Then("only create topic actions must be created between the streamlets")
-      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
-      val topics        = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
-
+      val createActions =
+        actions.collect {
+          case p: ProvidedAction[_, _] ⇒
+            p.asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+              .getAction(None)
+              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        }
+      val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size
       // topics must be created to connect ingress, processor, egress
       createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.name)).distinct.size
@@ -95,7 +100,15 @@ class TopicActionsSpec
 
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
       val Seq(foosAction, barsAction) = TopicActions(newApp)
-      val configMap0                  = foosAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
+
+      val configMap0 = foosAction
+        .asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+        .getAction(None)
+        .asInstanceOf[ResourceAction[_]]
+        .resource
+        .asInstanceOf[TopicActions.TopicResource]
+
+      //foosAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
       configMap0 mustBe TopicActions.resource(
         newApp.namespace,
         TopicActions.TopicInfo(in),
@@ -104,9 +117,14 @@ class TopicActionsSpec
         ctx.kafkaContext.bootstrapServers.value,
         CloudflowLabels(newApp)
       )
-      foosAction mustBe a[CreateOrUpdateAction[_]]
+      foosAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
 
-      val configMap1 = barsAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
+      val configMap1 = barsAction
+        .asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+        .getAction(None)
+        .asInstanceOf[ResourceAction[_]]
+        .resource
+        .asInstanceOf[TopicActions.TopicResource]
 
       configMap1 mustBe TopicActions.resource(
         newApp.namespace,
@@ -116,7 +134,7 @@ class TopicActionsSpec
         ctx.kafkaContext.bootstrapServers.value,
         CloudflowLabels(newApp)
       )
-      barsAction mustBe a[CreateOrUpdateAction[_]]
+      barsAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
       assertTopic(savepoint, configMap1, appId)
     }
   }

@@ -121,35 +121,51 @@ object StreamletChangeEvent extends Event {
           case AkkaRunner.runtime ⇒
             Action.provided[Secret, Deployment](
               streamletDeployment.secretName,
-              app.metadata.namespace, { secret =>
-                val resource =
-                  AkkaRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                val labeledResource =
-                  resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                Action.createOrUpdate(labeledResource, runner.AkkaRunner.editor)
+              app.metadata.namespace, {
+                case Some(secret) =>
+                  val resource =
+                    AkkaRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+                  val labeledResource =
+                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                  Action.createOrUpdate(labeledResource, runner.AkkaRunner.editor)
+                case None =>
+                  throw new Exception(
+                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  )
               }
             )
           case SparkRunner.runtime ⇒
             Action.provided[Secret, SparkResource.CR](
               streamletDeployment.secretName,
-              app.metadata.namespace, { secret =>
-                val resource =
-                  SparkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                val labeledResource =
-                  resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                val patch = SpecPatch(labeledResource.spec)
-                Action.createOrPatch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+              app.metadata.namespace, {
+                case Some(secret) =>
+                  val resource =
+                    SparkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+                  val labeledResource =
+                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                  val patch = SpecPatch(labeledResource.spec)
+                  Action.createOrPatch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+                case None =>
+                  throw new Exception(
+                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  )
               }
             )
           case FlinkRunner.runtime ⇒
             Action.provided[Secret, FlinkResource.CR](
               streamletDeployment.secretName,
-              app.metadata.namespace, { secret =>
-                val resource =
-                  FlinkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                val labeledResource =
-                  resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                Action.createOrUpdate(labeledResource, runner.FlinkRunner.editor)
+              app.metadata.namespace, {
+                case Some(secret) =>
+                  val resource =
+                    FlinkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+                  val labeledResource =
+                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                  Action.createOrUpdate(labeledResource, runner.FlinkRunner.editor)
+                case None =>
+                  throw new Exception(
+                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  )
+
               }
             )
         }

@@ -33,7 +33,7 @@ case class RunnerConfig(data: String) extends ConfigMapData {
 }
 
 object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
-
+  val PortMappingsPath     = "cloudflow.runner.streamlet.context.port_mappings"
   val AppConfigFilename    = "application.conf"
   implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
 

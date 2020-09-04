@@ -34,6 +34,7 @@ trait Event {
   def getKind(obj: ObjectResource) = if (obj.kind.isEmpty) obj.getClass.getSimpleName else obj.kind // sometimes kind is empty.
 
   /**
+   * TODO rewrite using `ProvidedAction`, ensuring all K8s effects are executed in executeActions.
    * Finds the associated [[CloudflowApplication.CR]]s for [[AppChangeEvent]]s.
    * The resulting flow outputs tuples of the app and the streamlet change event.
    */
