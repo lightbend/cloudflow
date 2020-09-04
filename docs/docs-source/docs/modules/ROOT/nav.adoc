@@ -60,6 +60,7 @@ include::partial$include.adoc[]
 ** xref:administration:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi]
 ** xref:administration:installing-spark-operator.adoc[Adding Spark Support]
 ** xref:administration:installing-flink-operator.adoc[Adding Flink Support]
+** xref:administration:storage-requirements.adoc[Storage Requirements]
 ** xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow]
 ** xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
 
