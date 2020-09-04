@@ -170,7 +170,3 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0       
 If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
 
 Continue with xref:installing-flink-operator.adoc[Adding Flink Support].
-
-== Next: Storage requirements 
-
-Continue with xref:storage-requirements.adoc[]
