@@ -65,7 +65,7 @@ object TopicActions {
     }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
-    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, labels)
+    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, bootstrapServers, labels)
 
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
@@ -99,7 +99,12 @@ object TopicActions {
     }
   }
 
-  def resource(namespace: String, topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
+  def resource(namespace: String,
+               topic: TopicInfo,
+               partitions: Int,
+               replicationFactor: Int,
+               bootstrapServers: String,
+               labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): ConfigMap =
     ConfigMap(
@@ -108,7 +113,8 @@ object TopicActions {
           "id"                -> topic.id,
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
-          "replicationFactor" -> replicationFactor.toString
+          "replicationFactor" -> replicationFactor.toString,
+          "bootstrap.servers" -> bootstrapServers
         ) ++ topic.properties
     )
 
