@@ -1,0 +1,88 @@
+= More Storage Options
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+
+include::ROOT:partial$include.adoc[]
+
+
+== Verified storage and example configuration
+
+The following tabs describe the storage classes that Lightbend has verified and tested on Azure Kubernetes Service (AKS), Amazon Elastic Kubernetes Service (EKS) and RedHat OpenShift (3.11). They include examples of the required `.yaml` file that should be used to update the Kubernetes cluster. There's no need to set the namespace when updating the cluster. 
+
+
+[.tabset]
+AKS::
++
+--
+
+The `AzureFile` storage class supports `ReadWriteMany` access mode and is verified to work with Cloudflow on Azure Kubernetes Service (AKS).
+
+NOTE: An important thing to note here is that the `uid` and `gid` mount options should be configured to match those used by the Cloudflow application pods, e.g. they should both have the value `185`. If this is misconfigured it will lead to application runtime errors when Spark and/or Flink are not permitted to write their intermediate state to disk.
+
+[source,yaml]
+----
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+    name: azurefile
+provisioner: kubernetes.io/azure-file
+mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
+    - uid=185
+    - gid=185
+    - mfsymlinks
+    - nobrl
+    - cache=none
+parameters:
+  skuName: Standard_LRS
+----
+
+For more information about configuring AzureFile, please read https://docs.microsoft.com/bs-cyrl-ba/azure/aks/azure-files-dynamic-pv[its documentation].
+
+--
+EKS::
++
+--
+
+Amazon Elastic File System (EFS) supports the `ReadWriteMany` access mode and is verified working with Cloudflow on Amazon Elastic Kubernetes Service (EKS).
+
+For more information about configuring Amazon Elastic File System, please read https://www.eksworkshop.com/beginner/190_efs/efs-provisioner/[its dcumentation].
+
+NOTE: You must configure the rules as discussed https://docs.aws.amazon.com/efs/latest/ug/accessing-fs-create-security-groups.html[here] in security groups to enable traffic between an EC2 instance of the Kubernetes Cluster and a mount target (and thus the file system). If you do not do this, Cloudflow will not be able to use EFS.
+
+--
+
+Openshift::
++
+--
+
+GlusterFS provisioner supports the `ReadWriteMany` access mode and is verified working with Cloudflow on Redhat Openshift.
+
+The GlusterFS installation will create the following storage class. Note that the name of the storage class has here been set to `glusterfs`, this may be different in your installation.
+
+[source,yaml]
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: glusterfs-storage
+parameters:
+  resturl: http://heketi-storage.glusterfs.svc:8080
+  restuser: admin
+  secretName: heketi-storage-admin-secret
+  secretNamespace: glusterfs
+provisioner: kubernetes.io/glusterfs
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+----
+
+For more information about configuring GlusterFS on Openshift, please read https://docs.openshift.com/container-platform/3.11/install_config/persistent_storage/persistent_storage_glusterfs.html[its documentation].
+
+--
+
+== What's next
+
+With this overview of storage, it's time to check xref:installing-cloudflow.adoc[].

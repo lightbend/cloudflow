@@ -30,6 +30,6 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0       
 flink-operator-7999fdd879-phqlg                     1/1     Running     0          1m29s
 ----
 
-== Next: Installing Enterprise components
+== Next: Storage Requirements
 
-Continue with xref:installing-enterprise.adoc[]
+Continue with xref:storage-requirements.adoc[]

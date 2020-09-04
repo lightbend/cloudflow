@@ -171,6 +171,6 @@ If you plan to write applications that utilize Flink you will need to install th
 
 Continue with xref:installing-flink-operator.adoc[Adding Flink Support].
 
-== Next: Installing Enterprise components
+== Next: Storage requirements 
 
-Continue with xref:installing-enterprise.adoc[]
+Continue with xref:storage-requirements.adoc[]
