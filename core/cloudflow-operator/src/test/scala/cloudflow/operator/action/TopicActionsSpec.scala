@@ -22,7 +22,13 @@ import org.scalatest._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._
 
-class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
+class TopicActionsSpec
+    extends WordSpec
+    with MustMatchers
+    with GivenWhenThen
+    with EitherValues
+    with OptionValues
+    with TestDeploymentContext {
   case class Foo(name: String)
   case class Bar(name: String)
   val namespace  = "ns"
@@ -95,7 +101,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
         TopicActions.TopicInfo(in),
         ctx.kafkaContext.partitionsPerTopic,
         ctx.kafkaContext.replicationFactor,
-        ctx.kafkaContext.bootstrapServers,
+        ctx.kafkaContext.bootstrapServers.value,
         CloudflowLabels(newApp)
       )
       foosAction mustBe a[CreateOrUpdateAction[_]]
@@ -107,7 +113,7 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
         TopicActions.TopicInfo(savepoint),
         ctx.kafkaContext.partitionsPerTopic,
         ctx.kafkaContext.replicationFactor,
-        ctx.kafkaContext.bootstrapServers,
+        ctx.kafkaContext.bootstrapServers.value,
         CloudflowLabels(newApp)
       )
       barsAction mustBe a[CreateOrUpdateAction[_]]
