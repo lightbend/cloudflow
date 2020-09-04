@@ -25,7 +25,7 @@ First, we add the Cloudflow Helm repository and update the local index:
 
 === Installing (with support for Spark or Flink)
 
-For use with Spark or Flink, the `persistentStorageClass` parameter sets the storage class to `nfs`. This storage class, as mentioned in xref:storage-requirements.adoc[], has to be of the type `ReadWriteMany`. In our example, we are using the `nfs` storage class.
+For use with Spark or Flink, the `persistentStorageClass` parameter sets the storage class to `nfs`. This storage class, as mentioned in xref:installation-prerequisites.adoc[], has to be of the type `ReadWriteMany`. In our example, we are using the `nfs` storage class.
 
   cloudflow_operator.persistentStorageClass=nfs
 
