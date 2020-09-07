@@ -56,4 +56,4 @@ This opens the Lightbend Console in your browser.
 
 == Upgrading Cloudflow
 
-If you need to upgrade Cloudflow to a newer version, xref:upgrading-cloudflow.adoc[upgrading Cloudflow] in the administration section will show you how.
+If you need to upgrade Cloudflow to a newer version, xref:upgrading-cloudflow.adoc[] in the administration section will show you how.

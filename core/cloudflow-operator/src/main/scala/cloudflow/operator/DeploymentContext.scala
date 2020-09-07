@@ -42,7 +42,7 @@ case class DeploymentContext(kafkaContext: KafkaContext,
 }
 
 case class KafkaContext(
-    bootstrapServers: String,
+    bootstrapServers: Option[String],
     partitionsPerTopic: Int,
     replicationFactor: Int,
     config: Config
