@@ -74,7 +74,7 @@ standard (default)   kubernetes.io/gce-pd   2m57s
 
 NOTE: When installing Cloudflow, we will use the name `nfs` to indicate that Cloudflow should use the NFS storage class.
 
-NOTE:: The NFS storage class documented on is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
+NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
 
 == More Storage Options
 
