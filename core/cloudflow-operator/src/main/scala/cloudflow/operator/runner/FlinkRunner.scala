@@ -30,7 +30,7 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
 import cloudflow.operator.action.Action
-import cloudflow.operator.runner.AkkaRunner.{getVolumeMounts, getVolumes}
+import cloudflow.operator.runner.AkkaRunner.{ getVolumeMounts, getVolumes }
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].

@@ -294,7 +294,8 @@ trait Runner[T <: ObjectResource] {
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
           containerConfig.volumeMounts
         }
-      }.getOrElse(List())
+      }
+      .getOrElse(List())
 
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
@@ -323,7 +324,6 @@ trait Runner[T <: ObjectResource] {
         podConfig.volumes
       }
       .getOrElse(List())
-
 
 }
 
@@ -366,8 +366,8 @@ object PodsConfig {
   }
 
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
-    val env       = containerConfig.as[Option[List[EnvVar]]]("env")
-    val resources = containerConfig.as[Option[Resource.Requirements]]("resources")
+    val env          = containerConfig.as[Option[List[EnvVar]]]("env")
+    val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
     val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
     ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
   }
@@ -377,7 +377,7 @@ object PodsConfig {
   }
 
   implicit val volumeMountsListConfReader: ValueReader[List[Volume.Mount]] = ValueReader.relative { config =>
-    asConfigObjectToMap[Volume.Mount](config).map{
+    asConfigObjectToMap[Volume.Mount](config).map {
       case (volumeName, valuesMount) =>
         valuesMount.copy(name = volumeName)
     }.toList
@@ -388,19 +388,18 @@ object PodsConfig {
    */
   implicit val volumeMountsConfReader: ValueReader[Volume.Mount] = ValueReader.relative { config =>
     Volume.Mount(
-      name = config.getOrElse[String]("name",""),
-      mountPath = config.getOrElse[String]("mountPath",""),
-      readOnly = config.getOrElse[Boolean]("readOnly",false),
-      subPath = config.getOrElse[String]("subPath","")
+      name = config.getOrElse[String]("name", ""),
+      mountPath = config.getOrElse[String]("mountPath", ""),
+      readOnly = config.getOrElse[Boolean]("readOnly", false),
+      subPath = config.getOrElse[String]("subPath", "")
     )
   }
 
   implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
-     asConfigObjectToMap[Volume.Source](config).map{
-       case (volumeName, source) => Volume(volumeName, source)
+    asConfigObjectToMap[Volume.Source](config).map {
+      case (volumeName, source) => Volume(volumeName, source)
     }.toList
   }
-
 
   /**
    * Currently only dealing with secrets inside volumes
@@ -409,7 +408,6 @@ object PodsConfig {
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
     config.as[Volume.Secret]("secret")
   }
-
 
   implicit val secretsConfReader: ValueReader[Volume.Secret] = ValueReader.relative { config =>
     Volume.Secret(secretName = config.as[String]("name"))
@@ -422,7 +420,8 @@ object PodsConfig {
     val volumes = config
       .as[Option[List[Volume]]]("volumes")
       .getOrElse(List.empty[Volume])
-    val containers = config.as[Option[Map[String, ContainerConfig]]]("containers")
+    val containers = config
+      .as[Option[Map[String, ContainerConfig]]]("containers")
       .getOrElse(Map.empty[String, ContainerConfig])
     PodConfig(containers, labels, volumes)
   }

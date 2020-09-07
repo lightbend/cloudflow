@@ -203,10 +203,10 @@ object AkkaRunner extends Runner[Deployment] {
         .addVolume(secretVolume)
         .addVolume(Runner.DownwardApiVolume)
 
-    val podSpecMoreVolumes = configSecretVolumes.foldLeft[Pod.Spec](podSpec){ case (acc, curr) =>
-      acc.addVolume(curr)
+    val podSpecMoreVolumes = configSecretVolumes.foldLeft[Pod.Spec](podSpec) {
+      case (acc, curr) =>
+        acc.addVolume(curr)
     }
-
 
     val template =
       Pod.Template.Spec
