@@ -364,22 +364,20 @@ object PodsConfig {
   }
 
   implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
-     val volumesMap = asConfigObjectToMap[Volume](config)
+     val volumesMap = asConfigObjectToMap[Volume.Source](config)
     //now the question is how do we pick a secret as we have
     // now just a source that can be a GitRepo or a Secret
-    val res = volumesMap.map( _._2).toList
+    val res = volumesMap.map{ case (volumeName, source) =>
+        Volume(volumeName, source)
+    }.toList
     res
   }
 
-  implicit val sourceConfReader: ValueReader[Volume] = ValueReader.relative { config =>
-    val res  = config.root.keySet.asScala.toList.map {
-      case "secret" =>
-        config.as[Volume.Secret]("secret")
-      case _ =>
-        Volume.Secret("sc")
-    }
-    val sec = asConfigObjectToMap[Volume.Secret](config)
-    Volume("",res.head)
+  /**
+   * By now only dealing with secrets inside volumes
+   */
+  implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
+    config.as[Volume.Secret]("secret")
   }
 
 
