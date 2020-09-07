@@ -422,7 +422,8 @@ object PodsConfig {
     val volumes = config
       .as[Option[List[Volume]]]("volumes")
       .getOrElse(List.empty[Volume])
-    val containers = config.as[Map[String, ContainerConfig]]("containers")
+    val containers = config.as[Option[Map[String, ContainerConfig]]]("containers")
+      .getOrElse(Map.empty[String, ContainerConfig])
     PodConfig(containers, labels, volumes)
   }
 
