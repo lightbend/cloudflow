@@ -303,6 +303,16 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(Map())
 
+  def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.volumes
+      }
+      .getOrElse(List())
+
+
 }
 
 import net.ceedubs.ficus.Ficus._
@@ -342,6 +352,7 @@ object PodsConfig {
     val value = envConfig.as[EnvVar.Value]("value")
     EnvVar(name, value)
   }
+
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
     val env       = containerConfig.as[Option[List[EnvVar]]]("env")
     val resources = containerConfig.as[Option[Resource.Requirements]]("resources")
@@ -352,12 +363,39 @@ object PodsConfig {
     asConfigObjectToMap[PodConfig](config)
   }
 
+  implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
+     val volumesMap = asConfigObjectToMap[Volume](config)
+    //now the question is how do we pick a secret as we have
+    // now just a source that can be a GitRepo or a Secret
+    val res = volumesMap.map( _._2).toList
+    res
+  }
+
+  implicit val sourceConfReader: ValueReader[Volume] = ValueReader.relative { config =>
+    val res  = config.root.keySet.asScala.toList.map {
+      case "secret" =>
+        config.as[Volume.Secret]("secret")
+      case _ =>
+        Volume.Secret("sc")
+    }
+    val sec = asConfigObjectToMap[Volume.Secret](config)
+    Volume("",res.head)
+  }
+
+
+  implicit val secretsConfReader: ValueReader[Volume.Secret] = ValueReader.relative { config =>
+    Volume.Secret(secretName = config.as[String]("name"))
+  }
+
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
+    val volumes = config
+      .as[Option[List[Volume]]]("volumes")
+      .getOrElse(List.empty[Volume])
     val containers = config.as[Map[String, ContainerConfig]]("containers")
-    PodConfig(containers, labels)
+    PodConfig(containers, labels, volumes)
   }
 
   /*
@@ -404,7 +442,8 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 
 final case class PodConfig(
     containers: Map[String, ContainerConfig],
-    labels: Map[String, String] = Map()
+    labels: Map[String, String] = Map(),
+    volumes: List[Volume] = List()
 )
 
 final case class ContainerConfig(
