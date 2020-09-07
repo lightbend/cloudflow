@@ -167,7 +167,7 @@ final case class Settings(config: Config) extends Extension {
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
   val kafka = KafkaSettings(
-    getNonEmptyString(config, s"$root.kafka.bootstrap-servers"),
+    config.as[Option[String]](s"$root.kafka.bootstrap-servers"),
     partitionsPerTopic,
     replicationFactor,
     config.as[Option[String]](s"$root.kafka.strimzi-topic-operator-namespace"),
@@ -203,7 +203,7 @@ final case class Settings(config: Config) extends Extension {
 }
 
 final case class KafkaSettings(
-    bootstrapServers: String,
+    bootstrapServers: Option[String],
     partitionsPerTopic: Int,
     replicationFactor: Int,
     strimziTopicOperatorNamespace: Option[String] = None,
