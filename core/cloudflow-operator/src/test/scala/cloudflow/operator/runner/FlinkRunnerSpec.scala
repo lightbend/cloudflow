@@ -183,6 +183,60 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.metadata.labels.get("key2") mustBe Some("value2")
     }
 
+    "read from config custom secrets and mount them in jobmanager and taskmanager pods" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods.pod {
+                |   volumes {
+                |     foo {
+                |       secret {
+                |         name = mysecret
+                |       }
+                |     },
+                |     bar {
+                |       secret {
+                |         name = yoursecret
+                |       }
+                |     }
+                |   }
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mountPath = "/etc/my/file"
+                |         readOnly = true
+                |       },
+                |       bar {
+                |         mountPath = "/etc/mc/fly"
+                |         readOnly =  false
+                |       }
+                |     }
+                |   }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.Secret(secretName = "mysecret")),
+        Volume("bar", Volume.Secret(secretName = "yoursecret"))
+      )
+
+      crd.spec.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true),
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
+    }
+
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
 
       val crd = FlinkRunner.resource(

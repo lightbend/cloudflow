@@ -223,6 +223,146 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.executor.labels.get("key2") mustBe Some("value2")
     }
 
+    "read from config custom secrets and mount them to the driver and executor pods specs" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods.pod {
+                |   volumes {
+                |     foo {
+                |       secret {
+                |         name = mysecret
+                |       }
+                |     }
+                |     bar {
+                |       secret {
+                |         name = yoursecret
+                |       }
+                |     }
+                |   }
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mountPath = "/etc/my/file"
+                |         readOnly = true
+                |       },
+                |       bar {
+                |         mountPath = "/etc/mc/fly"
+                |         readOnly =  false
+                |       }
+                |     }
+                |   }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.Secret(secretName = "mysecret")),
+        Volume("bar", Volume.Secret(secretName = "yoursecret"))
+      )
+
+      crd.spec.driver.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true),
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
+      crd.spec.executor.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true),
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
+    }
+
+    "read from config custom secrets and mount them DIFFERENTLY to the driver and executor pods specs" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods {
+                | pod {
+                |   volumes {
+                |     foo {
+                |       secret {
+                |         name = mysecret
+                |       }
+                |     }
+                |     bar {
+                |       secret {
+                |         name = yoursecret
+                |       }
+                |     }
+                |   }
+                | }
+                |   driver {
+                |     volumes {
+                |       foo {
+                |         secret {
+                |           name = mysecret
+                |         }
+                |       }
+                |     }
+                |     containers.container {
+                |       volume-mounts {
+                |         foo {
+                |           mountPath = "/etc/my/file"
+                |           readOnly = true
+                |         }
+                |       }
+                |     }
+                |   }
+                |     executor {
+                |       volumes {
+                |         foo {
+                |           secret {
+                |             name = mysecret
+                |           }
+                |         }
+                |       }
+                |       containers.container {
+                |         volume-mounts {
+                |           bar {
+                |             mountPath = "/etc/mc/fly"
+                |             readOnly =  false
+                |           }
+                |         }
+                |       }
+                |     }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.Secret(secretName = "mysecret")),
+        Volume("bar", Volume.Secret(secretName = "yoursecret"))
+      )
+
+      crd.spec.driver.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true)
+      )
+
+      crd.spec.executor.volumeMounts must contain allElementsOf List(
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
+    }
+
     "read from config DIFFERENT custom labels and add them to the driver and executor pods specs" in {
 
       val crd = SparkRunner.resource(
