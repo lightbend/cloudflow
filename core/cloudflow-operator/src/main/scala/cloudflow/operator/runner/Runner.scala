@@ -18,6 +18,7 @@ package cloudflow.operator
 package runner
 
 import java.nio.charset.StandardCharsets
+
 import scala.collection.JavaConverters._
 import scala.util._
 import scala.concurrent._
@@ -33,10 +34,11 @@ import skuber._
 import skuber.PersistentVolume.AccessMode
 import skuber.PersistentVolumeClaim.VolumeMode
 import skuber._
-
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
+import skuber.Volume.MountPropagationMode
+import skuber.Volume.MountPropagationMode.MountPropagationMode
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -356,25 +358,43 @@ object PodsConfig {
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
     val env       = containerConfig.as[Option[List[EnvVar]]]("env")
     val resources = containerConfig.as[Option[Resource.Requirements]]("resources")
-    ContainerConfig(env.getOrElse(List()), resources)
+    val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
+    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
   }
 
   implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config ⇒
     asConfigObjectToMap[PodConfig](config)
   }
 
-  implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
-     val volumesMap = asConfigObjectToMap[Volume.Source](config)
-    //now the question is how do we pick a secret as we have
-    // now just a source that can be a GitRepo or a Secret
-    val res = volumesMap.map{ case (volumeName, source) =>
-        Volume(volumeName, source)
+  implicit val volumeMountsListConfReader: ValueReader[List[Volume.Mount]] = ValueReader.relative { config =>
+    asConfigObjectToMap[Volume.Mount](config).map{
+      case (volumeName, valuesMount) =>
+        valuesMount.copy(name = volumeName)
     }.toList
-    res
   }
 
   /**
-   * By now only dealing with secrets inside volumes
+   * Currently not providing MountPropagation
+   */
+  implicit val volumeMountsConfReader: ValueReader[Volume.Mount] = ValueReader.relative { config =>
+    Volume.Mount(
+      name = config.getOrElse[String]("name",""),
+      mountPath = config.getOrElse[String]("mountPath",""),
+      readOnly = config.as[Boolean]("readOnly"),
+      subPath = config.as[String]("subPath")
+    )
+  }
+
+  implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
+     asConfigObjectToMap[Volume.Source](config).map{
+       case (volumeName, source) => Volume(volumeName, source)
+    }.toList
+  }
+
+
+  /**
+   * Currently only dealing with secrets inside volumes
+   * Not taking into acccount other type of sources
    */
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
     config.as[Volume.Secret]("secret")
@@ -446,5 +466,6 @@ final case class PodConfig(
 
 final case class ContainerConfig(
     env: List[EnvVar] = List(),
-    resources: Option[Resource.Requirements] = None
+    resources: Option[Resource.Requirements] = None,
+    volumeMounts: List[Volume.Mount] = List()
 )
