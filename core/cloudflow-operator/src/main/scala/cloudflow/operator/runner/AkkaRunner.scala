@@ -143,6 +143,8 @@ object AkkaRunner extends Runner[Deployment] {
     val volumeMount  = Volume.Mount(configMapName, Runner.ConfigMapMountPath, readOnly = true)
     val secretMount  = Volume.Mount(Name.ofVolume(secretName), Runner.SecretMountPath, readOnly = true)
 
+    val configSecretVolumes = getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+
     val resourceRequirements = createResourceRequirements(podsConfig)
     val environmentVariables = createEnvironmentVariables(app, podsConfig)
 
@@ -153,7 +155,7 @@ object AkkaRunner extends Runner[Deployment] {
       env = environmentVariables,
       args = args,
       ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
-      volumeMounts = List(secretMount) ++ pvcVolumeMounts :+ volumeMount :+ Runner.DownwardApiVolumeMount
+      volumeMounts = List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
 
     val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
@@ -201,6 +203,11 @@ object AkkaRunner extends Runner[Deployment] {
         .addVolume(secretVolume)
         .addVolume(Runner.DownwardApiVolume)
 
+    val podSpecMoreVolumes = configSecretVolumes.foldLeft[Pod.Spec](podSpec){ case (acc, curr) =>
+      acc.addVolume(curr)
+    }
+
+
     val template =
       Pod.Template.Spec
         .named(podName)
@@ -212,7 +219,7 @@ object AkkaRunner extends Runner[Deployment] {
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)
-        .withPodSpec(podSpec)
+        .withPodSpec(podSpecMoreVolumes)
 
     val deploymentResource = Deployment(
       metadata = ObjectMeta(name = podName,

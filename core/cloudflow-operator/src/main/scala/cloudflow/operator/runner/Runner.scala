@@ -286,6 +286,16 @@ trait Runner[T <: ObjectResource] {
         }
       }
 
+  def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[Volume.Mount] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.volumeMounts
+        }
+      }.getOrElse(List())
+
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
       .get(podName)
@@ -380,8 +390,8 @@ object PodsConfig {
     Volume.Mount(
       name = config.getOrElse[String]("name",""),
       mountPath = config.getOrElse[String]("mountPath",""),
-      readOnly = config.as[Boolean]("readOnly"),
-      subPath = config.as[String]("subPath")
+      readOnly = config.getOrElse[Boolean]("readOnly",false),
+      subPath = config.getOrElse[String]("subPath","")
     )
   }
 
