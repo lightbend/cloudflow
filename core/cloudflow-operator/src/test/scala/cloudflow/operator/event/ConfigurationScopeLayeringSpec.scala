@@ -20,7 +20,7 @@ import org.scalatest.{ ConfigMap ⇒ _, _ }
 import cloudflow.operator.TestDeploymentContext
 import com.typesafe.config.ConfigFactory
 
-class ConfigInputChangeEventSpec
+class ConfigurationScopeLayeringSpec
     extends WordSpec
     with MustMatchers
     with GivenWhenThen
@@ -29,7 +29,7 @@ class ConfigInputChangeEventSpec
     with Inspectors
     with TestDeploymentContext {
 
-  "ConfigInputChangeEvent" should {
+  "ConfigurationScopeLayering" should {
     "transform the config" in {
       val appConfig = ConfigFactory.parseString("""
       cloudflow {

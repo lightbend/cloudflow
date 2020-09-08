@@ -93,7 +93,7 @@ object ConfigInputChangeEvent extends Event {
           val appConfig = getConfigFromSecret(configInputChangeEvent, system)
 
           app.spec.deployments.flatMap { streamletDeployment ⇒
-            val (streamletConfig, runtimeConfig, podsConfig) = ConfigurationScopeLayering.configs(streamletDeployment, appConfig)
+            val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig)
 
             // create update action for output secret action which is mounted as config by runtime specific deployments
             val configSecret =
@@ -101,9 +101,9 @@ object ConfigInputChangeEvent extends Event {
                 streamletDeployment.secretName,
                 app,
                 streamletDeployment,
-                streamletConfig,
-                runtimeConfig,
-                podsConfig,
+                configs.streamlet,
+                configs.runtime,
+                configs.pods,
                 CloudflowLabels.StreamletDeploymentConfigFormat
               )
             List(Action.createOrUpdate(configSecret, secretEditor))

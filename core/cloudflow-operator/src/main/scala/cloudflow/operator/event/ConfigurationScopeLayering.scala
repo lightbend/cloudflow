@@ -27,7 +27,9 @@ import scala.util.Try
  */
 object ConfigurationScopeLayering {
 
-  def configs(streamletDeployment: StreamletDeployment, appConfig: Config): (Config, Config, Config) = {
+  final case class Configs(streamlet: Config, runtime: Config, pods: Config)
+
+  def configs(streamletDeployment: StreamletDeployment, appConfig: Config): Configs = {
     val streamletName = streamletDeployment.streamletName
     val runtime       = streamletDeployment.runtime
 
@@ -35,8 +37,8 @@ object ConfigurationScopeLayering {
     val podsConfig      = extractPodsConfig(streamletConfig)
     val runtimeConfig   = extractRuntimeConfig(runtime, streamletConfig)
 
-    val asPortMappings = ConfigurationScopeLayering.moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig)
-    (asPortMappings, runtimeConfig, podsConfig)
+    val asPortMappings = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig)
+    Configs(asPortMappings, runtimeConfig, podsConfig)
   }
 
   // open for unit testing
