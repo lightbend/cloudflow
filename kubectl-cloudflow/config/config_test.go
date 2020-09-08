@@ -429,7 +429,7 @@ func Test_validateConfig(t *testing.T) {
 	fmt.Printf("badLabelKeyMalformed: %s\n", validateConfig(badLabelKeyMalformed, spec))
 
 	badLabelKeyMalformed2 := newConfig(`
-  cloudflow.runtimes.flink.kubernetes.pods.pod {
+  	cloudflow.runtimes.flink.kubernetes.pods.pod {
 		labels {
 		 	"lkjsdfsdf..sdfsfd//keyabcdefstuvzabcdefghijklmnopqrstuvwxyz" :  value2
 		}
@@ -547,11 +547,11 @@ func Test_validateConfig(t *testing.T) {
 	fmt.Printf("badLabelKeyMalformed33: %s\n", validateConfig(badLabelKeyMalformed33, spec))
 
 	badLabelValueMalFormed4 := newConfig(`
-  cloudflow.runtimes.flink.kubernetes.pods.pod {
+  	cloudflow.runtimes.flink.kubernetes.pods.pod {
 	  labels {
 		  "/k" : "stuvwxyzarstuvwxyz"
 		}
-  }
+  	}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelValueMalFormed4, spec))
 	fmt.Printf("badLabelValueMalFormed4: %s\n", validateConfig(badLabelValueMalFormed4, spec))
@@ -561,7 +561,7 @@ func Test_validateConfig(t *testing.T) {
 		labels {
 		  "h/" : "stuvwxyzarstuvwxyz"
 		}
-  }
+  	}
 	`)
 	assert.NotEmpty(t, validateConfig(badLabelValueMalFormed5, spec))
 	fmt.Printf("badLabelValueMalFormed5: %s\n", validateConfig(badLabelValueMalFormed5, spec))
@@ -585,7 +585,139 @@ func Test_validateConfig(t *testing.T) {
 	}
 	`)
 	assert.Empty(t, validateConfig(okShortLabel, spec))
-	fmt.Printf("okShortLabel: %s\n", validateConfig(okShortLabel, spec))
+
+	volumePodWellformed := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				secret {
+					name = mysecret
+				}
+			}
+			bar {
+				secret {
+					name = yoursecret
+				}
+			}
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(volumePodWellformed, spec))
+
+	volumePodMalformed := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				secret {
+					name 
+				}
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed, spec))
+	fmt.Printf("volumePodMalformed: %s\n", validateConfig(volumePodMalformed, spec))
+
+	volumePodMalformed2 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				secret {
+				}
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed2, spec))
+	fmt.Printf("volumePodMalformed2: %s\n", validateConfig(volumePodMalformed2, spec))
+
+	volumePodMalformed3 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				secret {
+				}
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed3, spec))
+	fmt.Printf("volumePodMalformed3: %s\n", validateConfig(volumePodMalformed3, spec))
+
+	volumeMountPodWellformed := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				secret {
+					name = mysecret
+				}
+			}
+			bar {
+				secret {
+					name = yoursecret
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mountPath = "/etc/my/file"
+					readOnly = true
+				}
+				bar {
+					mountPath = "/etc/mc/fly"
+					readOnly = false
+				}
+			}
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(volumeMountPodWellformed, spec))
+
+	volumeMountPodMalformed := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		containers.container {
+			volume-mounts {
+				foo {
+					mountPathy = "/etc/my/file"
+				}
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumeMountPodMalformed, spec))
+	fmt.Printf("volumeMountPodMalformed: %s\n", validateConfig(volumeMountPodMalformed, spec))
+
+	secretsVolumeMountMismatch := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				secret {
+					name = mysecret
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mountPath = "/etc/my/file"
+					readOnly = true
+				}
+				bar {
+					mountPath = "/etc/mc/fly"
+					readOnly = false
+				}
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(secretsVolumeMountMismatch, spec))
+	fmt.Printf("secretsVolumeMountMismatch: %s\n", validateConfig(secretsVolumeMountMismatch, spec))
 
 	unknownRuntimeConfigSection := newConfig(`
 	cloudflow.runtimes {
