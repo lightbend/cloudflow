@@ -111,7 +111,11 @@ object FlinkRunner extends Runner[CR] {
                                        ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
   ): Seq[Action[ObjectResource]] =
-    Vector(CreatePersistentVolumeClaimAction(persistentVolumeClaim(app.spec.appId, namespace, labels, ownerReferences)))
+    Vector(
+      CreatePersistentVolumeClaimAction(
+        persistentVolumeClaim(app.spec.appId, namespace, labels, ctx.flinkRunnerSettings.persistentStorageSettings, ownerReferences)
+      )
+    )
 
   def resource(
       deployment: StreamletDeployment,

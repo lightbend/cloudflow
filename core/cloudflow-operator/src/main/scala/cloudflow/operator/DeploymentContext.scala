@@ -29,15 +29,13 @@ case class DeploymentContext(kafkaContext: KafkaContext,
                              akkaRunnerSettings: AkkaRunnerSettings,
                              sparkRunnerSettings: SparkRunnerSettings,
                              flinkRunnerSettings: FlinkRunnerSettings,
-                             persistentStorageSettings: PersistentStorageSettings,
                              podName: String,
                              podNamespace: String) {
-  import kafkaContext._
   def infoMessage = s"""
    | pod-name:                         ${podName}
    | pod-namespace                     ${podNamespace}
    |
-   | kafka-bootstrap-servers:          ${bootstrapServers}
+   | kafka-bootstrap-servers:          ${kafkaContext.bootstrapServers}
   """
 }
 
@@ -87,6 +85,7 @@ final case class SparkPodSettings(
 final case class SparkRunnerSettings(
     driverSettings: SparkPodSettings,
     executorSettings: SparkPodSettings,
+    persistentStorageSettings: PersistentStorageSettings,
     prometheusRules: String
 ) extends RunnerSettings
 
@@ -111,5 +110,6 @@ final case class FlinkRunnerSettings(
     parallelism: Int,
     jobManagerSettings: FlinkJobManagerSettings,
     taskManagerSettings: FlinkTaskManagerSettings,
+    persistentStorageSettings: PersistentStorageSettings,
     prometheusRules: String
 ) extends RunnerSettings

@@ -53,6 +53,10 @@ trait TestDeploymentContext {
           memoryOverhead = Some("1024m"),
           javaOptions = Some("-Xmx1024")
         ),
+        PersistentStorageSettings(
+          resources = Resources("1G", "2G"),
+          storageClassName = "storage"
+        ),
         "(prometheus rules)"
       ),
       flinkRunnerSettings = FlinkRunnerSettings(
@@ -71,11 +75,11 @@ trait TestDeploymentContext {
                                                          cpuLimit = Some("1"),
                                                          memoryLimit = Some("1024m")
                                                        )),
+        PersistentStorageSettings(
+          resources = Resources("1G", "2G"),
+          storageClassName = "storage"
+        ),
         "(prometheus rules)"
-      ),
-      PersistentStorageSettings(
-        resources = Resources("1G", "2G"),
-        storageClassName = "storage"
       ),
       podName = "cloudflow-operator",
       podNamespace = "cloudflow"

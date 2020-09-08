@@ -126,7 +126,11 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
                                        ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
   ): Seq[Action[ObjectResource]] =
-    Vector(CreatePersistentVolumeClaimAction(persistentVolumeClaim(app.spec.appId, namespace, labels, ownerReferences)))
+    Vector(
+      CreatePersistentVolumeClaimAction(
+        persistentVolumeClaim(app.spec.appId, namespace, labels, ctx.sparkRunnerSettings.persistentStorageSettings, ownerReferences)
+      )
+    )
 
   def resource(
       deployment: StreamletDeployment,

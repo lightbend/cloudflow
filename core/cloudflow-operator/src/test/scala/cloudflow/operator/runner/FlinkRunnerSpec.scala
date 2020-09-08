@@ -277,6 +277,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
           2,
           jobManagerSettings = FlinkJobManagerSettings(1, FlinkPodResourceSettings()),
           taskManagerSettings = FlinkTaskManagerSettings(2, FlinkPodResourceSettings()),
+          persistentStorageSettings = PersistentStorageSettings(cloudflow.operator.Resources("15G", "30G"), storageClassName = "nfs"),
           prometheusRules = "sample rules"
         )
       )

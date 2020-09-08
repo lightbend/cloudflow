@@ -110,7 +110,11 @@ trait Runner[T <: ObjectResource] {
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
-  def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+  def persistentVolumeClaim(appId: String,
+                            namespace: String,
+                            labels: CloudflowLabels,
+                            persistentStorageSettings: PersistentStorageSettings,
+                            ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
   ): PersistentVolumeClaim = {
     val metadata = ObjectMeta(
@@ -125,11 +129,11 @@ trait Runner[T <: ObjectResource] {
       volumeMode = Some(VolumeMode.Filesystem),
       resources = Some(
         Resource.Requirements(
-          limits = Map(Resource.storage   -> ctx.persistentStorageSettings.resources.limit),
-          requests = Map(Resource.storage -> ctx.persistentStorageSettings.resources.request)
+          limits = Map(Resource.storage   -> persistentStorageSettings.resources.limit),
+          requests = Map(Resource.storage -> persistentStorageSettings.resources.request)
         )
       ),
-      storageClassName = Some(ctx.persistentStorageSettings.storageClassName),
+      storageClassName = Some(persistentStorageSettings.storageClassName),
       selector = None
     )
     PersistentVolumeClaim(metadata = metadata, spec = Some(pvcSpec), status = None)
