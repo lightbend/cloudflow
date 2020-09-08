@@ -71,16 +71,10 @@ class ConfigInputChangeEventSpec
       cloudflow.streamlets.logger.config-parameters.log-level="info"
       cloudflow.streamlets.logger.config-parameters.msg-prefix="valid-logger"      
       """)
-      import ConfigInputChangeEvent._
 
-      val streamletName    = "logger"
-      val runtimeConfig    = getGlobalRuntimeConfigAtStreamletPath("akka", streamletName, appConfig)
-      val kubernetesConfig = getGlobalKubernetesConfigAtStreamletPath("akka", streamletName, appConfig)
-
-      var loggerConfig = getMergedStreamletConfig(streamletName, appConfig, runtimeConfig, kubernetesConfig)
-      loggerConfig = moveConfigParameters(loggerConfig, streamletName)
-      loggerConfig = mergeRuntimeConfigToRoot(loggerConfig, streamletName)
-      loggerConfig = mergeKubernetesConfigToRoot(loggerConfig, streamletName)
+      val runtime       = "akka"
+      val streamletName = "logger"
+      val loggerConfig  = ConfigurationScopeLayering.mergeToStreamletConfig(runtime, streamletName, appConfig)
 
       loggerConfig.getString("cloudflow.streamlets.logger.log-level") mustBe "info"
       loggerConfig.getString("cloudflow.streamlets.logger.foo") mustBe "bar"
