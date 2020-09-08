@@ -412,7 +412,6 @@ func validateVolumesMounts(containersConfig *configuration.Config) error {
 		}
 	}
 	return nil
-
 }
 
 func checkSecretsAreMounted(podConfig *configuration.Config, containersConfig *configuration.Config) error {
