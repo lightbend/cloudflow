@@ -6,10 +6,23 @@ categories:
   - title: ':rocket: Features'
     labels:
       - 'kind/enhancement'
+  - title: 'Cloudflow operator'
+    labels:
+      - 'operator'
+  - title: 'kubectl-cloudflow'
+    labels:
+      - 'kubectl-cloudflow'
+  - title: 'Streamlets'
+    labels:
+      - 'streamlets'
+      - 'akka'
+      - 'flink'
+      - 'spark'
   - title: ':book: Documentation'
     labels:
       - 'kind/documentation'
       - 'documentation'
+      - 'examples'
   - title: ':bug: Bug Fixes'
     labels:
       - 'kind/bug'
