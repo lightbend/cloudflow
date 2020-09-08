@@ -4,7 +4,7 @@ import sbt.Keys._
     //tag::docs-projectSetup-example[]
 lazy val sampleApp = (project in file("."))
     .settings(
-      cloudflowAkkaBaseImage := "myRepositoryUrl/myRepositoryPath:2.0.9-cloudflow-akka-2.6.6-scala-2.12",
+      cloudflowAkkaBaseImage := "myRepositoryUrl/myRepositoryPath:2.0.10-cloudflow-akka-2.6.6-scala-2.12",
     //end::docs-projectSetup-example[]
       name := "sample-app",
       organization := "com.lightbend.cloudflow",
