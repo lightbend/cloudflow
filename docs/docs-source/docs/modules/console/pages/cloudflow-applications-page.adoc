@@ -1,0 +1,20 @@
+= Cloudflow Applications page
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+The **Cloudflow Applications** page provides an entry point for Cloudflow-specific information. In the **Deployed Applications** pane, each tile represents one running Cloudflow application. Tiles contain basic information about the application (name, resource counts, how long it has been deployed, etc) along with a (live) thumbnail view of the blueprint and the health history over the current time period. 
+
+TIP: To drill into an application's monitoring page, click its tile.
+
+The panel to the left of the **Deployed Applications** pane contains:
+
+* a **Workloads** link to the *Cluster Map* infrastructure view
+* a list of cluster resources being used for Cloudflow applications
+* a summary of application health organized by current health
+
+image::pl-doc-applicationsPage.png[Cloudflow Applications Page,width="100%",pdfwidth="100%",title="Cloudflow Applications Page"]
+
+Let's take a high level look at the application monitoring page and  xref:application-monitoring-overview.adoc[Application monitoring concepts].
