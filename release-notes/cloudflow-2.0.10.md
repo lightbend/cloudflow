@@ -9,7 +9,7 @@ Cloudflow 2.0.10 does not depend on the Strimzi Entity and Cluster operators any
 You can optionally install Flink and Spark operators, if you respectively use Flink and Spark Streamlets. This makes Cloudflow substantially more lightweight for applications that do not use Flink or Spark.
 
 Other notable changes in Cloudflow 2.0.10:
-- Fix for logging bug caused my adding log4j jar files to the classpath
+- Fix for logging bug caused by adding log4j jar files to the classpath
 - Akka gRPC support
 - The configuration format now supports adding custom labels to pods.
 - cloudflow.runtimes.flink.config support for runLocal
