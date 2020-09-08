@@ -35,7 +35,7 @@ case class RunnerConfig(data: String) extends ConfigMapData {
 object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
 
   val AppConfigFilename    = "application.conf"
-  implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
+  implicit val topicFormat = jsonFormat(Topic.apply, "id", "cluster", "config")
 
   def apply(
       appId: String,

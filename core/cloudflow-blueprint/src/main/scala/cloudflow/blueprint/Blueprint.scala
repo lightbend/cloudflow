@@ -33,6 +33,7 @@ object Blueprint {
   val ManagedKey                       = "managed"
   val ProducersKey                     = "producers"
   val ConsumersKey                     = "consumers"
+  val ClusterKey                       = "cluster"
 
   // kafka config items
   // must align with cloudflow.streamlets.Topic
@@ -80,14 +81,17 @@ object Blueprint {
           getKeys(config, TopicsSectionKey).map { key ⇒
             val producersKey = s"$TopicsSectionKey.${key}.$ProducersKey"
             val consumersKey = s"$TopicsSectionKey.${key}.$ConsumersKey"
+            val clusterKey   = s"$TopicsSectionKey.${key}.$ClusterKey"
             val configKey    = s"$TopicsSectionKey.${key}"
 
             val topicId   = key
             val producers = getStringListOrEmpty(config, producersKey)
             val consumers = getStringListOrEmpty(config, consumersKey)
+            val cluster   = getStringOrEmpty(config, clusterKey)
             val kafkaConfig = getConfigOrEmpty(config, configKey)
               .withoutPath(ProducersKey)
               .withoutPath(ConsumersKey)
+              .withoutPath(ClusterKey)
             // validate at least that producer and consumer sections are objects.
             // TODO It is possible to create a ConsumerConfig and ProducerConfig from properties and check unused,
             // TODO if badly spelled or unknown settings need to be prevented.
@@ -99,7 +103,7 @@ object Blueprint {
               if (topicConfig.hasPath(PartitionsKey)) topicConfig.getInt(PartitionsKey)
               if (topicConfig.hasPath(ReplicasKey)) topicConfig.getInt(ReplicasKey)
             }
-            Topic(topicId, producers, consumers, kafkaConfig)
+            Topic(topicId, producers, consumers, cluster, kafkaConfig)
           }.toVector
         } else Vector.empty[Topic]
 
@@ -130,6 +134,8 @@ object Blueprint {
     if (config.hasPath(key)) config.getConfig(key) else ConfigFactory.empty()
   private def getStringListOrEmpty(config: Config, key: String): Vector[String] =
     if (config.hasPath(key)) config.getStringList(key).asScala.toVector else Vector.empty[String]
+  private def getStringOrEmpty(config: Config, key: String): Option[String] =
+    if (config.hasPath(key)) Option(config.getString(key)) else None
 }
 
 final case class Blueprint(

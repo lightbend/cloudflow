@@ -94,11 +94,12 @@ object ApplicationDescriptor {
                           LibraryVersion)
   }
 
-  def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint) =
+  def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint): Map[String, Topic] =
     blueprint.topics.flatMap { topic =>
       topic.connections.filter(_.streamlet.name == streamlet.name).map { verifiedPort =>
         verifiedPort.portName -> Topic(
           topic.id,
+          topic.cluster,
           topic.kafkaConfig
         )
       }
@@ -194,6 +195,7 @@ object Topic {
 
 final case class Topic(
     id: String,
+    cluster: Option[String], // needs to be top level and not part of config so can be easily parsed in app spec in cli
     config: Config = ConfigFactory.empty()
 ) {
   def name: String     = Try(config.getString(Blueprint.TopicKey)).getOrElse(id)

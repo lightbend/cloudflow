@@ -55,6 +55,9 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
             port,
             Topic(
               topicConfig.getString("id"),
+              if (topicConfig.hasPath("cluster"))
+                Option(topicConfig.getString("cluster"))
+              else None,
               topicConfig.getConfig("config")
             )
           )
