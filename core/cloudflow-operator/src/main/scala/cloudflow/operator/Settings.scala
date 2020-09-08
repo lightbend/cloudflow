@@ -96,10 +96,9 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     val driverPath   = s"$root.deployment.spark-runner-driver"
     val executorPath = s"$root.deployment.spark-runner-executor"
 
-    val driverConfig   = config.getConfig(driverPath)
-    val executorConfig = config.getConfig(executorPath)
-    // TODO correct path
-    val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
+    val driverConfig              = config.getConfig(driverPath)
+    val executorConfig            = config.getConfig(executorPath)
+    val persistentStorageSettings = executorConfig.as[PersistentStorageSettings]("persistent-storage")
 
     SparkRunnerSettings(
       getSparkPodSettings(driverConfig),
@@ -112,11 +111,10 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   private def getFlinkRunnerSettings(config: Config, root: String, runnerStr: String): FlinkRunnerSettings = {
     val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
 
-    val jobManagerConfig  = flinkRunnerConfig.getConfig("jobmanager")
-    val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
-    val parallelism       = flinkRunnerConfig.as[Int]("parallelism")
-    // TODO correct path
-    val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
+    val jobManagerConfig          = flinkRunnerConfig.getConfig("jobmanager")
+    val taskManagerConfig         = flinkRunnerConfig.getConfig("taskmanager")
+    val parallelism               = flinkRunnerConfig.as[Int]("parallelism")
+    val persistentStorageSettings = flinkRunnerConfig.as[PersistentStorageSettings]("persistent-storage")
 
     FlinkRunnerSettings(
       parallelism,
