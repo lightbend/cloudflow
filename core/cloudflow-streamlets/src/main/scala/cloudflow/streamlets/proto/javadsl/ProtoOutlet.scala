@@ -26,11 +26,11 @@ final case class ProtoOutlet[T <: GeneratedMessageV3](
     clazz: Class[T]
 ) extends CodecOutlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
-  val descriptor               = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
+  val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
-  override def codec: Codec[T] = new ProtoCodec(clazz)
-  override def schemaAsString           = TextFormat.printToUnicodeString(descriptor.toProto)
-  override def schemaDefinition         = ProtoUtil.createSchemaDefinition(descriptor)
+  override def codec: Codec[T]  = new ProtoCodec(clazz)
+  override def schemaAsString   = TextFormat.printToUnicodeString(descriptor.toProto)
+  override def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
   /**
    * Returns a CodecOutlet with the partitioner set.
