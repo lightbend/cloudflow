@@ -131,7 +131,7 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment, bootstrapServers)
+      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment, Some(bootstrapServers))
       val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig

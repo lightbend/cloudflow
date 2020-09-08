@@ -60,12 +60,21 @@ object TopicActions {
   def createAction(appNamespace: String,
                    labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext): CreateOrUpdateAction[ConfigMap] = {
     val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
-      case Some(bootstrapServers) => bootstrapServers                  -> topic.brokerConfig
-      case None                   => ctx.kafkaContext.bootstrapServers -> ctx.kafkaContext.properties
+      case Some(bootstrapServers) => bootstrapServers -> topic.brokerConfig
+      case None => {
+        // FIX for now, so you can use cloudflow without bootstrap servers set at install,
+        // without managed topics. This will be further fixed in https://github.com/lightbend/cloudflow/issues/685
+        if (ctx.kafkaContext.bootstrapServers.isEmpty) {
+          throw new Exception(
+            "cloudflow_operator.kafkaBootstrapservers was not set during installation of cloudflow-operator. Cannot create managed topics."
+          )
+        }
+        ctx.kafkaContext.bootstrapServers.get -> ctx.kafkaContext.properties
+      }
     }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
-    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, labels)
+    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, bootstrapServers, labels)
 
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
@@ -99,7 +108,12 @@ object TopicActions {
     }
   }
 
-  def resource(namespace: String, topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
+  def resource(namespace: String,
+               topic: TopicInfo,
+               partitions: Int,
+               replicationFactor: Int,
+               bootstrapServers: String,
+               labels: CloudflowLabels)(
       implicit ctx: DeploymentContext
   ): ConfigMap =
     ConfigMap(
@@ -108,7 +122,8 @@ object TopicActions {
           "id"                -> topic.id,
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
-          "replicationFactor" -> replicationFactor.toString
+          "replicationFactor" -> replicationFactor.toString,
+          "bootstrap.servers" -> bootstrapServers
         ) ++ topic.properties
     )
 

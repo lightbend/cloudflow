@@ -20,8 +20,11 @@ import java.nio.file.{ Path, Paths }
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 
 trait StreamletContext {
+
+  private lazy val log = LoggerFactory.getLogger(getClass.getName)
 
   /**
    * A [[cloudflow.streamlets.StreamletDefinition StreamletDefinition]] that informs this context about the
@@ -59,7 +62,21 @@ trait StreamletContext {
    * The default bootstrapServers for the Kafka broker that has been installed or configured
    * to be used globally for all Cloudflow applications
    */
-  def internalKafkaBootstrapServers = config.getString("cloudflow.kafka.bootstrap-servers")
+  def internalKafkaBootstrapServers =
+    try {
+      config.getString("cloudflow.kafka.bootstrap-servers")
+    } catch {
+      case e: com.typesafe.config.ConfigException.Missing =>
+        // FIX for now. Will be improved in https://github.com/lightbend/cloudflow/issues/685
+        val msg =
+          """
+          Default Kafka bootstrap.servers is not set. 
+          `cloudflow_operator.kafkaBootstrapservers` was likely not set during installation of cloudflow-operator.
+          bootstrap.servers needs to be specified for all topics, in the blueprint, or in a configuration file (used with `kubectl cloudflow deploy --conf <conf-file>`). 
+          """
+        log.error(msg, e)
+        throw e
+    }
 
   /**
    * The subset of configuration specific to a single named instance of a streamlet.

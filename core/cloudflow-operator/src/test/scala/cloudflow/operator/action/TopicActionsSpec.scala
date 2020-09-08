@@ -22,7 +22,13 @@ import org.scalatest._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._
 
-class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with TestDeploymentContext {
+class TopicActionsSpec
+    extends WordSpec
+    with MustMatchers
+    with GivenWhenThen
+    with EitherValues
+    with OptionValues
+    with TestDeploymentContext {
   case class Foo(name: String)
   case class Bar(name: String)
   val namespace  = "ns"
@@ -90,20 +96,26 @@ class TopicActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
       val Seq(foosAction, barsAction) = TopicActions(newApp)
       val configMap0                  = foosAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
-      configMap0 mustBe TopicActions.resource(newApp.namespace,
-                                              TopicActions.TopicInfo(in),
-                                              ctx.kafkaContext.partitionsPerTopic,
-                                              ctx.kafkaContext.replicationFactor,
-                                              CloudflowLabels(newApp))
+      configMap0 mustBe TopicActions.resource(
+        newApp.namespace,
+        TopicActions.TopicInfo(in),
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        ctx.kafkaContext.bootstrapServers.value,
+        CloudflowLabels(newApp)
+      )
       foosAction mustBe a[CreateOrUpdateAction[_]]
 
       val configMap1 = barsAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
 
-      configMap1 mustBe TopicActions.resource(newApp.namespace,
-                                              TopicActions.TopicInfo(savepoint),
-                                              ctx.kafkaContext.partitionsPerTopic,
-                                              ctx.kafkaContext.replicationFactor,
-                                              CloudflowLabels(newApp))
+      configMap1 mustBe TopicActions.resource(
+        newApp.namespace,
+        TopicActions.TopicInfo(savepoint),
+        ctx.kafkaContext.partitionsPerTopic,
+        ctx.kafkaContext.replicationFactor,
+        ctx.kafkaContext.bootstrapServers.value,
+        CloudflowLabels(newApp)
+      )
       barsAction mustBe a[CreateOrUpdateAction[_]]
       assertTopic(savepoint, configMap1, appId)
     }
