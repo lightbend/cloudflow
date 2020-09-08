@@ -103,7 +103,7 @@ object Action {
   /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
-  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: T => Action[R])(
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: Option[T] => Action[R])(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ) =
@@ -298,7 +298,7 @@ final case class DeleteAction[T <: ObjectResource](
 final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val resourceName: String,
     val namespace: String,
-    val getAction: T => Action[R],
+    val getAction: Option[T] => Action[R],
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[R] {
@@ -324,7 +324,7 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     def getAndProvide =
       client
         .usingNamespace(namespace)
-        .get[T](resourceName)
+        .getOption[T](resourceName)
         .flatMap { existing =>
           getAction(existing).execute(client)
         }
