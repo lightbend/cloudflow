@@ -1,7 +1,7 @@
 // global attributes
 :page-partial:
 
-:cloudflow-version: 2.1.0-SNAPSHOT
-:cloudflow-branch-version: master
-:cloudflow-examples-version: 2.1.0-SNAPSHOT
+:cloudflow-version: 2.0.10
+:cloudflow-branch-version: v2.0.10
+:cloudflow-examples-version: 2.0.10
 :cli-plugin: kubectl
