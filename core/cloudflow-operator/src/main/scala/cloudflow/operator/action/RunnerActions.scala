@@ -59,9 +59,16 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .flatMap { deployment ⇒
         Seq(
           Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-          Action.provided[Secret, T](deployment.secretName,
-                                     namespace,
-                                     secret => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor))
+          Action.provided[Secret, T](
+            deployment.secretName,
+            namespace, {
+              case Some(secret) => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
+              case None =>
+                throw new Exception(
+                  s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                )
+            }
+          )
         )
       }
 
@@ -72,10 +79,15 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
         if (runner == SparkRunner) {
           val patchAction = Action.provided[Secret, SparkResource.CR](
             deployment.secretName,
-            namespace, { secret =>
-              val resource = SparkRunner.resource(deployment, newApp, secret, namespace)
-              val patch    = SparkRunner.patch(deployment, newApp, secret, namespace)
-              Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+            namespace, {
+              case Some(secret) =>
+                val resource = SparkRunner.resource(deployment, newApp, secret, namespace)
+                val patch    = SparkRunner.patch(deployment, newApp, secret, namespace)
+                Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
+              case None =>
+                throw new Exception(
+                  s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                )
             }
           )
           val configAction = Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor)
@@ -83,10 +95,17 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
         } else {
           Seq(
             Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-            Action.provided[Secret, T](deployment.secretName,
-                                       namespace,
-                                       secret =>
-                                         Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor))
+            Action.provided[Secret, T](
+              deployment.secretName,
+              namespace, {
+                case Some(secret) =>
+                  Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
+                case None =>
+                  throw new Exception(
+                    s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                  )
+              }
+            )
           )
         }
       }
