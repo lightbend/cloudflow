@@ -108,7 +108,6 @@ class TopicActionsSpec
         .resource
         .asInstanceOf[TopicActions.TopicResource]
 
-      //foosAction.asInstanceOf[ResourceAction[_]].resource.asInstanceOf[TopicActions.TopicResource]
       configMap0 mustBe TopicActions.resource(
         newApp.namespace,
         TopicActions.TopicInfo(in),
