@@ -308,13 +308,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   }
                 | }
                 |   driver {
-                |     volumes {
-                |       foo {
-                |         secret {
-                |           name = mysecret
-                |         }
-                |       }
-                |     }
                 |     containers.container {
                 |       volume-mounts {
                 |         foo {
@@ -325,13 +318,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |     }
                 |   }
                 |     executor {
-                |       volumes {
-                |         foo {
-                |           secret {
-                |             name = mysecret
-                |           }
-                |         }
-                |       }
                 |       containers.container {
                 |         volume-mounts {
                 |           bar {
