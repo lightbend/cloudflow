@@ -5,7 +5,9 @@ documentation:
 #  - 'examples/*'
 
 akka:
-  - any: ['core/cloudflow-akka/**/*', 'core/cloudflow-akka-tests/**/*', 'core/cloudflow-akka-util/**/*']
+  - 'core/cloudflow-akka/**/*'
+  - 'core/cloudflow-akka-tests/**/*'
+  - 'core/cloudflow-akka-util/**/*'
 #flink:
 #  - any: ['core/cloudflow-flink/*', 'core/cloudflow-flink-testkit/*', 'core/cloudflow-flink-tests/*']
 #spark:
