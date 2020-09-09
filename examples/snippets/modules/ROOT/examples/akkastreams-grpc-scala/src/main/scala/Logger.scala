@@ -4,7 +4,7 @@ import akka.stream.scaladsl.RunnableGraph
 import cloudflow.akkastream.AkkaStreamlet
 import cloudflow.akkastream.scaladsl.RunnableGraphStreamletLogic
 import cloudflow.streamlets.StreamletShape
-import cloudflow.streamlets.proto.javadsl.ProtoInlet
+import cloudflow.streamlets.proto.ProtoInlet
 import sensordata.grpc.SensorData
 
 class Logger extends AkkaStreamlet {
