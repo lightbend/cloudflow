@@ -1,11 +1,11 @@
 # https://github.com/actions/labeler
 documentation:
-  - 'docs/*'
+  - 'docs/**/*'
 #examples:
 #  - 'examples/*'
 
 akka:
-  - any: ['core/cloudflow-akka/*', 'core/cloudflow-akka-tests/*', 'core/cloudflow-akka-util/*']
+  - any: ['core/cloudflow-akka/**/*', 'core/cloudflow-akka-tests/**/*', 'core/cloudflow-akka-util/**/*']
 #flink:
 #  - any: ['core/cloudflow-flink/*', 'core/cloudflow-flink-testkit/*', 'core/cloudflow-flink-tests/*']
 #spark:
