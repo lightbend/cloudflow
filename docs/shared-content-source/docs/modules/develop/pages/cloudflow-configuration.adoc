@@ -149,6 +149,54 @@ The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable
 and how to add labels to a pod. 
 
+It also possible to add `volumes` to pods where the source of the volume is a secret. Then these can be mounted into the pod with `volume-mounts`. 
+
+There is an exception for `volume-mounts` regards being abel to set and specific type of pod. Will cover that later on, now here below, a sample of how to configure two `volumes` with secrets and how to mount them.  
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+   volumes {
+      foo {
+        secret {
+          name = mysecret
+        }
+      }
+      bar {
+        secret {
+          name = mysecret2
+        }
+      }
+    }
+    containers.container {
+      volume-mounts {
+        foo {
+          mountPath = "/mnt/folderA"
+          readOnly = true
+        }
+        bar {
+          mountPath = "/mnt/folderB"
+          readOnly = true
+        }
+      }
+    }
+  } 
+}
+----
+
+This configuration will mount `mysecret` into each `my-streamlet` pod on path `/mnt/folderA` as read only. While `mysecret2` will be mounted into `/mnt/folderB` . Bare in mind that each `volume-mount` has to point to a `volume` defined in the same config.
+
+.Configuration available to set volumes and mount their secrets
+[%autowidth]
+|===
+| resource  | key
+| `volumes` | `kubernetes.pods.pod.volume.[name].secret.name = [secret-name]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mountPath = [some-path]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].readOnly = [true or false]`
+|===
+
+
 For runtimes that only deploy one pod per streamlet, the config path for the container settings is `kubernetes.pods.pod.containers.container`.
 
 Spark and Flink create two types of pods:
@@ -172,7 +220,7 @@ For Flink you can use the following paths:
 
 You can also specify the Kubernetes container settings for all streamlets using a particular runtime. 
 
-Is important to clarify that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not.
+Is important to clarify that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. It has the same limitation when defining `volumes` and `volume-mounts`. Is only allowed `cloudflow.runtimes.flink.kubernetes.pods.pod.volumes` and `cloudflow.runtimes.flink.kubernetes.pods.pod.containers.container.volume-mounts`.
  
 This is shown in the example below:
 
@@ -221,7 +269,51 @@ cloudflow.runtimes.spark {
 The above example shows specific container settings for the Spark driver and executor pods. In this case the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory and will be labeled with `key1 : value1` and 
 `key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
 
+Regards `volumes` and `volume-mounts` Spark runtime is the only runtime that allows to set different `volume-mounts` to each of its pods. Which are `driver` and `executor`. This will work as the following. The `volumes` are set in every pod but it's the `volume-mounts` that can be made specific to a type of pod. The sample below show how to:
 
+[source, hocon]
+----
+cloudflow.runtime.spark {
+  kubernetes.pods {
+    pod {
+     volumes {
+        foo {
+          secret {
+            name = mysecret
+          }
+        }
+        bar {
+          secret {
+            name = mysecret2
+          }
+        }
+      }
+    }
+    driver {
+      containers.container {
+        volume-mounts {
+          foo {
+            mountPath = "/mnt/file1"
+            readOnly = true
+          }
+        }
+      }
+    } 
+    executor {
+      containers.container {
+        volume-mounts {
+          bar {
+            mountPath = "/mnt/file2"
+            readOnly = true
+          }
+        }
+      }
+    } 
+  }
+}
+---- 
+
+This configuration will mount `mysecret` into any `driver` pod on path `/mnt/file1` as read only. While `mysecret2` will be mounted into any `executor` pod on path `/mnt/file2`.
 
 We explore the runtime configuration in more detail in the next section.
 
