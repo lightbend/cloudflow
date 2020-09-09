@@ -378,8 +378,8 @@ func validateVolumes(podConfig *configuration.Config) error {
 	if volumesConfig := podConfig.GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
 		for key, value := range volumesConfig.Root().GetObject().Items() {
 			secret := value.GetObject().GetKey("secret")
-			if secret == nil {
-				return fmt.Errorf("missing 'secret' in volume %s", key)
+			if secret == nil || !secret.IsObject() {
+				return fmt.Errorf("missing or malformed 'secret' in volume %s. Please have a look at documentation to see what's expected", key)
 			}
 			name := secret.GetObject().GetKey("name")
 			if name == nil {
@@ -414,14 +414,14 @@ func validateVolumesMounts(containersConfig *configuration.Config) error {
 	return nil
 }
 
-func checkSecretsAreMounted(podConfig *configuration.Config, containersConfig *configuration.Config) error {
+func checkVolumeMountsReferToVolume(podsConfig *configuration.Config, containersConfig *configuration.Config) error {
 
-	validateVolumes(podConfig)
+	validateVolumes(podsConfig.GetConfig("pod"))
 	validateVolumesMounts(containersConfig)
 
 	var volumesNames []string
 	var volumeMountSecretNames []string
-	if volumesConfig := podConfig.GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
+	if volumesConfig := podsConfig.GetConfig("pod").GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
 		for volumeName, _ := range volumesConfig.Root().GetObject().Items() {
 			volumesNames = append(volumesNames, volumeName)
 		}
@@ -436,11 +436,6 @@ func checkSecretsAreMounted(podConfig *configuration.Config, containersConfig *c
 					volumeMountSecretNames = append(volumeMountSecretNames, volumeMountName)
 				}
 			}
-		}
-	}
-	for _, volumeSecretName := range volumesNames {
-		if !contains(volumeMountSecretNames, volumeSecretName) {
-			return fmt.Errorf("the secret '%s' should match with a volume-mounts that is among '%s'", volumeSecretName, volumeMountSecretNames)
 		}
 	}
 	return nil
@@ -468,8 +463,8 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 
 				containersConfig := podConfig.GetConfig(containersKey)
 
-				if containersConfig == nil && podConfig.GetConfig(labels) == nil {
-					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section or a labels section",
+				if containersConfig == nil && podConfig.GetConfig(labels) == nil && podConfig.GetConfig(volumes) == nil {
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section nor labels",
 						rootPath,
 						kubernetesKey,
 						podsKey,
@@ -482,7 +477,7 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 					if err := validateVolumesMounts(containersConfig); err != nil {
 						return err
 					}
-					if err := checkSecretsAreMounted(podConfig, containersConfig); err != nil {
+					if err := checkVolumeMountsReferToVolume(podsConfig, containersConfig); err != nil {
 						return err
 					}
 					for containerName := range containersConfig.Root().GetObject().Items() {

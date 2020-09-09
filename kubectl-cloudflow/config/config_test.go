@@ -648,6 +648,19 @@ func Test_validateConfig(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(volumePodMalformed3, spec))
 	fmt.Printf("volumePodMalformed3: %s\n", validateConfig(volumePodMalformed3, spec))
 
+	volumePodMalformed4 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				secret = mymalformedsecret
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed4, spec))
+	fmt.Printf("volumePodMalformed4: %s\n", validateConfig(volumePodMalformed4, spec))
+
 	volumeMountPodWellformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
 		volumes {
@@ -677,6 +690,45 @@ func Test_validateConfig(t *testing.T) {
 	}
 	`)
 	assert.Empty(t, validateConfig(volumeMountPodWellformed, spec))
+
+	volumeMountPodWellformed2 := newConfig(`
+	cloudflow.runtimes.spark.kubernetes.pods {
+		pod {
+		  volumes {
+		    foo {
+		      secret {
+		        name = mysecret
+		      } 
+		    }
+		    bar {
+		      secret {
+		        name = myothersecret
+		      }
+		    }
+		  } 
+		}
+
+		driver {
+		  containers.container {
+		    volume-mounts {
+		      foo {
+		        mountPath: "/tmp/some"
+		      }
+		    }
+		  }
+		}
+
+		executor {
+		  containers.container {
+		    volume-mounts {
+		      bar {
+		        mountPath: "/tmp/some"
+		      }
+		    }
+		  }
+		}
+	}`)
+	assert.Empty(t, validateConfig(volumeMountPodWellformed2, spec))
 
 	volumeMountPodMalformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
