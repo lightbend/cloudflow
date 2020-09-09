@@ -48,7 +48,7 @@ const SupportedApplicationDescriptorVersion = "3"
 
 // FailOnProtocolVersionMismatch fails and exits if the protocol version of kubectl-cloudflow does not match with the cloudflow operator protocol version.
 func FailOnProtocolVersionMismatch() {
-	cm, err := getProtocolVersionConfigMap()
+	cm, err := GetProtocolVersionConfigMap()
 	if err != nil {
 		printutil.LogAndExit("Could not verify protocol version. Kubernetes API returned an error: %s", err)
 	}
@@ -73,8 +73,8 @@ func FailOnProtocolVersionMismatch() {
 	}
 }
 
-// getProtocolVersionConfigMap gets the protocol version config map set by the operator
-func getProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
+// GetProtocolVersionConfigMap gets the protocol version config map set by the operator
+func GetProtocolVersionConfigMap() (*corev1.ConfigMap, error) {
 	k8sClient, k8sErr := k8sclient.GetClient()
 	if k8sErr != nil {
 		return nil, fmt.Errorf("Failed to create new kubernetes client, %s", k8sErr.Error())

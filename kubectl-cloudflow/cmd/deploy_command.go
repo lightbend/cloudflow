@@ -40,6 +40,9 @@ type deployOptions struct {
 	configFiles             []string
 }
 
+// Label to identify Kafka cluster configuration secrets
+const KafkaClusterNameLabel = "cloudflow.lightbend.com/kafka-cluster-name"
+
 func init() {
 
 	deployOpts := &deployOptions{}
@@ -153,6 +156,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
+
+	// Validate that Kafka cluster configuration secrets exist
+	validateKafkaConfigSecretsExist(k8sClient, applicationSpec)
 
 	if !opts.noRegistryCredentials {
 		handleAuth(k8sClient, namespace, opts, imageReference)
@@ -426,4 +432,59 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 		os.Exit(1)
 	}
 
+}
+
+func validateKafkaConfigSecretsExist(k8sClient *kubernetes.Clientset, applicationSpec cfapp.CloudflowApplicationSpec) {
+	// get ns of cloudflow-operator
+	cm, err := version.GetProtocolVersionConfigMap()
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+	cloudflowNamespace := cm.ObjectMeta.Namespace
+	fmt.Println("cloudflow-operator namespace:", cloudflowNamespace)
+
+	// compare secrets
+	//secretLabelSelector := metav1.LabelSelector{MatchLabels: map[string]string{AppManagedByLabelKey: AppManagedByLabelValue}}
+	//secretLabelSelector := metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{
+	//	metav1.LabelSelectorRequirement{
+	//		Key:      KafkaClusterNameLabel,
+	//		Operator: metav1.LabelSelectorOpExists,
+	//	},
+	//}}
+	//secretListOptions := metav1.ListOptions{LabelSelector: labels.Set(secretLabelSelector.MatchLabels).String()}
+	//secretListOptions := metav1.ListOptions{LabelSelector: labels.Set(secretLabelSelector.MatchLabels).String()}
+
+	l, err := k8sClient.CoreV1().Secrets(cloudflowNamespace).List(metav1.ListOptions{})
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	actualClusters := make(map[string]bool)
+	for _, s := range l.Items {
+		clusterName := s.ObjectMeta.Labels[KafkaClusterNameLabel]
+		if len(clusterName) > 0 {
+			fmt.Println("secret clusterName:", s.ObjectMeta.Name)
+			fmt.Println("kafka cluster clusterName:", clusterName)
+			actualClusters[clusterName] = true
+		}
+	}
+
+	// get set of cluster configs used in app spec
+	expectedClusters := make(map[string]bool)
+	for _, d := range applicationSpec.Deployments {
+		for _, pm := range d.PortMappings {
+			if len(pm.Cluster) > 0 && !actualClusters[pm.Cluster] {
+				fmt.Println("cluster not found in cloudflow:", pm.Cluster)
+				expectedClusters[pm.Cluster] = true
+			}
+		}
+	}
+
+	if len(expectedClusters) > 0 {
+		clusters := make([]string, 0, len(expectedClusters))
+		for k := range expectedClusters {
+			clusters = append(clusters, k)
+		}
+		printutil.LogAndExit("Could not find the referenced Kafka cluster configurations: %s", strings.Join(clusters, ", "))
+	}
 }
