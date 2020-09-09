@@ -1,6 +1,8 @@
 # https://github.com/actions/labeler
-documentation: docs/*
-examples: examples/*
+documentation:
+  - 'docs/*'
+examples:
+  - 'examples/*'
 
 akka:
   - any: ['core/cloudflow-akka/*', 'core/cloudflow-akka-tests/*', 'core/cloudflow-akka-util/*']
@@ -8,8 +10,12 @@ flink:
   - any: ['core/cloudflow-flink/*', 'core/cloudflow-flink-testkit/*', 'core/cloudflow-flink-tests/*']
 spark:
   - any: ['core/cloudflow-spark/*', 'core/cloudflow-spark-testkit/*', 'core/cloudflow-spark-tests/*']
-operator: core/cloudflow-operator/*
-streamlets: core/cloudflow-streamlets/*
-dependencies: core/project/Dependencies.scala
+operator:
+  - 'core/cloudflow-operator/*'
+streamlets:
+  - 'core/cloudflow-streamlets/*'
+dependencies:
+  - 'core/project/Dependencies.scala'
 
-kubectl-cloudflow: kubectl-cloudflow/*
+kubectl-cloudflow:
+  - 'kubectl-cloudflow/*'
