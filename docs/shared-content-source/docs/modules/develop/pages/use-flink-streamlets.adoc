@@ -187,5 +187,7 @@ Flink needs `flink-azure-fs-hadoop` support to be built into your Streamlet in o
 
 [source, scala]
 ----
-libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % "1.11.1"
+libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % FlinkVersion
 ----
+
+NOTE: Please ensure you replace FlinkVersion with the current version of Flink used by Cloudflow, which you can find in https://github.com/lightbend/cloudflow/blob/01044fba8b4a7a6334bade74e29a780021a3a274/core/sbt-cloudflow/src/main/scala/cloudflow/sbt/CloudflowFlinkPlugin.scala[CloudflowFlinkPlugin.scala]
