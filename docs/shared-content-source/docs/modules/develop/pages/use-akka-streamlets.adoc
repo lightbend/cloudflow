@@ -92,5 +92,16 @@ The `FlowWithContext` provides a constrained set of operators compared to the Ak
 
 There are some side effects to this approach. For instance, if you filter records, only offsets associated to records that are not filtered will be committed. This means that on restart, more re-processing—of previously filtered records—can occur than you might expect.
 
-Next, xref:build-akka-streamlets.adoc[Building an Akka Streamlet] provides more details.
+== Adding additional Akka libraries
 
+If you enable plugin `CloudflowAkkaPlugin`, Cloudflow will add all of the Akka jars, necessary for a typical Akka streamlet implementation. But sometimes
+you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
+of the libraries that you are adding have the same version that the rest of of the Akka libraries.
+The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowAkkaPlugin.AkkaVersion`.
+So, if for example, you want to add Akka Persistent Query library, you can do it as shown below:
+
+----
+libraryDependencies ++=  Seq("com.typesafe.akka"%%"akka-persistence-query"%cloudflow.sbt.CloudflowAkkaPlugin.AkkaVersion)
+----
+
+Next, xref:build-akka-streamlets.adoc[Building an Akka Streamlet] provides more details.
