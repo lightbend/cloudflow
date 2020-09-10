@@ -210,7 +210,7 @@ For details on the degrees of freedom and upgrade options, please refer to the h
 
 == Adding additional Spark libraries
 
-If you enable plugin `CloudflowSparkPlugin`, cloudflow will add all of the Spark jars, necessary for a typical Spark streamlet implementation. But sometimes
+If you enable plugin `CloudflowSparkPlugin`, Cloudflow will add all of the Spark jars, necessary for a typical Spark streamlet implementation. But sometimes
 you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
 of the libraries that you are adding have the same version that the rest of of the Spark libraries.
 The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowSparkPlugin.SparkVersion`.
