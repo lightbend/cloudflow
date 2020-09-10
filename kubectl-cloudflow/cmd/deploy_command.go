@@ -110,6 +110,13 @@ the Cloudflow service account. Subsequent usage of the deploy command will use
 the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
+
+If your application contains streamlets that connect to each other through
+Kafka then validation will check that all named Kafka cluster configurations
+exist in the cloudflow namespace. If named Kafka cluster configurations
+are not defined, but port mappings exist, then validation will check that a
+default Kafka cluster configuration exists. Validation failure will result
+in an error and the application will not be deployed.
 `,
 		Example: `kubectl cloudflow deploy call-record-aggregator.json`,
 		Args:    validateDeployCmdArgs,
@@ -158,7 +165,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	}
 
 	// Validate that Kafka cluster configuration secrets exist
-	validateKafkaConfigSecretsExist(k8sClient, applicationSpec)
+	validateKafkaClusterSecretsExist(k8sClient, applicationSpec)
 
 	if !opts.noRegistryCredentials {
 		handleAuth(k8sClient, namespace, opts, imageReference)
@@ -434,26 +441,16 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 
 }
 
-func validateKafkaConfigSecretsExist(k8sClient *kubernetes.Clientset, applicationSpec cfapp.CloudflowApplicationSpec) {
+// TODO: fail if 'default' config secret does not exist when streamlets contain inlets and outlets for topics
+func validateKafkaClusterSecretsExist(k8sClient *kubernetes.Clientset, applicationSpec cfapp.CloudflowApplicationSpec) {
 	// get ns of cloudflow-operator
 	cm, err := version.GetProtocolVersionConfigMap()
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
 	cloudflowNamespace := cm.ObjectMeta.Namespace
-	fmt.Println("cloudflow-operator namespace:", cloudflowNamespace)
 
-	// compare secrets
-	//secretLabelSelector := metav1.LabelSelector{MatchLabels: map[string]string{AppManagedByLabelKey: AppManagedByLabelValue}}
-	//secretLabelSelector := metav1.LabelSelector{MatchExpressions: []metav1.LabelSelectorRequirement{
-	//	metav1.LabelSelectorRequirement{
-	//		Key:      KafkaClusterNameLabel,
-	//		Operator: metav1.LabelSelectorOpExists,
-	//	},
-	//}}
-	//secretListOptions := metav1.ListOptions{LabelSelector: labels.Set(secretLabelSelector.MatchLabels).String()}
-	//secretListOptions := metav1.ListOptions{LabelSelector: labels.Set(secretLabelSelector.MatchLabels).String()}
-
+	// get set of cluster configs found in the cloudflow namespace
 	l, err := k8sClient.CoreV1().Secrets(cloudflowNamespace).List(metav1.ListOptions{})
 	if err != nil {
 		printutil.LogErrorAndExit(err)
@@ -463,18 +460,15 @@ func validateKafkaConfigSecretsExist(k8sClient *kubernetes.Clientset, applicatio
 	for _, s := range l.Items {
 		clusterName := s.ObjectMeta.Labels[KafkaClusterNameLabel]
 		if len(clusterName) > 0 {
-			fmt.Println("secret clusterName:", s.ObjectMeta.Name)
-			fmt.Println("kafka cluster clusterName:", clusterName)
 			actualClusters[clusterName] = true
 		}
 	}
 
-	// get set of cluster configs used in app spec
+	// if any app spec cluster configs don't exist in the cloudflow namespace then make a set we can use to report the error
 	expectedClusters := make(map[string]bool)
 	for _, d := range applicationSpec.Deployments {
 		for _, pm := range d.PortMappings {
 			if len(pm.Cluster) > 0 && !actualClusters[pm.Cluster] {
-				fmt.Println("cluster not found in cloudflow:", pm.Cluster)
 				expectedClusters[pm.Cluster] = true
 			}
 		}
