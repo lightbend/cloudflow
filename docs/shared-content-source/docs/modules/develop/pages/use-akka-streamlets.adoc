@@ -94,7 +94,7 @@ There are some side effects to this approach. For instance, if you filter record
 
 == Adding additional Akka libraries
 
-If you enable plugin `CloudflowAkkaPlugin`, cloudflow will add all of the Akka jars, necessary for a typical Akka streamlet implementation. But sometimes
+If you enable plugin `CloudflowAkkaPlugin`, Cloudflow will add all of the Akka jars, necessary for a typical Akka streamlet implementation. But sometimes
 you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
 of the libraries that you are adding have the same version that the rest of of the Akka libraries.
 The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowAkkaPlugin.AkkaVersion`.
@@ -105,4 +105,3 @@ libraryDependencies ++=  Seq("com.typesafe.akka"%%"akka-persistence-query"%cloud
 ----
 
 Next, xref:build-akka-streamlets.adoc[Building an Akka Streamlet] provides more details.
-
