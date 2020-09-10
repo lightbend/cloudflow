@@ -9,9 +9,9 @@ cloudflow_operator_chart_repo_tag    := master
 cloudflow_operator_chart_dir_in_repo := installer/cloudflow-environment
 
 cloudflow_operator_image_name        := lightbend/cloudflow-operator
-cloudflow_operator_image_tag         := 2.0.9
+cloudflow_operator_image_tag         := 2.0.10
 spark_operator_image_name            := lightbend/sparkoperator
-spark_operator_image_tag             := 2.0.9-cloudflow-spark-2.4.5-1.1.2-scala-2.12
+spark_operator_image_tag             := 2.0.10-cloudflow-spark-2.4.5-1.1.2-scala-2.12
 flink_operator_image_name            := lightbend/flinkk8soperator
 flink_operator_image_tag             := v0.5.0
 kafka_image_name                     := strimzi/kafka

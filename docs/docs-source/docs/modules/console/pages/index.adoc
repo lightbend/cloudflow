@@ -1,0 +1,45 @@
+= Observing Cloudflow applications
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+Available with a Lightbend Platform subscription, Lightbend Console provides deep insights and observability for Cloudflow applications. It helps you verify that your application looks as you expect--with the correct streamlets and the proper connections, each using the desired schema. In the Console, you can watch your application run, check on key performance indicators, such as latency and throughput, and observe the health of each streamlet and the monitors computed on them.
+
+Before you can use Console, you need to have been completed  xref:administration:installing-enterprise.adoc[installing Cloudflow Enterprise components]
+
+ifdef::review[REVIEWERS: not sure what the "monitors computed on them" means?]
+
+TIP: All Console pages have in-app help. Click the **?** icon in the upper right of any panel to display the help. To hide the help overlay, click **CLOSE** in the upper right.
+
+== Lightbend Console views
+
+Lightbend Console provides two main views for monitoring Lightbend-enabled applications: infrastructure and Cloudflow-specific. For Cloudflow, Console includes an page that displays all applications in the cluster. In the *Cloudflow Applications* view you see a blueprint and streamlet-oriented frame of reference: all information is structured for a higher level perspective on a running pipeline-enabled application: where the main actors are the blueprint, its constituent streamlets, their monitors and metrics. Health at the application level is based on rolling up health at the streamlet level which is based on rolling up health at the monitor level.
+
+image::pl-doc-blueprint.png[Application blueprint,500,align="center",title="Application blueprint"]
+
+The infrastructure *Cluster Map* view is shown below. A Kubernetes-based cluster consists of nodes running pods (you can reach this view by clicking
+the *workload* icon within the controls panel in the window upper left). Those pods are organized by the workloads in which they are running.
+Workloads have monitors running on pods and the health of the workload is based on rolling up the health of its monitors. This infrastructure-based
+view does not have a high level concept of an application but it does allow you to define or customize monitors for workloads.  While this
+customization is not available directly in the Cloudflow-based view, those monitors do carry over to the Cloudflow perspective.
+
+image::pl-doc-cluster-map-view.png[Cluster map view,400,float="left",title="Cluster map view"]
+
+This is the corresponding infrastructure view for the Cloudflow application shown above. Note that there are 11 workloads here (three with two pods each
+all others with one). But the pipeline view contains eight streamlets. This discrepancy is due to how spark jobs are handled: they each have an executor and driver--resulting in an additional workload for each spark streamlet--or three additional workloads here since there are three
+spark-based streamlets.
+
+== What's next
+
+The remainder of this section describes:
+
+* The xref:cloudflow-applications-page.adoc[Cloudflow Applications page]
+* xref:application-monitoring-overview.adoc[Application monitoring concepts]
+* The xref:blueprint-graph.adoc[Blueprint Graph], a pane on the application monitoring page
+* xref:application-monitoring-page.adoc[Application monitoring page]
+
+
+
+

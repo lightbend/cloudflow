@@ -18,10 +18,6 @@ ThisBuild / scmInfo := Some(
   )
 )
 
-ThisBuild / pomExtra := (
-  <url>https://github.com/lightbend/cloudflow</url>
-)
-
 ThisBuild / organizationName := "Lightbend Inc."
 ThisBuild / organizationHomepage := Some(url("https://www.lightbend.com/"))
 ThisBuild / homepage := Some(url("https://cloudflow.io"))

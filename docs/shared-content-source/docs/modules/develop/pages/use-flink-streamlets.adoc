@@ -116,6 +116,18 @@ The volumes are claimed for as long as the Pipeline application is deployed, all
 
 Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
 
+== Adding additional Flink libraries
+
+If you enable plugin `CloudflowFlinkPlugin`, Cloudflow will add all of the Flink jars, necessary for a typical Flink streamlet implementation. But sometimes
+you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
+of the libraries that you are adding have the same version that the rest of of the Flink libraries.
+The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion`.
+So, if for example, you want to add Azure file system, you can do it as shown below:
+
+----
+libraryDependencies ++=  Seq("org.apache.flink"%"flink-azure-fs-hadoop"%cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion)
+----
+
 == Flink local execution
 
 If you are testing Flink streamlets locally <<Using the Local Sandbox>> you should be aware
@@ -161,3 +173,31 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
 NOTE: If you set `execution.checkpointing.interval` you need to set all other relevant checkpointing settings, the default checkpointing will not be used if `execution.checkpointing.interval` is set.
 
 In the above example the `runLocalConfigFile` setting is shown to point to a local.conf in the taxi-ride-fare example project.
+
+== Azure Blob Storage
+
+Flink supports several file systems for reading and writing data and for its state backend. In this section, we will look at how to use Microsoft's Azure Blob Storage for these purposes.
+
+Please refer to the Flink documentation https://ci.apache.org/projects/flink/flink-docs-stable/ops/filesystems/azure.html[Azure Blob Storage]
+
+To make this work in a Cloudflow context there are a couple of things you need to do as follows.
+
+=== Checkpoints
+
+In the configuration file, you need to specify that the `state.backend` is `filesystem`, set `state.checkpoints.dir` to match the location of your Blob, and provide your access key.
+
+[source,hocon]
+----
+cloudflow.runtimes.flink.config {
+  flink.state.backend = filesystem
+  flink.state.checkpoints.dir = "wasbs://<your-container>@$<your-azure-account>.blob.core.windows.net/<object-path>"
+  flink.fs.azure.account.key.<your-azure-acount>.blob.core.windows.net = "<blob-access-key>"
+}
+----
+
+Flink needs `flink-azure-fs-hadoop` support to be built into your Streamlet in order to be able to use Azure as a filesystem backend. To faciliate this simply add the following library dependency to the `build.sbt`.
+
+[source, scala]
+----
+libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion
+----

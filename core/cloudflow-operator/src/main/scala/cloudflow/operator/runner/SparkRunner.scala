@@ -21,11 +21,19 @@ import cloudflow.blueprint.deployment._
 import cloudflow.operator.runner.SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
-import skuber.ResourceSpecification.Subresources
-import skuber._
-import skuber.json.format._
-import skuber.Resource._
+
+import skuber.apps.v1.Deployment
 import skuber.api.patch.{ JsonMergePatch, Patch }
+import skuber.json.format._
+import skuber.json.rbac.format._
+import skuber.rbac._
+import skuber._
+import skuber.Resource._
+import skuber.ResourceSpecification.Subresources
+import skuber.PersistentVolume.AccessMode
+import skuber.PersistentVolumeClaim.VolumeMode
+
+import cloudflow.operator.action.Action
 
 trait PatchProvider[T <: Patch] {
   def patchFormat: Writes[T]
@@ -52,11 +60,74 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
 
-  def resourceDefinition = implicitly[ResourceDefinition[CR]]
-  val runtime            = "spark"
+  def resourceDefinition       = implicitly[ResourceDefinition[CR]]
+  val runtime                  = "spark"
+  val requiresPersistentVolume = true
 
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
+
+  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] = {
+    val roleSpark = sparkRole(namespace, labels, ownerReferences)
+
+    Vector(
+      Action.createOrUpdate(roleSpark, roleEditor),
+      Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor)
+    )
+
+  }
+  private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
+    Role(
+      metadata = ObjectMeta(
+        name = Name.ofSparkRole(),
+        namespace = namespace,
+        labels = labels(Name.ofSparkRole),
+        ownerReferences = ownerReferences
+      ),
+      kind = "Role",
+      rules = List(
+        PolicyRule(
+          apiGroups = List(""),
+          attributeRestrictions = None,
+          nonResourceURLs = List(),
+          resourceNames = List(),
+          resources = List("pods", "services", "configmaps", "ingresses", "endpoints"),
+          verbs = List("get", "create", "delete", "list", "watch", "update")
+        ),
+        createEventPolicyRule
+      )
+    )
+
+  private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
+    RoleBinding(
+      metadata = ObjectMeta(
+        name = Name.ofSparkRoleBinding(),
+        namespace = namespace,
+        labels = labels(Name.ofRoleBinding),
+        ownerReferences = ownerReferences
+      ),
+      kind = "RoleBinding",
+      roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
+      subjects = List(
+        Subject(
+          None,
+          "ServiceAccount",
+          Name.ofServiceAccount,
+          Some(namespace)
+        )
+      )
+    )
+
+  override def persistentVolumeActions(app: CloudflowApplication.CR,
+                                       namespace: String,
+                                       labels: CloudflowLabels,
+                                       ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] =
+    Vector(CreatePersistentVolumeClaimAction(persistentVolumeClaim(app.spec.appId, namespace, labels, ownerReferences)))
+
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -93,7 +164,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     // Streamlet volume mounting
     // Volume mounting
-    val pvcName = Name.ofPVCInstance(appId)
+    val pvcName = Name.ofPVCInstance(appId, runtime)
 
     val pvcVolume      = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
     val pvcVolumeMount = Volume.Mount(pvcVolume.name, "/mnt/spark/storage")

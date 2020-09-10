@@ -1,0 +1,131 @@
+= Application monitoring page elements
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+The following screen shot shows the monitoring page for an example `call-record-pipeline` application. Blue arrows call out the main components. From the top left working clockwise, these include:
+
+* *Controls* - icons to navigate to the *GRAFANA* dashboard or the infrastructure *WORKLOADS* view.
+* The blueprint graph pane, available in different themes
+* The *VIEW* selector, which allows you to select the time period
+* *Metrics* - graphs of *Consumer lag* and *Throughput records* along with other key metrics
+* A *Selection:* - pane that identifies the current selection and lets you choose between viewing *Health* and streamlet *Shape*
+
+image::pl-doc-monitoring-page.png[Cloudflow Monitoring Page Structure,width="100%",pdfwidth="100%",title="Cloudflow Monitoring Page Structure"]
+
+
+This page describes application monitoring page elements, except for the Blueprint graph panel, which is described on the xref:blueprint-graph.adoc[Blueprint Graph] page.
+
+
+== Controls
+
+image::pl-doc-controls.png[Controls,146,float="right",title="Controls"]
+
+The top level controls panel is the jumping off point for other views on the current selection: metric dashboards (via Grafana) or infrastructure monitoring
+
+
+== Application Details panel
+
+The leftmost *Application Details* panel shows application status. It includes the current (i.e. _live_) health rolled up from all streamlets and summarizes health transitions per streamlet over the current _time period_. *Streamlet Health Events* bars show the relative amount of time over the duration that each streamlet spent in an unhealthy condition. Red indicates critical health, and orange indicates warning. Streamlets in this list are ordered by their amount of health issues and are weighted by severity.
+
+image::pl-doc-pipeline-details.png[Application status,144,float="right",title="Application status"]
+
+== Health and timeline panel
+
+The *Application Health* panel displays the health of the current selection--which can be either the application or a streamlet--over the selected time period. The health model used in Lightbend Console is based on a hierarchical rollup of health from monitors to streamlets (or workloads) to applications as a whole.
+
+image::pl-doc-rollup-health.png[Health timeline,500,title="Health timeline"]
+
+== Selection pane
+
+The *Selection:* pane identifies the selected application or streamlet. Use the tabs in this panel to show health bars for the current selection. Additional content is available when a single streamlet is selected.
+
+image::pl-doc-tabs.png[Tabs,244,float="right",title="Tabs"]
+
+=== Health tab
+
+With the *Health* tab selected, this panel shows health bars for the current selection. When the application is selected, by clicking the background of the blueprint diagram, this panel contains streamlet health. It displays one streamlet per row. When a streamlet is selected, the panel contains monitor health, one row per monitor.
+
+image::pl-doc-healthbars.png[Health bars,image,align="center",title="Health bars"]
+
+As in the blueprint view, health information is available for four states.
+
+image::pl-doc-health-colors.png[Health colors,image,height="24",title="Health colors"]
+
+Use *SORT BY* to order the health bars by:
+
+* *Name* (streamlet or monitor)
+* *First-unhealthy* (default) - orders by the first sample in each health metric to turn warning or critical.
+* *Most-unhealthy* - the summation of the number of samples over the duration that are either warning or critical - where critical has twice the weight as warning.
+
+
+=== Shape tab: inlet, outlet, and endpoint details [[shape]]
+
+Click the *Shape* tab to show details on the inlets and outlets of the selected streamlet. In the upper portion of the panel,
+a graphic shows the streamlet along with its named ports colored by their schema type.
+
+image::pl-doc-shape-view.png[Shape view,align="center",title="Shape view"]
+
+Below this is the URL of exposed endpoints (if any) followed by an expandable list of port details including
+the port name, schema type, current values of key performance metrics and upstream or downstream
+connections. Clicking on a connection in the list will select that upstream or downstream streamlet.
+
+*Consumer Lag* metrics are defined on each inlet and *Throughput* metrics are defined on both inlet and
+outlets. The values shown for these metrics are valid for the _current-time_. If you mouse over
+the main timeline (or a graph) and thus change the current-time you'll see these values change as well.
+In this manner you can correlate exact values for these key performance metrics with other metrics
+from this streamlet. See xref:application-monitoring-overview.adoc#kpm[Key performance metrics] for more information.
+
+These key metrics are based upon reading from or writing data to Kafka, the message bus behind the scenes.
+Inlets connect to Kafka via a consumer-group while outlets are written to topics. Both of these are shown in the details.
+
+== Metric Graphs panel
+
+Graphs of metrics for the _current selection_ are shown in the right-most panel.
+There are two basic graph representations: paired-stack graphs and area graphs. Throughput is depicted as an upper/lower
+stacked graph where all the incoming data are shown on top and the out-going throughput data on bottom. Each upper
+and lower graph could contain multiple sources and they are stacked upon each other.
+
+Area graphs show one or more curves overlaid upon each other. See xref:application-monitoring-overview.adoc#kpm[Key performance metrics] for more information.
+
+Currently applications only produce one family of high level metrics: *Throughput*, shown in a paired-stack graph:
+
+image::pl-doc-throughputGraph.png[Application throughput graph,align="center",title="Application throughput graph"]
+
+When a streamlet is selected, the right-most panel displays metric graphs
+relating to that streamlet:
+
+image::pl-doc-streamlet-graphs.png[Streamlet graphs,align="center",title="Streamlet graphs"]
+
+Each streamlet monitor is based upon a metric exported by the streamlet. When combined
+with an expression (based on the monitor type) and other parameters a monitor is
+defined. The metrics backing up most monitors are graphed in this panel.
+
+In addition there are other key metrics for each streamlet type. Metrics in this
+category include consumer-lag (for each streamlet inlet),
+throughput (on streamlet inlets and outlets), number of instances running (scale) and restart history are
+also shown in this panel. See xref:application-monitoring-overview.adoc#kpm[Key performance metrics] for more information.
+
+When a streamlet outputs several metrics with the same name but with
+different labels then a single graph is created for the collection of metrics. As you mouse over
+the graph you'll see, along with the crosshairs, each curve highlight. Curves occluded
+by others cannot be highlighted, so hover over an indicator chip in the upper right. This
+will highlight the curve (increasing its opacity) as well as show unique labels. In this example there are two labels with values unique to curve: container & pod.
+
+image::pl-doc-graph-annotated.png[Streamlet graph - annotated,image,align="center",450,title="Streamlet graph - annotated"]
+
+Most graphs display a description tooltip on graph-title hover.
+
+image::pl-doc-graphDescription.png[Graph tooltip,align="left",220,title="Graph tooltip"]
+
+== What's next
+
+Refer to the Open Source Cloudflow documentation for information on:
+
+* https://cloudflow.io/docs/current/develop/cloudflow-local-sandbox.html[Developing streamlets using a local sandbox]
+* https://cloudflow.io/docs/current/develop/use-akka-streamlets.html[Developing Akka streamlets]
+* https://cloudflow.io/docs/current/develop/use-spark-streamlets.html[Developing Spark streamlets]
+* https://cloudflow.io/docs/current/develop/use-flink-streamlets.html[Developing Flink streamlets]
+

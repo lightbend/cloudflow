@@ -1,0 +1,102 @@
+= Blueprint graph
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+
+The blueprint graph shows the current state of the application as a directed graph of streamlets with dataflow from left to right. Each streamlet identifier includes a service type icon (Akka Streams, Spark Streaming, or Flink), a name, an instance count and the number of ports:
+
+image::pl-doc-dag0.png[Blueprint Graph,width="100%",pdfwidth="100%",title="Blueprint Graph"]
+
+ifdef::review[REVIEWERS: do we have any screen shots with a Flink streamlet?]
+
+== Streamlet Iconography
+
+image::pl-doc-instance-count.png[Instance count,150,float="right",title="Instance count"]
+
+Each streamlet icon within the blueprint contains several visual elements:
+
+* Service type icon (Akka Streams, Spark, or Flink)
+* Ports for incoming or outgoing connections to other streamlets
+* Streamlet scale (shown when more than one instance is running)
+* Endpoint (the blue cloud-like icon on the streamlet right side)
+
+Schemas are defined for each inlet and outlet port and both ports. In the *Health* theme described below, both ports and wires are colored by schema type, allowing you to get a quick sense of which ports are compatible. These schema colors also display in the xref:application-monitoring-page.adoc#shape[*Shape* tab].
+
+Streamlets can be scaled. The scale of each streamlet is visualized below the streamlet icon. The above streamlet consists of three instances (pods).
+
+Selecting a streamlet by clicking it, focuses the rest of the page on the _Current Selection_. Clicking the background of the blueprint graph selects the application as a whole. The blueprint graph resizes with the window size, so the selection highlight effect depends on the resolution of the display and the complexity of the blueprint. This ranges from a very simple callout for narrow window sizes, to a full resolution icon with an instance count and end point icons (if any).
+
+image::pl-doc-node-selection.png[UI scaling,400,align="center",title="UI scaling"]
+
+== Blueprint themes
+
+Three blueprint-based themes are available. Each theme maps a streamlet metric into the streamlet icon color within the blueprint and another metric into the connections (color and line thickness) between streamlets. Select the *THEME* in the legend below the blueprint. The legend also helps you understand the mappings and metric ranges, based on the current time period.
+  
+image::pl-doc-blueprint-controls.png[Blueprint controls,width="100%",pdfwidth="100%",title="Blueprint controls"]
+
+As you move your mouse over a health bar or metric graph on the page you’ll see streamlet and connections change color to reflect their color mapping at the current time.
+
+The following table describes each theme: 
+
+.Blueprint themes
+[cols="3*a"options="header"]
+|===
+|[.small]#THEME# |[.small]#STREAMLET COLOR# |[.small]#CONNECTION COLOR AND THICKNESS#
+
+|[.small]#Activity#
+|[.small]#Sum of Throughput Across all Inlets#
+|[.small]#Consumer Lag (of target streamlet)#
+
+|[.small]#Health#
+|[.small]#Streamlet Monitor Health#
+|[.small]#Connection Schema#
+
+|[.small]#Latency#
+|[.small]#Streamlet Processing Time#
+|[.small]#Consumer Lag (of target streamlet)#
+
+|===
+
+=== Health theme
+
+*Health* is the default theme. In this theme, the streamlet icon’s color is based on its health at the current time and connections are colored based on their schema.
+
+image::pl-doc-health-colors.png[Health colors,466,align="center",title="Health colors"]
+
+Health is calculated using the least healthy of all the streamlet’s monitors at that time. This mapping is categorical in that neither health nor schema are continuous variables for a given time. Thus, the legend below the blueprint, shows distinct states for both streamlet and connection mapping. Health is a time-varying metric. 
+
+TIP: Hovering over the color chips within the legend shows the details of the chip.
+
+image::pl-doc-health-theme.png[Health theme,width="100%",pdfwidth="100%",title="Health theme"]
+
+=== Activity theme
+
+The *Activity* theme maps throughput into streamlet icon color: specifically the sum of the outlets throughputs. Connections are displayed
+with color and line thickness indicating consumer lag. For a given streamlet, this shows its inlet pressure (consumer lag) and its effort at servicing that pressure (the rate of data production: the outlet throughput). This theme gives you a sense of the level of activity of both the application as a whole as well as of individual streamlets. These two mappings are continuous and the colormaps in the legend reflect this. For both throughput and consumer lag the colormap is scaled by the min-to-max range of all streamlets and connections for the current time period.
+
+image::pl-doc-activity-theme.png[Activity theme,width="100%",pdfwidth="100%",title="Activity theme"]
+
+=== Latency theme
+
+*Latency*, the third theme, provides a measure of the inlet pressure. Like the *activity* theme, it uses consumer
+lag on connections and processing time (for Akka Streams-based streamlets) for coloring the streamlet icons. You can get a feeling for the amount of work the streamlet is performing at the current time and for how the streamlet is performing across the time period and relative to its peers.
+
+image::pl-doc-latency-theme.png[Latency theme,width="100%",pdfwidth="100%",title="Latency theme"]
+
+NOTE: Not all streamlets produce processing time metrics (currently Spark-based streamlets do not provide processing time
+metric data) and these streamlets are always gray (as shown in the above image).
+
+ifdef::review[REVIEWERS: Do Flink streamlets provide processing time metric data?]
+
+In general, the color scheme for continuous variables such as processing time, throughput and consumer lag uses green to indicate good,
+and orange or pink to indicate problematic. Blue is used for more ambiguous states like low throughput or low processing time where a value judgment isn’t relevant.
+
+== What's next
+
+Finally, let's take a look at the remaining elements on the xref:application-monitoring-page.adoc[Application monitoring page].
+
+
+
+
+

@@ -84,7 +84,7 @@ final case class Topic(
 }
 
 /**
- * Mapping between the port name and the savepoint path
+ * Mapping between the port name and the topic
  */
 case class PortMapping(port: String, topic: Topic)
 

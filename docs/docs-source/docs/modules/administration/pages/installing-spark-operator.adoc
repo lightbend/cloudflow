@@ -105,7 +105,7 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running   0         
 
 For this, we will create yet another YAML file that we will apply to the cluster with `kubectl`:
 ----
-cat > spark-mutating-webhook.yaml << EOF
+cat > spark-mutating-webhook.yaml << 'EOF2'
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -148,7 +148,7 @@ spec:
               )
               echo $JSON
               kubectl patch MutatingWebhookConfiguration $HOOK_NAME -n cloudflow -p "$JSON"
-EOF
+EOF2
 ----
 
 Now we can apply the changes to the webhook:
@@ -170,7 +170,3 @@ spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0       
 If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
 
 Continue with xref:installing-flink-operator.adoc[Adding Flink Support].
-
-== Next: Installing Enterprise components
-
-Continue with xref:installing-enterprise.adoc[]

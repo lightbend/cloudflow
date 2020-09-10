@@ -55,16 +55,22 @@ include::partial$include.adoc[]
 ** xref:cli:cloudflow_version.adoc[version]
 
 * xref:administration:index.adoc[Cloudflow administration]
-
+** xref:administration:installation-prerequisites.adoc[Installation Prerequisites]
 ** xref:administration:installing-cloudflow.adoc[Installing Cloudflow]
 ** xref:administration:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi]
 ** xref:administration:installing-spark-operator.adoc[Adding Spark Support]
 ** xref:administration:installing-flink-operator.adoc[Adding Flink Support]
+** xref:administration:installing-enterprise.adoc[Installing Cloudflow Enterprise components]
 ** xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow]
 ** xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
+
+* xref:console:index.adoc[Observing Cloudflow applications]
+** xref:console:cloudflow-applications-page.adoc[Cloudflow applications page]
+** xref:console:application-monitoring-overview.adoc[Application monitoring overview]
+** xref:console:blueprint-graph.adoc[Blueprint Graph]
+** xref:console:application-monitoring-page.adoc[Application monitoring page elements]
 
 * xref:project-info:index.adoc[Project Information]
 ** xref:project-info:migration-1_3-2_0.adoc[Migration Guide 1.3.x to 2.0.x]
 
 * xref:api:index.adoc[Streamlet API Reference]
-

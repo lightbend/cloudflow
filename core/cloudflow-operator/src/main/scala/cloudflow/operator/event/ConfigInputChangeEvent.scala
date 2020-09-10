@@ -18,8 +18,6 @@ package cloudflow.operator
 package event
 
 import java.nio.charset.StandardCharsets
-import scala.collection.JavaConverters._
-import scala.concurrent._
 import scala.util.Try
 
 import akka.actor._
@@ -95,20 +93,7 @@ object ConfigInputChangeEvent extends Event {
           val appConfig = getConfigFromSecret(configInputChangeEvent, system)
 
           app.spec.deployments.flatMap { streamletDeployment ⇒
-            val streamletName    = streamletDeployment.streamletName
-            val runtime          = streamletDeployment.runtime
-            val runtimeConfig    = getGlobalRuntimeConfigAtStreamletPath(runtime, streamletName, appConfig)
-            val kubernetesConfig = getGlobalKubernetesConfigAtStreamletPath(runtime, streamletName, appConfig)
-            var streamletConfig  = getMergedStreamletConfig(streamletName, appConfig, runtimeConfig, kubernetesConfig)
-
-            streamletConfig = moveConfigParameters(streamletConfig, streamletName)
-            streamletConfig = mergeRuntimeConfigToRoot(streamletConfig, streamletName)
-            streamletConfig = mergeKubernetesConfigToRoot(streamletConfig, streamletName)
-
-            val mergedKubernetesConfig = Try(streamletConfig.getConfig(KubernetesKey).atPath(KubernetesKey)).getOrElse(ConfigFactory.empty)
-            val mergedRuntimeConfig    = Try(streamletConfig.getConfig(runtime).atPath(runtime)).getOrElse(ConfigFactory.empty)
-
-            streamletConfig = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig)
+            val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig)
 
             // create update action for output secret action which is mounted as config by runtime specific deployments
             val configSecret =
@@ -116,9 +101,9 @@ object ConfigInputChangeEvent extends Event {
                 streamletDeployment.secretName,
                 app,
                 streamletDeployment,
-                streamletConfig,
-                mergedRuntimeConfig,
-                mergedKubernetesConfig,
+                configs.streamlet,
+                configs.runtime,
+                configs.pods,
                 CloudflowLabels.StreamletDeploymentConfigFormat
               )
             List(Action.createOrUpdate(configSecret, secretEditor))
@@ -130,7 +115,6 @@ object ConfigInputChangeEvent extends Event {
 
   def getConfigFromSecret(configInputChangeEvent: ConfigInputChangeEvent, system: ActorSystem) = {
     val secret: Secret = configInputChangeEvent.watchEvent._object
-    val empty          = ConfigFactory.empty()
     secret.data
       .get(ConfigInputChangeEvent.SecretDataKey)
       .flatMap { bytes =>
@@ -141,110 +125,15 @@ object ConfigInputChangeEvent extends Event {
               cause,
               s"Detected input secret '${secret.metadata.name}' contains invalid configuration data, IGNORING configuration."
             )
-            empty
+            ConfigFactory.empty()
         }.toOption
       }
       .getOrElse {
         system.log.error(
           s"Detected input secret '${secret.metadata.name}' does not have data key '${ConfigInputChangeEvent.SecretDataKey}', IGNORING configuration."
         )
-        empty
+        ConfigFactory.empty()
       }
-  }
-
-  val TopicsConfigPath                                  = "cloudflow.topics"
-  def streamletConfigPath(streamletName: String)        = s"cloudflow.streamlets.$streamletName"
-  val KubernetesKey                                     = "kubernetes"
-  def streamletRuntimeConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.config"
-  def globalRuntimeConfigPath(runtime: String)          = s"cloudflow.runtimes.$runtime.config"
-
-  def streamletKubernetesConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.$KubernetesKey"
-  def globalKubernetesConfigPath(runtime: String)          = s"cloudflow.runtimes.$runtime.$KubernetesKey"
-
-  def getMergedStreamletConfig(streamletName: String, appConfig: Config, runtimeConfig: Config, kubernetesConfig: Config) = {
-    val path = streamletConfigPath(streamletName)
-
-    Try(appConfig.getConfig(path)).toOption
-      .getOrElse(ConfigFactory.empty())
-      .atPath(path)
-      .withFallback(runtimeConfig)
-      .withFallback(kubernetesConfig)
-  }
-
-  def getGlobalRuntimeConfigAtStreamletPath(runtime: String, streamletName: String, appConfig: Config) =
-    Try(appConfig.getConfig(globalRuntimeConfigPath(runtime))).toOption
-      .getOrElse(ConfigFactory.empty())
-      .atPath(streamletRuntimeConfigPath(streamletName))
-
-  def getGlobalKubernetesConfigAtStreamletPath(runtime: String, streamletName: String, appConfig: Config) =
-    Try(appConfig.getConfig(globalKubernetesConfigPath(runtime))).toOption
-      .getOrElse(ConfigFactory.empty())
-      .atPath(streamletKubernetesConfigPath(streamletName))
-
-  def moveConfigParameters(config: Config, streamletName: String): Config = {
-    val key                        = streamletConfigPath(streamletName)
-    val configParametersKey        = "config-parameters"
-    val absoluteConfigParameterKey = s"$key.$configParametersKey"
-    val configParametersSection    = Try(config.getConfig(absoluteConfigParameterKey)).toOption
-
-    configParametersSection
-      .map { c =>
-        val adjustedConfigParametersConfig = c.atPath(key)
-        config.withoutPath(absoluteConfigParameterKey).withFallback(adjustedConfigParametersConfig)
-      }
-      .getOrElse(config)
-  }
-
-  def mergeRuntimeConfigToRoot(streamletConfig: Config, streamletName: String): Config =
-    mergeConfigToRoot(streamletConfig, streamletName, "config", false)
-
-  def mergeKubernetesConfigToRoot(streamletConfig: Config, streamletName: String): Config =
-    mergeConfigToRoot(streamletConfig, streamletName, "kubernetes", true)
-
-  def mergeConfigToRoot(streamletConfig: Config, streamletName: String, configKey: String, prefixWithConfigKey: Boolean = false): Config = {
-    val streamletKey = streamletConfigPath(streamletName)
-
-    val absoluteConfigKey = s"$streamletKey.$configKey"
-    val configSection     = Try(streamletConfig.getConfig(absoluteConfigKey)).toOption
-    // removing section and move its contents in the root.
-    configSection
-      .map { c =>
-        val configs = c
-          .root()
-          .entrySet()
-          .asScala
-          .map { entry =>
-            val key =
-              if (prefixWithConfigKey) s"$configKey.${entry.getKey}"
-              else entry.getKey
-            entry.getValue.atPath(key)
-          }
-          .toVector
-        val mergedConfig = streamletConfig.withoutPath(absoluteConfigKey)
-        configs.foldLeft(mergedConfig) { (acc, el) =>
-          acc.withFallback(el)
-        }
-      }
-      .getOrElse(streamletConfig)
-  }
-
-  /*
-   * Moves cloudflow.topics.<topic> config to cloudflow.runner.streamlet.context.port_mappings.<port>.config.
-   * The runner merges the secret on top of the configmap, which brings everything together.
-   */
-  def moveTopicsConfigToPortMappings(deployment: StreamletDeployment, streamletConfig: Config, appConfig: Config): Config = {
-    val portMappingConfigs = deployment.portMappings.flatMap {
-      case (port, topic) =>
-        Try(
-          appConfig
-            .getConfig(s"$TopicsConfigPath.${topic.id}")
-            .withFallback(topic.config)
-            .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
-        ).toOption
-    }
-    portMappingConfigs.foldLeft(streamletConfig) { (acc, el) =>
-      acc.withFallback(el)
-    }
   }
 
   def createSecret(
@@ -255,7 +144,13 @@ object ConfigInputChangeEvent extends Event {
       runtimeConfig: Config,
       podsConfig: Config,
       configFormat: String
-  ) =
+  ) = {
+    def render(config: Config): Array[Byte] =
+      config
+        .root()
+        .render(ConfigRenderOptions.concise())
+        .getBytes(StandardCharsets.UTF_8)
+
     Secret(
       metadata = ObjectMeta(
         name = secretName,
@@ -269,16 +164,12 @@ object ConfigInputChangeEvent extends Event {
         ownerReferences = CloudflowApplication.getOwnerReferences(app)
       ),
       data = Map(
-        ConfigInputChangeEvent.SecretDataKey        -> getData(config),
-        ConfigInputChangeEvent.RuntimeConfigDataKey -> getData(runtimeConfig),
-        ConfigInputChangeEvent.PodsConfigDataKey    -> getData(podsConfig)
+        ConfigInputChangeEvent.SecretDataKey        -> render(config),
+        ConfigInputChangeEvent.RuntimeConfigDataKey -> render(runtimeConfig),
+        ConfigInputChangeEvent.PodsConfigDataKey    -> render(podsConfig)
       )
     )
-  private def getData(config: Config) =
-    config
-      .root()
-      .render(ConfigRenderOptions.concise())
-      .getBytes(StandardCharsets.UTF_8)
+  }
 
   def secretEditor = new ObjectEditor[Secret] {
     def updateMetadata(obj: Secret, newMetadata: ObjectMeta): Secret = obj.copy(metadata = newMetadata)

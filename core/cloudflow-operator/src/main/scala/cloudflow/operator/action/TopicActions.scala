@@ -18,11 +18,10 @@ package cloudflow.operator
 package action
 
 import java.util.Collections
-
 import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
 import org.apache.kafka.common.KafkaFuture
 import org.slf4j.LoggerFactory
@@ -47,25 +46,78 @@ object TopicActions {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
       app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
 
+    def deploymentOf(topicId: String)(deployment: StreamletDeployment) = deployment.portMappings.values.exists(_.id == topicId)
+
     val managedTopics = distinctTopics(newApp.spec)
 
     val labels = CloudflowLabels(newApp)
     val actions =
-      managedTopics.toVector.map(topic => createAction(newApp.namespace, labels)(topic))
+      managedTopics.toVector.map { topic =>
+        // find a config (secret) for the topic, all deployments should have the same configuration for the same topic,
+        // since topics are defined once, deployments refer to the topics by port mappings.
+        // So it is ok to just take the first one found, that uses the topic.
+        val secretName = newApp.spec.deployments
+          .filter(deploymentOf(topic.id))
+          .headOption
+          .map(_.secretName)
+        action(secretName, newApp.namespace, labels, topic)
+      }
     actions
   }
 
   type TopicResource = ConfigMap
 
-  def createAction(appNamespace: String,
-                   labels: CloudflowLabels)(topic: TopicInfo)(implicit ctx: DeploymentContext): CreateOrUpdateAction[ConfigMap] = {
+  def action(secretName: Option[String], namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
+      implicit ctx: DeploymentContext
+  ): Action[ConfigMap] =
+    secretName
+      .map { name =>
+        Action.provided[Secret, ConfigMap](
+          name,
+          namespace, {
+            case Some(secret) => createActionFromSecret(secret, namespace, labels, topic)
+            case None         => createAction(namespace, labels, topic)
+          }
+        )
+      }
+      .getOrElse(createAction(namespace, labels, topic))
+
+  def createActionFromSecret(secret: Secret, namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
+      implicit ctx: DeploymentContext
+  ) = {
+    val config = getConfigFromSecret(secret)
+    if (config.hasPath(RunnerConfig.PortMappingsPath)) {
+      // if the kafkaconfig is not empty, it contains all the configuration
+      val topicInfo = getKafkaConfig(config, topic)
+        .map(conf => TopicInfo(Topic(id = topic.id, config = conf)))
+        .getOrElse(topic)
+
+      createAction(namespace, labels, topicInfo)
+    } else {
+      createAction(namespace, labels, topic)
+    }
+
+  }
+
+  def createAction(appNamespace: String, labels: CloudflowLabels, topic: TopicInfo)(
+      implicit ctx: DeploymentContext
+  ): CreateOrUpdateAction[ConfigMap] = {
     val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
-      case Some(bootstrapServers) => bootstrapServers                  -> topic.brokerConfig
-      case None                   => ctx.kafkaContext.bootstrapServers -> ctx.kafkaContext.properties
+      case Some(bootstrapServers) => bootstrapServers -> topic.brokerConfig
+      case None => {
+        // FIX for now, so you can use cloudflow without bootstrap servers set at install,
+        // without managed topics. This will be further fixed in https://github.com/lightbend/cloudflow/issues/685
+        if (ctx.kafkaContext.bootstrapServers.isEmpty) {
+          throw new Exception(
+            "cloudflow_operator.kafkaBootstrapservers was not set during installation of cloudflow-operator. Cannot create managed topics."
+          )
+        }
+        ctx.kafkaContext.bootstrapServers.get -> ctx.kafkaContext.properties
+      }
     }
     val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
     val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
-    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, labels)
+    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, bootstrapServers, labels)
 
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
@@ -99,22 +151,51 @@ object TopicActions {
     }
   }
 
-  def resource(namespace: String, topic: TopicInfo, partitions: Int, replicationFactor: Int, labels: CloudflowLabels)(
-      implicit ctx: DeploymentContext
-  ): ConfigMap =
+  def resource(namespace: String,
+               topic: TopicInfo,
+               partitions: Int,
+               replicationFactor: Int,
+               bootstrapServers: String,
+               labels: CloudflowLabels): ConfigMap =
     ConfigMap(
       metadata = ObjectMeta(name = s"topic-${topic.id}", labels = labels(topic.id), namespace = namespace),
       data = Map(
           "id"                -> topic.id,
           "name"              -> topic.name,
           "partitions"        -> partitions.toString,
-          "replicationFactor" -> replicationFactor.toString
+          "replicationFactor" -> replicationFactor.toString,
+          "bootstrap.servers" -> bootstrapServers
         ) ++ topic.properties
     )
 
   private val editor = new ObjectEditor[ConfigMap] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
+
+  private def getKafkaConfig(config: Config, topic: TopicInfo): Option[Config] = {
+    val portMappingsConfig = config.getConfig(RunnerConfig.PortMappingsPath)
+    // get the port mapping that matches the topic id.
+    portMappingsConfig
+      .root()
+      .entrySet
+      .asScala
+      .map(_.getKey)
+      .find { key =>
+        val topicIdInConfig = portMappingsConfig.getString(s"${key}.id")
+        topicIdInConfig == topic.id
+      }
+      .flatMap { key =>
+        getConfig(portMappingsConfig, s"$key.config")
+      }
+  }
+
+  private def getConfigFromSecret(secret: Secret): Config = {
+    val str = event.ConfigInputChangeEvent.getData(secret)
+    ConfigFactory.parseString(str)
+  }
+
+  private def getConfig(config: Config, key: String): Option[Config] =
+    if (config.hasPath(key)) Some(config.getConfig(key)) else None
 
   object TopicInfo {
     def apply(t: Topic): TopicInfo = TopicInfo(

@@ -1,0 +1,404 @@
+<div class="mask"></div>
+<div class="help-container">
+  <div class="title-container">
+    <span class="title">Cloudflow Monitoring User Guide</span>
+    <div class="close-help-button" (click)="closeHelp()">CLOSE</div>
+  </div>
+  <div class="reach-help">
+    Click on any<br><img style="vertical-align:text-top"
+      src="../../../assets/pl-doc-question-mark-trans.png" width="40"/><br>icon to display this help again.
+      <br><br>
+      <div (click)="hideHelpOnStartup()">
+        <input type="checkbox" id="defaultHideWgt" onclick="hideHelpOnStartup()"/>
+        <span (click)="hideHelpOnStartup()">Don't Show This on Page Load</span>
+      </div>
+  </div>
+  <div class="content">
+    <a href="#introduction"></a>
+    <h2 class="header">Introduction to Cloudflow Monitoring</h2>
+    <div class="prose">
+      This web-application is used to validate and monitor a Lightbend Cloudflow application.
+      Here you can get visual verification that your application looks as you expect, with the correct
+      streamlets and the proper connections each with the desired schema. In addition you can watch
+      your application run, checking on key performance indicators, such as latency and throughput, as
+      well as the health of each streamlet and the monitors computed on them.
+      <br><br>
+      First a tour of the user interface components:
+    </div>
+    <a href="#applications"></a>
+    <h3 class="sub-header">Cloudflow Applications Page</h3>
+    <div class="prose">
+      <img src="../../../assets/pl-doc-applicationsPage.png" width="100%" class="inset center"/>
+      <br>
+      The entry point for Lightbend Cloudflow is the applications page. Each running Cloudflow application is
+      represented with a 'tile'. Each tile contains basic information about the application (name, resource counts,
+      how long it has been deployed, etc) along with a (live) thumbnail view of the blueprint and the health history
+      over the current time period. Click on a tile to go to that application's monitoring page.
+      <br>
+      <p>To the left of the application tiles are panels containing:</p>
+      <ul>
+        <li>a link to the cluster view</li>
+        <li>cluster resources being used for Cloudflow applications</li>
+        <li>a summary of applications organized by current health</li>
+      </ul>
+    </div>
+
+    <a href="#monitoring"></a>
+    <h3 class="sub-header">Monitoring Page</h3>
+    <br>
+    <div class="prose">
+      <table width="100%"  border="0" cellpadding="0" cellspacing="0">
+      	<tr>
+          <td width="20%" class="bottom center-text link" (click)="changeTopic('controls')">
+            Dashboards & Infrastructure Monitoring
+          </td>
+          <td width="40%" class="bottom center-text link" (click)="changeTopic('blueprintGraph')">
+            Blueprint Graph
+          </td>
+          <td width="40%" class="bottom center-text link" (click)="changeTopic('time-period-control')">
+            Time Period Control
+          </td>
+        </tr>
+        <tr>
+      		<td colspan="3">
+      			<img src="../../../assets/pl-doc-monitoring-page.png" width="100%">
+          </td>
+      	</tr>
+        <tr>
+          <td class="top center-text link" (click)="changeTopic('applicationDetails')">
+            Health Summary
+          </td>
+          <td class="top center-text link" (click)="changeTopic('currentSelection')">
+            Selection Health, Shape & Introspection
+          </td>
+          <td class="top center-text link" (click)="changeTopic('metricGraphs')">
+            Metric Graphs
+          </td>
+        </tr>
+      </table>
+    </div>
+    <br>
+    <h3 class="sub-header">How to use help</h3>
+    <div class="prose">
+      <img class="inset" align="left" src="../../../assets/pl-doc-question-mark-trans.png" width="40"/>
+      You can always reach this help by clicking on any of the '?' icons found in the upper right of any
+      panel in this application. Hide this help overlay by clicking 'CLOSE' in the upper right. In addition to this in-app help you can
+        find online help <a target="_blank" href="{{docUrl}}">here</a>
+    </div>
+    <h3 class="sub-header">Fundamental Concepts: Current Period, Time and Selection</h3>
+    <div class="prose">In this monitoring application all views (panels) are tightly coupled. Making a selection in one frequently
+      affects most others. There are two main selection types used here (1) the application or (2) a streamlet. By default the
+      application is selected - and when the page first loads you'll see the center panel full of rows of health bars, one for each
+      streamlet in the application. If you click a streamlet in the blueprint diagram or click a health bar title the application will then focus
+      all panels on that streamlet - as it becomes the <span class="key-concept">current selection</span>.
+    </div>
+    <div class="prose">Similarly there is a <span class="key-concept">current time</span>. The current-time is whatever time you've hovered over
+      in a graph, health bar or timeline - it is a very transient concept which is constantly changing based on the position of the mouse in these panels.
+      The current-time is visualized by a vertical crosshair in each time-based panel (graphs, health bars) and is reflected in the time callout in
+      both the main timeline as well as the blueprint panel. As you hover within a graph or health bar this current time changes
+      to track the mouse. If you mouse out of these panels then the current time snaps to 'NOW' (the most recent time sample) -
+      you'll see this in the time callout in the blueprint graph with a <span class="key-concept">'( live )'</span> label. Note: due to metric sampling
+      (see observation period below) this most-recent sample could be within seconds of 'now' or minutes in the past (latency is a function of the
+      observation period).
+    </div>
+    <a href="#time-period-control"></a>
+    <div class="prose"><img class="inset flow-around-right" src="../../../assets/pl-doc-time-period.png" width="144"/>
+      The duration of interest, or observation period, is governed by the <span class="key-concept">time period </span> as selected in the upper right hand
+      corner of the screen.  The options available include: 30 minutes, 1 hour, 4 hours, 1 day and 1 week.
+      Metrics are collected from streamlets at one rate (currently 10 second intervals) but health bars and graphs are calculated by sampling these underlying
+      metrics. The observation period (i.e. the time period) determines the sampling rate for all collected metrics.
+      This sampling rate governs the temporal resolution of displays (health bars & graphs).
+      Ten second sampling is used for one hour duration (360 samples / hour), 40 seconds for a four hour duration, etc. Select a short observation period
+      for low latency.
+
+      Metrics are streamed (based on this sampling rate) and the current status of the update cycle is visualized in the top navigation bar
+      <img class="inset flow-around-left" src="../../../assets/pl-doc-update-icon.png" width="213px"/>.
+      During an update cycle (while the clock is orange) the blueprint and graphs are incrementally updating. When the clock turns green the cycle is complete.
+
+      <br>The health of a monitor or streamlet at any point in time is determined as the 'worst' health over all collected time samples within its interval.
+      However metrics shown in graphs are instantaneous samples and only reflect the state of the system at the time of collection.
+    </div>
+    <a href="#blueprintGraph"></a>
+    <h2 class="header">Blueprint Graph</h2>
+    <div class="prose">The blueprint graph shows the current state of the application as a directed graph of streamlets with dataflow
+      from left to right.
+      Each streamlet is depicted with a 'service type' (Akka Streams or Spark Streaming) icon, a name, instance count and ports.
+      <img class="inset" src="../../../assets/pl-doc-dag0.png" width="100%"/>
+    </div>
+    <h3 class="sub-header">Blueprint Themes</h3>
+    <div class="prose">
+      Three blueprint-based ‘themes’ are available for visualizing state in the blueprint. Each theme maps a streamlet metric
+      into the streamlet icon color within the blueprint and another metric into the connections (color and line thickness) between streamlets.
+      The legend below the blueprint is where you select the theme as well as understand the mappings and metric ranges
+      (based on the current <span class="key-concept">time period</span>).
+      <img class="inset" src="../../../assets/pl-doc-blueprint-controls.png" width="100%"/>
+      As you ‘scrub’ over a health bar or metric graph on the page you’ll see streamlet and connections change color
+      to reflect their color mapping at the current time.
+      <br><br>
+      <table class="theme-table">
+        <thead  class="theme-head">
+          <td class="theme-cell"><b>theme</b></td>
+          <td class="theme-cell"><b>streamlet color</b></td>
+          <td class="theme-cell"><b>connection color and thickness</b></td>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Activity</td>
+            <td>Sum of Throughput Across all Inlets</td>
+            <td>Consumer Lag (of target streamlet)</td>
+          </tr>
+          <tr>
+            <td>Health</td>
+            <td>Streamlet Monitor Health</td>
+            <td>Connection Schema</td>
+          </tr>
+          <tr>
+            <td>Latency</td>
+            <td>Streamlet Processing Time</td>
+            <td>Consumer Lag (of target streamlet)</td>
+          </tr>
+        </tbody>
+      </table>
+      <br><br>
+      ‘Health’ is the default view. In this theme the streamlet icon’s color is based on its health
+      <div class="prose">
+        <img class="inset center" src="../../../assets/pl-doc-health-colors.png" height="24"/>
+      </div>
+      at the current time and connections are colored based on their schema. Health is defined as the least healthy of all the streamlet’s
+      monitors at that time. This mapping is categorical in that neither health nor schema are continuous variables
+      (for a given time) and thus the legend, below the blueprint, shows distinct states for both streamlet and connection
+      mapping (of course health is a time-varying metric). Hovering over the color chips within the legend shows the details of the chip.
+      <img class="inset" src="../../../assets/pl-doc-health-theme.png" width="100%"/>
+    </div>
+    <div class="prose">
+      The ‘Activity’ theme maps throughput into streamlet icon color: specifically the sum of the outlets throughputs. Connections are visualized
+      based on consumer lag (both for color and line thickness). In this manner for a given streamlet we’re visualizing its inlet pressure (consumer lag)
+      and the streamlet’s effort at servicing that pressure (the rate of data production: the outlet
+      throughput). The goal of this theme is to give the user a sense of the level of activity of both the Cloudflow as a whole as well
+      as individual streamlets. These two mappings are continuous and the colormaps in the legend reflect this. In both cases
+      (throughput and consumer lag) the colormap is scaled by the min-to-max range of all streamlets and connections for the current
+      <span class="key-concept">time period</span>.
+      <img class="inset" src="../../../assets/pl-doc-activity-theme.png" width="100%"/>
+    </div>
+    <div class="prose">
+      ‘Latency’, the third theme, gives a measure of the inlet pressure (like ‘activity’ it uses consumer
+      lag on connections) and processing time (for Akka Streams-based streamlets) for coloring the streamlet icons. In this manner
+      it gives a feeling for the amount of work the streamlet is performing at the current time.
+      <img class="inset" src="../../../assets/pl-doc-latency-theme.png" width="100%"/>
+      Note that not all streamlets produce processing time metrics (currently spark-based streamlets do not provide processing time
+      metric data) and these streamlets are always gray (as shown in the above image).
+      <br><br>
+      In general the color scheme for continuous variables (processing time, throughput and consumer lag) uses green to indicate ‘good’
+      and orange or pink to indicate ‘problematic’. Blue is used for more ambiguous states (like low throughput or low processing time)
+      where  value judgment isn’t relevant.
+      <br><br>
+      One side benefit of this mapping is that you can get a feeling for how the streamlet is performing relative to the entire observation
+      period as well as among its peers.
+    </div>
+    <h3 class="sub-header">Streamlet Iconography</h3>
+    <div class="prose">
+      <img class="inset top flow-around-left" src="../../../assets/pl-doc-instance-count.png" width="150"/>
+      Each streamlet icon within the blueprint consists of several visual elements:
+      <ul>
+        <li>Service type icon (akka or spark - as in the image to the right)</li>
+        <li>Ports for incoming or outgoing connections to other streamlets</li>
+        <li>Streamlet scale (shown when more than one instance is running)</li>
+        <li>Endpoint (the blue cloud-like icon on the streamlet right side)</li>
+      </ul>
+      Schemas are defined for each inlet and outlet port and, in the health theme, both ports and wires are colored by schema type,
+      allowing you to get a quick sense of which ports are compatible. These schema colors are also used in the 'shape' details
+      panel (see below).
+      <br><br>
+      Streamlets can be scaled. The scale of each streamlet is visualized below the streamlet icon. This
+      streamlet consists of three instances (pods).
+    </div>
+    <h3 class="sub-header">Setting the Current Selection</h3>
+    <div class="prose"><span class="key-concept">Current Selection</span> Selecting a streamlet, by clicking on it, focuses the rest of the page
+      on this selection. Clicking the background of the blueprint graph selects the application as a whole. The blueprint graph resizes with the window
+      size, so the selection highlight effect depends on the resolution of the display and the complexity of the blueprint. This ranges from a very
+      simple callout (for narrow window sizes), to a full resolution icon with a solid white outline for larger window sizes.
+      <img class="center" src="../../../assets/pl-doc-node-selection.png" width="100%" style="max-width:400px"/>
+    </div>
+    <br>
+    <a href="#applicationDetails"></a>
+    <h2 class="header">Application Details</h2>
+    <div class="prose">
+      <img class="inset flow-around-left" src="../../../assets/pl-doc-pipeline-details.png" width="144"/>
+      The leftmost panel contains application status including the current (i.e. <span class="key-concept">live</span>)
+      health rollups by streamlet as well as a summary of health transitions per streamlet over the current <span class="key-concept">time period</span>.
+      <br><br>
+      The amount of red (critical) and orange (warning) indicates the relative amount of time over the duration that the streamlet spent
+      in an unhealthy condition. Streamlets in this list are ordered by their amount (weighted by severity) of health issues.
+    </div>
+    <br>
+    <a href="#selectionHealth"></a>
+    <h2 class="header">Health And Timeline</h2>
+    <div class="prose">
+      <img class="inset" src="../../../assets/pl-doc-rollup-health.png" width="100%" style="max-width: 500px"/>
+      <br>
+      The center panel visualizes the health of the current selection (either application or streamlet) over the time period.
+      The health model used in Lightbend Console is based on a hierarchical rollup of health from monitors to streamlets
+      (or workloads) to applications as a whole.
+    </div>
+    <br>
+    <a href="#currentSelection"></a>
+    <h2 class="header">Selection Health and Shape</h2>
+    <div class="prose"><img class="inset flow-around-left" src="../../../assets/pl-doc-tabs.png" width="244"/>
+      Use the tabs in this panel to show health bars for the current selection (either application or streamlet).
+      When the current selection is a single streamlet then additional content is available.
+      <br><br>
+      The 'shape' tab contains information regarding inlets and outlets: schema, throughput and consumer lag metrics (at the current time),
+      as well as the endpoint exposed (if any) and the streamlet scale.
+    </div>
+    <h3 class="sub-header">Health</h3>
+    <div class="prose">
+      This panel shows health bars for the current selection. When the application is selected (by clicking the background of the blueprint diagram)
+      then this panel contains streamlet health, one streamlet per row. When a streamlet is selected then the panel contains monitor health
+      (one row per monitor).
+      <img class="inset center" src="../../../assets/pl-doc-healthbars.png" width="100%" style="max-width:450px"/>
+    </div>
+    <div class="prose">
+      As in the blueprint view, health information is available for four states
+      <img class="inset center" src="../../../assets/pl-doc-health-colors.png" height="24"/>
+    </div>
+
+    <div class="prose">The health bars can be ordered by
+      <ul>
+        <li>name (streamlet or monitor)</li>
+        <li>first-unhealthy (default)</li>
+        <li>most-unhealthy</li>
+      </ul>
+      'First Unhealthy' simply orders by the first sample in each health metric to turn warning or critical.
+      'Most Unhealthy' ordering is based on the summation of
+       the number of samples over the duration that are either warning or critical - where critical has twice the weight as warning.
+    </div>
+    <h3 class="sub-header">Shape: Inlet, Outlet and Endpoint Details</h3>
+    <div class="prose">
+      Click the 'Shape' tab and this panel changes to show details on the inlets
+      and outlets of the selected streamlet. In the upper portion of the panel
+      a graphic shows the streamlet along with its named ports colored by their schema type.
+      <img class="inset center" src="../../../assets/pl-doc-shape-view.png" width="100%" style="max-width:450px"/><br>
+      Below this is the URL of exposed endpoints (if any) followed by an expandable list of port details including
+      the port name, schema type, current values of key performance metrics and upstream or downstream
+      connections. Clicking on a connection in the list will select that up/downstream streamlet.
+      <br><br>
+      Consumer Lag metrics are defined on each inlet and Throughput metrics are defined on both inlet and
+      outlets (please see: <span class="link" (click)="changeTopic('keyPerformanceMetrics')">this</span>).
+      The values shown for these metrics are valid for the <span class="key-concept">current-time</span>. If you mouse over
+      the main timeline (or a graph) and thus change the current-time you'll see these values change as well.
+      In this manner you can correlate exact values for these key performance metrics with other metrics
+      from this streamlet.
+      <br><br>
+      These key metrics are based upon reading from or writing data to Kafka, the message bus behind the scenes.
+      Inlets connect to Kafka via a consumer-group while outlets are written to topics. Both of these are shown in the details.
+    </div>
+    <br>
+    <a href="#metricGraphs"></a>
+    <h2 class="header">Metric Graphs</h2>
+    <div class="prose">
+      Graphs of metrics for the <span class="key-concept">current selection</span> are shown in the right-most panel.
+      There are two basic graph representations: paired-stack graphs and area graphs. Throughput is depicted as an upper/lower
+      stacked graph where all the incoming data are shown on top and the out-going throughput data on bottom. Each upper
+      and lower graph could contain multiple sources and they are stacked upon each other.
+      <br>
+      Area graphs show one or more curves overlaid upon each other.
+      <br>
+      Currently applications only produce one family of high level metrics: Throughput.
+      (please see: <span class="link" (click)="changeTopic('keyPerformanceMetrics')">Key Performance Metrics</span>)
+      <img src="../../../assets/pl-doc-throughputGraph.png" class="inset center" width="100%" style="max-width: 450px"/>
+      Shown in a paired-stack graph.
+      <br><br>
+      Whenever a streamlet is selected the right-most panel displays metric graphs
+      relating to that streamlet.
+      <img src="../../../assets/pl-doc-streamlet-graphs.png" class="inset center" width="100%" style="max-width: 450px"/>
+
+      Each streamlet monitor is based upon a metric exported by the streamlet. When combined
+      with an expression (based on the monitor type) and other parameters a monitor is
+      defined. The metrics backing up most monitors are graphed in this panel.
+      <br>
+      In addition there are other key metrics for each streamlet type. Metrics in this
+      category include consumer-lag(for each streamlet inlet),
+      throughput(on streamlet inlets and outlets), number of instances running (scale) and restart history are
+      also shown in this panel.
+    </div>
+    <div class="prose">When a streamlet outputs several metrics with the same name but with
+      different labels then a single graph is created for the collection of metrics. As you mouse over
+      the graph you'll see, along with the crosshairs, each curve highlight. Curves occluded
+      by others cannot be highlighted, so hover over an indicator chip in the upper right. This
+      will highlight the curve (increasing its opacity) as well as show the labels unique to this
+      curve below the graph.
+      <img src="../../../assets/pl-doc-graph-annotated.png" class="inset center" width="100%" style="max-width: 450px"/>
+      In this example there are two labels with values unique to curve: container & pod.
+      <br><br>
+      <img src="../../../assets/pl-doc-graphDescription.png" class="inset flow-around-left" style="max-width: 220px"/>
+      Most graphs display a description tooltip on graph-title hover.
+    </div>
+    <a href="#keyPerformanceMetrics"></a>
+    <h3 class="sub-header">Key Performance Metrics</h3>
+    <div class="prose">
+      <span class="key-concept">Consumer Lag</span> is a key metric available for streamlet inlets.
+      Each inlet is part of a Kafka Consumer Group across all the instances of that streamlet.
+      If there is one instance of the streamlet, it is a group of one. The group members divide
+      up the kafka partitions of the topic they are reading. Every partition has a lag or latency measurement,
+      which is how far back the consumer group reader is from the most recent message. This metric
+      is captured in terms of the number of records each reader (instance) is behind
+      the most recent record produced upstream - and is presented as the maximum across all readers in the group.
+      <br>
+      <span class="key-concept">Throughput</span>, another key metric is available on both inlets and
+      outlets. On streamlet inlets it represents the rate of data records read by the streamlet (in records / second).
+      On outlets it is the rate of data records produced by the streamlet. It is useful to note that there might not be a one-to-one
+      relationship between inlet records and outlet records. This relationship is dependent on the functionality of the streamlet itself.
+      <br><br>
+      For application throughput we compare incoming data (i.e. the data produced on all outlets of all ingress's)
+      with outgoing data (i.e. the data consumed on all inlets of all egress streamlets in the application).
+      Incoming data is shown in the upper stack, outgoing on the bottom stack as in the following image.
+      <img src="../../../assets/pl-doc-app-thruput-annotated.png" width="100%" class="inset center"/>
+    </div>
+    <h3 class="sub-header">Crosshair Behavior</h3>
+    <div class="prose">As you move the mouse over a graph you'll see
+      the crosshair track the mouse. A timeline callout appears below the graph. In addition you'll see
+      a small vertical line drawn on all graphs, health bars and timelines on the page - allowing you
+      to correlate behavior across metrics, monitors and streamlets. When hovering over a metric graph, the vertical crosshair
+      shows the (up to six) metric values (one per curve) at the current time.  Callout values are shown if the mouse is within one
+      time sample from the mouse location - meaning that unknown (missing) data is not shown.
+      <img class="inset" src="../../../assets/pl-doc-crosshair.png" width="100%"/>
+    </div>
+    <a href="#controls"></a>
+    <h2 class="header">Controls</h2>
+    <div class="prose"><img class="inset flow-around-left" src="../../../assets/pl-doc-controls.png" width="146px"/>
+      The top level controls panel is the jumping off point for other views on the current selection: metric dashboards (via Grafana) or infrastructure monitoring
+      <br><br>
+      <h3 class="sub-header">Grafana Dashboards</h3>
+      There is a Grafana metric dashboard for each streamlet as well as one for the application as a whole (based on the current selection).
+      In these dashboards you can see a variety of
+      metrics for each service type of the current selection (Kafka, Akka Streams, Spark, JVM and Kubernetes) separated into groups. Here you also
+      have finer-grain control over time periods and other graphing attributes
+      <img src="../../../assets/pl-doc-grafana.png" width="100%" class="inset center"/>
+    </div>
+    <br>
+    <h3 class="sub-header">Relationship with Lightbend Console Monitoring</h3>
+    <div class="prose">There are two main views for monitoring Lightbend-enabled applications: the infrastructure and Cloudflow Applications views.
+      In the Cloudflow Application view you see a blueprint and streamlet-oriented frame of reference: all information is structured for a higher level perspective
+      on a running Cloudflow-enabled application: where the main actors are the blueprint, its constituent streamlets, their monitors and metrics. Health
+      at the application level is based on rolling up health at the streamlet level which is based on rolling up health at the monitor level.
+      <img class="inset center" src="../../../assets/pl-doc-blueprint.png" width="100%" style="max-width: 500px"/>
+      <br>
+    </div>
+    <div class="prose">
+      <img class="inset flow-around-left" src="../../../assets/pl-doc-controls.png" width="146px"/>
+      Another viewpoint is infrastructure-oriented: a cluster consists of nodes running pods (you can reach this view by clicking
+      on the 'workload' icon within the controls panel in the window upper left). Those pods are organized by the workloads in which they are running.
+      Workloads have monitors running on pods and the health of the workload is based on rolling up the health of its monitors. This infrastructure-based
+      view does not have a high level concept of 'application' but it does allow you to define or customize monitors for workloads.  While this
+      customization is not available directly in the Cloudflow-based view, those monitors do carry over to the Cloudflow perspective.
+    </div>
+    <div class="prose">
+      <img class="inset flow-around-right" src="../../../assets/pl-doc-cluster-map-view.png" width="50%"/>
+      This is the corresponding infrastructure view for this Cloudflow application. Note that there are 11 workloads here (three with two pods each
+      all others with one).
+      But the Cloudflow view contains eight streamlets. This discrepancy is due to how spark jobs are handled: they have an executor and driver -
+      resulting in an additional workload for each spark streamlet - or three additional workloads for this application (since there are three
+      spark-based streamlets). For more information on infrastructure monitoring see <a target="_blank" href="{{docUrl}}">here</a>
+    </div>
+  </div>
+</div>

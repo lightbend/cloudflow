@@ -23,7 +23,7 @@ trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
       kafkaContext = KafkaContext(
-        bootstrapServers = "localhost:9092",
+        bootstrapServers = Some("localhost:9092"),
         partitionsPerTopic = 3,
         replicationFactor = 1,
         config = ConfigFactory.empty()

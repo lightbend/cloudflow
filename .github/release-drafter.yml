@@ -1,0 +1,56 @@
+# Config for https://github.com/release-drafter/release-drafter
+name-template: 'Cloudflow $NEXT_PATCH_VERSION'
+tag-template: 'v$NEXT_PATCH_VERSION'
+
+categories:
+  - title: ':rocket: Features'
+    labels:
+      - 'kind/enhancement'
+  - title: 'Cloudflow operator'
+    labels:
+      - 'operator'
+  - title: 'kubectl-cloudflow'
+    labels:
+      - 'kubectl-cloudflow'
+  - title: 'Streamlets'
+    labels:
+      - 'streamlets'
+      - 'akka'
+      - 'flink'
+      - 'spark'
+  - title: ':book: Documentation'
+    labels:
+      - 'kind/documentation'
+      - 'documentation'
+      - 'examples'
+  - title: ':bug: Bug Fixes'
+    labels:
+      - 'kind/bug'
+      - 'Bug'
+  - title: ':toolbox: Maintenance'
+    labels:
+      - 'kind/maintenance'
+  - title: ':dart: Dependencies'
+    labels:
+      - 'dependencies'
+
+template: |
+  # :mega: Cloudflow $NEXT_PATCH_VERSION released!
+
+  We are pleased to announce another release of Cloudflow.
+
+  Please find the release notes at https://github.com/lightbend/cloudflow/blob/master/release-notes/
+
+  ## :green_book: What’s Changed
+  $CHANGES
+  ## :bow: Credits
+  Special thanks to the following contributors who helped with this release: $CONTRIBUTORS
+
+  Kubectl plugin download links:
+
+  * [Linux](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-linux-amd64.tar.gz)
+  * [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-darwin-amd64.tar.gz)
+  * [Windows](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-windows-amd64.tar.gz)
+
+
+change-template: '- $TITLE #$NUMBER by [@$AUTHOR](https://github.com/$AUTHOR)'

@@ -207,3 +207,15 @@ Upgrading an application that uses stateful computation requires planning ahead 
 Significant changes to the application logic, addition of sources, or changes to the schema representing the state are not allowed.
 
 For details on the degrees of freedom and upgrade options, please refer to the https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#recovery-semantics-after-changes-in-a-streaming-query[Structured Streaming documentation].
+
+== Adding additional Spark libraries
+
+If you enable plugin `CloudflowSparkPlugin`, Cloudflow will add all of the Spark jars, necessary for a typical Spark streamlet implementation. But sometimes
+you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
+of the libraries that you are adding have the same version that the rest of of the Spark libraries.
+The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowSparkPlugin.SparkVersion`.
+So, if for example, you want to add local Spark ML library, you can do it as shown below:
+
+----
+libraryDependencies ++=  Seq("org.apache.spark"%%"spark-mllib-local"%cloudflow.sbt.CloudflowSparkPlugin.SparkVersion)
+----

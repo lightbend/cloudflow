@@ -141,7 +141,7 @@ WARNING: The topic name is global to all applications deployed with Cloudflow on
 
 In <<basic-config>>, we saw how to declare a _built-in topic_ in Cloudflow to connect two or more Streamlets.
 
-It is possible to extend the topic definition with additional configuration parameters to connect to arbitrary Kafka topics, hosted locally, on a remote server, or even connect to a managed Cloud service.
+It is possible to extend the topic definition with additional configuration parameters to connect to arbitrary Kafka topics, hosted locally, on a remote server, or even connect to a managed Cloud service. It is best to specify this in a separate configuration file, which can be provided with the `kubectl cloudflow deploy` command. See xref:develop:cloudflow-configuration.adoc[The Configuration Model] for information about the configuration file format.
 
 In the following snippet, we declare a three topics that connect to an external managed Kafka instance.
 (Note that the credentials are redacted for obvious reasons)
@@ -183,10 +183,12 @@ shared-config {                      //<3>
 In the snippet above, we are centralizing the common configuration for all topics in a `shared-config` configuration entry.
 We then use the HOCON configuration extension syntax, as in +++${shared-config} {...}+++ to extend the common configuration with the specific values required for each topic definition.
 
-We are also using the explicit `topic.name` property instead of using the default name of the configuration object.
+Note that the topics configuration can be extended under the `cloudflow.topics` section, in the configuration file. The configuration you specify here overrides what is defined for the topics in the blueprint.
+We are also using the explicit `topic.name` property instead of using the default name of the configuration object to override the names of the topics.
 
 It is important to note the presence of the flag `managed`, which indicated whether Cloudflow should create the topic (`managed=true` (default)) or not (`managed=false`).
 
+NOTE: You can also provide topic configuration in the blueprint, under a `blueprint.topics.<topid-id>` section. It is recommended that you do not specify topic configuration in the blueprint that differs per deployment environment. Configuration files are a better solution for this, as shown in this section. 
 
 We can set up the Kafka provider configuration in a separate configuration file, like this:
 
