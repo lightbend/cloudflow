@@ -55,7 +55,7 @@ Once it's complete, you should see at the end of the output a `kubectl cloudflow
 $ kubectl cloudflow deploy call-record-aggregator.json
 ----
 
-NOTE: You might be prompted to enter credentials for the Docker registry that hosts your application images, if this is your first time deploying an application using that registry.
+NOTE: You might be prompted to enter credentials for the Docker registry that hosts your application images, if this is your first time deploying an application using that registry. The recommended way to authenticate is by logging in via `gcloud auth login`.
 
 Once the deployment of the application starts, you can view the progress of the application using the `kubectl cloudflow status` command:
 
