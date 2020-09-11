@@ -431,7 +431,7 @@ func checkVolumeMountsReferToVolume(podsConfig *configuration.Config, containers
 			if volumesMountsConfig := containerConfig.GetConfig(volumeMountsKey); volumesMountsConfig != nil && volumesMountsConfig.Root().IsObject() {
 				for volumeMountName, _ := range volumesMountsConfig.Root().GetObject().Items() {
 					if !contains(volumesNames, volumeMountName) {
-						return fmt.Errorf("the volume-mounts '%s' should match with a volume.secret.name that is among '%s'", volumeMountName, volumesNames)
+						return fmt.Errorf("the volume-mounts '%s' should match a volume.secret.name in '%s'", volumeMountName, volumesNames)
 					}
 					volumeMountSecretNames = append(volumeMountSecretNames, volumeMountName)
 				}
