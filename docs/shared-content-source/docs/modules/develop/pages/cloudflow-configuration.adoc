@@ -183,7 +183,7 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-This configuration will mount `mysecret` into each `my-streamlet` container on to the path `/mnt/folderA` as read only, while `mysecret2` will be mounted on path `/mnt/folderB`. Each `volume-mounts` name is matching a `volumes` name as `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`
+This configuration will mount `mysecret` into each `my-streamlet` container on to the path `/mnt/folderA` as read only, while `mysecret2` will be mounted on path `/mnt/folderB`. Each `volume-mounts` name must match a `volumes` name. In the example, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
 
 .Configuration available to set volumes and mount their secrets
 [%autowidth]
