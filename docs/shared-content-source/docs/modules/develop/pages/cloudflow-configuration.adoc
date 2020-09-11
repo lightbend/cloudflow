@@ -149,7 +149,7 @@ The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable
 and how to add labels to a pod. 
 
-It also possible to add `volumes`, that contain secrets, to the pods. And then mount this volumes into the container with `volume-mounts`. Bear in mind that each `volume-mounts` name has to match a `volumes`  name, defined in the same config file. Here's a sample of how to set two `volumes` with two different secrets and how to mount them in a container.  
+It is also possible to add `volumes`, that contain secrets, to the pods. And then mount these volumes into the container with `volume-mounts`. Bear in mind that each `volume-mounts` name has to match a `volumes`  name, defined in the same config file. Here's a sample of how to configure two `volumes` with two different secrets and how to mount them in the container.  The streamlet code can access the secret data in `mysecret` in the file `/mnt/folderA/mysecret`
 
 [source, hocon]
 ----
