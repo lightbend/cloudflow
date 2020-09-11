@@ -404,7 +404,7 @@ func validateVolumesMounts(containersConfig *configuration.Config) error {
 							return fmt.Errorf("not allowed '%s' key in the volume-mounts '%s'. Properties allowed are: %s ", key, volumeMountName, allowedProperties)
 						}
 						if value.IsEmpty() {
-							return fmt.Errorf("key '%s' has not value in then volume-mounts '%s' .", key, volumeMountName)
+							return fmt.Errorf("key '%s' has not value in then volume-mounts '%s'", key, volumeMountName)
 						}
 					}
 				}
