@@ -17,7 +17,7 @@ spec:
     service_account: "some-account"
   spark_operator:
     version: 0.6.7
-    image: 2.0.9-cloudflow-spark-2.4.5-1.1.2-scala-2.12
+    image: 2.0.10-cloudflow-spark-2.4.5-1.1.2-scala-2.12
   kafka_cluster_cr:
     name: strimzi
     zoo_keeper_persistent_storage_class: standard

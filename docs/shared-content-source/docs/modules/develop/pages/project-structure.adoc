@@ -91,7 +91,7 @@ Before delving into that, here we list the runtime plugins:
 NOTE: Each runtime plugin uses its own default base image. It's `lightbend/akka-base` for Akka, `lightbend/spark` for Spark and `lightbend/flink` for Flink. It could be the case that you're working against your own container registry and therefore prefer to point to your copy or customized version of our base images. To use your base images, set `cloudflowAkkaBaseImage`, `cloudflowSparkBaseImage`, and `cloudflowFlinkBaseImage` in `settings` of the respective runtime plugins in your application `build.sbt`.
 
 .Note's example
-In an Akka-based streamlet the default base image value is `lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}`. This may be set to `lightbend/akka-base:2.0.9-cloudflow-akka-2.6.6-scala-2.12` depending on your Cloudflow, Akka and Scala versions. To override this base image in your cloudflow application go to its build.sbt and set up a value in settings such as:
+In an Akka-based streamlet the default base image value is `lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}`. This may be set to `lightbend/akka-base:2.0.10-cloudflow-akka-2.6.6-scala-2.12` depending on your Cloudflow, Akka and Scala versions. To override this base image in your cloudflow application go to its build.sbt and set up a value in settings such as:
 
 [source, scala]
 ----

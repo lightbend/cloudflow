@@ -48,11 +48,15 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     } yield {
 
       val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+      val updatedStreamletDefinition = streamletDefinition.copy(
+        config = streamletDefinition.config
+          .withFallback(ConfigFactory.parseResourcesAnySyntax("akka.conf"))
+          .withFallback(config)
+      )
 
       if (activateCluster && localMode) {
-        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-        val clusterConfig              = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
-        val fullConfig                 = clusterConfig.withFallback(updatedStreamletDefinition.config)
+        val clusterConfig = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
+        val fullConfig    = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
         val system  = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
         val cluster = Cluster(system)
@@ -60,7 +64,6 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else if (activateCluster) {
-        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
         val clusterConfig = ConfigFactory
           .parseString(
             s"""akka.discovery.kubernetes-api.pod-label-selector = "com.lightbend.cloudflow/streamlet-name=${streamletDefinition.streamletRef}""""
@@ -76,8 +79,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       } else {
-        val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config.withFallback(config))
-        val system                     = ActorSystem(streamletDefinition.streamletRef, updatedStreamletDefinition.config)
+        val system = ActorSystem(streamletDefinition.streamletRef, updatedStreamletDefinition.config)
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       }
     }).recoverWith {

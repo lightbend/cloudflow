@@ -225,7 +225,7 @@ $ sbt buildApp
 [success] /cloudflow/examples/call-record-aggregator/call-record-pipeline/src/main/blueprint/blueprint.conf verified.
 ... #<3>
 [info] Sending build context to Docker daemon  51.97MB
-[info] Step 1/4 : FROM lightbend/akka-base:2.0.9-cloudflow-akka-2.6.6-scala-2.12
+[info] Step 1/4 : FROM lightbend/akka-base:2.0.10-cloudflow-akka-2.6.6-scala-2.12
 [info]  ---> bbcdde34a60a
 [info] Step 2/4 : USER 185
 [info] Successfully built dc0b6c01246e

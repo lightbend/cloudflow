@@ -11,14 +11,6 @@ An `GrpcServerLogic` can be used to handle gRPC requests.
 You need to extend your streamlet from `AkkaServerStreamlet`
 so that Cloudflow will expose an HTTP endpoint in Kubernetes.
 
-Additionally, you need to enable HTTP/2 by adding the following
-to your configuration:
-
-[source,hocon]
-----
-akka.http.server.preview.enable-http2 = on
-----
-
 === Example
 
 gRPC is a contract-first technology, so you start by adding
