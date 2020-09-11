@@ -203,7 +203,7 @@ object AkkaRunner extends Runner[Deployment] {
         .addVolume(secretVolume)
         .addVolume(Runner.DownwardApiVolume)
 
-    val podSpecMoreVolumes = configSecretVolumes.foldLeft[Pod.Spec](podSpec) {
+    val podSpecSecretVolumesAdded = configSecretVolumes.foldLeft[Pod.Spec](podSpec) {
       case (acc, curr) =>
         acc.addVolume(curr)
     }
@@ -219,7 +219,7 @@ object AkkaRunner extends Runner[Deployment] {
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)
-        .withPodSpec(podSpecMoreVolumes)
+        .withPodSpec(podSpecSecretVolumesAdded)
 
     val deploymentResource = Deployment(
       metadata = ObjectMeta(name = podName,
