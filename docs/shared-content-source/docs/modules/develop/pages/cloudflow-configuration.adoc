@@ -149,7 +149,7 @@ The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable
 and how to add labels to a pod. 
 
-It also possible to add `volumes` to pods where the source of the volume is a secret. Then these can be mounted into the pod with `volume-mounts`. 
+It also possible to add `volumes` to pods where the source of the volume is a secret. Then these can be mounted into the container with `volume-mounts`. 
 
 There is an exception for `volume-mounts` regards being abel to set and specific type of pod. Will cover that later on, now here below, a sample of how to configure two `volumes` with secrets and how to mount them.  
 
