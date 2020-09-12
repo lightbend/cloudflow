@@ -17,6 +17,6 @@ Other notable changes in Cloudflow 2.0.10:
 
 **The Cloudflow 2.0.10 `kubectl` plugin can be downloaded using one of the following links:**
 
-* [Linux](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.704-d787efb-linux-amd64.tar.gz)
-* [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.704-d787efb-darwin-amd64.tar.gz)
-* [Windows](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.704-d787efb-windows-amd64.tar.gz)
+* [Linux](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-linux-amd64.tar.gz)
+* [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-darwin-amd64.tar.gz)
+* [Windows](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-windows-amd64.tar.gz)
