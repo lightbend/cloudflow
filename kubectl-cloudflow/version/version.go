@@ -17,11 +17,8 @@ import (
 // BuildNumber describes the build number
 var BuildNumber = "local build"
 
-// ReleaseTagSnapshot is used to check if the ReleaseTag is set to snapshot without the need to duplicate the string
-var ReleaseTagSnapshot = "SNAPSHOT"
-
-// ReleaseTag is the tag used for a release, this tag is used to fetch the matching examples repository for this version of the CLI
-var ReleaseTag = ReleaseTagSnapshot
+// ReleaseTag is the tag used for a release
+var ReleaseTag = "SNAPSHOT"
 
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.
