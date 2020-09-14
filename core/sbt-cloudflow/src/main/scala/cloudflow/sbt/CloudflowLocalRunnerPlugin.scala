@@ -304,7 +304,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
     try {
       val stagedLog4jFile = tempDir.resolve(filename)
-      Files.copy(log4JSrc, stagedLog4jFile)
+      Files.copy(log4JSrc, stagedLog4jFile, StandardCopyOption.REPLACE_EXISTING)
       stagedLog4jFile
     } finally {
       log4JSrc.close
