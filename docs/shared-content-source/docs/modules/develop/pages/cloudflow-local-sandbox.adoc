@@ -197,6 +197,8 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 ...
 ----
 
+The above example also shows how to set a custom Log4j configuration with the `runLocalLog4jConfigFile` (2). If this key is ommitted a default log4j configuration is used that is packaged with the sbt-cloudflow plugin.
+
 ==== Providing Configuration Values
 
 With the local configuration file, you can provide values to streamlet configuration parameters and point volume mounts to locally available folders.
