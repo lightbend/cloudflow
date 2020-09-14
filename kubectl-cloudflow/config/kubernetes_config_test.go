@@ -7,12 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
-
-
-
-
-
 func Test_validateConfigLabels(t *testing.T) {
 	spec := createSpec()
 	labelConfigSection := newConfig(`
@@ -316,7 +310,6 @@ func Test_validateConfigLabels(t *testing.T) {
 	`)
 	assert.Empty(t, validateConfig(okShortLabel, spec))
 
-
 }
 
 func Test_validateConfigVolumes(t *testing.T) {
@@ -548,5 +541,3 @@ func Test_validateConfigTopic(t *testing.T) {
 	`)
 	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
 }
-
-

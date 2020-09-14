@@ -365,7 +365,6 @@ func Test_validateConfig(t *testing.T) {
 	fmt.Printf("unknownConfigParameterInStreamletConfigSection: %s\n", validateConfig(unknownConfigParameterInStreamletConfigSection, spec))
 }
 
-
 func Test_validateConfigEmptyDefault(t *testing.T) {
 	spec := cfapp.CloudflowApplicationSpec{
 		Streamlets: []cfapp.Streamlet{
