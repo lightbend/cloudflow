@@ -48,6 +48,9 @@ trait CloudflowSettingKeys {
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
   val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val runLocalLog4jConfigFile = settingKey[Option[String]](
+    s"The path to the log4j configuration file to use with the local runner Sandbox, if omitted, ${CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile} is read from plugin classpath."
+  )
   val ownerInDockerImage =
     settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
 }

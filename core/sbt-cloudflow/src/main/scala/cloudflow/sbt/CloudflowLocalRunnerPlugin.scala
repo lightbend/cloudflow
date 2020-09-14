@@ -115,7 +115,14 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val runtimeDescriptorByProject = getDescriptorsOrFail {
               descriptorByProject.map {
                 case (pid, projectDescriptor) =>
-                  pid -> scaffoldRuntime(pid, projectDescriptor, localConfig, tempDir, configDir)
+                  pid -> scaffoldRuntime(
+                        pid,
+                        projectDescriptor,
+                        localConfig,
+                        tempDir,
+                        configDir,
+                        runLocalLog4jConfigFile.value.getOrElse(CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile)
+                      )
               }
             }
 
@@ -260,10 +267,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     println(GraphLayout.renderGraph(graph))
   }
 
-  def scaffoldRuntime(projectId: String, descriptor: ApplicationDescriptor, localConfig: LocalConfig, targetDir: Path, configDir: Path)(
+  def scaffoldRuntime(projectId: String,
+                      descriptor: ApplicationDescriptor,
+                      localConfig: LocalConfig,
+                      targetDir: Path,
+                      configDir: Path,
+                      log4jConfigFileOrResource: String)(
       implicit logger: Logger
   ): Try[RuntimeDescriptor] = {
-    val log4jConfigFile = prepareLog4JFileFromResource(configDir, "local-run-log4j.properties", "local-run-log4j.properties")
+    val log4jConfigFile =
+      prepareLog4JFileFromFileOrResource(configDir, log4jConfigFileOrResource, CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile)
     for {
       appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
       outputFile        ← createOutputFile(targetDir, projectId)
@@ -274,8 +287,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def prepareLog4JFileFromResource(tempDir: Path, source: String, target: String)(implicit logger: Logger): Try[Path] = Try {
-    val log4JSrc        = Option(this.getClass.getClassLoader.getResourceAsStream(source))
+  def prepareLog4JFileFromFileOrResource(tempDir: Path, source: String, target: String)(implicit logger: Logger): Try[Path] = Try {
+    val sourceFile = new File(source)
+
+    val log4JSrc =
+      if (sourceFile.exists) Some(new java.io.FileInputStream(sourceFile))
+      else Some(this.getClass.getClassLoader.getResourceAsStream(source))
     val stagedLog4jFile = tempDir.resolve(target)
     try {
       if (!stagedLog4jFile.toFile.exists()) {
