@@ -272,28 +272,28 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                       localConfig: LocalConfig,
                       targetDir: Path,
                       configDir: Path,
-                      log4jConfigFileOrResource: String)(
+                      log4jConfigFile: String)(
       implicit logger: Logger
   ): Try[RuntimeDescriptor] = {
-    val log4jConfigFile =
-      prepareLog4JFileFromFileOrResource(configDir, log4jConfigFileOrResource, CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile)
+    val log4jConfig =
+      prepareLog4JFile(configDir, log4jConfigFile)
     for {
       appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
       outputFile        ← createOutputFile(targetDir, projectId)
-      logFile           <- log4jConfigFile
+      logFile           <- log4jConfig
       appDescriptorFile ← prepareApplicationFile(appDescriptor)
     } yield {
       RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfig.path)
     }
   }
 
-  def prepareLog4JFileFromFileOrResource(tempDir: Path, source: String, target: String)(implicit logger: Logger): Try[Path] = Try {
-    val sourceFile = new File(source)
-
-    val log4JSrc =
-      if (sourceFile.exists) Some(new java.io.FileInputStream(sourceFile))
-      else Some(this.getClass.getClassLoader.getResourceAsStream(source))
-    val stagedLog4jFile = tempDir.resolve(target)
+  def prepareLog4JFile(tempDir: Path, source: String)(implicit logger: Logger): Try[Path] = Try {
+    val sourceFile         = new File(source)
+    val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
+    val (log4JSrc, filename) =
+      if (sourceFile.exists) (Some(new java.io.FileInputStream(sourceFile)), sourceFile.getName)
+      else (Some(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource)), log4jClassResource)
+    val stagedLog4jFile = tempDir.resolve(filename)
     try {
       if (!stagedLog4jFile.toFile.exists()) {
         log4JSrc
