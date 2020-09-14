@@ -17,6 +17,7 @@
 package cloudflow.sbt
 
 import java.nio.file._
+import java.io._
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
@@ -121,7 +122,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                         localConfig,
                         tempDir,
                         configDir,
-                        runLocalLog4jConfigFile.value.getOrElse(CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile)
+                        runLocalLog4jConfigFile.value
                       )
               }
             }
@@ -272,7 +273,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                       localConfig: LocalConfig,
                       targetDir: Path,
                       configDir: Path,
-                      log4jConfigFile: String)(
+                      log4jConfigFile: Option[String])(
       implicit logger: Logger
   ): Try[RuntimeDescriptor] = {
     val log4jConfig =
@@ -280,33 +281,34 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     for {
       appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
       outputFile        ← createOutputFile(targetDir, projectId)
-      logFile           <- log4jConfig
+      logFile           ← log4jConfig
       appDescriptorFile ← prepareApplicationFile(appDescriptor)
     } yield {
       RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfig.path)
     }
   }
 
-  def prepareLog4JFile(tempDir: Path, source: String)(implicit logger: Logger): Try[Path] = Try {
-    val sourceFile         = new File(source)
+  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String])(implicit logger: Logger): Try[Path] = Try {
     val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
-    val (log4JSrc, filename) =
-      if (sourceFile.exists) (Some(new java.io.FileInputStream(sourceFile)), sourceFile.getName)
-      else (Some(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource)), log4jClassResource)
-    val stagedLog4jFile = tempDir.resolve(filename)
-    try {
-      if (!stagedLog4jFile.toFile.exists()) {
-        log4JSrc
-          .map(src ⇒ Files.copy(src, stagedLog4jFile))
-          .getOrElse {
-            logger.warn("Could not find log4j configuration for local runner")
-            0L
-          }
-      }
-    } finally {
-      log4JSrc.foreach(_.close)
+
+    if (this.getClass.getClassLoader.getResource(log4jClassResource) == null) {
+      throw new Exception("Default log4j configuration could not be found on classpath of sbt-cloudflow.")
     }
-    stagedLog4jFile
+    // keeping the filename since log4j uses the prefix to load it as XML or properties.
+    val (log4JSrc: InputStream, filename: String) = log4jConfigPath
+      .map { log4jPath =>
+        val log4jFile = new File(log4jPath)
+        if (log4jFile.exists && log4jFile.isFile) new FileInputStream(log4jFile) -> log4jFile.getName
+      }
+      .getOrElse(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource) -> log4jClassResource)
+
+    try {
+      val stagedLog4jFile = tempDir.resolve(filename)
+      Files.copy(log4JSrc, stagedLog4jFile)
+      stagedLog4jFile
+    } finally {
+      log4JSrc.close
+    }
   }
 
   def streamletFilterByClass(appDescriptor: ApplicationDescriptor, streamletClasses: Set[String]): ApplicationDescriptor = {
