@@ -195,7 +195,7 @@ object Topic {
 
 final case class Topic(
     id: String,
-    cluster: Option[String], // needs to be top level and not part of config so can be easily parsed in app spec in cli
+    cluster: Option[String] = None, // needs to be top level and not part of config so can be easily parsed in app spec in cli
     config: Config = ConfigFactory.empty()
 ) {
   def name: String     = Try(config.getString(Blueprint.TopicKey)).getOrElse(id)

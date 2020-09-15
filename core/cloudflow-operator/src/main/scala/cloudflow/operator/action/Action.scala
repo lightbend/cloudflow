@@ -330,6 +330,7 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
         }
     getAndProvide.recoverWith {
       case t: Throwable if retries > 0 =>
+        sys.log.error(t, "### executeWithRetry")
         sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName, reason: ${t.getClass.getSimpleName}")
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
     }

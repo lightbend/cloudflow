@@ -31,6 +31,7 @@ Set the `cloudflow_operator.image.name` value when installing the [helm chart](h
 helm install cloudflow ./cloudflow --namespace cloudflow \
 --set cloudflow_operator.image.name=<gcp_hostname>/<project_id>/cloudflow-operator \
 --set cloudflow_operator.image.tag=<docker-image-tag> \
+--set cloudflow_operator.image.pullPolicy=Always \
 --set cloudflow_operator.logLevelRoot=DEBUG
 ```
 
