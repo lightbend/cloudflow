@@ -307,26 +307,26 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |     }
                 |   }
                 | }
-                |   driver {
-                |     containers.container {
-                |       volume-mounts {
-                |         foo {
-                |           mountPath = "/etc/my/file"
-                |           readOnly = true
-                |         }
+                | driver {
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mountPath = "/etc/my/file"
+                |         readOnly = true
                 |       }
                 |     }
                 |   }
-                |     executor {
-                |       containers.container {
-                |         volume-mounts {
-                |           bar {
-                |             mountPath = "/etc/mc/fly"
-                |             readOnly =  false
-                |           }
-                |         }
+                | }
+                | executor {
+                |   containers.container {
+                |     volume-mounts {
+                |       bar {
+                |         mountPath = "/etc/mc/fly"
+                |         readOnly =  false
                 |       }
                 |     }
+                |   }
+                | }
                 |}
                 """.stripMargin.getBytes()
           )
