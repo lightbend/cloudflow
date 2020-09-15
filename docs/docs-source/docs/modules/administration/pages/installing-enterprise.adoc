@@ -19,7 +19,7 @@ Add the Lightbend Helm repository and update the local index:
 
 Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. 
 
-We recommend using the following command to create an environment variable for username and password. 
+We recommend using the following command to create an environment variable for username and password (here username/password are your credentials to the Lightbend docker repository - bintray).
 *This is to avoid storing this information in the shell's history file.*
 
   read DOCKER_USERNAME
