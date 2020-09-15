@@ -54,9 +54,7 @@ Install the NFS Server Provisioner using the following command:
 IMPORTANT: Depending on your Kubernetes configuration, you may want to adjust the values used during the install. 
 Please see https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner#configuration[NFS Server Provisioner configuration options].
 
-  helm upgrade nfs-server-provisioner stable/nfs-server-provisioner \
-    --install \
-    --set storageClass.provisionerName=cloudflow-nfs \
+  helm install nfs-server-provisioner stable/nfs-server-provisioner \
     --namespace cloudflow
 
 The result of the installation is shown below, the NFS Server provisioner pod is running and the new storage class exists.
