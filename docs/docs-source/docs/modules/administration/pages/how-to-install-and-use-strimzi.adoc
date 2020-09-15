@@ -120,12 +120,12 @@ TIP: If you want to change any parameters of the Kafka cluster, edit the `kafka-
 
 The most important parameters here are:
 
-* Log retention policy - see https://www.cloudkarafka.com/blog/2018-05-08-what-is-kafka-retention-period.html#:~:text=If%20the%20log%20retention%20is,data%20is%20not%20a%20problem[this article]
-for log retention options. In our example we are using 1 hour retention, which is good enough for testing, with retention time check at 300000 ms.
-Alternatively you can use `log.retention.bytes` - a size-based retention policy (in bytes). You can also use both
-to ensure that time-based retention does not overwrite available log size.
-* Kafka storage size - here we are using 10GI. You need to make sure that this value is greater then the max log size,
-which can be calculated based on the log retention policy and anticipated message rate (for time based retention policy)
+* Log retention policy - see https://www.cloudkarafka.com/blog/2018-05-08-what-is-kafka-retention-period.html#:~:text=If%20the%20log%20retention%20is,data%20is%20not%20a%20problem[this article] and
+https://medium.com/@sunny_81705/kafka-log-retention-and-cleanup-policies-c8d9cb7e09f8#:~:text=Apache%20Kafka%20provides%20two%20types,for%20Segments%20is%207%20days[this one]
+for log retention explanation. In our example we are using 1 hour retention, which is good enough for testing, with retention time check at 300000 ms.
+Alternatively you can use `log.retention.bytes` - a size-based retention policy (in bytes).
+* Kafka storage size - you need to make sure that this value is greater than the max log retention size in bytes,
+or calculated log size based on the log retention time policy and anticipated message rate.
 
 
 === Removing Strimzi 
