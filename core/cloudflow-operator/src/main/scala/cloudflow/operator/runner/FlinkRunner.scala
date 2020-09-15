@@ -27,11 +27,10 @@ import skuber.rbac._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 import skuber._
-
 import cloudflow.blueprint.deployment._
 import FlinkResource._
-
 import cloudflow.operator.action.Action
+import cloudflow.operator.runner.AkkaRunner.{ getVolumeMounts, getVolumes }
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
@@ -127,8 +126,8 @@ object FlinkRunner extends Runner[CR] {
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy)
-    val volumeMounts = makeVolumeMountsSpec(streamletToDeploy)
+    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+    val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
     import ctx.flinkRunnerSettings._
 
