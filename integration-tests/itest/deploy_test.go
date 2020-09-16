@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
-	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
+	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,16 +31,16 @@ const (
 	UpdateAkkaProcessResourcesFile = "./resources/update_akka_process_resources.conf"
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
-	UpdateMountingSecret 	       = "./resources/update_mounting_secret.conf"
-	SecretResourceFile			   = "./resources/secret.yaml"
-	SecretResourceFilePassword	   = "1f2d1e2e67df"
-	SecretResourceFileMountingPath    = "/tmp/some/password"
+	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
+	SecretResourceFile             = "./resources/secret.yaml"
+	SecretResourceFilePassword     = "1f2d1e2e67df"
+	SecretResourceFileMountingPath = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
 	UpdateAkkaConfigurationFile    = "./resources/update_akka_config.conf"
 	UpdateAkkaConfigOutput         = "log-dead-letters=[15]"
 )
 
-var deploySleepTime, _ = time.ParseDuration("15s")
+var deploySleepTime, _ = time.ParseDuration("5s")
 
 var swissKnifeApp = cli.App{
 	CRFile: "./resources/swiss-knife.json",
@@ -66,7 +66,6 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
-
 
 	Context("when I deploy an application", func() {
 
@@ -104,7 +103,6 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 	})
 
-	
 	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
 		checkContainsStreamlet := func(streamlet string) {
 			status, err := cli.Status(swissKnifeApp)
@@ -171,11 +169,11 @@ var _ = Describe("Application deployment", func() {
 		}, XLongTimeout)
 	})
 
-	Context("Application swiss-knife is deployed and running",func() {
+	Context("Application swiss-knife is deployed and running", func() {
 		clientset := k8s_secret.InitClient()
 
 		It("should deploy a secret", func() {
-			_, err := k8s_secret.CreateSecret(SecretResourceFile,swissKnifeApp.Name,clientset)
+			_, err := k8s_secret.CreateSecret(SecretResourceFile, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -196,7 +194,6 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 	})
-
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
 		It("should reconfigure the pods of an Akka application", func(done Done) {
