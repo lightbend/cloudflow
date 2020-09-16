@@ -14,7 +14,7 @@ import (
 	"os"
 	"os/exec"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func InitClient() *kubernetes.Clientset {
