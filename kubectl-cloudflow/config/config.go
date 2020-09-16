@@ -343,11 +343,11 @@ func labelHasPrefix(label string) bool {
 
 func validateLabel(name string, prefix string) error {
 	// See https://github.com/kubernetes/kubernetes/issues/71140, IsDNS1123Subdomain and IsDNS1123Label do not allow uppercase letters.
-	labelPattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
+	labelPattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
 
 	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
-	labelSingleCharFormat := regexp.MustCompile(`^[a-z]{1}$`)
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
 	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
 

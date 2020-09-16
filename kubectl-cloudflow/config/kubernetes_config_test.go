@@ -14,16 +14,6 @@ func Test_validateConfigLabels(t *testing.T) {
 		labels {
 			key1 = value1
 			key2 = value2
-		} containers.container {
-			resources {
-				requests {
-					cpu = 2
-					memory = "512M"
-				}
-				limits {
-					memory = "1024M"
-				}
-			}
 		}
 	}
 	`)
@@ -32,18 +22,8 @@ func Test_validateConfigLabels(t *testing.T) {
 	labelConfigSectionUppercase := newConfig(`
 	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
 		labels {
-			key1 = value1
-			key2 = value2
-		} containers.container {
-			resources {
-				requests {
-					cpu = 2
-					memory = "512M"
-				}
-				limits {
-					memory = "1024M"
-				}
-			}
+			key1 = VALUE1 
+			KEY2 = value2
 		}
 	}
 	`)
