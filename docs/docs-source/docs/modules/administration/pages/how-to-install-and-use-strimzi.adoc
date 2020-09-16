@@ -47,7 +47,7 @@ strimzi-cluster-operator-9968fd8c9-fhqmj   1/1     Running   0          17s
 
 To create a Kafka cluster using Strimzi, we have to create a `CustomResource` of the kind `Kafka` in the namespace `cloudflow`. 
 
-NOTE: The Kafka cluster configuration shown here is meant for development and testing purposes only.
+NOTE: The Kafka cluster configuration shown here is meant for development and testing purposes only. Please consider your storage requirements and modify the custom resource accordingly for your intended usage.
 
 Create the YAML file containing the Kafka custom resource using the following snippet:
 
