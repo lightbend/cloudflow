@@ -68,9 +68,7 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("when I deploy an application", func() {
-
 		It("should start a deployment", func() {
-			//You must add your user and password here
 			output, err := cli.Deploy(swissKnifeApp, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
@@ -146,7 +144,6 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
-
 		It("should reconfigure the application", func(done Done) {
 			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
 			Expect(err).NotTo(HaveOccurred())
@@ -192,7 +189,6 @@ var _ = Describe("Application deployment", func() {
 			Expect(out).To(Equal(SecretResourceFilePassword))
 			close(done)
 		}, LongTimeout)
-
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {

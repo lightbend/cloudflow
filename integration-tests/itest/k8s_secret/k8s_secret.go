@@ -1,7 +1,6 @@
 package k8s_secret 
 
 import (
-
 	"context"
 	"fmt"
 	"strings"
@@ -17,7 +16,6 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
-
 
 func InitClient() *kubernetes.Clientset {
 	kubeconfig := os.Getenv("HOME") + "/.kube/config"
@@ -70,6 +68,5 @@ func ReadMountedSecret(namespace string, clientset *kubernetes.Clientset, podPar
 			return string(out), err
 		}
 	}
-
 	return  "Not matching pods with that file mounted",nil
 }
