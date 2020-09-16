@@ -362,8 +362,8 @@ func validateLabel(name string, prefix string) error {
 }
 
 func validateLabelValue(labelValue string, label string) error {
-	labelValuePattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
-	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9]{1}$`)
+	labelValuePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
 	// check for HOCON error that is not caught by go/akka library
 	if strings.ContainsAny(labelValue, "{") || len(labelValue) == 0 {
 		return fmt.Errorf("label '%s' has a value that can't be parsed: '%s'", label, labelValue)
