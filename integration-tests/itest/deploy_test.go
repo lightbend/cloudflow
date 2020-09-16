@@ -57,7 +57,6 @@ var _ = Describe("Application deployment", func() {
 			}
 
 		})
-
 	})
 
 	Context("the cluster is clean for testing", func() {
