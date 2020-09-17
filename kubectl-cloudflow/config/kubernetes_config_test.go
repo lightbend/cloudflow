@@ -14,20 +14,20 @@ func Test_validateConfigLabels(t *testing.T) {
 		labels {
 			key1 = value1
 			key2 = value2
-		} containers.container {
-			resources {
-				requests {
-					cpu = 2
-					memory = "512M"
-				}
-				limits {
-					memory = "1024M"
-				}
-			}
 		}
 	}
 	`)
 	assert.Empty(t, validateConfig(labelConfigSection, spec))
+
+	labelConfigSectionUppercase := newConfig(`
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		labels {
+			key1 = VALUE1 
+			KEY2 = value2
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(labelConfigSectionUppercase, spec))
 
 	badLabelConfigValueEmpty := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods {
