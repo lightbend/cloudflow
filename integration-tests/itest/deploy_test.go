@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
@@ -30,6 +31,10 @@ const (
 	UpdateAkkaProcessResourcesFile = "./resources/update_akka_process_resources.conf"
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
+	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
+	SecretResourceFile             = "./resources/secret.yaml"
+	SecretResourceFilePassword     = "1f2d1e2e67df"
+	SecretResourceFileMountingPath = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
 	UpdateAkkaConfigurationFile    = "./resources/update_akka_config.conf"
 	UpdateAkkaConfigOutput         = "log-dead-letters=[15]"
@@ -138,7 +143,6 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
-
 		It("should reconfigure the application", func(done Done) {
 			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
 			Expect(err).NotTo(HaveOccurred())
@@ -159,6 +163,31 @@ var _ = Describe("Application deployment", func() {
 			checkAnyPodLogForOutput("flink-egress", UpdateConfigPayload)
 			close(done)
 		}, XLongTimeout)
+	})
+
+	Context("Application swiss-knife is deployed and running", func() {
+		clientset := k8s_secret.InitClient()
+
+		It("should deploy a secret", func() {
+			_, err := k8s_secret.CreateSecret(SecretResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reconfigure akka streamlets to add a secret as mounting file", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingSecret)
+			Expect(err).NotTo(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
+
+		It("should find specifig content in the secret mounted file in any akka streamlet", func(done Done) {
+			out, err := k8s_secret.ReadMountedSecret(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountingPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(SecretResourceFilePassword))
+			close(done)
+		}, LongTimeout)
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
