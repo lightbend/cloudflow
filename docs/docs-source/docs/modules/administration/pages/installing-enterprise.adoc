@@ -33,7 +33,7 @@ Once configured, we can execute the Helm command to install the Cloudflow enterp
 ----
 helm install cloudflow-enterprise-components cloudflow-helm-charts/cloudflow-enterprise-components \
   --namespace cloudflow \
-  --set enterpriseOperatorVersion=2.0.10 \
+  --set enterpriseOperatorVersion={cloudflow-version} \
   --set enterprise-suite.imageCredentials.username="$DOCKER_USERNAME" \
   --set enterprise-suite.imageCredentials.password="$DOCKER_PASSWORD"
 ----
