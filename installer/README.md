@@ -1,7 +1,11 @@
 # Cloudflow Installer
+
 ## Introduction
 
-**NOTE** Please use https://github.com/lightbend/cloudflow-helm-charts instead, which supercedes this project. The Cloudflow Installer operator project is going to be removed in the near future.
+The Cloudflow Installer operator is being replaced by [helm charts](https://github.com/lightbend/cloudflow-helm-charts) and is going to be removed in the near future.
+
+After [Starting a Kubernetes Cluster](start-cluster.md), follow the installation
+instructions from the [Cloudflow documentation](https://cloudflow.io/docs/current/administration/index.html).
 
 ### Prerequisite
 
