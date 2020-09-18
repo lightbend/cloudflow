@@ -27,7 +27,7 @@ That is, the _latest-greatest_ changes that aren't released yet.
 The corresponding URL mapping is: https://cloudflow.io/docs/dev/index.html
 
 Any other version, is addressed by its explicit version number. 
-For example: https://cloudflow.io/docs/v1.3.4/index.html
+For example: https://cloudflow.io/docs/1.3.3/index.html
 
 In general, the versions produced by our documentation process follow the current mapping to names and git branches:
 
