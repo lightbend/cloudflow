@@ -182,7 +182,7 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		It("should find specifig content in the secret mounted file in any akka streamlet", func(done Done) {
+		It("should find specific content in the secret mounted file in any akka streamlet", func(done Done) {
 			out, err := k8s_secret.ReadMountedSecret(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountingPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(SecretResourceFilePassword))
