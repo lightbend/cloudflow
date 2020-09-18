@@ -20,8 +20,8 @@ spark:
   - 'core/cloudflow-spark-testkit/**/*'
   - 'core/cloudflow-spark-tests/**/*'
 
-operator:
-  - 'core/cloudflow-operator/**/*'
+#operator:
+#  - 'core/cloudflow-operator/**/*'
 
 streamlets:
   - 'core/cloudflow-streamlets/**/*'
