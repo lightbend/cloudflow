@@ -10,20 +10,22 @@ This instruction shows how to install the Cloudflow Enterprise components. These
 
 == Installing Enterprise components
 
-Before installing, you need to make sure you have the credentials required to download the cloudflow-enterprise components from the Lightbend commercial repository.
+Before installing, you need to make sure you have the https://portal.lightbend.com/LightbendPlatform/Credentials[credentials] required to download the cloudflow-enterprise components from the Lightbend commercial repository.
 
 Add the Lightbend Helm repository and update the local index:
 
   helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
   helm repo update
 
-Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. 
+Install the components, note that you set the `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` environment variables before executing this command. Set `$DOCKER_USERNAME` and `$DOCKER_PASSWORD` to the https://portal.lightbend.com/LightbendPlatform/Credentials[username and password of the Lightbend commercial repository]. 
 
 We recommend using the following command to create an environment variable for username and password (here username/password are your credentials to the Lightbend docker repository - bintray).
 *This is to avoid storing this information in the shell's history file.*
 
   read DOCKER_USERNAME
   read -s DOCKER_PASSWORD
+
+
 
 TIP: If you want to see the password typed in, remove the `-s` (for silent) flag.
 
