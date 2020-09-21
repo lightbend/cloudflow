@@ -1,78 +1,88 @@
-## Spark-based Cloudflow Application using Avro encoding
+## Spark-based Cloudflow Application using protobuf encoding
 
 ### Problem Definition
 
-In this application we use a an ingress to generate random data from a set of virtual sensors, use Spark to emit moving average values for each sensor id and the report the values to the console egress.
-All Avro message definitions can be found [here](src/main/avro).
-Avro encoding is enabled through usage of `AvroInlet` and `AvroOutlet`and usage of the `cloudflow.spark.sql.SQLImplicits._` import.
+In this application we use an ingress to generate random data from a set of virtual sensors, use Spark to emit moving average values for each sensor id and the report the values to the console egress.
+All Protobuf message definitions can be found [here](src/main/protobuf).
+Protobuf encoding is enabled through usage of `ProtoInlet` and `Protoutlet` and usage of the `scalapb.spark.Implicits._` import.
 
-### Running locally
+Note: `scalapb.spark.Implicits._` import is incompatible with `cloudflow.spark.sql.SQLImplicits._`.
+The two cannot be used together in the same class. As a result, if an implementation is using any of the custom
+scala case classes (or Avro), encoders for these classes have to be defined. For example a
+[SparkRandomGenDataIngress](src/main/scala/sensors/proto/SparkRandomGenDataIngress.scala) class is using a custom 
+case class `Rate`. To use this class in Spark streaming, the following is added
 
-Steps:
-
-* Start local execution:
-
-```bash
-$ sbt runLocal
-```
-
-At the very end you should see locations of log files for components
-
-* Tail the log
-
-```bash
-$ tail -f <log location>
-```
-
-
-Verify that you can see application output:
-
-````
--------------------------------------------
-Batch: n
--------------------------------------------
-+------+-----+------------------+
-|   src|gauge|             value|
-+------+-----+------------------+
-|src-97|  oil| 11.28699131177144|
-|src-33|  gas| 54.13269242596257|
-|src-33|  gas| 988.3230454723247|
-|src-97|  gas| 148.3055826758501|
-|src-97|  gas| 148.3055826758501|
-|src-33|  gas| 54.13269242596257|
-|src-97|  oil|  760.024470736732|
-|src-97|  oil|  760.024470736732|
-|src-33|  gas| 988.3230454723247|
-|src-97|  gas|1042.3404196321565|
-|src-97|  gas|1042.3404196321565|
-|src-33|  oil| 27.75132596682821|
-|src-33|  gas| 976.6856203943967|
-|src-97|  gas| 385.3532592940638|
-|src-33|  gas| 976.6856203943967|
-|src-33|  oil| 27.75132596682821|
-|src-97|  gas| 385.3532592940638|
-|src-33|  gas|1269.5736118755415|
-|src-97|  oil|188.75469481408513|
-|src-33|  gas|1269.5736118755415|
-+------+-----+------------------+
-only showing top 20 rows
-
+````Scala
+implicit val rateEncoder = Encoders.product[Rate]
 ````
 
-### Example Deployment on Cluster
-
+#### Running locally
+ 
+ Steps:
+ 
+ * Start local execution:
+ 
+ ```bash
+ $ sbt runLocal
+ ```
+ 
+ At the very end you should see locations of log files for components
+ 
+ * Tail the log
+ 
+ ```bash
+ $ tail -f <log location>
+ ```
+ 
+ 
+ Verify that you can see application output:
+ 
+ ````
+ -------------------------------------------
+ Batch: n
+ -------------------------------------------
+ +------+-----+------------------+
+ |   src|gauge|             value|
+ +------+-----+------------------+
+ |src-97|  oil| 11.28699131177144|
+ |src-33|  gas| 54.13269242596257|
+ |src-33|  gas| 988.3230454723247|
+ |src-97|  gas| 148.3055826758501|
+ |src-97|  gas| 148.3055826758501|
+ |src-33|  gas| 54.13269242596257|
+ |src-97|  oil|  760.024470736732|
+ |src-97|  oil|  760.024470736732|
+ |src-33|  gas| 988.3230454723247|
+ |src-97|  gas|1042.3404196321565|
+ |src-97|  gas|1042.3404196321565|
+ |src-33|  oil| 27.75132596682821|
+ |src-33|  gas| 976.6856203943967|
+ |src-97|  gas| 385.3532592940638|
+ |src-33|  gas| 976.6856203943967|
+ |src-33|  oil| 27.75132596682821|
+ |src-97|  gas| 385.3532592940638|
+ |src-33|  gas|1269.5736118755415|
+ |src-97|  oil|188.75469481408513|
+ |src-33|  gas|1269.5736118755415|
+ +------+-----+------------------+
+ only showing top 20 rows
+ 
+ ````
+ 
+ ### Example Deployment on Cluster
+ 
 Steps:
 
-* Make sure you have installed a cluster and you are running Cloudflow (check [documentation](https://cloudflow.io/docs/current/administration/installing-cloudflow.html) for cluster install).
-Make sure you have access to your cluster:
-
-* Add your favorite docker registry to your sbt project 
-
-* Build the application.
-
-```bash
-$ sbt buildApp
-```
+** Make sure you have installed a cluster and you are running Cloudflow (check [documentation](https://cloudflow.io/docs/current/administration/installing-cloudflow.html) for cluster install).
+ Make sure you have access to your cluster:
+ 
+ * Add your favorite docker registry to your sbt project 
+ 
+ * Build the application.
+ 
+ ```bash
+ $ sbt buildApp
+ ```
 At the very end you should see the application image built and instructions for how to deploy it:
 
 ```
@@ -220,3 +230,16 @@ only showing top 20 rows
 ```bash
 $ kubectl cloudflow undeploy spark-sensors
 ```
+### Protobuf vs Avro
+
+This project demonstrates the usage of Protobuf for message encoding. Protobuf is enabled through usage of
+[Scala-PB Spark](https://scalapb.github.io/docs/sparksql/).
+ScalaPB comes with its own `implicits` - `scalapb.spark.Implicits._` which is not compatible with `cloudflow.spark.sql.SQLImplicits._`
+The following are the rules for using imports.
+
+* When protobufs are not used, you should use `cloudflow.spark.sql.SQLImplicits._` in all classes as required - see [MovingAverageSparklet](src/main/scala/sensors/proto/MovingAverageSparklet.scala) for an example.
+* When protobufs are used, you should use `scalapb.spark.Implicits._`. Here are the caveats. 
+You may want to import `cloudflow.spark.sql.SQLImplicits.StringToColumn` to convert $"col name" into a Column.
+If you use custom scala classes in you Spark calculations, you need to explicitly create encoder for it. See
+[SparkRandomGenDataIngress](src/main/scala/sensors/proto/SparkRandomGenDataIngress.scala) for example.
+* Usage of both imports in the same class will lead to problems.

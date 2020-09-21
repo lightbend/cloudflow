@@ -20,10 +20,8 @@ import java.io.File
 
 import com.typesafe.config.Config
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.encoders.{ ExpressionEncoder, RowEncoder }
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
+import org.apache.spark.sql.streaming._
 import cloudflow.spark.SparkStreamletContext
-import cloudflow.spark.avro.{ SparkAvroDecoder, SparkAvroEncoder }
 import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.streamlets._
 
@@ -38,12 +36,9 @@ class SparkStreamletContextImpl(
   val storageDir           = config.getString("storage.mountPath")
   val maxOffsetsPerTrigger = config.getLong("cloudflow.spark.read.options.max-offsets-per-trigger")
   def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = {
-
-    implicit val inRowEncoder: ExpressionEncoder[Row] = RowEncoder(encoder.schema)
-    val schema                                        = inPort.schemaAsString
-    val topic                                         = findTopicForPort(inPort)
-    val srcTopic                                      = topic.name
-    val brokers                                       = runtimeBootstrapServers(topic)
+    val topic    = findTopicForPort(inPort)
+    val srcTopic = topic.name
+    val brokers  = runtimeBootstrapServers(topic)
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -58,12 +53,7 @@ class SparkStreamletContextImpl(
 
     val rawDataset = src.select($"value").as[Array[Byte]]
 
-    val dataframe: Dataset[Row] = rawDataset.mapPartitions { iter ⇒
-      val avroDecoder = new SparkAvroDecoder[In](schema)
-      iter.map(avroDecoder.decode)
-    }(inRowEncoder)
-
-    dataframe.as[In]
+    rawDataset.map(inPort.codec.decode(_))
   }
 
   def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
@@ -78,8 +68,13 @@ class SparkStreamletContextImpl(
       typeTag: TypeTag[Out]
   ): StreamingQuery = {
 
-    val avroEncoder   = new SparkAvroEncoder[Out](outPort.schemaAsString)
-    val encodedStream = avroEncoder.encodeWithKey(stream, outPort.partitioner)
+    val encodedStream = stream.map { value ⇒
+      val key = outPort.partitioner match {
+        case RoundRobinPartitioner => null
+        case _                     => outPort.partitioner(value).getBytes()
+      }
+      EncodedKV(key, outPort.codec.encode(value))
+    }
 
     val topic     = findTopicForPort(outPort)
     val destTopic = topic.name
@@ -120,3 +115,5 @@ class SparkStreamletContextImpl(
     dir.getAbsolutePath
   }
 }
+
+case class EncodedKV(key: Array[Byte], value: Array[Byte])
