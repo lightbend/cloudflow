@@ -67,6 +67,10 @@ var _ = Describe("Application deployment", func() {
 			err := ensureAppNotDeployed(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
 		})
+		It("should not have secrets remaining from previous runs of test app", func() {
+			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	Context("when I deploy an application", func() {
