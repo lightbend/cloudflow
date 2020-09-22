@@ -59,6 +59,26 @@ func DeleteSecret(secretName string, namespace string, clientset *kubernetes.Cli
 	return secretsClient.Delete(context.TODO(), secretName, metaV1.DeleteOptions{})
 }
 
+func DeleteSecrets(namespace string, clientset *kubernetes.Clientset) error {
+	secrets, err := GetSecrets(namespace, clientset)
+	if err != nil {
+		return err
+	}
+	for _, sec := range secrets.Items {
+		fmt.Println("deleting %s", sec.ObjectMeta.Name)
+		err := DeleteSecret(sec.ObjectMeta.Name, namespace, clientset)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetSecrets(namespace string, clientset *kubernetes.Clientset) (*coreV1.SecretList, error) {
+	secretsClient := clientset.CoreV1().Secrets(namespace)
+	return secretsClient.List(context.TODO(), metaV1.ListOptions{})
+}
+
 func ReadMountedSecret(namespace string, clientset *kubernetes.Clientset, podPartialName string, readFilePath string) (string, error) {
 
 	coreV1Client := clientset.CoreV1()
@@ -66,7 +86,6 @@ func ReadMountedSecret(namespace string, clientset *kubernetes.Clientset, podPar
 	if err != nil {
 		panic(err.Error())
 	}
-
 	for _, pod := range pods.Items {
 		if strings.Contains(pod.Name, podPartialName) {
 			cmd := exec.Command("kubectl", "exec", pod.Name, "-n", namespace, "--", "cat", readFilePath)
