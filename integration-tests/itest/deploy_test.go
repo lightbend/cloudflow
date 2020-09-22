@@ -191,7 +191,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 		It("should delete this secret", func() {
-			err := k8s_secret.Delete(SecretResourceFileName, swissKnifeApp.Name, clientset)
+			err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})

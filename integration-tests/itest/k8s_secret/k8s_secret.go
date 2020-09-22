@@ -53,7 +53,7 @@ func CreateSecret(path string, namespace string, clientset *kubernetes.Clientset
 	return secret, err
 }
 
-func Delete(secretName string, namespace string, clientset *kubernetes.Clientset) error {
+func DeleteSecret(secretName string, namespace string, clientset *kubernetes.Clientset) error {
 
 	secretsClient := clientset.CoreV1().Secrets(namespace)
 	return secretsClient.Delete(context.TODO(), secretName, metaV1.DeleteOptions{})
