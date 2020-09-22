@@ -33,6 +33,7 @@ const (
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
 	SecretResourceFile             = "./resources/secret.yaml"
+	SecretResourceFileName         = "mysecret"
 	SecretResourceFilePassword     = "1f2d1e2e67df"
 	SecretResourceFileMountingPath = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
@@ -188,6 +189,11 @@ var _ = Describe("Application deployment", func() {
 			Expect(out).To(Equal(SecretResourceFilePassword))
 			close(done)
 		}, LongTimeout)
+
+		It("should delete this secret", func() {
+			err := k8s_secret.Delete(SecretResourceFileName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
