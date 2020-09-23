@@ -33,6 +33,7 @@ const (
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
 	SecretResourceFile             = "./resources/secret.yaml"
+	SecretResourceFileName         = "mysecret"
 	SecretResourceFilePassword     = "1f2d1e2e67df"
 	SecretResourceFileMountingPath = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
@@ -46,6 +47,8 @@ var swissKnifeApp = cli.App{
 	CRFile: "./resources/swiss-knife.json",
 	Name:   "swiss-knife",
 }
+
+var clientset = k8s_secret.InitClient()
 
 var _ = Describe("Application deployment", func() {
 
@@ -62,6 +65,10 @@ var _ = Describe("Application deployment", func() {
 	Context("the cluster is clean for testing", func() {
 		It("should not have the test app", func() {
 			err := ensureAppNotDeployed(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should not have secrets remaining from previous runs of test app", func() {
+			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -166,7 +173,6 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("Application swiss-knife is deployed and running", func() {
-		clientset := k8s_secret.InitClient()
 
 		It("should deploy a secret", func() {
 			_, err := k8s_secret.CreateSecret(SecretResourceFile, swissKnifeApp.Name, clientset)
@@ -188,6 +194,11 @@ var _ = Describe("Application deployment", func() {
 			Expect(out).To(Equal(SecretResourceFilePassword))
 			close(done)
 		}, LongTimeout)
+
+		It("should delete this secret", func() {
+			err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
@@ -347,8 +358,10 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("A deployed application can be undeployed", func() {
-		It("should undeploy the test app", func(done Done) {
-			err := cli.Undeploy(swissKnifeApp)
+		It("should delete test secrets and undeploy the test app", func(done Done) {
+			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+			err = cli.Undeploy(swissKnifeApp)
 			Expect(err).NotTo(HaveOccurred())
 			err = cli.PollUntilAppPresenceIs(swissKnifeApp, false)
 			Expect(err).NotTo(HaveOccurred())

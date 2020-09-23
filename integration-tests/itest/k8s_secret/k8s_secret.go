@@ -1,12 +1,12 @@
-package k8s_secret 
+package k8s_secret
 
 import (
 	"context"
 	"fmt"
-	"strings"
 	"github.com/ghodss/yaml"
 	"io/ioutil"
-	
+	"strings"
+
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -30,7 +30,7 @@ func InitClient() *kubernetes.Clientset {
 	return clientset
 }
 
-func CreateSecret(path string, namespace string, clientset *kubernetes.Clientset)  (*coreV1.Secret, error) {
+func CreateSecret(path string, namespace string, clientset *kubernetes.Clientset) (*coreV1.Secret, error) {
 
 	secretsClient := clientset.CoreV1().Secrets(namespace)
 
@@ -53,20 +53,45 @@ func CreateSecret(path string, namespace string, clientset *kubernetes.Clientset
 	return secret, err
 }
 
-func ReadMountedSecret(namespace string, clientset *kubernetes.Clientset, podPartialName string, readFilePath string) (string, error){
+func DeleteSecret(secretName string, namespace string, clientset *kubernetes.Clientset) error {
+
+	secretsClient := clientset.CoreV1().Secrets(namespace)
+	return secretsClient.Delete(context.TODO(), secretName, metaV1.DeleteOptions{})
+}
+
+func DeleteSecrets(namespace string, clientset *kubernetes.Clientset) error {
+	secrets, err := GetSecrets(namespace, clientset)
+	if err != nil {
+		return err
+	}
+	for _, sec := range secrets.Items {
+		fmt.Println("deleting %s", sec.ObjectMeta.Name)
+		err := DeleteSecret(sec.ObjectMeta.Name, namespace, clientset)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetSecrets(namespace string, clientset *kubernetes.Clientset) (*coreV1.SecretList, error) {
+	secretsClient := clientset.CoreV1().Secrets(namespace)
+	return secretsClient.List(context.TODO(), metaV1.ListOptions{})
+}
+
+func ReadMountedSecret(namespace string, clientset *kubernetes.Clientset, podPartialName string, readFilePath string) (string, error) {
 
 	coreV1Client := clientset.CoreV1()
 	pods, err := coreV1Client.Pods(namespace).List(context.TODO(), metaV1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
-
 	for _, pod := range pods.Items {
-		if strings.Contains(pod.Name, podPartialName){
-			cmd := exec.Command("kubectl", "exec", pod.Name, "-n", namespace, "--","cat", readFilePath)
+		if strings.Contains(pod.Name, podPartialName) {
+			cmd := exec.Command("kubectl", "exec", pod.Name, "-n", namespace, "--", "cat", readFilePath)
 			out, err := cmd.CombinedOutput()
 			return string(out), err
 		}
 	}
-	return  "Not matching pods with that file mounted",nil
+	return "Not matching pods with that file mounted", nil
 }
