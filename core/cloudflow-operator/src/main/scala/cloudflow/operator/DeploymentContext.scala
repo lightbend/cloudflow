@@ -27,6 +27,7 @@ import skuber.Resource._
  */
 case class DeploymentContext(kafkaContext: KafkaContext,
                              akkaRunnerSettings: AkkaRunnerSettings,
+                             akkaMicroserviceRunnerSettings: AkkaMicroserviceRunnerSettings,
                              sparkRunnerSettings: SparkRunnerSettings,
                              flinkRunnerSettings: FlinkRunnerSettings,
                              persistentStorageSettings: PersistentStorageSettings,
@@ -64,6 +65,12 @@ sealed trait RunnerSettings {
 }
 
 final case class AkkaRunnerSettings(
+    resourceConstraints: ResourceConstraints,
+    javaOptions: String,
+    prometheusRules: String
+) extends RunnerSettings
+
+final case class AkkaMicroserviceRunnerSettings(
     resourceConstraints: ResourceConstraints,
     javaOptions: String,
     prometheusRules: String

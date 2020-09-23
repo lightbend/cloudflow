@@ -81,6 +81,12 @@ object Name {
   def ofAkkaRole() =
     "cloudflow-app-akka-role"
 
+  def ofAkkaMicroserviceRoleBinding() =
+    "cloudflow-app-akka-microservice-rolebinding"
+
+  def ofAkkaMicroserviceRole() =
+    "cloudflow-app-akka-microservice-role"
+
   def ofSparkRoleBinding() =
     "cloudflow-app-spark-rolebinding"
 

@@ -19,6 +19,7 @@ import java.time.ZonedDateTime
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
+import cloudflow.operator.runner.AkkaMicroserviceRunner
 import cloudflow.operator.runner.{ AkkaRunner, FlinkRunner, SparkRunner }
 import cloudflow.operator.{ CloudflowApplication, CloudflowLabels, DeploymentContext }
 import skuber.json.format.eventFmt
@@ -82,9 +83,10 @@ object EventActions {
     )
 
   private def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.runtime match {
-    case AkkaRunner.runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-    case SparkRunner.runtime ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
-    case FlinkRunner.runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
+    case AkkaRunner.runtime             ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
+    case AkkaMicroserviceRunner.runtime ⇒ streamlet.replicas.getOrElse(AkkaMicroserviceRunner.DefaultReplicas)
+    case SparkRunner.runtime            ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
+    case FlinkRunner.runtime            ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
   }
 
   def undeployEvent(app: CloudflowApplication.CR, namespace: String, cause: ObjectResource)(

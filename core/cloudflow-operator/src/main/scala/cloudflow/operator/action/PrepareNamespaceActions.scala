@@ -18,6 +18,8 @@ package cloudflow.operator
 package action
 
 import scala.collection.immutable._
+
+import cloudflow.operator.runner.AkkaMicroserviceRunner
 import skuber._
 import cloudflow.operator.runner.{ AkkaRunner, FlinkRunner, Runner, SparkRunner }
 
@@ -37,8 +39,9 @@ object PrepareNamespaceActions {
 
   private def extractRunners(app: CloudflowApplication.CR): Vector[Runner[_]] =
     app.spec.streamlets.map(streamlet => streamlet.descriptor.runtime.name).distinct.map {
-      case AkkaRunner.runtime  => AkkaRunner
-      case FlinkRunner.runtime => FlinkRunner
-      case SparkRunner.runtime => SparkRunner
+      case AkkaRunner.runtime             => AkkaRunner
+      case AkkaMicroserviceRunner.runtime => AkkaMicroserviceRunner
+      case FlinkRunner.runtime            => FlinkRunner
+      case SparkRunner.runtime            => SparkRunner
     }
 }

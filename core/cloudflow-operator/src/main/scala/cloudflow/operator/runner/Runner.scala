@@ -212,9 +212,10 @@ trait Runner[T <: ObjectResource] {
     val labels          = CloudflowLabels(app)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val prometheusConfig = deployment.runtime match {
-      case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules)
-      case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerSettings.prometheusRules)
-      case FlinkRunner.runtime ⇒ PrometheusConfig(ctx.flinkRunnerSettings.prometheusRules)
+      case AkkaRunner.runtime             ⇒ PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules)
+      case AkkaMicroserviceRunner.runtime ⇒ PrometheusConfig(ctx.akkaMicroserviceRunnerSettings.prometheusRules)
+      case SparkRunner.runtime            ⇒ PrometheusConfig(ctx.sparkRunnerSettings.prometheusRules)
+      case FlinkRunner.runtime            ⇒ PrometheusConfig(ctx.flinkRunnerSettings.prometheusRules)
     }
 
     val configData = Vector(

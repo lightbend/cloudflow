@@ -1,0 +1,96 @@
+{
+  "apiVersion": "cloudflow.lightbend.com/v1alpha1",
+  "kind": "CloudflowApplication",
+  "metadata": {
+    "annotations": {
+      "com.lightbend.cloudflow/created-by-cli-version": "2.0.10 (717-6cf9b406)"
+    },
+    "creationTimestamp": "2020-09-22T19:36:32Z",
+    "generation": 1,
+    "labels": {
+      "app.kubernetes.io/managed-by": "cloudflow",
+      "app.kubernetes.io/part-of": "shopping-cart-service",
+      "com.lightbend.cloudflow/app-id": "shopping-cart-service"
+    },
+    "managedFields": [
+      {
+        "apiVersion": "cloudflow.lightbend.com/v1alpha1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:com.lightbend.cloudflow/created-by-cli-version": {},
+              "f:kubectl.kubernetes.io/last-applied-configuration": {}
+            },
+            "f:labels": {
+              ".": {},
+              "f:app.kubernetes.io/managed-by": {},
+              "f:app.kubernetes.io/part-of": {},
+              "f:com.lightbend.cloudflow/app-id": {}
+            }
+          },
+          "f:spec": {
+            ".": {},
+            "f:agent_paths": {
+              ".": {},
+              "f:prometheus": {}
+            },
+            "f:app_id": {},
+            "f:app_version": {},
+            "f:deployments": {},
+            "f:library_version": {},
+            "f:streamlets": {},
+            "f:version": {}
+          }
+        },
+        "manager": "kubectl",
+        "operation": "Update",
+        "time": "2020-09-22T19:36:32Z"
+      }
+    ],
+    "name": "shopping-cart-service",
+    "namespace": "shopping-cart-service",
+    "resourceVersion": "95377",
+    "selfLink": "/apis/cloudflow.lightbend.com/v1alpha1/namespaces/shopping-cart-service/cloudflowapplications/shopping-cart-service",
+    "uid": "701cf2a8-6d03-4b98-a448-58573fc9630c"
+  },
+  "spec": {
+    "agent_paths": {
+      "prometheus": "/prometheus/jmx_prometheus_javaagent.jar"
+    },
+    "app_id": "shopping-cart-service",
+    "app_version": "728-858caca-dirty",
+    "deployments": [
+      {
+        "class_name": "shopping.cart.Main",
+        "config": {},
+        "image": "docker.io/patriknw/shopping-cart-service-scala:0.1-39-141c65c6-20200916-1227",
+        "name": "shopping-cart-service.main",
+        "port_mappings": {},
+        "runtime": "akka-microservice",
+        "secret_name": "shopping-cart-service",
+        "streamlet_name": "shopping-cart-service",
+        "volume_mounts": null
+      }
+    ],
+    "library_version": "2.0.10",
+    "streamlets": [
+      {
+        "descriptor": {
+          "attributes": [],
+          "class_name": "shopping.cart.Main",
+          "config_parameters": [],
+          "description": "",
+          "inlets": [],
+          "labels": [],
+          "outlets": [],
+          "runtime": "akka-microservice",
+          "volume_mounts": []
+        },
+        "name": "shopping-cart-service"
+      }
+    ],
+    "version": "3"
+  }
+}

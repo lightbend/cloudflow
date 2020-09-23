@@ -134,6 +134,22 @@ object StreamletChangeEvent extends Event {
                   )
               }
             )
+          case AkkaMicroserviceRunner.runtime ⇒
+            Action.provided[Secret, Deployment](
+              streamletDeployment.secretName,
+              app.metadata.namespace, {
+                case Some(secret) =>
+                  val resource =
+                    AkkaMicroserviceRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+                  val labeledResource =
+                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
+                  Action.createOrUpdate(labeledResource, runner.AkkaMicroserviceRunner.editor)
+                case None =>
+                  throw new Exception(
+                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  )
+              }
+            )
           case SparkRunner.runtime ⇒
             Action.provided[Secret, SparkResource.CR](
               streamletDeployment.secretName,

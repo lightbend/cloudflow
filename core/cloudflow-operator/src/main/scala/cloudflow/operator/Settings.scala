@@ -92,6 +92,15 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     )
   }
 
+  private def getAkkaMicroserviceRunnerSettings(config: Config, runnerPath: String, runnerStr: String): AkkaMicroserviceRunnerSettings = {
+    val runnerConfig = config.getConfig(runnerPath)
+    AkkaMicroserviceRunnerSettings(
+      getResourceConstraints(runnerConfig),
+      getNonEmptyString(runnerConfig, "java-opts"),
+      getPrometheusRules(runnerStr)
+    )
+  }
+
   private def getSparkRunnerSettings(config: Config, root: String, runnerStr: String): SparkRunnerSettings = {
     val driverPath   = s"$root.deployment.spark-runner-driver"
     val executorPath = s"$root.deployment.spark-runner-executor"
@@ -123,6 +132,11 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
     case runner.AkkaRunner.runtime ⇒
+      appendResourcesToString(
+        "prometheus-rules/base.yaml",
+        "prometheus-rules/kafka-client.yaml"
+      )
+    case runner.AkkaMicroserviceRunner.runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/kafka-client.yaml"
@@ -172,7 +186,9 @@ final case class Settings(config: Config) extends Extension {
     replicationFactor
   )
 
-  val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
+  val akkaRunnerSettings = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
+  val akkaMicroserviceRunnerSettings =
+    getAkkaMicroserviceRunnerSettings(config, s"$root.deployment.akka-microservice-runner", runner.AkkaMicroserviceRunner.runtime)
   val sparkRunnerSettings       = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
   val flinkRunnerSettings       = getFlinkRunnerSettings(config, root, runner.FlinkRunner.runtime)
   val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
@@ -191,6 +207,7 @@ final case class Settings(config: Config) extends Extension {
         ConfigFactory.empty()
       ),
       akkaRunnerSettings,
+      akkaMicroserviceRunnerSettings,
       sparkRunnerSettings,
       flinkRunnerSettings,
       persistentStorageSettings,

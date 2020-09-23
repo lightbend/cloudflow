@@ -38,6 +38,16 @@ trait TestDeploymentContext {
         javaOptions = "-Xmx1024",
         "(prometheus rules)"
       ),
+      akkaMicroserviceRunnerSettings = AkkaMicroserviceRunnerSettings(
+        resourceConstraints = ResourceConstraints(
+          cpuRequests = Quantity("100m"),
+          memoryRequests = Quantity("128m"),
+          cpuLimits = Some(Quantity("1")),
+          memoryLimits = Some(Quantity("512m"))
+        ),
+        javaOptions = "-Xmx1024",
+        "(prometheus rules)"
+      ),
       sparkRunnerSettings = SparkRunnerSettings(
         driverSettings = SparkPodSettings(
           cores = Some(1),
