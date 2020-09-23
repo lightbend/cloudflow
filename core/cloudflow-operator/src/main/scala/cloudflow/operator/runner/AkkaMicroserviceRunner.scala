@@ -16,8 +16,6 @@
 
 package cloudflow.operator.runner
 
-import java.net.URL
-
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.CloudflowApplication
 import cloudflow.operator.CloudflowLabels
@@ -45,7 +43,6 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
 
   override def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
   override val runtime            = "akka-microservice"
-  val requiresPersistentVolume    = false // FIXME remove?
 
   override def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
@@ -121,12 +118,6 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
 
     val podsConfig = getPodsConfig(configSecret)
 
-    // TODO check if this is still valid.
-    // Pass this argument to the entry point script. The top level entry point will be a
-    // cloudflow-entrypoint.sh which will route to the appropriate entry point based on the
-    // arguments passed to it
-    val args = List("akka")
-
     val configMapName = Name.ofConfigMap(deployment.name)
 
     val volume = Volume(configMapName, ConfigMapVolumeSource(configMapName))
@@ -160,14 +151,9 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
       resources = Some(resourceRequirements),
       image = deployment.image,
       env = environmentVariables,
-      args = args,
       ports = akkaManagementPort :: akkaHttpPort :: k8sPrometheusMetricsPort :: k8sStreamletPorts,
       volumeMounts = List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
-
-    // FIXME
-    val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
-    val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
     val container = c
     //FIXME .withImagePullPolicy(ImagePullPolicy)
@@ -245,12 +231,7 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
       )
 
     deploymentResource.copy(
-      spec = deploymentResource.spec.map(s ⇒
-        s.copy(strategy = deployment.endpoint
-          .map(_ ⇒ Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
-          .orElse(Some(Deployment.Strategy(Deployment.StrategyType.Recreate)))
-        )
-      )
+      spec = deploymentResource.spec.map(s ⇒ s.copy(strategy = Some(Deployment.Strategy(Deployment.StrategyType.RollingUpdate))))
     )
   }
 
@@ -330,9 +311,6 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
   val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
   val DefaultReplicas                   = 2
   val ImagePullPolicy                   = Container.PullPolicy.Always // FIXME
-
-  val HealthCheckPath = "/checks/healthy"
-  val ReadyCheckPath  = "/checks/ready"
 
   val ProbeInitialDelaySeconds = 20
   val ProbeTimeoutSeconds      = 1
