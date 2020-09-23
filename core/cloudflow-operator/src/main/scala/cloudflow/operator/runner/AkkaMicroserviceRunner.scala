@@ -16,6 +16,8 @@
 
 package cloudflow.operator.runner
 
+import java.net.URL
+
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.CloudflowApplication
 import cloudflow.operator.CloudflowLabels
@@ -114,6 +116,8 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
     val k8sStreamletPorts =
       deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
+    val akkaManagementPort       = Container.Port(8558, Protocol.TCP, name = "management")
+    val akkaHttpPort             = Container.Port(8080, Protocol.TCP, name = "http")
 
     val podsConfig = getPodsConfig(configSecret)
 
@@ -157,7 +161,7 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
       image = deployment.image,
       env = environmentVariables,
       args = args,
-      ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
+      ports = akkaManagementPort :: akkaHttpPort :: k8sPrometheusMetricsPort :: k8sStreamletPorts,
       volumeMounts = List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
 
@@ -165,25 +169,24 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
     val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
-    val tempDir              = System.getProperty("java.io.tmpdir")
-    val pathToLivenessCheck  = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
-    val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
     val container = c
-      .withImagePullPolicy(ImagePullPolicy)
+    //FIXME .withImagePullPolicy(ImagePullPolicy)
       .withLivenessProbe(
         Probe(
-          ExecAction(List("/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")),
-          ProbeInitialDelaySeconds,
-          ProbeTimeoutSeconds,
-          Some(ProbePeriodSeconds)
+          HTTPGetAction(port = "management", path = "/alive"),
+          initialDelaySeconds = ProbeInitialDelaySeconds,
+          timeoutSeconds = ProbeTimeoutSeconds,
+          periodSeconds = Some(ProbePeriodSeconds),
+          failureThreshold = Some(ProbeFailureThreshold)
         )
       )
       .withReadinessProbe(
         Probe(
-          ExecAction(List("/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")),
-          ProbeInitialDelaySeconds,
-          ProbeTimeoutSeconds,
-          Some(ProbePeriodSeconds)
+          HTTPGetAction(port = "management", path = "/ready"),
+          initialDelaySeconds = ProbeInitialDelaySeconds,
+          timeoutSeconds = ProbeTimeoutSeconds,
+          periodSeconds = Some(ProbePeriodSeconds),
+          failureThreshold = Some(ProbeFailureThreshold)
         )
       )
 
@@ -222,17 +225,24 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
               ).mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
-        .addLabels(updateLabels)
+        .addLabels(updateLabels.updated("app", "shoppingcartservice"))
         .withPodSpec(podSpecSecretVolumesAdded)
 
+    // FIXME hardcoded shoppingcartservice labels
+
     val deploymentResource = Deployment(
-      metadata = ObjectMeta(name = podName,
-                            namespace = namespace,
-                            labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
-                            ownerReferences = ownerReferences)
+      metadata = ObjectMeta(
+        name = podName,
+        namespace = namespace,
+        labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent).updated("app", "shoppingcartservice"),
+        ownerReferences = ownerReferences
+      )
     ).withReplicas(deployment.replicas.getOrElse(DefaultReplicas))
       .withTemplate(template)
-      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))
+      .withLabelSelector(
+        LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName),
+                      LabelSelector.IsEqualRequirement("app", "shoppingcartservice"))
+      )
 
     deploymentResource.copy(
       spec = deploymentResource.spec.map(s ⇒
@@ -249,18 +259,18 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
   private def createResourceRequirements(podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
     var resourceRequirements = Resource.Requirements(
       requests = Map(
-        Resource.cpu    -> ctx.akkaRunnerSettings.resourceConstraints.cpuRequests,
-        Resource.memory -> ctx.akkaRunnerSettings.resourceConstraints.memoryRequests
+        Resource.cpu    -> ctx.akkaMicroserviceRunnerSettings.resourceConstraints.cpuRequests,
+        Resource.memory -> ctx.akkaMicroserviceRunnerSettings.resourceConstraints.memoryRequests
       )
     )
 
-    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits
+    resourceRequirements = ctx.akkaMicroserviceRunnerSettings.resourceConstraints.cpuLimits
       .map { cpuLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.cpu -> cpuLimit))
       }
       .getOrElse(resourceRequirements)
 
-    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits
+    resourceRequirements = ctx.akkaMicroserviceRunnerSettings.resourceConstraints.memoryLimits
       .map { memoryLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.memory -> memoryLimit))
       }
@@ -287,7 +297,12 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
       )
     } else Nil
 
-    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions) :: prometheusEnvVars
+    val defaultEnvironmentVariables =
+      EnvVar(JavaOptsEnvVar, ctx.akkaMicroserviceRunnerSettings.javaOptions) ::
+          // FIXME add to akkaMicroserviceRunnerSettings ?
+          EnvVar(BootstrapRequiredContactPoints, "2") ::
+          prometheusEnvVars
+
     val envVarsFomPodConfigMap = podsConfig.pods
       .get(PodsConfig.CloudflowPodName)
       .flatMap { podConfig =>
@@ -310,15 +325,17 @@ object AkkaMicroserviceRunner extends Runner[Deployment] {
   }
 
   val JavaOptsEnvVar                    = "JAVA_OPTS"
+  val BootstrapRequiredContactPoints    = "REQUIRED_CONTACT_POINT_NR"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
   val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
-  val DefaultReplicas                   = 1
-  val ImagePullPolicy                   = Container.PullPolicy.Always
+  val DefaultReplicas                   = 2
+  val ImagePullPolicy                   = Container.PullPolicy.Always // FIXME
 
   val HealthCheckPath = "/checks/healthy"
   val ReadyCheckPath  = "/checks/ready"
 
-  val ProbeInitialDelaySeconds = 10
+  val ProbeInitialDelaySeconds = 20
   val ProbeTimeoutSeconds      = 1
   val ProbePeriodSeconds       = 10
+  val ProbeFailureThreshold    = 10
 }

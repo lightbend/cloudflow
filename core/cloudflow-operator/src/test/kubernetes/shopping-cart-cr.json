@@ -65,7 +65,7 @@
       {
         "class_name": "shopping.cart.Main",
         "config": {},
-        "image": "docker.io/patriknw/shopping-cart-service-scala:0.1-39-141c65c6-20200916-1227",
+        "image": "docker.io/patriknw/shopping-cart-service-scala:0.2-1-2472dd18",
         "name": "shopping-cart-service.main",
         "port_mappings": {},
         "runtime": "akka-microservice",
