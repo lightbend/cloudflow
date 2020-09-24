@@ -159,18 +159,9 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 final case class Settings(config: Config) extends Extension {
   import Settings._
 
-  val partitionsPerTopic = getPartitionsPerTopic(config, s"$root.kafka.partitions-per-topic")
-  val replicationFactor  = getReplicationFactor(config, s"$root.kafka.replication-factor")
-
   val releaseVersion = getNonEmptyString(config, s"$root.release-version")
   val podName        = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
-
-  val kafka = KafkaSettings(
-    config.as[Option[String]](s"$root.kafka.bootstrap-servers"),
-    partitionsPerTopic,
-    replicationFactor
-  )
 
   val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
   val sparkRunnerSettings       = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
@@ -184,12 +175,6 @@ final case class Settings(config: Config) extends Extension {
 
   val deploymentContext = {
     DeploymentContext(
-      KafkaContext(
-        kafka.bootstrapServers,
-        kafka.partitionsPerTopic,
-        kafka.replicationFactor,
-        ConfigFactory.empty()
-      ),
       akkaRunnerSettings,
       sparkRunnerSettings,
       flinkRunnerSettings,
@@ -199,8 +184,6 @@ final case class Settings(config: Config) extends Extension {
     )
   }
 }
-
-final case class KafkaSettings(bootstrapServers: Option[String], partitionsPerTopic: Int, replicationFactor: Int)
 
 final case class Resources(request: String, limit: String)
 

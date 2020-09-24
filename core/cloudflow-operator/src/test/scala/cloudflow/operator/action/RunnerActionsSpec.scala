@@ -219,7 +219,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     (configMap.data must contain).key(RunnerConfig.AppConfigFilename)
     val mountedAppConfiguration = ConfigFactory.parseString(configMap.data(RunnerConfig.AppConfigFilename))
     val expectedAppConfiguration =
-      ConfigFactory.parseString(RunnerConfig(appId, appVersion, deployment, ctx.kafkaContext.bootstrapServers).data)
+      ConfigFactory.parseString(RunnerConfig(appId, appVersion, deployment).data)
     mountedAppConfiguration mustEqual expectedAppConfiguration
     (configMap.data must contain).key(PrometheusConfig.PrometheusConfigFilename)
     val mountedPromConfiguration  = configMap.data(PrometheusConfig.PrometheusConfigFilename)

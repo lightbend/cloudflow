@@ -15,15 +15,15 @@
  */
 
 package cloudflow.operator.action
-import scala.concurrent._
-import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.pattern._
-
 import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
+
+import scala.concurrent._
+import scala.concurrent.duration._
 
 /**
  * Captures an action to create, delete or update a Kubernetes resource.
@@ -101,6 +101,14 @@ object Action {
     new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
+   * Creates an [[CompositeAction]]. A single action that encapsulates other actions.
+   */
+  def composite[T <: ObjectResource](actions: Vector[Action[T]])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[T]
+  ): CompositeAction[T] = CompositeAction(actions)
+
+  /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
   def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: Option[T] => Action[R])(
@@ -108,6 +116,18 @@ object Action {
       resourceDefinition: ResourceDefinition[T]
   ) =
     new ProvidedAction(resourceName, namespace, fAction, format, resourceDefinition)
+
+  /**
+   * Creates an action provided that a list of resources with a label in a namespace are found.
+   */
+  def providedByLabel[T <: ObjectResource, R <: ObjectResource](labelKey: String,
+                                                                labelValues: Vector[String],
+                                                                namespace: String,
+                                                                fAction: ListResource[T] => Action[R])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[ListResource[T]]
+  ) =
+    new ProvidedByLabelAction(labelKey, labelValues, namespace, fAction, format, resourceDefinition)
 
   /**
    * Creates an [[UpdateStatusAction]].
@@ -295,6 +315,33 @@ final case class DeleteAction[T <: ObjectResource](
   }
 }
 
+final case class CompositeAction[T <: ObjectResource](
+    actions: Vector[Action[T]]
+) extends Action[T] {
+  val name = "composite"
+
+  def executing =
+    s"Composite $resourceName resource"
+  def executed =
+    s"Deleted $resourceName resource"
+
+  /**
+   * The names of the resources that this action is applied to
+   */
+  override def resourceName: String = s"composite[${actions.map(_.resourceName).mkString(",")}]"
+
+  /**
+   * The namespaces that the actions take place in
+   */
+  override def namespace: String = s"composite[${actions.map(_.namespace).mkString(",")}]"
+
+  /**
+   * Executes all actions
+   */
+  override def execute(client: RequestContext)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    Future.sequence(actions.map(_.execute(client))).map(_ => this)
+}
+
 final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val resourceName: String,
     val namespace: String,
@@ -328,6 +375,53 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
         .flatMap { existing =>
           getAction(existing).execute(client)
         }
+    getAndProvide.recoverWith {
+      case t: Throwable if retries > 0 =>
+        sys.log.error(t, "### executeWithRetry")
+        sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName, reason: ${t.getClass.getSimpleName}")
+        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+    }
+  }
+}
+
+final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
+    val labelKey: String,
+    val labelValues: Vector[String],
+    val namespace: String,
+    val getAction: ListResource[T] => Action[R],
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[ListResource[T]]
+) extends Action[R] {
+  val name = "provideByLabel"
+
+  val resourceName = "n/a"
+
+  def executing =
+    s"Providing a list of $namespace/$resourceName to next action"
+  def executed =
+    s"Provided a list of $namespace/$resourceName to next action"
+
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+    executeWithRetry(
+      client,
+      delay = 1.second,
+      retries = 60
+    )
+
+  private def executeWithRetry(
+      client: KubernetesClient,
+      delay: FiniteDuration,
+      retries: Int
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+    val selector: LabelSelector = LabelSelector(LabelSelector.InRequirement(labelKey, labelValues.toList))
+    def getAndProvide: Future[Action[R]] =
+      client
+        .usingNamespace(namespace)
+        .listSelected[ListResource[T]](selector)(skuber.json.format.ListResourceFormat[T], resourceDefinition, lc)
+        .flatMap { list =>
+          getAction(list).execute(client)
+        }
+
     getAndProvide.recoverWith {
       case t: Throwable if retries > 0 =>
         sys.log.error(t, "### executeWithRetry")

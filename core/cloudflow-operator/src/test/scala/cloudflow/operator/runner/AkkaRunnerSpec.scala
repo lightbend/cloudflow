@@ -17,8 +17,8 @@
 package cloudflow.operator.runner
 
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{PrometheusConfig, StreamletDeployment}
-import cloudflow.operator.{CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext}
+import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 import skuber._

@@ -22,8 +22,12 @@ import java.util.Collections
 import akka.actor.ActorSystem
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
-import com.typesafe.config.{ Config, ConfigFactory }
-import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
+import cloudflow.operator.event.ConfigInputChangeEvent
+import com.typesafe.config.Config
+import org.apache.kafka.clients.admin.Admin
+import org.apache.kafka.clients.admin.AdminClientConfig
+import org.apache.kafka.clients.admin.CreateTopicsOptions
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.common.KafkaFuture
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Format
@@ -33,7 +37,9 @@ import skuber.json.format._
 
 import scala.collection.immutable._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 
 /**
@@ -68,7 +74,9 @@ object TopicActions {
   }
 
   type TopicResource = ConfigMap
-  val DefaultConfigurationName = Some("default")
+  val DefaultConfigurationName = "default"
+  val KafkaClusterNameFormat   = "cloudflow-kafka-cluster-%s"
+  val KafkaClusterNameLabel    = "cloudflow.lightbend.com/kafka-cluster-name"
 
   /**
    * Create a topic using the correct Kafka configuration.
@@ -86,7 +94,7 @@ object TopicActions {
       providedTopic.cluster
         .map { cluster =>
           Action.provided[Secret, ConfigMap](
-            s"cloudflow-kafka-cluster-$cluster",
+            String.format(KafkaClusterNameFormat, cluster),
             ctx.podNamespace, {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, namespace, labels, providedTopic)
               case None         =>
@@ -96,11 +104,11 @@ object TopicActions {
           )
         }
         .getOrElse {
-          if (topic.cluster.eq(DefaultConfigurationName))
+          if (topic.cluster.eq(Some(DefaultConfigurationName)))
             throw new Exception(
               "A default Kafka configuration was not defined during installation of cloudflow-operator. Cannot create managed topics."
             )
-          useClusterConfiguration(topic.copy(cluster = DefaultConfigurationName))
+          useClusterConfiguration(topic.copy(cluster = Some(DefaultConfigurationName)))
         }
 
     appConfigSecretName
@@ -120,7 +128,7 @@ object TopicActions {
       implicit ctx: DeploymentContext
   ) = {
     log.debug(s"### Using Kafka connection configuration from cluster [${topic.cluster.get}] for topic [${topic.name}]")
-    val config = getConfigFromSecret(secret)
+    val config = ConfigInputChangeEvent.getConfigFromSecret(secret)
     log.debug(s"### config after parse:\n${config.root().render()}")
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
     createAction(namespace, labels, topicInfo)
@@ -131,7 +139,7 @@ object TopicActions {
   ) =
     for {
       secret <- secretOption
-      config = getConfigFromSecret(secret)
+      config = ConfigInputChangeEvent.getConfigFromSecret(secret)
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers
@@ -143,18 +151,16 @@ object TopicActions {
   def createAction(appNamespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext
   ): CreateOrUpdateAction[ConfigMap] = {
-    val (bootstrapServers, brokerConfig) = topic.bootstrapServers match {
-      case Some(bootstrapServers) => bootstrapServers -> topic.brokerConfig
-      case None =>
+    val (bootstrapServers, partitions, replicas, brokerConfig) = (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
+      case (Some(bootstrapServers), Some(partitions), Some(replicas)) => (bootstrapServers, partitions, replicas, topic.brokerConfig)
+      case _ =>
         throw new Exception(
-          s"A 'bootstrap.servers' property was not found in the provided Kafka connection configuration for topic [${topic.name}]" +
-              topic.cluster.map(c => s", cluster [$c]").getOrElse("")
+          s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
+              topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
+              ". Update install to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
         )
     }
-    val partitions        = topic.partitions.getOrElse(ctx.kafkaContext.partitionsPerTopic)
-    val replicationFactor = topic.replicationFactor.getOrElse(ctx.kafkaContext.replicationFactor)
-    val configMap         = resource(appNamespace, topic, partitions, replicationFactor, bootstrapServers, labels)
-
+    val configMap   = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)
     val adminClient = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
@@ -175,7 +181,7 @@ object TopicActions {
             Future.successful(akka.Done)
           } else {
             log.info("Creating managed topic [{}]", topic.name)
-            val newTopic = new NewTopic(topic.name, partitions, replicationFactor.toShort).configs(topic.properties.asJava)
+            val newTopic = new NewTopic(topic.name, partitions, replicas.toShort).configs(topic.properties.asJava)
             val result =
               adminClient.createTopics(
                 Collections.singleton(newTopic),
@@ -225,12 +231,6 @@ object TopicActions {
           getConfig(portMappingsConfig, s"$key.config")
         }
     } else None
-
-  private def getConfigFromSecret(secret: Secret): Config = {
-    val str = event.ConfigInputChangeEvent.getData(secret)
-    log.debug(s"### config before parse:\n$str")
-    ConfigFactory.parseString(str)
-  }
 
   private def getConfig(config: Config, key: String): Option[Config] =
     if (config.hasPath(key)) Some(config.getConfig(key)) else None

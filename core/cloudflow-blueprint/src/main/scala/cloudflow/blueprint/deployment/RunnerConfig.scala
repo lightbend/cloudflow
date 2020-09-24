@@ -40,11 +40,9 @@ object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
   def apply(
       appId: String,
       appVersion: String,
-      deployment: StreamletDeployment,
-      kafkaBootstrapServers: Option[String]
+      deployment: StreamletDeployment
   ): RunnerConfig = {
-    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment)) ++
-          kafkaBootstrapServers.map(bs => Map("kafka" -> JsObject("bootstrap-servers" -> JsString(bs)))).getOrElse(Map())
+    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment))
     RunnerConfig(
       JsObject(
         "cloudflow" -> JsObject(map)
