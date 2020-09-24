@@ -58,9 +58,9 @@ check-links:
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		--entrypoint /bin/sh \
-		-t ${antora_docker_image}:${antora_docker_image_tag} \
+		-t lightbend/antora-doc:0.1.0 \
 		--cache-dir=./.cache/antora \
-		-c 'find /antora/docs-source -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check -p -c docs-source/asciidoc-link-check-config.json'
+		-c 'find docs/docs-source -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check -p -c docs/docs-source/asciidoc-link-check-config.json'
 
 list-todos: html
 	docker run \

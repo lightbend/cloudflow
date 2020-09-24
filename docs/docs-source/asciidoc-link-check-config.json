@@ -12,6 +12,8 @@
         { "pattern": "^https://repo\\.lightbend\\.com" },
         { "pattern": "^https://lightbend\\.bintray\\.com" },
         { "pattern": "^https://bintray\\.com/lightbend" },
-        { "pattern": "^http://maven\\.apache\\.org/SETTINGS/1\\.0\\.0$" }
+        { "pattern": "^http://maven\\.apache\\.org/SETTINGS/1\\.0\\.0$" },
+	{ "pattern": "^https://strimzi.io/charts/$" },
+	{ "pattern": "^http://heketi-storage.glusterfs.svc:8080$" }
     ]
 }
