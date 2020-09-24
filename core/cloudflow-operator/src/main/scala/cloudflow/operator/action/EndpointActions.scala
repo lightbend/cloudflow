@@ -21,12 +21,11 @@ import scala.concurrent._
 import scala.collection.immutable._
 import akka.actor.ActorSystem
 import play.api.libs.json._
-
 import skuber._
 import skuber.api.client._
 import skuber.json.format._
-
 import cloudflow.blueprint.deployment._
+import skuber.Service.Type.NodePort
 
 /**
  * Creates a sequence of resource actions for the endpoint changes
@@ -80,7 +79,7 @@ object EndpointActions {
         labels = labels(Name.ofService(streamletDeploymentName)),
         ownerReferences = ownerReferences
       ),
-      spec = Some(Service.Spec(ports = List(servicePort)))
+      spec = Some(Service.Spec(ports = List(servicePort), _type = NodePort))
     ).withSelector(CloudflowLabels.Name -> Name.ofPod(streamletDeploymentName))
   }
 
