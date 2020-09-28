@@ -25,8 +25,8 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .settings(commonSettings)
   .settings(
     name := "taxi-ride-fare",
-    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
-//    runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
+    //    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
+    //    runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
   )
 
 lazy val datamodel = appModule("datamodel")
@@ -47,6 +47,19 @@ lazy val ingestor = appModule("ingestor")
   )
   .dependsOn(datamodel)
 
+lazy val ridesingestor = appModule("ridesingestor")
+  .enablePlugins(CloudflowFlinkPlugin)
+  .settings(
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
+      "org.scalatest"          %% "scalatest"              % "3.0.8"  % "test"
+    )
+  )
+  .settings(
+    parallelExecution in Test := false
+  )
+  .dependsOn(datamodel)
 
 lazy val processor = appModule("processor")
   .enablePlugins(CloudflowFlinkPlugin)
@@ -63,7 +76,7 @@ lazy val processor = appModule("processor")
   .dependsOn(datamodel)
 
 lazy val ridelogger = appModule("logger")
-  .enablePlugins(CloudflowAkkaPlugin)
+  .enablePlugins(CloudflowFlinkPlugin)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(

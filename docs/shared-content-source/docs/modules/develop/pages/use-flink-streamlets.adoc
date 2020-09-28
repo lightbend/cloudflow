@@ -135,6 +135,10 @@ of several things:
 
 * Restartability. Unlike cluster deployment, a local Flink execution will not restart in the case of crashes.
 * Checkpointing. By default, in the case of local runs, checkpointing is done in memory, which means that in the case of local runs, checkpointing does not survive beyond an individual execution.
+* In the case of local execution, an instance of a Flink server is created for each SBT module for which `CloudflowFlinkPlugin`
+is enabled. A single Flink server (in the case of local execution) is running a single streamlet. As a result, if you want to be able to test locally,
+each SBT module should contain a single Flink streamlet. If you are developing several Flink streamlets, make sure that
+each one of them is in a separate module.
 
 The checkpointing behaviour in this case (along with many other parameters) can be overwritten
 using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
@@ -155,6 +159,9 @@ cloudflow.streamlets.processor.config {
   rest.port = 5000
 }
 ----
+
+NOTE: if you have more then one Flink streamlet in your local project, DO NOT enable web UI in `cloudflow.runtimes.flink.config` - this will set the same UI port for all Flink servers
+and will prevent them from starting. Make sure that you are enabling Web UI for individual streamlets and using different ports for them.
 
 In the above example the Web UI is enabled for the processors streamlet. which will listen on port 5000.
 You need to provide the location of the local configuration in your sbt build file:
