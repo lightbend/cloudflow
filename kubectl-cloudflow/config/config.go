@@ -182,7 +182,6 @@ func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 func replaceEnvVars(config *Config) *Config {
 	envVars := make(map[string]string)
 	for _, env := range os.Environ() {
-		// env is
 		envPair := strings.SplitN(env, "=", 2)
 		envVars[envPair[0]] = envPair[1]
 	}
@@ -191,6 +190,7 @@ func replaceEnvVars(config *Config) *Config {
 		for k, v := range envVars {
 			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("$%s", k), v)
 			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${%s}", k), v)
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${?%s}", k), v)
 		}
 		return newConfig(replaced)
 	}

@@ -190,6 +190,32 @@ func Test_replaceEnvVars(t *testing.T) {
 	config = replaceEnvVars(config)
 	hConf = config.parse()
 	assert.Equal(t, "info", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
+	os.Setenv("LOG_LEVEL", "info")
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+			log-level = "debug"
+      log-level = ${?LOG_LEVEL}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "info", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+			log-level = "debug"
+      log-level = ${?LOG_LEVEL_NOT_SET}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "debug", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
 }
 
 func Test_addCommandLineArguments(t *testing.T) {
