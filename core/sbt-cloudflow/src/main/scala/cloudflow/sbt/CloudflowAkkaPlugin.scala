@@ -26,7 +26,7 @@ import CloudflowBasePlugin._
 import java.io.File
 
 object CloudflowAkkaPlugin extends AutoPlugin {
-  final val AkkaVersion = "2.6.8"
+  final val AkkaVersion = "2.6.9"
   final val AkkaDockerBaseImage =
     s"lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
