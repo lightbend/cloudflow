@@ -46,13 +46,37 @@ Java::
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-java/src/main/java/sensordata/SensorDataIngress.java[tag=logic]
 ----
 
-=== Exposing through an ingress
+=== External access
 
 gRPC services use HTTP/2 as a transport mechanism. Cloudflow supports
 both HTTP and HTTP/2 on the port exposed by the pod.
 
-When you want to expose your gRPC service to external clients,
-you will need to expose it as a HTTP/2 service to the outside.
-Configuring an ingress to support HTTP/2 might be possible
-with the correct additional configuration, but is currently not
-officially supported, and might even require code changes.
+There are 3 ways to use HTTP/2:
+
+* With TLS
+* Without TLS ('h2c'), using the `Upgrade` mechanism to negotiate between using HTTP/1 and HTTP/2
+* Without TLS ('h2c'), without negotiation (which assumes the client has prior knowledge that the server supports HTTP/2)
+
+==== LoadBalancer Service
+
+By creating a service of type `LoadBalancer` you can expose your services using a direct TCP loadbalancer.
+This means all features supported by the underlying implementation are available.
+
+Limitations of this approach are that you are restricted to 1 service per IP, and
+more advanced features such as TLS termination and path-based routing are not available.
+
+==== Nginx Ingress
+
+The approach described in the xref:administration:providing-external-access-to-cloudflow-services.adoc[Setting up external access]
+section will technically work for gRPC services as well, but there are a number of caveats:
+
+Nginx, by default, will only support h2c via the `Upgrade` mechanism. Because this mechanism is more
+complicated than the other 2 approaches, client support for this mechanism is not ubiquitous. Also, the
+loadbalancer will use HTTP/1 rather than HTTP/2 to the service. While this may happen to work it is
+not optimal.
+
+==== GCE Ingress
+
+`gce` (as used in the internal and external HTTP(S) load balancers on Google Kubernetes Engine)
+requires the target service to be of type `NodePort`. Because cloudflow creates nodes of type
+`ClusterIP`, this ingress type cannot be used.
