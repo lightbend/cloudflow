@@ -165,6 +165,33 @@ func Test_addDefaultValues(t *testing.T) {
 	assert.Equal(t, "12m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
 }
 
+func Test_replaceEnvVars(t *testing.T) {
+	os.Setenv("bar", "high")
+	strConf := "foo = $bar"
+	config := newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf := config.parse()
+	assert.Equal(t, "high", hConf.GetString("foo"))
+
+	strConf = "foo = ${bar}"
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "high", hConf.GetString("foo"))
+
+	os.Setenv("LOG_LEVEL", "info")
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+      log-level = ${LOG_LEVEL}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "info", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+}
+
 func Test_addCommandLineArguments(t *testing.T) {
 
 	spec := cfapp.CloudflowApplicationSpec{
