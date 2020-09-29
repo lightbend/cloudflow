@@ -22,8 +22,7 @@ func Test_validateConfigLabels(t *testing.T) {
 	labelConfigSectionUppercase := newConfig(`
 	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
 		labels {
-			key1 = VALUE1 
-			KEY2 = value2
+			KEY1 = VALUE1 
 		}
 	}
 	`)
@@ -390,6 +389,19 @@ func Test_validateConfigVolumes(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(volumePodMalformed4, spec))
 	fmt.Printf("volumePodMalformed4: %s\n", validateConfig(volumePodMalformed4, spec))
 
+	volumePodMalformed5 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				pvc = mymalformedsecret
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed5, spec))
+	fmt.Printf("volumePodMalformed5: %s\n", validateConfig(volumePodMalformed5, spec))
+
 	volumeMountPodWellformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
 		volumes {
@@ -458,6 +470,37 @@ func Test_validateConfigVolumes(t *testing.T) {
 		}
 	}`)
 	assert.Empty(t, validateConfig(volumeMountPodWellformed2, spec))
+
+	volumeMountPodWellformed3 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				pvc {
+					name = mysecret
+					readOnly = true
+				}
+			}
+			bar {
+				secret {
+					name = yoursecret
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mountPath = "/etc/my/file"
+					readOnly = true
+				}
+				bar {
+					mountPath = "/etc/mc/fly"
+					readOnly = false
+				}
+			}
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(volumeMountPodWellformed3, spec))
 
 	volumeMountPodMalformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
