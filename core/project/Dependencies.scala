@@ -42,7 +42,7 @@ object Library {
 
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.EmbeddedKafka 
-  val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
+  val Ficus                 = "com.iheart"            %% "ficus"                    % "1.5.0"
   val JodaTime              = "joda-time"              % "joda-time"                % "2.10.6"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
   val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
