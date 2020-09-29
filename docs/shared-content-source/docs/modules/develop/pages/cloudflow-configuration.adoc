@@ -52,6 +52,8 @@ cloudflow {
       config-parameters {                   //<1>
         // config parameter values go here  
         my-config-parameter = "some-value"
+        another-config-parameter = "default-value"
+        another-config-parameter = ${?MY_VAR}
       }  
       config {                              //<2>
         // runtime settings go here
@@ -79,6 +81,11 @@ cloudflow {
 <3> `kubernetes` section
 
 You need to specify at least one of the sections shown above.
+==== Environment variables
+Environment / shell variables can be specified in the config as `${variable_name}`, `$variable_name`, or `${?variable_name}`. 
+In the example above, `${?MY_VAR}` is replaced by the value of the 
+`MY_VAR` environment / shell variable if it is set, otherwise "default-value" will be the value for `another-config-parameter`. 
+If it was specified as `$MY_VAR`, the `MY_VAR` shell variable must be set.
 
 ==== Configuration Parameters Settings
 You can learn more about configuration parameters in xref:develop:streamlet-configuration.adoc[]
