@@ -16,20 +16,27 @@
 
 package cloudflow.akkastream.util.scaladsl
 
+import scala.collection.immutable
+import scala.concurrent.Future
+
 import akka.annotation.ApiMayChange
 import akka.grpc.scaladsl.ServiceHandler
-
-import scala.collection.immutable
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
+import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.RouteDirectives
+import akka.http.scaladsl.server.Directives._
 import cloudflow.akkastream.{ AkkaStreamletContext, Server }
-
-import scala.concurrent.Future
 
 @ApiMayChange
 abstract class GrpcServerLogic(server: Server)(implicit context: AkkaStreamletContext) extends HttpServerLogic(server) {
   def handlers(): immutable.Seq[PartialFunction[HttpRequest, Future[HttpResponse]]]
 
-  override def route(): Route = RouteDirectives.handle(ServiceHandler.concatOrNotFound(handlers(): _*))
+  override def route(): Route =
+    concat(
+      pathEndOrSingleSlash {
+        complete(OK, "")
+      },
+      handle(ServiceHandler.concatOrNotFound(handlers(): _*))
+    )
+
 }

@@ -5,19 +5,19 @@
 
 include::ROOT:partial$include.adoc[]
 
-If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
+If you plan to write applications that utilize Flink you will need to install the Lyft Flink operator before deploying your Cloudflow application.
 
-The only Cloudflow compatible Flink operator is a fork currently maintained by Lightbend.
-
-Install the Flink operator using the following Helm command:
+Install the Lyft Flink operator using the following Helm command:
 
 ----
 helm install flink-operator \
   https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
   --namespace cloudflow \
-  --set operatorImageName="lightbend/flinkk8soperator" \
+  --set operatorImageName="docker.io/lyft/flinkk8soperator" \
   --set operatorVersion="v0.5.0"
 ----
+
+NOTE: The above Helm command uses a Helm chart for the Lyft Flink operator that is hosted [here](https://github.com/lightbend/flink-operator).
 
 This completes the installation of the Flink operator. 
 

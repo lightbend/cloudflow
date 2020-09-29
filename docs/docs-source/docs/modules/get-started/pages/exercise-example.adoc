@@ -115,7 +115,7 @@ Forwarding from [::1]:3000 -> 3000
 Handling connection for 3000
 ----
 
-NOTE: The port-forward solution used here is a temporary route to the application from localhost. If you want to create a permanent route that can be accessed by anyone, please see the following chapter on Kubernetes ingresses: xref:ingress-creation.adoc[Providing External Access to Cloudflow Services]
+NOTE: The port-forward solution used here is a temporary route to the application from localhost. If you want to create a permanent route that can be accessed by anyone, please see the following chapter on Kubernetes ingresses: xref:administration:providing-external-access-to-cloudflow-services.adoc[Providing External Access to Cloudflow Services]
 
 * Push data to the application. In order to do that follow the steps:
 ** create a json file named `data.json` with the following content:

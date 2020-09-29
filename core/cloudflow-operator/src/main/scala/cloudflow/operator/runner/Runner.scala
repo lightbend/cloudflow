@@ -19,6 +19,7 @@ package runner
 
 import java.nio.charset.StandardCharsets
 
+import scala.collection.JavaConverters._
 import scala.util._
 import scala.concurrent._
 import akka.actor._
@@ -34,6 +35,8 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
+import skuber.Volume.MountPropagationMode
+import skuber.Volume.MountPropagationMode.MountPropagationMode
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -285,6 +288,17 @@ trait Runner[T <: ObjectResource] {
         }
       }
 
+  def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[Volume.Mount] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.volumeMounts
+        }
+      }
+      .getOrElse(List())
+
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
       .get(podName)
@@ -303,6 +317,15 @@ trait Runner[T <: ObjectResource] {
         podConfig.labels
       }
       .getOrElse(Map())
+
+  def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.volumes
+      }
+      .getOrElse(List())
 
 }
 
@@ -343,22 +366,66 @@ object PodsConfig {
     val value = envConfig.as[EnvVar.Value]("value")
     EnvVar(name, value)
   }
+
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
-    val env       = containerConfig.as[Option[List[EnvVar]]]("env")
-    val resources = containerConfig.as[Option[Resource.Requirements]]("resources")
-    ContainerConfig(env.getOrElse(List()), resources)
+    val env          = containerConfig.as[Option[List[EnvVar]]]("env")
+    val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
+    val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
+    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
   }
 
   implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config ⇒
     asConfigObjectToMap[PodConfig](config)
   }
 
+  implicit val volumeMountsListConfReader: ValueReader[List[Volume.Mount]] = ValueReader.relative { config =>
+    asConfigObjectToMap[Volume.Mount](config).map {
+      case (volumeName, valuesMount) =>
+        valuesMount.copy(name = volumeName)
+    }.toList
+  }
+
+  /**
+   * Currently not providing MountPropagation
+   */
+  implicit val volumeMountsConfReader: ValueReader[Volume.Mount] = ValueReader.relative { config =>
+    Volume.Mount(
+      name = config.getOrElse[String]("name", ""),
+      mountPath = config.getOrElse[String]("mountPath", ""),
+      readOnly = config.getOrElse[Boolean]("readOnly", false),
+      subPath = config.getOrElse[String]("subPath", "")
+    )
+  }
+
+  implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
+    asConfigObjectToMap[Volume.Source](config).map {
+      case (volumeName, source) => Volume(volumeName, source)
+    }.toList
+  }
+
+  /**
+   * Currently only dealing with secrets inside volumes
+   * Not taking into acccount other type of sources
+   */
+  implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
+    config.as[Volume.Secret]("secret")
+  }
+
+  implicit val secretsConfReader: ValueReader[Volume.Secret] = ValueReader.relative { config =>
+    Volume.Secret(secretName = config.as[String]("name"))
+  }
+
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
-    val containers = config.as[Map[String, ContainerConfig]]("containers")
-    PodConfig(containers, labels)
+    val volumes = config
+      .as[Option[List[Volume]]]("volumes")
+      .getOrElse(List.empty[Volume])
+    val containers = config
+      .as[Option[Map[String, ContainerConfig]]]("containers")
+      .getOrElse(Map.empty[String, ContainerConfig])
+    PodConfig(containers, labels, volumes)
   }
 
   /*
@@ -405,10 +472,12 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 
 final case class PodConfig(
     containers: Map[String, ContainerConfig],
-    labels: Map[String, String] = Map()
+    labels: Map[String, String] = Map(),
+    volumes: List[Volume] = List()
 )
 
 final case class ContainerConfig(
     env: List[EnvVar] = List(),
-    resources: Option[Resource.Requirements] = None
+    resources: Option[Resource.Requirements] = None,
+    volumeMounts: List[Volume.Mount] = List()
 )

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,6 +33,8 @@ const kubernetesKey = "kubernetes"
 const podsKey = "pods"
 const cloudflowPodName = "pod"
 const labels = "labels"
+const volumes = "volumes"
+const volumeMountsKey = "volume-mounts"
 const cloudflowContainerName = "container"
 const containersKey = "containers"
 const resourcesKey = "resources"
@@ -111,6 +114,7 @@ func handleConfig(
 		return nil, err
 	}
 
+	config = replaceEnvVars(config)
 	config = addDefaultValuesFromSpec(applicationSpec, config, configurationArguments)
 
 	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
@@ -173,6 +177,24 @@ func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 		}
 	}
 	return &config, nil
+}
+
+func replaceEnvVars(config *Config) *Config {
+	envVars := make(map[string]string)
+	for _, env := range os.Environ() {
+		envPair := strings.SplitN(env, "=", 2)
+		envVars[envPair[0]] = envPair[1]
+	}
+	if len(envVars) != 0 {
+		replaced := config.String()
+		for k, v := range envVars {
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("$%s", k), v)
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${%s}", k), v)
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${?%s}", k), v)
+		}
+		return newConfig(replaced)
+	}
+	return config
 }
 
 func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
@@ -341,11 +363,11 @@ func labelHasPrefix(label string) bool {
 
 func validateLabel(name string, prefix string) error {
 	// See https://github.com/kubernetes/kubernetes/issues/71140, IsDNS1123Subdomain and IsDNS1123Label do not allow uppercase letters.
-	labelPattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
+	labelPattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
 
 	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
-	labelSingleCharFormat := regexp.MustCompile(`^[a-z]{1}$`)
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
 	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
 
@@ -360,8 +382,8 @@ func validateLabel(name string, prefix string) error {
 }
 
 func validateLabelValue(labelValue string, label string) error {
-	labelValuePattern := regexp.MustCompile(`^[a-z0-9]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9]{1}$`)
-	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9]{1}$`)
+	labelValuePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
 	// check for HOCON error that is not caught by go/akka library
 	if strings.ContainsAny(labelValue, "{") || len(labelValue) == 0 {
 		return fmt.Errorf("label '%s' has a value that can't be parsed: '%s'", label, labelValue)
@@ -372,6 +394,82 @@ func validateLabelValue(labelValue string, label string) error {
 	return fmt.Errorf("The value of label %s is malformed: '%s'. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", label, labelValue)
 }
 
+func validateVolumes(podConfig *configuration.Config) error {
+	if volumesConfig := podConfig.GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
+		for key, value := range volumesConfig.Root().GetObject().Items() {
+			secret := value.GetObject().GetKey("secret")
+			if secret == nil || !secret.IsObject() {
+				return fmt.Errorf("missing or malformed 'secret' in volume %s. Please have a look at documentation to see what's expected", key)
+			}
+			name := secret.GetObject().GetKey("name")
+			if name == nil {
+				return fmt.Errorf("missing 'name' in %s.secret", key)
+			}
+			if name.IsEmpty() {
+				return fmt.Errorf("missing content of 'name' in %s.secret.name", key)
+			}
+		}
+	}
+	return nil
+}
+
+func validateVolumesMounts(containersConfig *configuration.Config) error {
+	allowedProperties := []string{"mountPath", "readOnly", "subPath"}
+	for containerName := range containersConfig.Root().GetObject().Items() {
+		if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
+			if volumesMountsConfig := containerConfig.GetConfig(volumeMountsKey); volumesMountsConfig != nil && volumesMountsConfig.Root().IsObject() {
+				for volumeMountName, volumeMountKeyValue := range volumesMountsConfig.Root().GetObject().Items() {
+					for key, value := range volumeMountKeyValue.GetObject().Items() {
+						if !contains(allowedProperties, key) {
+							return fmt.Errorf("not allowed '%s' key in the volume-mounts '%s'. Properties allowed are: %s ", key, volumeMountName, allowedProperties)
+						}
+						if value.IsEmpty() {
+							return fmt.Errorf("key '%s' has not value in then volume-mounts '%s'", key, volumeMountName)
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func checkVolumeMountsReferToVolume(podsConfig *configuration.Config, containersConfig *configuration.Config) error {
+
+	validateVolumes(podsConfig.GetConfig("pod"))
+	validateVolumesMounts(containersConfig)
+
+	var volumesNames []string
+	var volumeMountSecretNames []string
+	if volumesConfig := podsConfig.GetConfig("pod").GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
+		for volumeName := range volumesConfig.Root().GetObject().Items() {
+			volumesNames = append(volumesNames, volumeName)
+		}
+	}
+	for containerName := range containersConfig.Root().GetObject().Items() {
+		if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
+			if volumesMountsConfig := containerConfig.GetConfig(volumeMountsKey); volumesMountsConfig != nil && volumesMountsConfig.Root().IsObject() {
+				for volumeMountName := range volumesMountsConfig.Root().GetObject().Items() {
+					if !contains(volumesNames, volumeMountName) {
+						return fmt.Errorf("the volume-mounts '%s' should match a volume.secret.name in '%s'", volumeMountName, volumesNames)
+					}
+					volumeMountSecretNames = append(volumeMountSecretNames, volumeMountName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string) error {
 	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
 		for podName := range podsConfig.Root().GetObject().Items() {
@@ -379,10 +477,14 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 				if err := validateLabels(podConfig, podName); err != nil {
 					return err
 				}
+				if err := validateVolumes(podConfig); err != nil {
+					return err
+				}
+
 				containersConfig := podConfig.GetConfig(containersKey)
 
-				if containersConfig == nil && podConfig.GetConfig(labels) == nil {
-					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section or a labels section",
+				if containersConfig == nil && podConfig.GetConfig(labels) == nil && podConfig.GetConfig(volumes) == nil {
+					return fmt.Errorf("kubernetes configuration %s.%s.%s.%s for pod '%s' does not contain a %s section nor labels",
 						rootPath,
 						kubernetesKey,
 						podsKey,
@@ -392,10 +494,16 @@ func validateKubernetesSection(k8sConfig *configuration.Config, rootPath string)
 				}
 
 				if containersConfig != nil && containersConfig.Root().IsObject() {
+					if err := validateVolumesMounts(containersConfig); err != nil {
+						return err
+					}
+					if err := checkVolumeMountsReferToVolume(podsConfig, containersConfig); err != nil {
+						return err
+					}
 					for containerName := range containersConfig.Root().GetObject().Items() {
 						if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
 							for containerKey := range containerConfig.Root().GetObject().Items() {
-								if !(containerKey == resourcesKey || containerKey == envKey) {
+								if !(containerKey == resourcesKey || containerKey == envKey || containerKey == volumeMountsKey) {
 									return fmt.Errorf("kubernetes configuration for pod '%s', container '%s' at %s.%s.%s.%s.%s.%s does not contain a %s or an %s section",
 										podName,
 										containerName,

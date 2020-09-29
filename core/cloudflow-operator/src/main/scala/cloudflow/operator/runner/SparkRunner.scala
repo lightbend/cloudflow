@@ -176,7 +176,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Volume.Mount(mount.name, mount.path)
     })
 
-    val volumes      = streamletPvcVolume :+ pvcVolume :+ Runner.DownwardApiVolume
+    val volumes      = streamletPvcVolume ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName) :+ pvcVolume :+ Runner.DownwardApiVolume
     val volumeMounts = streamletVolumeMount :+ pvcVolumeMount :+ Runner.DownwardApiVolumeMount
 
     // This is the group id of the user in the streamlet container,
@@ -208,7 +208,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Driver(
         javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
         labels = labels ++ getLabels(podsConfig, DriverPod),
-        volumeMounts = volumeMounts,
+        volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, DriverPod),
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, DriverPod),
         configMaps = configMaps,
@@ -222,7 +222,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
         javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
         instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
         labels = labels ++ getLabels(podsConfig, ExecutorPod),
-        volumeMounts = volumeMounts,
+        volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, ExecutorPod),
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, ExecutorPod),
         configMaps = configMaps,

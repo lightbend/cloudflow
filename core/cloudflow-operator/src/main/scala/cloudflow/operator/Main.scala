@@ -110,8 +110,8 @@ object Main extends {
   private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
     val crdTimeout = 20.seconds
     // TODO check if version is the same, if not, also create.
-    Await.ready(
-      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).map { result ⇒
+    Await.result(
+      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).flatMap { result ⇒
         result.fold(client.create(CloudflowApplication.CRD)) { crd ⇒
           if (crd.spec.version != CloudflowApplication.CRD.spec.version) {
             client.create(CloudflowApplication.CRD)
@@ -127,8 +127,8 @@ object Main extends {
   private def installProtocolVersion(client: skuber.api.client.KubernetesClient,
                                      ownerReferences: List[OwnerReference])(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
-    Await.ready(
-      client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {
+    Await.result(
+      client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).flatMap {
         _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap ⇒
           if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
             client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))

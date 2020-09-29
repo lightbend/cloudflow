@@ -54,9 +54,9 @@ class FlinkStreamletContextImpl(
     val properties = new ju.Properties()
     properties.putAll(propsMap.asJava)
 
-    val consumer = new FlinkKafkaConsumer[In](
+    val consumer = new FlinkKafkaConsumer[Array[Byte]](
       srcTopic,
-      new FlinkKafkaCodecDeserializationSchema[In](inlet),
+      new FlinkKafkaCodecDeserializationSchema(),
       properties
     )
 
@@ -66,7 +66,7 @@ class FlinkStreamletContextImpl(
     // also this setting is honored only when checkpointing is on - otherwise the property in Kafka
     // "enable.auto.commit" is considered
     consumer.setCommitOffsetsOnCheckpoints(true)
-    env.addSource(consumer)
+    env.addSource(consumer).map(inlet.codec.decode(_))
   }
 
   /**

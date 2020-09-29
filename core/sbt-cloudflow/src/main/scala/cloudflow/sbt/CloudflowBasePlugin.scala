@@ -152,7 +152,7 @@ object DockerRegistryNotSetError {
       |Example:
       |
       |lazy val myProject = (project in file("."))
-      |  .enablePlugins(CloudflowAkkaStreamsApplicationPlugin)
+      |  .enablePlugins(CloudflowAkkaPlugin)
       |  .settings(
       |   cloudflowDockerRegistry := Some("docker-registry-default.cluster.example.com"),
       |   // other settings

@@ -23,7 +23,9 @@ import akka.annotation.ApiMayChange
 import akka.japi.Function
 import akka.grpc.javadsl.ServiceHandler
 import akka.http.javadsl.model.{ HttpRequest, HttpResponse }
-import akka.http.javadsl.server.{ Directives, Route }
+import akka.http.javadsl.model.StatusCodes.OK
+import akka.http.javadsl.server.Route
+import akka.http.javadsl.server.Directives._
 import cloudflow.akkastream.{ AkkaStreamletContext, Server }
 
 @ApiMayChange
@@ -33,6 +35,11 @@ abstract class GrpcServerLogic(server: Server, context: AkkaStreamletContext) ex
   override def createRoute(): Route = {
     import scala.collection.JavaConverters._
     val handler = ServiceHandler.concatOrNotFound(handlers().asScala: _*)
-    Directives.handle(request => handler(request))
+
+    concat(
+      pathEndOrSingleSlash(() => complete(OK, "")),
+      handle(request => handler(request))
+    )
+
   }
 }
