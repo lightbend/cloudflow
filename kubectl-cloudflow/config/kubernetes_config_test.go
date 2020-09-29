@@ -22,8 +22,7 @@ func Test_validateConfigLabels(t *testing.T) {
 	labelConfigSectionUppercase := newConfig(`
 	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
 		labels {
-			key1 = VALUE1 
-			KEY2 = value2
+			KEY1 = VALUE1 
 		}
 	}
 	`)
