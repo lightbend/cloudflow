@@ -377,7 +377,6 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
         }
     getAndProvide.recoverWith {
       case t: Throwable if retries > 0 =>
-        sys.log.error(t, "### executeWithRetry")
         sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName, reason: ${t.getClass.getSimpleName}")
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
     }
@@ -397,9 +396,9 @@ final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
   val resourceName = "n/a"
 
   def executing =
-    s"Providing a list of $namespace/$resourceName to next action"
+    s"Providing a list of resources in $namespace to next action"
   def executed =
-    s"Provided a list of $namespace/$resourceName to next action"
+    s"Provided a list of resources in $namespace to next action"
 
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
     executeWithRetry(
@@ -424,8 +423,7 @@ final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
 
     getAndProvide.recoverWith {
       case t: Throwable if retries > 0 =>
-        sys.log.error(t, "### executeWithRetry")
-        sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName, reason: ${t.getClass.getSimpleName}")
+        sys.log.info(s"Scheduling retry to getting resources by label spec in $namespace, reason: ${t.getClass.getSimpleName}")
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
     }
   }

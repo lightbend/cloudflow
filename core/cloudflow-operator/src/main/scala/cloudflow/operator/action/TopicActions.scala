@@ -89,7 +89,6 @@ object TopicActions {
   def action(appConfigSecretName: Option[String], namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext
   ): Action[ConfigMap] = {
-    log.debug(s"### attempting to create topic [${topic.name}]...")
     def useClusterConfiguration(providedTopic: TopicInfo): Action[TopicResource] =
       providedTopic.cluster
         .map { cluster =>
@@ -127,9 +126,7 @@ object TopicActions {
   def createActionFromKafkaConfigSecret(secret: Secret, namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext
   ) = {
-    log.debug(s"### Using Kafka connection configuration from cluster [${topic.cluster.get}] for topic [${topic.name}]")
     val config = ConfigInputChangeEvent.getConfigFromSecret(secret)
-    log.debug(s"### config after parse:\n${config.root().render()}")
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
     createAction(namespace, labels, topicInfo)
   }
@@ -143,10 +140,7 @@ object TopicActions {
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers
-    } yield {
-      log.debug(s"### Using Kafka connection configuration from application secret for topic [${topic.name}]")
-      createAction(namespace, labels, topicWithKafkaConfig)
-    }
+    } yield createAction(namespace, labels, topicWithKafkaConfig)
 
   def createAction(appNamespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext

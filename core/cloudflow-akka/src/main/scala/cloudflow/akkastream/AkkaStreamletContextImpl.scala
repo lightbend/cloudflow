@@ -293,9 +293,6 @@ final class AkkaStreamletContextImpl(
   }
 
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
-    println(s"### streamletDefinition.portMappings: ${streamletDefinition.portMappings}")
-    println(s"### findTopicForPort: $outlet")
-
     val topic = findTopicForPort(outlet)
 
     new KafkaSinkRef(

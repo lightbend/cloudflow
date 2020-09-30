@@ -86,7 +86,6 @@ object ConfigInputChangeEvent extends Event {
 
   def getConfigFromSecret(secret: Secret): Config = {
     val str = getData(secret)
-    log.debug(s"### config before parse:\n$str")
     ConfigFactory.parseString(str)
   }
 
@@ -115,8 +114,6 @@ object ConfigInputChangeEvent extends Event {
               val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets, system)
               val actions = app.spec.deployments.map {
                 streamletDeployment ⇒
-                  log.debug(s"### clusterSecrets: $clusterSecrets")
-
                   val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig, allNamedClusters)
 
                   // create update action for output secret action which is mounted as config by runtime specific deployments
@@ -142,9 +139,9 @@ object ConfigInputChangeEvent extends Event {
       .mapConcat(_.toList)
 
   /**
-   * Look up all Kafka cluster names defined in streamlet definitions with the named cluster secrets found in K8s.
-   * If a referenced definition cannot be found in K8s then log an error, but continue.
-   * Return all named clusters and the 'default' cluster configuration, if one is defined.
+   * Look up all Kafka cluster names referenced in streamlet definitions with the named cluster secrets found in K8s.
+   * If a referenced cluster name does not have a corresponding secret K8s then log an error, but continue.
+   * Return all named cluster configs and the 'default' cluster config, if one is defined.
    */
   def namedClusters(appName: String, clusterNames: Vector[String], clusterSecrets: ListResource[Secret], system: ActorSystem) = {
     val namedClusters: Map[String, Config] = clusterNames.flatMap { name =>
