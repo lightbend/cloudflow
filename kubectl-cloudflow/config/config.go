@@ -335,60 +335,74 @@ func validateLabels(podConfig *configuration.Config, podName string) error {
 		}
 
 		for key, value := range labelsConfig.Root().GetObject().Items() {
-			label := strings.TrimSpace(key)
+			labelKey := strings.TrimSpace(key)
 			labelValue := strings.TrimSpace(value.String())
 
-			if labelHasPrefix(label) {
-				splitted := strings.Split(label, "/")
+			if labelKeyHasPrefix(labelKey) {
+				splitted := strings.Split(labelKey, "/")
 				prefix := splitted[0]
-				label := splitted[1]
-
-				if err := validateLabel(label, prefix); err != nil {
+				name := splitted[1]
+				if err := validateLabelPrefix(prefix, labelKey); err != nil {
 					return err
 				}
-				return validateLabelValue(labelValue, label)
+				if err := validateLabelName(name); err != nil {
+					return err
+				}
+				return validateLabelValue(labelValue, labelKey)
 			}
-			if err := validateLabel(label, ""); err != nil {
+
+			name := labelKey
+			if err := validateLabelName(name); err != nil {
 				return err
 			}
-			return validateLabelValue(labelValue, label)
+			return validateLabelValue(labelValue, name)
 		}
 	}
 	return nil
 }
 
-func labelHasPrefix(label string) bool {
+func labelKeyHasPrefix(label string) bool {
 	return strings.Count(label, "/") == 1 && !strings.HasPrefix(label, "/") && !strings.HasSuffix(label, "/")
 }
 
-func validateLabel(name string, prefix string) error {
-	// See https://github.com/kubernetes/kubernetes/issues/71140, IsDNS1123Subdomain and IsDNS1123Label do not allow uppercase letters.
-	labelPattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
-
-	// TODO a DNS-1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+//Only the prefix of a value key has a different check
+func validateLabelPrefix(prefix string, labelKey string) error {
+	//the prefix must be a DNS subdomain. As per https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
 	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
 	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
 
-	if len(prefix) > 0 && illegalLabelPrefixPattern.MatchString(prefix) || labelPrefixPattern.MatchString(prefix) == false {
-		return fmt.Errorf(malformedLabelMsg, fmt.Sprintf("%s/%s", prefix, name))
+	if len(prefix) > 0 && illegalLabelPrefixPattern.MatchString(prefix) {
+		return fmt.Errorf(malformedLabelMsg, fmt.Sprintf("%s/%s", prefix, labelKey))
 	}
-
-	if labelPattern.MatchString(name) || labelSingleCharFormat.MatchString(name) {
+	if labelPrefixPattern.MatchString(prefix) || labelSingleCharFormat.MatchString(prefix) {
 		return nil
 	}
-	return fmt.Errorf(malformedLabelMsg, name)
+	return fmt.Errorf("The value of label %s is malformed: '%s'. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", labelKey, prefix)
+}
+
+func validateLabelName(label string) error {
+	labelNamePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
+	// check for HOCON error that is not caught by go/akka library
+	if strings.ContainsAny(label, "{") || len(label) == 0 {
+		return fmt.Errorf("label name '%s' is invalid", label)
+	}
+	if labelNamePattern.MatchString(label) || labelSingleCharFormat.MatchString(label) {
+		return nil
+	}
+	return fmt.Errorf("label %s is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", label)
 }
 
 func validateLabelValue(labelValue string, label string) error {
 	labelValuePattern := regexp.MustCompile(`^[a-z0-9A-Z]{1}[a-z0-9A-Z\.\_\-]{0,61}[a-z0-9A-Z]{1}$`)
-	labelValueSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
+	labelSingleCharFormat := regexp.MustCompile(`^[a-z0-9A-Z]{1}$`)
 	// check for HOCON error that is not caught by go/akka library
 	if strings.ContainsAny(labelValue, "{") || len(labelValue) == 0 {
 		return fmt.Errorf("label '%s' has a value that can't be parsed: '%s'", label, labelValue)
 	}
-	if labelValuePattern.MatchString(labelValue) || labelValueSingleCharFormat.MatchString(labelValue) {
+	if labelValuePattern.MatchString(labelValue) || labelSingleCharFormat.MatchString(labelValue) {
 		return nil
 	}
 	return fmt.Errorf("The value of label %s is malformed: '%s'. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set", label, labelValue)

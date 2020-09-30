@@ -22,12 +22,30 @@ func Test_validateConfigLabels(t *testing.T) {
 	labelConfigSectionUppercase := newConfig(`
 	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
 		labels {
-			key1 = VALUE1 
-			KEY2 = value2
+			KEY1 = VALUE1 
 		}
 	}
 	`)
 	assert.Empty(t, validateConfig(labelConfigSectionUppercase, spec))
+
+	labelConfigSectionPrefix := newConfig(`
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		labels {
+			subdomain123/KEY1 = VALUE1 
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(labelConfigSectionPrefix, spec))
+
+	badLabelConfigSectionPrefix := newConfig(`
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+		labels {
+			SUBDOMAIN123/KEY1 = VALUE1 
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(badLabelConfigSectionPrefix, spec))
+	fmt.Printf("badLabelConfigSectionPrefix: %s\n", validateConfig(badLabelConfigSectionPrefix, spec))
 
 	badLabelConfigValueEmpty := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods {
