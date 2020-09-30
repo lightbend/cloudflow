@@ -10,6 +10,15 @@ on:
 
 name: Build and Test
 jobs:
+  build-and-test-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build documentation
+      run: |
+        cd docs
+        make html-author-mode
+        grep -r "page unresolved" target/staging/docs/ && exit 1 || echo 'ok'
   build-and-test-scala:
     runs-on: ubuntu-latest
     steps:

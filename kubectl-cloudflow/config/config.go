@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -113,6 +114,7 @@ func handleConfig(
 		return nil, err
 	}
 
+	config = replaceEnvVars(config)
 	config = addDefaultValuesFromSpec(applicationSpec, config, configurationArguments)
 
 	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
@@ -175,6 +177,24 @@ func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 		}
 	}
 	return &config, nil
+}
+
+func replaceEnvVars(config *Config) *Config {
+	envVars := make(map[string]string)
+	for _, env := range os.Environ() {
+		envPair := strings.SplitN(env, "=", 2)
+		envVars[envPair[0]] = envPair[1]
+	}
+	if len(envVars) != 0 {
+		replaced := config.String()
+		for k, v := range envVars {
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("$%s", k), v)
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${%s}", k), v)
+			replaced = strings.ReplaceAll(replaced, fmt.Sprintf("${?%s}", k), v)
+		}
+		return newConfig(replaced)
+	}
+	return config
 }
 
 func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
@@ -464,14 +484,14 @@ func checkVolumeMountsReferToVolume(podsConfig *configuration.Config, containers
 	var volumesNames []string
 	var volumeMountSecretNames []string
 	if volumesConfig := podsConfig.GetConfig("pod").GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
-		for volumeName, _ := range volumesConfig.Root().GetObject().Items() {
+		for volumeName := range volumesConfig.Root().GetObject().Items() {
 			volumesNames = append(volumesNames, volumeName)
 		}
 	}
 	for containerName := range containersConfig.Root().GetObject().Items() {
 		if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
 			if volumesMountsConfig := containerConfig.GetConfig(volumeMountsKey); volumesMountsConfig != nil && volumesMountsConfig.Root().IsObject() {
-				for volumeMountName, _ := range volumesMountsConfig.Root().GetObject().Items() {
+				for volumeMountName := range volumesMountsConfig.Root().GetObject().Items() {
 					if !contains(volumesNames, volumeMountName) {
 						return fmt.Errorf("the volume-mounts '%s' should match a volume.secret.name in '%s'", volumeMountName, volumesNames)
 					}

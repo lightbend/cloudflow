@@ -3,7 +3,7 @@ import sbt._
 // format: OFF
 object Version {
 
-  val Akka          = "2.6.8"
+  val Akka          = "2.6.9"
   val AkkaHttp      = "10.2.0"
   val AkkaMgmt      = "1.0.8"
   val AkkaGrpc      = "1.0.1"
@@ -13,11 +13,6 @@ object Version {
   val Flink         = "1.10.0"
   val KafkaClients  = "2.5.0"
   val EmbeddedKafka = "2.5.0" 
-
-  // We've postponed updating Akka and Akka HTTP for the operator
-  // because of https://github.com/lightbend/cloudflow/issues/610
-  val AkkaOperator     = "2.5.29"
-  val AkkaHttpOperator = "10.1.12"
 }
 
 object Library {
@@ -37,11 +32,6 @@ object Library {
   val AkkaStreamKafkaTestkit = ("com.typesafe.akka" %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka) .exclude("com.typesafe.akka", "akka-stream-testkit")
   val AkkaStreamTestkit      = "com.typesafe.akka"  %% "akka-stream-testkit"       % Version.Akka
   
-  val AkkaSlf4jOperator         = "com.typesafe.akka" %% "akka-slf4j"                % Version.AkkaOperator
-  val AkkaStreamOperator        = "com.typesafe.akka" %% "akka-stream"               % Version.AkkaOperator
-  val AkkaStreamTestkitOperator = "com.typesafe.akka" %% "akka-stream-testkit"       % Version.AkkaOperator
-  val AkkaHttpOperator          = "com.typesafe.akka" %% "akka-http"                 % Version.AkkaHttpOperator
-
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
   val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
   val AkkaClusterBootstrap  = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
@@ -63,7 +53,7 @@ object Library {
 
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
-  val Skuber                = "io.skuber"                  %% "skuber"               % "2.4.1-cve-fix-a8d7617c"
+  val Skuber                = "io.skuber"                  %% "skuber"               % "2.6.0"
   
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
   val SparkJacksonDatabind  = "com.fasterxml.jackson.core"  % "jackson-databind"     % "2.6.7.3"
