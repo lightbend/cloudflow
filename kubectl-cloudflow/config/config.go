@@ -338,7 +338,6 @@ func validateLabels(podConfig *configuration.Config, podName string) error {
 			labelKey := strings.TrimSpace(key)
 			labelValue := strings.TrimSpace(value.String())
 
-			fmt.Printf("labelKey %s", labelKey)
 
 			if labelHasPrefix(labelKey) {
 				splitted := strings.Split(labelKey, "/")
