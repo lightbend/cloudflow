@@ -364,7 +364,8 @@ func labelHasPrefix(label string) bool {
 
 //Only the prefix of a value key has a different check
 func validateLabelPrefix(name string, prefix string) error {
-	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9A-Z\.]{0,252}[a-z0-9A-Z]{0,1}$`)
+	//the prefix must be a DNS subdomain. As per https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+	labelPrefixPattern := regexp.MustCompile(`^[a-z0-9\.]{0,252}[a-z0-9]{0,1}$`)
 	labelSingleCharFormat := regexp.MustCompile(`^[a-zA-Z]{1}$`)
 	illegalLabelPrefixPattern := regexp.MustCompile(`^[0-9\-]`)
 	malformedLabelMsg := "label '%s' is malformed. Please review the constraints at https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set"
