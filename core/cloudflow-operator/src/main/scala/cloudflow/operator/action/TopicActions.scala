@@ -126,7 +126,7 @@ object TopicActions {
   def createActionFromKafkaConfigSecret(secret: Secret, namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext
   ) = {
-    val config = ConfigInputChangeEvent.getConfigFromSecret(secret)
+    val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
     createAction(namespace, labels, topicInfo)
   }
