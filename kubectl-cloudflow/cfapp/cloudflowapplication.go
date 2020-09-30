@@ -18,7 +18,7 @@ import (
 type PortMapping struct {
 	ID      string          `json:"id"`
 	Config  json.RawMessage `json:"config"`
-	Cluster string			`json:"cluster,omitempty"`
+	Cluster string          `json:"cluster,omitempty"`
 }
 
 // Endpoint contains deployment endpoint information
