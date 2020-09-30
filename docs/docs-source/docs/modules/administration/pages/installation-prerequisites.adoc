@@ -15,7 +15,7 @@ It also shows how to install Kafka, Spark, and Flink operators that integrate wi
 Make sure you have the following prerequisites installed before continuing:
 
 - Helm, version 3 or later (check with `helm version`)
-- Kubectl 
+- Kubectl
 
 Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster to install Cloudflow. This can be done with the following command:
 
@@ -23,13 +23,16 @@ Before proceeding, make sure that `kubectl` is correctly installed and access th
 
 === Kafka
 
-Kafka is used by Cloudflow to store data streams. Before installing Cloudflow, you need to make sure there is a Kafka cluster available and have the necessary broker bootstrap configuration.
+Kafka is used by Cloudflow to connect streamlets together in a blueprint.
+If you intend to connect streamlets in this way then at least one Kafka cluster should be available before installation.
+Cloudflow may be used without Kafka (for example, when your application contains a single streamlet, or an xref:develop:clustering-akka-streamlet.adoc[Akka cluster]), but if your team intends to connect streamlets together and not include Kafka connection information in each topic they define then it's recommended to define a `default` Kafka cluster at install time.
 
-The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs used by Cloudflow to establish the connection to the Kafka cluster. The configuration string should have the following format:
+The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs used by Cloudflow to establish the connection to a Kafka cluster.
+The configuration string should have the following format:
 
     broker-1-address:broker-1-port, broker-2-address;broker-2-port
 
-If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi, a third-party Kafka operator that can create and manage Kafka clusters. 
+If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi, a third-party Kafka operator that can create and manage Kafka clusters.
 
 See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a guide on how to configure and install a Kafka cluster using Strimzi.
 
@@ -51,7 +54,7 @@ Add the `Stable` Helm repository and update the local index:
 
 Install the NFS Server Provisioner using the following command:
 
-IMPORTANT: Depending on your Kubernetes configuration, you may want to adjust the values used during the install. 
+IMPORTANT: Depending on your Kubernetes configuration, you may want to adjust the values used during the install.
 Please see https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner#configuration[NFS Server Provisioner configuration options].
 
   helm install nfs-server-provisioner stable/nfs-server-provisioner \
