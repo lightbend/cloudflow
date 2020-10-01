@@ -35,16 +35,14 @@ case class RunnerConfig(data: String) extends ConfigMapData {
 object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
   val PortMappingsPath     = "cloudflow.runner.streamlet.context.port_mappings"
   val AppConfigFilename    = "application.conf"
-  implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
+  implicit val topicFormat = jsonFormat(Topic.apply, "id", "cluster", "config")
 
   def apply(
       appId: String,
       appVersion: String,
-      deployment: StreamletDeployment,
-      kafkaBootstrapServers: Option[String]
+      deployment: StreamletDeployment
   ): RunnerConfig = {
-    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment)) ++
-          kafkaBootstrapServers.map(bs => Map("kafka" -> JsObject("bootstrap-servers" -> JsString(bs)))).getOrElse(Map())
+    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment))
     RunnerConfig(
       JsObject(
         "cloudflow" -> JsObject(map)

@@ -31,6 +31,7 @@ final case class Topic(
     id: String,
     producers: Vector[String] = Vector.empty[String],
     consumers: Vector[String] = Vector.empty[String],
+    cluster: Option[String] = None,
     kafkaConfig: Config = ConfigFactory.empty(),
     problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
     verified: Option[VerifiedTopic] = None
@@ -75,15 +76,19 @@ final case class Topic(
       .toOption
       .getOrElse(Vector.empty[PortPathError])
 
+    val clusterNameError = cluster.flatMap { clusterName =>
+      if (NameUtils.isDnsLabelCompatible(clusterName)) None else Some(InvalidKafkaClusterName(clusterName))
+    }.toVector
+
     val verifiedPorts = verifiedProducerPortsResult.getOrElse(Vector.empty[VerifiedPort]) ++ verifiedConsumerPortsResult.getOrElse(
             Vector.empty[VerifiedPort]
           )
     val schemaErrors = verifySchema(verifiedPorts)
     copy(
-      problems = invalidTopicError ++ patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ schemaErrors,
+      problems = invalidTopicError ++ patternErrors ++ portPathErrors ++ producerErrors ++ consumerErrors ++ clusterNameError ++ schemaErrors,
       verified =
         if (verifiedPorts.nonEmpty)
-          Some(VerifiedTopic(id, verifiedPorts.distinct.sortBy(_.portPath.toString), kafkaConfig))
+          Some(VerifiedTopic(id, verifiedPorts.distinct.sortBy(_.portPath.toString), cluster, kafkaConfig))
         else None
     )
   }

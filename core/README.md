@@ -23,7 +23,19 @@ ImageName(
 3. Open the sbt console by typing `sbt`
 4. Switch to the `cloudflow-operator` project: `project cloudflow-operator`
 5. Build and push the docker image: `dockerBuildAndPush`
-6. Update the operator image settings in [shared.sh](../installer/deprecated-installer/common/shared.sh) if using the deprecated installer (Cloudflow 1.3.3 and earlier):
+6. Deploy the operator
+
+Set the `cloudflow_operator.image.name` value when installing the [helm chart](https://github.com/lightbend/cloudflow-helm-charts), i.e) 
+
+```
+helm install cloudflow ./cloudflow --namespace cloudflow \
+--set cloudflow_operator.image.name=<gcp_hostname>/<project_id>/cloudflow-operator \
+--set cloudflow_operator.image.tag=<docker-image-tag> \
+--set cloudflow_operator.image.pullPolicy=Always \
+--set cloudflow_operator.logLevelRoot=DEBUG
+```
+
+Update the operator image settings in [shared.sh](../installer/deprecated-installer/common/shared.sh) if using the deprecated installer (Cloudflow 1.3.3 and earlier):
 
 ```
 export operatorImageName="<gcp_hostname>/<project_id>/cloudflow-operator"

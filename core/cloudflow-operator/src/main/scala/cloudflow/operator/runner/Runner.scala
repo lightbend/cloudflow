@@ -27,10 +27,8 @@ import com.typesafe.config._
 import play.api.libs.json._
 import org.slf4j._
 import skuber.api.client._
-import skuber.json.format._
 import skuber.json.rbac.format._
 import skuber.rbac._
-import skuber._
 import skuber.PersistentVolume.AccessMode
 import skuber.PersistentVolumeClaim.VolumeMode
 import skuber._
@@ -157,8 +155,12 @@ trait Runner[T <: ObjectResource] {
       for {
         pvcResult ← client.getOption[PersistentVolumeClaim](resource.name)(format, resourceDefinition, lc)
         res ← pvcResult
-          .map(_ ⇒ Future.successful(CreatePersistentVolumeClaimAction(resource)))
-          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreatePersistentVolumeClaimAction(o)))
+          .map(_ ⇒ Future.successful(CreatePersistentVolumeClaimAction(resource)(format, resourceDefinition)))
+          .getOrElse(
+            client
+              .create(resource)(format, resourceDefinition, lc)
+              .map(o ⇒ CreatePersistentVolumeClaimAction(o)(format, resourceDefinition))
+          )
       } yield res
   }
 
@@ -218,7 +220,7 @@ trait Runner[T <: ObjectResource] {
     }
 
     val configData = Vector(
-      RunnerConfig(app.spec.appId, app.spec.appVersion, deployment, ctx.kafkaContext.bootstrapServers),
+      RunnerConfig(app.spec.appId, app.spec.appVersion, deployment),
       prometheusConfig
     )
     val name = Name.ofConfigMap(deployment.name)
@@ -330,7 +332,7 @@ trait Runner[T <: ObjectResource] {
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.namemappers.implicits.hyphenCase
+
 import collection.JavaConverters._
 import skuber.Resource.Quantity
 

@@ -41,7 +41,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
       blueprint.problems must contain theSameElementsAs Vector(EmptyStreamlets, EmptyStreamletDescriptors)
     }
 
-    "read producers, consumers and extra config" in {
+    "read producers, consumers, cluster name, and extra config" in {
       val blueprint = Blueprint
         .parseString(
           s"""blueprint {
@@ -52,6 +52,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
           |    metrics {
           |      producers = [metrics.out]
           |      consumers = [validation.in]
+          |      cluster = "eastern-canada-1"
           |      extra = "data"
           |    }
           |  }
@@ -66,6 +67,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
       metricsTopic.name mustBe "metrics"
       metricsTopic.producers must contain theSameElementsAs Vector("metrics.out")
       metricsTopic.consumers must contain theSameElementsAs Vector("validation.in")
+      metricsTopic.cluster mustBe Some("eastern-canada-1")
       val config = metricsTopic.kafkaConfig
       config.getString("extra") mustBe "data"
     }

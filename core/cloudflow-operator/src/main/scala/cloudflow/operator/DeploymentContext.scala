@@ -16,8 +16,6 @@
 
 package cloudflow.operator
 
-import cloudflow.blueprint.deployment.Topic
-import com.typesafe.config.Config
 import skuber.Resource._
 
 /**
@@ -25,29 +23,16 @@ import skuber.Resource._
  * TODO it is possible that a lot of these settings will come from the client,
  * and in many cases, will be defined per streamlet.
  */
-case class DeploymentContext(kafkaContext: KafkaContext,
-                             akkaRunnerSettings: AkkaRunnerSettings,
+case class DeploymentContext(akkaRunnerSettings: AkkaRunnerSettings,
                              sparkRunnerSettings: SparkRunnerSettings,
                              flinkRunnerSettings: FlinkRunnerSettings,
                              persistentStorageSettings: PersistentStorageSettings,
                              podName: String,
                              podNamespace: String) {
-  import kafkaContext._
   def infoMessage = s"""
    | pod-name:                         ${podName}
    | pod-namespace                     ${podNamespace}
-   |
-   | kafka-bootstrap-servers:          ${bootstrapServers}
   """
-}
-
-case class KafkaContext(
-    bootstrapServers: Option[String],
-    partitionsPerTopic: Int,
-    replicationFactor: Int,
-    config: Config
-) {
-  val properties: Map[String, AnyRef] = Topic.pathAsMap(config, "kafka-clients")
 }
 
 final case class Host(name: String, port: Option[Int]) {

@@ -59,23 +59,15 @@ trait StreamletContext {
   def config: Config = streamletDefinition.config
 
   /**
-   * The default bootstrapServers for the Kafka broker that has been installed or configured
-   * to be used globally for all Cloudflow applications
+   * The runtime 'bootstrap.servers' for the given topic. This is provided by the cloudflow-operator when creating
+   * the streamlet's 'cloudflow.runner' configuration. A 'bootstrap.servers' will always be provided as long as a
+   * 'default' Kafka cluster is defined during the install of the cloudflow-operator.
    */
-  def internalKafkaBootstrapServers =
-    try {
-      config.getString("cloudflow.kafka.bootstrap-servers")
-    } catch {
-      case e: com.typesafe.config.ConfigException.Missing =>
-        // FIX for now. Will be improved in https://github.com/lightbend/cloudflow/issues/685
-        val msg =
-          """
-          Default Kafka bootstrap.servers is not set. 
-          `cloudflow_operator.kafkaBootstrapservers` was likely not set during installation of cloudflow-operator.
-          bootstrap.servers needs to be specified for all topics, in the blueprint, or in a configuration file (used with `kubectl cloudflow deploy --conf <conf-file>`). 
-          """
-        log.error(msg, e)
-        throw e
+  def runtimeBootstrapServers(topic: Topic): String =
+    topic.bootstrapServers.getOrElse {
+      val e = BootstrapServersForTopicNotFound(topic)
+      log.error(e.getMessage)
+      throw e
     }
 
   /**
@@ -120,3 +112,9 @@ case class TopicForPortNotFoundException(port: StreamletPort, streamletDefinitio
     extends Exception(
       s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
     )
+
+case class BootstrapServersForTopicNotFound(topic: Topic) extends Exception(s"""
+  |Runtime Kafka bootstrap.servers is not set for topic ${topic.id}
+  |A 'default' Kafka cluster, named cluster, or inline cluster configuration was not provided for this topic.
+  |To set a 'default' Kafka cluster you must update or reinstall the cloudflow-operator Helm release with value `kafkaClusters.default.bootstrapServers`.
+  |""".stripMargin)

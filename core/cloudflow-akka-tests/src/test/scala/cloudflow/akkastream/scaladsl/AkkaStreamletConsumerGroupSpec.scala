@@ -36,12 +36,11 @@ import org.scalatest.time._
 object AkkaStreamletConsumerGroupSpec {
   val kafkaPort = 1234
   val zkPort    = 5678
-  val config    = ConfigFactory.parseString(s"""
+  val config    = ConfigFactory.parseString("""
       akka {
         stdout-loglevel = "OFF"
         loglevel = "OFF"
       }
-      cloudflow.kafka.bootstrap-servers = "localhost:$kafkaPort"
       """)
 }
 
@@ -165,7 +164,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       streamletRef = StreamletRef,
       streamletClass = StreamletClass,
       portMappings = List(
-        PortMapping("out", Topic(outlet))
+        PortMapping("out", Topic(outlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
@@ -186,7 +185,8 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
     val out            = "out"
 
     def run(streamletRef: String, receiver: TestReceiver, genOutlet: String): StreamletExecution = {
-      val context = new AkkaStreamletContextImpl(definition(streamletRef, genOutlet), system)
+      val streamletDef = definition(streamletRef, genOutlet)
+      val context      = new AkkaStreamletContextImpl(streamletDef, system)
       receiver.setContext(context)
       receiver.run(context)
     }
@@ -197,7 +197,7 @@ class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort
       streamletRef = streamletRef,
       streamletClass = "TestReceiver",
       portMappings = List(
-        PortMapping("in", Topic(genOutlet))
+        PortMapping("in", Topic(genOutlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))
       ),
       volumeMounts = List.empty[VolumeMount],
       config = config
