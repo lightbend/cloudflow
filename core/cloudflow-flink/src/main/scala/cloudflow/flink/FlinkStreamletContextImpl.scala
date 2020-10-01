@@ -52,7 +52,7 @@ class FlinkStreamletContextImpl(
           topic.kafkaConsumerProperties
 
     val properties = new ju.Properties()
-    properties.putAll(propsMap.asJava)
+    properties.putAll(propsMap.asJava: ju.Map[_, _])
 
     val consumer = new FlinkKafkaConsumer[Array[Byte]](
       srcTopic,
@@ -87,7 +87,7 @@ class FlinkStreamletContextImpl(
           topic.kafkaProducerProperties
 
     val properties = new ju.Properties()
-    properties.putAll(propsMap.asJava)
+    properties.putAll(propsMap.asJava: ju.Map[_, _])
 
     stream.addSink(
       new FlinkKafkaProducer[Out](
