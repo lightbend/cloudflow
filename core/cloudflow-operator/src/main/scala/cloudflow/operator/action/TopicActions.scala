@@ -151,7 +151,7 @@ object TopicActions {
         throw new Exception(
           s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
               topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
-              ". Update install to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
+              ". Update installation of Cloudflow with Helm charts to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
         )
     }
     val configMap   = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)

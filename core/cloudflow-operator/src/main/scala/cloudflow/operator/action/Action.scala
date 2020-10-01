@@ -101,7 +101,7 @@ object Action {
     new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
-   * Creates an [[CompositeAction]]. A single action that encapsulates other actions.
+   * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
   def composite[T <: ObjectResource](actions: Vector[Action[T]])(
       implicit format: Format[T],
@@ -321,9 +321,9 @@ final case class CompositeAction[T <: ObjectResource](
   val name = "composite"
 
   def executing =
-    s"Composite $resourceName resource"
+    s"Executing $resourceName resource(s)"
   def executed =
-    s"Deleted $resourceName resource"
+    s"Executed $resourceName resource(s)"
 
   /**
    * The names of the resources that this action is applied to

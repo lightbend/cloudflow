@@ -41,7 +41,7 @@ const RequiredFlinkVersion = "v1beta1"
 
 // SupportedApplicationDescriptorVersion is the Application Descriptor Version that this version of kubectl-cloudflow supports.
 // This version must match up with the version that is added by sbt-cloudflow, which is hardcoded in `cloudflow.blueprint.deployment.ApplicationDescriptor`.
-const SupportedApplicationDescriptorVersion = "3"
+const SupportedApplicationDescriptorVersion = "4"
 
 // FailOnProtocolVersionMismatch fails and exits if the protocol version of kubectl-cloudflow does not match with the cloudflow operator protocol version.
 func FailOnProtocolVersionMismatch() {
