@@ -288,28 +288,31 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String])(implicit logger: Logger): Try[Path] = Try {
-    val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
+  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String])(implicit logger: Logger): Try[Path] =
+    Try {
+      val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
 
-    if (this.getClass.getClassLoader.getResource(log4jClassResource) == null) {
-      throw new Exception("Default log4j configuration could not be found on classpath of sbt-cloudflow.")
-    }
-    // keeping the filename since log4j uses the prefix to load it as XML or properties.
-    val (log4JSrc: InputStream, filename: String) = log4jConfigPath
-      .map { log4jPath =>
-        val log4jFile = new File(log4jPath)
-        if (log4jFile.exists && log4jFile.isFile) new FileInputStream(log4jFile) -> log4jFile.getName
+      if (this.getClass.getClassLoader.getResource(log4jClassResource) == null) {
+        throw new Exception("Default log4j configuration could not be found on classpath of sbt-cloudflow.")
       }
-      .getOrElse(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource) -> log4jClassResource)
+      // keeping the filename since log4j uses the prefix to load it as XML or properties.
+      val (log4JSrc: InputStream, filename: String) = log4jConfigPath
+        .map { log4jPath =>
+          val log4jFile = new File(log4jPath)
+          if (log4jFile.exists && log4jFile.isFile) new FileInputStream(log4jFile) -> log4jFile.getName
+        }
+        .getOrElse(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource) -> log4jClassResource)
 
-    try {
-      val stagedLog4jFile = tempDir.resolve(filename)
-      Files.copy(log4JSrc, stagedLog4jFile, StandardCopyOption.REPLACE_EXISTING)
-      stagedLog4jFile
-    } finally {
-      log4JSrc.close
+      try {
+        val stagedLog4jFile = tempDir.resolve(filename)
+        Files.copy(log4JSrc, stagedLog4jFile, StandardCopyOption.REPLACE_EXISTING)
+        stagedLog4jFile
+      } finally {
+        log4JSrc.close
+      }
+    }.recoverWith {
+      case ex: Throwable => Failure(new Exception("Failed to prepare the log4j file.", ex))
     }
-  }
 
   def streamletFilterByClass(appDescriptor: ApplicationDescriptor, streamletClasses: Set[String]): ApplicationDescriptor = {
     val streamletInstances   = appDescriptor.streamlets.filter(streamlet => streamletClasses(streamlet.descriptor.className))

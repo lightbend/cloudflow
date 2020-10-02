@@ -72,6 +72,25 @@ The script is a standard Scala sbt build file--with the addition of the Cloudflo
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[tag=get-started]
 ----
 
+== Local configuration
+
+To be able to run the example locally you should provide the two resources files mentioned in **build.sbt**.
+
+. Create a `log4j.xml` file with the following contents and save it in your `src/main/resources/` directory:
++
+[source,xml]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/log4j.xml[]
+----
++
+. Create a `local.conf` file with the following contents and save it, as well, in your `src/main/resources/` directory:
++
+[source,HOCON]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/local.conf[]
+----
+
+
 == What's next
 
 Now, let's xref:define-avro-schema.adoc[define the Avro schema].
