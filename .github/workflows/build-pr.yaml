@@ -5,9 +5,17 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8', '11' ]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Setup java
+      uses: joschi/setup-jdk@v2
+      with:
+        java-version: ${{ matrix.java }}
+        architecture: x64
     - name: Build documentation
       run: |
         cd docs
