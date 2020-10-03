@@ -90,7 +90,7 @@ func Test_CreateSecret(t *testing.T) {
 	config := new(Config)
 	config = addCommandLineArguments(spec, config, args)
 	hoconConfig := configuration.ParseString(config.String())
-	secret, err := createAppInputSecret(&spec, config)
+	secret, err := CreateAppInputSecret(&spec, config)
 	assert.Empty(t, err)
 	assert.NotEmpty(t, secret)
 	hoconConfig = configuration.ParseString(secret.StringData["secret.conf"])

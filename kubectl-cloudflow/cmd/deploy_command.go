@@ -141,7 +141,17 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	config, err := config.GetAppConfiguration(args, namespace, appCR.Spec, c.configFiles)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	err = ValidatePVCsExist(config, k8sClient, namespace)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	appInputSecret, err := CreateAppInputSecret(&applicationSpec, config)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}

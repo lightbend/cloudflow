@@ -66,10 +66,22 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, appCR.Spec, c.configFiles)
+	config, err := config.GetAppConfiguration(args, namespace, appCR.Spec, c.configFiles)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
+
+	err = ValidatePVCsExist(config, k8sClient, namespace)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	appInputSecret, err := CreateAppInputSecret(&applicationSpec, config)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+
 
 	// Get the Cloudflow operator ownerReference
 	ownerReference := appCR.GenerateOwnerReference()
@@ -89,3 +101,4 @@ func validateConfigureCMDArgs(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
