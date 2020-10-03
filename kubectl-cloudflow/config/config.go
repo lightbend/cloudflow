@@ -188,104 +188,28 @@ func replaceEnvVars(config *Config) *Config {
 }
 
 func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
-	if config.isEmpty() {
-		return nil
-	}
-
-	hoconConf := config.parse()
-	cloudflowConfig := hoconConf.GetConfig(cloudflowPath)
-	if cloudflowConfig != nil && cloudflowConfig.Root().IsObject() {
-		for section := range cloudflowConfig.Root().GetObject().Items() {
-			absPath := fmt.Sprintf("%s.%s", cloudflowPath, section)
-			if !(absPath == cloudflowStreamletsPath || absPath == cloudflowRuntimesPath || absPath == cloudflowTopicsPath) {
-				return fmt.Errorf("Unknown configuration path '%s'", absPath)
-			}
-		}
-	} else {
-		return fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
-	}
-	// TODO kubernetes section: valide args to known path formats:
 	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
+	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec)
+	if err != nil {
+		return err
+	}
+	for streamletName, k8sConfig := range k8sConfigMap {
+		if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
+			return k8serr
+		}
+	}
+
 	// cloudflow.runtimes.<streamlet>.kubernetes.<k8s-keys>
-
-	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
-	if streamletsConfig != nil && streamletsConfig.Root().IsObject() {
-		for streamletName := range streamletsConfig.Root().GetObject().Items() {
-			streamletFound := false
-			foundInstance := cfapp.Streamlet{}
-			for _, streamletInstance := range applicationSpec.Streamlets {
-				if streamletInstance.Name == streamletName {
-					streamletFound = true
-					foundInstance = streamletInstance
-					break
-				}
-			}
-			if !streamletFound {
-				return fmt.Errorf("Configuration contains unknown streamlet '%s'", streamletName)
-			}
-
-			streamletConfig := streamletsConfig.GetConfig(streamletName)
-			if streamletConfig != nil && streamletConfig.Root().IsObject() {
-				if streamletConfig.GetConfig(configParametersKey) == nil &&
-					streamletConfig.GetConfig(configKey) == nil &&
-					streamletConfig.GetConfig(kubernetesKey) == nil {
-					return fmt.Errorf("streamlet config in path '%s.%s' does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, streamletName, configParametersKey, configKey, kubernetesKey)
-				}
-				for streamletConfigSectionKey := range streamletConfig.Root().GetObject().Items() {
-					if !(streamletConfigSectionKey == configParametersKey || streamletConfigSectionKey == configKey || streamletConfigSectionKey == kubernetesKey) {
-						return fmt.Errorf("streamlet config in path '%s.%s' contains unknown section '%s'", cloudflowStreamletsPath, streamletName, streamletConfigSectionKey)
-					}
-					if streamletConfigSectionKey == configParametersKey {
-						if configParametersSection := streamletConfig.GetConfig(configParametersKey); configParametersSection != nil && configParametersSection.Root().IsObject() {
-							for configParKey := range configParametersSection.Root().GetObject().Items() {
-								configParFound := false
-								for _, configParameterDescriptor := range foundInstance.Descriptor.ConfigParameters {
-									if configParameterDescriptor.Key == configParKey {
-										configParFound = true
-										break
-									}
-								}
-								if !configParFound {
-									return fmt.Errorf("Unknown config parameter '%s' found for streamlet '%s' in path '%s.%s.%s'", configParKey, streamletName, cloudflowStreamletsPath, streamletName, configParametersKey)
-								}
-							}
-						}
-					}
-					if streamletConfigSectionKey == kubernetesKey {
-						if k8sConfig := streamletConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
-							if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
-								return k8serr
-							}
-						} else {
-							return fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
-						}
-					}
-				}
-			}
+	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec)
+	if err != nil {
+		return err
+	}
+	for runtime, k8sConfig := range k8sConfigMap {
+		if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
+			return k8serr
 		}
 	}
-	runtimesConfig := hoconConf.GetConfig(cloudflowRuntimesPath)
-	if runtimesConfig != nil && runtimesConfig.Root().IsObject() {
-		for runtime := range runtimesConfig.Root().GetObject().Items() {
-			runtimeConfig := runtimesConfig.GetConfig(runtime)
-			if runtimeConfig != nil && runtimeConfig.Root().IsObject() {
-				if runtimeConfig.GetConfig(configKey) == nil &&
-					runtimeConfig.GetConfig(kubernetesKey) == nil {
-					return fmt.Errorf("runtime config %s.%s does not contain '%s' or '%s' config sections", cloudflowRuntimesPath, runtime, configKey, kubernetesKey)
-				}
-				for runtimeConfigKey := range runtimeConfig.Root().GetObject().Items() {
-					if !(runtimeConfigKey == configKey || runtimeConfigKey == kubernetesKey) {
-						return fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPath, runtime, runtimeConfigKey)
-					}
-				}
-				if k8sConfig := runtimeConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
-					if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
-						return k8serr
-					}
-				}
-			}
-		}
-	}
+	hoconConf := config.parse()
 	unknownTopics := []string{}
 	topicsConfig := hoconConf.GetConfig(cloudflowTopicsPath)
 	if topicsConfig != nil && topicsConfig.Root().IsObject() {
@@ -312,6 +236,8 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 		return fmt.Errorf("Unknown topics found in configuration file: %s", strings.Join(unknownTopics, ", "))
 	}
 
+	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
+	runtimesConfig := hoconConf.GetConfig(cloudflowRuntimesPath)
 	if streamletsConfig == nil && runtimesConfig == nil && topicsConfig == nil {
 		return fmt.Errorf("Missing %s, %s or %s config sections", cloudflowStreamletsPath, cloudflowRuntimesPath, cloudflowTopicsPath)
 	}
@@ -1016,9 +942,12 @@ func ValidatePVCsExist(k8sConfig *configuration.Config, namespace string, k8sCli
 }
 
 
-func getStreamletsKubernetesConfig(config Config, applicationSpec cfapp.CloudflowApplicationSpec ) (*configuration.Config, error) {
+func getStreamletsKubernetesConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec ) (map[string]*configuration.Config, error) {
+	//map of name of the runtime and its config
+	k8sConfigs := make(map[string]*configuration.Config)
+
 	if config.isEmpty() {
-		return nil, nil
+		return k8sConfigs, nil
 	}
 
 	hoconConf := config.parse()
@@ -1027,11 +956,11 @@ func getStreamletsKubernetesConfig(config Config, applicationSpec cfapp.Cloudflo
 		for section := range cloudflowConfig.Root().GetObject().Items() {
 			absPath := fmt.Sprintf("%s.%s", cloudflowPath, section)
 			if !(absPath == cloudflowStreamletsPath || absPath == cloudflowRuntimesPath || absPath == cloudflowTopicsPath) {
-				return nil, fmt.Errorf("Unknown configuration path '%s'", absPath)
+				return k8sConfigs, fmt.Errorf("Unknown configuration path '%s'", absPath)
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
+		return k8sConfigs, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
 	}
 	// TODO kubernetes section: valide args to known path formats:
 	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
@@ -1050,7 +979,7 @@ func getStreamletsKubernetesConfig(config Config, applicationSpec cfapp.Cloudflo
 				}
 			}
 			if !streamletFound {
-				return nil, fmt.Errorf("Configuration contains unknown streamlet '%s'", streamletName)
+				return k8sConfigs, fmt.Errorf("Configuration contains unknown streamlet '%s'", streamletName)
 			}
 
 			streamletConfig := streamletsConfig.GetConfig(streamletName)
@@ -1058,11 +987,11 @@ func getStreamletsKubernetesConfig(config Config, applicationSpec cfapp.Cloudflo
 				if streamletConfig.GetConfig(configParametersKey) == nil &&
 					streamletConfig.GetConfig(configKey) == nil &&
 					streamletConfig.GetConfig(kubernetesKey) == nil {
-					return nil, fmt.Errorf("streamlet config in path '%s.%s' does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, streamletName, configParametersKey, configKey, kubernetesKey)
+					return k8sConfigs, fmt.Errorf("streamlet config in path '%s.%s' does not contain '%s', '%s' or '%s' config sections", cloudflowStreamletsPath, streamletName, configParametersKey, configKey, kubernetesKey)
 				}
 				for streamletConfigSectionKey := range streamletConfig.Root().GetObject().Items() {
 					if !(streamletConfigSectionKey == configParametersKey || streamletConfigSectionKey == configKey || streamletConfigSectionKey == kubernetesKey) {
-						return nil, fmt.Errorf("streamlet config in path '%s.%s' contains unknown section '%s'", cloudflowStreamletsPath, streamletName, streamletConfigSectionKey)
+						return k8sConfigs, fmt.Errorf("streamlet config in path '%s.%s' contains unknown section '%s'", cloudflowStreamletsPath, streamletName, streamletConfigSectionKey)
 					}
 					if streamletConfigSectionKey == configParametersKey {
 						if configParametersSection := streamletConfig.GetConfig(configParametersKey); configParametersSection != nil && configParametersSection.Root().IsObject() {
@@ -1075,31 +1004,32 @@ func getStreamletsKubernetesConfig(config Config, applicationSpec cfapp.Cloudflo
 									}
 								}
 								if !configParFound {
-									return nil, fmt.Errorf("Unknown config parameter '%s' found for streamlet '%s' in path '%s.%s.%s'", configParKey, streamletName, cloudflowStreamletsPath, streamletName, configParametersKey)
+									return k8sConfigs, fmt.Errorf("Unknown config parameter '%s' found for streamlet '%s' in path '%s.%s.%s'", configParKey, streamletName, cloudflowStreamletsPath, streamletName, configParametersKey)
 								}
 							}
 						}
 					}
 					if streamletConfigSectionKey == kubernetesKey {
 						if k8sConfig := streamletConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
-							if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
-								return nil, k8serr
-							}
-							return k8sConfig, nil
+							fmt.Printf("###### streamletName %s", streamletName)
+							k8sConfigs[streamletName] = k8sConfig
 						} else {
-							return nil, fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
+							return k8sConfigs, fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
 						}
 					}
 				}
 			}
 		}
 	}
-	return nil, nil
+	return k8sConfigs, nil
 }
 
-func getRuntimesKubernetesConfig(config Config, applicationSpec cfapp.CloudflowApplicationSpec) (*configuration.Config, error) {
+func getRuntimesKubernetesConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) (map[string]*configuration.Config, error) {
+	//map of name of the runtime and its config
+	k8sConfigs := make(map[string]*configuration.Config)
+
 	if config.isEmpty() {
-		return nil, nil
+		return k8sConfigs, nil
 	}
 
 	hoconConf := config.parse()
@@ -1108,11 +1038,11 @@ func getRuntimesKubernetesConfig(config Config, applicationSpec cfapp.CloudflowA
 		for section := range cloudflowConfig.Root().GetObject().Items() {
 			absPath := fmt.Sprintf("%s.%s", cloudflowPath, section)
 			if !(absPath == cloudflowStreamletsPath || absPath == cloudflowRuntimesPath || absPath == cloudflowTopicsPath) {
-				return nil, fmt.Errorf("Unknown configuration path '%s'", absPath)
+				return k8sConfigs, fmt.Errorf("Unknown configuration path '%s'", absPath)
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
+		return k8sConfigs, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
 	}
 	// TODO kubernetes section: valide args to known path formats:
 	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
@@ -1124,21 +1054,18 @@ func getRuntimesKubernetesConfig(config Config, applicationSpec cfapp.CloudflowA
 			if runtimeConfig != nil && runtimeConfig.Root().IsObject() {
 				if runtimeConfig.GetConfig(configKey) == nil &&
 					runtimeConfig.GetConfig(kubernetesKey) == nil {
-					return nil, fmt.Errorf("runtime config %s.%s does not contain '%s' or '%s' config sections", cloudflowRuntimesPath, runtime, configKey, kubernetesKey)
+					return k8sConfigs, fmt.Errorf("runtime config %s.%s does not contain '%s' or '%s' config sections", cloudflowRuntimesPath, runtime, configKey, kubernetesKey)
 				}
 				for runtimeConfigKey := range runtimeConfig.Root().GetObject().Items() {
 					if !(runtimeConfigKey == configKey || runtimeConfigKey == kubernetesKey) {
-						return nil, fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPath, runtime, runtimeConfigKey)
+						return k8sConfigs, fmt.Errorf("streamlet config %s.%s contains unknown section '%s'", cloudflowRuntimesPath, runtime, runtimeConfigKey)
 					}
 				}
 				if k8sConfig := runtimeConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
-					if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
-						return nil, k8serr
-					}
-					return k8sConfig, nil
-				}
+					k8sConfigs[runtime] = k8sConfig
+				} 
 			}
 		}
 	}
-	return nil, nil
+	return k8sConfigs, nil
 }
