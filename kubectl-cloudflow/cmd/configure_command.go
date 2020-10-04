@@ -66,17 +66,17 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	config, err := config.GetAppConfiguration(args, namespace, appCR.Spec, c.configFiles)
+	appConfig, err := config.GetAppConfiguration(args, namespace, appCR.Spec, c.configFiles)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
 
-	err = ValidatePVCsExist(config, k8sClient, namespace)
+	err = config.AllConfigPVCsExist(appConfig, namespace, appCR.Spec, k8sClient)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
 
-	appInputSecret, err := CreateAppInputSecret(&applicationSpec, config)
+	appInputSecret, err := config.CreateAppInputSecret(&appCR.Spec, appConfig)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}

@@ -100,25 +100,25 @@ func GetAppConfiguration(
 		return nil, err
 	}
 
-	config, err := loadAndMergeConfigs(configFiles)
+	appConfig, err := loadAndMergeConfigs(configFiles)
 	if err != nil {
 		return nil, err
 	}
 
-	config = replaceEnvVars(config)
-	config = addDefaultValuesFromSpec(applicationSpec, config, configurationArguments)
+	appConfig = replaceEnvVars(appConfig)
+	appConfig = addDefaultValuesFromSpec(applicationSpec, appConfig, configurationArguments)
 
-	config = addCommandLineArguments(applicationSpec, config, configurationArguments)
+	appConfig = addCommandLineArguments(applicationSpec, appConfig, configurationArguments)
 
-	if err := validateConfig(config, applicationSpec); err != nil {
+	if err := validateConfig(appConfig, applicationSpec); err != nil {
 		return nil, err
 	}
 
-	validationError := validateConfigurationAgainstDescriptor(applicationSpec, *config)
+	validationError := validateConfigurationAgainstDescriptor(applicationSpec, *appConfig)
 	if validationError != nil {
 		return nil, validationError
 	}
-	return config, nil
+	return appConfig, nil
 }
 
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
@@ -243,6 +243,8 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 	}
 	return nil
 }
+
+
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
@@ -631,7 +633,7 @@ func addCommandLineArguments(spec cfapp.CloudflowApplicationSpec, config *Config
 func CreateAppInputSecret(spec *cfapp.CloudflowApplicationSpec, config *Config) (*corev1.Secret, error) {
 	secretMap := make(map[string]string)
 	secretMap["secret.conf"] = config.String()
-	secret := createInputSecret(spec.AppID, secretMap)
+	secret := CreateInputSecret(spec.AppID, secretMap)
 	return secret, nil
 }
 
@@ -650,7 +652,7 @@ func findSecretName(spec *cfapp.CloudflowApplicationSpec, streamletName string) 
 	panic(fmt.Errorf("could not find secret name for streamlet %s", streamletName))
 }
 
-func createInputSecret(appID string, data map[string]string) *corev1.Secret {
+func CreateInputSecret(appID string, data map[string]string) *corev1.Secret {
 	labels := cfapp.CreateLabels(appID)
 	labels["com.lightbend.cloudflow/app-id"] = appID
 	labels["com.lightbend.cloudflow/created-at"] = fmt.Sprintf("%d", time.Now().UnixNano())
@@ -916,27 +918,49 @@ func existsPVC(pvc string, pvcs *corev1.PersistentVolumeClaimList, namespace str
 	return fmt.Errorf("pvc '%s' is not present in the namespace '%s'", pvc, namespace)
 }
 
-func ValidatePVCsExist(k8sConfig *configuration.Config, namespace string, k8sClient *kubernetes.Clientset) error {
+func k8sConfigPVCsExist(k8sConfig *configuration.Config, namespace string, k8sClient *kubernetes.Clientset) error {
 	if podsConfig := k8sConfig.GetConfig(podsKey); podsConfig != nil && podsConfig.Root().IsObject() {
 		for podName := range podsConfig.Root().GetObject().Items() {
 			if podConfig := podsConfig.GetConfig(podName); podConfig != nil && podConfig.Root().IsObject() {
 				if volumesConfig := podConfig.GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
 					for _, value := range volumesConfig.Root().GetObject().Items() {
 						pvc := value.GetObject().GetKey("pvc")
-						pvcName := pvc.GetObject().GetKey("name").String()
 						if pvc != nil {
-							pvcs, err := getPVCs(namespace, k8sClient)
-							if err != nil {
-								return err
-							}
-							if err := existsPVC(pvcName, pvcs, namespace); err != nil {
-								return err
+							pvcName := pvc.GetObject().GetKey("name")
+							if pvcName != nil {
+								pvcs, err := getPVCs(namespace, k8sClient)
+								if err != nil {
+									return err
+								}
+								if err := existsPVC(pvcName.String(), pvcs, namespace); err != nil {
+									return err
+								}
 							}
 						}
+						
 					}
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.CloudflowApplicationSpec, k8sClient *kubernetes.Clientset) error {
+	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec) 
+	if err != nil {
+		return err
+	}
+	for _, k8sConfig := range k8sConfigMap {
+		k8sConfigPVCsExist(k8sConfig, namespace, k8sClient)
+	}
+	
+	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec) 
+	if err != nil {
+		return err
+	}
+	for _, k8sConfig := range k8sConfigMap {
+		k8sConfigPVCsExist(k8sConfig, namespace, k8sClient)
 	}
 	return nil
 }
