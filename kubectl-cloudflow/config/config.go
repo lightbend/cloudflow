@@ -952,7 +952,9 @@ func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.
 		return err
 	}
 	for _, k8sConfig := range k8sConfigMap {
-		k8sConfigPVCsExist(k8sConfig, namespace, k8sClient)
+		if err = k8sConfigPVCsExist(k8sConfig, namespace, k8sClient); err != nil {
+			return err
+		}
 	}
 	
 	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec) 
@@ -960,7 +962,9 @@ func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.
 		return err
 	}
 	for _, k8sConfig := range k8sConfigMap {
-		k8sConfigPVCsExist(k8sConfig, namespace, k8sClient)
+		if err = k8sConfigPVCsExist(k8sConfig, namespace, k8sClient); err != nil {
+			return err
+		}
 	}
 	return nil
 }

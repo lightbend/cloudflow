@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
 	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s_pvc"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
@@ -32,6 +33,9 @@ const (
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
+	UpdateMountingPVC           = "./resources/update_mounting_pvc.conf"
+	PVCResourceFile             = "./resources/pvc.yaml"
+	PVCResourceFileName			= "myclaim"
 	SecretResourceFile             = "./resources/secret.yaml"
 	SecretResourceFileName         = "mysecret"
 	SecretResourceFilePassword     = "1f2d1e2e67df"
@@ -97,14 +101,6 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		It("should have all pods in a 'running' status, eventually", func(done Done) {
-
-			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(status).To(Equal("Running"))
-			close(done)
-		}, LongTimeout)
 	})
 
 	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
@@ -199,6 +195,41 @@ var _ = Describe("Application deployment", func() {
 			err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
+	})
+
+	Context("Application swiss-knife is deployed and running", func() {
+
+		It("should TRY reconfigure spark streamlets to add a pvc but find there's no pvc in the cluster", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).To(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
+
+		It("should deploy a pvc", func() {
+			_, err := k8s_pvc.CreatePVC(PVCResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reconfigure spark streamlets to add a pvc and mount it", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).NotTo(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
+
+
+		It("should delete that pvc", func() {
+			err := k8s_pvc.DeletePVC(PVCResourceFileName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+
+
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
