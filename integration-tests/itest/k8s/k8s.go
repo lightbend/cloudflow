@@ -48,7 +48,7 @@ func ReadFile(namespace string, clientset *kubernetes.Clientset, podPartialName 
 	return "", fmt.Errorf("not matching pods with name containing '%s'",podPartialName)
 }
 
-func CopyFile(namespace string, clientset *kubernetes.Clientset, podPartialName string, localSrcFile string, podDestFile string) error {
+func CopyLocalFileToMatchingPod(namespace string, clientset *kubernetes.Clientset, podPartialName string, localSrcFile string, podDestFile string) error {
 
 	coreV1Client := clientset.CoreV1()
 	pods, err := coreV1Client.Pods(namespace).List(context.TODO(), metaV1.ListOptions{})
