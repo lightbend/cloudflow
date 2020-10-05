@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
-	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s"
 	"github.com/lightbend/cloudflow/integration-test/itest/k8s_pvc"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
 	. "github.com/onsi/ginkgo"
@@ -33,13 +34,18 @@ const (
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
-	UpdateMountingPVC           = "./resources/update_mounting_pvc.conf"
-	PVCResourceFile             = "./resources/pvc.yaml"
-	PVCResourceFileName			= "myclaim"
+	UpdateMountingPVC              = "./resources/update_mounting_pvc.conf"
+	PVCResourceFile                = "./resources/pvc.yaml"
+	PVCResourceName                = "myclaim"
+	PVCResourceLocalFileMountPath  = "./resources/imhere.txt"
+	PVCResourceAkkaFileMountPath   = "/tmp/some-akka/file.txt"
+	PVCResourceSparkFileMountPath  = "/tmp/some-spark/file.txt"
+	PVCResourceFlinkFileMountPath  = "/tmp/some-flink/file.txt"
+	PVCResourceFileContent         = "hello"
 	SecretResourceFile             = "./resources/secret.yaml"
 	SecretResourceFileName         = "mysecret"
 	SecretResourceFilePassword     = "1f2d1e2e67df"
-	SecretResourceFileMountingPath = "/tmp/some/password"
+	SecretResourceFileMountPath    = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
 	UpdateAkkaConfigurationFile    = "./resources/update_akka_config.conf"
 	UpdateAkkaConfigOutput         = "log-dead-letters=[15]"
@@ -73,6 +79,10 @@ var _ = Describe("Application deployment", func() {
 		})
 		It("should not have secrets remaining from previous runs of test app", func() {
 			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should not have the pvc remaining from previous runs of test app", func() {
+			err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -185,7 +195,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 		It("should find specific content in the secret mounted file in any akka streamlet", func(done Done) {
-			out, err := k8s_secret.ReadMountedSecret(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountingPath)
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(SecretResourceFilePassword))
 			close(done)
@@ -222,13 +232,30 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
+		It("should write specific content in any akka streamlet", func(done Done) {
+			err := k8s.CopyFile(swissKnifeApp.Name, clientset, "akka", PVCResourceLocalFileMountPath, PVCResourceAkkaFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
+
+		It("should find specific content in any spark streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "spark-process", PVCResourceSparkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
+
+		It("should find specific content in any flink streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "flink-process", PVCResourceFlinkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
 
 		It("should delete that pvc", func() {
-			err := k8s_pvc.DeletePVC(PVCResourceFileName, swissKnifeApp.Name, clientset)
+			err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
-
-
 
 	})
 
