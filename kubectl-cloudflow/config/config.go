@@ -187,23 +187,21 @@ func replaceEnvVars(config *Config) *Config {
 }
 
 func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
-	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
-	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec)
+	streamletsK8sConfigs, err := getStreamletsKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
-	for streamletName, k8sConfig := range k8sConfigMap {
+	for streamletName, k8sConfig := range streamletsK8sConfigs {
 		if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowStreamletsPath, streamletName)); k8serr != nil {
 			return k8serr
 		}
 	}
 
-	// cloudflow.runtimes.<streamlet>.kubernetes.<k8s-keys>
-	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec)
+	runtimeK8sConfigs, err := getRuntimesKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
-	for runtime, k8sConfig := range k8sConfigMap {
+	for runtime, k8sConfig := range runtimeK8sConfigs {
 		if k8serr := validateKubernetesSection(k8sConfig, fmt.Sprintf("%s.%s", cloudflowRuntimesPath, runtime)); k8serr != nil {
 			return k8serr
 		}
@@ -938,22 +936,23 @@ func k8sConfigPVCsExist(k8sConfig *configuration.Config, namespace string, k8sCl
 	return nil
 }
 
-func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.CloudflowApplicationSpec, k8sClient *kubernetes.Clientset) error {
-	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec)
+// ReferencedPersistentVolumeClaimsExist checks if all the PVCs exist.
+func ReferencedPersistentVolumeClaimsExist(config *Config, namespace string, applicationSpec cfapp.CloudflowApplicationSpec, k8sClient *kubernetes.Clientset) error {
+	streamletsK8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
-	for _, k8sConfig := range k8sConfigMap {
+	for _, k8sConfig := range streamletsK8sConfigMap {
 		if err = k8sConfigPVCsExist(k8sConfig, namespace, k8sClient); err != nil {
 			return err
 		}
 	}
 
-	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec)
+	runtimesK8sConfigMap, err := getRuntimesKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
-	for _, k8sConfig := range k8sConfigMap {
+	for _, k8sConfig := range runtimesK8sConfigMap {
 		if err = k8sConfigPVCsExist(k8sConfig, namespace, k8sClient); err != nil {
 			return err
 		}
@@ -981,9 +980,6 @@ func getStreamletsKubernetesConfig(config *Config, applicationSpec cfapp.Cloudfl
 	} else {
 		return k8sConfigs, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
 	}
-	// TODO kubernetes section: valide args to known path formats:
-	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
-	// cloudflow.runtimes.<streamlet>.kubernetes.<k8s-keys>
 
 	streamletsConfig := hoconConf.GetConfig(cloudflowStreamletsPath)
 	if streamletsConfig != nil && streamletsConfig.Root().IsObject() {
@@ -1062,9 +1058,6 @@ func getRuntimesKubernetesConfig(config *Config, applicationSpec cfapp.Cloudflow
 	} else {
 		return k8sConfigs, fmt.Errorf("Configuration misses root '%s' section", cloudflowPath)
 	}
-	// TODO kubernetes section: valide args to known path formats:
-	// cloudflow.streamlets.<streamlet>.kubernetes.<k8s-keys>
-	// cloudflow.runtimes.<streamlet>.kubernetes.<k8s-keys>
 	runtimesConfig := hoconConf.GetConfig(cloudflowRuntimesPath)
 	if runtimesConfig != nil && runtimesConfig.Root().IsObject() {
 		for runtime := range runtimesConfig.Root().GetObject().Items() {
