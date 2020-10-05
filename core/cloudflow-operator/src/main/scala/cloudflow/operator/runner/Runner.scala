@@ -419,7 +419,7 @@ object PodsConfig {
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
     val c: Config                        = config
     val m: java.util.Map[String, AnyRef] = c.root().unwrapped()
-    val res: Option[Volume.Source] = m.keySet().toArray().headOption.map {
+    val res: Option[Volume.Source] = config.root().keySet().toArray().headOption.map {
       case "secret" =>
         config.as[Volume.Secret]("secret")
       case "pvc" =>
