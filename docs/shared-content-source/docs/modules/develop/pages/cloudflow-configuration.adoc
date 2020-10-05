@@ -156,7 +156,7 @@ The above example shows that `500mcpu` is requested, as well as `512Mi` of memor
 The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable and how to add labels to a pod. 
 
-It is also possible to add `volumes`, that contain a Secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
+It is also possible to add `volumes`, that contain a secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
 
 Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
 
@@ -195,9 +195,9 @@ cloudflow.streamlets.my-streamlet {
 This configuration will mount `mysecret1` into each `my-streamlet` container on to the path `/mnt/folderA/mysecret1` as read-only, while `mysecret2` will be mounted on path `/mnt/folderB/mysecret2`. Inside these folders, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted.
 As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
 
-Apart from secrets `volumes` can also mount a Persistent Volumes Claim that already exist in the kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster will raise an error and stop the deployment or configuration.
+You can also mount `volumes` on Persistent Volume Claims (PVC) that already exist in the Kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster, an error is shown and the deployment or configuration is stopped.
 
-Here's a sample, and further explanation, of how to configure two pvcs to be mounted on the containers that implements replicas of `my-streamlet`. 
+Here's a sample, and further explanation, of how to configure two PVC's to be mounted on all the deployed containers of `my-streamlet`. 
 
 [source, hocon]
 ----
@@ -233,7 +233,7 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-This configuration will mount a preexisting Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
+This configuration will mount an existing Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
 
 .Configuration available to set volumes and mount their secrets
 [%autowidth]
@@ -319,7 +319,7 @@ cloudflow.runtimes.spark {
 The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
 `key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
 
-Regarding `volumes` and `volume-mounts`, `runtime.spark` is the only runtime that allows to set different `volume-mounts` to each of its pods. More concretely, while the `volumes` have to be set as `cloudflow.runtime.spark.kubernetes.pods.pod.volumes` the `volume-mounts` can be set specifically as `cloudflow.runtime.spark.kubernetes.pods.driver.containers.container.volume-mounts` and/or the `cloudflow.runtime.spark.kubernetes.pods.executor.containers.container.volume-mounts`. This applies to both types of `volumes`, Secrets as well as Persistent Volume Claims.
+You can set different `volume-mounts` for the driver and executor pods in Spark, or specify volume mounts once for both types of pods. More concretely, while the `volumes` have to be set as `cloudflow.runtime.spark.kubernetes.pods.pod.volumes` the `volume-mounts` can be set specifically as `cloudflow.runtime.spark.kubernetes.pods.driver.containers.container.volume-mounts` and/or the `cloudflow.runtime.spark.kubernetes.pods.executor.containers.container.volume-mounts`. This applies to both types of `volumes`, Secrets as well as Persistent Volume Claims.
 
 The sample below shows how to.
 
