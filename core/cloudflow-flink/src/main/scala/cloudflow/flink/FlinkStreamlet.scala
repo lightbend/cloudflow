@@ -81,7 +81,9 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
       new FlinkStreamletContextImpl(streamletDefinition,
-                                    createExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef),
+                                    updateStreamExecutionEnvironment(
+                                      createStreamExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef)
+                                    ),
                                     updatedConfig)
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
@@ -117,10 +119,17 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
   }
 
   /**
+   * Override this method to modify the org.apache.flink.streaming.api.scala.StreamExecutionEnvironment used in this FlinkStreamlet.
+   * By default this method does not modify the StreamExecutionEnvironment.
+   */
+  def updateStreamExecutionEnvironment(env: StreamExecutionEnvironment): StreamExecutionEnvironment =
+    env
+
+  /**
    * Creates the Flink StreamExecutionEnvironment and by default sets up exactly-once checkpointing.
    * @see [[setupExecutionEnvironment]] to modify the StreamExecutionEnvironment that is created by this method.
    */
-  protected def createExecutionEnvironment(config: Config, streamlet: String): StreamExecutionEnvironment = {
+  protected def createStreamExecutionEnvironment(config: Config, streamlet: String): StreamExecutionEnvironment = {
 
     val localMode     = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
     val runtimePath   = ClusterFlinkJobExecutor.flinkRuntime
