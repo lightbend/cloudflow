@@ -81,8 +81,8 @@ var _ = Describe("Application deployment", func() {
 			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		It("should not have the pvc remaining from previous runs of test app", func() {
-			err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
+		It("should not have pvcs remaining from previous runs of test app", func() {
+			err := k8s_pvc.DeletePVCs(swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
