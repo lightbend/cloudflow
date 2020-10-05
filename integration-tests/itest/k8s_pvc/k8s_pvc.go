@@ -15,19 +15,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-func InitClient() *kubernetes.Clientset {
-	kubeconfig := os.Getenv("HOME") + "/.kube/config"
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-	return clientset
-}
-
 func CreatePVC(path string, namespace string, clientset *kubernetes.Clientset) (*coreV1.PersistentVolumeClaim, error) {
 
 	pvcClient := clientset.CoreV1().PersistentVolumeClaims(namespace)

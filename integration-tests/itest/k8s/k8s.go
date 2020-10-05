@@ -12,6 +12,19 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
+func InitClient() *kubernetes.Clientset {
+	kubeconfig := os.Getenv("HOME") + "/.kube/config"
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	return clientset
+}
+
 func ReadFile(namespace string, clientset *kubernetes.Clientset, podPartialName string, readFilePath string) (string, error) {
 
 	coreV1Client := clientset.CoreV1()

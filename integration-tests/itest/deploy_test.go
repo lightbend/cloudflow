@@ -58,7 +58,7 @@ var swissKnifeApp = cli.App{
 	Name:   "swiss-knife",
 }
 
-var clientset = k8s_secret.InitClient()
+var clientset = k8s.InitClient()
 
 var _ = Describe("Application deployment", func() {
 
