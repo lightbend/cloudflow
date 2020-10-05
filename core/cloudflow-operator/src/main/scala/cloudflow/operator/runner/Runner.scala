@@ -417,7 +417,6 @@ object PodsConfig {
    * How to make this optional?
    */
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
-    println(config)
     val c: Config                        = config
     val m: java.util.Map[String, AnyRef] = c.root().unwrapped()
     val res: Option[Volume.Source] = m.keySet().toArray().headOption.map {

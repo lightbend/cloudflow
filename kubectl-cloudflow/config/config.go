@@ -367,25 +367,6 @@ func validateVolumes(podConfig *configuration.Config) error {
 	return nil
 }
 
-func validateVolumesPVC(podConfig *configuration.Config) error {
-	if volumesConfig := podConfig.GetConfig(volumes); volumesConfig != nil && volumesConfig.Root().IsObject() {
-		for key, value := range volumesConfig.Root().GetObject().Items() {
-			secret := value.GetObject().GetKey("secret")
-			if secret == nil || !secret.IsObject() {
-				return fmt.Errorf("missing or malformed 'secret' in volume %s. Please have a look at documentation to see what's expected", key)
-			}
-			name := secret.GetObject().GetKey("name")
-			if name == nil {
-				return fmt.Errorf("missing 'name' in %s.secret", key)
-			}
-			if name.IsEmpty() {
-				return fmt.Errorf("missing content of 'name' in %s.secret.name", key)
-			}
-		}
-	}
-	return nil
-}
-
 func validateVolumesMounts(containersConfig *configuration.Config) error {
 	allowedProperties := []string{"mountPath", "readOnly", "subPath"}
 	for containerName := range containersConfig.Root().GetObject().Items() {

@@ -75,12 +75,3 @@ func GetPVCs(namespace string, clientset *kubernetes.Clientset) (*coreV1.Persist
 	pvcClient := clientset.CoreV1().PersistentVolumeClaims(namespace)
 	return pvcClient.List(context.TODO(), metaV1.ListOptions{})
 }
-
-func main() {
-	fmt.Printf("sdfdsf")
-	// CreatePVC("./resources/pvc.yaml","cloudflow",InitClient())
-	pvcs, _ := GetPVCs("cloudflow", InitClient())
-	for _, items := range pvcs.Items {
-		fmt.Printf(items.ObjectMeta.Name)
-	}
-}
