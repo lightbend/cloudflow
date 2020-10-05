@@ -156,7 +156,7 @@ The above example shows that `500mcpu` is requested, as well as `512Mi` of memor
 The pod is limited to use `4Gi` of memory.
 It also shows how to set options to the JVM through an environment variable and how to add labels to a pod. 
 
-It is also possible to add `volumes`, that contain a Secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
+It is also possible to add `volumes`, that contain a secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
 
 Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
 
