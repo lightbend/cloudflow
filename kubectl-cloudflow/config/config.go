@@ -88,7 +88,6 @@ func (conf *Config) parse() *configuration.Config {
 	return configuration.ParseString(conf.String())
 }
 
-
 func GetAppConfiguration(
 	args []string,
 	namespace string,
@@ -243,8 +242,6 @@ func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSp
 	}
 	return nil
 }
-
-
 
 func validateLabels(podConfig *configuration.Config, podName string) error {
 	if labelsConfig := podConfig.GetConfig(labels); labelsConfig != nil && labelsConfig.Root().IsObject() {
@@ -918,13 +915,10 @@ func validateMemorySize(value string) error {
 	return nil
 }
 
-
 func getPVCs(namespace string, clientset *kubernetes.Clientset) (*corev1.PersistentVolumeClaimList, error) {
 	pvcClient := clientset.CoreV1().PersistentVolumeClaims(namespace)
 	return pvcClient.List(metav1.ListOptions{})
 }
-
-
 
 func existsPVC(pvc string, pvcs *corev1.PersistentVolumeClaimList, namespace string) error {
 	for _, item := range pvcs.Items {
@@ -954,7 +948,7 @@ func k8sConfigPVCsExist(k8sConfig *configuration.Config, namespace string, k8sCl
 								}
 							}
 						}
-						
+
 					}
 				}
 			}
@@ -964,7 +958,7 @@ func k8sConfigPVCsExist(k8sConfig *configuration.Config, namespace string, k8sCl
 }
 
 func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.CloudflowApplicationSpec, k8sClient *kubernetes.Clientset) error {
-	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec) 
+	k8sConfigMap, err := getStreamletsKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
@@ -973,8 +967,8 @@ func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.
 			return err
 		}
 	}
-	
-	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec) 
+
+	k8sConfigMap, err = getRuntimesKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
 	}
@@ -986,8 +980,7 @@ func AllConfigPVCsExist(config *Config, namespace string, applicationSpec cfapp.
 	return nil
 }
 
-
-func getStreamletsKubernetesConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec ) (map[string]*configuration.Config, error) {
+func getStreamletsKubernetesConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) (map[string]*configuration.Config, error) {
 	//map of name of the runtime and its config
 	k8sConfigs := make(map[string]*configuration.Config)
 
@@ -1056,7 +1049,6 @@ func getStreamletsKubernetesConfig(config *Config, applicationSpec cfapp.Cloudfl
 					}
 					if streamletConfigSectionKey == kubernetesKey {
 						if k8sConfig := streamletConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
-							fmt.Printf("###### streamletName %s", streamletName)
 							k8sConfigs[streamletName] = k8sConfig
 						} else {
 							return k8sConfigs, fmt.Errorf("streamlet kubernetes config in path '%s.%s.%s' is not a valid %s section", cloudflowStreamletsPath, streamletName, kubernetesKey, kubernetesKey)
@@ -1108,7 +1100,7 @@ func getRuntimesKubernetesConfig(config *Config, applicationSpec cfapp.Cloudflow
 				}
 				if k8sConfig := runtimeConfig.GetConfig(kubernetesKey); k8sConfig != nil && k8sConfig.Root().IsObject() {
 					k8sConfigs[runtime] = k8sConfig
-				} 
+				}
 			}
 		}
 	}
