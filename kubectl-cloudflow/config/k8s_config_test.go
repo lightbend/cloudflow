@@ -440,12 +440,12 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPath = "/etc/my/file"
-					readOnly = true
+					mount-path = "/etc/my/file"
+					read-only = true
 				}
 				bar {
-					mountPath = "/etc/mc/fly"
-					readOnly = false
+					mount-path = "/etc/mc/fly"
+					read-only = false
 				}
 			}
 		}
@@ -474,7 +474,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 		  	containers.container {
 			    volume-mounts {
 			      	foo {
-			        	mountPath: "/tmp/some"
+			        	mount-path: "/tmp/some"
 			      	}
 			    }
 		  }
@@ -484,7 +484,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 			containers.container {
 			    volume-mounts {
 				    bar {
-				        mountPath: "/tmp/some"
+				        mount-path: "/tmp/some"
 				    }
 			    }
 			}
@@ -498,7 +498,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 			foo {
 				pvc {
 					name = myclaim
-					readOnly = true
+					read-only = true
 				}
 			}
 			bar {
@@ -510,12 +510,12 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPath = "/etc/my/file"
-					readOnly = true
+					mount-path = "/etc/my/file"
+					read-only = true
 				}
 				bar {
-					mountPath = "/etc/mc/fly"
-					readOnly = false
+					mount-path = "/etc/mc/fly"
+					read-only = false
 				}
 			}
 		}
@@ -529,7 +529,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPathy = "/etc/my/file"
+					mount-pathy = "/etc/my/file"
 				}
 			}
 		}
@@ -550,12 +550,12 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPath = "/etc/my/file"
-					readOnly = true
+					mount-path = "/etc/my/file"
+					read-only = true
 				}
 				bar {
-					mountPath = "/etc/mc/fly"
-					readOnly = false
+					mount-path = "/etc/mc/fly"
+					read-only = false
 				}
 			}
 		}

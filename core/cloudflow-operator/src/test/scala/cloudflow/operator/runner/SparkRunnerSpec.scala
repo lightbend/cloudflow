@@ -249,12 +249,12 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
                 |       }
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }
@@ -311,8 +311,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
                 |       }
                 |     }
                 |   }
@@ -321,8 +321,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }
@@ -419,15 +419,15 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |     foo {
                 |       pvc {
                 |         name = myclaim
-                |         readOnly = false
+                |         read-only = false
                 |       }
                 |     }
                 |   }
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = false
+                |         mount-path = "/etc/my/file"
+                |         read-only = false
                 |       }
                 |     }
                 |   }
@@ -463,13 +463,13 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |     foo {
                 |       pvc {
                 |         name = myclaim1
-                |         readOnly = false
+                |         read-only = false
                 |       }
                 |     }
                 |     bar {
                 |       pvc {
                 |         name = myclaim2
-                |         readOnly = false
+                |         read-only = false
                 |       }
                 |     }
                 |   }
@@ -478,8 +478,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
                 |       }
                 |     }
                 |   }
@@ -488,8 +488,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }

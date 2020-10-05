@@ -351,12 +351,12 @@ func validateVolumes(podConfig *configuration.Config) error {
 				if name.IsEmpty() {
 					return fmt.Errorf("missing content of 'name' in %s.pvc.name", key)
 				}
-				readOnly := pvc.GetObject().GetKey("readOnly")
+				readOnly := pvc.GetObject().GetKey("read-only")
 				if readOnly == nil {
-					return fmt.Errorf("missing 'readOnly' in %s.pvc", key)
+					return fmt.Errorf("missing 'read-only' in %s.pvc", key)
 				}
 				if readOnly.IsEmpty() {
-					return fmt.Errorf("missing content of 'readOnly' in %s.pvc.readOnly", key)
+					return fmt.Errorf("missing content of 'read-only' in %s.pvc.read-only", key)
 				}
 			}
 
@@ -366,7 +366,7 @@ func validateVolumes(podConfig *configuration.Config) error {
 }
 
 func validateVolumesMounts(containersConfig *configuration.Config) error {
-	allowedProperties := []string{"mountPath", "readOnly", "subPath"}
+	allowedProperties := []string{"mount-path", "read-only", "subPath"}
 	for containerName := range containersConfig.Root().GetObject().Items() {
 		if containerConfig := containersConfig.GetConfig(containerName); containerConfig != nil && containerConfig.Root().IsObject() {
 			if volumesMountsConfig := containerConfig.GetConfig(volumeMountsKey); volumesMountsConfig != nil && volumesMountsConfig.Root().IsObject() {
