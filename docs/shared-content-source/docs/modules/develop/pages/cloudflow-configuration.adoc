@@ -195,7 +195,7 @@ cloudflow.streamlets.my-streamlet {
 This configuration will mount `mysecret1` into each `my-streamlet` container on to the path `/mnt/folderA/mysecret1` as read-only, while `mysecret2` will be mounted on path `/mnt/folderB/mysecret2`. Inside these folders, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted.
 As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
 
-Apart from secrets `volumes` can also mount a Persistent Volumes Claim that already exist in the kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster will raise an error and stop the deployment or configuration.
+You can also mount `volumes` on Persistent Volume Claims (PVC) that already exist in the Kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster, an error is shown and the deployment or configuration is stopped.
 
 Here's a sample, and further explanation, of how to configure two PVC's to be mounted on all the deployed containers of `my-streamlet`. 
 
