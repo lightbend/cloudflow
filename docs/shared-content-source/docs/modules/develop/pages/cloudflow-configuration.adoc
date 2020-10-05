@@ -197,7 +197,7 @@ As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` ma
 
 Apart from secrets `volumes` can also mount a Persistent Volumes Claim that already exist in the kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster will raise an error and stop the deployment or configuration.
 
-Here's a sample, and further explanation, of how to configure two pvcs to be mounted on the containers that implements replicas of `my-streamlet`. 
+Here's a sample, and further explanation, of how to configure two PVC's to be mounted on all the deployed containers of `my-streamlet`. 
 
 [source, hocon]
 ----
