@@ -81,7 +81,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
       new FlinkStreamletContextImpl(streamletDefinition,
-                                    createExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef),
+                                    updateExecutionEnvironment(createExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef)),
                                     updatedConfig)
     }).recoverWith {
       case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
@@ -115,6 +115,13 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     }
     configuration
   }
+
+  /**
+   * Override this method to modify the org.apache.flink.streaming.api.scala.StreamExecutionEnvironment used in this FlinkStreamlet.
+   * By default this method does not modify the StreamExecutionEnvironment.
+   */
+  def updateExecutionEnvironment(env: StreamExecutionEnvironment): StreamExecutionEnvironment =
+    env
 
   /**
    * Creates the Flink StreamExecutionEnvironment and by default sets up exactly-once checkpointing.
