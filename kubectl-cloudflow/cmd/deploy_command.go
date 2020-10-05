@@ -156,7 +156,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogErrorAndExit(err)
 	}
 
-	err = config.AllConfigPVCsExist(appConfig,namespace, applicationSpec, k8sClient)
+	err = config.AllConfigPVCsExist(appConfig, namespace, applicationSpec, k8sClient)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}

@@ -81,8 +81,6 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogErrorAndExit(err)
 	}
 
-
-
 	// Get the Cloudflow operator ownerReference
 	ownerReference := appCR.GenerateOwnerReference()
 
@@ -101,4 +99,3 @@ func validateConfigureCMDArgs(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
