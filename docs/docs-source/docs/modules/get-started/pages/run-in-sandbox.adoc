@@ -100,15 +100,18 @@ We can also appreciate that the `ingress` streamlet is reachable on the TCP port
 http-ingress [sensordata.SensorDataHttpIngress]
 	- HTTP port [3000]
 ```
-You can send data to this port to exercise the pipeline.
-To make this easy, we include a script `send-local-data.sh` that takes a sample dataset from the `test-data/` directory and sends it record-by-record to the HTTP ingress port for processing.
 
-You should see an output similar to this:
+Sending sample data to this port will exercise the pipeline:
 
 [source, bash]
 ----
-$ ./send-local-data.sh 
-Sending {"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}
+$ curl -i -X POST localhost:3000 -H "Content-Type: application/json" --data '{"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":105.9}}'
+----
+
+The output should be similar to:
+
+[source, bash]
+----
 HTTP/1.1 202 Accepted
 Server: akka-http/10.1.11
 Date: Wed, 10 Jun 2020 18:11:18 GMT
@@ -123,8 +126,26 @@ In the `<path-to-temp-file`, you should see output similar to this:
 
 [source, text]
 ----
-[INFO] [06/10/2020 20:21:34.400] [akka_streamlet-akka.actor.default-dispatcher-5] [akka.actor.ActorSystemImpl(akka_streamlet)] valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "windSpeed", "value": 105.9}
+2020-10-02 12:04:07 INFO  ActorSystemImpl:99 - valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "power", "value": 1.7}
+2020-10-02 12:04:07 INFO  ActorSystemImpl:99 - valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "rotorSpeed", "value": 3.9}
+2020-10-02 12:04:07 INFO  ActorSystemImpl:99 - valid-logger {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "windSpeed", "value": 105.9}
 ----
+
+Trying to send invalid data such as:
+
+[source, bash]
+----
+$ curl -i -X POST localhost:3000 -H "Content-Type: application/json" --data '{"deviceId":"c75cb448-df0e-4692-8e06-0321b7703992","timestamp":1495545646279,"measurements":{"power":1.7,"rotorSpeed":3.9,"windSpeed":-105.9}}'
+----
+
+Will produce, as expected, output from the invalid logger:
+
+[source, text]
+----
+2020-10-02 12:19:23 WARN  ActorSystemImpl:119 - Invalid metric detected! {"metric": {"deviceId": "c75cb448-df0e-4692-8e06-0321b7703992", "timestamp": 1495545646279, "name": "windSpeed", "value": -105.9}, "error": "All measurements must be positive numbers!"}
+----
+
+To make this easy, we include in the folder of the example a script `send-local-data.sh` that takes a sample dataset from the `test-data/` directory and sends it record-by-record to the HTTP ingress port for processing.
 
 When you are done experimenting with the running application, you can stop it by pressing **ENTER**
 

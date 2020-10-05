@@ -18,8 +18,8 @@ package cloudflow.operator
 package event
 
 import java.nio.charset.StandardCharsets
-import scala.util.Try
 
+import scala.util.Try
 import akka.actor._
 import akka.NotUsed
 import akka.stream.scaladsl._
@@ -27,9 +27,9 @@ import com.typesafe.config._
 import skuber._
 import skuber.api.client._
 import skuber.json.format._
-
 import cloudflow.operator.action._
 import cloudflow.blueprint.deployment.StreamletDeployment
+import org.slf4j.LoggerFactory
 
 /**
  * Indicates that the configuration of the application has been changed by the user.
@@ -37,6 +37,9 @@ import cloudflow.blueprint.deployment.StreamletDeployment
 case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret]) extends AppChangeEvent[Secret]
 
 object ConfigInputChangeEvent extends Event {
+
+  private val log = LoggerFactory.getLogger(ConfigInputChangeEvent.getClass)
+
   val SecretDataKey        = "secret.conf"
   val RuntimeConfigDataKey = "runtime-config.conf"
   val PodsConfigDataKey    = "pods-config.conf"
@@ -81,37 +84,91 @@ object ConfigInputChangeEvent extends Event {
         }
       }
 
+  def getConfigFromSecret(secret: Secret): Config = {
+    val str = getData(secret)
+    ConfigFactory.parseString(str)
+  }
+
   def getData(secret: Secret): String =
     secret.data.get(ConfigInputChangeEvent.SecretDataKey).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
 
   def toInputConfigUpdateAction(
-      implicit system: ActorSystem
+      implicit system: ActorSystem,
+      ctx: DeploymentContext
   ): Flow[(Option[CloudflowApplication.CR], ConfigInputChangeEvent), Action[ObjectResource], NotUsed] =
     Flow[(Option[CloudflowApplication.CR], ConfigInputChangeEvent)]
       .map {
         case (Some(app), configInputChangeEvent) ⇒
           val appConfig = getConfigFromSecret(configInputChangeEvent, system)
 
-          app.spec.deployments.flatMap { streamletDeployment ⇒
-            val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig)
+          val clusterNames = (for {
+              d          <- app.spec.deployments
+              (_, topic) <- d.portMappings
+              cluster    <- topic.cluster.toVector
+            } yield cluster) :+ TopicActions.DefaultConfigurationName
 
-            // create update action for output secret action which is mounted as config by runtime specific deployments
-            val configSecret =
-              createSecret(
-                streamletDeployment.secretName,
-                app,
-                streamletDeployment,
-                configs.streamlet,
-                configs.runtime,
-                configs.pods,
-                CloudflowLabels.StreamletDeploymentConfigFormat
-              )
-            List(Action.createOrUpdate(configSecret, secretEditor))
-          }
+          val providedAction = Action.providedByLabel[Secret, Secret](
+            TopicActions.KafkaClusterNameLabel,
+            clusterNames,
+            ctx.podNamespace, { clusterSecrets =>
+              val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets, system)
+              val actions = app.spec.deployments.map {
+                streamletDeployment ⇒
+                  val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig, allNamedClusters)
 
+                  // create update action for output secret action which is mounted as config by runtime specific deployments
+                  val configSecret =
+                    createSecret(
+                      streamletDeployment.secretName,
+                      app,
+                      streamletDeployment,
+                      configs.streamlet,
+                      configs.runtime,
+                      configs.pods,
+                      CloudflowLabels.StreamletDeploymentConfigFormat
+                    )
+                  Action.createOrUpdate(configSecret, secretEditor)
+              }
+
+              Action.composite(actions)
+            }
+          )
+          List(providedAction)
         case _ ⇒ Nil // app could not be found, do nothing.
       }
       .mapConcat(_.toList)
+
+  /**
+   * Look up all Kafka cluster names referenced in streamlet definitions with the named cluster secrets found in K8s.
+   * If a referenced cluster name does not have a corresponding secret K8s then log an error, but continue.
+   * Return all named cluster configs and the 'default' cluster config, if one is defined.
+   */
+  def namedClusters(appName: String, clusterNames: Vector[String], clusterSecrets: ListResource[Secret], system: ActorSystem) = {
+    val namedClusters: Map[String, Config] = clusterNames.flatMap { name =>
+      val secret = clusterSecrets.items.find(_.metadata.labels.get(TopicActions.KafkaClusterNameLabel).contains(name))
+      secret match {
+        case Some(secret) =>
+          val clusterConfigStr = getConfigFromSecret(secret)
+          Vector(name -> clusterConfigStr)
+        case None =>
+          system.log.error(
+            s"""
+              |The referenced cluster configuration secret '$name' for app '$appName' does not exist.
+              |This should have been detected at deploy time.
+              |This will lead to a runtime exception when the streamlet runs.
+            """.stripMargin
+          )
+          Nil
+      }
+    }.toMap
+
+    val maybeDefaultCluster = clusterSecrets.items
+      .find(_.metadata.labels.get(TopicActions.KafkaClusterNameLabel).contains(TopicActions.DefaultConfigurationName))
+      .map(s => TopicActions.DefaultConfigurationName -> getConfigFromSecret(s))
+      .toMap
+
+    namedClusters ++ maybeDefaultCluster
+  }
 
   def getConfigFromSecret(configInputChangeEvent: ConfigInputChangeEvent, system: ActorSystem) = {
     val secret: Secret = configInputChangeEvent.watchEvent._object

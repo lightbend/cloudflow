@@ -15,6 +15,7 @@ If you are unfamiliar with the project or with asciidoc, please read the contrib
 ## Contributing to the Cloudflow Documentation
 
 Detailed information about working with the documentation is provided in the [docs-source](docs-source/README.adoc) folder.
+A good starting point is to build the documentation in "author-mode" with the `make html-author-mode` command.
 
 ## Building the Documentation
 
@@ -29,10 +30,10 @@ To build the documentation, use `make` with the following commands:
 	The result is available at `docs-source/build/site/`
 
 `make html`::
-    Generates the html documentation and homepage. The result is available at `techhub/build/site/`.
+    Generates from the upstream git repository the html documentation (result available at `docs/target/staging/docs/<version>`) and homepage (result available at  `docs/target/staging`).
 
 `make html-author-mode`:: 
-    Generates the documentation, in 'author' mode, to display review comments and TODOs. The result is available at `techhub/build/site/cloudflow/<version>`.
+    Generates from the local folders the documentation (result available at `docs/target/staging/docs`) and the homepage (result available at  `docs/target/staging`), in 'author' mode, to display review comments and TODOs.
 
 * `make check-links`
 

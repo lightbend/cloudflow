@@ -64,12 +64,12 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
 
     val deployment = StreamletDeployment(
       name = appId,
-      runtime = "spark",
+      runtime = "akka",
       image = image,
-      streamletName = "spark-streamlet",
+      streamletName = "akka-streamlet",
       className = "cloudflow.operator.runner.AkkaRunner",
       endpoint = None,
-      secretName = "spark-streamlet",
+      secretName = "akka-streamlet",
       config = ConfigFactory.empty(),
       portMappings = Map.empty,
       volumeMounts = None,

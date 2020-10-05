@@ -18,9 +18,10 @@ package cloudflow.operator
 package action
 
 import org.scalatest._
-
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._
+import skuber.ObjectMeta
+import skuber.Secret
 
 class TopicActionsSpec
     extends WordSpec
@@ -31,10 +32,24 @@ class TopicActionsSpec
     with TestDeploymentContext {
   case class Foo(name: String)
   case class Bar(name: String)
-  val namespace  = "ns"
-  val appVersion = "0.0.1"
-  val image      = "image-1"
-  val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
+  val namespace               = "ns"
+  val appVersion              = "0.0.1"
+  val image                   = "image-1"
+  val agentPaths              = Map("prometheus" -> "/app/prometheus/prometheus.jar")
+  val defaultBootstrapServers = "localhost:9092"
+  val defaultPartitions       = 3
+  val defaultReplicas         = 1
+  val defaultClusterSecret = Secret(
+    metadata = ObjectMeta(),
+    data = Map(
+      "secret.conf" ->
+          s"""
+       |bootstrap.servers = "$defaultBootstrapServers"
+       |partitions = "$defaultPartitions"
+       |replicas = "$defaultReplicas"
+       |""".stripMargin.getBytes()
+    )
+  )
 
   "TopicActions" should {
     "create topics when there is no previous application deployment" in {
@@ -49,8 +64,18 @@ class TopicActionsSpec
       val createActions =
         actions.collect {
           case p: ProvidedAction[_, _] ⇒
-            p.asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+            // try to get Kafka connection info from empty application secret
+            val fallbackProvidedAction = p
+              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
               .getAction(None)
+              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+
+            // assert that we fallback to provide the 'default' cluster secret
+            fallbackProvidedAction.resourceName mustBe TopicActions.KafkaClusterNameFormat.format(TopicActions.DefaultConfigurationName)
+
+            // fallback to get Kafka connection info from 'default' cluster secret
+            fallbackProvidedAction
+              .getAction(Option(defaultClusterSecret))
               .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
         }
       val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
@@ -102,49 +127,111 @@ class TopicActionsSpec
       val Seq(foosAction, barsAction) = TopicActions(newApp)
 
       val configMap0 = foosAction
-        .asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        // try to get Kafka connection info from empty application secret
         .getAction(None)
-        .asInstanceOf[ResourceAction[_]]
+        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        // fallback to get Kafka connection info from 'default' cluster secret
+        .getAction(Option(defaultClusterSecret))
+        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
         .resource
-        .asInstanceOf[TopicActions.TopicResource]
 
       configMap0 mustBe TopicActions.resource(
         newApp.namespace,
         TopicActions.TopicInfo(in),
-        ctx.kafkaContext.partitionsPerTopic,
-        ctx.kafkaContext.replicationFactor,
-        ctx.kafkaContext.bootstrapServers.value,
+        defaultPartitions,
+        defaultReplicas,
+        defaultBootstrapServers,
         CloudflowLabels(newApp)
       )
       foosAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
 
       val configMap1 = barsAction
-        .asInstanceOf[ProvidedAction[_, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        // try to get Kafka connection info from empty application secret
         .getAction(None)
-        .asInstanceOf[ResourceAction[_]]
+        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        // fallback to get Kafka connection info from 'default' cluster secret
+        .getAction(Option(defaultClusterSecret))
+        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
         .resource
-        .asInstanceOf[TopicActions.TopicResource]
 
       configMap1 mustBe TopicActions.resource(
         newApp.namespace,
         TopicActions.TopicInfo(savepoint),
-        ctx.kafkaContext.partitionsPerTopic,
-        ctx.kafkaContext.replicationFactor,
-        ctx.kafkaContext.bootstrapServers.value,
+        defaultPartitions,
+        defaultReplicas,
+        defaultBootstrapServers,
         CloudflowLabels(newApp)
       )
       barsAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
       assertTopic(savepoint, configMap1, appId)
     }
+
+    "create a topic for a named kafka cluster" in {
+      val clusterName = "cluster-baz"
+      val clusterSecret = Secret(
+        metadata = ObjectMeta(),
+        data = Map(
+          "secret.conf" ->
+              s"""
+           |bootstrap.servers = "localhost:19092"
+           |partitions = "100"
+           |replicas = "3"
+           |""".stripMargin.getBytes()
+        )
+      )
+
+      Given("no current app")
+      val newApp = createApp(Option(clusterName))
+
+      When("savepoint actions are created from a new app")
+      val actions = TopicActions(newApp)
+
+      Then("only create topic actions must be created between the streamlets")
+      val createActions =
+        actions.collect {
+          case p: ProvidedAction[_, _] ⇒
+            // try to get Kafka connection info from empty application secret
+            val fallbackProvidedAction = p
+              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+              .getAction(None)
+              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+
+            // assert that we fallback to provide the 'cluster-baz' cluster secret as specified in topic config
+            fallbackProvidedAction.resourceName mustBe TopicActions.KafkaClusterNameFormat.format(clusterName)
+
+            // fallback to get Kafka connection info from 'cluster-baz' cluster secret
+            fallbackProvidedAction
+              .getAction(Option(clusterSecret))
+              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        }
+      val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
+      createActions.size mustBe actions.size
+      // topics must be created to connect ingress, processor, egress
+      createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.name)).distinct.size
+      topics.foreach { topic ⇒
+        val resource = createActions
+          .find(_.resource.metadata.name == s"topic-${topic.name}")
+          .value
+          .resource
+          .asInstanceOf[TopicActions.TopicResource]
+        assertTopic(topic, resource, newApp.spec.appId, bootstrapServers = "localhost:19092", partitions = 100, replicas = 3)
+      }
+    }
   }
 
-  def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic, resource: TopicActions.TopicResource, appId: String)(
-      implicit ctx: DeploymentContext
-  ) = {
+  def assertTopic(savepoint: cloudflow.blueprint.deployment.Topic,
+                  resource: TopicActions.TopicResource,
+                  appId: String,
+                  bootstrapServers: String = defaultBootstrapServers,
+                  partitions: Int = defaultPartitions,
+                  replicas: Int = defaultReplicas) = {
     resource.metadata.namespace mustBe "testing-app"
     resource.metadata.name mustBe s"topic-${savepoint.name}"
-    resource.data("partitions") mustBe ctx.kafkaContext.partitionsPerTopic.toString
-    resource.data("replicationFactor") mustBe ctx.kafkaContext.replicationFactor.toShort.toString
+    resource.data("bootstrap.servers") mustBe bootstrapServers
+    resource.data("partitions") mustBe partitions.toString
+    resource.data("replicationFactor") mustBe replicas.toString
     resource.apiVersion mustBe "v1"
     resource.metadata.labels("app.kubernetes.io/name") mustBe Name.ofLabelValue(savepoint.name)
     resource.metadata.labels("app.kubernetes.io/part-of") mustBe Name.ofLabelValue(appId)
@@ -152,8 +239,11 @@ class TopicActionsSpec
     resource.kind mustBe "ConfigMap"
   }
 
-  def createApp() = {
-    val ingress   = randomStreamlet().asIngress[Foo].withServerAttribute
+  def createApp(cluster: Option[String] = None) = {
+    val rndStreamlet = randomStreamlet()
+    val fooIngress   = rndStreamlet.asIngress[Foo]
+
+    val ingress   = fooIngress.withServerAttribute
     val processor = randomStreamlet().asProcessor[Foo, Bar].withRuntime("spark")
     val egress    = randomStreamlet().asEgress[Bar].withServerAttribute
 
@@ -166,8 +256,8 @@ class TopicActionsSpec
       .use(ingressRef)
       .use(processorRef)
       .use(egressRef)
-      .connect(BTopic("foos"), ingressRef.out, processorRef.in)
-      .connect(BTopic("bars"), processorRef.out, egressRef.in)
+      .connect(BTopic(id = "foos", cluster = cluster), ingressRef.out, processorRef.in)
+      .connect(BTopic(id = "bars", cluster = cluster), processorRef.out, egressRef.in)
       .verified
       .right
       .value

@@ -79,6 +79,8 @@ object BlueprintProblem {
       case PortPathNotFound(path, suggestions) ⇒
         val end = if (suggestions.nonEmpty) s""", please try ${suggestions.map(_.toString).mkString(" or ")}.""" else "."
         s"'$path' does not point to a known streamlet inlet or outlet$end"
+      case InvalidKafkaClusterName(name) =>
+        s"Invalid Kafka cluster name '$name'. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case StreamletDescriptorNotFound(streamletRef, className) ⇒
         s"ClassName $className for $streamletRef cannot be found."
       case UnconnectedInlets(unconnectedInlets) ⇒
@@ -116,6 +118,8 @@ final case class InvalidConsumerPortPath(topic: String, path: String) extends Bl
 final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
     extends PortPathError
 final case class PortBoundToManyTopics(path: String, topics: immutable.IndexedSeq[String]) extends PortPathError
+
+final case class InvalidKafkaClusterName(name: String) extends BlueprintProblem
 
 final case class InvalidStreamletClassName(streamletRef: String, streamletClassName: String) extends BlueprintProblem
 final case class InvalidStreamletName(streamletRef: String)                                  extends BlueprintProblem

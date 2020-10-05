@@ -96,6 +96,7 @@ object LocalRunner extends StreamletLoader {
     val kafkaPort = 9093
     val bootstrapServers =
       if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
+    val topicConfig = ConfigFactory.parseString(s"""bootstrap.servers = "$bootstrapServers"""")
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion
@@ -120,7 +121,8 @@ object LocalRunner extends StreamletLoader {
       val existingPortMappings =
         appDescriptor.deployments
           .find(_.streamletName == streamletInstance.name)
-          .map(_.portMappings)
+          // Override topic configs to use the local runner configured Kafka broker
+          .map(_.portMappings.mapValues(_.copy(cluster = None, config = topicConfig)))
           .getOrElse(Map.empty[String, Topic])
 
       val deployment: StreamletDeployment =
@@ -131,7 +133,7 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment, Some(bootstrapServers))
+      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment)
       val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig

@@ -17,19 +17,20 @@
 package cloudflow.operator.event
 
 import cloudflow.blueprint.deployment.StreamletDeployment
-import com.typesafe.config.{ Config, ConfigFactory }
-import scala.collection.JavaConverters._
+import cloudflow.operator.action.TopicActions
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 /**
  * Implementation of https://cloudflow.io/docs/current/develop/cloudflow-configuration.html
  */
 object ConfigurationScopeLayering {
-
   final case class Configs(streamlet: Config, runtime: Config, pods: Config)
 
-  def configs(streamletDeployment: StreamletDeployment, appConfig: Config): Configs = {
+  def configs(streamletDeployment: StreamletDeployment, appConfig: Config, clusterSecretConfigs: Map[String, Config]): Configs = {
     val streamletName = streamletDeployment.streamletName
     val runtime       = streamletDeployment.runtime
 
@@ -37,7 +38,8 @@ object ConfigurationScopeLayering {
     val podsConfig      = extractPodsConfig(streamletConfig)
     val runtimeConfig   = extractRuntimeConfig(runtime, streamletConfig)
 
-    val asPortMappings = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig)
+    val asPortMappings = moveTopicsConfigToPortMappings(streamletDeployment, streamletConfig, appConfig, clusterSecretConfigs)
+
     Configs(asPortMappings, runtimeConfig, podsConfig)
   }
 
@@ -123,21 +125,39 @@ object ConfigurationScopeLayering {
 
   /*
    * Moves cloudflow.topics.<topic> config to cloudflow.runner.streamlet.context.port_mappings.<port>.config.
+   * If no cloudflow.topics.<topic> exists then use the named Kafka cluster if one exists, otherwise default.
    * The runner merges the secret on top of the configmap, which brings everything together.
    */
-  private def moveTopicsConfigToPortMappings(deployment: StreamletDeployment, streamletConfig: Config, appConfig: Config): Config = {
+  private[event] def moveTopicsConfigToPortMappings(deployment: StreamletDeployment,
+                                                    streamletConfig: Config,
+                                                    appConfig: Config,
+                                                    clusterSecretConfigs: Map[String, Config]): Config = {
     val portMappingConfigs = deployment.portMappings.flatMap {
       case (port, topic) =>
-        Try(
-          appConfig
-            .getConfig(s"$TopicsConfigPath.${topic.id}")
-            .withFallback(topic.config)
+        Try {
+          val portMappingConfig = if (appConfig.hasPath(s"$TopicsConfigPath.${topic.id}")) {
+            appConfig
+              .getConfig(s"$TopicsConfigPath.${topic.id}")
+              .withFallback(topic.config)
+          } else {
+            val clusterSecretConfig =
+              topic.cluster
+                .flatMap(clusterName => clusterSecretConfigs.get(clusterName))
+                .orElse(clusterSecretConfigs.get(TopicActions.DefaultConfigurationName))
+                .getOrElse(ConfigFactory.empty())
+
+            appConfig
+              .withFallback(topic.config)
+              .withFallback(clusterSecretConfig)
+          }
+
+          portMappingConfig
             .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
             // Need to retain the topic.id
             .withFallback(ConfigFactory.parseString(s"""
                 cloudflow.runner.streamlet.context.port_mappings.$port.id = ${topic.id}
               """))
-        ).toOption
+        }.toOption
     }
     portMappingConfigs.foldLeft(streamletConfig) { (acc, el) =>
       acc.withFallback(el)
