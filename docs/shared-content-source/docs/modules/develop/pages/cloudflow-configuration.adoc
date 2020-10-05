@@ -233,7 +233,7 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-This configuration will mount a preexisting Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
+This configuration will mount an existing Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
 
 .Configuration available to set volumes and mount their secrets
 [%autowidth]
