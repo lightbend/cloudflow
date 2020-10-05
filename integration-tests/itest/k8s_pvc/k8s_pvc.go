@@ -34,7 +34,7 @@ func CreatePVC(path string, namespace string, clientset *kubernetes.Clientset) (
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Created secret %s\n", pvcSpec.ObjectMeta.Name)
+	fmt.Printf("Created PVC %s\n", pvcSpec.ObjectMeta.Name)
 	return secret, err
 }
 
