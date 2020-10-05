@@ -8,6 +8,9 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"os/exec"
+	"k8s.io/client-go/tools/clientcmd"
+	"os"
+
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
@@ -42,7 +45,7 @@ func ReadFile(namespace string, clientset *kubernetes.Clientset, podPartialName 
 			return strings.TrimSuffix(string(out),"\n"), err
 		}
 	}
-	return "Not matching pods with that file mounted", nil
+	return "", fmt.Errorf("not matching pods with name containing '%s'",podPartialName)
 }
 
 func CopyFile(namespace string, clientset *kubernetes.Clientset, podPartialName string, localSrcFile string, podDestFile string) error {
@@ -55,7 +58,6 @@ func CopyFile(namespace string, clientset *kubernetes.Clientset, podPartialName 
 	for _, pod := range pods.Items {
 		if strings.Contains(pod.Name, podPartialName) {
 			cmd := exec.Command("kubectl", "cp", localSrcFile, fmt.Sprintf("%s/%s:%s", namespace, pod.Name, podDestFile))
-			fmt.Println("Writing %s",cmd.String())
 			out, err := cmd.CombinedOutput()
 			if err != nil {
     			fmt.Println(fmt.Sprint(err) + ": " + string(out))
@@ -64,5 +66,5 @@ func CopyFile(namespace string, clientset *kubernetes.Clientset, podPartialName 
 			return nil
 		}
 	}
-	return nil 
+	return fmt.Errorf("nothing has been copied") 
 }

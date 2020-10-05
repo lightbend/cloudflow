@@ -415,7 +415,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 		labels {}
 		volumes {
 			foo {
-				pvc = mymalformedsecret
+				pvc = mymalformedpvc
 			}
 		}
 	}
@@ -497,7 +497,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 		volumes {
 			foo {
 				pvc {
-					name = mysecret
+					name = myclaim
 					readOnly = true
 				}
 			}
