@@ -319,7 +319,7 @@ cloudflow.runtimes.spark {
 The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
 `key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
 
-Regarding `volumes` and `volume-mounts`, `runtime.spark` is the only runtime that allows to set different `volume-mounts` to each of its pods. More concretely, while the `volumes` have to be set as `cloudflow.runtime.spark.kubernetes.pods.pod.volumes` the `volume-mounts` can be set specifically as `cloudflow.runtime.spark.kubernetes.pods.driver.containers.container.volume-mounts` and/or the `cloudflow.runtime.spark.kubernetes.pods.executor.containers.container.volume-mounts`. This applies to both types of `volumes`, Secrets as well as Persistent Volume Claims.
+You can set different `volume-mounts` for the driver and executor pods in Spark, or specify volume mounts once for both types of pods. More concretely, while the `volumes` have to be set as `cloudflow.runtime.spark.kubernetes.pods.pod.volumes` the `volume-mounts` can be set specifically as `cloudflow.runtime.spark.kubernetes.pods.driver.containers.container.volume-mounts` and/or the `cloudflow.runtime.spark.kubernetes.pods.executor.containers.container.volume-mounts`. This applies to both types of `volumes`, Secrets as well as Persistent Volume Claims.
 
 The sample below shows how to.
 
