@@ -79,7 +79,7 @@ Whether or not a pull request (or parts of it) shall be back- or forward-ported 
 
 ## Documentation
 
-All documentation is preferred to be in Lightbend's standard documentation format [Paradox](https://github.com/lightbend/paradox), which among other things allows all code in the documentation to be externalized into compiled files and imported into the documentation.
+All documentation is preferred to be in [Asciidoc](https://asciidoc.org/) format, which among other things allows all code in the documentation to be externalized into compiled files and imported into the documentation.
 
 ## External dependencies
 
