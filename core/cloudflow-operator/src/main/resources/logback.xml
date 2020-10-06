@@ -12,7 +12,7 @@
   </root>
 
   <logger name="akka"                                     level="${LOGLEVEL_AKKA:-info}" />
-  <logger name="skuber.api"                               level="${LOGLEVEL_AKKA:-warn}" />
+  <logger name="skuber.api"                               level="${LOGLEVEL_SKUBER:-warn}" />
 
   <logger name="com.zaxxer.hikari"                        level="${log.hikari:-info}" />
   <logger name="com.zaxxer.hikari.pool"                   level="${log.hikari:-info}" />
