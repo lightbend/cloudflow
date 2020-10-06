@@ -15,7 +15,7 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
 
 // to generate one complete scaladoc site and one complete javadoc site
-addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
+addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.3")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
 addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
