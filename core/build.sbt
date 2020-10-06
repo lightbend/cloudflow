@@ -376,7 +376,7 @@ lazy val blueprint =
 lazy val plugin =
   cloudflowModule("sbt-cloudflow")
     .dependsOn(streamlets, blueprint)
-    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(
       scalafmtOnCompile := true,
       sbtPlugin := true,
@@ -397,7 +397,11 @@ lazy val plugin =
             Logback               % Test,
             "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
             ScalaTest
-          )
+          ),
+      scriptedLaunchOpts := { scriptedLaunchOpts.value ++
+        Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+      },
+      scriptedBufferLog := false
     )
 
 lazy val runner =
