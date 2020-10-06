@@ -17,7 +17,7 @@ helm install flink-operator \
   --set operatorVersion="v0.5.0"
 ----
 
-NOTE: The above Helm command uses a Helm chart for the Lyft Flink operator that is hosted [here](https://github.com/lightbend/flink-operator).
+NOTE: The above Helm command uses a Helm chart for the Lyft Flink operator that is hosted https://github.com/lightbend/flink-operator[here].
 
 This completes the installation of the Flink operator. 
 
