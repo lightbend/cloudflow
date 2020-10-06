@@ -113,240 +113,240 @@ var _ = Describe("Application deployment", func() {
 
 	})
 
-	// Context("The status of a deployed test application that uses akka, spark, and flink", func() {
-	// 	checkContainsStreamlet := func(streamlet string) {
-	// 		status, err := cli.Status(swissKnifeApp)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		streamlets := cli.GetStreamlets(&status)
-	// 		Expect(streamlets).To(ContainElement(streamlet))
-	// 	}
-	// 	It("should contain a spark process", func() {
-	// 		checkContainsStreamlet("spark-process")
-	// 	})
+	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
+		checkContainsStreamlet := func(streamlet string) {
+			status, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := cli.GetStreamlets(&status)
+			Expect(streamlets).To(ContainElement(streamlet))
+		}
+		It("should contain a spark process", func() {
+			checkContainsStreamlet("spark-process")
+		})
 
-	// 	It("should contain a flink process", func() {
-	// 		checkContainsStreamlet("flink-process")
-	// 	})
+		It("should contain a flink process", func() {
+			checkContainsStreamlet("flink-process")
+		})
 
-	// 	It("should contain an akka process", func() {
-	// 		checkContainsStreamlet("akka-process")
-	// 	})
-	// })
+		It("should contain an akka process", func() {
+			checkContainsStreamlet("akka-process")
+		})
+	})
 
-	// Context("Running streamlets from the sample app should produce counter data", func() {
-	// 	It("should produce a counter in the raw output log", func(done Done) {
-	// 		checkAnyPodLogForOutput("raw-egress", "count:")
-	// 		close(done)
-	// 	}, LongTimeout)
+	Context("Running streamlets from the sample app should produce counter data", func() {
+		It("should produce a counter in the raw output log", func(done Done) {
+			checkAnyPodLogForOutput("raw-egress", "count:")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should produce a counter in the akka output log", func(done Done) {
-	// 		checkAnyPodLogForOutput("akka-egress", "count:")
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should produce a counter in the akka output log", func(done Done) {
+			checkAnyPodLogForOutput("akka-egress", "count:")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should produce a counter in the spark output log", func(done Done) {
-	// 		checkAnyPodLogForOutput("spark-egress", "count:")
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should produce a counter in the spark output log", func(done Done) {
+			checkAnyPodLogForOutput("spark-egress", "count:")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should produce a counter in the flink output log", func(done Done) {
-	// 		checkAnyPodLogForOutput("flink-egress", "count:")
-	// 		close(done)
-	// 	}, LongTimeout)
-	// })
+		It("should produce a counter in the flink output log", func(done Done) {
+			checkAnyPodLogForOutput("flink-egress", "count:")
+			close(done)
+		}, LongTimeout)
+	})
 
-	// Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
-	// 	It("should reconfigure the application", func(done Done) {
-	// 		err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		close(done)
-	// 	}, LongTimeout)
+	Context("Configuration parameters of a deployed streamlet can be configured using the CLI", func() {
+		It("should reconfigure the application", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should have configured an akka streamlet", func(done Done) {
-	// 		checkAnyPodLogForOutput("akka-egress", UpdateConfigPayload)
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should have configured an akka streamlet", func(done Done) {
+			checkAnyPodLogForOutput("akka-egress", UpdateConfigPayload)
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should have configured a spark streamlet", func(done Done) {
-	// 		checkAnyPodLogForOutput("spark-egress", UpdateConfigPayload)
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should have configured a spark streamlet", func(done Done) {
+			checkAnyPodLogForOutput("spark-egress", UpdateConfigPayload)
+			close(done)
+		}, LongTimeout)
 
-	// 	XIt("should have configured a flink streamlet", func(done Done) {
-	// 		checkAnyPodLogForOutput("flink-egress", UpdateConfigPayload)
-	// 		close(done)
-	// 	}, XLongTimeout)
-	// })
+		XIt("should have configured a flink streamlet", func(done Done) {
+			checkAnyPodLogForOutput("flink-egress", UpdateConfigPayload)
+			close(done)
+		}, XLongTimeout)
+	})
 
-	// Context("Application swiss-knife is deployed and running", func() {
+	Context("Application swiss-knife is deployed and running", func() {
 
-	// 	It("should deploy a secret", func() {
-	// 		_, err := k8s_secret.CreateSecret(SecretResourceFile, swissKnifeApp.Name, clientset)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 	})
+		It("should deploy a secret", func() {
+			_, err := k8s_secret.CreateSecret(SecretResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	// 	It("should reconfigure akka streamlets to add a secret as mounting file", func(done Done) {
-	// 		err := cli.Configure(swissKnifeApp, UpdateMountingSecret)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should reconfigure akka streamlets to add a secret as mounting file", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingSecret)
+			Expect(err).NotTo(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should find specific content in the secret mounted file in any akka streamlet", func(done Done) {
-	// 		out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountPath)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		Expect(out).To(Equal(SecretResourceFilePassword))
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should find specific content in the secret mounted file in any akka streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(SecretResourceFilePassword))
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should delete this secret", func() {
-	// 		err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 	})
-	// })
+		It("should delete this secret", func() {
+			err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 
-	// Context("Application swiss-knife is deployed and running", func() {
+	Context("Application swiss-knife is deployed and running", func() {
 
-	// 	It("should TRY reconfigure spark streamlets to add a pvc but find there's no pvc in the cluster", func(done Done) {
-	// 		err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
-	// 		Expect(err).To(HaveOccurred())
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should TRY reconfigure spark streamlets to add a pvc but find there's no pvc in the cluster", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).To(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should deploy a pvc", func() {
-	// 		_, err := k8s_pvc.CreatePVC(PVCResourceFile, swissKnifeApp.Name, clientset)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 	})
+		It("should deploy a pvc", func() {
+			_, err := k8s_pvc.CreatePVC(PVCResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	// 	It("should reconfigure spark streamlets to add a pvc and mount it", func(done Done) {
-	// 		err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should reconfigure spark streamlets to add a pvc and mount it", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).NotTo(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should write specific content in any akka streamlet", func(done Done) {
-	// 		err := k8s.CopyLocalFileToMatchingPod(swissKnifeApp.Name, clientset, "akka", PVCResourceLocalFileMountPath, PVCResourceAkkaFileMountPath)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should write specific content in any akka streamlet", func(done Done) {
+			err := k8s.CopyLocalFileToMatchingPod(swissKnifeApp.Name, clientset, "akka", PVCResourceLocalFileMountPath, PVCResourceAkkaFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should find specific content in any spark streamlet", func(done Done) {
-	// 		out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "spark-process", PVCResourceSparkFileMountPath)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		Expect(out).To(Equal(PVCResourceFileContent))
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should find specific content in any spark streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "spark-process", PVCResourceSparkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should find specific content in any flink streamlet", func(done Done) {
-	// 		out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "flink-process", PVCResourceFlinkFileMountPath)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		Expect(out).To(Equal(PVCResourceFileContent))
-	// 		close(done)
-	// 	}, LongTimeout)
+		It("should find specific content in any flink streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "flink-process", PVCResourceFlinkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
 
-	// 	It("should delete that pvc", func() {
-	// 		err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 	})
+		It("should delete that pvc", func() {
+			err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	// })
+	})
 
-	// Context("Kubernetes configuration can be updated using the CLI", func() {
-	// 	It("should reconfigure the pods of an Akka application", func(done Done) {
-	// 		By("Register current CPU and memory for an Akka pods")
-	// 		appStatus, err := cli.Status(swissKnifeApp)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		someAkkaPod := cli.GetFirstStreamletPod(&appStatus, "akka-process")
-	// 		Expect(someAkkaPod).NotTo(Equal(nil))
-	// 		podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, someAkkaPod.Pod)
-	// 		Expect(err).NotTo(HaveOccurred())
+	Context("Kubernetes configuration can be updated using the CLI", func() {
+		It("should reconfigure the pods of an Akka application", func(done Done) {
+			By("Register current CPU and memory for an Akka pods")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			someAkkaPod := cli.GetFirstStreamletPod(&appStatus, "akka-process")
+			Expect(someAkkaPod).NotTo(Equal(nil))
+			podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, someAkkaPod.Pod)
+			Expect(err).NotTo(HaveOccurred())
 
-	// 		By("Reconfigure a single Akka streamlet")
-	// 		err = cli.Configure(swissKnifeApp, UpdateAkkaProcessResourcesFile)
-	// 		Expect(err).NotTo(HaveOccurred())
+			By("Reconfigure a single Akka streamlet")
+			err = cli.Configure(swissKnifeApp, UpdateAkkaProcessResourcesFile)
+			Expect(err).NotTo(HaveOccurred())
 
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
-	// 		By("Get new resource configuration")
-	// 		updatedAppStatus, err := cli.Status(swissKnifeApp)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		updatedAkkaPod := cli.GetFirstStreamletPod(&updatedAppStatus, "akka-process")
-	// 		Expect(updatedAkkaPod).NotTo(Equal(nil))
-	// 		podUpdatedRes, err := kubectl.GetPodResources(swissKnifeApp.Name, updatedAkkaPod.Pod)
-	// 		Expect(podUpdatedRes.Cpu).NotTo(Equal(podRes.Cpu))
-	// 		Expect(podUpdatedRes.Mem).NotTo(Equal(podRes.Mem))
-	// 		// TODO: Read the config file and compare with the values there to avoid out-of-sync situations
-	// 		Expect(podUpdatedRes.Cpu).To(Equal("550m"))
-	// 		Expect(podUpdatedRes.Mem).To(Equal("612M"))
-	// 		close(done)
-	// 	}, LongTimeout)
+			By("Get new resource configuration")
+			updatedAppStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			updatedAkkaPod := cli.GetFirstStreamletPod(&updatedAppStatus, "akka-process")
+			Expect(updatedAkkaPod).NotTo(Equal(nil))
+			podUpdatedRes, err := kubectl.GetPodResources(swissKnifeApp.Name, updatedAkkaPod.Pod)
+			Expect(podUpdatedRes.Cpu).NotTo(Equal(podRes.Cpu))
+			Expect(podUpdatedRes.Mem).NotTo(Equal(podRes.Mem))
+			// TODO: Read the config file and compare with the values there to avoid out-of-sync situations
+			Expect(podUpdatedRes.Cpu).To(Equal("550m"))
+			Expect(podUpdatedRes.Mem).To(Equal("612M"))
+			close(done)
+		}, LongTimeout)
 
-	// 	It("Should reconfigure the Akka runtime of the complete application", func(done Done) {
-	// 		By("Register the current CPU and memory for all Akka streamlets")
-	// 		appStatus, err := cli.Status(swissKnifeApp)
-	// 		Expect(err).NotTo(HaveOccurred())
-	// 		streamlets := [5]string{"akka-process", "akka-egress", "spark-egress", "raw-egress", "flink-egress"}
-	// 		streamletResourceConfigMap := make(map[string]kubectl.PodResources)
-	// 		for _, streamlet := range streamlets {
-	// 			pod := cli.GetFirstStreamletPod(&appStatus, streamlet)
-	// 			Expect(pod).NotTo(Equal(nil))
-	// 			podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
-	// 			Expect(err).NotTo(HaveOccurred())
-	// 			streamletResourceConfigMap[streamlet] = podRes
-	// 		}
+		It("Should reconfigure the Akka runtime of the complete application", func(done Done) {
+			By("Register the current CPU and memory for all Akka streamlets")
+			appStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
+			streamlets := [5]string{"akka-process", "akka-egress", "spark-egress", "raw-egress", "flink-egress"}
+			streamletResourceConfigMap := make(map[string]kubectl.PodResources)
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&appStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				podRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				streamletResourceConfigMap[streamlet] = podRes
+			}
 
-	// 		By("Reconfigure the Akka Kubernetes Runtime")
-	// 		err = cli.Configure(swissKnifeApp, UpdateAkkaRuntimeResourcesFile)
-	// 		Expect(err).NotTo(HaveOccurred())
+			By("Reconfigure the Akka Kubernetes Runtime")
+			err = cli.Configure(swissKnifeApp, UpdateAkkaRuntimeResourcesFile)
+			Expect(err).NotTo(HaveOccurred())
 
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
-	// 		By("Get new resource configuration")
-	// 		updatedAppStatus, err := cli.Status(swissKnifeApp)
-	// 		Expect(err).NotTo(HaveOccurred())
+			By("Get new resource configuration")
+			updatedAppStatus, err := cli.Status(swissKnifeApp)
+			Expect(err).NotTo(HaveOccurred())
 
-	// 		for _, streamlet := range streamlets {
-	// 			pod := cli.GetFirstStreamletPod(&updatedAppStatus, streamlet)
-	// 			Expect(pod).NotTo(Equal(nil))
-	// 			updatedPodRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
-	// 			Expect(err).NotTo(HaveOccurred())
-	// 			oldRes := streamletResourceConfigMap[streamlet]
-	// 			Expect(updatedPodRes.Cpu).NotTo(Equal(oldRes.Cpu))
-	// 			Expect(updatedPodRes.Mem).NotTo(Equal(oldRes.Mem))
-	// 			// TODO: Read the config file for these values
-	// 			Expect(updatedPodRes.Cpu).To(Equal("665m"))
-	// 			Expect(updatedPodRes.Mem).To(Equal("655M"))
-	// 		}
-	// 		close(done)
-	// 	}, LongTimeout)
-	// })
+			for _, streamlet := range streamlets {
+				pod := cli.GetFirstStreamletPod(&updatedAppStatus, streamlet)
+				Expect(pod).NotTo(Equal(nil))
+				updatedPodRes, err := kubectl.GetPodResources(swissKnifeApp.Name, pod.Pod)
+				Expect(err).NotTo(HaveOccurred())
+				oldRes := streamletResourceConfigMap[streamlet]
+				Expect(updatedPodRes.Cpu).NotTo(Equal(oldRes.Cpu))
+				Expect(updatedPodRes.Mem).NotTo(Equal(oldRes.Mem))
+				// TODO: Read the config file for these values
+				Expect(updatedPodRes.Cpu).To(Equal("665m"))
+				Expect(updatedPodRes.Mem).To(Equal("655M"))
+			}
+			close(done)
+		}, LongTimeout)
+	})
 
-	// Context("Framework configuration can be updated using the CLI", func() {
-	// 	It("should reconfigure the configuration of a Spark application", func(done Done) {
-	// 		By("Reconfigure Spark-specific configuration")
-	// 		err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
-	// 		Expect(err).NotTo(HaveOccurred())
+	Context("Framework configuration can be updated using the CLI", func() {
+		It("should reconfigure the configuration of a Spark application", func(done Done) {
+			By("Reconfigure Spark-specific configuration")
+			err := cli.Configure(swissKnifeApp, UpdateSparkConfigurationFile)
+			Expect(err).NotTo(HaveOccurred())
 
-	// 		By("Wait for the deployment of the new configuration")
-	// 		time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-	// 		cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
-	// 		By("Verifying configuration update")
-	// 		checkMatchingPodLogForOutput("spark-config-output", "driver", UpdateSparkConfigOutput)
-	// 		close(done)
-	// 	}, LongTimeout)
+			By("Verifying configuration update")
+			checkMatchingPodLogForOutput("spark-config-output", "driver", UpdateSparkConfigOutput)
+			close(done)
+		}, LongTimeout)
 
 		It("should reconfigure the configuration of an Akka application", func(done Done) {
 			By("Reconfigure Akka-specific configuration")
