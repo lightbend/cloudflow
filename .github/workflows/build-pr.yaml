@@ -25,4 +25,4 @@ jobs:
         git config --global user.email "cloudflow@lightbend.com"
         git config --global user.name "Cloudflow CI"
         cd core
-        sbt scripted
+        sbt publishLocal scripted
