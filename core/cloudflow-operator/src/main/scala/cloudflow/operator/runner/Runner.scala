@@ -35,8 +35,6 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
-import skuber.Volume.MountPropagationMode
-import skuber.Volume.MountPropagationMode.MountPropagationMode
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"

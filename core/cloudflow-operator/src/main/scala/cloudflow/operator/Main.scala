@@ -98,7 +98,7 @@ object Main extends {
                    .map(_.metadata.ownerReferences),
                  10 seconds)
 
-  private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
+  private def connectToKubernetes()(implicit system: ActorSystem) = {
     val conf   = Configuration.defaultK8sConfig
     val client = k8sInit(conf).usingNamespace("")
     system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")

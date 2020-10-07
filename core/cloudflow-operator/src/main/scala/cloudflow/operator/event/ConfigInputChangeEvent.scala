@@ -29,7 +29,6 @@ import skuber.api.client._
 import skuber.json.format._
 import cloudflow.operator.action._
 import cloudflow.blueprint.deployment.StreamletDeployment
-import org.slf4j.LoggerFactory
 
 /**
  * Indicates that the configuration of the application has been changed by the user.
@@ -37,8 +36,6 @@ import org.slf4j.LoggerFactory
 case class ConfigInputChangeEvent(appId: String, namespace: String, watchEvent: WatchEvent[Secret]) extends AppChangeEvent[Secret]
 
 object ConfigInputChangeEvent extends Event {
-
-  private val log = LoggerFactory.getLogger(ConfigInputChangeEvent.getClass)
 
   val SecretDataKey        = "secret.conf"
   val RuntimeConfigDataKey = "runtime-config.conf"

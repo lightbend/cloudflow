@@ -45,24 +45,6 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     if (port >= 0 && port <= 65535) port
     else throw new ConfigException.BadValue(key, s"Not a valid port number: $port")
 
-  private def getPartitionsPerTopic(config: Config, key: String): Int = {
-
-    def validatePartitionsPerTopic(partitionsPerTopic: Int) =
-      if (partitionsPerTopic >= 1) partitionsPerTopic
-      else throw new ConfigException.BadValue(key, s"Partition count has to be a positive number > 0: $partitionsPerTopic")
-
-    validatePartitionsPerTopic(config.getInt(key))
-  }
-
-  private def getReplicationFactor(config: Config, key: String): Int = {
-
-    def validateReplicationFactor(replicationFactor: Int) =
-      if (replicationFactor >= 1) replicationFactor
-      else throw new ConfigException.BadValue(key, s"Replica count has to be a positive number > 0: $replicationFactor")
-
-    validateReplicationFactor(config.getInt(key))
-  }
-
   private def getResourceConstraints(config: Config): ResourceConstraints = ResourceConstraints(
     getNonEmptyString(config, "requests-cpu"),
     getNonEmptyString(config, "requests-memory"),
