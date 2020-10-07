@@ -83,6 +83,13 @@ To be able to run the example locally you should provide the two resources files
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/log4j.xml[]
 ----
 +
+you can tune the logging verbosity by changing the level(e.g. to `INFO`):
++
+[source,xml]
+----
+<level value="INFO" />
+----
++
 . Create a `local.conf` file with the following contents and save it, as well, in your `src/main/resources/` directory:
 +
 [source,HOCON]
