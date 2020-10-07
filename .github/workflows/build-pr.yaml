@@ -3,7 +3,7 @@ on:
   # Trigger the workflow on push only for the master branch
   pull_request:
 jobs:
-  build-docs:
+  build-all:
     runs-on: ubuntu-latest
     strategy:
       matrix:
