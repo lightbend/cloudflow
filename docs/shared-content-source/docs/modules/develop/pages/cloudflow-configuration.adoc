@@ -179,12 +179,12 @@ cloudflow.streamlets.my-streamlet {
     containers.container {
       volume-mounts {
         foo {
-          mountPath = "/mnt/folderA"
-          readOnly = true
+          mount-path = "/mnt/folderA"
+          read-only = true
         }
         bar {
-          mountPath = "/mnt/folderB"
-          readOnly = true
+          mount-path = "/mnt/folderB"
+          read-only = true
         }
       }
     }
@@ -207,25 +207,25 @@ cloudflow.streamlets.my-streamlet {
       foo {
         pvc {
           name = myclaim1
-          readOnly = true
+          read-only = true
         }
       }
       bar {
         pvc {
           name = myclaim2
-          readOnly = false
+          read-only = false
         }
       }
     }
     containers.container {
       volume-mounts {
         foo {
-          mountPath = "/mnt/folderA"
-          readOnly = true
+          mount-path = "/mnt/folderA"
+          read-only = true
         }
         bar {
-          mountPath = "/mnt/folderB"
-          readOnly = false
+          mount-path = "/mnt/folderB"
+          read-only = false
         }
       }
     }
@@ -241,9 +241,9 @@ This configuration will mount an existing Persistent Volume Claim `myclaim1` int
 | resource  | key
 | `volumes` | `kubernetes.pods.pod.volume.[name].secret.name = [secret-name]`
 | `volumes` | `kubernetes.pods.pod.volume.[name].pvc.name = [pvc-name]`
-| `volumes` | `kubernetes.pods.pod.volume.[name].pvc.readOnly = [true or false]`
-| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mountPath = [some-path]`
-| `volume-mounts` | `pod.containers.container.volume-mounts.[name].readOnly = [true or false]`
+| `volumes` | `kubernetes.pods.pod.volume.[name].pvc.read-only = [true or false]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
 |===
 
 
@@ -342,7 +342,7 @@ cloudflow.runtime.spark {
         baz {
           pvc {
             name = myclaim1
-            readOnly = false
+            read-only = false
           }
         }
       }
@@ -351,12 +351,12 @@ cloudflow.runtime.spark {
       containers.container {
         volume-mounts {
           foo {
-            mountPath = "/mnt/folderA/mysecret1"
-            readOnly = true
+            mount-path = "/mnt/folderA/mysecret1"
+            read-only = true
           }
           baz {
-            mountPath = "/mnt/folderB"
-            readOnly = false
+            mount-path = "/mnt/folderB"
+            read-only = false
           }
         }
       }
@@ -365,8 +365,8 @@ cloudflow.runtime.spark {
       containers.container {
         volume-mounts {
           bar {
-            mountPath = "/mnt/folderC/mysecret2"
-            readOnly = true
+            mount-path = "/mnt/folderC/mysecret2"
+            read-only = true
           }
         }
       }
