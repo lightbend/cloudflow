@@ -22,5 +22,7 @@ jobs:
         make all
     - name: Run integration tests of the sbt plugin
       run: |
+        git config --global user.email "cloudflow@lightbend.com"
+        git config --global user.name "Cloudflow CI"
         cd core
         sbt scripted
