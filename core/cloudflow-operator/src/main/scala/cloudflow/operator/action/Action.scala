@@ -178,7 +178,9 @@ class CreateOrUpdateAction[T <: ObjectResource](
 
   private def executeCreate(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       res ← existing
         .map { existingResource ⇒
           val resourceVersionUpdated =
@@ -223,7 +225,9 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
       client: KubernetesClient
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       res ← existing
         .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, executeCreateOrPatch))
         .getOrElse(recoverFromConflict(client.create(resource), client, executeCreateOrPatch))
@@ -273,7 +277,9 @@ class UpdateStatusAction[T <: ObjectResource](
 
   def executeUpdateStatus(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       resourceVersionUpdated = existing
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
@@ -308,7 +314,10 @@ final case class DeleteAction[T <: ObjectResource](
    */
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
-    client.deleteWithOptions(name, options)(resourceDefinition, lc).map(_ ⇒ this)
+    client
+      .usingNamespace(namespace)
+      .deleteWithOptions(name, options)(resourceDefinition, lc)
+      .map(_ ⇒ this)
   }
 }
 
