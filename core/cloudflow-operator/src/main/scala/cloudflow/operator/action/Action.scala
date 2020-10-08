@@ -104,8 +104,7 @@ object Action {
    * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
   def composite[T <: ObjectResource](actions: Vector[Action[T]])(
-      implicit format: Format[T],
-      resourceDefinition: ResourceDefinition[T]
+      implicit resourceDefinition: ResourceDefinition[T]
   ): CompositeAction[T] = CompositeAction(actions)
 
   /**

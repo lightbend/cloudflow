@@ -22,7 +22,6 @@ import cloudflow.operator.runner.SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
 
-import skuber.apps.v1.Deployment
 import skuber.api.patch.{ JsonMergePatch, Patch }
 import skuber.json.format._
 import skuber.json.rbac.format._
@@ -30,8 +29,6 @@ import skuber.rbac._
 import skuber._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
-import skuber.PersistentVolume.AccessMode
-import skuber.PersistentVolumeClaim.VolumeMode
 
 import cloudflow.operator.action.Action
 

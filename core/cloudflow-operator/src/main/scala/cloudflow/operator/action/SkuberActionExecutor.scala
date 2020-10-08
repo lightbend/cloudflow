@@ -20,7 +20,6 @@ package action
 import scala.concurrent._
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 
 import skuber._
 import skuber.api.Configuration
@@ -30,7 +29,7 @@ import skuber.api.Configuration
  */
 final class SkuberActionExecutor(
     k8sConfig: Configuration = Configuration.defaultK8sConfig
-)(implicit system: ActorSystem, mat: Materializer, executionContext: ExecutionContext)
+)(implicit system: ActorSystem, executionContext: ExecutionContext)
     extends ActionExecutor {
   implicit val lc = skuber.api.client.RequestLoggingContext()
   def execute(action: Action[ObjectResource]): Future[Action[ObjectResource]] = {
