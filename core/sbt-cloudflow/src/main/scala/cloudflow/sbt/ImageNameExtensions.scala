@@ -15,6 +15,7 @@
  */
 
 package cloudflow.sbt
+import sbtdocker.ImageName
 
 object ImageNameExtensions {
   // Extension method for the format, keep it here until we need it elsewhere

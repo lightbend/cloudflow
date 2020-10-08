@@ -121,9 +121,9 @@ object CloudflowBasePlugin extends AutoPlugin {
 
             log.warn("""*** WARNING ***""")
             log.warn("""You haven't specified the "cloudflowDockerRegistry" in your build.sbt""")
-            log.warn("""To have a working deployment you should make available the produced docker image""")
+            log.warn("""To have a working deployment you should make the produced docker image available """)
             log.warn("""in a docker registry accessible from your cluster nodes""")
-            log.warn(s"""The Cloudflow application CR point to ${dockerImage}${version}""")
+            log.warn(s"""The Cloudflow application CR points to ${dockerImage}${version}""")
 
             ImageNameAndDigest(returnImageName, imageDigest) -> streamletDescriptors
           } else
@@ -207,18 +207,6 @@ object TooManyImagesBuiltError {
     """.stripMargin
 }
 
-final case class ImageName(registry: Option[String] = None,
-                           namespace: Option[String] = None,
-                           repository: String,
-                           tag: Option[String] = None) {
-
-  override def toString = {
-    val registryString  = registry.fold("")(_ + "/")
-    val namespaceString = namespace.fold("")(_ + "/")
-    val tagString       = tag.fold("")(":" + _)
-    registryString + namespaceString + repository + tagString
-  }
-}
 final case class ImageDigest(val algorithm: String, val digest: String, includeAlgorithm: Boolean = true) {
   override def toString =
     if (includeAlgorithm) {
