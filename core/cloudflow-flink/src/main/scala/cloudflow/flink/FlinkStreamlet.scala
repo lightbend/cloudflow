@@ -32,7 +32,7 @@ import org.apache.flink.streaming.api.environment.CheckpointConfig
 import org.apache.flink.streaming.api.scala._
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
-import org.apache.flink.configuration.{ Configuration, RestOptions }
+import org.apache.flink.configuration.{ ConfigOptions, Configuration, RestOptions }
 import org.apache.flink.core.fs.FileSystem
 
 /**
@@ -135,20 +135,20 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     val runtimePath   = ClusterFlinkJobExecutor.flinkRuntime
     val streamletPath = ClusterFlinkJobExecutor.streamletRuntimeConfigPath(streamlet)
 
-    val env = if (localMode) {
-      val configuration = new Configuration()
-      populateFlinkConfiguration(
-        populateFlinkConfiguration(configuration, config, runtimePath),
-        config,
-        streamletPath
-      )
-      // Ensures that filesystem is initialized with right configuration
+    val configuration = populateFlinkConfiguration(
+      populateFlinkConfiguration(new Configuration(), config, runtimePath),
+      config,
+      streamletPath
+    )
+    // Ensures that if file syetem back end is used, it is initialized with right configuration
+    if ("filesystem" == configuration.getString(ConfigOptions.key("state.backend").stringType().defaultValue("")))
       FileSystem.initialize(configuration, null)
+
+    val env = if (localMode) {
       // Create local Flink environment
       // Note here that a local web support is set through configuration by setting
       // "local.web" to true or on, either in the streamlet or Flink runtime context.
       if (isWebEnabled(config, streamletPath) || isWebEnabled(config, runtimePath)) {
-
         val localEnv = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration)
         val port =
           if (configuration.contains(RestOptions.BIND_PORT))
