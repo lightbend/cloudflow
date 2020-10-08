@@ -25,6 +25,7 @@ import akka.kafka.ConsumerMessage._
 import cloudflow.streamlets._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
+import scala.collection.immutable
 
 /**
  * Provides functions to split elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
@@ -34,6 +35,7 @@ object Splitter {
   /**
    * A Graph that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    */
+  @deprecated("prefer providing Outlets, this variant can't guarantee at-least-once", "2.10.12")
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
@@ -62,6 +64,7 @@ object Splitter {
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
+  @deprecated("prefer providing Outlets, this variant can't guarantee at-least-once", "2.10.12")
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
@@ -78,7 +81,7 @@ object Splitter {
       rightOutlet: CodecOutlet[R]
   )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
     val defaultSettings = CommitterSettings(context.system)
-    sink[I, L, R](flow, context.committableSink(leftOutlet, defaultSettings), context.committableSink(rightOutlet, defaultSettings))
+    sink[I, L, R](flow, leftOutlet, rightOutlet, defaultSettings)
   }
 
   /**
@@ -91,7 +94,13 @@ object Splitter {
       rightOutlet: CodecOutlet[R],
       committerSettings: CommitterSettings
   )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] =
-    sink[I, L, R](flow, context.committableSink(leftOutlet, committerSettings), context.committableSink(rightOutlet, committerSettings))
+    flow.asFlow
+      .map { // translate the either flow to multi-outlets
+        case (Left(l), offset)  => ((immutable.Seq(l), immutable.Seq.empty), offset)
+        case (Right(r), offset) => ((immutable.Seq.empty, immutable.Seq(r)), offset)
+      }
+      .to(MultiOutlet.sink2(leftOutlet, rightOutlet, committerSettings))
+
 }
 
 /**

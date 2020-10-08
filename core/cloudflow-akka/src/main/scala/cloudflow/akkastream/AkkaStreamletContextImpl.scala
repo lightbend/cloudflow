@@ -31,6 +31,7 @@ import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.kafka.scaladsl._
 import akka.stream._
 import akka.stream.scaladsl._
+import cloudflow.akkastream.scaladsl.FlowWithCommittableContext
 import com.typesafe.config._
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -38,6 +39,7 @@ import org.apache.kafka.common.serialization._
 import cloudflow.streamlets._
 
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.collection.immutable
 
 /**
  * Implementation of the StreamletContext trait.
@@ -177,6 +179,31 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+  }
+
+  override def flexiFlow[T](
+      outlet: CodecOutlet[T]
+  ): Flow[(immutable.Seq[T], Committable), (Unit, Committable), NotUsed] = {
+    val topic = findTopicForPort(outlet)
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(runtimeBootstrapServers(topic))
+      .withProperties(topic.kafkaProducerProperties)
+
+    Flow[(immutable.Seq[T], Committable)]
+      .map {
+        case (values, committable) =>
+          ProducerMessage.MultiMessage(values.map(value => producerRecord(outlet, topic, value)), committable)
+      }
+      .via(handleTermination)
+      .via(Producer.flexiFlow(producerSettings))
+      .map(results => ((), results.passThrough))
+  }
+
+  private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
+    val key        = outlet.partitioner(value)
+    val bytesKey   = keyBytes(key)
+    val bytesValue = outlet.codec.encode(value)
+    new ProducerRecord(topic.name, bytesKey, bytesValue)
   }
 
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =

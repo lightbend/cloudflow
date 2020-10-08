@@ -38,6 +38,7 @@ object Splitter {
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
+  @deprecated("prefer providing Outlets, this variant can't guarantee at-least-once", "2.10.12")
   def sink[I, L, R](
       flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       left: Sink[Pair[L, Committable], NotUsed],
@@ -59,6 +60,7 @@ object Splitter {
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
+  @deprecated("prefer providing Outlets, this variant can't guarantee at-least-once", "2.10.12")
   def sink[I, L, R](
       flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       leftOutlet: CodecOutlet[L],
@@ -87,7 +89,10 @@ object Splitter {
       rightOutlet: CodecOutlet[R],
       context: AkkaStreamletContext
   ): Sink[Pair[I, Committable], NotUsed] =
-    sink[I, L, R](flow, leftOutlet, rightOutlet, CommitterSettings(context.system), context)
+    akkastream.util.scaladsl.Splitter
+      .sink[I, L, R](flow.via(toEitherFlow).asScala, leftOutlet, rightOutlet, CommitterSettings(context.system))(context)
+      .contramap[Pair[I, Committable]](_.toScala)
+      .asJava
 
   private def toEitherFlow[L, R] =
     FlowWithContext
