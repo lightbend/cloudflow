@@ -3,7 +3,7 @@ on:
   # Trigger the workflow on push only for the master branch
   pull_request:
 jobs:
-  build-docs:
+  build-all:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,3 +20,9 @@ jobs:
       run: |
         cd docs
         make all
+    - name: Run integration tests of the sbt plugin
+      run: |
+        git config --global user.email "cloudflow@lightbend.com"
+        git config --global user.name "Cloudflow CI"
+        cd core
+        sbt publishLocal scripted

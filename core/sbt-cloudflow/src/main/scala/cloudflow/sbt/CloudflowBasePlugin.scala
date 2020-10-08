@@ -71,7 +71,7 @@ object CloudflowBasePlugin extends AutoPlugin {
       val namespace = cloudflowDockerRepository.value
 
       cloudflowDockerImageName.value.map { imageName ⇒
-        ImageName(
+        sbtdocker.ImageName(
           registry = registry,
           namespace = namespace,
           repository = imageName.name,
@@ -93,25 +93,62 @@ object CloudflowBasePlugin extends AutoPlugin {
                      | See https://cloudflow.io/docs/current/project-info/migration-1_3-2_0.html#_build_process for more info.
                   """.stripMargin)
         }.value,
-    buildAndPublishImage := Def.task {
-          val _ = (checkUncommittedChanges.value, verifyDockerRegistry.value)
-          Def.task {
-            val streamletDescriptors                           = streamletDescriptorsInProject.value
-            val imageNameToDigest: Map[ImageName, ImageDigest] = dockerBuildAndPush.value
-            val log                                            = streams.value.log
-            if (imageNameToDigest.size > 1) throw TooManyImagesBuilt
-            val (imageName, imageDigest) = imageNameToDigest.head
-
+    buildAndPublishImage := Def.taskDyn {
+          def buildAndPublishLog(log: sbt.internal.util.ManagedLogger)(imageName: ImageName, imageDigest: ImageDigest) = {
             log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
             log.info("Successfully built and published the following image:")
             log.info(imageName.referenceWithDigest(imageDigest))
-            ImageNameAndDigest(imageName, imageDigest) -> streamletDescriptors
-          }.value
+          }
+
+          if (cloudflowDockerRegistry.value.isEmpty) Def.task {
+            val _                    = checkUncommittedChanges.value
+            val streamletDescriptors = streamletDescriptorsInProject.value
+
+            val imageId     = docker.value
+            val dockerImage = verifyDockerImage.value
+            val returnImageName = ImageName(
+              registry = dockerImage.registry,
+              namespace = dockerImage.namespace,
+              repository = dockerImage.repository,
+              tag = dockerImage.tag
+            )
+
+            val log         = streams.value.log
+            val version     = cloudflowBuildNumber.value.buildNumber
+            val imageDigest = ImageDigest("", version, includeAlgorithm = false)
+
+            buildAndPublishLog(log)(returnImageName, imageDigest)
+
+            log.warn("""*** WARNING ***""")
+            log.warn("""You haven't specified the "cloudflowDockerRegistry" in your build.sbt""")
+            log.warn("""To have a working deployment you should make the produced docker image available """)
+            log.warn("""in a docker registry accessible from your cluster nodes""")
+            log.warn(s"""The Cloudflow application CR points to ${dockerImage}${version}""")
+
+            ImageNameAndDigest(returnImageName, imageDigest) -> streamletDescriptors
+          } else
+            Def.task {
+              val _                    = (checkUncommittedChanges.value, verifyDockerRegistry.value)
+              val streamletDescriptors = streamletDescriptorsInProject.value
+              val imageNameToDigest: Map[ImageName, ImageDigest] =
+                dockerBuildAndPush.value.map {
+                  case (k, v) => ImageName(k.registry, k.namespace, k.repository, k.tag) -> ImageDigest(v.algorithm, v.digest)
+                }
+              if (imageNameToDigest.size > 1) throw TooManyImagesBuilt
+              val (imageName, imageDigest) = imageNameToDigest.head
+
+              buildAndPublishLog(streams.value.log)(imageName, imageDigest)
+              ImageNameAndDigest(imageName, imageDigest) -> streamletDescriptors
+            }
         }.value,
     fork in Compile := true,
     extraDockerInstructions := Seq(),
     ownerInDockerImage := userAsOwner(UserInImage)
   )
+
+  private[sbt] val verifyDockerImage = Def.task {
+    (imageNames in docker).value.headOption.getOrElse(throw DockerRegistryNotSet)
+  }
 
   private[sbt] val verifyDockerRegistry = Def.task {
     cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
@@ -141,6 +178,8 @@ object CloudflowBasePlugin extends AutoPlugin {
   }
 }
 
+case object DockerImageNotSet extends Exception("Cannot indentify the docker image to build.") with NoStackTrace
+
 case object DockerRegistryNotSet extends Exception(DockerRegistryNotSetError.msg) with NoStackTrace with sbt.FeedbackProvidedException
 object DockerRegistryNotSetError {
   val msg =
@@ -168,4 +207,12 @@ object TooManyImagesBuiltError {
     """.stripMargin
 }
 
+final case class ImageDigest(val algorithm: String, val digest: String, includeAlgorithm: Boolean = true) {
+  override def toString =
+    if (includeAlgorithm) {
+      s"$algorithm:$digest"
+    } else {
+      digest
+    }
+}
 final case class ImageNameAndDigest(imageName: ImageName, imageId: ImageDigest)
