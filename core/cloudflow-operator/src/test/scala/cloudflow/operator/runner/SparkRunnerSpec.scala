@@ -249,12 +249,12 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
-                |       },
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
+                |       }
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }
@@ -311,8 +311,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
                 |       }
                 |     }
                 |   }
@@ -321,8 +321,8 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }
@@ -402,6 +402,117 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.driver.labels.get("key2") mustBe Some("value2")
       crd.spec.executor.labels.get("key3") mustBe Some("value3")
       crd.spec.executor.labels.get("key4") mustBe Some("value4")
+    }
+
+    "read from config custom pvc and mount them to the driver and executor pods specs" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods.pod {
+                |   volumes {
+                |     foo {
+                |       pvc {
+                |         name = myclaim
+                |         read-only = false
+                |       }
+                |     }
+                |   }
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mount-path = "/etc/my/file"
+                |         read-only = false
+                |       }
+                |     }
+                |   }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.PersistentVolumeClaimRef(claimName = "myclaim", readOnly = false))
+      )
+
+      crd.spec.driver.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", false)
+      )
+    }
+
+    "read from config custom pvc and mount them DIFFERENTLY to the driver and executor pods specs" in {
+
+      val crd = SparkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods {
+                | pod {
+                |   volumes {
+                |     foo {
+                |       pvc {
+                |         name = myclaim1
+                |         read-only = false
+                |       }
+                |     }
+                |     bar {
+                |       pvc {
+                |         name = myclaim2
+                |         read-only = false
+                |       }
+                |     }
+                |   }
+                | }
+                | driver {
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
+                |       }
+                |     }
+                |   }
+                | }
+                | executor {
+                |   containers.container {
+                |     volume-mounts {
+                |       bar {
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
+                |       }
+                |     }
+                |   }
+                | }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.PersistentVolumeClaimRef(claimName = "myclaim1", readOnly = false)),
+        Volume("bar", Volume.PersistentVolumeClaimRef(claimName = "myclaim2", readOnly = false))
+      )
+
+      crd.spec.driver.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true)
+      )
+      crd.spec.executor.volumeMounts must contain allElementsOf List(
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
     }
 
     "convert the CRD to/from Json" in {

@@ -35,8 +35,6 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
-import skuber.Volume.MountPropagationMode
-import skuber.Volume.MountPropagationMode.MountPropagationMode
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -337,6 +335,9 @@ import collection.JavaConverters._
 import skuber.Resource.Quantity
 
 object PodsConfig {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
   val CloudflowPodName       = "pod"
   val CloudflowContainerName = "container"
 
@@ -391,8 +392,8 @@ object PodsConfig {
   implicit val volumeMountsConfReader: ValueReader[Volume.Mount] = ValueReader.relative { config =>
     Volume.Mount(
       name = config.getOrElse[String]("name", ""),
-      mountPath = config.getOrElse[String]("mountPath", ""),
-      readOnly = config.getOrElse[Boolean]("readOnly", false),
+      mountPath = config.getOrElse[String]("mount-path", ""),
+      readOnly = config.getOrElse[Boolean]("read-only", false),
       subPath = config.getOrElse[String]("subPath", "")
     )
   }
@@ -407,12 +408,35 @@ object PodsConfig {
    * Currently only dealing with secrets inside volumes
    * Not taking into acccount other type of sources
    */
+  /**
+   * Currently only dealing with secrets inside volumes
+   * Not taking into acccount other type of sources
+   *
+   * How to make this optional?
+   */
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
-    config.as[Volume.Secret]("secret")
+    val res: Option[Volume.Source] = config.root().keySet().toArray().headOption.map {
+      case "secret" =>
+        config.as[Volume.Secret]("secret")
+      case "pvc" =>
+        config.as[Volume.PersistentVolumeClaimRef]("pvc")
+      case x =>
+        throw new IllegalArgumentException(
+          s"volume definition '$x' in config: '$config' is not 'secret' nor 'pvc'. These are the only options"
+        )
+    }
+    res.getOrElse(Volume.GenericVolumeSource(config.toString))
   }
 
   implicit val secretsConfReader: ValueReader[Volume.Secret] = ValueReader.relative { config =>
     Volume.Secret(secretName = config.as[String]("name"))
+  }
+
+  implicit val persistentVolumeClaimRefConfReader: ValueReader[Volume.PersistentVolumeClaimRef] = ValueReader.relative { config =>
+    Volume.PersistentVolumeClaimRef(
+      claimName = config.as[String]("name"),
+      readOnly = config.as[Boolean]("read-only")
+    )
   }
 
   implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒

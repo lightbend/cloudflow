@@ -66,7 +66,17 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogAndExit("Failed to retrieve the application `%s`, %s", applicationName, err.Error())
 	}
 
-	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, appCR.Spec, c.configFiles)
+	appConfig, err := config.GetAppConfiguration(args, namespace, appCR.Spec, c.configFiles)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	err = config.ReferencedPersistentVolumeClaimsExist(appConfig, namespace, appCR.Spec, k8sClient)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	appInputSecret, err := config.CreateAppInputSecret(&appCR.Spec, appConfig)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}

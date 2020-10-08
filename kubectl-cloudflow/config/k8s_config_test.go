@@ -59,7 +59,8 @@ func Test_validateConfigLabels(t *testing.T) {
 						memory = "1024M"
 					}
 				}
-			}labels {
+			}
+			labels {
 				key1
 			}
 		}	
@@ -74,7 +75,8 @@ func Test_validateConfigLabels(t *testing.T) {
 						memory = "1024M"
 					}
 				}
-			}labels {
+			}
+			labels {
 				key2: value2
 			}
 		}
@@ -408,6 +410,19 @@ func Test_validateConfigVolumes(t *testing.T) {
 	assert.NotEmpty(t, validateConfig(volumePodMalformed4, spec))
 	fmt.Printf("volumePodMalformed4: %s\n", validateConfig(volumePodMalformed4, spec))
 
+	volumePodMalformed5 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		labels {}
+		volumes {
+			foo {
+				pvc = mymalformedpvc
+			}
+		}
+	}
+	`)
+	assert.NotEmpty(t, validateConfig(volumePodMalformed5, spec))
+	fmt.Printf("volumePodMalformed5: %s\n", validateConfig(volumePodMalformed5, spec))
+
 	volumeMountPodWellformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
 		volumes {
@@ -425,12 +440,12 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPath = "/etc/my/file"
-					readOnly = true
+					mount-path = "/etc/my/file"
+					read-only = true
 				}
 				bar {
-					mountPath = "/etc/mc/fly"
-					readOnly = false
+					mount-path = "/etc/mc/fly"
+					read-only = false
 				}
 			}
 		}
@@ -441,41 +456,72 @@ func Test_validateConfigVolumes(t *testing.T) {
 	volumeMountPodWellformed2 := newConfig(`
 	cloudflow.runtimes.spark.kubernetes.pods {
 		pod {
-		  volumes {
-		    foo {
-		      secret {
-		        name = mysecret
-		      } 
-		    }
-		    bar {
-		      secret {
-		        name = myothersecret
-		      }
-		    }
+		  	volumes {
+			    foo {
+				    secret {
+				    	name = mysecret
+				    } 
+			    }
+			    bar {
+				    secret {
+				        name = myothersecret
+				    }
+			    }
 		  } 
 		}
 
 		driver {
-		  containers.container {
-		    volume-mounts {
-		      foo {
-		        mountPath: "/tmp/some"
-		      }
-		    }
+		  	containers.container {
+			    volume-mounts {
+			      	foo {
+			        	mount-path: "/tmp/some"
+			      	}
+			    }
 		  }
 		}
 
 		executor {
-		  containers.container {
-		    volume-mounts {
-		      bar {
-		        mountPath: "/tmp/some"
-		      }
-		    }
-		  }
+			containers.container {
+			    volume-mounts {
+				    bar {
+				        mount-path: "/tmp/some"
+				    }
+			    }
+			}
 		}
 	}`)
 	assert.Empty(t, validateConfig(volumeMountPodWellformed2, spec))
+
+	volumeMountPodWellformed3 := newConfig(`
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				pvc {
+					name = myclaim
+					read-only = true
+				}
+			}
+			bar {
+				secret {
+					name = yoursecret
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mount-path = "/etc/my/file"
+					read-only = true
+				}
+				bar {
+					mount-path = "/etc/mc/fly"
+					read-only = false
+				}
+			}
+		}
+	}
+	`)
+	assert.Empty(t, validateConfig(volumeMountPodWellformed3, spec))
 
 	volumeMountPodMalformed := newConfig(`
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
@@ -483,7 +529,7 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPathy = "/etc/my/file"
+					mount-pathy = "/etc/my/file"
 				}
 			}
 		}
@@ -504,12 +550,12 @@ func Test_validateConfigVolumes(t *testing.T) {
 		containers.container {
 			volume-mounts {
 				foo {
-					mountPath = "/etc/my/file"
-					readOnly = true
+					mount-path = "/etc/my/file"
+					read-only = true
 				}
 				bar {
-					mountPath = "/etc/mc/fly"
-					readOnly = false
+					mount-path = "/etc/mc/fly"
+					read-only = false
 				}
 			}
 		}
@@ -522,19 +568,19 @@ func Test_validateConfigPaths(t *testing.T) {
 	spec := createSpec()
 
 	badK8sPath := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.resources.requests.memory = "256M"
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.resources.requests.memory = "256M"
 	`)
 	assert.NotEmpty(t, validateConfig(badK8sPath, spec))
 	fmt.Printf("badK8sPath: %s\n", validateConfig(badK8sPath, spec))
 
 	badK8sPath2 := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.requests.memory = "256M"
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.requests.memory = "256M"
 	`)
 	assert.NotEmpty(t, validateConfig(badK8sPath2, spec))
 	fmt.Printf("badK8sPath2: %s\n", validateConfig(badK8sPath2, spec))
 
 	badK8sPath3 := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.containers.requests.memory = "256M"
+	cloudflow.streamlets.my-streamlet.kubernetes.pods.containers.requests.memory = "256M"
 	`)
 	assert.NotEmpty(t, validateConfig(badK8sPath3, spec))
 	fmt.Printf("badK8sPath3: %s\n", validateConfig(badK8sPath3, spec))
@@ -545,7 +591,7 @@ func Test_validateConfigTopic(t *testing.T) {
 	validTopic := newConfig(`
 	cloudflow.topics {
 		my-topic {
-				topic.name = "my-topic-name"
+			topic.name = "my-topic-name"
 		}
 	}
 	`)
@@ -553,7 +599,7 @@ func Test_validateConfigTopic(t *testing.T) {
 	unknownTopic := newConfig(`
 	cloudflow.topics {
 		topic {
-				topic.name = "my-topic-name"
+			topic.name = "my-topic-name"
 		}
 	}
 	`)

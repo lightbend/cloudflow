@@ -209,12 +209,12 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |   containers.container {
                 |     volume-mounts {
                 |       foo {
-                |         mountPath = "/etc/my/file"
-                |         readOnly = true
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
                 |       },
                 |       bar {
-                |         mountPath = "/etc/mc/fly"
-                |         readOnly =  false
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
                 |       }
                 |     }
                 |   }

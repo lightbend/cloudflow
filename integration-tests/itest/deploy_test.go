@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/lightbend/cloudflow/integration-test/itest/cli"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s"
+	"github.com/lightbend/cloudflow/integration-test/itest/k8s_pvc"
 	"github.com/lightbend/cloudflow/integration-test/itest/k8s_secret"
 	"github.com/lightbend/cloudflow/integration-test/itest/kubectl"
 
@@ -32,10 +34,18 @@ const (
 	UpdateAkkaRuntimeResourcesFile = "./resources/update_akka_runtime.conf"
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
+	UpdateMountingPVC              = "./resources/update_mounting_pvc.conf"
+	PVCResourceFile                = "./resources/pvc.yaml"
+	PVCResourceName                = "myclaim"
+	PVCResourceLocalFileMountPath  = "./resources/imhere.txt"
+	PVCResourceAkkaFileMountPath   = "/tmp/some-akka/file.txt"
+	PVCResourceSparkFileMountPath  = "/tmp/some-spark/file.txt"
+	PVCResourceFlinkFileMountPath  = "/tmp/some-flink/file.txt"
+	PVCResourceFileContent         = "hello"
 	SecretResourceFile             = "./resources/secret.yaml"
 	SecretResourceFileName         = "mysecret"
 	SecretResourceFilePassword     = "1f2d1e2e67df"
-	SecretResourceFileMountingPath = "/tmp/some/password"
+	SecretResourceFileMountPath    = "/tmp/some/password"
 	UpdateSparkConfigOutput        = "locality=[5s]"
 	UpdateAkkaConfigurationFile    = "./resources/update_akka_config.conf"
 	UpdateAkkaConfigOutput         = "log-dead-letters=[15]"
@@ -48,7 +58,7 @@ var swissKnifeApp = cli.App{
 	Name:   "swiss-knife",
 }
 
-var clientset = k8s_secret.InitClient()
+var clientset = k8s.InitClient()
 
 var _ = Describe("Application deployment", func() {
 
@@ -69,6 +79,10 @@ var _ = Describe("Application deployment", func() {
 		})
 		It("should not have secrets remaining from previous runs of test app", func() {
 			err := k8s_secret.DeleteSecrets(swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should not have pvcs remaining from previous runs of test app", func() {
+			err := k8s_pvc.DeletePVCs(swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -97,14 +111,6 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
-		It("should have all pods in a 'running' status, eventually", func(done Done) {
-
-			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(status).To(Equal("Running"))
-			close(done)
-		}, LongTimeout)
 	})
 
 	Context("The status of a deployed test application that uses akka, spark, and flink", func() {
@@ -189,7 +195,7 @@ var _ = Describe("Application deployment", func() {
 		}, LongTimeout)
 
 		It("should find specific content in the secret mounted file in any akka streamlet", func(done Done) {
-			out, err := k8s_secret.ReadMountedSecret(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountingPath)
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "akka", SecretResourceFileMountPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(Equal(SecretResourceFilePassword))
 			close(done)
@@ -199,6 +205,58 @@ var _ = Describe("Application deployment", func() {
 			err := k8s_secret.DeleteSecret(SecretResourceFileName, swissKnifeApp.Name, clientset)
 			Expect(err).NotTo(HaveOccurred())
 		})
+	})
+
+	Context("Application swiss-knife is deployed and running", func() {
+
+		It("should TRY reconfigure spark streamlets to add a pvc but find there's no pvc in the cluster", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).To(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
+
+		It("should deploy a pvc", func() {
+			_, err := k8s_pvc.CreatePVC(PVCResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reconfigure spark streamlets to add a pvc and mount it", func(done Done) {
+			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
+			Expect(err).NotTo(HaveOccurred())
+			By("Wait for the deployment of the new configuration")
+			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
+			close(done)
+		}, LongTimeout)
+
+		It("should write specific content in any akka streamlet", func(done Done) {
+			err := k8s.CopyLocalFileToMatchingPod(swissKnifeApp.Name, clientset, "akka", PVCResourceLocalFileMountPath, PVCResourceAkkaFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			close(done)
+		}, LongTimeout)
+
+		It("should find specific content in any spark streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "spark-process", PVCResourceSparkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
+
+		It("should find specific content in any flink streamlet", func(done Done) {
+			out, err := k8s.ReadFile(swissKnifeApp.Name, clientset, "flink-process", PVCResourceFlinkFileMountPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(out).To(Equal(PVCResourceFileContent))
+			close(done)
+		}, LongTimeout)
+
+		It("should delete that pvc", func() {
+			err := k8s_pvc.DeletePVC(PVCResourceName, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 	})
 
 	Context("Kubernetes configuration can be updated using the CLI", func() {
