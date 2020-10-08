@@ -120,10 +120,13 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   override def persistentVolumeActions(app: CloudflowApplication.CR,
                                        namespace: String,
                                        labels: CloudflowLabels,
-                                       ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] =
-    Vector(CreatePersistentVolumeClaimAction(persistentVolumeClaim(app.spec.appId, namespace, labels, ownerReferences)))
+                                       persistentStorageSettings: PersistentStorageSettings,
+                                       ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
+    Vector(
+      CreatePersistentVolumeClaimAction(
+        persistentVolumeClaim(app.spec.appId, namespace, labels, persistentStorageSettings, ownerReferences)
+      )
+    )
 
   def resource(
       deployment: StreamletDeployment,

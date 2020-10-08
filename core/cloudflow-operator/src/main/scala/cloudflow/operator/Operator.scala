@@ -204,7 +204,7 @@ object Operator {
     val eventsResult = getCurrentEvents[O](client, options)
 
     Source
-      .fromFuture(eventsResult)
+      .future(eventsResult)
       .mapConcat(identity _)
       .concat(
         client

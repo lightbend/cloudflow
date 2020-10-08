@@ -16,8 +16,6 @@
 
 package cloudflow.flink
 
-import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala._

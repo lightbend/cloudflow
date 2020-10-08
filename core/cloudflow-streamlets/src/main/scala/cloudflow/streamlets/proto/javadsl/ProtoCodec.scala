@@ -18,7 +18,6 @@ package cloudflow.streamlets.proto.javadsl
 
 import cloudflow.streamlets._
 import com.google.protobuf.GeneratedMessageV3
-import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 class ProtoCodec[T <: GeneratedMessageV3](clazz: Class[T]) extends Codec[T] {
   val parser = clazz.getMethod("parseFrom", classOf[Array[Byte]])

@@ -19,7 +19,6 @@ package cloudflow.operator
 import java.lang.management.ManagementFactory
 
 import akka.actor._
-import akka.stream._
 import com.typesafe.config.{ Config, ConfigRenderOptions }
 import skuber._
 import skuber.api.Configuration
@@ -39,10 +38,9 @@ object Main extends {
     implicit val system = ActorSystem()
 
     try {
-      implicit val ec           = system.dispatcher
-      implicit val materializer = ActorMaterializer()
-      val settings              = Settings(system)
-      implicit val ctx          = settings.deploymentContext
+      implicit val ec  = system.dispatcher
+      val settings     = Settings(system)
+      implicit val ctx = settings.deploymentContext
 
       logStartOperatorMessage(settings)
 
