@@ -31,7 +31,7 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
+import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 /**
  * Provides an entry-point for defining the behavior of an AkkaStreamlet.

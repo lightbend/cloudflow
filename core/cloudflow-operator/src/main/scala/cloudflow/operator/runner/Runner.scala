@@ -88,7 +88,7 @@ trait Runner[T <: ObjectResource] {
       implicit ctx: DeploymentContext
   ) =
     appActions(app, namespace, labels, ownerReferences) ++
-        persistentVolumeActions(app, namespace, labels, ownerReferences) ++
+        persistentVolumeActions(app, namespace, labels, ctx.persistentStorageSettings, ownerReferences) ++
         serviceAccountAction(namespace, labels, ownerReferences)
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
@@ -98,19 +98,20 @@ trait Runner[T <: ObjectResource] {
   def persistentVolumeActions(app: CloudflowApplication.CR,
                               namespace: String,
                               labels: CloudflowLabels,
-                              ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
-    val _ = (app, namespace, labels, ownerReferences) // to remove warning.
+                              persistentStorageSettings: PersistentStorageSettings,
+                              ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] = {
+    val _ = (app, namespace, labels, persistentStorageSettings, ownerReferences) // to remove warning.
     Seq()
   }
 
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
-  def persistentVolumeClaim(appId: String, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): PersistentVolumeClaim = {
+  def persistentVolumeClaim(appId: String,
+                            namespace: String,
+                            labels: CloudflowLabels,
+                            persistentStorageSettings: PersistentStorageSettings,
+                            ownerReferences: List[OwnerReference]): PersistentVolumeClaim = {
     val metadata = ObjectMeta(
       name = Name.ofPVCInstance(appId, runtime),
       namespace = namespace,
@@ -123,11 +124,11 @@ trait Runner[T <: ObjectResource] {
       volumeMode = Some(VolumeMode.Filesystem),
       resources = Some(
         Resource.Requirements(
-          limits = Map(Resource.storage   -> ctx.persistentStorageSettings.resources.limit),
-          requests = Map(Resource.storage -> ctx.persistentStorageSettings.resources.request)
+          limits = Map(Resource.storage   -> persistentStorageSettings.resources.limit),
+          requests = Map(Resource.storage -> persistentStorageSettings.resources.request)
         )
       ),
-      storageClassName = Some(ctx.persistentStorageSettings.storageClassName),
+      storageClassName = Some(persistentStorageSettings.storageClassName),
       selector = None
     )
     PersistentVolumeClaim(metadata = metadata, spec = Some(pvcSpec), status = None)

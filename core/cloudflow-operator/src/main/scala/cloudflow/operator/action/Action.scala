@@ -103,9 +103,7 @@ object Action {
   /**
    * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
-  def composite[T <: ObjectResource](actions: Vector[Action[T]])(
-      implicit resourceDefinition: ResourceDefinition[T]
-  ): CompositeAction[T] = CompositeAction(actions)
+  def composite[T <: ObjectResource](actions: Vector[Action[T]]): CompositeAction[T] = CompositeAction(actions)
 
   /**
    * Creates an action provided that a resource with resourceName in namespace is found.

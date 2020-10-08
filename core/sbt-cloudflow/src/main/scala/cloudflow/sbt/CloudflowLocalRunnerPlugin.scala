@@ -273,9 +273,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                       localConfig: LocalConfig,
                       targetDir: Path,
                       configDir: Path,
-                      log4jConfigFile: Option[String])(
-      implicit logger: Logger
-  ): Try[RuntimeDescriptor] = {
+                      log4jConfigFile: Option[String]): Try[RuntimeDescriptor] = {
     val log4jConfig =
       prepareLog4JFile(configDir, log4jConfigFile)
     for {
@@ -288,7 +286,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }
   }
 
-  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String])(implicit logger: Logger): Try[Path] =
+  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String]): Try[Path] =
     Try {
       val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
 

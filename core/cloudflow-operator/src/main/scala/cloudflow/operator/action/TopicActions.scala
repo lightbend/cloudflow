@@ -123,17 +123,13 @@ object TopicActions {
       .getOrElse(useClusterConfiguration(topic))
   }
 
-  def createActionFromKafkaConfigSecret(secret: Secret, namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
-      implicit ctx: DeploymentContext
-  ) = {
+  def createActionFromKafkaConfigSecret(secret: Secret, namespace: String, labels: CloudflowLabels, topic: TopicInfo) = {
     val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
     createAction(namespace, labels, topicInfo)
   }
 
-  def maybeCreateActionFromAppConfigSecret(secretOption: Option[Secret], namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
-      implicit ctx: DeploymentContext
-  ) =
+  def maybeCreateActionFromAppConfigSecret(secretOption: Option[Secret], namespace: String, labels: CloudflowLabels, topic: TopicInfo) =
     for {
       secret <- secretOption
       config = ConfigInputChangeEvent.getConfigFromSecret(secret)
@@ -142,9 +138,7 @@ object TopicActions {
       _ <- topicWithKafkaConfig.bootstrapServers
     } yield createAction(namespace, labels, topicWithKafkaConfig)
 
-  def createAction(appNamespace: String, labels: CloudflowLabels, topic: TopicInfo)(
-      implicit ctx: DeploymentContext
-  ): CreateOrUpdateAction[ConfigMap] = {
+  def createAction(appNamespace: String, labels: CloudflowLabels, topic: TopicInfo): CreateOrUpdateAction[ConfigMap] = {
     val (bootstrapServers, partitions, replicas, brokerConfig) = (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) => (bootstrapServers, partitions, replicas, topic.brokerConfig)
       case _ =>
