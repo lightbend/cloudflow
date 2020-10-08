@@ -85,7 +85,6 @@ lazy val root =
     .settings(commonSettings)
     .aggregate(
       streamlets,
-      events,
       akkastream,
       akkastreamUtil,
       akkastreamTestkit,
@@ -115,22 +114,6 @@ lazy val streamlets =
             Bijection,
             ScalaPbRuntime,
             ScalaTest
-          )
-    )
-
-lazy val events =
-  cloudflowModule("cloudflow-events")
-    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    .dependsOn(streamlets)
-    .settings(
-      scalafmtOnCompile := true,
-      libraryDependencies ++= Vector(
-            AkkaStream,
-            Ficus,
-            Skuber,
-            Logback % Test,
-            ScalaTest,
-            MockitoScala
           )
     )
 
@@ -407,9 +390,9 @@ lazy val plugin =
 lazy val runner =
   cloudflowModule("cloudflow-runner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    //TODO removed events for Flink Akka 2.6 conflict, will need to find a way to put it back.
-    .dependsOn(streamlets,
-               blueprint //events
+    .dependsOn(
+      streamlets,
+      blueprint
     )
     .settings(
       scalafmtOnCompile := true,
