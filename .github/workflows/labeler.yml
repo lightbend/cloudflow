@@ -1,12 +1,12 @@
 # https://github.com/actions/labeler
 name: "Pull Request Labeler"
 on:
-  - pull_request
+  - pull_request_target
 
 jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/labeler@2.2.0
+      - uses: actions/labeler@main
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
