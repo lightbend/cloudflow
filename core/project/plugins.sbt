@@ -1,6 +1,7 @@
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.5.0")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.2.1")
+addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.1.1")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.11")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")

@@ -98,9 +98,6 @@ trait CloudflowTaskKeys {
     "The deployment descriptor for the current application. Available if the project has a valid blueprint."
   )
 
-  private[sbt] val cloudflowBuildNumber =
-    taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
-
   private[sbt] val streamletDescriptorsInProject =
     taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")
   private[sbt] val imageNamesByProject = taskKey[Map[String, DockerImageName]]("The list of all image names.")

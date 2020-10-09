@@ -13,7 +13,6 @@ First, make sure that you have the following installed:
 * https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
 * https://helm.sh/docs/intro/install/[Helm,window=_blank], version 2 or higher. We recommend version 3 to avoid dealing with tiller.
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
-* https://git-scm.com/[git,window=_blank]
 
 == Download and install the Cloudflow CLI
 

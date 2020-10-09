@@ -11,7 +11,6 @@ lazy val helloWorld =  (project in file("."))
 
 val checkCRFile = taskKey[Unit]("Testing the CR file")
 checkCRFile := {
-  file("target/hello-world.json")
   val data = ujson.read(file("target/hello-world.json"))
 
   val appId = data("spec")("app_id").str

@@ -89,7 +89,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     },
     applicationDescriptor := {
       val appId           = (ThisProject / name).value
-      val appVersion      = cloudflowBuildNumber.value.buildNumber
+      val appVersion      = (ThisProject / version).value
       val agentPathsMap   = Map("prometheus" -> "/prometheus/jmx_prometheus_javaagent.jar")
       val dockerImageName = cloudflowDockerImageName.value
 

@@ -82,7 +82,6 @@ object CloudflowBasePlugin extends AutoPlugin {
     build := showResultOfBuild
           .dependsOn(
             docker.dependsOn(
-              checkUncommittedChanges,
               streamletDescriptorsInProject
             )
           )
@@ -101,10 +100,9 @@ object CloudflowBasePlugin extends AutoPlugin {
           }
 
           if (cloudflowDockerRegistry.value.isEmpty) Def.task {
-            val _                    = checkUncommittedChanges.value
             val streamletDescriptors = streamletDescriptorsInProject.value
 
-            val imageId     = docker.value
+            val _           = docker.value
             val dockerImage = verifyDockerImage.value
             val returnImageName = ImageName(
               registry = dockerImage.registry,
@@ -113,9 +111,9 @@ object CloudflowBasePlugin extends AutoPlugin {
               tag = dockerImage.tag
             )
 
-            val log         = streams.value.log
-            val version     = cloudflowBuildNumber.value.buildNumber
-            val imageDigest = ImageDigest("", version, includeAlgorithm = false)
+            val log          = streams.value.log
+            val imageVersion = (ThisProject / version).value
+            val imageDigest  = ImageDigest("", imageVersion, includeAlgorithm = false)
 
             buildAndPublishLog(log)(returnImageName, imageDigest)
 
@@ -123,12 +121,11 @@ object CloudflowBasePlugin extends AutoPlugin {
             log.warn("""You haven't specified the "cloudflowDockerRegistry" in your build.sbt""")
             log.warn("""To have a working deployment you should make the produced docker image available """)
             log.warn("""in a docker registry accessible from your cluster nodes""")
-            log.warn(s"""The Cloudflow application CR points to ${dockerImage}${version}""")
+            log.warn(s"""The Cloudflow application CR points to ${dockerImage}${imageVersion}""")
 
             ImageNameAndDigest(returnImageName, imageDigest) -> streamletDescriptors
           } else
             Def.task {
-              val _                    = (checkUncommittedChanges.value, verifyDockerRegistry.value)
               val streamletDescriptors = streamletDescriptorsInProject.value
               val imageNameToDigest: Map[ImageName, ImageDigest] =
                 dockerBuildAndPush.value.map {
@@ -148,19 +145,6 @@ object CloudflowBasePlugin extends AutoPlugin {
 
   private[sbt] val verifyDockerImage = Def.task {
     (imageNames in docker).value.headOption.getOrElse(throw DockerRegistryNotSet)
-  }
-
-  private[sbt] val verifyDockerRegistry = Def.task {
-    cloudflowDockerRegistry.value.getOrElse(throw DockerRegistryNotSet)
-  }
-
-  private[sbt] val checkUncommittedChanges = Def.task {
-    val log = streams.value.log
-    if (cloudflowBuildNumber.value.hasUncommittedChanges) {
-      log.warn(
-        s"You have uncommitted changes in ${thisProjectRef.value.project}. Please commit all changes before publishing to guarantee a repeatable and traceable build."
-      )
-    }
   }
 
   private[sbt] val showResultOfBuild = Def.task {

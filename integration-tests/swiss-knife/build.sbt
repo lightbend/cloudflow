@@ -74,3 +74,5 @@ lazy val commonSettings = Seq(
     "-unchecked"
   )
 )
+
+dynverSeparator in ThisBuild := "-"

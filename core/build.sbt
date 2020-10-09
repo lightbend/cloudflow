@@ -433,7 +433,6 @@ lazy val operator =
     .enablePlugins(
       sbtdocker.DockerPlugin,
       JavaAppPackaging,
-      BuildNumberPlugin,
       BuildInfoPlugin,
       ScalafmtPlugin
     )
@@ -475,7 +474,7 @@ lazy val operator =
               registry = None,
               namespace = Some("lightbend"),
               repository = "cloudflow-operator",
-              tag = Some(cloudflowBuildNumber.value.asVersion)
+              tag = Some((ThisBuild / version).value)
             )
           ),
       dockerfile in docker := {
@@ -606,3 +605,5 @@ lazy val commonSettings = bintraySettings ++ Seq(
       )
 
 releaseIgnoreUntrackedFiles := true
+// https://github.com/dwijnand/sbt-dynver#portable-version-strings
+dynverSeparator in ThisBuild := "-"

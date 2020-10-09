@@ -32,8 +32,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
-    BuildNumberPlugin &&
-      sbtavrohugger.SbtAvrohugger &&
+    sbtavrohugger.SbtAvrohugger &&
       sbtavro.SbtAvro &&
       sbtprotoc.ProtocPlugin &&
       akka.grpc.sbt.AkkaGrpcPlugin
@@ -52,11 +51,11 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       // Cloudflow is released with Ivy patterns - bintray is used for internal release
       resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
       cloudflowDockerImageName := Def.task {
-            Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+            Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
           }.value,
       cloudflowWorkDir := (ThisBuild / baseDirectory).value / "target" / ".cloudflow",
       imageNamesByProject := Def.taskDyn {
-            val buildNumber = cloudflowBuildNumber.value.buildNumber
+            val buildNumber = (ThisProject / version).value
             Def.task {
               buildStructure.value.allProjectRefs
                 .map(_.project)

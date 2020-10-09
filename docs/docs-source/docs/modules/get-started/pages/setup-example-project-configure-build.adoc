@@ -37,15 +37,6 @@ As we move through the process, the leaf level directories of the above tree wil
 * **scala** : the source code of the application under the package name `sensordata`
 * **build.sbt** : the sbt build script
 
-. From the top-level directory, initialize `git` (after adding files you will commit them):
-+
-----
-git init
-----
-+
-WARNING: The Cloudflow `sbt` plugin assumes that your project is version-managed using `git`. 
-It will use `git commit` information to generate dynamic versioning for the Docker images it produces. If the project doesn't have an initialized git index with at least one commit, some commands will fail with a `not a git repository` error.
-
 == The sbt build script
 
 Cloudflow provides sbt plugins for the supported runtimes, Akka, Spark and Flink. 
