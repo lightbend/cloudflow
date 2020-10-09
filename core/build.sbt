@@ -571,7 +571,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
         headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
         scalaVersion := Version.Scala,
         autoAPIMappings := true,
-        // useGpgAgent := false,
+        useGpgAgent := false,
         releaseProcess := Seq[ReleaseStep](
               checkSnapshotDependencies,
               inquireVersions,
