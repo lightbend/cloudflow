@@ -23,7 +23,7 @@ class MultiOutlet extends AkkaStreamlet {
           if (data.value < 0) (immutable.Seq(DataInvalid(data.key, data.value, "All data must be positive numbers!")), immutable.Seq.empty)
           else (immutable.Seq.empty, immutable.Seq(data))
         }
-        .to(MultiOutlet.sink(invalid, valid))
+        .to(MultiOutlet.sink2(invalid, valid))
   }
 }
 // end::sink2[]
