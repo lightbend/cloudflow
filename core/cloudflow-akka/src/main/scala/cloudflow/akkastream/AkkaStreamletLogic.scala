@@ -30,6 +30,7 @@ import com.typesafe.config.Config
 import cloudflow.streamlets._
 import cloudflow.akkastream.scaladsl._
 
+import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
 
@@ -256,6 +257,21 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   def getDefaultCommitterSettings() = defaultCommitterSettings
+
+  /**
+   * Creates a sink for publishing records to two different outlets. This sink ensures to commit
+   * the originating offset only after all the records to the different outlets.
+   *
+   * Per outlet, the records are partitioned according to the `partitioner` of the `outlet`.
+   * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
+   * The `outlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to serialize the records that are written to Kafka.
+   */
+  def committableMultiSink[T1, T2](
+      outlet1: CodecOutlet[T1],
+      outlet2: CodecOutlet[T2],
+      committerSettings: CommitterSettings = defaultCommitterSettings
+  ): Sink[((immutable.Seq[T1], immutable.Seq[T2]), Committable), NotUsed] =
+    cloudflow.akkastream.util.scaladsl.MultiOutlet.sink2(outlet1, outlet2, committerSettings)
 
   /**
    * Creates a sink for publishing records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.

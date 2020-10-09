@@ -12,12 +12,50 @@ The `cloudflow.akka.util` library contains some predefined `StreamletLogic`{empt
 
 The following sections describe how you implement stream processing logic with these utilities.
 
+== Multi-outlet
+
+=== Use case
+
+When a single message should
+
+- produce multiple outgoing messages,
+- produce messages to multiple outlets, or
+- select different outlets to produce messages
+
+with at-least-once semantics, the `MultiOutlet` offers producing to multiple outlets. The `MultiOutlet` accepts elements containing collections of messages to be written to each outlet. With this, the collection contents decides if a message results in writing to the outlet. Each outlet can receive zero, one or multiple messages for every message processed in the streamlet.
+
+Every element from the outlet will be processed through a `FlowWithCommittableContext`, which provides at-least-once semantics.
+
+=== Example
+
+The `MultiOutlet` defines a `sink2` method which expects two outlets. The sink expects a pair of collections:
+
+- Java: `akka.japi.Pair<java.util.List<O1>, java.util.List<O2>>`
+- Scala: `(immutable.Seq[O1], immutable.Seq[O2])`
+
+[.tabset]
+Scala::
++
+[source,scala]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/MultiOutlet.scala[tag=sink2]
+----
+
+Java::
++
+[source,java]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/MultiOutlet.java[tag=sink2]
+----
+
 == Splitter
 
 === Use case
 
 A `Splitter` can be used to split a stream in two, writing elements to one of two outlets.
 Every element from the outlet will be processed through a `FlowWithCommittableContext`, which provides at-least-once semantics.
+
+The `Splitter` is a specific case of the multi-outlet where a message is produced to exactly one outlet.
 
 === Example
 
