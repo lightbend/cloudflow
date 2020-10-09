@@ -601,7 +601,8 @@ lazy val commonSettings = bintraySettings ++ Seq(
         resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
         resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
         scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
-        scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+        scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+        publishTo := sonatypePublishToBundle.value
       )
 
 releaseIgnoreUntrackedFiles := true

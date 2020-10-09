@@ -31,7 +31,6 @@ ThisBuild / description := "Cloudflow enables users to quickly develop, orchestr
 ThisBuild / pomIncludeRepository := { _ =>
   false
 }
-ThisBuild / publishTo := sonatypePublishToBundle.value
 
 ThisBuild / publishConfiguration := publishConfiguration.value.withOverwrite(true)
 ThisBuild / publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
