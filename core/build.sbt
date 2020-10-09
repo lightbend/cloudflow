@@ -577,13 +577,8 @@ lazy val commonSettings = bintraySettings ++ Seq(
               inquireVersions,
               runClean,
               runTest,
-              setReleaseVersion,
-              commitReleaseVersion,
-              tagRelease,
               releaseStepCommandAndRemaining("publishSigned"),
               releaseStepCommand("sonatypeBundleRelease"),
-              setNextVersion,
-              commitNextVersion,
               pushChanges
             ),
         unidocGenjavadocVersion := "0.16",
