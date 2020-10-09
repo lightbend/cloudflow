@@ -17,12 +17,13 @@ class DataSplitter extends AkkaStreamlet {
   val shape   = StreamletShape(in).withOutlets(invalid, valid)
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithCommittableContext(in)
-      .map { data =>
-        if (data.value < 0) (immutable.Seq(DataInvalid(data.key, data.value, "All data must be positive numbers!")), immutable.Seq.empty)
-        else (immutable.Seq.empty, immutable.Seq(data))
-      }
-      .to(MultiOutlet.sink(invalid, valid))
+    def runnableGraph =
+      sourceWithCommittableContext(in)
+        .map { data =>
+          if (data.value < 0) (immutable.Seq(DataInvalid(data.key, data.value, "All data must be positive numbers!")), immutable.Seq.empty)
+          else (immutable.Seq.empty, immutable.Seq(data))
+        }
+        .to(MultiOutlet.sink(invalid, valid))
   }
 }
 // end::sink2[]
