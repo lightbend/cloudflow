@@ -10,7 +10,7 @@ import cloudflow.streamlets.avro._
 
 import scala.collection.immutable
 
-class MultiOutlet extends AkkaStreamlet {
+class MultiOutletExample extends AkkaStreamlet {
   val in      = AvroInlet[Data]("in")
   val invalid = AvroOutlet[DataInvalid]("invalid").withPartitioner(data ⇒ data.key)
   val valid   = AvroOutlet[Data]("valid").withPartitioner(RoundRobinPartitioner)

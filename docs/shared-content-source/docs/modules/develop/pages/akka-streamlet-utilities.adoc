@@ -38,14 +38,14 @@ Scala::
 +
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/MultiOutlet.scala[tag=sink2]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/MultiOutletExample.scala[tag=sink2]
 ----
 
 Java::
 +
 [source,java]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/MultiOutlet.java[tag=sink2]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-java/src/main/java/cloudflow/akkastreamsdoc/MultiOutletExample.java[tag=sink2]
 ----
 
 == Splitter

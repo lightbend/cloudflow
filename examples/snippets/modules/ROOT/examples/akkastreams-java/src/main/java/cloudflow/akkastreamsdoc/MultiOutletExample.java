@@ -21,7 +21,7 @@ import cloudflow.akkastream.util.javadsl.*;
 
 import akka.japi.Pair;
 
-public class MultiOutlet extends AkkaStreamlet {
+public class MultiOutletExample extends AkkaStreamlet {
   AvroInlet<Data> inlet = AvroInlet.<Data>create("in", Data.class);
   AvroOutlet<DataInvalid> invalidOutlet =
       AvroOutlet.<DataInvalid>create(
