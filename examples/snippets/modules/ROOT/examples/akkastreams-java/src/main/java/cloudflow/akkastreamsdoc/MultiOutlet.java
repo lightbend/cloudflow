@@ -50,7 +50,7 @@ public class MultiOutlet extends AkkaStreamlet {
                         }
                         return Pair.create(invalid, valid);
                 })
-                .to(MultiOutlet.sink2(invalidOutlet, validOutlet, getContext()));
+                .to(MultiOutlet.sink2(invalidOutlet, validOutlet, getDefaultCommitterSettings()));
       }
     };
   }
