@@ -26,16 +26,16 @@ import CloudflowBasePlugin._
 
 object CloudflowFlinkPlugin extends AutoPlugin {
   final val FlinkVersion = "1.10.0"
-  final val CloudflowFlinkDockerBaseImage =
-    s"lightbend/flink:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+  final def cloudflowFlinkDockerBaseImage(version: String) =
+    s"lightbend/flink:${version}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     cloudflowFlinkBaseImage := None,
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-flink"         % BuildInfo.version,
-          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % BuildInfo.version % "test"
+          "com.lightbend.cloudflow" %% "cloudflow-flink"         % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % (ThisProject / cloudflowVersion).value % "test"
         ),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
@@ -63,7 +63,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
       new Dockerfile {
-        from(cloudflowFlinkBaseImage.value.getOrElse(CloudflowFlinkDockerBaseImage))
+        from(cloudflowFlinkBaseImage.value.getOrElse(cloudflowFlinkDockerBaseImage((ThisProject / cloudflowVersion).value)))
         user(UserInImage)
 
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
