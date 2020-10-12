@@ -45,10 +45,12 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   // used for internal release
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
+  private final val CloudflowVersion        = BuildInfo.version
 
   /** Set default values for keys. */
   override def projectSettings =
     Seq(
+      cloudflowVersion := CloudflowVersion,
       // Cloudflow is released with Ivy patterns - bintray is used for internal release
       resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
       cloudflowDockerImageName := Def.task {

@@ -19,6 +19,8 @@ package cloudflow.sbt
 import sbt._
 import sbt.Keys._
 
+import cloudflow.sbt.CloudflowKeys.cloudflowVersion
+
 /**
  * SBT Plugin for building generic libraries that use Cloudflow concepts, such as data definitions (e.g. `Codec`),
  * AVRO support, etc.
@@ -33,7 +35,7 @@ object CloudflowLibraryPlugin extends AutoPlugin {
   /** Set default values for keys. */
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-streamlets" % BuildInfo.version
+          "com.lightbend.cloudflow" %% "cloudflow-streamlets" % (ThisProject / cloudflowVersion).value
         )
   )
 
