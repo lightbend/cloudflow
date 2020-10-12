@@ -236,9 +236,14 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
    */
   private case object LocalFlinkJobExecutor extends FlinkJobExecutor {
     def execute(): StreamletExecution = {
+
       log.info(s"Executing local mode ${context.streamletRef}")
       val jobResult = Future(createLogic.executeStreamingQueries(context.env))
-
+      jobResult.recoverWith {
+        case t: Throwable =>
+          log.error(t.getMessage, t)
+          Future.failed(t)
+      }
       new StreamletExecution {
         val readyFuture = readyPromise.future
 
