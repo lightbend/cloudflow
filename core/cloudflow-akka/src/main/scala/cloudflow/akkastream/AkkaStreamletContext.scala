@@ -17,6 +17,8 @@
 package cloudflow.akkastream
 
 import scala.concurrent.Future
+import scala.collection.immutable
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.Entity
@@ -60,6 +62,10 @@ trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
+
+  private[akkastream] def flexiFlow[T](
+      outlet: CodecOutlet[T]
+  ): Flow[(immutable.Seq[_ <: T], _ <: Committable), (Unit, Committable), NotUsed]
 
   @deprecated("Use `committableSink` instead.", "1.3.4")
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
