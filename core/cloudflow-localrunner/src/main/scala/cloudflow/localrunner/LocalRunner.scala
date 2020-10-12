@@ -42,6 +42,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LocalRunner extends StreamletLoader {
 
   val consoleOut = System.out // preserve
+  val errOut     = System.err // preserve
 
   lazy val log = LoggerFactory.getLogger("localRunner")
 
@@ -49,6 +50,7 @@ object LocalRunner extends StreamletLoader {
     new Thread(new Runnable {
       def run() {
         System.setOut(consoleOut)
+        System.setErr(errOut)
         withResourceDo(outputStream)(_.flush)
       }
     })
@@ -80,13 +82,16 @@ object LocalRunner extends StreamletLoader {
     JRuntime.getRuntime.addShutdownHook(shutdownHook(fos))
 
     Console.withOut(fos) {
-      System.setOut(new PrintStream(fos))
-      readDescriptorFile(appDescriptorFilename) match {
-        case Success(applicationDescriptor) ⇒
-          run(applicationDescriptor, localConfig)
-        case Failure(ex) ⇒
-          log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
-          System.exit(1)
+      Console.withErr(fos) {
+        System.setOut(new PrintStream(fos))
+        System.setErr(new PrintStream(fos))
+        readDescriptorFile(appDescriptorFilename) match {
+          case Success(applicationDescriptor) ⇒
+            run(applicationDescriptor, localConfig)
+          case Failure(ex) ⇒
+            log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
+            System.exit(1)
+        }
       }
     }
   }
