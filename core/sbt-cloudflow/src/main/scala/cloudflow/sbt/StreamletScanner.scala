@@ -108,18 +108,17 @@ object StreamletScanner {
  * An exception hierarchy to provide feedback to the user that there is an issue with how the Streamlet
  * is defined.
  */
-sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace {}
+sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace
 
 object StreamletScannerException {
-  def errorMsg(error: Throwable) = {
+  def errorMsg(error: Throwable): String = {
     val cause = error match {
       case e: java.lang.reflect.InvocationTargetException =>
-        val invocationTarget = e.getCause
-        if (invocationTarget == null) e else invocationTarget
+        Option(e.getCause).getOrElse(e)
       case _ => error
     }
 
-    s"""an ${cause.getClass.getSimpleName}${if (cause.getMessage != null) ": " + cause.getMessage}"""
+    s"""an ${cause.getClass.getSimpleName}${Option(cause.getMessage).map(": " + _).getOrElse("")}"""
   }
 }
 import StreamletScannerException._
