@@ -226,15 +226,15 @@ helm-fetch-cloudflow-operator: helm-repo-lightbend-add ${cloudflow_operator_work
 ##############
 
 helm-repo-strimzi-add:
-	helm repo add strimzi http://strimzi.io/charts/ > /dev/null 2>&1
+	helm repo add strimzi http://strimzi.io/charts/ > /dev/null 2>&1 | true
 	helm repo update
 
 helm-repo-incubator-add:
-	helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator  > /dev/null 2>&1
+	helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator  > /dev/null 2>&1 | true
 	helm repo update
 
 helm-repo-lightbend-add:
-	helm repo add lightbend-helm-charts https://repo.lightbend.com/helm-charts/  > /dev/null 2>&1
+	helm repo add lightbend-helm-charts https://repo.lightbend.com/helm-charts/  > /dev/null 2>&1 | true
 	helm repo update
 
 ####################################
