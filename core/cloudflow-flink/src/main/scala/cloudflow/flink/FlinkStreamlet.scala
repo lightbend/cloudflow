@@ -140,7 +140,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       config,
       streamletPath
     )
-    // Ensures that if file syetem back end is used, it is initialized with right configuration
+    // Ensures that if file system back end is used, it is initialized with the right configuration
     if ("filesystem" == configuration.getString(ConfigOptions.key("state.backend").stringType().defaultValue("")))
       FileSystem.initialize(configuration, null)
 
