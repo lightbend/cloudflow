@@ -108,7 +108,21 @@ object StreamletScanner {
  * An exception hierarchy to provide feedback to the user that there is an issue with how the Streamlet
  * is defined.
  */
-sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace
+sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace {}
+
+object StreamletScannerException {
+  def errorMsg(error: Throwable) = {
+    val cause = error match {
+      case e: java.lang.reflect.InvocationTargetException =>
+        val invocationTarget = e.getCause
+        if (invocationTarget == null) e else invocationTarget
+      case _ => error
+    }
+
+    s"""an ${cause.getClass.getSimpleName}${if (cause.getMessage != null) ": " + cause.getMessage}"""
+  }
+}
+import StreamletScannerException._
 
 final case class ConstructorMissing(streamletClass: Class[_])
     extends StreamletScannerException(
@@ -116,7 +130,7 @@ final case class ConstructorMissing(streamletClass: Class[_])
     )
 final case class ConstructorFailure(streamletClass: Class[_], error: Throwable)
     extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. Its constructor threw an exception: ${error.getMessage}"
+      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. Its constructor threw ${errorMsg(error)}"
     )
 final case class DescriptorMethodMissing(streamletClass: Class[_])
     extends StreamletScannerException(
@@ -124,5 +138,5 @@ final case class DescriptorMethodMissing(streamletClass: Class[_])
     )
 final case class DescriptorMethodFailure(streamletClass: Class[_], error: Throwable)
     extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' could not be introspected. Its descriptor method threw an exception: ${error.getMessage}"
+      s"Streamlet '${streamletClass.getName}' could not be introspected. Its descriptor method threw ${errorMsg(error)}"
     )
