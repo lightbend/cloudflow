@@ -43,7 +43,7 @@ object Actions {
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp, namespace, labels, ownerReferences) ++
-      deployTopics(newApp, currentApp) ++
+      deployTopics(newApp) ++
       deployRunners(newApp, currentApp, namespace) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
@@ -76,8 +76,7 @@ object Actions {
     PrepareNamespaceActions(app, namespace, labels, ownerReferences)
 
   private def deployTopics(
-      newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR]
+      newApp: CloudflowApplication.CR
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     TopicActions(newApp)
 
