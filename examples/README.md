@@ -10,7 +10,7 @@ This directory contains examples showcasing different Cloudflow features.
   ```
   CLOUDFLOW_VERSION
   ```
-  pointing to the latest available release, otherwise re-build everything locally.
+  This should point to the latest available release, otherwise re-build everything locally.
 
 ## Examples
 
