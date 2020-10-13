@@ -24,7 +24,7 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
-    name := "taxi-ride-fare",
+    name := "taxi-ride-proto",
   )
 
 lazy val datamodel = appModule("datamodel")
