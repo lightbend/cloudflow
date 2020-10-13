@@ -433,7 +433,6 @@ lazy val operator =
     .enablePlugins(
       sbtdocker.DockerPlugin,
       JavaAppPackaging,
-      BuildNumberPlugin,
       BuildInfoPlugin,
       ScalafmtPlugin
     )
@@ -475,7 +474,7 @@ lazy val operator =
               registry = None,
               namespace = Some("lightbend"),
               repository = "cloudflow-operator",
-              tag = Some(cloudflowBuildNumber.value.asVersion)
+              tag = Some((ThisBuild / version).value)
             )
           ),
       dockerfile in docker := {
@@ -560,13 +559,8 @@ lazy val commonSettings = bintraySettings ++ Seq(
               inquireVersions,
               runClean,
               runTest,
-              setReleaseVersion,
-              commitReleaseVersion,
-              tagRelease,
               releaseStepCommandAndRemaining("publishSigned"),
               releaseStepCommand("sonatypeBundleRelease"),
-              setNextVersion,
-              commitNextVersion,
               pushChanges
             ),
         unidocGenjavadocVersion := "0.16",
@@ -602,7 +596,10 @@ lazy val commonSettings = bintraySettings ++ Seq(
         resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
         resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
         scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
-        scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+        scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+        publishTo := sonatypePublishToBundle.value
       )
 
 releaseIgnoreUntrackedFiles := true
+// https://github.com/dwijnand/sbt-dynver#portable-version-strings
+dynverSeparator in ThisBuild := "-"

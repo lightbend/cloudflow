@@ -1,6 +1,2 @@
-$ exec git init
-$ exec git add build.sbt
-$ exec git commit -m "first"
-
 > buildApp
 > checkCRFile

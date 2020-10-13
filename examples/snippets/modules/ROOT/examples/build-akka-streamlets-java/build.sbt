@@ -95,3 +95,4 @@ lazy val commonSettings = Seq(
   javacOptions ++= Seq("-Xlint:deprecation")
 )
 
+dynverSeparator in ThisBuild := "-"

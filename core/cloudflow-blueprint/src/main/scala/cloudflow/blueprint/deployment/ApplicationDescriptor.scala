@@ -46,35 +46,14 @@ object ApplicationDescriptor {
    */
   val Version = "4"
 
-  /*
-   * The version of this library when it is built, which is also the version of sbt-cloudflow.
-   */
-  val LibraryVersion     = BuildInfo.version
   val PrometheusAgentKey = "prometheus"
-
-  def apply(
-      appId: String,
-      appVersion: String,
-      image: String,
-      streamlets: Vector[StreamletInstance],
-      deployments: Vector[StreamletDeployment],
-      agentPaths: Map[String, String]
-  ): ApplicationDescriptor =
-    ApplicationDescriptor(
-      appId,
-      appVersion,
-      streamlets,
-      deployments.map(deployment ⇒ deployment.copy(image = image)),
-      agentPaths,
-      Version,
-      LibraryVersion
-    )
 
   def apply(appId: String,
             appVersion: String,
             image: String,
             blueprint: VerifiedBlueprint,
-            agentPaths: Map[String, String]): ApplicationDescriptor = {
+            agentPaths: Map[String, String],
+            libraryVersion: String): ApplicationDescriptor = {
 
     val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
@@ -91,7 +70,7 @@ object ApplicationDescriptor {
                           deployments,
                           agentPaths,
                           Version,
-                          LibraryVersion)
+                          libraryVersion)
   }
 
   def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint): Map[String, Topic] =

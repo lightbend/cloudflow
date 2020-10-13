@@ -46,3 +46,5 @@ lazy val sensorData =  (project in file("."))
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
     )
+
+dynverSeparator in ThisBuild := "-"

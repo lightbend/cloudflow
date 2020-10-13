@@ -101,7 +101,7 @@ object BuildAppPlugin extends AutoPlugin {
     val newApplicationDescriptor = appDescriptor.copy(deployments = newDeployments)
 
     // create the CR
-    val cr = makeCR(newApplicationDescriptor)
+    val cr = makeCR(newApplicationDescriptor, (ThisProject / version).value)
 
     // generate the CR file in the current location
     new File("target").mkdir()
@@ -112,13 +112,12 @@ object BuildAppPlugin extends AutoPlugin {
     log.success(s"kubectl cloudflow deploy ${file.getAbsolutePath}")
   }
 
-  def makeCR(appDescriptor: ApplicationDescriptor): CloudflowCR =
+  def makeCR(appDescriptor: ApplicationDescriptor, version: String): CloudflowCR =
     CloudflowCR(
       apiVersion = "cloudflow.lightbend.com/v1alpha1",
       kind = "CloudflowApplication",
       metadata = Metadata(
-        // @todo : need to change this version
-        annotations = Map("com.lightbend.cloudflow/created-by-cli-version" -> "SNAPSHOT (local build)"),
+        annotations = Map("com.lightbend.cloudflow/created-by-cli-version" -> version),
         labels = Map(
           "app.kubernetes.io/managed-by"   -> "cloudflow",
           "app.kubernetes.io/part-of"      -> appDescriptor.appId,

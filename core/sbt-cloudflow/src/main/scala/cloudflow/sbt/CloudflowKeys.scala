@@ -44,6 +44,7 @@ trait CloudflowSettingKeys {
   val cloudflowFlinkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Flink plugin")
   val cloudflowSparkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Spark plugin")
   val cloudflowAkkaBaseImage     = settingKey[Option[String]]("The base image for Cloudflow Akka plugin")
+  val cloudflowVersion           = settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
   val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
@@ -97,9 +98,6 @@ trait CloudflowTaskKeys {
   private[sbt] val applicationDescriptor = taskKey[Option[ApplicationDescriptor]](
     "The deployment descriptor for the current application. Available if the project has a valid blueprint."
   )
-
-  private[sbt] val cloudflowBuildNumber =
-    taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
   private[sbt] val streamletDescriptorsInProject =
     taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")

@@ -32,7 +32,7 @@ object CloudflowApplicationSpecBuilder {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val streamlets             = blueprint.streamlets.map(toStreamlet)
-    val deployments            = ApplicationDescriptor(appId, appVersion, image, blueprint, agentPaths).deployments
+    val deployments            = ApplicationDescriptor(appId, appVersion, image, blueprint, agentPaths, BuildInfo.version).deployments
     CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, deployments, agentPaths)
   }
 

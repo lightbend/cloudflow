@@ -3,6 +3,7 @@ lazy val helloWorld =  (project in file("."))
     .settings(
       scalaVersion := "2.12.11",
       name := "hello-world",
+      cloudflowAkkaBaseImage := Some("lightbend/akka-base:2.0.10-cloudflow-akka-2.6.9-scala-2.12"),
 
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
@@ -11,7 +12,6 @@ lazy val helloWorld =  (project in file("."))
 
 val checkCRFile = taskKey[Unit]("Testing the CR file")
 checkCRFile := {
-  file("target/hello-world.json")
   val data = ujson.read(file("target/hello-world.json"))
 
   val appId = data("spec")("app_id").str

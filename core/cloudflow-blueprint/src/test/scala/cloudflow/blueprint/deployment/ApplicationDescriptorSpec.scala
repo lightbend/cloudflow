@@ -70,7 +70,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val truncatedAppId = "monstrous-some-very-long-name-with-u-in-the-middle-that-still"
       val appVersion     = "42-abcdef0"
       val image          = "image-1"
-      val descriptor     = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor     = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
 
       Then("the resulting descriptor application id and secret name must be valid")
       descriptor.appId mustBe truncatedAppId
@@ -101,7 +101,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val appId      = "monstrous-mite-12345"
       val appVersion = "42-abcdef0"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
 
       Then("the descriptor must be valid")
       descriptor.appId mustBe appId
@@ -181,7 +181,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val appId      = "noisy-nissan-42"
       val appVersion = "1-2345678"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
 
       Then("the descriptor must be valid")
       descriptor.deployments.size mustBe 4
@@ -232,7 +232,7 @@ class ApplicationDescriptorSpec extends WordSpec with MustMatchers with EitherVa
       val appId      = "funky-foofighter-9862"
       val appVersion = "12-3456789"
       val image      = "image-1"
-      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+      val descriptor = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
 
       Then("the descriptor must be valid")
       descriptor.deployments.size mustBe 3

@@ -40,7 +40,7 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     cloudflowDockerImageName := Def.task {
-          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+          Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
         }.value,
     streamletDescriptorsInProject := Def.taskDyn {
           val detectedStreamlets = cloudflowStreamletDescriptors.value
