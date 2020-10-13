@@ -25,7 +25,6 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .settings(commonSettings)
   .settings(
     name := "taxi-ride-fare",
-    //    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
     //    runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
   )
 
