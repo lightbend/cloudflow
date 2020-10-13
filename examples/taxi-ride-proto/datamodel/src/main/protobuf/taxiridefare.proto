@@ -1,0 +1,7 @@
+syntax = "proto3";
+option java_package = "taxiride.datamodel";
+
+message TaxiRideFare {
+    int64 rideId = 1;
+    float totalFare = 2;
+}

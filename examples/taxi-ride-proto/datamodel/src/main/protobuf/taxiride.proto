@@ -1,0 +1,16 @@
+syntax = "proto3";
+option java_package = "taxiride.datamodel";
+
+message TaxiRide {
+    int64 rideId = 1;
+    int64 taxiId = 2;
+    bool isStart = 3;
+    int32 passengerCnt = 4;
+    int64 driverId = 5;
+    float startLon = 6;
+    float startLat = 7;
+    float endLon = 8;
+    float endLat = 9;
+    int64 startTime = 10;
+    int64 endTime = 11;
+}
