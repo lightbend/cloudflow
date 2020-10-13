@@ -7,6 +7,7 @@ lazy val helloWorld1 =  (project in file("helloworld1"))
       version := version1,
       scalaVersion := "2.12.11",
       name := "hello-world-1",
+      cloudflowAkkaBaseImage := Some("lightbend/akka-base:2.0.10-cloudflow-akka-2.6.9-scala-2.12"),
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
       )
@@ -18,6 +19,7 @@ lazy val helloWorld2 =  (project in file("helloworld2"))
       version := version2,
       scalaVersion := "2.12.11",
       name := "hello-world-2",
+      cloudflowAkkaBaseImage := Some("lightbend/akka-base:2.0.10-cloudflow-akka-2.6.9-scala-2.12"),
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
       )
