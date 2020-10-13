@@ -11,8 +11,7 @@ object ConnectedCarActor {
   def apply(carId:String): Behavior[ConnectedCarERecordWrapper] = {
     def updated(numberOfRecords: Int, driverName: String, carId:String, averageSpeed: Double, currentSpeed: Double): Behavior[ConnectedCarERecordWrapper] = {
       Behaviors.receive { (context, message) => {
-          context.log.info("Update Received- CarId: {} MessageCarId: {} From Actor: {}", 
-            carId, message.record.carId, message.sender.path)
+          context.log.info(s"Update Received- CarId: ${carId} MessageCarId: ${message.record.carId} From Actor: ${message.sender.path}")
 
           val newAverage = ((averageSpeed * numberOfRecords) + message.record.speed) / (numberOfRecords + 1)
           val newNumberOfRecords = numberOfRecords+1
