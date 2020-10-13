@@ -317,7 +317,7 @@ final case class DeleteAction[T <: ObjectResource](
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
     client
       .usingNamespace(namespace)
-      .deleteWithOptions(name, options)(resourceDefinition, lc)
+      .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
       .map(_ ⇒ this)
   }
 }
