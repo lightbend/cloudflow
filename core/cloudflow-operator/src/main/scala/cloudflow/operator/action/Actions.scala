@@ -64,12 +64,8 @@ object Actions {
       app: CloudflowApplication.CR,
       namespace: String,
       cause: ObjectResource
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
-    val actions = deployRunners(app, currentApp = None, namespace)
-    actions.collect {
-      case createAction: CreateOrUpdateAction[_] ⇒ createAction.revert
-    } :+ EventActions.undeployEvent(app, namespace, cause)
-  }
+  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+    Seq(EventActions.undeployEvent(app, namespace, cause))
 
   def prepareNamespace(
       app: CloudflowApplication.CR,
