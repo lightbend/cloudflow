@@ -284,8 +284,9 @@ class UpdateStatusAction[T <: ObjectResource](
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-        .getOrElse(resource)
-      res ← recoverFromConflict(client.updateStatus(resourceVersionUpdated), client, executeUpdateStatus)
+      res ← resourceVersionUpdated
+        .map(resourceToUpdate => recoverFromConflict(client.updateStatus(resourceToUpdate), client, executeUpdateStatus))
+        .getOrElse(Future.successful(resource))
     } yield res
 }
 
@@ -316,7 +317,7 @@ final case class DeleteAction[T <: ObjectResource](
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
     client
       .usingNamespace(namespace)
-      .deleteWithOptions(name, options)(resourceDefinition, lc)
+      .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
       .map(_ ⇒ this)
   }
 }
