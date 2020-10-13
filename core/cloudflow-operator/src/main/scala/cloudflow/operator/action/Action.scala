@@ -284,8 +284,9 @@ class UpdateStatusAction[T <: ObjectResource](
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-        .getOrElse(resource)
-      res ← recoverFromConflict(client.updateStatus(resourceVersionUpdated), client, executeUpdateStatus)
+      res ← resourceVersionUpdated
+        .map(resourceToUpdate => recoverFromConflict(client.updateStatus(resourceToUpdate), client, executeUpdateStatus))
+        .getOrElse(Future.successful(resource))
     } yield res
 }
 
