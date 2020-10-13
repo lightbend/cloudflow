@@ -88,17 +88,30 @@ object TopicActions {
    */
   def action(appConfigSecretName: Option[String], namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
       implicit ctx: DeploymentContext
-  ): Action[ConfigMap] = {
-    def useClusterConfiguration(providedTopic: TopicInfo): Action[TopicResource] =
+  ): Action[ObjectResource] = {
+    def useClusterConfiguration(providedTopic: TopicInfo): Action[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
-          Action.provided[Secret, ConfigMap](
+          Action.provided[Secret, ObjectResource](
             String.format(KafkaClusterNameFormat, cluster),
             ctx.podNamespace, {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, namespace, labels, providedTopic)
               case None         =>
                 // TODO: cluster secret can't be found. we can either throw an exception and fail deployment (and maybe create a status message), or fallback to using the default Kafka configuration
                 throw new Exception(s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]")
+                // TODO do something like `AppError.updateStatusAction(appId, msg)` instead
+                new ResourceAction[CloudflowApplication.CR] {
+                  def execute(client: KubernetesClient)(
+                      implicit sys: ActorSystem,
+                      ec: ExecutionContext,
+                      lc: skuber.api.client.LoggingContext
+                  ): scala.concurrent.Future[cloudflow.operator.action.Action[cloudflow.operator.CloudflowApplication.CR]] =
+                    // update status
+                    null
+                  def name: String                                         = "fpp"
+                  def resource: cloudflow.operator.CloudflowApplication.CR = ???
+                }
+
             }
           )
         }
@@ -112,7 +125,7 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        Action.provided[Secret, ConfigMap](
+        Action.provided[Secret, ObjectResource](
           name,
           namespace, { secretOption =>
             maybeCreateActionFromAppConfigSecret(secretOption, namespace, labels, topic)

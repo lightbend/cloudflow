@@ -63,7 +63,8 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
             deployment.secretName,
             namespace, {
               case Some(secret) => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
-              case None =>
+              case None         =>
+                // TODO do something like `AppError.updateStatusAction(appId, msg)` instead
                 throw new Exception(
                   s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
                 )

@@ -23,6 +23,7 @@ import skuber._
 
 /**
  * Executes Kubernetes resource actions.
+ * Any non-fatal exception in execute should result in a failure containing an [[ActionException]]
  */
 trait ActionExecutor {
 
@@ -32,3 +33,9 @@ trait ActionExecutor {
    */
   def execute(action: Action[ObjectResource]): Future[Action[ObjectResource]]
 }
+
+/**
+ * Exception thrown when the action failed to make the appropriate change(s) for the application identified by `appId`.
+ */
+case class ActionException(action: Action[ObjectResource], cause: Throwable)
+    extends Exception(s"Action ${action.name} failed: ${cause.getMessage}", cause)

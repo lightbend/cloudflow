@@ -18,6 +18,7 @@ package cloudflow.operator
 package action
 
 import scala.concurrent._
+import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
 
@@ -43,6 +44,10 @@ final class SkuberActionExecutor(
       .map { executedAction ⇒
         kubernetesClient.close
         executedAction
+      }
+      .recoverWith {
+        case NonFatal(e) =>
+          Future.failed(new ActionException(action, e))
       }
   }
 }

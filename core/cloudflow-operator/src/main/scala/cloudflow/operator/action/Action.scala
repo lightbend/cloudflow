@@ -36,6 +36,11 @@ sealed trait Action[+T <: ObjectResource] {
   def name: String
 
   /**
+   * The application this action is executing for.
+   */
+  def appId: Option[String] = None
+
+  /**
    * The name of the resource that this action is applied to
    */
   def resourceName: String
