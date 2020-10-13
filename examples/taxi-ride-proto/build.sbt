@@ -25,7 +25,6 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .settings(commonSettings)
   .settings(
     name := "taxi-ride-fare",
-    //    runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
   )
 
 lazy val datamodel = appModule("datamodel")
