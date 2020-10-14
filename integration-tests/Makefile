@@ -41,7 +41,8 @@ prepare-cluster:
 	helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator | true
 	helm repo update
 	yq write spark-values.yaml operatorVersion "${version}-cloudflow-spark-2.4.5-1.1.2-scala-2.12" > generated-spark-values.yaml
-	helm upgrade -i spark-operator incubator/sparkoperator --values="generated-spark-values.yaml" --version "0.6.7" --namespace cloudflow    
+	helm upgrade -i spark-operator incubator/sparkoperator --values="generated-spark-values.yaml" --version "0.6.7" --namespace cloudflow
+	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 	@echo '****** Installing Flink Operator'
 	(helm upgrade -i flink-operator \
 		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
