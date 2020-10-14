@@ -49,7 +49,9 @@ jobs:
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
       run: |
         export PATH="$HOME/opt/sbt/bin:$PATH"
-        cd scripts
+        cd core
+        sbt publishLocal
+        cd ../scripts
         ./build-all.sh test
 
 
