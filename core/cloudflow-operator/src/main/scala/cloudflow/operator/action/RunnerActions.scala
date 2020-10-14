@@ -19,6 +19,7 @@ package action
 
 import scala.collection.immutable._
 
+import org.slf4j.LoggerFactory
 import skuber._
 import skuber.json.format._
 
@@ -29,6 +30,8 @@ import cloudflow.operator.runner._
  * between a current application and a new application.
  */
 abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
+  private val log = LoggerFactory.getLogger(this.getClass)
+
   protected def actions(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
@@ -63,14 +66,9 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
             deployment.secretName,
             namespace, {
               case Some(secret) => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
-              case None         =>
-                // TODO log, though it is likely that App is already not existing anymore.
-                // So modify toAction updateStatus so it logs that it will not update non-existing app
-                // Add this kind of errorAction to Status, CloudflowApplication.Status(newApp.spec).errorAction
-                CloudflowApplication
-                  .Status(newApp.spec)
-                  .copy(appStatus = Some(CloudflowApplication.Status.Error))
-                  .toAction(newApp)
+              case None =>
+                log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
+                CloudflowApplication.Status.errorAction(newApp)
             }
           )
         )
@@ -81,7 +79,7 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         if (runner == SparkRunner) {
-          val patchAction = Action.provided[Secret, SparkResource.CR](
+          val patchAction = Action.provided[Secret, ObjectResource](
             deployment.secretName,
             namespace, {
               case Some(secret) =>
@@ -89,9 +87,8 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
                 val patch    = SparkRunner.patch(deployment, newApp, secret, namespace)
                 Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
               case None =>
-                throw new Exception(
-                  s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-                )
+                log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
+                CloudflowApplication.Status.errorAction(newApp)
             }
           )
           val configAction = Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor)
@@ -99,15 +96,14 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
         } else {
           Seq(
             Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-            Action.provided[Secret, T](
+            Action.provided[Secret, ObjectResource](
               deployment.secretName,
               namespace, {
                 case Some(secret) =>
                   Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
                 case None =>
-                  throw new Exception(
-                    s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-                  )
+                  log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
+                  CloudflowApplication.Status.errorAction(newApp)
               }
             )
           )

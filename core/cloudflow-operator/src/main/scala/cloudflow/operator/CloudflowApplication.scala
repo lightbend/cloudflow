@@ -142,6 +142,9 @@ object CloudflowApplication {
       )
     }
 
+    def errorAction(app: CloudflowApplication.CR): Action[ObjectResource] =
+      Status(app.spec).copy(appStatus = Some(CloudflowApplication.Status.Error)).toAction(app)
+
     def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
       // TODO not match on runtime, this is not great for extensibility.
       // There are some plans to make replicas mandatory in the CR

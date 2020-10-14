@@ -68,7 +68,7 @@ object TopicActions {
           .headOption
           .map(_.secretName)
 
-        action(appConfigSecretName, newApp.namespace, labels, topic)
+        action(appConfigSecretName, newApp.namespace, labels, topic, newApp)
       }
     actions
   }
@@ -86,7 +86,11 @@ object TopicActions {
    * 2. User-defined topic cluster configuration name in blueprint
    * 3. Default topic cluster configuration
    */
-  def action(appConfigSecretName: Option[String], namespace: String, labels: CloudflowLabels, topic: TopicInfo)(
+  def action(appConfigSecretName: Option[String],
+             namespace: String,
+             labels: CloudflowLabels,
+             topic: TopicInfo,
+             newApp: CloudflowApplication.CR)(
       implicit ctx: DeploymentContext
   ): Action[ObjectResource] = {
     def useClusterConfiguration(providedTopic: TopicInfo): Action[ObjectResource] =
@@ -98,29 +102,20 @@ object TopicActions {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, namespace, labels, providedTopic)
               case None         =>
                 // TODO: cluster secret can't be found. we can either throw an exception and fail deployment (and maybe create a status message), or fallback to using the default Kafka configuration
-                throw new Exception(s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]")
-                // TODO do something like `AppError.updateStatusAction(appId, msg)` instead
-                new ResourceAction[CloudflowApplication.CR] {
-                  def execute(client: KubernetesClient)(
-                      implicit sys: ActorSystem,
-                      ec: ExecutionContext,
-                      lc: skuber.api.client.LoggingContext
-                  ): scala.concurrent.Future[cloudflow.operator.action.Action[cloudflow.operator.CloudflowApplication.CR]] =
-                    // update status
-                    null
-                  def name: String                                         = "fpp"
-                  def resource: cloudflow.operator.CloudflowApplication.CR = ???
-                }
-
+                log.error(s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]")
+                CloudflowApplication.Status.errorAction(newApp)
             }
           )
         }
         .getOrElse {
-          if (topic.cluster.eq(Some(DefaultConfigurationName)))
-            throw new Exception(
+          if (topic.cluster.eq(Some(DefaultConfigurationName))) {
+            log.error(
               "A default Kafka configuration was not defined during installation of cloudflow-operator. Cannot create managed topics."
             )
-          useClusterConfiguration(topic.copy(cluster = Some(DefaultConfigurationName)))
+            CloudflowApplication.Status.errorAction(newApp)
+          } else {
+            useClusterConfiguration(topic.copy(cluster = Some(DefaultConfigurationName)))
+          }
         }
 
     appConfigSecretName
