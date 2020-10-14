@@ -142,8 +142,13 @@ object CloudflowApplication {
       )
     }
 
-    def errorAction(app: CloudflowApplication.CR): Action[ObjectResource] =
-      Status(app.spec).copy(appStatus = Some(CloudflowApplication.Status.Error)).toAction(app)
+    def errorAction(app: CloudflowApplication.CR, msg: String): Action[ObjectResource] =
+      Status(app.spec)
+        .copy(
+          appStatus = Some(CloudflowApplication.Status.Error),
+          appMessage = Some(msg)
+        )
+        .toAction(app)
 
     def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
       // TODO not match on runtime, this is not great for extensibility.
@@ -177,7 +182,11 @@ object CloudflowApplication {
   }
 
   // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
-  case class Status(appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
+  case class Status(appId: String,
+                    appVersion: String,
+                    streamletStatuses: Vector[StreamletStatus],
+                    appStatus: Option[String],
+                    appMessage: Option[String] = None) {
     def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
     def updateApp(newApp: CloudflowApplication.CR) = {
       // copy PodStatus lists that already exist

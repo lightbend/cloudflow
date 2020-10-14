@@ -67,8 +67,9 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
             namespace, {
               case Some(secret) => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
               case None =>
-                log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
-                CloudflowApplication.Status.errorAction(newApp)
+                val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                log.error(msg)
+                CloudflowApplication.Status.errorAction(newApp, msg)
             }
           )
         )
@@ -87,8 +88,9 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
                 val patch    = SparkRunner.patch(deployment, newApp, secret, namespace)
                 Action.patch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
               case None =>
-                log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
-                CloudflowApplication.Status.errorAction(newApp)
+                val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                log.error(msg)
+                CloudflowApplication.Status.errorAction(newApp, msg)
             }
           )
           val configAction = Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor)
@@ -102,8 +104,9 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
                 case Some(secret) =>
                   Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
                 case None =>
-                  log.error(s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'.")
-                  CloudflowApplication.Status.errorAction(newApp)
+                  val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                  log.error(msg)
+                  CloudflowApplication.Status.errorAction(newApp, msg)
               }
             )
           )
