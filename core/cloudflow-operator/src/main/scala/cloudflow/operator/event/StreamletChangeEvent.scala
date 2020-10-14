@@ -20,8 +20,10 @@ package event
 import akka.actor._
 import akka.NotUsed
 import akka.stream.scaladsl._
+
+import org.slf4j.LoggerFactory
+
 import skuber._
-import skuber.apps.v1.Deployment
 import skuber.api.client._
 import skuber.json.format._
 
@@ -39,6 +41,7 @@ case class StreamletChangeEvent[T <: ObjectResource](appId: String, streamletNam
 }
 
 object StreamletChangeEvent extends Event {
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
@@ -119,7 +122,7 @@ object StreamletChangeEvent extends Event {
         val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
         val updateAction = streamletDeployment.runtime match {
           case AkkaRunner.runtime ⇒
-            Action.provided[Secret, Deployment](
+            Action.provided[Secret, ObjectResource](
               streamletDeployment.secretName,
               app.metadata.namespace, {
                 case Some(secret) =>
@@ -129,13 +132,13 @@ object StreamletChangeEvent extends Event {
                     resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
                   Action.createOrUpdate(labeledResource, runner.AkkaRunner.editor)
                 case None =>
-                  throw new Exception(
-                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-                  )
+                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  log.error(msg)
+                  CloudflowApplication.Status.errorAction(app, msg)
               }
             )
           case SparkRunner.runtime ⇒
-            Action.provided[Secret, SparkResource.CR](
+            Action.provided[Secret, ObjectResource](
               streamletDeployment.secretName,
               app.metadata.namespace, {
                 case Some(secret) =>
@@ -146,13 +149,13 @@ object StreamletChangeEvent extends Event {
                   val patch = SpecPatch(labeledResource.spec)
                   Action.createOrPatch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
                 case None =>
-                  throw new Exception(
-                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-                  )
+                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+                  log.error(msg)
+                  CloudflowApplication.Status.errorAction(app, msg)
               }
             )
           case FlinkRunner.runtime ⇒
-            Action.provided[Secret, FlinkResource.CR](
+            Action.provided[Secret, ObjectResource](
               streamletDeployment.secretName,
               app.metadata.namespace, {
                 case Some(secret) =>
@@ -162,10 +165,10 @@ object StreamletChangeEvent extends Event {
                     resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
                   Action.createOrUpdate(labeledResource, runner.FlinkRunner.editor)
                 case None =>
-                  throw new Exception(
-                    s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-                  )
+                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
 
+                  log.error(msg)
+                  CloudflowApplication.Status.errorAction(app, msg)
               }
             )
         }
