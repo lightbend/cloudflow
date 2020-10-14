@@ -406,14 +406,7 @@ object PodsConfig {
   }
 
   /**
-   * Currently only dealing with secrets inside volumes
-   * Not taking into acccount other type of sources
-   */
-  /**
-   * Currently only dealing with secrets inside volumes
-   * Not taking into acccount other type of sources
-   *
-   * How to make this optional?
+   * TODO How to make this optional?
    */
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
     val res: Option[Volume.Source] = config.root().keySet().toArray().headOption.map {
