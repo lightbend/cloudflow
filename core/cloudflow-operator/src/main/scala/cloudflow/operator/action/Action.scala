@@ -186,7 +186,8 @@ class CreateOrUpdateAction[T <: ObjectResource](
     } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
   private def executeCreate(client: KubernetesClient,
-                            retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
+                            retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
+    val nextRetries = retries - 1
     for {
       existing ← client
         .usingNamespace(namespace)
@@ -198,12 +199,13 @@ class CreateOrUpdateAction[T <: ObjectResource](
           recoverFromConflict(
             client.update(resourceVersionUpdated),
             client,
-            retries - 1,
+            nextRetries,
             executeCreate
           )
         }
-        .getOrElse(recoverFromConflict(client.create(resource), client, retries - 1, executeCreate))
+        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreate))
     } yield res
+  }
 
   /**
    * Reverts the action to create the resource.
@@ -235,15 +237,18 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
   private def executeCreateOrPatch(
       client: KubernetesClient,
       retries: Int = 60
-  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
+    val nextRetries = retries - 1
+
     for {
       existing ← client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       res ← existing
-        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, retries - 1, executeCreateOrPatch))
-        .getOrElse(recoverFromConflict(client.create(resource), client, retries - 1, executeCreateOrPatch))
+        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
+        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
+  }
 }
 
 class PatchAction[T <: ObjectResource, O <: Patch](
