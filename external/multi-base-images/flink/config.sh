@@ -409,7 +409,8 @@ fi
 
 
 # Here we are not asking if this FLINK_ENV_JAVA_OPTS exist as any other case above and below
-# because we know they do. We did 'export' it in the file of this folder flink-entrypoint.sh
+# because we know it does. We did 'export' it in the file ./flink-entrypoint.sh that indirectly 
+# executes this script through /opt/flink/bin/taskmanager.sh.
 FLINK_ENV_JAVA_OPTS_CONFIG=$(readFromConfig ${KEY_ENV_JAVA_OPTS} "${DEFAULT_ENV_JAVA_OPTS}" "${YAML_CONF}") 
 
 # What we need to make sure is that we don't add more than once as this script can run multiple times
