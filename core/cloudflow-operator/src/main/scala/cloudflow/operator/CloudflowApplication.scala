@@ -128,6 +128,7 @@ object CloudflowApplication {
     val Running          = "Running"
     val Pending          = "Pending"
     val CrashLoopBackOff = "CrashLoopBackOff"
+    val Error            = "Error"
 
     def apply(
         spec: CloudflowApplication.Spec
@@ -173,7 +174,7 @@ object CloudflowApplication {
   }
 
   // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
-  case class Status private (appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
+  case class Status(appId: String, appVersion: String, streamletStatuses: Vector[StreamletStatus], appStatus: Option[String]) {
     def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
     def updateApp(newApp: CloudflowApplication.CR) = {
       // copy PodStatus lists that already exist

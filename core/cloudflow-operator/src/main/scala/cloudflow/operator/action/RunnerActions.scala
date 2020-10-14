@@ -59,15 +59,18 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       .flatMap { deployment ⇒
         Seq(
           Action.createOrUpdate(runner.configResource(deployment, newApp, namespace), runner.configEditor),
-          Action.provided[Secret, T](
+          Action.provided[Secret, ObjectResource](
             deployment.secretName,
             namespace, {
               case Some(secret) => Action.createOrUpdate(runner.resource(deployment, newApp, secret, namespace), runner.editor)
               case None         =>
-                // TODO do something like `AppError.updateStatusAction(appId, msg)` instead
-                throw new Exception(
-                  s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-                )
+                // TODO log, though it is likely that App is already not existing anymore.
+                // So modify toAction updateStatus so it logs that it will not update non-existing app
+                // Add this kind of errorAction to Status, CloudflowApplication.Status(newApp.spec).errorAction
+                CloudflowApplication
+                  .Status(newApp.spec)
+                  .copy(appStatus = Some(CloudflowApplication.Status.Error))
+                  .toAction(newApp)
             }
           )
         )
