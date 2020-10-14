@@ -162,15 +162,6 @@ object Operator {
     )
   }
 
-  // private def recoverFromActionException(implicit system: ActorSystem) =
-  //   Flow[Action[ObjectResource]].recoverWithRetries(
-  //     -1, {
-  //       case e @ ActionException(action, cause) ⇒
-  //         system.log.error(e.getMessage)
-
-  //     }
-  //   )
-
   private def executeActions(actionExecutor: ActionExecutor,
                              logAttributes: Attributes): Flow[Action[ObjectResource], Action[ObjectResource], NotUsed] =
     Flow[Action[ObjectResource]]
