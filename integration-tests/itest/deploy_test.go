@@ -52,6 +52,7 @@ const (
 )
 
 var deploySleepTime, _ = time.ParseDuration("5s")
+var configureSleepTime, _ = time.ParseDuration("15s")
 
 var swissKnifeApp = cli.App{
 	CRFile: "./resources/swiss-knife.json",
@@ -160,11 +161,11 @@ var _ = Describe("Application deployment", func() {
 			err := cli.Configure(swissKnifeApp, UpdateConfigParamsFile)
 			Expect(err).NotTo(HaveOccurred())
 			close(done)
+			time.Sleep(configureSleepTime) // this wait is to let the application get configured
 		}, LongTimeout)
 
-		It("should have all pods in a 'running' status, eventually", func(done Done) {
-
-			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
+		It("should get to a 'running' app status, eventually", func(done Done) {
+			status, err := cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal("Running"))
@@ -232,16 +233,17 @@ var _ = Describe("Application deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should reconfigure spark streamlets to add a pvc and mount it", func(done Done) {
+		It("should reconfigure streamlets to add a pvc and mount it", func(done Done) {
 			err := cli.Configure(swissKnifeApp, UpdateMountingPVC)
 			Expect(err).NotTo(HaveOccurred())
 			By("Wait for the deployment of the new configuration")
-			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
+			time.Sleep(configureSleepTime) // this wait is to let the application get configured
+
 			cli.PollUntilAppStatusIs(swissKnifeApp, "Running")
 			close(done)
 		}, LongTimeout)
 
-		It("should write specific content in any akka streamlet", func(done Done) {
+		It("should write specific content in any streamlet", func(done Done) {
 			err := k8s.CopyLocalFileToMatchingPod(swissKnifeApp.Name, clientset, "akka", PVCResourceLocalFileMountPath, PVCResourceAkkaFileMountPath)
 			Expect(err).NotTo(HaveOccurred())
 			close(done)
