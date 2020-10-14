@@ -21,7 +21,7 @@ prepare-itest-osx:
 	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}\") )'"))
 	(wget https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-${bintray_version}-darwin-amd64.tar.gz -O kubectl_cloudflow.tar.gz && \
 		tar -zxf kubectl_cloudflow.tar.gz --directory itest && \
-		xattr -d com.apple.quarantine itest/kubectl-cloudflow)
+		xattr -d com.apple.quarantine itest/kubectl-cloudflow | true)
 
 .PHONY: prepare-cluster
 prepare-cluster:
