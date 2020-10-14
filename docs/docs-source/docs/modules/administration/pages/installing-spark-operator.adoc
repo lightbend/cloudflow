@@ -5,6 +5,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: See xref:installation-prerequisites.adoc#_storage_requirements_for_use_with_spark_or_flink[Storage requirements (for use with Spark or Flink)] to setup Storage Requirements for Spark applications.
+
 If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application.
 
 The only Cloudflow compatible Spark operator is a fork maintained by Lightbend.
@@ -155,7 +157,7 @@ Now we can apply the changes to the webhook:
 
   kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 
-That completes the installation of the Spark operator. You can check the result with the following command: 
+That completes the installation of the Spark operator. You can check the result with the following command:
 
 ----
 $ kubectl get pods -n cloudflow

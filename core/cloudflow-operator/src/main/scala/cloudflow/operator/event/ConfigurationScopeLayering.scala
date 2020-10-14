@@ -132,26 +132,27 @@ object ConfigurationScopeLayering {
                                                     streamletConfig: Config,
                                                     appConfig: Config,
                                                     clusterSecretConfigs: Map[String, Config]): Config = {
+    val defaultClusterConfig = clusterSecretConfigs.get(TopicActions.DefaultConfigurationName)
     val portMappingConfigs = deployment.portMappings.flatMap {
       case (port, topic) =>
         Try {
-          val portMappingConfig = if (appConfig.hasPath(s"$TopicsConfigPath.${topic.id}")) {
-            appConfig
-              .getConfig(s"$TopicsConfigPath.${topic.id}")
-              .withFallback(topic.config)
-          } else {
-            val clusterSecretConfig =
-              topic.cluster
-                .flatMap(clusterName => clusterSecretConfigs.get(clusterName))
-                .orElse(clusterSecretConfigs.get(TopicActions.DefaultConfigurationName))
-                .getOrElse(ConfigFactory.empty())
+          val clusterSecretConfig =
+            topic.cluster
+              .flatMap(clusterName => clusterSecretConfigs.get(clusterName))
+              .orElse(defaultClusterConfig)
+              .getOrElse(ConfigFactory.empty())
 
-            appConfig
-              .withFallback(topic.config)
-              .withFallback(clusterSecretConfig)
-          }
+          val portMappingConfig =
+            if (appConfig.hasPath(s"$TopicsConfigPath.${topic.id}"))
+              appConfig.getConfig(s"$TopicsConfigPath.${topic.id}")
+            else
+              appConfig
 
-          portMappingConfig
+          val portMappingWithFallbackConfig = portMappingConfig
+            .withFallback(topic.config)
+            .withFallback(clusterSecretConfig)
+
+          portMappingWithFallbackConfig
             .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
             // Need to retain the topic.id
             .withFallback(ConfigFactory.parseString(s"""

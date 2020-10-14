@@ -104,17 +104,17 @@ class ConfigurationScopeLayeringSpec
           "in" -> Topic(
                 "metrics",
                 config = ConfigFactory.parseString("""
-                  |bootstrap.servers = "inline-config-kafka-bootstrap:9092"
-                  |connection-config {
-                  |  connection.foo.bar = "inline-baz"
-                  |}
-                  |producer-config {
-                  |  producer.foo.bar = "inline-baz"
-                  |}
-                  |consumer-config {
-                  |  consumer.foo.bar = "inline-baz"
-                  |}
-                  |""".stripMargin)
+                                                 |bootstrap.servers = "inline-config-kafka-bootstrap:9092"
+                                                 |connection-config {
+                                                 |  connection.foo.bar = "inline-baz"
+                                                 |}
+                                                 |producer-config {
+                                                 |  producer.foo.bar = "inline-baz"
+                                                 |}
+                                                 |consumer-config {
+                                                 |  consumer.foo.bar = "inline-baz"
+                                                 |}
+                                                 |""".stripMargin)
               )
         ),
         volumeMounts = None,
@@ -122,44 +122,44 @@ class ConfigurationScopeLayeringSpec
       )
 
       val appConfig = ConfigFactory.parseString("""
-        |cloudflow.topics.invalid-metrics {
-        |  bootstrap.servers = "app-cluster:9092"
-        |  connection-config {
-        |    connection.foo.bar = "app-baz"
-        |  }
-        |  producer-config {
-        |    producer.foo.bar = "app-baz"
-        |  }
-        |  consumer-config {
-        |    consumer.foo.bar = "app-baz"
-        |  }
-        |}
-        |""".stripMargin)
+                                                  |cloudflow.topics.invalid-metrics {
+                                                  |  bootstrap.servers = "app-cluster:9092"
+                                                  |  connection-config {
+                                                  |    connection.foo.bar = "app-baz"
+                                                  |  }
+                                                  |  producer-config {
+                                                  |    producer.foo.bar = "app-baz"
+                                                  |  }
+                                                  |  consumer-config {
+                                                  |    consumer.foo.bar = "app-baz"
+                                                  |  }
+                                                  |}
+                                                  |""".stripMargin)
 
       val defaultClusterConfig = ConfigFactory.parseString("""
-        |bootstrap.servers = "default-named-cluster:9092"
-        |connection-config {
-        |  connection.foo.bar = "default-baz"
-        |}
-        |producer-config {
-        |  producer.foo.bar = "default-baz"
-        |}
-        |consumer-config {
-        |  consumer.foo.bar = "default-baz"
-        |}
+                                                             |bootstrap.servers = "default-named-cluster:9092"
+                                                             |connection-config {
+                                                             |  connection.foo.bar = "default-baz"
+                                                             |}
+                                                             |producer-config {
+                                                             |  producer.foo.bar = "default-baz"
+                                                             |}
+                                                             |consumer-config {
+                                                             |  consumer.foo.bar = "default-baz"
+                                                             |}
       """.stripMargin)
 
       val nonDefaultClusterConfig = ConfigFactory.parseString("""
-        |bootstrap.servers = "non-default-named-cluster:9092"
-        |connection-config {
-        |  connection.foo.bar = "non-default-baz"
-        |}
-        |producer-config {
-        |  producer.foo.bar = "non-default-baz"
-        |}
-        |consumer-config {
-        |  consumer.foo.bar = "non-default-baz"
-        |}
+                                                                |bootstrap.servers = "non-default-named-cluster:9092"
+                                                                |connection-config {
+                                                                |  connection.foo.bar = "non-default-baz"
+                                                                |}
+                                                                |producer-config {
+                                                                |  producer.foo.bar = "non-default-baz"
+                                                                |}
+                                                                |consumer-config {
+                                                                |  consumer.foo.bar = "non-default-baz"
+                                                                |}
       """.stripMargin)
 
       val clusterSecretConfigs = Map("default" -> defaultClusterConfig, "non-default-named-cluster" -> nonDefaultClusterConfig)
