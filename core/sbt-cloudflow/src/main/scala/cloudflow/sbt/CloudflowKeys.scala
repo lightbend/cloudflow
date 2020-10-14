@@ -59,7 +59,7 @@ trait CloudflowTaskKeys {
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
   val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
   val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
-  val printAppGraph             = taskKey[Unit]("Print graph of all streamlets and how they are connected")
+  val printAppGraph             = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
   val build                     = taskKey[Unit]("Build the image.")
   val buildAndPublish           = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
   val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
