@@ -99,11 +99,12 @@ class ConfigurationScopeLayeringSpec
         config = ConfigFactory.empty(),
         portMappings = Map(
           "maybe"   -> Topic("maybe-valid"),
+          "sometimes" -> Topic("sometimes"),
           "invalid" -> Topic("invalid-metrics"),
           "valid"   -> Topic("valid-metrics", cluster = Some("non-default-named-cluster")),
           "in" -> Topic(
-                "metrics",
-                config = ConfigFactory.parseString("""
+            "metrics",
+            config = ConfigFactory.parseString("""
                                                  |bootstrap.servers = "inline-config-kafka-bootstrap:9092"
                                                  |connection-config {
                                                  |  connection.foo.bar = "inline-baz"
@@ -115,23 +116,36 @@ class ConfigurationScopeLayeringSpec
                                                  |  consumer.foo.bar = "inline-baz"
                                                  |}
                                                  |""".stripMargin)
-              )
+          )
         ),
         volumeMounts = None,
         replicas = None
       )
 
       val appConfig = ConfigFactory.parseString("""
-                                                  |cloudflow.topics.invalid-metrics {
-                                                  |  bootstrap.servers = "app-cluster:9092"
-                                                  |  connection-config {
-                                                  |    connection.foo.bar = "app-baz"
+                                                  |cloudflow.topics {
+                                                  |  invalid-metrics {
+                                                  |    bootstrap.servers = "app-cluster:9092"
+                                                  |    connection-config {
+                                                  |      connection.foo.bar = "app-baz"
+                                                  |    }
+                                                  |    producer-config {
+                                                  |      producer.foo.bar = "app-baz"
+                                                  |    }
+                                                  |    consumer-config {
+                                                  |      consumer.foo.bar = "app-baz"
+                                                  |    }
                                                   |  }
-                                                  |  producer-config {
-                                                  |    producer.foo.bar = "app-baz"
-                                                  |  }
-                                                  |  consumer-config {
-                                                  |    consumer.foo.bar = "app-baz"
+                                                  |  sometimes {
+                                                  |    connection-config {
+                                                  |      connection2.foo.bar = "sometimes-baz"
+                                                  |    }
+                                                  |    producer-config {
+                                                  |      producer.foo.bar = "sometimes-baz"
+                                                  |    }
+                                                  |    consumer-config {
+                                                  |      consumer.foo.bar = "sometimes-baz"
+                                                  |    }
                                                   |  }
                                                   |}
                                                   |""".stripMargin)
@@ -173,6 +187,15 @@ class ConfigurationScopeLayeringSpec
       maybeValidConfig.getConfig("connection-config").getString("connection.foo.bar") mustBe "default-baz"
       maybeValidConfig.getConfig("producer-config").getString("producer.foo.bar") mustBe "default-baz"
       maybeValidConfig.getConfig("consumer-config").getString("consumer.foo.bar") mustBe "default-baz"
+
+      // 'sometimes' port uses global topic configuration from app config, and falls back 'default' named config for bootstrap.servers and other config
+      val sometimesPort   = "sometimes"
+      val sometimesConfig = configs.streamlet.getConfig(s"cloudflow.runner.streamlet.context.port_mappings.$sometimesPort.config")
+      sometimesConfig.getString("bootstrap.servers") mustBe "default-named-cluster:9092"
+      sometimesConfig.getConfig("connection-config").getString("connection.foo.bar") mustBe "default-baz"
+      sometimesConfig.getConfig("connection-config").getString("connection2.foo.bar") mustBe "sometimes-baz"
+      sometimesConfig.getConfig("producer-config").getString("producer.foo.bar") mustBe "sometimes-baz"
+      sometimesConfig.getConfig("consumer-config").getString("consumer.foo.bar") mustBe "sometimes-baz"
 
       // 'invalid' port uses global topic configuration from app config
       val invalidPort   = "invalid"
