@@ -162,6 +162,15 @@ var _ = Describe("Application deployment", func() {
 			close(done)
 		}, LongTimeout)
 
+		It("should have all pods in a 'running' status, eventually", func(done Done) {
+
+			status, err := cli.PollUntilPodsStatusIs(swissKnifeApp, "Running")
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal("Running"))
+			close(done)
+		}, LongTimeout)
+
 		It("should have configured an akka streamlet", func(done Done) {
 			checkAnyPodLogForOutput("akka-egress", UpdateConfigPayload)
 			close(done)
