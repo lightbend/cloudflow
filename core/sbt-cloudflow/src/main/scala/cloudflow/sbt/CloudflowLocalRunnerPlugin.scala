@@ -159,7 +159,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               stopKafka()
             }
           }
-        }.value
+        }.value,
+    printAppGraph := printApplicationGraph.value
   )
 
   def banner(bannerChar: Char)(name: String)(message: Any): Unit = {
@@ -231,6 +232,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         throw ex
       }
     descriptors.collect { case (pid, Success(runtimeDescriptor)) => (pid, runtimeDescriptor) }
+  }
+
+  def printApplicationGraph: Def.Initialize[Task[Unit]] = Def.task {
+    implicit val logger = streams.value.log
+    val _appDescriptor  = applicationDescriptor.value
+    val appDescriptor = _appDescriptor.getOrElse {
+      logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
+      throw new IllegalStateException("ApplicationDescriptor is not present")
+    }
+    printAppLayout(resolveConnections(appDescriptor))
   }
 
   def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
