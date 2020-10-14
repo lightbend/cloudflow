@@ -66,9 +66,12 @@ sealed trait Action[+T <: ObjectResource] {
     future.recoverWith {
       case e: K8SException if (e.status.code == Some(Action.ConflictCode)) => {
         if (retries > 0) {
-          sys.log.info(s"Recovering from conflict in resource version, retry nr ${retries}: ${e.getMessage}")
+          sys.log.info(s"Recovering from K8SException, conflict in resource version: ${e.getMessage}")
           f(client, retries)
-        } else throw e
+        } else {
+          sys.log.error(s"Exhausted retries recovering from conflict, giving up.")
+          throw e
+        }
       }
     }
 
