@@ -2,6 +2,16 @@
     $(error variable 'version' must be manually specified when running a release task)
   endif
 
+step1: | spawn-gke-cluster
+step2: | step1 prepare-swiss-knife # this should also give some time to the cluster ...
+step3: | step2 prepare-itest-osx
+step4: | step3 prepare-cluster
+step5: | step4 run-it-tests # finally!
+step6: | step5 delete-gke-cluster # cleanup
+
+.PHONY: all
+all: step6
+
 .PHONY: prepare-swiss-knife
 prepare-swiss-knife:
 	@echo '****** Prepare and publish the swiss-knife application'
@@ -63,21 +73,18 @@ prepare-cluster:
 spawn-gke-cluster:
 	@echo '****** Spawn a GKE cluster to run the IT tests on'
 	(cd ../installer && \
-		echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g'")) && \
-		./create-cluster-gke.sh "it-${machine-id}-${version}")
+		echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
+		source ./create-cluster-gke.sh "it-${machine-id}")
 
 .PHONY: delete-gke-cluster
 delete-gke-cluster:
 	@echo '****** Deleting your GKE cluster'
-	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g'")) && \
-		gcloud container clusters delete "it-${machine-id}-${version}")
+	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
+		gcloud container clusters delete -y "it-${machine-id}")
 
-.PHONY: all
+.PHONY: run-it-tests
 run-it-tests:
 	@echo '****** Run Integration Tests'
 	PATH=$$PWD/itest:$$PATH echo $$PATH
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
 	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
-
-.PHONY: all
-all: | spawn-gke-cluster prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests delete-gke-cluster
