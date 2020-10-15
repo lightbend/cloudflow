@@ -98,13 +98,13 @@ class ConfigurationScopeLayeringSpec
         secretName = "akka-streamlet",
         config = ConfigFactory.empty(),
         portMappings = Map(
-          "maybe"   -> Topic("maybe-valid"),
+          "maybe"     -> Topic("maybe-valid"),
           "sometimes" -> Topic("sometimes"),
-          "invalid" -> Topic("invalid-metrics"),
-          "valid"   -> Topic("valid-metrics", cluster = Some("non-default-named-cluster")),
+          "invalid"   -> Topic("invalid-metrics"),
+          "valid"     -> Topic("valid-metrics", cluster = Some("non-default-named-cluster")),
           "in" -> Topic(
-            "metrics",
-            config = ConfigFactory.parseString("""
+                "metrics",
+                config = ConfigFactory.parseString("""
                                                  |bootstrap.servers = "inline-config-kafka-bootstrap:9092"
                                                  |connection-config {
                                                  |  connection.foo.bar = "inline-baz"
@@ -116,7 +116,7 @@ class ConfigurationScopeLayeringSpec
                                                  |  consumer.foo.bar = "inline-baz"
                                                  |}
                                                  |""".stripMargin)
-          )
+              )
         ),
         volumeMounts = None,
         replicas = None
