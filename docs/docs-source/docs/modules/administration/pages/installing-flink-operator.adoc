@@ -5,6 +5,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: See xref:installation-prerequisites.adoc#_storage_requirements_for_use_with_spark_or_flink[Storage requirements (for use with Spark or Flink)] to setup Storage Requirements for Flink applications.
+
 If you plan to write applications that utilize Flink you will need to install the Lyft Flink operator before deploying your Cloudflow application.
 
 Install the Lyft Flink operator using the following Helm command:
@@ -19,7 +21,7 @@ helm install flink-operator \
 
 NOTE: The above Helm command uses a Helm chart for the Lyft Flink operator that is hosted https://github.com/lightbend/flink-operator[here].
 
-This completes the installation of the Flink operator. 
+This completes the installation of the Flink operator.
 
 ----
 $ kubectl get pods -n cloudflow
