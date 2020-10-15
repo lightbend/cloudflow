@@ -56,6 +56,10 @@ RUN set -ex; \
   chmod -R 777 $FLINK_HOME
 
 ADD config.sh $FLINK_HOME/bin/
+ADD flink-console.sh $FLINK_HOME/bin/
+
+RUN chmod 777 $FLINK_HOME/bin/flink-console.sh; \
+    chown 501:dialout $FLINK_HOME/bin/flink-console.sh
 
 # Update entrypoint
 COPY flink-entrypoint.sh /opt/
