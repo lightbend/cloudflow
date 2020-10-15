@@ -69,7 +69,7 @@ prepare-cluster:
 .PHONY: spawn-gke-cluster
 spawn-gke-cluster:
 	@echo '****** Spawn a GKE cluster to run the IT tests on'
-	(cd ../installer && \
+	(cd ../cluster_scripts && \
 		echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
 		source ./create-cluster-gke.sh "it-${machine-id}")
 
