@@ -50,10 +50,10 @@ echo "Now starting building of examples..."
 # Following section has been commented - will uncomment when we have a way
 # to publish artifacts since we need to specify the plugin version for each example
 
+cd ../examples
+
 # Obtain current project list from examples.yaml
 PROJECTS=$(cat $DIR/../examples/examples.yaml | grep "path" | cut -d\" -f2)
-
-cd ../examples
 
 for prj in $PROJECTS; do
   echo "========================================================================="
