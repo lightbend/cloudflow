@@ -49,10 +49,6 @@ echo "Now starting building of examples..."
 version=$(cat version.sbt | cut -d'"' -f2)
 echo $version
 
-cd ../examples
-scripts/change-plugin-version.sh $version
-echo "Plugin versions changed to $version"
-
 
 # Following section has been commented - will uncomment when we have a way
 # to publish artifacts since we need to specify the plugin version for each example
