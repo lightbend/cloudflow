@@ -58,7 +58,8 @@ val javadocDisabledFor = Set(
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletLoader.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletShapeImpl.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/TopicForPortNotFoundException.java",
-  "/cloudflow-streamlets/target/java/cloudflow/streamlets/descriptors/VolumeMountDescriptor.java"
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/descriptors/VolumeMountDescriptor.java",
+  "/cloudflow/cloudflow/core/cloudflow-spark/target/java/cloudflow/spark/kafka/EncodedKV.java"
 )
 
 lazy val root =
