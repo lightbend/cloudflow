@@ -32,7 +32,7 @@ prepare-cluster:
 	helm repo add strimzi https://strimzi.io/charts/ | true
 	helm repo update
 	helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
-	kubectl apply -f kafka-cluster.yaml
+	(for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
 	@echo '****** Installing NFS provisioner'
 	helm repo add stable https://kubernetes-charts.storage.googleapis.com/ | true
 	helm repo update
@@ -58,3 +58,26 @@ prepare-cluster:
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** The cluster is ready for integration tests!'
+
+.PHONY: spawn-gke-cluster
+spawn-gke-cluster:
+	@echo '****** Spawn a GKE cluster to run the IT tests on'
+	(cd ../installer && \
+		echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g'")) && \
+		./create-cluster-gke.sh "it-${machine-id}-${version}")
+
+.PHONY: delete-gke-cluster
+delete-gke-cluster:
+	@echo '****** Deleting your GKE cluster'
+	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g'")) && \
+		gcloud container clusters delete "it-${machine-id}-${version}")
+
+.PHONY: all
+run-it-tests:
+	@echo '****** Run Integration Tests'
+	PATH=$$PWD/itest:$$PATH echo $$PATH
+	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
+	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
+
+.PHONY: all
+all: | spawn-gke-cluster prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests delete-gke-cluster
