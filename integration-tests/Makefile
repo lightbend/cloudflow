@@ -2,15 +2,8 @@
     $(error variable 'version' must be manually specified when running a release task)
   endif
 
-step1: | spawn-gke-cluster
-step2: | step1 prepare-swiss-knife # this should also give some time to the cluster ...
-step3: | step2 prepare-itest-osx
-step4: | step3 prepare-cluster
-step5: | step4 run-it-tests # finally!
-step6: | step5 delete-gke-cluster # cleanup
-
 .PHONY: all
-all: step6
+all: | spawn-gke-cluster prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests delete-gke-cluster
 
 .PHONY: prepare-swiss-knife
 prepare-swiss-knife:
