@@ -53,6 +53,8 @@ echo "Now starting building of examples..."
 # Obtain current project list from examples.yaml
 PROJECTS=$(cat $DIR/../examples/examples.yaml | grep "path" | cut -d\" -f2)
 
+cd ../examples
+
 for prj in $PROJECTS; do
   echo "========================================================================="
   echo "${TARGET}: $prj"
