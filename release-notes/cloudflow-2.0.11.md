@@ -3,6 +3,7 @@
 Today we are happy to announce the availability of Cloudflow 2.0.11. 
 
 Cloudflow 2.0.11 is installed and upgraded with helm charts. See the Cloudflow helm charts [here](https://github.com/lightbend/cloudflow-helm-charts). See [the installation documentation](https://cloudflow.io/docs/current/administration/index.html) for more details.
+A new setting `kafkaClusters.default.bootstrapServers` is required for 2.0.11 so be sure to set this to your existing kafka cluster in the helm upgrade command, for instance by adding `--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092` to the helm upgrade command shown in the documentation.
 
 For existing users of Cloudflow 2.0.10 it is important to note that Cloudflow must be upgraded with the helm charts, as described in the documentation. The Cloudflow kubectl plugin must also be upgraded to 2.0.11 (links below) and existing applications must be rebuilt with the 2.0.11 sbt-cloudflow plugin.
 
