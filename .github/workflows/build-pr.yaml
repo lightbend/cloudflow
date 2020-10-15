@@ -16,6 +16,13 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
+    - name: Cache SBT Coursier cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/coursier
+        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-coursier-cache-
     - name: Build documentation
       run: |
         cd docs
