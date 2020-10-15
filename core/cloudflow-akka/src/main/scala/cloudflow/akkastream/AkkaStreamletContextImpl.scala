@@ -19,6 +19,7 @@ package cloudflow.akkastream
 import java.util.concurrent.atomic.AtomicReference
 import java.nio.file.{ Files, Paths }
 
+import scala.collection.immutable
 import scala.concurrent._
 import scala.util._
 import akka._
@@ -181,6 +182,31 @@ final class AkkaStreamletContextImpl(
 
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     Flow[(T, Committable)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
+
+  override def flexiFlow[T](
+      outlet: CodecOutlet[T]
+  ): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
+    val topic = findTopicForPort(outlet)
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(runtimeBootstrapServers(topic))
+      .withProperties(topic.kafkaProducerProperties)
+
+    Flow[(immutable.Seq[T], Committable)]
+      .map {
+        case (values, committable) =>
+          ProducerMessage.MultiMessage(values.map(value => producerRecord(outlet, topic, value)), committable)
+      }
+      .via(handleTermination)
+      .via(Producer.flexiFlow(producerSettings))
+      .map(results => ((), results.passThrough))
+  }
+
+  private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
+    val key        = outlet.partitioner(value)
+    val bytesKey   = keyBytes(key)
+    val bytesValue = outlet.codec.encode(value)
+    new ProducerRecord(topic.name, bytesKey, bytesValue)
+  }
 
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
