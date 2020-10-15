@@ -5,6 +5,9 @@
 .PHONY: all
 all: | spawn-gke-cluster prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests delete-gke-cluster
 
+.PHONY: on-cluster
+on-cluster: | prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests
+
 .PHONY: prepare-swiss-knife
 prepare-swiss-knife:
 	@echo '****** Prepare and publish the swiss-knife application'
@@ -56,6 +59,7 @@ prepare-cluster:
 	helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/ | true
 	helm repo update
 	(helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
+		--atomic \
 		--version "${version}" \
 		--set cloudflow_operator.persistentStorageClass=nfs \
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
