@@ -10,8 +10,8 @@ New features in this release:
 - Named Kafka cluster configurations. The helm chart makes it possible to define the default Kafka cluster and any other Kafka clusters that applications might use. The cluster names can then be used in blueprints. Because of this change it is now also possible to set defaults for many Kafka settings, and it is possible to connect to the named Kafka clusters with TLS settings.
 - Mount existing persistent volume claims through configuration files.
 - Mounting existing secrets through configuration files.
-- Protobuf support for Spark
-- Java DSL for protobuf inlet/outlet
+- Protobuf support for Spark.
+- Java DSL for protobuf inlet/outlet.
 - runLocalLog4jConfigFile setting for custom log4j configuration used in runLocal.
 - Added methods to change Spark session and Flink streaming env in streamlet code.
 - In `sbt buildApp`, publishing images to a Docker Registry is now optional, making it possible to build the Cloudflow application CR, and push the images independently.
