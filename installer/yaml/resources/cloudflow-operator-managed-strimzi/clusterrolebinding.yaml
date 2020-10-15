@@ -1,9 +1,0 @@
-# clusterrolebinding.yaml
-
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cloudflow-operator-bindings
-  labels:
-    app.kubernetes.io/version: __cloudflowOperator.imageTag__
-    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
