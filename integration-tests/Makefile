@@ -2,6 +2,12 @@
     $(error variable 'version' must be manually specified when running a release task)
   endif
 
+.PHONY: all
+all: | spawn-gke-cluster prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests delete-gke-cluster
+
+.PHONY: on-cluster
+on-cluster: | prepare-swiss-knife prepare-itest-osx prepare-cluster run-it-tests
+
 .PHONY: prepare-swiss-knife
 prepare-swiss-knife:
 	@echo '****** Prepare and publish the swiss-knife application'
@@ -32,7 +38,7 @@ prepare-cluster:
 	helm repo add strimzi https://strimzi.io/charts/ | true
 	helm repo update
 	helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
-	kubectl apply -f kafka-cluster.yaml
+	(for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
 	@echo '****** Installing NFS provisioner'
 	helm repo add stable https://kubernetes-charts.storage.googleapis.com/ | true
 	helm repo update
@@ -53,8 +59,29 @@ prepare-cluster:
 	helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/ | true
 	helm repo update
 	(helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
+		--atomic \
 		--version "${version}" \
 		--set cloudflow_operator.persistentStorageClass=nfs \
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** The cluster is ready for integration tests!'
+
+.PHONY: spawn-gke-cluster
+spawn-gke-cluster:
+	@echo '****** Spawn a GKE cluster to run the IT tests on'
+	(cd ../cluster_scripts && \
+		echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
+		source ./create-cluster-gke.sh "it-${machine-id}")
+
+.PHONY: delete-gke-cluster
+delete-gke-cluster:
+	@echo '****** Deleting your GKE cluster'
+	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
+		gcloud container clusters delete -y "it-${machine-id}")
+
+.PHONY: run-it-tests
+run-it-tests:
+	@echo '****** Run Integration Tests'
+	PATH=$$PWD/itest:$$PATH echo $$PATH
+	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
+	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
