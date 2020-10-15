@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
 
-lazy val sparkSensors = Project(id = "spark-sensors", base = file("."))
+lazy val sparkSensors = Project(id = "spark-sensors-proto", base = file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowSparkPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
