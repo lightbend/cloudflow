@@ -56,11 +56,11 @@ object Library {
   val Skuber                = "io.skuber"                  %% "skuber"               % "2.6.0"
   
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
-  val SparkJacksonDatabind  = "com.fasterxml.jackson.core"  % "jackson-databind"     % "2.6.7.3"
   val SparkMllib            = "org.apache.spark"           %% "spark-mllib"          % Version.Spark
   val SparkSql              = "org.apache.spark"           %% "spark-sql"            % Version.Spark
   val SparkSqlKafka         = "org.apache.spark"           %% "spark-sql-kafka-0-10" % Version.Spark
   val SparkStreaming        = "org.apache.spark"           %% "spark-streaming"      % Version.Spark
+  val SparkProto            = "com.thesamet.scalapb"       %% "sparksql-scalapb"     % "0.9.0"
   val ScalaTestUnscoped     = "org.scalatest"              %% "scalatest"            % "3.0.8"
   val ScalaPbRuntime        = "com.thesamet.scalapb"       %% "scalapb-runtime"      % scalapb.compiler.Version.scalapbVersion
   val ScalaPbCompilerPlugin = "com.thesamet.scalapb"       %% "compilerplugin"       % scalapb.compiler.Version.scalapbVersion

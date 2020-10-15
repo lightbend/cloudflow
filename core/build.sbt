@@ -58,7 +58,8 @@ val javadocDisabledFor = Set(
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletLoader.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/StreamletShapeImpl.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/TopicForPortNotFoundException.java",
-  "/cloudflow-streamlets/target/java/cloudflow/streamlets/descriptors/VolumeMountDescriptor.java"
+  "/cloudflow-streamlets/target/java/cloudflow/streamlets/descriptors/VolumeMountDescriptor.java",
+  "/cloudflow/cloudflow/core/cloudflow-spark/target/java/cloudflow/spark/kafka/EncodedKV.java"
 )
 
 lazy val root =
@@ -223,7 +224,6 @@ lazy val spark =
     .settings(
       scalafmtOnCompile := true,
       // Prevent incompatible version of jackson-databind
-      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Seq(
             AkkaActor,
             AkkaDiscovery,
@@ -235,8 +235,12 @@ lazy val spark =
             SparkSql,
             SparkSqlKafka,
             SparkStreaming,
+            SparkProto,
             ScalaTest
-          )
+          ),
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
     .settings(
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
@@ -249,11 +253,13 @@ lazy val sparkTestkit =
     .settings(
       scalafmtOnCompile := true,
       // Prevent incompatible version of jackson-databind
-      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
             ScalaTestUnscoped,
             Junit
-          )
+          ),
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
 
 lazy val sparkTests =
@@ -263,11 +269,13 @@ lazy val sparkTests =
     .settings(
       scalafmtOnCompile := true,
       // Prevent incompatible version of jackson-databind
-      dependencyOverrides += SparkJacksonDatabind,
       libraryDependencies ++= Vector(
             ScalaTest,
             Junit
-          )
+          ),
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
+      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
     .settings(
       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue

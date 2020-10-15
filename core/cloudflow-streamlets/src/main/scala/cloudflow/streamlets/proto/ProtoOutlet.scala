@@ -22,7 +22,7 @@ import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 final case class ProtoOutlet[T <: GeneratedMessage: GeneratedMessageCompanion](
     name: String,
-    partitioner: T ⇒ String
+    partitioner: T ⇒ String = RoundRobinPartitioner
 ) extends CodecOutlet[T] {
   val cmp              = implicitly[GeneratedMessageCompanion[T]]
   val codec            = new ProtoCodec[T]

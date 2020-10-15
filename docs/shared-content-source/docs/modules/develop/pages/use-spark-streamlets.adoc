@@ -28,6 +28,26 @@ codec of the data they manipulate.
 Currently, Cloudflow supports Avro and hence the classes are named `AvroInlet` and `AvroOutlet`.
 Each outlet also allows the user to define a partitioning function that will be used to partition the data.
 
+== Usage of different encodings in Spark streamlet
+
+Currently Cloudflow supports two different data encoding types - Avro and Protobuf. Both can be used for Spark streamlet,
+but you should remember several rules. Protobuf support is based on https://scalapb.github.io/docs/sparksql/[Scala-PB Spark],
+which comes with its own `implicits` - `scalapb.spark.Implicits._` which is not compatible with `cloudflow.spark.sql.SQLImplicits._`.
+When using these `implicits` the following rules have to be observed:
+
+* If protobuf's encoding is not used, always use `cloudflow.spark.sql.SQLImplicits._`.
+* If you are using at least one protobuf encoding, you need to use `scalapb.spark.Implicits._`.
+Note that this `implicits` do not include default implicit supporting Scala classes. So if in addition to
+protobuf, you are using Avro and or any custom scala types in your Spark processing, you have to add implicit encoders, for these
+types. For example, if you are using the following type in your calculations:
+----
+case class Rate(timestamp: Timestamp, value: Long)
+----
+In your code you should have a definition of the corresponding encoder:
+----
+implicit val rateEncoder = Encoders.product[Rate]
+----
+
 == `StreamletShape`
 
 The `StreamletShape` captures the connectivity and compatibility details of a Spark-based streamlet.

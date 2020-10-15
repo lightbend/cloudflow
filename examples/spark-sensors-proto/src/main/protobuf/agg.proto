@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "sensors.proto";
+
+message Agg {
+    string src = 1;
+    string gauge = 2;
+    double value = 3;
+}

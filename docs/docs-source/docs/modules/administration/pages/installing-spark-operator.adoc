@@ -43,7 +43,7 @@ resyncInterval: 30
 webhookPort: 8080
 sparkJobNamespace: ""
 operatorImageName: "lightbend/sparkoperator"
-operatorVersion: "2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12"
+operatorVersion: "2.0.11-cloudflow-spark-2.4.5-1.1.2-scala-2.12"
 ---
 kind: Service
 apiVersion: v1
@@ -54,7 +54,7 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: sparkoperator
-    app.kubernetes.io/version: 2.0.7-cloudflow-spark-2.4.5-1.1.2-scala-2.12
+    app.kubernetes.io/version: 2.0.11-cloudflow-spark-2.4.5-1.1.2-scala-2.12
 EOF
 ----
 

@@ -57,7 +57,7 @@ The following example reads a password from a file, and passes it to the `kubect
 $ cat my-dockerhub-password.txt | kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json -u <your docker hub username> --password-stdin
 ```
 
-If your docker repository is public you can omit credentials with the `--no-registry-credentials` flag, which is shown in the following example:
+If your docker repository is public, or if image pull secrets are already setup in your Kubernetes cluster to pull from your docker repository, you can omit credentials with the `--no-registry-credentials` flag, which is shown in the following example:
 
 ```
 $ kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json --no-registry-credentials
