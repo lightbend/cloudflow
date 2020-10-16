@@ -77,11 +77,10 @@ spawn-gke-cluster:
 delete-gke-cluster:
 	@echo '****** Deleting your GKE cluster'
 	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
-		gcloud container clusters delete -y "it-${machine-id}")
+		gcloud container clusters delete "it-${machine-id}")
 
 .PHONY: run-it-tests
 run-it-tests:
 	@echo '****** Run Integration Tests'
-	PATH=$$PWD/itest:$$PATH echo $$PATH
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
 	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
