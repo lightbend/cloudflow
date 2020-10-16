@@ -110,23 +110,25 @@ print-site:
 
 # TODO: this should go in the release process
 process: get-version
-	version_docs="${version}-docs"
+	$(eval version_docs="${version}-docs")
 
 	# Set current version
 	# git checkout -b "v${version_docs}"
 	yq write -i docs-source/docs/antora.yml version current
-	set-antora-versions
+	# set-antora-versions
 
 	# git add .
 	# git commit -m "Update current antora build"
 	
-	# yq write -i docs-source/docs/antora.yml version "${version_docs}"
+	yq write -i docs-source/docs/antora.yml version "${version_docs}"
 
 	# add to the list:
 	# yq write docs-source/site.yml 'content.sources.[0].branches[+]' "v${version_docs}"
 	
 	# git add .
 	# git commit -m "Update documentation to version: ${version}"
+
+	yq write -i docs-source/docs/antora.yml version dev
 
 	# git push -u "v${version_docs}" "v${version_docs}"
 	# git checkout master
