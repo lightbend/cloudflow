@@ -30,7 +30,14 @@ clean:
 
 build: clean html javascaladoc_staged print-site
 
-html: clean
+set-version:
+	# get latest tag
+	$(eval version=$(shell sh -c "git describe --abbrev=0 | sed 's/v//'"))
+	# query bintray for the corresponding artifact version
+	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))	
+
+html: clean set-version
+	yq write docs-source/base-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}" > docs-source/site.yml
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		--privileged \
@@ -42,7 +49,8 @@ html: clean
 		docs/docs-source/site.yml
 	@echo "Done"
 
-html-author-mode: clean
+html-author-mode: clean set-version
+	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}" > docs-source/author-mode-site.yml
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${ROOT_DIR}:/antora \
