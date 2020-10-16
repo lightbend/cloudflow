@@ -4,7 +4,7 @@ import sbt.Keys._
 val AkkaVersion = "2.6.8"
 val AkkaPersistenceCassandraVersion = "1.0.0"
 val AkkaHttpVersion = "10.1.10"
-val AkkaProjectionVersion = "0.3"
+val AkkaProjectionVersion = "1.0.0"
 
 lazy val root =
   Project(id = "root", base = file("."))
