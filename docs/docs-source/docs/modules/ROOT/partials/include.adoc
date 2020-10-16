@@ -1,7 +1,5 @@
 :page-partial:
 // global attributes
-:cloudflow-version: 2.1.0-SNAPSHOT
-:cloudflow-examples-version: 2.1.0-SNAPSHOT
 
 :installer-image-tag:          INSTALLER_IMAGE_TAG
 :kubernetes-platform-name:     Kubernetes

@@ -50,7 +50,14 @@ html: clean set-version
 	@echo "Done"
 
 html-author-mode: clean set-version
-	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}" > docs-source/author-mode-site.yml
+	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
+	yq write ../examples/snippets/base-antora.yml version "${version}" > ../examples/snippets/antora.yml
+
+	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.cloudflow-version' "${version}" > docs-source/author-mode-site.yml
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${ROOT_DIR}:/antora \
@@ -100,3 +107,22 @@ ${javascaladoc_dir}:
 print-site:
 	# The result directory with the contents of this build:
 	@echo "${staging_dir}"
+
+release: set-version
+	# Creating a new `current` version
+	# * In `docs/docs-source/docs/antora.yml`, update `version: dev` to `version: current`
+	yq write -i docs-source/docs/antora.yml version current
+	# * In `docs/shared-content-source/docs/antora.yml`, update `version: x.y.z-SNAPSHOT` to `version: x.y.z`
+	yq write -i shared-content-source/docs/antora.yml version ${version}
+	# * In `examples/snippets/antora.yml`, update  `version: x.y.z-SNAPSHOT` to `version: x.y.z`
+	yq write -i examples/snippets/antora.yml version ${version}
+	# Change the internal version references to the new versions:
+	# * In `docs/docs-source/docs/modules/ROOT/partials/include.adoc` 
+	# ** update `:cloudflow-version:` to the new  `x.y.z` version
+	# ** update `:cloudflow-examples-version:` to the new `x.y.z` version
+	# yq write -i docs/docs-source/docs/modules/ROOT/partials/include.adoc cloudflow-version ${version}
+	# yq write -i cloudflow-examples-version ${version}
+	# * In `docs/shared-content-source/docs/modules/ROOT/partials/include.adoc` 
+	# ** update `:cloudflow-version:` to the new  `x.y.z` version
+	# ** update `:cloudflow-examples-version:` to the new `x.y.z` version
+	# ** update `:cloudflow-branch-version:` to the exact tag of the released Cloudflow version (i.e vx.y.z)
