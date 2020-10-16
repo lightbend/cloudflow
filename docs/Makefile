@@ -30,14 +30,22 @@ clean:
 
 build: clean html javascaladoc_staged print-site
 
-set-version:
+get-version:
 	# get latest tag
 	$(eval version=$(shell sh -c "git describe --abbrev=0 | sed 's/v//'"))
 	# query bintray for the corresponding artifact version
-	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))	
+	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))
 
-html: clean set-version
-	yq write docs-source/base-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}" > docs-source/site.yml
+set-antora-versions: get-version
+	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
+	yq write ../examples/snippets/base-antora.yml version "${version}" > ../examples/snippets/antora.yml
+
+	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.cloudflow-version' "${version}" > docs-source/author-mode-site.yml
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+
+html: clean set-antora-versions
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		--privileged \
@@ -49,15 +57,7 @@ html: clean set-version
 		docs/docs-source/site.yml
 	@echo "Done"
 
-html-author-mode: clean set-version
-	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
-	yq write ../examples/snippets/base-antora.yml version "${version}" > ../examples/snippets/antora.yml
-
-	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.cloudflow-version' "${version}" > docs-source/author-mode-site.yml
-	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
-	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
-	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
-
+html-author-mode: clean set-antora-versions
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${ROOT_DIR}:/antora \
@@ -112,17 +112,3 @@ release: set-version
 	# Creating a new `current` version
 	# * In `docs/docs-source/docs/antora.yml`, update `version: dev` to `version: current`
 	yq write -i docs-source/docs/antora.yml version current
-	# * In `docs/shared-content-source/docs/antora.yml`, update `version: x.y.z-SNAPSHOT` to `version: x.y.z`
-	yq write -i shared-content-source/docs/antora.yml version ${version}
-	# * In `examples/snippets/antora.yml`, update  `version: x.y.z-SNAPSHOT` to `version: x.y.z`
-	yq write -i examples/snippets/antora.yml version ${version}
-	# Change the internal version references to the new versions:
-	# * In `docs/docs-source/docs/modules/ROOT/partials/include.adoc` 
-	# ** update `:cloudflow-version:` to the new  `x.y.z` version
-	# ** update `:cloudflow-examples-version:` to the new `x.y.z` version
-	# yq write -i docs/docs-source/docs/modules/ROOT/partials/include.adoc cloudflow-version ${version}
-	# yq write -i cloudflow-examples-version ${version}
-	# * In `docs/shared-content-source/docs/modules/ROOT/partials/include.adoc` 
-	# ** update `:cloudflow-version:` to the new  `x.y.z` version
-	# ** update `:cloudflow-examples-version:` to the new `x.y.z` version
-	# ** update `:cloudflow-branch-version:` to the exact tag of the released Cloudflow version (i.e vx.y.z)
