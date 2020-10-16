@@ -2,5 +2,5 @@
 //
 resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.9")
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "2.0.11")
 
