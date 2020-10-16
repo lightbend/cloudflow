@@ -25,6 +25,7 @@ jobs:
           ${{ runner.os }}-sbt-coursier-cache-
     - name: Build documentation
       run: |
+        sudo snap install yq
         cd docs
         make all
     - name: Run integration tests of the sbt plugin
