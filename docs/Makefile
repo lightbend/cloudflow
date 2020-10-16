@@ -109,36 +109,26 @@ print-site:
 	@echo "${staging_dir}"
 
 # TODO: this should go in the release process
-build-current: get-version
-	current_branch="current-${version}-docs"
-	git checkout -b ${current_branch}
-	yq write -i docs-source/docs/antora.yml version current
+process: get-version
+	version_docs="${version}-docs"
 
-build-version: get-version
-	docs_branch="${version}-docs"
-	git checkout -b ${docs_branch}
-	yq write -i docs-source/docs/antora.yml version "${version}-dev"
-
-add-version: get-version
-	yq write docs-source/site.yml 'content.sources.[0].branches' "pippo"
-
-process:
-	git checkout -b "v${version}-docs"
+	# Set current version
+	# git checkout -b "v${version_docs}"
 	yq write -i docs-source/docs/antora.yml version current
 	set-antora-versions
-	git add .
-	git commit -m "Update current antora build"
-	
-	yq write -i docs-source/docs/antora.yml version "${version}-dev"
-	set-antora-versions
 
-	add to the list:
-	yw write docs-source/site.yml 'content.sources.[0].branches' "v${version}-dev"
+	# git add .
+	# git commit -m "Update current antora build"
 	
-	git add .
-	git commit -m "Update documentation to v${version}"
+	# yq write -i docs-source/docs/antora.yml version "${version_docs}"
 
-	git push -u "v${version}-docs" "v${version}-docs"
-	git checkout master
-	git merge "v${version}-docs"
-	git push
+	# add to the list:
+	# yq write docs-source/site.yml 'content.sources.[0].branches[+]' "v${version_docs}"
+	
+	# git add .
+	# git commit -m "Update documentation to version: ${version}"
+
+	# git push -u "v${version_docs}" "v${version_docs}"
+	# git checkout master
+	# git merge "v${version}-docs"
+	# git push

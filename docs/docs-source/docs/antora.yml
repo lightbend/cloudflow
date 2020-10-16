@@ -2,5 +2,4 @@ name: docs
 version: dev
 title: Cloudflow
 nav:
-- modules/ROOT/nav.adoc
-
+  - modules/ROOT/nav.adoc
