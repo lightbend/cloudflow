@@ -120,8 +120,7 @@ build-version: get-version
 	yq write -i docs-source/docs/antora.yml version "${version}-dev"
 
 add-version: get-version
-	yw write docs-source/site.yml 'content.sources.[0].branches' "pippo"
-
+	yq write docs-source/site.yml 'content.sources.[0].branches' "pippo"
 
 process:
 	git checkout -b "v${version}-docs"
