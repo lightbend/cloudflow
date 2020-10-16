@@ -46,16 +46,11 @@ RETVAL=$?
 
 echo "Installer built and tested, docker image built"
 echo "Now starting building of examples..."
-version=$(cat version.sbt | cut -d'"' -f2)
-echo $version
-
-cd ../examples
-scripts/change-plugin-version.sh $version
-echo "Plugin versions changed to $version"
-
 
 # Following section has been commented - will uncomment when we have a way
 # to publish artifacts since we need to specify the plugin version for each example
+
+cd ../examples
 
 # Obtain current project list from examples.yaml
 PROJECTS=$(cat $DIR/../examples/examples.yaml | grep "path" | cut -d\" -f2)

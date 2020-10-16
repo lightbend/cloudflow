@@ -45,24 +45,6 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     if (port >= 0 && port <= 65535) port
     else throw new ConfigException.BadValue(key, s"Not a valid port number: $port")
 
-  private def getPartitionsPerTopic(config: Config, key: String): Int = {
-
-    def validatePartitionsPerTopic(partitionsPerTopic: Int) =
-      if (partitionsPerTopic >= 1) partitionsPerTopic
-      else throw new ConfigException.BadValue(key, s"Partition count has to be a positive number > 0: $partitionsPerTopic")
-
-    validatePartitionsPerTopic(config.getInt(key))
-  }
-
-  private def getReplicationFactor(config: Config, key: String): Int = {
-
-    def validateReplicationFactor(replicationFactor: Int) =
-      if (replicationFactor >= 1) replicationFactor
-      else throw new ConfigException.BadValue(key, s"Replica count has to be a positive number > 0: $replicationFactor")
-
-    validateReplicationFactor(config.getInt(key))
-  }
-
   private def getResourceConstraints(config: Config): ResourceConstraints = ResourceConstraints(
     getNonEmptyString(config, "requests-cpu"),
     getNonEmptyString(config, "requests-memory"),
@@ -159,20 +141,9 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 final case class Settings(config: Config) extends Extension {
   import Settings._
 
-  val partitionsPerTopic = getPartitionsPerTopic(config, s"$root.kafka.partitions-per-topic")
-  val replicationFactor  = getReplicationFactor(config, s"$root.kafka.replication-factor")
-
   val releaseVersion = getNonEmptyString(config, s"$root.release-version")
   val podName        = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
-
-  val kafka = KafkaSettings(
-    getNonEmptyString(config, s"$root.kafka.bootstrap-servers"),
-    partitionsPerTopic,
-    replicationFactor,
-    config.as[Option[String]](s"$root.kafka.strimzi-topic-operator-namespace"),
-    config.as[Option[String]](s"$root.kafka.strimzi-cluster-name")
-  )
 
   val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
   val sparkRunnerSettings       = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
@@ -186,13 +157,6 @@ final case class Settings(config: Config) extends Extension {
 
   val deploymentContext = {
     DeploymentContext(
-      KafkaContext(
-        kafka.bootstrapServers,
-        kafka.partitionsPerTopic,
-        kafka.replicationFactor,
-        kafka.strimziTopicOperatorNamespace,
-        kafka.strimziClusterName
-      ),
       akkaRunnerSettings,
       sparkRunnerSettings,
       flinkRunnerSettings,
@@ -202,14 +166,6 @@ final case class Settings(config: Config) extends Extension {
     )
   }
 }
-
-final case class KafkaSettings(
-    bootstrapServers: String,
-    partitionsPerTopic: Int,
-    replicationFactor: Int,
-    strimziTopicOperatorNamespace: Option[String] = None,
-    strimziClusterName: Option[String] = None
-)
 
 final case class Resources(request: String, limit: String)
 

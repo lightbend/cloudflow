@@ -1,0 +1,9 @@
+syntax = "proto3";
+option java_package = "sensors.proto";
+
+message Data {
+    string src = 1;
+    int64 timestamp = 2;
+    string gauge = 3;
+    double value = 4;
+}

@@ -27,7 +27,7 @@ import scala.util.{ Failure, Try }
 import akka.actor.{ ActorSystem, Cancellable, Scheduler }
 import com.typesafe.config.Config
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery }
+import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import cloudflow.streamlets.BootstrapInfo._
 import cloudflow.streamlets._
@@ -69,7 +69,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
   override protected final def createContext(config: Config): SparkStreamletContext =
     (for {
       streamletConfig ← StreamletDefinition.read(config)
-      session         ← makeSparkSession(makeSparkConfig)
+      session         ← makeSparkSession(makeSparkConfig).map(updateSparkSession)
     } yield {
       val updatedConfig = streamletConfig.config.withFallback(config)
       new kafka.SparkStreamletContextImpl(streamletConfig, session, updatedConfig)
@@ -166,6 +166,13 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
       .set("spark.shuffle.compress", "false")
   }
 
+  /**
+   * Override this method to modify the org.apache.spark.SparkSession used in this SparkStreamlet.
+   * By default this method does not modify the session.
+   */
+  def updateSparkSession(session: SparkSession): SparkSession =
+    session
+
   private def makeSparkSession(sparkConfig: SparkConf): Try[SparkSession] = Try {
     val session = SparkSession
       .builder()
@@ -221,10 +228,13 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   /**
    * Write a `StreamingQuery` into outlet using the specified `OutputMode`
    */
-  final def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode)(
+  final def writeStream[Out](stream: Dataset[Out],
+                             outPort: CodecOutlet[Out],
+                             outputMode: OutputMode,
+                             optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
       typeTag: TypeTag[Out]
-  ): StreamingQuery = context.writeStream(stream, outPort, outputMode)
+  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optionalTrigger)
 
   final def config: Config = context.config
 

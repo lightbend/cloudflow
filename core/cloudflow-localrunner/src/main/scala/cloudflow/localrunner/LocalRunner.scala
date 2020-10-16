@@ -42,6 +42,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LocalRunner extends StreamletLoader {
 
   val consoleOut = System.out // preserve
+  val errOut     = System.err // preserve
 
   lazy val log = LoggerFactory.getLogger("localRunner")
 
@@ -49,6 +50,7 @@ object LocalRunner extends StreamletLoader {
     new Thread(new Runnable {
       def run() {
         System.setOut(consoleOut)
+        System.setErr(errOut)
         withResourceDo(outputStream)(_.flush)
       }
     })
@@ -80,13 +82,16 @@ object LocalRunner extends StreamletLoader {
     JRuntime.getRuntime.addShutdownHook(shutdownHook(fos))
 
     Console.withOut(fos) {
-      System.setOut(new PrintStream(fos))
-      readDescriptorFile(appDescriptorFilename) match {
-        case Success(applicationDescriptor) ⇒
-          run(applicationDescriptor, localConfig)
-        case Failure(ex) ⇒
-          log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
-          System.exit(1)
+      Console.withErr(fos) {
+        System.setOut(new PrintStream(fos))
+        System.setErr(new PrintStream(fos))
+        readDescriptorFile(appDescriptorFilename) match {
+          case Success(applicationDescriptor) ⇒
+            run(applicationDescriptor, localConfig)
+          case Failure(ex) ⇒
+            log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
+            System.exit(1)
+        }
       }
     }
   }
@@ -96,6 +101,7 @@ object LocalRunner extends StreamletLoader {
     val kafkaPort = 9093
     val bootstrapServers =
       if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
+    val topicConfig = ConfigFactory.parseString(s"""bootstrap.servers = "$bootstrapServers"""")
 
     val appId      = appDescriptor.appId
     val appVersion = appDescriptor.appVersion
@@ -120,7 +126,8 @@ object LocalRunner extends StreamletLoader {
       val existingPortMappings =
         appDescriptor.deployments
           .find(_.streamletName == streamletInstance.name)
-          .map(_.portMappings)
+          // Override topic configs to use the local runner configured Kafka broker
+          .map(_.portMappings.mapValues(_.copy(cluster = None, config = topicConfig)))
           .getOrElse(Map.empty[String, Topic])
 
       val deployment: StreamletDeployment =
@@ -131,12 +138,13 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment, bootstrapServers)
+      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment)
       val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig
         .withFallback(streamletParamConfig)
         .withFallback(baseConfig)
+        .withFallback(localConfig)
         .withValue("cloudflow.local", ConfigValueFactory.fromAnyRef(true))
 
       (streamletInstance, patchedRunnerConfig)

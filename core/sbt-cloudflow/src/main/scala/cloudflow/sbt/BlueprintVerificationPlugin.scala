@@ -89,14 +89,15 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     },
     applicationDescriptor := {
       val appId           = (ThisProject / name).value
-      val appVersion      = cloudflowBuildNumber.value.buildNumber
+      val appVersion      = (ThisProject / version).value
       val agentPathsMap   = Map("prometheus" -> "/prometheus/jmx_prometheus_javaagent.jar")
       val dockerImageName = cloudflowDockerImageName.value
+      val libraryVersion  = (ThisProject / cloudflowVersion).value
 
       for {
         BlueprintVerified(bp, _) ← verificationResult.value.toOption
         verifiedBlueprint        ← bp.verified.toOption
-      } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap)
+      } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap, libraryVersion)
     },
     fork in Compile := true
   )

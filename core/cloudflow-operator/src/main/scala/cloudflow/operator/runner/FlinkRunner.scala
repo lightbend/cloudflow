@@ -21,18 +21,22 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import com.typesafe.config._
 import play.api.libs.json._
-import skuber._
 import skuber.json.format._
+import skuber.json.rbac.format._
+import skuber.rbac._
 import skuber.Resource._
+import skuber.ResourceSpecification.Subresources
+import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
-import skuber.ResourceSpecification.Subresources
+import cloudflow.operator.action.Action
 
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
  */
 object FlinkRunner extends Runner[CR] {
   def format = implicitly[Format[CR]]
+
   def editor = new ObjectEditor[CR] {
     override def updateMetadata(obj: CR, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
@@ -48,6 +52,68 @@ object FlinkRunner extends Runner[CR] {
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
 
+  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] = {
+    val roleFlink = flinkRole(namespace, labels, ownerReferences)
+    Vector(
+      Action.createOrUpdate(roleFlink, roleEditor),
+      Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor)
+    )
+  }
+  private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
+    Role(
+      metadata = ObjectMeta(
+        name = Name.ofFlinkRole(),
+        namespace = namespace,
+        labels = labels(Name.ofFlinkRole),
+        ownerReferences = ownerReferences
+      ),
+      kind = "Role",
+      rules = List(
+        PolicyRule(
+          apiGroups = List(""),
+          attributeRestrictions = None,
+          nonResourceURLs = List(),
+          resourceNames = List(),
+          resources = List("pods", "services", "configmaps", "ingresses", "endpoints"),
+          verbs = List("get", "create", "delete", "list", "watch", "update")
+        ),
+        createEventPolicyRule
+      )
+    )
+
+  private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
+    RoleBinding(
+      metadata = ObjectMeta(
+        name = Name.ofFlinkRoleBinding(),
+        namespace = namespace,
+        labels = labels(Name.ofRoleBinding),
+        ownerReferences = ownerReferences
+      ),
+      kind = "RoleBinding",
+      roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
+      subjects = List(
+        Subject(
+          None,
+          "ServiceAccount",
+          Name.ofServiceAccount,
+          Some(namespace)
+        )
+      )
+    )
+
+  override def persistentVolumeActions(app: CloudflowApplication.CR,
+                                       namespace: String,
+                                       labels: CloudflowLabels,
+                                       persistentStorageSettings: PersistentStorageSettings,
+                                       ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
+    Vector(
+      CreatePersistentVolumeClaimAction(
+        persistentVolumeClaim(app.spec.appId, namespace, labels, persistentStorageSettings, ownerReferences)
+      )
+    )
+
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -62,8 +128,8 @@ object FlinkRunner extends Runner[CR] {
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy)
-    val volumeMounts = makeVolumeMountsSpec(streamletToDeploy)
+    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+    val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
     import ctx.flinkRunnerSettings._
 
@@ -103,7 +169,9 @@ object FlinkRunner extends Runner[CR] {
     val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId).mapValues(Name.ofLabelValue)
+          Map(Operator.StreamletNameLabel -> deployment.streamletName, Operator.AppIdLabel -> app.spec.appId)
+            .mapValues(Name.ofLabelValue) ++
+          getLabels(podsConfig, PodsConfig.CloudflowPodName)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
 
     CustomResource[Spec, Status](_spec)
@@ -227,7 +295,7 @@ object FlinkRunner extends Runner[CR] {
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
     // persistent storage
-    val pvcName   = Name.ofPVCInstance(app.spec.appId)
+    val pvcName   = Name.ofPVCInstance(app.spec.appId, runtime)
     val pvcVolume = Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef(pvcName))
 
     // Streamlet volume mounting
@@ -372,6 +440,7 @@ object FlinkResource {
   )
 
   final case class ApplicationState(state: String, errorMessage: Option[String])
+
   final case class JobManagerInfo(
       podName: Option[String],
       webUIAddress: Option[String],

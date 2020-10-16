@@ -6,6 +6,12 @@ This directory contains examples showcasing different Cloudflow features.
 
   All examples must be built and tested using JDK8.
 
+  To build the examples using the latest Cloudflow release need to have the environment variable:
+  ```
+  CLOUDFLOW_VERSION
+  ```
+  pointing to the latest available release, otherwise re-build everything locally.
+
 ## Examples
 
 - call-record-aggregator - Akka and Spark based Cloudflow Application

@@ -26,18 +26,18 @@ import CloudflowBasePlugin._
 import java.io.File
 
 object CloudflowAkkaPlugin extends AutoPlugin {
-  final val AkkaVersion = "2.6.6"
-  final val AkkaDockerBaseImage =
-    s"lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
+  final val AkkaVersion = "2.6.9"
+  final def akkaDockerBaseImage(version: String) =
+    s"lightbend/akka-base:${version}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
   override def projectSettings = Seq(
     cloudflowAkkaBaseImage := None,
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-akka-util"    % BuildInfo.version,
-          "com.lightbend.cloudflow" %% "cloudflow-akka"         % BuildInfo.version,
-          "com.lightbend.cloudflow" %% "cloudflow-akka-testkit" % BuildInfo.version % "test"
+          "com.lightbend.cloudflow" %% "cloudflow-akka-util"    % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" %% "cloudflow-akka"         % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" %% "cloudflow-akka-testkit" % (ThisProject / cloudflowVersion).value % "test"
         ),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
@@ -64,7 +64,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
       new Dockerfile {
-        from(cloudflowAkkaBaseImage.value.getOrElse(AkkaDockerBaseImage))
+        from(cloudflowAkkaBaseImage.value.getOrElse(akkaDockerBaseImage((ThisProject / cloudflowVersion).value)))
         user(UserInImage)
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))

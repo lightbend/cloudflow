@@ -17,6 +17,7 @@
 package cloudflow.sbt
 
 import java.nio.file._
+import java.io._
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
@@ -60,8 +61,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependencies ++= Vector(
-          Slf4jLog4jBridge % Runtime,
-          Log4J            % Runtime
+          Slf4jLog4jBridge % Test,
+          Log4J            % Test
         ),
     allApplicationClasspathByProject := (Def
           .taskDyn {
@@ -84,7 +85,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           })
           .value
           .toMap,
-    runLocal := Def.taskDyn {
+    (Test / runLocal) := Def.taskDyn {
           Def.task {
             implicit val logger = streams.value.log
             val _               = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
@@ -99,7 +100,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               throw new IllegalStateException("ApplicationDescriptor is not present")
             }
 
-            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Runtime).value)
+            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Test).value)
 
             val projects = streamletDescriptorsByProject.keys
 
@@ -115,7 +116,14 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val runtimeDescriptorByProject = getDescriptorsOrFail {
               descriptorByProject.map {
                 case (pid, projectDescriptor) =>
-                  pid -> scaffoldRuntime(pid, projectDescriptor, localConfig, tempDir, configDir)
+                  pid -> scaffoldRuntime(
+                        pid,
+                        projectDescriptor,
+                        localConfig,
+                        tempDir,
+                        configDir,
+                        runLocalLog4jConfigFile.value
+                      )
               }
             }
 
@@ -151,7 +159,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               stopKafka()
             }
           }
-        }.value
+        }.value,
+    printAppGraph := printApplicationGraph.value
   )
 
   def banner(bannerChar: Char)(name: String)(message: Any): Unit = {
@@ -225,6 +234,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     descriptors.collect { case (pid, Success(runtimeDescriptor)) => (pid, runtimeDescriptor) }
   }
 
+  def printApplicationGraph: Def.Initialize[Task[Unit]] = Def.task {
+    implicit val logger = streams.value.log
+    val _appDescriptor  = applicationDescriptor.value
+    val appDescriptor = _appDescriptor.getOrElse {
+      logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
+      throw new IllegalStateException("ApplicationDescriptor is not present")
+    }
+    printAppLayout(resolveConnections(appDescriptor))
+  }
+
   def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
     def topicFormat(topic: String): String =
       s"[$topic]"
@@ -260,37 +279,49 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     println(GraphLayout.renderGraph(graph))
   }
 
-  def scaffoldRuntime(projectId: String, descriptor: ApplicationDescriptor, localConfig: LocalConfig, targetDir: Path, configDir: Path)(
-      implicit logger: Logger
-  ): Try[RuntimeDescriptor] = {
-    val log4jConfigFile = prepareLog4JFileFromResource(configDir, "local-run-log4j.properties", "local-run-log4j.properties")
+  def scaffoldRuntime(projectId: String,
+                      descriptor: ApplicationDescriptor,
+                      localConfig: LocalConfig,
+                      targetDir: Path,
+                      configDir: Path,
+                      log4jConfigFile: Option[String]): Try[RuntimeDescriptor] = {
+    val log4jConfig =
+      prepareLog4JFile(configDir, log4jConfigFile)
     for {
       appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
       outputFile        ← createOutputFile(targetDir, projectId)
-      logFile           <- log4jConfigFile
+      logFile           ← log4jConfig
       appDescriptorFile ← prepareApplicationFile(appDescriptor)
     } yield {
       RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfig.path)
     }
   }
 
-  def prepareLog4JFileFromResource(tempDir: Path, source: String, target: String)(implicit logger: Logger): Try[Path] = Try {
-    val log4JSrc        = Option(this.getClass.getClassLoader.getResourceAsStream(source))
-    val stagedLog4jFile = tempDir.resolve(target)
-    try {
-      if (!stagedLog4jFile.toFile.exists()) {
-        log4JSrc
-          .map(src ⇒ Files.copy(src, stagedLog4jFile))
-          .getOrElse {
-            logger.warn("Could not find log4j configuration for local runner")
-            0L
-          }
+  def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String]): Try[Path] =
+    Try {
+      val log4jClassResource = CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile
+
+      if (this.getClass.getClassLoader.getResource(log4jClassResource) == null) {
+        throw new Exception("Default log4j configuration could not be found on classpath of sbt-cloudflow.")
       }
-    } finally {
-      log4JSrc.foreach(_.close)
+      // keeping the filename since log4j uses the prefix to load it as XML or properties.
+      val (log4JSrc: InputStream, filename: String) = log4jConfigPath
+        .map { log4jPath =>
+          val log4jFile = new File(log4jPath)
+          if (log4jFile.exists && log4jFile.isFile) new FileInputStream(log4jFile) -> log4jFile.getName
+        }
+        .getOrElse(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource) -> log4jClassResource)
+
+      try {
+        val stagedLog4jFile = tempDir.resolve(filename)
+        Files.copy(log4JSrc, stagedLog4jFile, StandardCopyOption.REPLACE_EXISTING)
+        stagedLog4jFile
+      } finally {
+        log4JSrc.close
+      }
+    }.recoverWith {
+      case ex: Throwable => Failure(new Exception("Failed to prepare the log4j file.", ex))
     }
-    stagedLog4jFile
-  }
 
   def streamletFilterByClass(appDescriptor: ApplicationDescriptor, streamletClasses: Set[String]): ApplicationDescriptor = {
     val streamletInstances   = appDescriptor.streamlets.filter(streamlet => streamletClasses(streamlet.descriptor.className))

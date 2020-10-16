@@ -65,3 +65,5 @@ lazy val commonSettings = Seq(
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
 )
+
+dynverSeparator in ThisBuild := "-"

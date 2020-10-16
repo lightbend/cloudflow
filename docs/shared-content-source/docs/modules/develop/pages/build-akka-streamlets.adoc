@@ -184,7 +184,7 @@ You can access the inlet and outlet streams through methods on the `StreamletLog
 So far, we've used the `plainSource` method to read from the inlet.
 When the streamlet is started, it will only receive elements that arrive *after* it is started. 
 The same applies when the streamlet is restarted for any reason. 
-In short, the `plainSource` provides at-most-once message delivery semantics, as described in xref:message-delivery-semantics.adoc[Message delivery semantics].
+In short, the `plainSource` provides at-most-once message delivery semantics, as described in xref:message-delivery.adoc[Message delivery semantics].
 
 [NOTE]
 ====

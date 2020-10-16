@@ -90,7 +90,7 @@ func Test_CreateSecret(t *testing.T) {
 	config := new(Config)
 	config = addCommandLineArguments(spec, config, args)
 	hoconConfig := configuration.ParseString(config.String())
-	secret, err := createAppInputSecret(&spec, config)
+	secret, err := CreateAppInputSecret(&spec, config)
 	assert.Empty(t, err)
 	assert.NotEmpty(t, secret)
 	hoconConfig = configuration.ParseString(secret.StringData["secret.conf"])
@@ -163,6 +163,59 @@ func Test_addDefaultValues(t *testing.T) {
 	hoconConf = configuration.ParseString(conf.String())
 	assert.Equal(t, "10m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 	assert.Equal(t, "12m", hoconConf.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
+}
+
+func Test_replaceEnvVars(t *testing.T) {
+	os.Setenv("bar", "high")
+	strConf := "foo = $bar"
+	config := newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf := config.parse()
+	assert.Equal(t, "high", hConf.GetString("foo"))
+
+	strConf = "foo = ${bar}"
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "high", hConf.GetString("foo"))
+
+	os.Setenv("LOG_LEVEL", "info")
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+      log-level = ${LOG_LEVEL}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "info", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
+	os.Setenv("LOG_LEVEL", "info")
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+			log-level = "debug"
+      log-level = ${?LOG_LEVEL}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "info", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
+	strConf = `
+	  cloudflow.streamlets.my-streamlet.config-parameters {
+			log-level = "debug"
+      log-level = ${?LOG_LEVEL_NOT_SET}
+	  }
+
+	`
+	config = newConfig(strConf)
+	config = replaceEnvVars(config)
+	hConf = config.parse()
+	assert.Equal(t, "debug", hConf.GetString("cloudflow.streamlets.my-streamlet.config-parameters.log-level"))
+
 }
 
 func Test_addCommandLineArguments(t *testing.T) {
@@ -271,9 +324,8 @@ func Test_validateConfigFiles(t *testing.T) {
 	err = validateConfigurationAgainstDescriptor(spec, *config)
 	assert.NotEmpty(t, err)
 }
-
-func Test_validateConfig(t *testing.T) {
-	spec := cfapp.CloudflowApplicationSpec{
+func createSpec() cfapp.CloudflowApplicationSpec {
+	return cfapp.CloudflowApplicationSpec{
 		Streamlets: []cfapp.Streamlet{
 			{
 				Descriptor: cfapp.Descriptor{
@@ -298,101 +350,72 @@ func Test_validateConfig(t *testing.T) {
 			},
 		},
 	}
-
+}
+func Test_validateConfig(t *testing.T) {
+	spec := createSpec()
 	noStreamletsOrRuntimes := newConfig("a.b.c { }")
 	assert.NotEmpty(t, validateConfig(noStreamletsOrRuntimes, spec))
+	fmt.Printf("noStreamletsOrRuntimes: %s\n", validateConfig(noStreamletsOrRuntimes, spec))
 
 	unknownStreamletConfigSection := newConfig(`
-     cloudflow.streamlets {
-			 my-streamlet {
-				 config-par = 1
-			 }
-		 }
+	cloudflow.streamlets {
+		my-streamlet {
+			config-par = 1
+		}
+	}
 	`)
 	assert.NotEmpty(t, validateConfig(unknownStreamletConfigSection, spec))
+	fmt.Printf("unknownStreamletConfigSection: %s\n", validateConfig(unknownStreamletConfigSection, spec))
 
 	unknownRuntimeConfigSection := newConfig(`
-     cloudflow.runtimes {
-			 akka {
-				 config-par = 1
-			 }
-		 }
+	cloudflow.runtimes {
+		akka {
+			config-par = 1
+		}
+	}
 	`)
 	assert.NotEmpty(t, validateConfig(unknownRuntimeConfigSection, spec))
 
 	validRuntimeConfigSection := newConfig(`
-     cloudflow.runtimes {
-			 akka {
-				 config {
-					 akka.loglevel = "WARNING"
-				 }
-			 }
-		 }
+	cloudflow.runtimes {
+		akka {
+			config {
+				akka.loglevel = "WARNING"
+			}
+		}
+	}
 	`)
 	assert.Empty(t, validateConfig(validRuntimeConfigSection, spec))
 
 	validStreamletConfigSection := newConfig(`
-     cloudflow.streamlets {
-			 my-streamlet {
-				 config-parameters {
-           my-parameter = "value"
-				 }
-				 config {
-					 akka.loglevel = "WARNING"
-				 }
-			 }
-		 }
+	cloudflow.streamlets {
+		my-streamlet {
+			config-parameters {
+							my-parameter = "value"
+			}
+			config {
+				akka.loglevel = "WARNING"
+			}
+		}
+	}
 	`)
 	assert.Empty(t, validateConfig(validStreamletConfigSection, spec))
 
 	unknownConfigParameterInStreamletConfigSection := newConfig(`
-     cloudflow.streamlets {
-			 my-streamlet {
-				 config-parameters {
-					 my-parameter = "value"
-					 my-par = "value"
-				 }
-				 config {
-					 akka.loglevel = "WARNING"
-				 }
-			 }
-		 }
+	cloudflow.streamlets {
+		my-streamlet {
+			config-parameters {
+				my-parameter = "value"
+				my-par = "value"
+			}
+			config {
+				akka.loglevel = "WARNING"
+			}
+		}
+	}
 	`)
 	assert.NotEmpty(t, validateConfig(unknownConfigParameterInStreamletConfigSection, spec))
-
-	validTopic := newConfig(`
-     cloudflow.topics {
-			 my-topic {
-         topic.name = "my-topic-name"
-			 }
-		 }
-	`)
-	assert.Empty(t, validateConfig(validTopic, spec))
-	unknownTopic := newConfig(`
-     cloudflow.topics {
-			 topic {
-         topic.name = "my-topic-name"
-			 }
-		 }
-	`)
-	assert.NotEmpty(t, validateConfig(unknownTopic, spec))
-
-	badK8sPath := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.resources.requests.memory = "256M"
-	`)
-	assert.NotEmpty(t, validateConfig(badK8sPath, spec))
-	fmt.Println(validateConfig(badK8sPath, spec))
-
-	badK8sPath2 := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.requests.memory = "256M"
-	`)
-	assert.NotEmpty(t, validateConfig(badK8sPath2, spec))
-	fmt.Println(validateConfig(badK8sPath2, spec))
-
-	badK8sPath3 := newConfig(`
-	   cloudflow.streamlets.my-streamlet.kubernetes.pods.containers.requests.memory = "256M"
-	`)
-	assert.NotEmpty(t, validateConfig(badK8sPath3, spec))
+	fmt.Printf("unknownConfigParameterInStreamletConfigSection: %s\n", validateConfig(unknownConfigParameterInStreamletConfigSection, spec))
 }
 
 func Test_validateConfigEmptyDefault(t *testing.T) {

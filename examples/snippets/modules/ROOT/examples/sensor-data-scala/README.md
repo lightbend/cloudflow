@@ -156,7 +156,7 @@ sensor-data-scala-validation-9c765d79b-rzr97          1/1     Running   0       
 Access the HTTP ingress (no public ingress is available by default):
 
 ```
-kubectl port-forward sensor-data-scala-http-ingress-747895bf7d-drb4x -n sensor-data-scala 3000:3000
+kubectl port-forward svc/sensor-data-scala-http-ingress-service -n sensor-data-scala 3000:3000
 ```
 
 Post data to the HTTP ingress:

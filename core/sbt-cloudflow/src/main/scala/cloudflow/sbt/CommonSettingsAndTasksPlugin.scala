@@ -16,6 +16,8 @@
 
 package cloudflow.sbt
 
+import akka.grpc.sbt.AkkaGrpcPlugin.autoImport.akkaGrpcGeneratedLanguages
+import akka.grpc.sbt.AkkaGrpcPlugin.autoImport.AkkaGrpc
 import sbt.Keys._
 import sbt._
 import scalapb.ScalaPbCodeGenerator
@@ -30,10 +32,10 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   /** This plugin depends on these other plugins: */
   override def requires: Plugins =
-    BuildNumberPlugin &&
-      sbtavrohugger.SbtAvrohugger &&
+    sbtavrohugger.SbtAvrohugger &&
       sbtavro.SbtAvro &&
-      sbtprotoc.ProtocPlugin
+      sbtprotoc.ProtocPlugin &&
+      akka.grpc.sbt.AkkaGrpcPlugin
 
   /** Make public keys available. */
   object autoImport extends CloudflowKeys
@@ -42,18 +44,20 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   // used for internal release
   final val CloudflowBintrayReleasesRepoUrl = "https://lightbend.bintray.com/cloudflow"
+  private final val CloudflowVersion        = BuildInfo.version
 
   /** Set default values for keys. */
   override def projectSettings =
     Seq(
+      cloudflowVersion := CloudflowVersion,
       // Cloudflow is released with Ivy patterns - bintray is used for internal release
       resolvers += Resolver.url("cloudflow", url(CloudflowBintrayReleasesRepoUrl))(Resolver.ivyStylePatterns),
       cloudflowDockerImageName := Def.task {
-            Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / cloudflowBuildNumber).value.buildNumber))
+            Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
           }.value,
       cloudflowWorkDir := (ThisBuild / baseDirectory).value / "target" / ".cloudflow",
       imageNamesByProject := Def.taskDyn {
-            val buildNumber = cloudflowBuildNumber.value.buildNumber
+            val buildNumber = (ThisProject / version).value
             Def.task {
               buildStructure.value.allProjectRefs
                 .map(_.project)
@@ -74,12 +78,11 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
             SchemaFormat.Avro  -> "src/main/avro",
             SchemaFormat.Proto -> "src/main/protobuf"
           ),
-      PB.targets in Compile := {
+      akkaGrpcGeneratedLanguages := {
         val schemaLang = schemaCodeGenerator.value
         schemaLang match {
-          case SchemaCodeGenerator.Java ⇒ Seq(PB.gens.java -> (sourceManaged in Compile).value)
-          case SchemaCodeGenerator.Scala =>
-            Seq(scalaPbTarget((crossTarget in Compile).value / "scalapb"))
+          case SchemaCodeGenerator.Java  => Seq(AkkaGrpc.Java)
+          case SchemaCodeGenerator.Scala => Seq(AkkaGrpc.Scala)
         }
       },
       AvroConfig / generate := Def.taskDyn {

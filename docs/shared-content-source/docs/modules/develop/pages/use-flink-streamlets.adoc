@@ -99,13 +99,13 @@ The next section about message delivery semantics explains the options that are 
 The message processing semantics provided by Flink streamlets are determined by the guarantees provided by the underlying sources, sinks and connectors. Flink offers _at-least-once_ or _exactly_once_ semantics depending on whether checkpointing is enabled. 
 
 If checkpointing is enabled, Flink guarantees end to end exactly-once processing with supported sources, sinks and connectors.
+Checkpointing is enabled by default in Cloudflow, using `exactly_once` checkpointing mode. You can override this using the Configuration system by specific `execution.checkpointing` settings, as shown https://ci.apache.org/projects/flink/flink-docs-release-1.10/ops/config.html#checkpointing[here]. 
 
 When we say “exactly-once semantics”, what we mean is that each incoming event affects the final results exactly once. Even in case of a machine or software failure, there’s no duplicate data and no data that goes unprocessed. This  https://flink.apache.org/features/2018/03/01/end-to-end-exactly-once-apache-flink.html[post] explains in detail how `TwoPhaseCommitSinkFunction` implements the two-phase commit protocol and makes it possible to build end-to-end exactly-once applications with Flink and a selection of data sources and sinks, including Apache Kafka versions 0.11 and beyond.
 
 For more details of how the various types of processing semantics impact Kafka producers and consumers when interacting with Flink, please refer to this https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html[guide].
 
 In Cloudflow, streamlets communicate with each other through Kafka - hence the semantics here depends on the settings that we use in our streamlets implementation. For Flink we use _at-least-once_ in `FlinkKafkaProducer`. To use _exactly-once_ the Kafka broker needs to have the value of `transaction.max.timeout.ms` set to at least _1 hour_, which can have an impact on other runtimes in the application.
-
 
 == Reliable restart of stateful processes
 
@@ -115,3 +115,96 @@ PVCs are automatically provisioned for each Cloudflow application.
 The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
 
 Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
+
+== Adding additional Flink libraries
+
+If you enable plugin `CloudflowFlinkPlugin`, Cloudflow will add all of the Flink jars, necessary for a typical Flink streamlet implementation. But sometimes
+you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
+of the libraries that you are adding have the same version that the rest of of the Flink libraries.
+The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion`.
+So, if for example, you want to add Azure file system, you can do it as shown below:
+
+----
+libraryDependencies ++=  Seq("org.apache.flink"%"flink-azure-fs-hadoop"%cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion)
+----
+
+== Flink local execution
+
+If you are testing Flink streamlets locally <<Using the Local Sandbox>> you should be aware
+of several things:
+
+* Restartability. Unlike cluster deployment, a local Flink execution will not restart in the case of crashes.
+* Checkpointing. By default, in the case of local runs, checkpointing is done in memory, which means that in the case of local runs, checkpointing does not survive beyond an individual execution.
+* In the case of local execution, an instance of a Flink server is created for each SBT module for which `CloudflowFlinkPlugin`
+is enabled. A single Flink server (in the case of local execution) is running a single streamlet. As a result, if you want to be able to test locally,
+each SBT module should contain a single Flink streamlet. If you are developing several Flink streamlets, make sure that
+each one of them is in a separate module.
+
+The checkpointing behaviour in this case (along with many other parameters) can be overwritten
+using <<The Cloudflow Configuration Model>>. The default configuration for Flink is https://github.com/apache/flink/blob/master/flink-dist/src/main/resources/flink-conf.yaml[here].
+Complete documentation of configuration parameters, can be found https://ci.apache.org/projects/flink/flink-docs-stable/ops/config.html[here].
+
+In addition to "standard" Flink parameters, you can enable the Web UI
+when using `runLocal`. If the parameter `local.web` is set in the configuration
+(for the Flink runtime or a particular streamlet), the Flink execution is started with the Web UI, as shown in
+https://ci.apache.org/projects/flink/flink-docs-release-1.11/ops/deployment/local.html#start-a-local-flink-cluster[here]. By default the Web UI is available
+at `http://localhost:8081`, but the port can be overwritten using the configuration system with `rest.port` under `cloudflow.runtimes.flink.config.flink` or specifically for a streamlet under `cloudflow.streamlets.<streamlet>.config`.
+
+An example of modifying some flink configuration is shown below:
+
+[source,hocon]
+----
+cloudflow.streamlets.processor.config {
+  local.web = on
+  rest.port = 5000
+}
+----
+
+NOTE: if you have more then one Flink streamlet in your local project, DO NOT enable web UI in `cloudflow.runtimes.flink.config` - this will set the same UI port for all Flink servers
+and will prevent them from starting. Make sure that you are enabling Web UI for individual streamlets and using different ports for them.
+
+In the above example the Web UI is enabled for the processors streamlet. which will listen on port 5000.
+You need to provide the location of the local configuration in your sbt build file:
+
+[source,scala]
+----
+lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
+  .enablePlugins(CloudflowApplicationPlugin)
+  .settings(commonSettings)
+  .settings(
+    name := "taxi-ride-fare",
+    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
+  )
+----
+
+NOTE: If you set `execution.checkpointing.interval` you need to set all other relevant checkpointing settings, the default checkpointing will not be used if `execution.checkpointing.interval` is set.
+
+In the above example the `runLocalConfigFile` setting is shown to point to a local.conf in the taxi-ride-fare example project.
+
+== Azure Blob Storage
+
+Flink supports several file systems for reading and writing data and for its state backend. In this section, we will look at how to use Microsoft's Azure Blob Storage for these purposes.
+
+Please refer to the Flink documentation https://ci.apache.org/projects/flink/flink-docs-stable/ops/filesystems/azure.html[Azure Blob Storage]
+
+To make this work in a Cloudflow context there are a couple of things you need to do as follows.
+
+=== Checkpoints
+
+In the configuration file, you need to specify that the `state.backend` is `filesystem`, set `state.checkpoints.dir` to match the location of your Blob, and provide your access key.
+
+[source,hocon]
+----
+cloudflow.runtimes.flink.config {
+  flink.state.backend = filesystem
+  flink.state.checkpoints.dir = "wasbs://<your-container>@$<your-azure-account>.blob.core.windows.net/<object-path>"
+  flink.fs.azure.account.key.<your-azure-acount>.blob.core.windows.net = "<blob-access-key>"
+}
+----
+
+Flink needs `flink-azure-fs-hadoop` support to be built into your Streamlet in order to be able to use Azure as a filesystem backend. To faciliate this simply add the following library dependency to the `build.sbt`.
+
+[source, scala]
+----
+libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion
+----

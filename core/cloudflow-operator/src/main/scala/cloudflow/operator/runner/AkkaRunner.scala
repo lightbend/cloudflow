@@ -17,14 +17,18 @@
 package cloudflow.operator
 package runner
 
-import cloudflow.blueprint.deployment._
-import skuber._
 import play.api.libs.json._
 import skuber.Volume._
 import skuber.apps.v1.Deployment
+import skuber.json.rbac.format._
+import skuber.rbac._
+import skuber._
+
+import cloudflow.blueprint.deployment._
+import cloudflow.operator.action._
 
 /**
- * Creates the ConfigMap and the Runner resource (a Deployment) that define an Akka [[Runner]].
+ * Creates the Resources that define an Akka [[Runner]].
  */
 object AkkaRunner extends Runner[Deployment] {
   def format = implicitly[Format[Deployment]]
@@ -34,8 +38,62 @@ object AkkaRunner extends Runner[Deployment] {
   }
   def configEditor = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
 
-  def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
-  val runtime            = "akka"
+  def resourceDefinition       = implicitly[ResourceDefinition[Deployment]]
+  val runtime                  = "akka"
+  val requiresPersistentVolume = false
+
+  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
+      implicit ctx: DeploymentContext
+  ): Seq[Action[ObjectResource]] = {
+    val roleAkka = akkaRole(namespace, labels, ownerReferences)
+    Vector(
+      Action.createOrUpdate(roleAkka, roleEditor),
+      Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
+    )
+  }
+
+  private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
+    Role(
+      metadata = ObjectMeta(
+        name = Name.ofAkkaRole(),
+        namespace = namespace,
+        labels = labels(Name.ofAkkaRole),
+        ownerReferences = ownerReferences
+      ),
+      kind = "Role",
+      rules = List(
+        createAkkaClusterPolicyRule,
+        createEventPolicyRule
+      )
+    )
+
+  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
+    RoleBinding(
+      metadata = ObjectMeta(
+        name = Name.ofAkkaRoleBinding(),
+        namespace = namespace,
+        labels = labels(Name.ofRoleBinding),
+        ownerReferences = ownerReferences
+      ),
+      kind = "RoleBinding",
+      roleRef = RoleRef("rbac.authorization.k8s.io", "Role", role.metadata.name),
+      subjects = List(
+        Subject(
+          None,
+          "ServiceAccount",
+          Name.ofServiceAccount,
+          Some(namespace)
+        )
+      )
+    )
+  private val createAkkaClusterPolicyRule = PolicyRule(
+    apiGroups = List(""),
+    attributeRestrictions = None,
+    nonResourceURLs = List(),
+    resourceNames = List(),
+    resources = List("pods"),
+    verbs = List("get", "list", "watch")
+  )
 
   def resource(
       deployment: StreamletDeployment,
@@ -85,6 +143,8 @@ object AkkaRunner extends Runner[Deployment] {
     val volumeMount  = Volume.Mount(configMapName, Runner.ConfigMapMountPath, readOnly = true)
     val secretMount  = Volume.Mount(Name.ofVolume(secretName), Runner.SecretMountPath, readOnly = true)
 
+    val configSecretVolumes = getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+
     val resourceRequirements = createResourceRequirements(podsConfig)
     val environmentVariables = createEnvironmentVariables(app, podsConfig)
 
@@ -95,7 +155,7 @@ object AkkaRunner extends Runner[Deployment] {
       env = environmentVariables,
       args = args,
       ports = k8sStreamletPorts :+ k8sPrometheusMetricsPort,
-      volumeMounts = List(secretMount) ++ pvcVolumeMounts :+ volumeMount :+ Runner.DownwardApiVolumeMount
+      volumeMounts = List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
 
     val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
@@ -143,6 +203,11 @@ object AkkaRunner extends Runner[Deployment] {
         .addVolume(secretVolume)
         .addVolume(Runner.DownwardApiVolume)
 
+    val podSpecSecretVolumesAdded = configSecretVolumes.foldLeft[Pod.Spec](podSpec) {
+      case (acc, curr) =>
+        acc.addVolume(curr)
+    }
+
     val template =
       Pod.Template.Spec
         .named(podName)
@@ -150,11 +215,11 @@ object AkkaRunner extends Runner[Deployment] {
           labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
                 Operator.StreamletNameLabel -> deployment.streamletName,
                 Operator.AppIdLabel         -> appId
-              ).mapValues(Name.ofLabelValue)
+              ).mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)
-        .withPodSpec(podSpec)
+        .withPodSpec(podSpecSecretVolumesAdded)
 
     val deploymentResource = Deployment(
       metadata = ObjectMeta(name = podName,

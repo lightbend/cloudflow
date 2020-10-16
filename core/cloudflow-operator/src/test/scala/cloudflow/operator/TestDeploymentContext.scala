@@ -21,13 +21,6 @@ import skuber.Resource.Quantity
 trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
-      kafkaContext = KafkaContext(
-        strimziClusterName = Some("kafka"),
-        strimziTopicOperatorNamespace = Some("strimzi"),
-        bootstrapServers = "localhost:9092",
-        partitionsPerTopic = 3,
-        replicationFactor = 1
-      ),
       akkaRunnerSettings = AkkaRunnerSettings(
         resourceConstraints = ResourceConstraints(
           cpuRequests = Quantity("100m"),

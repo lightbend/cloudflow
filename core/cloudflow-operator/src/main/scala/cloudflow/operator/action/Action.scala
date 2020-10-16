@@ -15,15 +15,15 @@
  */
 
 package cloudflow.operator.action
-import scala.concurrent._
-import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.pattern._
-
 import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
+
+import scala.concurrent._
+import scala.concurrent.duration._
 
 /**
  * Captures an action to create, delete or update a Kubernetes resource.
@@ -34,6 +34,11 @@ sealed trait Action[+T <: ObjectResource] {
    * The action name
    */
   def name: String
+
+  /**
+   * The application this action is executing for.
+   */
+  def appId: Option[String] = None
 
   /**
    * The name of the resource that this action is applied to
@@ -54,12 +59,19 @@ sealed trait Action[+T <: ObjectResource] {
   /**
    * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
    */
-  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, f: KubernetesClient => Future[O])(
-      implicit ec: ExecutionContext
+  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
+      implicit sys: ActorSystem,
+      ec: ExecutionContext
   ): Future[O] =
     future.recoverWith {
       case e: K8SException if (e.status.code == Some(Action.ConflictCode)) => {
-        f(client)
+        if (retries > 0) {
+          sys.log.info(s"Recovering from K8SException, conflict in resource version: ${e.getMessage}")
+          f(client, retries)
+        } else {
+          sys.log.error(s"Exhausted retries recovering from conflict, giving up.")
+          throw e
+        }
       }
     }
 
@@ -101,13 +113,30 @@ object Action {
     new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
+   * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
+   */
+  def composite[T <: ObjectResource](actions: Vector[Action[T]]): CompositeAction[T] = CompositeAction(actions)
+
+  /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
-  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: T => Action[R])(
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: Option[T] => Action[R])(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ) =
     new ProvidedAction(resourceName, namespace, fAction, format, resourceDefinition)
+
+  /**
+   * Creates an action provided that a list of resources with a label in a namespace are found.
+   */
+  def providedByLabel[T <: ObjectResource, R <: ObjectResource](labelKey: String,
+                                                                labelValues: Vector[String],
+                                                                namespace: String,
+                                                                fAction: ListResource[T] => Action[R])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[ListResource[T]]
+  ) =
+    new ProvidedByLabelAction(labelKey, labelValues, namespace, fAction, format, resourceDefinition)
 
   /**
    * Creates an [[UpdateStatusAction]].
@@ -159,9 +188,13 @@ class CreateOrUpdateAction[T <: ObjectResource](
       result <- executeCreate(client)
     } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
-  private def executeCreate(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  private def executeCreate(client: KubernetesClient,
+                            retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
+    val nextRetries = retries - 1
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       res ← existing
         .map { existingResource ⇒
           val resourceVersionUpdated =
@@ -169,11 +202,13 @@ class CreateOrUpdateAction[T <: ObjectResource](
           recoverFromConflict(
             client.update(resourceVersionUpdated),
             client,
+            nextRetries,
             executeCreate
           )
         }
-        .getOrElse(recoverFromConflict(client.create(resource), client, executeCreate))
+        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreate))
     } yield res
+  }
 
   /**
    * Reverts the action to create the resource.
@@ -203,14 +238,20 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
 
   private def executeCreateOrPatch(
-      client: KubernetesClient
-  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
+      client: KubernetesClient,
+      retries: Int = 60
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
+    val nextRetries = retries - 1
+
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       res ← existing
-        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, executeCreateOrPatch))
-        .getOrElse(recoverFromConflict(client.create(resource), client, executeCreateOrPatch))
+        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
+        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
+  }
 }
 
 class PatchAction[T <: ObjectResource, O <: Patch](
@@ -254,15 +295,19 @@ class UpdateStatusAction[T <: ObjectResource](
       result <- executeUpdateStatus(client)
     } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 
-  def executeUpdateStatus(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
+  def executeUpdateStatus(client: KubernetesClient,
+                          retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client.getOption[T](resource.name)
+      existing ← client
+        .usingNamespace(namespace)
+        .getOption[T](resource.name)
       resourceVersionUpdated = existing
         .map(existingResource ⇒
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-        .getOrElse(resource)
-      res ← recoverFromConflict(client.updateStatus(resourceVersionUpdated), client, executeUpdateStatus)
+      res ← resourceVersionUpdated
+        .map(resourceToUpdate => recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus))
+        .getOrElse(Future.successful(resource))
     } yield res
 }
 
@@ -291,14 +336,44 @@ final case class DeleteAction[T <: ObjectResource](
    */
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
-    client.deleteWithOptions(name, options)(resourceDefinition, lc).map(_ ⇒ this)
+    client
+      .usingNamespace(namespace)
+      .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
+      .map(_ ⇒ this)
   }
+}
+
+final case class CompositeAction[T <: ObjectResource](
+    actions: Vector[Action[T]]
+) extends Action[T] {
+  val name = "composite"
+
+  def executing =
+    s"Executing $resourceName resource(s)"
+  def executed =
+    s"Executed $resourceName resource(s)"
+
+  /**
+   * The names of the resources that this action is applied to
+   */
+  override def resourceName: String = s"composite[${actions.map(_.resourceName).mkString(",")}]"
+
+  /**
+   * The namespaces that the actions take place in
+   */
+  override def namespace: String = s"composite[${actions.map(_.namespace).mkString(",")}]"
+
+  /**
+   * Executes all actions
+   */
+  override def execute(client: RequestContext)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+    Future.sequence(actions.map(_.execute(client))).map(_ => this)
 }
 
 final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val resourceName: String,
     val namespace: String,
-    val getAction: T => Action[R],
+    val getAction: Option[T] => Action[R],
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T]
 ) extends Action[R] {
@@ -324,13 +399,61 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     def getAndProvide =
       client
         .usingNamespace(namespace)
-        .get[T](resourceName)
+        .getOption[T](resourceName)
         .flatMap { existing =>
           getAction(existing).execute(client)
         }
     getAndProvide.recoverWith {
-      case _ if retries > 0 =>
-        sys.log.info(s"Scheduling retry to get resource $namespace/$resourceName")
+      case t: K8SException if retries > 0 =>
+        sys.log.info(
+          s"Scheduling retry to get resource $namespace/$resourceName, cause: ${t.getClass.getSimpleName} message: ${t.getMessage}"
+        )
+        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+    }
+  }
+}
+
+final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
+    val labelKey: String,
+    val labelValues: Vector[String],
+    val namespace: String,
+    val getAction: ListResource[T] => Action[R],
+    implicit val format: Format[T],
+    implicit val resourceDefinition: ResourceDefinition[ListResource[T]]
+) extends Action[R] {
+  val name = "provideByLabel"
+
+  val resourceName = "n/a"
+
+  def executing =
+    s"Providing a list of resources in $namespace to next action"
+  def executed =
+    s"Provided a list of resources in $namespace to next action"
+
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+    executeWithRetry(
+      client,
+      delay = 1.second,
+      retries = 60
+    )
+
+  private def executeWithRetry(
+      client: KubernetesClient,
+      delay: FiniteDuration,
+      retries: Int
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+    val selector: LabelSelector = LabelSelector(LabelSelector.InRequirement(labelKey, labelValues.toList))
+    def getAndProvide: Future[Action[R]] =
+      client
+        .usingNamespace(namespace)
+        .listSelected[ListResource[T]](selector)(skuber.json.format.ListResourceFormat[T], resourceDefinition, lc)
+        .flatMap { list =>
+          getAction(list).execute(client)
+        }
+
+    getAndProvide.recoverWith {
+      case t: Throwable if retries > 0 =>
+        sys.log.info(s"Scheduling retry to getting resources by label spec in $namespace, reason: ${t.getClass.getSimpleName}")
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
     }
   }

@@ -25,7 +25,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
 
   "a RunnerConfig" should {
     "generate the correct JSON (one streamlet per deployment)" in {
-      val runnerConfig = RunnerConfig(appId, appVersion, ingressDeployment, kafkaBootstrapServers)
+      val runnerConfig = RunnerConfig(appId, appVersion, ingressDeployment)
       val config       = ConfigFactory.parseString(runnerConfig.data)
 
       val streamlet = config.getConfig("cloudflow.runner.streamlet")
@@ -55,6 +55,9 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
             port,
             Topic(
               topicConfig.getString("id"),
+              if (topicConfig.hasPath("cluster"))
+                Option(topicConfig.getString("cluster"))
+              else None,
               topicConfig.getConfig("config")
             )
           )
@@ -93,7 +96,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .connect(Topic(id = "bars"), processorRef.out)
 
   val verifiedBlueprint = blueprint.verified.right.value
-  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths)
+  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
 
   val allDeployments      = descriptor.deployments
   val ingressDeployment   = allDeployments.find(_.streamletName == ingressRef.name).value

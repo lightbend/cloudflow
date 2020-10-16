@@ -613,7 +613,6 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .connect(Topic("fooos"), processorRef.in)
         .connect(Topic("foos-processed"), processorRef.out)
         .connect(Topic("foos-processed2"), processorRef.out)
-      println(blueprint.topics.map(_.verified))
       blueprint.problems mustBe Vector(
         PortBoundToManyTopics("bar.in", Vector("foos", "fooos")),
         PortBoundToManyTopics("bar.out", Vector("foos-processed", "foos-processed2"))

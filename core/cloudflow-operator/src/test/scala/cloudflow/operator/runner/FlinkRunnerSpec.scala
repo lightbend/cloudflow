@@ -79,7 +79,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       replicas = None
     )
 
-    "read environment variables and resource requirements from pod configuration and configure taskmanager and jobmanager " in {
+    "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods specs" in {
 
       val crd = FlinkRunner.resource(
         deployment = deployment,
@@ -91,11 +91,12 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
-              |    { name = "JAVA_OPTS"
-              |      value = "-XX:MaxRAMPercentage=40.0"
+              |    { 
+              |       name = "JAVA_OPTS"
+              |       value = "-XX:MaxRAMPercentage=40.0"
               |    },{
-              |      name = "FOO"
-              |      value = "BAR"
+              |       name = "FOO"
+              |       value = "BAR"
               |    }
               |   ]
               |  resources {
@@ -107,7 +108,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |    }
               |  }
               |}
-              |        """.stripMargin.getBytes()
+              |""".stripMargin.getBytes()
           )
         ),
         namespace = namespace
@@ -121,7 +122,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
       crd.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
-        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-pvc")),
+        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-flink-pvc")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
@@ -143,6 +144,97 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
+    }
+
+    "read from config custom labels and add them to the jobmanager and taskmanager pods specs" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                  |kubernetes.pods.pod {
+                  | labels: {
+                  |     "key1" : "value1",
+                  |     "key2" : "value2"
+                  | }
+                  | containers.container {
+                  |  env = [
+                  |    {
+                  |      name = "FOO"
+                  |      value = "BAR"
+                  |    }
+                  |   ]
+                  |}
+                  |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+
+      crd.metadata.labels.get("key1") mustBe Some("value1")
+      crd.metadata.labels.get("key2") mustBe Some("value2")
+    }
+
+    "read from config custom secrets and mount them in jobmanager and taskmanager pods" in {
+
+      val crd = FlinkRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods.pod {
+                |   volumes {
+                |     foo {
+                |       secret {
+                |         name = mysecret
+                |       }
+                |     },
+                |     bar {
+                |       secret {
+                |         name = yoursecret
+                |       }
+                |     }
+                |   }
+                |   containers.container {
+                |     volume-mounts {
+                |       foo {
+                |         mount-path = "/etc/my/file"
+                |         read-only = true
+                |       },
+                |       bar {
+                |         mount-path = "/etc/mc/fly"
+                |         read-only =  false
+                |       }
+                |     }
+                |   }
+                |}
+                """.stripMargin.getBytes()
+          )
+        ),
+        namespace = namespace
+      )
+
+      crd.spec.volumes must contain allElementsOf List(
+        Volume("foo", Volume.Secret(secretName = "mysecret")),
+        Volume("bar", Volume.Secret(secretName = "yoursecret"))
+      )
+
+      crd.spec.volumeMounts must contain allElementsOf List(
+        Volume.Mount("foo", "/etc/my/file", true),
+        Volume.Mount("bar", "/etc/mc/fly", false)
+      )
+
     }
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
@@ -216,7 +308,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
       crd.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
-        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-pvc")),
+        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-flink-pvc")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )

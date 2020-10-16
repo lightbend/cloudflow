@@ -40,6 +40,9 @@ type deployOptions struct {
 	configFiles             []string
 }
 
+// Label to identify Kafka cluster configuration secrets
+const KafkaClusterNameLabel = "cloudflow.lightbend.com/kafka-cluster-name"
+
 func init() {
 
 	deployOpts := &deployOptions{}
@@ -107,6 +110,13 @@ the Cloudflow service account. Subsequent usage of the deploy command will use
 the stored credentials.
 
 You can update the credentials with the "update-docker-credentials" command.
+
+If your application contains streamlets that connect to each other through
+Kafka then validation will check that all named Kafka cluster configurations
+exist in the cloudflow namespace. If named Kafka cluster configurations
+are not defined, but port mappings exist, then validation will check that a
+default Kafka cluster configuration exists. Validation failure will result
+in an error and the application will not be deployed.
 `,
 		Example: `kubectl cloudflow deploy call-record-aggregator.json`,
 		Args:    validateDeployCmdArgs,
@@ -141,7 +151,17 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
 
-	appInputSecret, err := config.HandleConfig(args, k8sClient, namespace, applicationSpec, opts.configFiles)
+	appConfig, err := config.GetAppConfiguration(args, namespace, applicationSpec, opts.configFiles)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	err = config.ReferencedPersistentVolumeClaimsExist(appConfig, namespace, applicationSpec, k8sClient)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	appInputSecret, err := config.CreateAppInputSecret(&applicationSpec, appConfig)
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
@@ -153,6 +173,9 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	if err != nil {
 		printutil.LogErrorAndExit(err)
 	}
+
+	// Validate that Kafka cluster configuration secrets exist
+	validateKafkaClusterSecretsExist(k8sClient, applicationSpec)
 
 	if !opts.noRegistryCredentials {
 		handleAuth(k8sClient, namespace, opts, imageReference)
@@ -426,4 +449,46 @@ func validateStreamletRunnersDependencies(applicationSpec cfapp.CloudflowApplica
 		os.Exit(1)
 	}
 
+}
+
+// TODO: fail if 'default' config secret does not exist when streamlets contain inlets and outlets for topics
+func validateKafkaClusterSecretsExist(k8sClient *kubernetes.Clientset, applicationSpec cfapp.CloudflowApplicationSpec) {
+	// get ns of cloudflow-operator
+	cm, err := version.GetProtocolVersionConfigMap()
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+	cloudflowNamespace := cm.ObjectMeta.Namespace
+
+	// get set of cluster configs found in the cloudflow namespace
+	l, err := k8sClient.CoreV1().Secrets(cloudflowNamespace).List(metav1.ListOptions{})
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
+	actualClusters := make(map[string]bool)
+	for _, s := range l.Items {
+		clusterName := s.ObjectMeta.Labels[KafkaClusterNameLabel]
+		if len(clusterName) > 0 {
+			actualClusters[clusterName] = true
+		}
+	}
+
+	// if any app spec cluster configs don't exist in the cloudflow namespace then make a set we can use to report the error
+	expectedClusters := make(map[string]bool)
+	for _, d := range applicationSpec.Deployments {
+		for _, pm := range d.PortMappings {
+			if len(pm.Cluster) > 0 && !actualClusters[pm.Cluster] {
+				expectedClusters[pm.Cluster] = true
+			}
+		}
+	}
+
+	if len(expectedClusters) > 0 {
+		clusters := make([]string, 0, len(expectedClusters))
+		for k := range expectedClusters {
+			clusters = append(clusters, k)
+		}
+		printutil.LogAndExit("Could not find the referenced Kafka cluster configurations: %s", strings.Join(clusters, ", "))
+	}
 }

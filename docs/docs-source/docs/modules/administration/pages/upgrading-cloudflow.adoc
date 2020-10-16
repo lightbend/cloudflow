@@ -1,0 +1,33 @@
+= Upgrading Cloudflow
+:toc:
+:toc-title: ON THIS PAGE
+:toclevels: 2
+
+include::ROOT:partial$include.adoc[]
+
+To upgrade Cloudflow after a new release use the Helm upgrade command.
+
+== Upgrading
+
+To upgrade Cloudflow in your cluster to the latest version run
+
+[source,shell script]
+----
+  helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
+    --namespace cloudflow \
+    --reuse-values
+----
+
+== Selecting a specific version
+
+To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
+
+[source,shell script,subs="attributes"]
+----
+  helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
+    --namespace cloudflow \
+    --reuse-values \
+    --version="{cloudflow-version}"
+----
+
+IMPORTANT: A typical upgrade of Cloudflow does not affect the running Cloudflow applications. However, always check the release notes to be sure there are no breaking changes.

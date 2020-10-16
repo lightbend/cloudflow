@@ -1,13 +1,11 @@
-import sbt._
-import sbt.Keys._
-
+//tag::get-started[]
 //tag::local-conf[]
 lazy val sensorData =  (project in file("."))
-    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin, ScalafmtPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
       scalaVersion := "2.12.11",
       runLocalConfigFile := Some("src/main/resources/local.conf"), //<1>
-      scalafmtOnCompile := true,
+      runLocalLog4jConfigFile := Some("src/main/resources/log4j.xml"), //<2>
       name := "sensor-data-scala",
 //end::local-conf[]      
 
@@ -17,7 +15,13 @@ lazy val sensorData =  (project in file("."))
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-      ),
+      )
+    )
+//end::get-started[]
+    .enablePlugins(ScalafmtPlugin)
+    .settings(
+      scalafmtOnCompile := true,
+
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
@@ -38,5 +42,6 @@ lazy val sensorData =  (project in file("."))
 
       scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
-
     )
+
+dynverSeparator in ThisBuild := "-"

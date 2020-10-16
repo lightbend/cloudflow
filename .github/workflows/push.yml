@@ -10,6 +10,15 @@ on:
 
 name: Build and Test
 jobs:
+  build-and-test-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build documentation
+      run: |
+        cd docs
+        make html-author-mode
+        grep -r "page unresolved" target/staging/docs/ && exit 1 || echo 'ok'
   build-and-test-scala:
     runs-on: ubuntu-latest
     steps:
@@ -19,13 +28,13 @@ jobs:
       run: |
         make -C .github/workflows/setup setup-local-all
 
-    - name: Cache SBT ivy cache
+    - name: Cache SBT Coursier cache
       uses: actions/cache@v1
       with:
-        path: ~/.ivy2/cache
-        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+        path: ~/.cache/coursier
+        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
         restore-keys: |
-          ${{ runner.os }}-sbt-ivy-cache-
+          ${{ runner.os }}-sbt-coursier-cache-
 
     - name: Cache SBT
       uses: actions/cache@v1

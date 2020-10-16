@@ -2,17 +2,22 @@
 <configuration>
   <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
 
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{ISO8601} %-5level [%logger{0}] - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="STDOUT"/>
+  </appender>
+
   <root level="${LOGLEVEL_ROOT:-info}">
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-      <target>System.out</target>
-      <encoder>
-        <pattern>%d{ISO8601} %-5level [%logger{0}] - %msg%n</pattern>
-      </encoder>
-    </appender>
+    <appender-ref ref="ASYNCSTDOUT"/>
   </root>
 
   <logger name="akka"                                     level="${LOGLEVEL_AKKA:-info}" />
-  <logger name="skuber.api"                               level="${LOGLEVEL_AKKA:-warn}" />
+  <logger name="skuber.api"                               level="${LOGLEVEL_SKUBER:-warn}" />
 
   <logger name="com.zaxxer.hikari"                        level="${log.hikari:-info}" />
   <logger name="com.zaxxer.hikari.pool"                   level="${log.hikari:-info}" />

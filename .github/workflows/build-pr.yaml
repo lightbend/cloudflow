@@ -3,14 +3,33 @@ on:
   # Trigger the workflow on push only for the master branch
   pull_request:
 jobs:
-  build-docs:
+  build-all:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8', '11', '13' ]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Setup java
+      uses: joschi/setup-jdk@v2
+      with:
+        java-version: ${{ matrix.java }}
+        architecture: x64
+    - name: Cache SBT Coursier cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/coursier
+        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-coursier-cache-
     - name: Build documentation
       run: |
         cd docs
         make all
-    
-        
+    - name: Run integration tests of the sbt plugin
+      run: |
+        git config --global user.email "cloudflow@lightbend.com"
+        git config --global user.name "Cloudflow CI"
+        cd core
+        sbt publishLocal scripted

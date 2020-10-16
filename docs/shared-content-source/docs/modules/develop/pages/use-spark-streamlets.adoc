@@ -28,6 +28,26 @@ codec of the data they manipulate.
 Currently, Cloudflow supports Avro and hence the classes are named `AvroInlet` and `AvroOutlet`.
 Each outlet also allows the user to define a partitioning function that will be used to partition the data.
 
+== Usage of different encodings in Spark streamlet
+
+Currently Cloudflow supports two different data encoding types - Avro and Protobuf. Both can be used for Spark streamlet,
+but you should remember several rules. Protobuf support is based on https://scalapb.github.io/docs/sparksql/[Scala-PB Spark],
+which comes with its own `implicits` - `scalapb.spark.Implicits._` which is not compatible with `cloudflow.spark.sql.SQLImplicits._`.
+When using these `implicits` the following rules have to be observed:
+
+* If protobuf's encoding is not used, always use `cloudflow.spark.sql.SQLImplicits._`.
+* If you are using at least one protobuf encoding, you need to use `scalapb.spark.Implicits._`.
+Note that this `implicits` do not include default implicit supporting Scala classes. So if in addition to
+protobuf, you are using Avro and or any custom scala types in your Spark processing, you have to add implicit encoders, for these
+types. For example, if you are using the following type in your calculations:
+----
+case class Rate(timestamp: Timestamp, value: Long)
+----
+In your code you should have a definition of the corresponding encoder:
+----
+implicit val rateEncoder = Encoders.product[Rate]
+----
+
 == `StreamletShape`
 
 The `StreamletShape` captures the connectivity and compatibility details of a Spark-based streamlet.
@@ -62,6 +82,16 @@ It contains the following context data and contracts:
 * The Typesafe `Config` loaded from the classpath through a `config` method, which can be used to read configuration settings.
 * The name used in the blueprint for the specific instance of this streamlet being run.
 * A function `checkpointDir` which returns a directory on a persistent storage where checkpoints can be safely kept, making them available across restarts.
+
+== Controlling Streaming Query execution
+
+Spark Structured streaming provides a mechanism for controlling the timing of streaming data processing in the form of
+https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[triggers].
+The trigger settings of a streaming query define whether the query is going to be executed as micro-batch query with a fixed
+batch interval or as a continuous processing query. Different kinds of triggers that are supported by Spark are https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers[here].
+
+The `writeStream` method in stream logic allows to specify trigger used for Streamlet execution.
+
 
 == Lifecycle
 
@@ -197,3 +227,15 @@ Upgrading an application that uses stateful computation requires planning ahead 
 Significant changes to the application logic, addition of sources, or changes to the schema representing the state are not allowed.
 
 For details on the degrees of freedom and upgrade options, please refer to the https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#recovery-semantics-after-changes-in-a-streaming-query[Structured Streaming documentation].
+
+== Adding additional Spark libraries
+
+If you enable plugin `CloudflowSparkPlugin`, Cloudflow will add all of the Spark jars, necessary for a typical Spark streamlet implementation. But sometimes
+you might need to add additional libraries. When doing so, it is necessary to make sure, that the versions
+of the libraries that you are adding have the same version that the rest of of the Spark libraries.
+The version used by Cloudflow are currently defined in the variable `cloudflow.sbt.CloudflowSparkPlugin.SparkVersion`.
+So, if for example, you want to add local Spark ML library, you can do it as shown below:
+
+----
+libraryDependencies ++=  Seq("org.apache.spark"%%"spark-mllib-local"%cloudflow.sbt.CloudflowSparkPlugin.SparkVersion)
+----

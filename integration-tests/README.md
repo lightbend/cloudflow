@@ -22,7 +22,7 @@ This will setup sbt to push the swiss-knife app images to the `docker.io/lightbe
     cp target/swiss-knife.json ../itest/resources
 
 ### Manual Execution
-From the `itest` sub-directory, run `ginkgo -v` or `go test`
+From the `itest` sub-directory, run `PATH=$PWD:$PATH ginkgo -v`
 
 `Ginkgo` provides a nice textual overview of the executed tests.
 The `-v` (verbose) is required to output a message for every executed test.

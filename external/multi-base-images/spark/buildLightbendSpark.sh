@@ -21,8 +21,10 @@ SCRIPT=`basename ${BASH_SOURCE[0]}`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 SPARK_VERSION=2.4.5
 SPARK_OPERATOR_VERSION=1.1.2
+PROTOBUF_VERSION=3.11.4
+SCALAPB_VERSION=0.10.4
 DOCKER_USERNAME=lightbend
-CLOUDFLOW_VERSION=2.0.8
+CLOUDFLOW_VERSION=2.0.11
 SPARK_IMAGE_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-$SPARK_VERSION-scala-2.12
 SPARK_OPERATOR_TAG=${CLOUDFLOW_VERSION}-cloudflow-spark-$SPARK_VERSION-$SPARK_OPERATOR_VERSION-scala-2.12
 
@@ -45,11 +47,18 @@ $DIR/spark/dev/make-distribution.sh --name cloudflow-2.12 --tgz -Pscala-2.12 -Ph
 
 # build the Spark image
 tar -zxvf spark-$SPARK_VERSION-bin-cloudflow-2.12.tgz
-cd $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+# replace protobuf jar to support sparksql-scalapb and load Scala-PB
+rm spark-$SPARK_VERSION-bin-cloudflow-2.12/jars/protobuf-java-*.*
+curl https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/$PROTOBUF_VERSION/protobuf-java-$PROTOBUF_VERSION.jar --output spark-$SPARK_VERSION-bin-cloudflow-2.12/jars/protobuf-java-$PROTOBUF_VERSION.jar
+curl https://repo1.maven.org/maven2/com/thesamet/scalapb/sparksql-scalapb_2.12/$SCALAPB_VERSION/sparksql-scalapb_2.12-$SCALAPB_VERSION.jar  --output spark-$SPARK_VERSION-bin-cloudflow-2.12/jars/sparksql-scalapb_2.12-$SCALAPB_VERSION.jar
+
+# copy extra jars
 cp $DIR/metrics.properties $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
 cp $DIR/prometheus.yaml $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
 cp $DIR/log4j.properties $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
 cp $DIR/spark-entrypoint.sh $DIR/spark/spark-$SPARK_VERSION-bin-cloudflow-2.12
+
+# build an image
 docker build -f $DIR/Dockerfile -t $DOCKER_USERNAME/spark:$SPARK_IMAGE_TAG .
 
 # build the Spark operator image

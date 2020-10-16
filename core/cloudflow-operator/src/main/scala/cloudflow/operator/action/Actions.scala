@@ -37,14 +37,13 @@ object Actions {
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR] = None,
       namespace: String,
-      cause: ObjectResource,
-      deleteOutdatedTopics: Boolean = false
+      cause: ObjectResource
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
-    prepareNamespace(newApp.spec.appId, namespace, labels, ownerReferences) ++
-      deployTopics(newApp, currentApp, deleteOutdatedTopics) ++
+    prepareNamespace(newApp, namespace, labels, ownerReferences) ++
+      deployTopics(newApp) ++
       deployRunners(newApp, currentApp, namespace) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
@@ -64,49 +63,22 @@ object Actions {
   def undeploy(
       app: CloudflowApplication.CR,
       namespace: String,
-      cause: ObjectResource,
-      deleteExistingTopics: Boolean = false
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
-    val currentApp = None
-
-    val savepointActions = if (deleteExistingTopics) {
-      deployTopics(app, currentApp)
-    } else Seq()
-
-    val actions = savepointActions ++ deployRunners(app, currentApp, namespace)
-
-    actions.collect {
-      case createAction: CreateOrUpdateAction[_] ⇒ createAction.revert
-    } :+ EventActions.undeployEvent(app, namespace, cause)
-  }
+      cause: ObjectResource
+  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+    Seq(EventActions.undeployEvent(app, namespace, cause))
 
   def prepareNamespace(
-      appId: String,
+      app: CloudflowApplication.CR,
       namespace: String,
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    AppActions(appId, namespace, labels, ownerReferences)
+    PrepareNamespaceActions(app, namespace, labels, ownerReferences)
 
   private def deployTopics(
-      newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      deleteOutdatedTopics: Boolean = false
+      newApp: CloudflowApplication.CR
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
-    if (ctx.kafkaContext.useStrimzi) {
-      StrimziTopicActions(
-        newApp = newApp,
-        currentApp = currentApp,
-        strimziTopicOperatorNamespace = ctx.kafkaContext.strimziTopicOperatorNamespace.get,
-        strimziClusterName = ctx.kafkaContext.strimziClusterName.get,
-        partitionsPerTopic = ctx.kafkaContext.partitionsPerTopic,
-        replicationFactor = ctx.kafkaContext.replicationFactor,
-        deleteOutdatedTopics = deleteOutdatedTopics
-      )
-    } else {
-      // TODO add Kafka AdminClient support
-      Seq.empty[Action[ObjectResource]]
-    }
+    TopicActions(newApp)
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,

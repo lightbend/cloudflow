@@ -44,10 +44,14 @@ trait CloudflowSettingKeys {
   val cloudflowFlinkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Flink plugin")
   val cloudflowSparkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Spark plugin")
   val cloudflowAkkaBaseImage     = settingKey[Option[String]]("The base image for Cloudflow Akka plugin")
+  val cloudflowVersion           = settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
   val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
   val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val runLocalLog4jConfigFile = settingKey[Option[String]](
+    s"The path to the log4j configuration file to use with the local runner Sandbox, if omitted, ${CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile} is read from plugin classpath."
+  )
   val ownerInDockerImage =
     settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
 }
@@ -59,6 +63,7 @@ trait CloudflowTaskKeys {
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
   val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
   val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
+  val printAppGraph             = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
   val build                     = taskKey[Unit]("Build the image.")
   val buildAndPublish           = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
   val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
@@ -94,9 +99,6 @@ trait CloudflowTaskKeys {
   private[sbt] val applicationDescriptor = taskKey[Option[ApplicationDescriptor]](
     "The deployment descriptor for the current application. Available if the project has a valid blueprint."
   )
-
-  private[sbt] val cloudflowBuildNumber =
-    taskKey[BuildNumber]("The current Cloudflow build number (i.e. ${numberOfGitCommits}-${gitHeadCommit}).")
 
   private[sbt] val streamletDescriptorsInProject =
     taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")

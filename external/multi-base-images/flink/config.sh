@@ -405,9 +405,21 @@ if [ -z "${FLINK_PID_DIR}" ]; then
     FLINK_PID_DIR=$(readFromConfig ${KEY_ENV_PID_DIR} "${DEFAULT_ENV_PID_DIR}" "${YAML_CONF}")
 fi
 
-if [ -z "${FLINK_ENV_JAVA_OPTS}" ]; then
-    FLINK_ENV_JAVA_OPTS=$(readFromConfig ${KEY_ENV_JAVA_OPTS} "${DEFAULT_ENV_JAVA_OPTS}" "${YAML_CONF}")
 
+
+
+# Here we are not asking if this FLINK_ENV_JAVA_OPTS exist as any other case above and below
+# because we know it does. We did 'export' it in the file ./flink-entrypoint.sh that indirectly 
+# executes this script through /opt/flink/bin/taskmanager.sh.
+FLINK_ENV_JAVA_OPTS_CONFIG=$(readFromConfig ${KEY_ENV_JAVA_OPTS} "${DEFAULT_ENV_JAVA_OPTS}" "${YAML_CONF}") 
+
+# What we need to make sure is that we don't add more than once as this script can run multiple times
+# e.g. /opt/flink/bin/taskmanager.sh -> /opt/flink/bin/flink-console.sh (both call this script)
+# so if the opts from the config still haven't added, we do.
+if [ -z "${FLINK_ENV_JAVA_OPTS##*$FLINK_ENV_JAVA_OPTS_CONFIG*}" ];then 
+    echo "${FLINK_ENV_JAVA_OPTS_CONFIG} have already been added to JVM Options"
+else
+    FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${FLINK_ENV_JAVA_OPTS_CONFIG}"
     # Remove leading and ending double quotes (if present) of value
     FLINK_ENV_JAVA_OPTS="$( echo "${FLINK_ENV_JAVA_OPTS}" | sed -e 's/^"//'  -e 's/"$//' )"
 fi

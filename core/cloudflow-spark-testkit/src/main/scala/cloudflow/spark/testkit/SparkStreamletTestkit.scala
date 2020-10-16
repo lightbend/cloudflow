@@ -248,7 +248,7 @@ case class ExecutionReport(totalRows: Long, totalQueries: Int, failures: Seq[Str
     s"total rows: [$totalRows], total queries: [$totalQueries], failures: [${failures.mkString(",")}]"
 }
 
-class QueryExecutionMonitor()(implicit ec: ExecutionContext) extends StreamingQueryListener {
+class QueryExecutionMonitor() extends StreamingQueryListener {
   @volatile var status: Map[UUID, QueryState] = Map()
   @volatile var dataRows: Map[UUID, Long]     = Map()
 

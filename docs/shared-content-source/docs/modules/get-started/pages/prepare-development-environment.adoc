@@ -1,31 +1,29 @@
 :page-partial:
 
-To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes-based cluster. 
+To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes cluster. 
 This page describes the required environment to prepare for development. 
-A a later page covers the Kubernetes requirements.
-//TODO: Link the page to Kubernetes installation
+Please see xref:administration:installing-cloudflow.adoc[Installing Cloudflow] for instructions to install Cloudflow on a Kubernetes cluster.
 
 == Prerequisites
 
 First, make sure that you have the following installed:
 
-* Java 8 (JDK)
+* Java(JDK) >= 8
 * https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
 * https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
 * https://helm.sh/docs/intro/install/[Helm,window=_blank], version 2 or higher. We recommend version 3 to avoid dealing with tiller.
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
-* https://git-scm.com/[git,window=_blank]
 
 == Download and install the Cloudflow CLI
 
 Using one the links below, download the Cloudflow CLI version appropriate for your development platform.
 Install it on your local system by unzipping the archive and moving the executable into your `PATH`.
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.8.645-df682e0-linux-amd64.tar.gz[Linux]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-linux-amd64.tar.gz[Linux]
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.8.645-df682e0-darwin-amd64.tar.gz[MacOS]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-darwin-amd64.tar.gz[MacOS]
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.8.645-df682e0-windows-amd64.tar.gz[Windows]
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-2.0.10.717-6cf9b406-windows-amd64.tar.gz[Windows]
 
 Please make sure you have the executable in your path with proper permission settings. 
 For Linux or MacOS, put the executables in `/usr/local/bin` with permission settings of `755`.

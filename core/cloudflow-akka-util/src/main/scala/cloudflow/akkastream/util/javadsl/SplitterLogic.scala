@@ -21,10 +21,12 @@ import akka.japi.Pair
 import akka.kafka._
 import akka.stream.javadsl._
 import akka.kafka.ConsumerMessage._
+import akka.stream.scaladsl
 import cloudflow._
 import cloudflow.akkastream._
 import cloudflow.akkastream.javadsl._
-import cloudflow.akkastream.javadsl.util.{ Either ⇒ JEither }
+import cloudflow.akkastream.javadsl.util.{ Either => JEither }
+import cloudflow.akkastream.scaladsl.FlowWithCommittableContext
 import cloudflow.streamlets._
 
 /**
@@ -38,6 +40,7 @@ object Splitter {
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
    * At-least-once semantics are used.
    */
+  @deprecated("prefer providing Outlets, this variant can't guarantee at-least-once", "2.10.12")
   def sink[I, L, R](
       flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       left: Sink[Pair[L, Committable], NotUsed],
@@ -66,15 +69,18 @@ object Splitter {
       committerSettings: CommitterSettings,
       context: AkkaStreamletContext
   ): Sink[Pair[I, Committable], NotUsed] =
-    sink[I, L, R](
-      flow,
-      context.committableSink(leftOutlet, committerSettings).asJava.contramap[Pair[L, Committable]] { pair ⇒
-        (pair.first, pair.second)
-      },
-      context.committableSink(rightOutlet, committerSettings).asJava.contramap[Pair[R, Committable]] { pair ⇒
-        (pair.first, pair.second)
-      }
-    )
+    akka.stream.javadsl.Flow
+      .create[Pair[I, Committable]]()
+      .map(_.toScala)
+      .to(
+        akkastream.util.scaladsl.Splitter
+          .sink[I, L, R](
+            flow.via(toEitherFlow).asScala,
+            leftOutlet,
+            rightOutlet,
+            committerSettings
+          )(context)
+      )
 
   /**
    * Java API

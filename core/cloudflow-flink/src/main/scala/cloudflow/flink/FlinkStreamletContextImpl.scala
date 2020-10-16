@@ -16,8 +16,6 @@
 
 package cloudflow.flink
 
-import scala.collection.JavaConverters._
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala._
@@ -47,16 +45,16 @@ class FlinkStreamletContextImpl(
     val topic            = findTopicForPort(inlet)
     val srcTopic         = topic.name
     val groupId          = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val bootstrapServers = topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers)
+    val bootstrapServers = runtimeBootstrapServers(topic)
     val propsMap = Map("bootstrap.servers" -> bootstrapServers, "group.id" -> groupId, "auto.offset.reset" -> "earliest") ++
           topic.kafkaConsumerProperties
 
     val properties = new ju.Properties()
-    properties.putAll(propsMap.asJava)
+    propsMap.foreach { case (k, v) => properties.put(k, v) }
 
-    val consumer = new FlinkKafkaConsumer[In](
+    val consumer = new FlinkKafkaConsumer[Array[Byte]](
       srcTopic,
-      new FlinkKafkaCodecDeserializationSchema[In](inlet),
+      new FlinkKafkaCodecDeserializationSchema(),
       properties
     )
 
@@ -66,7 +64,7 @@ class FlinkStreamletContextImpl(
     // also this setting is honored only when checkpointing is on - otherwise the property in Kafka
     // "enable.auto.commit" is considered
     consumer.setCommitOffsetsOnCheckpoints(true)
-    env.addSource(consumer)
+    env.addSource(consumer).map(inlet.codec.decode(_))
   }
 
   /**
@@ -81,13 +79,13 @@ class FlinkStreamletContextImpl(
 
     val topic            = findTopicForPort(outlet)
     val destTopic        = topic.name
-    val bootstrapServers = topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers)
+    val bootstrapServers = runtimeBootstrapServers(topic)
 
     val propsMap = Map("bootstrap.servers" -> bootstrapServers, "batch.size" -> "0") ++
           topic.kafkaProducerProperties
 
     val properties = new ju.Properties()
-    properties.putAll(propsMap.asJava)
+    propsMap.foreach { case (k, v) => properties.put(k, v) }
 
     stream.addSink(
       new FlinkKafkaProducer[Out](

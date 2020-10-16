@@ -19,7 +19,6 @@ package cloudflow.operator
 import java.lang.management.ManagementFactory
 
 import akka.actor._
-import akka.stream._
 import com.typesafe.config.{ Config, ConfigRenderOptions }
 import skuber._
 import skuber.api.Configuration
@@ -39,10 +38,9 @@ object Main extends {
     implicit val system = ActorSystem()
 
     try {
-      implicit val ec           = system.dispatcher
-      implicit val materializer = ActorMaterializer()
-      val settings              = Settings(system)
-      implicit val ctx          = settings.deploymentContext
+      implicit val ec  = system.dispatcher
+      val settings     = Settings(system)
+      implicit val ctx = settings.deploymentContext
 
       logStartOperatorMessage(settings)
 
@@ -98,7 +96,7 @@ object Main extends {
                    .map(_.metadata.ownerReferences),
                  10 seconds)
 
-  private def connectToKubernetes()(implicit system: ActorSystem, mat: Materializer) = {
+  private def connectToKubernetes()(implicit system: ActorSystem) = {
     val conf   = Configuration.defaultK8sConfig
     val client = k8sInit(conf).usingNamespace("")
     system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")
@@ -110,8 +108,8 @@ object Main extends {
   private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
     val crdTimeout = 20.seconds
     // TODO check if version is the same, if not, also create.
-    Await.ready(
-      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).map { result ⇒
+    Await.result(
+      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).flatMap { result ⇒
         result.fold(client.create(CloudflowApplication.CRD)) { crd ⇒
           if (crd.spec.version != CloudflowApplication.CRD.spec.version) {
             client.create(CloudflowApplication.CRD)
@@ -127,8 +125,8 @@ object Main extends {
   private def installProtocolVersion(client: skuber.api.client.KubernetesClient,
                                      ownerReferences: List[OwnerReference])(implicit ec: ExecutionContext): Unit = {
     val protocolVersionTimeout = 20.seconds
-    Await.ready(
-      client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).map {
+    Await.result(
+      client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).flatMap {
         _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap ⇒
           if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
             client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))

@@ -20,8 +20,11 @@ import java.nio.file.{ Path, Paths }
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 
 trait StreamletContext {
+
+  private lazy val log = LoggerFactory.getLogger(getClass.getName)
 
   /**
    * A [[cloudflow.streamlets.StreamletDefinition StreamletDefinition]] that informs this context about the
@@ -56,10 +59,16 @@ trait StreamletContext {
   def config: Config = streamletDefinition.config
 
   /**
-   * The default bootstrapServers for the Kafka broker that has been installed or configured
-   * to be used globally for all Cloudflow applications
+   * The runtime 'bootstrap.servers' for the given topic. This is provided by the cloudflow-operator when creating
+   * the streamlet's 'cloudflow.runner' configuration. A 'bootstrap.servers' will always be provided as long as a
+   * 'default' Kafka cluster is defined during the install of the cloudflow-operator.
    */
-  def internalKafkaBootstrapServers = config.getString("cloudflow.kafka.bootstrap-servers")
+  def runtimeBootstrapServers(topic: Topic): String =
+    topic.bootstrapServers.getOrElse {
+      val e = BootstrapServersForTopicNotFound(topic)
+      log.error(e.getMessage)
+      throw e
+    }
 
   /**
    * The subset of configuration specific to a single named instance of a streamlet.
@@ -103,3 +112,9 @@ case class TopicForPortNotFoundException(port: StreamletPort, streamletDefinitio
     extends Exception(
       s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
     )
+
+case class BootstrapServersForTopicNotFound(topic: Topic) extends Exception(s"""
+  |Runtime Kafka bootstrap.servers is not set for topic ${topic.id}
+  |A 'default' Kafka cluster, named cluster, or inline cluster configuration was not provided for this topic.
+  |To set a 'default' Kafka cluster you must update or reinstall the cloudflow-operator Helm release with value `kafkaClusters.default.bootstrapServers`.
+  |""".stripMargin)

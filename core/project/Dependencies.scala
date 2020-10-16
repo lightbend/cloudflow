@@ -3,19 +3,16 @@ import sbt._
 // format: OFF
 object Version {
 
-  val Akka          = "2.6.6"
+  val Akka          = "2.6.9"
   val AkkaHttp      = "10.2.0"
   val AkkaMgmt      = "1.0.8"
-  val AlpakkaKafka  = "2.0.4"
+  val AkkaGrpc      = "1.0.1"
+  val AlpakkaKafka  = "2.0.5"
   val Scala         = "2.12.11"
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
+  val KafkaClients  = "2.5.0"
   val EmbeddedKafka = "2.5.0" 
-
-  // We've postponed updating Akka and Akka HTTP for the operator
-  // because of https://github.com/lightbend/cloudflow/issues/610
-  val AkkaOperator     = "2.5.29"
-  val AkkaHttpOperator = "10.1.12"
 }
 
 object Library {
@@ -23,7 +20,9 @@ object Library {
   val AkkaHttp               = "com.typesafe.akka"  %% "akka-http"                 % Version.AkkaHttp
   val AkkaHttpJackson        = "com.typesafe.akka"  %% "akka-http-jackson"         % Version.AkkaHttp
   val AkkaHttpSprayJson      = "com.typesafe.akka"  %% "akka-http-spray-json"      % Version.AkkaHttp
+  val AkkaHttp2Support       = "com.typesafe.akka"  %% "akka-http2-support"        % Version.AkkaHttp
   val AkkaActor              = "com.typesafe.akka"  %% "akka-actor"                % Version.Akka
+  val AkkaProtobuf           = "com.typesafe.akka"  %% "akka-protobuf"             % Version.Akka
   val AkkaShardingTyped      = "com.typesafe.akka"  %% "akka-cluster-sharding-typed"% Version.Akka
   val AkkaStream             = "com.typesafe.akka"  %% "akka-stream"               % Version.Akka
   val AkkaSlf4j              = "com.typesafe.akka"  %% "akka-slf4j"                % Version.Akka
@@ -33,16 +32,14 @@ object Library {
   val AkkaStreamKafkaTestkit = ("com.typesafe.akka" %% "akka-stream-kafka-testkit" % Version.AlpakkaKafka) .exclude("com.typesafe.akka", "akka-stream-testkit")
   val AkkaStreamTestkit      = "com.typesafe.akka"  %% "akka-stream-testkit"       % Version.Akka
   
-  val AkkaSlf4jOperator         = "com.typesafe.akka" %% "akka-slf4j"                % Version.AkkaOperator
-  val AkkaStreamOperator        = "com.typesafe.akka" %% "akka-stream"               % Version.AkkaOperator
-  val AkkaStreamTestkitOperator = "com.typesafe.akka" %% "akka-stream-testkit"       % Version.AkkaOperator
-  val AkkaHttpOperator          = "com.typesafe.akka" %% "akka-http"                 % Version.AkkaHttpOperator
-
   val AkkaCluster           = "com.typesafe.akka"     %% "akka-cluster"              % Version.Akka
   val AkkaManagement        = "com.lightbend.akka.management" %% "akka-management"   % Version.AkkaMgmt
   val AkkaClusterBootstrap  = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
   val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
+
+  val AkkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Version.AkkaGrpc
+
   val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
   val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.EmbeddedKafka 
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
@@ -56,14 +53,14 @@ object Library {
 
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
-  val Skuber                = "io.skuber"                  %% "skuber"               % "2.4.1-cve-fix-a8d7617c"
+  val Skuber                = "io.skuber"                  %% "skuber"               % "2.6.0"
   
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
-  val SparkJacksonDatabind  = "com.fasterxml.jackson.core"  % "jackson-databind"     % "2.6.7.3"
   val SparkMllib            = "org.apache.spark"           %% "spark-mllib"          % Version.Spark
   val SparkSql              = "org.apache.spark"           %% "spark-sql"            % Version.Spark
   val SparkSqlKafka         = "org.apache.spark"           %% "spark-sql-kafka-0-10" % Version.Spark
   val SparkStreaming        = "org.apache.spark"           %% "spark-streaming"      % Version.Spark
+  val SparkProto            = "com.thesamet.scalapb"       %% "sparksql-scalapb"     % "0.9.0"
   val ScalaTestUnscoped     = "org.scalatest"              %% "scalatest"            % "3.0.8"
   val ScalaPbRuntime        = "com.thesamet.scalapb"       %% "scalapb-runtime"      % scalapb.compiler.Version.scalapbVersion
   val ScalaPbCompilerPlugin = "com.thesamet.scalapb"       %% "compilerplugin"       % scalapb.compiler.Version.scalapbVersion
@@ -72,6 +69,7 @@ object Library {
   val FlinkStreaming         = "org.apache.flink"      %% "flink-streaming-scala"    % Version.Flink
   val FlinkAvro              = "org.apache.flink"       % "flink-avro"               % Version.Flink
   val FlinkKafka             = "org.apache.flink"      %% "flink-connector-kafka"    % Version.Flink
+  val FlinkWeb               = "org.apache.flink"      %% "flink-runtime-web"        % Version.Flink
 
   val FastClasspathScanner  = "io.github.lukehutch"   %  "fast-classpath-scanner"   % "2.21"
   val ScalaCheck            = "org.scalacheck"        %% "scalacheck"               % "1.14.0"

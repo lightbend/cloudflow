@@ -5,11 +5,11 @@
 
 include::ROOT:partial$include.adoc[]
 
-NOTE: Full sources for all Cloudflow example applications can be found in the
+NOTE: The sources for the example described below can be found in the application called
+https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
+Full sources for all Cloudflow example applications can be found in the
 https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
-The sources for the example described below can be found in the application called
-https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
 
 A typical Cloudflow application uses the organization shown below. 
 We will implement the example in Scala. 
@@ -37,15 +37,6 @@ As we move through the process, the leaf level directories of the above tree wil
 * **scala** : the source code of the application under the package name `sensordata`
 * **build.sbt** : the sbt build script
 
-. From the top-level directory, initialize `git` (after adding files you will commit them):
-+
-----
-git init
-----
-+
-WARNING: The Cloudflow `sbt` plugin assumes that your project is version-managed using `git`. 
-It will use `git commit` information to generate dynamic versioning for the Docker images it produces. If the project doesn't have an initialized git index with at least one commit, some commands will fail with a `not a git repository` error.
-
 == The sbt build script
 
 Cloudflow provides sbt plugins for the supported runtimes, Akka, Spark and Flink. 
@@ -60,7 +51,7 @@ In addition to the backend-specific plugin, we need to add the `CloudflowApplica
 +
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/build.sbt[tag=get-started]
 ----
 +
 The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams, the Cloudflow application plugin, and also the Scalafmt plugin that we suggest to keep the style consistent in the application (optional).
@@ -69,8 +60,34 @@ The script is a standard Scala sbt build file--with the addition of the Cloudflo
 +
 [source,scala]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[tag=get-started]
 ----
+
+== Local configuration
+
+To be able to run the example locally you should provide the two resources files mentioned in **build.sbt**.
+
+. Create a `log4j.xml` file with the following contents and save it in your `src/main/resources/` directory:
++
+[source,xml]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/log4j.xml[]
+----
++
+you can tune the logging verbosity by changing the level(e.g. to `INFO`):
++
+[source,xml]
+----
+<level value="INFO" />
+----
++
+. Create a `local.conf` file with the following contents and save it, as well, in your `src/main/resources/` directory:
++
+[source,HOCON]
+----
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/src/main/resources/local.conf[]
+----
+
 
 == What's next
 

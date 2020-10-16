@@ -19,6 +19,7 @@ package cloudflow.akkastream
 import java.util.concurrent.atomic.AtomicReference
 import java.nio.file.{ Files, Paths }
 
+import scala.collection.immutable
 import scala.concurrent._
 import scala.util._
 import akka._
@@ -69,7 +70,7 @@ final class AkkaStreamletContextImpl(
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withProperties(topic.kafkaConsumerProperties)
@@ -101,7 +102,7 @@ final class AkkaStreamletContextImpl(
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withProperties(topic.kafkaConsumerProperties)
@@ -164,7 +165,7 @@ final class AkkaStreamletContextImpl(
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, Committable)]
@@ -182,11 +183,36 @@ final class AkkaStreamletContextImpl(
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     Flow[(T, Committable)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
+  override def flexiFlow[T](
+      outlet: CodecOutlet[T]
+  ): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
+    val topic = findTopicForPort(outlet)
+    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(runtimeBootstrapServers(topic))
+      .withProperties(topic.kafkaProducerProperties)
+
+    Flow[(immutable.Seq[T], Committable)]
+      .map {
+        case (values, committable) =>
+          ProducerMessage.MultiMessage(values.map(value => producerRecord(outlet, topic, value)), committable)
+      }
+      .via(handleTermination)
+      .via(Producer.flexiFlow(producerSettings))
+      .map(results => ((), results.passThrough))
+  }
+
+  private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
+    val key        = outlet.partitioner(value)
+    val bytesKey   = keyBytes(key)
+    val bytesValue = outlet.codec.encode(value)
+    new ProducerRecord(topic.name, bytesKey, bytesValue)
+  }
+
   private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
                                                    committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, CommittableOffset)]
@@ -208,7 +234,7 @@ final class AkkaStreamletContextImpl(
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
       .withProperties(topic.kafkaConsumerProperties)
@@ -229,7 +255,7 @@ final class AkkaStreamletContextImpl(
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
       .withProperties(topic.kafkaConsumerProperties)
@@ -277,7 +303,7 @@ final class AkkaStreamletContextImpl(
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(topic.bootstrapServers.getOrElse(internalKafkaBootstrapServers))
+      .withBootstrapServers(runtimeBootstrapServers(topic))
       .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
@@ -298,7 +324,7 @@ final class AkkaStreamletContextImpl(
     new KafkaSinkRef(
       system,
       outlet,
-      internalKafkaBootstrapServers,
+      runtimeBootstrapServers(topic),
       topic,
       killSwitch,
       completionPromise

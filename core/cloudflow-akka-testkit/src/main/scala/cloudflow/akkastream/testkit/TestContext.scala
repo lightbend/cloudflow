@@ -18,6 +18,7 @@ package cloudflow.akkastream.testkit
 
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.collection.immutable
 import scala.concurrent._
 import akka.NotUsed
 import akka.actor._
@@ -115,10 +116,38 @@ private[testkit] case class TestContext(
       }
       .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
+
+  private def seqFlowWithCommittableContext[T](
+      outlet: CodecOutlet[T]
+  ): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[immutable.Seq[T], immutable.Seq[T]] = {
+    val flow = Flow[immutable.Seq[T]]
+
+    outletTaps
+      .find(_.portName == outlet.name)
+      .map { outletTap ⇒
+        val tout = outletTap.asInstanceOf[OutletTap[T]]
+        flow
+          .via(killSwitch.flow)
+          .mapError {
+            case cause: Throwable ⇒
+              completionPromise.failure(cause)
+              cause
+          }
+          .alsoTo(
+            Flow[immutable.Seq[T]].mapConcat(identity).map(t ⇒ tout.toPartitionedValue(t)).to(tout.sink)
+          )
+          .asFlowWithContext[immutable.Seq[T], Committable, Committable]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
+      }
+      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+  }
+
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     Flow[(T, Committable)].toMat(Sink.ignore)(Keep.left)
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
+
+  private[akkastream] def flexiFlow[T](outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] =
+    seqFlowWithCommittableContext[T](outlet).map(_ => ()).asFlow
 
   @deprecated("Use `committableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =

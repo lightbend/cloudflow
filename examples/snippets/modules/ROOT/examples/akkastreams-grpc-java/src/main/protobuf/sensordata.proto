@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "sensordata.grpc";
+option java_outer_classname = "SensorDataProto";
+
+package sensordata;
+
+service SensorDataService {
+    rpc Provide (SensorData) returns (SensorReply) {}
+}
+
+message SensorData {
+    string payload = 1;
+}
+
+message SensorReply {
+    string message = 1;
+}

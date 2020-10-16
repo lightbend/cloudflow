@@ -1,33 +1,72 @@
-## Spark-based Cloudflow Application
+## Spark-based Cloudflow Application using Avro encoding
 
 ### Problem Definition
 
 In this application we use a an ingress to generate random data from a set of virtual sensors, use Spark to emit moving average values for each sensor id and the report the values to the console egress.
+All Avro message definitions can be found [here](src/main/avro).
+Avro encoding is enabled through usage of `AvroInlet` and `AvroOutlet`and usage of the `cloudflow.spark.sql.SQLImplicits._` import.
 
-### Example Deployment on GKE
+### Running locally
 
 Steps:
 
-* Make sure you have installed a gke cluster and you are running Cloudflow (check https://github.com/lightbend/cloudflow/tree/master/installer for more). Make sure you have access to your cluster:
+* Start local execution:
 
 ```bash
-$ gcloud container clusters get-credentials <CLUSTER_NAME>
+$ sbt runLocal
 ```
 
-and that you have access to the Google docker registry:
+At the very end you should see locations of log files for components
+
+* Tail the log
 
 ```bash
-$ gcloud auth configure-docker
+$ tail -f <log location>
 ```
 
-* Add the Google docker registry to your sbt project (should be adjusted to your setup). Eg.
 
-```
-ThisBuild / cloudflowDockerRegistry := Some("eu.gcr.io")
-ThisBuild / cloudflowDockerRepository := Some("my-awesome-project")
-```
+Verify that you can see application output:
 
-`my-awesome-project` refers to the project ID of your Google Cloud Platform project.
+````
+-------------------------------------------
+Batch: n
+-------------------------------------------
++------+-----+------------------+
+|   src|gauge|             value|
++------+-----+------------------+
+|src-97|  oil| 11.28699131177144|
+|src-33|  gas| 54.13269242596257|
+|src-33|  gas| 988.3230454723247|
+|src-97|  gas| 148.3055826758501|
+|src-97|  gas| 148.3055826758501|
+|src-33|  gas| 54.13269242596257|
+|src-97|  oil|  760.024470736732|
+|src-97|  oil|  760.024470736732|
+|src-33|  gas| 988.3230454723247|
+|src-97|  gas|1042.3404196321565|
+|src-97|  gas|1042.3404196321565|
+|src-33|  oil| 27.75132596682821|
+|src-33|  gas| 976.6856203943967|
+|src-97|  gas| 385.3532592940638|
+|src-33|  gas| 976.6856203943967|
+|src-33|  oil| 27.75132596682821|
+|src-97|  gas| 385.3532592940638|
+|src-33|  gas|1269.5736118755415|
+|src-97|  oil|188.75469481408513|
+|src-33|  gas|1269.5736118755415|
++------+-----+------------------+
+only showing top 20 rows
+
+````
+
+### Example Deployment on Cluster
+
+Steps:
+
+* Make sure you have installed a cluster and you are running Cloudflow (check [documentation](https://cloudflow.io/docs/current/administration/installing-cloudflow.html) for cluster install).
+Make sure you have access to your cluster:
+
+* Add your favorite docker registry to your sbt project 
 
 * Build the application.
 

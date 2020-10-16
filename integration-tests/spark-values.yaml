@@ -1,0 +1,32 @@
+rbac:
+  create: true
+serviceAccounts:
+  sparkoperator:
+    create: true
+    name: cloudflow-spark-operator
+  spark:
+    create: true
+    name: cloudflow-spark
+
+enableWebhook: true
+enableMetrics: true
+
+controllerThreads: 10
+installCrds: true
+metricsPort: 10254
+metricsEndpoint: "/metrics"
+metricsPrefix: ""
+resyncInterval: 30
+webhookPort: 8080
+sparkJobNamespace: ""
+operatorImageName: "lightbend/sparkoperator"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: cloudflow-webhook
+  labels:
+    app.kubernetes.io/name: sparkoperator
+spec:
+  selector:
+    app.kubernetes.io/name: sparkoperator

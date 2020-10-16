@@ -23,32 +23,16 @@ import skuber.Resource._
  * TODO it is possible that a lot of these settings will come from the client,
  * and in many cases, will be defined per streamlet.
  */
-case class DeploymentContext(kafkaContext: KafkaContext,
-                             akkaRunnerSettings: AkkaRunnerSettings,
+case class DeploymentContext(akkaRunnerSettings: AkkaRunnerSettings,
                              sparkRunnerSettings: SparkRunnerSettings,
                              flinkRunnerSettings: FlinkRunnerSettings,
                              persistentStorageSettings: PersistentStorageSettings,
                              podName: String,
                              podNamespace: String) {
-  import kafkaContext._
   def infoMessage = s"""
    | pod-name:                         ${podName}
    | pod-namespace                     ${podNamespace}
-   |
-   | kafka-bootstrap-servers:          ${bootstrapServers}
-   | strimzi-cluster-name:             ${strimziClusterName}
-   | strimzi-topic-operator-namespace: ${strimziTopicOperatorNamespace}
   """
-}
-
-case class KafkaContext(
-    bootstrapServers: String,
-    partitionsPerTopic: Int,
-    replicationFactor: Int,
-    strimziTopicOperatorNamespace: Option[String],
-    strimziClusterName: Option[String]
-) {
-  def useStrimzi = strimziTopicOperatorNamespace.nonEmpty && strimziClusterName.nonEmpty
 }
 
 final case class Host(name: String, port: Option[Int]) {
