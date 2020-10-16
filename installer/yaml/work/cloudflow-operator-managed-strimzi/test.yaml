@@ -1,0 +1,361 @@
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/release-version: 2.0.7
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-operator
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/release-version: 2.0.7
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-operator-bindings
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: cloudflow-operator
+  namespace: __namespace__
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/release-version: 2.0.7
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-operator
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloudflow-operator
+      com.lightbend.cloudflow/instance-id: __instanceId__
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations: null
+      labels:
+        app.kubernetes.io/managed-by: helm
+        app.kubernetes.io/name: cloudflow-operator
+        app.kubernetes.io/part-of: cloudflow
+        app.kubernetes.io/version: __cloudflowOperator.imageTag__
+        cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+        cloudflow.lightbend.com/release-version: 2.0.7
+        com.lightbend.cloudflow/instance-id: __instanceId__
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: JAVA_OPTS
+          value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: cloudflow-kafka-bootstrap.__namespace__:9092
+        - name: KAFKA_STRIMZI_CLUSTER_NAME
+          value: cloudflow
+        - name: KAFKA_STRIMZI_TOPIC_OPERATOR_NAMESPACE
+          value: __namespace__
+        - name: AKKA_RUNNER_REQUESTS_MEMORY
+          value: 128M
+        - name: AKKA_RUNNER_REQUESTS_CPU
+          value: "0.5"
+        - name: AKKA_RUNNER_LIMITS_MEMORY
+          value: 2048M
+        - name: SPARK_EXECUTOR_REQUESTS_MEMORY
+          value: 2G
+        - name: SPARK_EXECUTOR_REQUESTS_CPU
+          value: "1"
+        - name: SPARK_DRIVER_REQUESTS_MEMORY
+          value: 1024M
+        - name: SPARK_DRIVER_REQUESTS_CPU
+          value: "0.5"
+        - name: PERSISTENT_STORAGE_CLASS
+          value: __cloudflowOperator.persistentStorageClass__
+        - name: RELEASE_VERSION
+          value: 2.0.7
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: __cloudflowOperator.imageName__:__cloudflowOperator.imageTag__
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /checks/healthy
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: cloudflow-operator
+        ports:
+        - containerPort: 5001
+          name: http
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /checks/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 1
+            memory: 1024M
+          requests:
+            cpu: 100m
+            memory: 512M
+      serviceAccountName: cloudflow-operator
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/build-number: __cloudflowOperator.imageTag__
+    cloudflow.lightbend.com/release-version: 2.0.7
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+spec:
+  cruiseControl:
+    image: __kafka.imageName__:__kafka.imageTag__
+    tlsSidecar:
+      image: __kafka.imageName__:__kafka.imageTag__
+  entityOperator:
+    tlsSidecar:
+      image: __kafka.imageName__:__kafka.imageTag__
+    topicOperator:
+      image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+      resources: {}
+    userOperator:
+      image: __strimziOperator.imageName__:__strimziOperator.imageTag__
+  jmxTrans:
+    image: __kafka.imageName__:__kafka.imageTag__
+  kafka:
+    config:
+      auto.create.topics.enable: false
+      log.message.format.version: "2.3"
+      log.retention.bytes: 112197632
+      log.retention.hours: -1
+      offsets.topic.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      transaction.state.log.replication.factor: 3
+    image: __kafka.imageName__:__kafka.imageTag__
+    listeners:
+      plain: {}
+      tls: {}
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    metrics:
+      lowercaseOutputName: true
+      rules:
+      - labels:
+          clientId: $3
+          partition: $5
+          topic: $4
+        name: kafka_server_$1_$2
+        pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        type: GAUGE
+      - labels:
+          broker: $4:$5
+          clientId: $3
+        name: kafka_server_$1_$2
+        pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+),
+          brokerPort=(.+)><>Value
+        type: GAUGE
+      - name: kafka_$1_$2_$3_percent
+        pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+        type: GAUGE
+      - name: kafka_$1_$2_$3_percent
+        pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>Value
+        type: GAUGE
+      - labels:
+          $4: $5
+        name: kafka_$1_$2_$3_percent
+        pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+        type: GAUGE
+      - labels:
+          $4: $5
+          $6: $7
+        name: kafka_$1_$2_$3_total
+        pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+        type: COUNTER
+      - labels:
+          $4: $5
+        name: kafka_$1_$2_$3_total
+        pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+        type: COUNTER
+      - name: kafka_$1_$2_$3_total
+        pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+        type: COUNTER
+      - labels:
+          $4: $5
+          $6: $7
+        name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+        type: GAUGE
+      - labels:
+          $4: $5
+        name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+        type: GAUGE
+      - name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+        type: GAUGE
+      - labels:
+          $4: $5
+          $6: $7
+        name: kafka_$1_$2_$3_count
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+        type: COUNTER
+      - labels:
+          $4: $5
+          $6: $7
+          quantile: 0.$8
+        name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+        type: GAUGE
+      - labels:
+          $4: $5
+        name: kafka_$1_$2_$3_count
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+        type: COUNTER
+      - labels:
+          $4: $5
+          quantile: 0.$6
+        name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+        type: GAUGE
+      - name: kafka_$1_$2_$3_count
+        pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+        type: COUNTER
+      - labels:
+          quantile: 0.$4
+        name: kafka_$1_$2_$3
+        pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+        type: GAUGE
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    replicas: 3
+    resources:
+      limits:
+        memory: 9Gi
+      requests:
+        cpu: 500m
+        memory: 2G
+    storage:
+      class: __kafkaClusterCr.kafkaPersistentStorageClass__
+      deleteClaim: false
+      size: 100Gi
+      type: persistent-claim
+    tlsSidecar:
+      image: __kafka.imageName__:__kafka.imageTag__
+    version: 2.4.0
+  zookeeper:
+    image: __kafka.imageName__:__kafka.imageTag__
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    metrics:
+      lowercaseOutputName: true
+      rules:
+      - name: zookeeper_$2
+        pattern: org.apache.ZooKeeperService<name0=ReplicatedServer_id(\d+)><>(\w+)
+      - labels:
+          replicaId: $2
+        name: zookeeper_$3
+        pattern: org.apache.ZooKeeperService<name0=ReplicatedServer_id(\d+), name1=replica.(\d+)><>(\w+)
+      - labels:
+          memberType: $3
+          replicaId: $2
+        name: zookeeper_$4
+        pattern: org.apache.ZooKeeperService<name0=ReplicatedServer_id(\d+), name1=replica.(\d+),
+          name2=(\w+)><>(\w+)
+      - labels:
+          memberType: $3
+          replicaId: $2
+        name: zookeeper_$4_$5
+        pattern: org.apache.ZooKeeperService<name0=ReplicatedServer_id(\d+), name1=replica.(\d+),
+          name2=(\w+), name3=(\w+)><>(\w+)
+      - name: zookeeper_$2
+        pattern: org.apache.ZooKeeperService<name0=StandaloneServer_port(\d+)><>(\w+)
+      - name: zookeeper_$2_$3
+        pattern: org.apache.ZooKeeperService<name0=StandaloneServer_port(\d+), name1=(InMemoryDataTree)><>(\w+)
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    replicas: 3
+    resources:
+      limits:
+        memory: 3Gi
+      requests:
+        cpu: 500m
+        memory: 2G
+    storage:
+      class: __kafkaClusterCr.zookeeperPersistentStorageClass__
+      deleteClaim: false
+      size: 10Gi
+      type: persistent-claim
+    tlsSidecar:
+      image: __kafka.imageName__:__kafka.imageTag__

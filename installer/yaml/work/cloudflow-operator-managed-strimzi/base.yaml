@@ -1,0 +1,426 @@
+---
+# Source: cloudflow-environment/templates/serviceaccount.yaml
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: cloudflow-operator
+  labels:     
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name:  cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: cloudflowOperatorImageTagPH
+    cloudflow.lightbend.com/release-version: 2.0.7
+    cloudflow.lightbend.com/build-number: cloudflowOperatorImageTagPH
+automountServiceAccountToken: true
+---
+# Source: cloudflow-environment/templates/clusterrolebinding.yaml
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# This gives the service account that runs all core Cloudflow
+# services the cluster role "admin", which might be slightly
+# too wide-ranging but certainly not as wide as "cluster-admin"
+#
+# At a later time we might want to declare a custom ClusterRole
+# with slightly less permissions than the "admin" role but at
+# this time it is unclear which permissions we could remove
+# without causing problems for the functionality we foresee
+# in the core services.
+#
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cloudflow-operator-bindings
+  labels:     
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name:  cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: cloudflowOperatorImageTagPH
+    cloudflow.lightbend.com/release-version: 2.0.7
+    cloudflow.lightbend.com/build-number: cloudflowOperatorImageTagPH
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name:  cloudflow-operator
+  namespace: namespacePH
+---
+# Source: cloudflow-environment/templates/deployment.yaml
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cloudflow-operator
+  labels:     
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name:  cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: cloudflowOperatorImageTagPH
+    cloudflow.lightbend.com/release-version: 2.0.7
+    cloudflow.lightbend.com/build-number: cloudflowOperatorImageTagPH
+spec:
+  replicas: 1 # TODO: add a pod autoscaler to manage this deployment
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloudflow-operator
+  template:
+    metadata:
+      annotations:
+      labels:         
+        app.kubernetes.io/managed-by: helm
+        app.kubernetes.io/name:  cloudflow-operator
+        app.kubernetes.io/part-of: cloudflow
+        app.kubernetes.io/version: cloudflowOperatorImageTagPH
+        cloudflow.lightbend.com/release-version: 2.0.7
+        cloudflow.lightbend.com/build-number: cloudflowOperatorImageTagPH
+    spec:
+      serviceAccountName: cloudflow-operator
+      automountServiceAccountToken: true
+      containers:
+        - name: cloudflow-operator
+          image: "lightbend/cloudflow-operator:cloudflowOperatorImageTagPH"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+              name: http
+          # Set CPU/memory requests/limits
+          resources:
+            requests:
+              memory: 512M
+              cpu: 100m
+            limits:
+              memory: 1024M
+              cpu: 1
+          env:
+            # Configure the JVM to behave itself when run in a Docker container
+            - name: JAVA_OPTS
+              value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafkaBootstrapServersPH"
+            # Configure Strimzi details
+            - name: KAFKA_STRIMZI_CLUSTER_NAME
+              value: "cloudflow"
+            - name: KAFKA_STRIMZI_TOPIC_OPERATOR_NAMESPACE
+              value: "strimziTopicOperatorNamespacePH"
+            # Configure runner resource request/limit defaults
+            - name: AKKA_RUNNER_REQUESTS_MEMORY
+              value: "128M"
+            - name: AKKA_RUNNER_REQUESTS_CPU
+              value: "0.5"
+            - name: AKKA_RUNNER_LIMITS_MEMORY
+              value: "2048M"
+            - name: SPARK_EXECUTOR_REQUESTS_MEMORY
+              value: "2G"
+            - name: SPARK_EXECUTOR_REQUESTS_CPU
+              value: "1"
+            - name: SPARK_DRIVER_REQUESTS_MEMORY
+              value: "1024M"
+            - name: SPARK_DRIVER_REQUESTS_CPU
+              value: "0.5"
+            # Misc values
+            - name: PERSISTENT_STORAGE_CLASS
+              value: "cloudflowRWMStorageClassPH"
+            - name: RELEASE_VERSION
+              value: "2.0.7"
+            # Expose pod meta information to operator
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          readinessProbe:
+            httpGet:
+              path: /checks/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /checks/healthy
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+---
+# Source: cloudflow-environment/templates/strimzi-standalone-topic-operator.yaml
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: cloudflow-environment/templates/strimzi-kafka-cluster.yaml
+# Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: cloudflow
+  namespace: strimziClusterOperatorNamespacePH
+  labels:     
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name:  cloudflow-operator
+    app.kubernetes.io/part-of: cloudflow
+    app.kubernetes.io/version: cloudflowOperatorImageTagPH
+    cloudflow.lightbend.com/release-version: 2.0.7
+    cloudflow.lightbend.com/build-number: cloudflowOperatorImageTagPH
+spec:
+  kafka:
+    version: 2.4.0
+    replicas: 3
+    listeners:
+      plain: {}
+      tls: {}
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    config:
+      auto.create.topics.enable: false
+      log.message.format.version: "2.3"
+      log.retention.bytes: 112197632
+      log.retention.hours: -1
+      offsets.topic.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      transaction.state.log.replication.factor: 3
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
+      
+      class: kafkaRWOStorageClassPH
+      
+    metrics:
+      # Inspired by config from Kafka 2.0.0 example rules:
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
+      lowercaseOutputName: true
+      rules:
+      # Special cases and very specific rules
+      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          topic: "$4"
+          partition: "$5"
+      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          broker: "$4:$5"
+      # Some percent metrics use MeanRate attribute
+      # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+      # Generic gauges for percents
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>Value
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      # Generic per-second counters with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+      # Generic gauges with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+      # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's.
+      # Note that these are missing the '_sum' metric!
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+          quantile: "0.$8"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          quantile: "0.$6"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          quantile: "0.$4"
+    resources:
+      limits:
+        memory: 9Gi
+      requests:
+        memory: 5Gi
+  zookeeper:
+    replicas: 3
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    storage:
+      type: persistent-claim
+      size: 10Gi
+      deleteClaim: false
+      
+      class: zookeeperRWOStorageClassPH
+      
+    metrics:
+      # Inspired by Zookeeper rules
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
+      lowercaseOutputName: true
+      rules:
+      # replicated Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
+        name: "zookeeper_$3"
+        labels:
+          replicaId: "$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
+        name: "zookeeper_$4"
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
+        name: "zookeeper_$4_$5"
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
+      # standalone Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
+        name: "zookeeper_$2_$3"
+    resources:
+      limits:
+        memory: 3Gi
+      requests:
+        memory: 1Gi
+  entityOperator:
+    topicOperator:
+      resources:
+        {}

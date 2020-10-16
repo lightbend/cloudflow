@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-patch-spark-mutatingwebhookconfig
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+spec:
+  template:
+    metadata:
+      labels:
+        com.lightbend.cloudflow/instance-id: __instanceId__
+    spec:
+      containers:
+      - command:
+        - /bin/ash
+        - -c
+        - "apk update && apk add wget\nwget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl
+          && chmod 755 /bin/kubectl\nNAME=\"cloudflow-sparkoperator\"\nAPI_VERSION=$(kubectl
+          get deployment -n __namespace__ $NAME -o jsonpath='{.apiVersion}')\nUUID=$(kubectl
+          get deployment -n __namespace__ $NAME -o jsonpath='{.metadata.uid}')\nKIND=$(kubectl
+          get deployment -n __namespace__ $NAME -o jsonpath='{.kind}')\nHOOK_NAME=\"cloudflow-sparkoperator-webhook-config\"\nJSON=$(cat
+          <<EOF\n{ \n  \"metadata\": { \n    \"ownerReferences\": [ \n      { \n        \"apiVersion\":
+          \"$API_VERSION\", \n        \"blockOwnerDeletion\": true, \n        \"controller\":
+          true, \n        \"kind\": \"$KIND\", \n        \"name\": \"$NAME\",\n        \"uid\":
+          \"$UUID\" \n      } \n    ] \n  } \n}\nEOF\n)\necho $JSON\nkubectl patch
+          MutatingWebhookConfiguration $HOOK_NAME -n __namespace__ -p \"$JSON\"\n"
+        image: __webhookPatchJob.image__
+        name: main
+      restartPolicy: OnFailure
+      serviceAccountName: cloudflow-operator

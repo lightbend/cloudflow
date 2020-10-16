@@ -1,0 +1,681 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: flinkapplications.flink.k8s.io
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    description: The current state machine phase for this FlinkApplication
+    name: Phase
+    type: string
+  - JSONPath: .status.clusterStatus.health
+    description: The health of the Flink cluster
+    name: Cluster Health
+    type: string
+  - JSONPath: .status.jobStatus.health
+    description: The health of the Flink job
+    name: Job Health
+    type: string
+  - JSONPath: .status.clusterStatus.healthyTaskManagers
+    name: Healthy TMs
+    priority: 1
+    type: string
+  - JSONPath: .status.clusterStatus.numberOfTaskManagers
+    name: Total TMs
+    priority: 1
+    type: string
+  - JSONPath: .status.jobStatus.jobRestartCount
+    description: Number of times the job has restarted
+    name: Job Restarts
+    type: integer
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: flink.k8s.io
+  names:
+    kind: FlinkApplication
+    listKind: FlinkApplicationList
+    plural: flinkapplications
+    shortNames:
+    - flinkapp
+    singular: flinkapplication
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            allowNonRestoredState:
+              type: boolean
+            blobPort:
+              maximum: 65535
+              minimum: 1
+              type: integer
+            deleteMode:
+              enum:
+              - Savepoint
+              - None
+              - ForceCancel
+              type: string
+            deploymentMode:
+              enum:
+              - Dual
+              type: string
+            entryClass:
+              type: string
+            flinkConfig:
+              properties:
+                additionalProperties:
+                  type: string
+              type: object
+            flinkVersion:
+              type: string
+            image:
+              type: string
+            imagePullPolicy:
+              enum:
+              - Always
+              - Never
+              - IfNotPresent
+              type: string
+            imagePullSecrets:
+              items:
+                properties:
+                  name:
+                    type: string
+                type: object
+              type: array
+            jarName:
+              type: string
+            jobManagerConfig:
+              properties:
+                envConfig:
+                  properties:
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                - fieldPath
+                                type: object
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor: {}
+                                  resource:
+                                    type: string
+                                required:
+                                - resource
+                                type: object
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                            type: object
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    envFrom:
+                      items:
+                        properties:
+                          configMapRef:
+                            properties:
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            type: object
+                          prefix:
+                            type: string
+                          secretRef:
+                            properties:
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            type: object
+                        type: object
+                      type: array
+                  type: object
+                nodeSelector:
+                  properties:
+                    additionalProperties:
+                      type: string
+                  type: object
+                offHeapMemoryFraction:
+                  maximum: 1
+                  minimum: 0
+                  type: number
+                replicas:
+                  minimum: 1
+                  type: integer
+                resources:
+                  properties:
+                    limits:
+                      properties:
+                        cpu:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        ephemeral-storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        memory:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                      type: object
+                    requests:
+                      properties:
+                        cpu:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        ephemeral-storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        memory:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                      type: object
+                  type: object
+              type: object
+            maxCheckpointRestoreAgeSeconds:
+              minimum: 1
+              type: integer
+            metricsQueryPort:
+              maximum: 65535
+              minimum: 1
+              type: integer
+            parallelism:
+              minimum: 1
+              type: integer
+            programArgs:
+              type: string
+            queryPort:
+              maximum: 65535
+              minimum: 1
+              type: integer
+            restartNonce:
+              type: string
+            rpcPort:
+              maximum: 65535
+              minimum: 1
+              type: integer
+            savepointInfo:
+              properties:
+                savepointLocation:
+                  type: string
+              type: object
+            savepointPath:
+              type: string
+            serviceAccountName:
+              type: string
+            taskManagerConfig:
+              properties:
+                envConfig:
+                  properties:
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                - fieldPath
+                                type: object
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor: {}
+                                  resource:
+                                    type: string
+                                required:
+                                - resource
+                                type: object
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                            type: object
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    envFrom:
+                      items:
+                        properties:
+                          configMapRef:
+                            properties:
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            type: object
+                          prefix:
+                            type: string
+                          secretRef:
+                            properties:
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            type: object
+                        type: object
+                      type: array
+                  type: object
+                nodeSelector:
+                  properties:
+                    additionalProperties:
+                      type: string
+                  type: object
+                offHeapMemoryFraction:
+                  maximum: 1
+                  minimum: 0
+                  type: number
+                resources:
+                  properties:
+                    limits:
+                      properties:
+                        cpu:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        ephemeral-storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        memory:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                      type: object
+                    requests:
+                      properties:
+                        cpu:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        ephemeral-storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        memory:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                        storage:
+                          pattern: ^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          type: string
+                      type: object
+                  type: object
+                taskSlots:
+                  minimum: 1
+                  type: integer
+              type: object
+            volumeMounts:
+              items:
+                properties:
+                  mountPath:
+                    type: string
+                  mountPropagation:
+                    type: string
+                  name:
+                    type: string
+                  readOnly:
+                    type: boolean
+                  subPath:
+                    type: string
+                  subPathExpr:
+                    type: string
+                required:
+                - name
+                - mountPath
+                type: object
+              type: array
+            volumes:
+              items:
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
+          required:
+          - image
+          - jarName
+          - parallelism
+          - entryClass
+          type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: cloudflow
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: flink-operator
+    com.lightbend.cloudflow/instance-id: __instanceId__
+    helm.sh/chart: flink-operator-0.8.2
+  name: cloudflow-flink-operator
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: cloudflow
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: flink-operator
+    com.lightbend.cloudflow/instance-id: __instanceId__
+    helm.sh/chart: flink-operator-0.8.2
+  name: flink-role
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-flink-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - extensions
+  - apps
+  resources:
+  - deployments
+  - deployments/status
+  - ingresses
+  - ingresses/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - update
+  - patch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+- apiGroups:
+  - flink.k8s.io
+  resources:
+  - flinkapplications
+  - flinkapplications/status
+  - flinkapplications/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - ""
+  - route.openshift.io
+  resources:
+  - routes/custom-host
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: cloudflow
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: flink-operator
+    com.lightbend.cloudflow/instance-id: __instanceId__
+    helm.sh/chart: flink-operator-0.8.2
+  name: flink-role-binding
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: flink-role
+subjects:
+- kind: ServiceAccount
+  name: __flinkOperator.serviceAccount__
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: cloudflow-flink-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudflow-flink-operator
+subjects:
+- kind: ServiceAccount
+  name: cloudflow-flink-operator
+  namespace: __namespace__
+---
+apiVersion: v1
+data:
+  config: "operator:\n  limitNamespace: \n  resyncPeriod: 30s\n  metricsPrefix: flinkk8soperator\n
+    \ profilerPort: 10254\n  ingressUrlFormat: \n  useKubectlProxy: false\n  proxyPort:
+    8001\n  containerNameFormat: \n  workers: 4\n  baseBackoffDuration: 100ms\n  maxBackoffDuration:
+    30s\n  maxErrDuration: 5m\nlogger:\n  level: 4"
+kind: ConfigMap
+metadata:
+  labels:
+    com.lightbend.cloudflow/instance-id: __instanceId__
+  name: flink-operator-config
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: cloudflow
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: flink-operator
+    com.lightbend.cloudflow/instance-id: __instanceId__
+    helm.sh/chart: flink-operator-0.8.2
+  name: cloudflow-flink-operator
+  namespace: __namespace__
+  ownerReferences:
+  - apiVersion: cloudflow-installer.lightbend.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cloudflow
+    name: __instanceId__
+    uid: __instanceUid__
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: flink-operator
+      app.kubernetes.io/version: v0.4.0
+      com.lightbend.cloudflow/instance-id: __instanceId__
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flink-operator
+        app.kubernetes.io/version: v0.4.0
+        com.lightbend.cloudflow/instance-id: __instanceId__
+    spec:
+      containers:
+      - args:
+        - --logtostderr
+        - --config
+        - /etc/flinkoperator/config*/config.yaml
+        command:
+        - flinkoperator
+        env:
+        - name: OPERATOR_NAME
+          value: flinkk8soperator
+        image: __flinkOperator.imageName__:__flinkOperator.imageTag__
+        imagePullPolicy: IfNotPresent
+        name: flinkoperator-gojson
+        ports:
+        - containerPort: 10254
+        resources:
+          limits:
+            cpu: "2"
+            memory: 1G
+          requests:
+            cpu: 500m
+            memory: 1G
+        volumeMounts:
+        - mountPath: /etc/flinkoperator/config
+          name: config-volume
+      serviceAccountName: cloudflow-flink-operator
+      volumes:
+      - configMap:
+          items:
+          - key: config
+            path: config.yaml
+          name: flink-operator-config
+        name: config-volume
