@@ -120,7 +120,7 @@ object CloudflowBasePlugin extends AutoPlugin {
             log.warn("""You haven't specified the "cloudflowDockerRegistry" in your build.sbt""")
             log.warn("""To have a working deployment you should make the produced docker image available """)
             log.warn("""in a docker registry accessible from your cluster nodes""")
-            log.warn(s"""The Cloudflow application CR points to ${dockerImage}${imageVersion}""")
+            log.warn(s"""The Cloudflow application CR points to ${dockerImage}""")
 
             ImageNameAndDigest(returnImageName, imageDigest) -> streamletDescriptors
           } else
