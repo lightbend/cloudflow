@@ -32,7 +32,7 @@ build: clean html javascaladoc_staged print-site
 
 get-version:
 	# get latest tag
-	$(eval version=$(shell sh -c "git describe --abbrev=0 | sed 's/v//'"))
+	$(eval version=$(shell sh -c "git for-each-ref refs/tags --sort=-taggerdate --format='%(refname)' --count=1 | sed 's|refs/tags/v||'"))
 	# query bintray for the corresponding artifact version
 	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))
 
