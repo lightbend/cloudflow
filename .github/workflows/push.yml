@@ -15,6 +15,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+        # from https://github.com/actions/checkout/blob/61b9e3751b92087fd0b06925ba6dd6314e06f089/src/ref-helper.ts#L6
+        ref: '+refs/tags/*:refs/tags/*'
         fetch-depth: 0
     - name: Build documentation
       run: |
