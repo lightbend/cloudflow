@@ -15,5 +15,7 @@ lazy val helloWorld =  (project in file("."))
 val checkCRFile = taskKey[Unit]("Testing the CR file")
 checkCRFile := {
   val data = ujson.read(file("target/hello-world.json"))
+  val image = data("spec")("deployments")(0)("image").str
+
   assert { image == "localhost:5000/hello-world:0.0.1"}
 }
