@@ -33,7 +33,7 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 * link:./docs/current/app-development-process.html[The Cloudflow development process]
 * link:./docs/current/get-started/index.html[Getting started with Cloudflow]
 * link:./docs/current/develop/cloudflow-streamlets.html[Developing applications with Cloudflow]
-* https://github.com/lightbend/cloudflow/blob/master/installer/README.md[Setup Cloudflow on a Kubernetes Cluster]
+* https://cloudflow.io/docs/current/administration/index.html[Setup Cloudflow on a Kubernetes Cluster]
 * Chat with us on https://gitter.im/lightbend/cloudflow[Gitter]
 * Ask us a question on https://discuss.lightbend.com/c/cloudflow[Discuss]
 * Want to https://github.com/lightbend/cloudflow/blob/master/CONTRIBUTING.md[contribute]?
