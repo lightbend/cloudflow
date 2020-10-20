@@ -50,7 +50,7 @@ wrk -c 400 -t 400 -d 500 -s wrk-04-moderate-breeze.lua <http-ingress-url>
 
 ### Example Deployment on Kubernetes
 
-* Make sure you have installed a Kubernetes cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
+* Make sure you have installed a Kubernetes cluster with Cloudflow running.
 
 * Verify GKE cluster and Google docker registry 
 

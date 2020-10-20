@@ -35,15 +35,8 @@ helm install cloudflow ./cloudflow --namespace cloudflow \
 --set cloudflow_operator.logLevelRoot=DEBUG
 ```
 
-Update the operator image settings in [shared.sh](../installer/deprecated-installer/common/shared.sh) if using the deprecated installer (Cloudflow 1.3.3 and earlier):
-
-```
-export operatorImageName="<gcp_hostname>/<project_id>/cloudflow-operator"
-export operatorImageTag="<docker-image-tag>"
-```
-
 **note**: don't forget to replace `<gcp_hostname>`, `<project_id>` and `<docker-image-tag>` by your specific values. 
-7. Follow the GKE installer [instructions](../installer/README.md) to setup Cloudflow on GKE with the modified `cloudflow-operator` image.
+7. Follow the GKE installation [instructions](../cluster_scripts/README.md) to setup Cloudflow on GKE with the modified `cloudflow-operator` image.
 
 ## Publishing a development build
 

@@ -12,7 +12,7 @@ You need the command line tool for the cloud environment of your choosing:
 
 ### Utilities
 * [jq](https://stedolan.github.io/jq/)
-* [Helm](https://helm.sh/) *note: Cloudflow installer is currently compatible with both v2 and v3*
+* [Helm](https://helm.sh/)
 
 ## Starting a cluster
 
@@ -55,4 +55,3 @@ Notes
   Same is true for AKS, you are free to create a cluster customized to your needs by either changing the values in `create-cluster-aks.sh`, using the [Azure Cloud Shell]([https://shell.azure.com](https://shell.azure.com/)), or the Azure CLI.
 
 - The `cloudflow` namespace
-The installer creates a namespace called `cloudflow` where all supporting components are installed. This restriction will be removed in the future.

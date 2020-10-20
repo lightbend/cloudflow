@@ -18,7 +18,7 @@ The [buildLightbendSpark.sh](multi-base-images/spark/buildLightbendSpark.sh) scr
 
 1. Creates an appropriate Spark distribution. 
 2. Builds and pushes a Spark image to be used as a Cloudflow application base image
-3. Builds and pushes a Spark Operator image to be used by the Cloudflow installer.
+3. Builds and pushes a Spark Operator image.
 
 #### Strimzi
 

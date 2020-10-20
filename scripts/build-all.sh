@@ -37,14 +37,7 @@ RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
 
 echo "Core streamlet libraries built, tested and published to local"
-echo "Now starting build of installer"
 
-cd ../installer
-sbt --supershell=false "; scalafmtCheck ; clean ; test"
-RETVAL=$?
-[ $RETVAL -ne 0 ] && echo "Failure in building of installer" && exit -1
-
-echo "Installer built and tested, docker image built"
 echo "Now starting building of examples..."
 
 # Following section has been commented - will uncomment when we have a way

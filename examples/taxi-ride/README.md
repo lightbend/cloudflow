@@ -107,7 +107,7 @@ $ ./send-data-fares.sh -p 3001
 
 **Steps:**
 
-* Make sure you have installed a GKE cluster with Cloudflow running as per the [installation guide](https://github.com/lightbend/cloudflow/blob/master/installer/README.md).
+* Make sure you have installed a GKE cluster with Cloudflow running.
 Make sure you have access to your cluster:
 
 ```bash
