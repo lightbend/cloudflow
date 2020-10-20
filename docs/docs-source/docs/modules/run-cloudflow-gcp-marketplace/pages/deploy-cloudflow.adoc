@@ -28,10 +28,6 @@ Some of them have a tooltip next to them that explains the purpose of that confi
 * Namespace:
 The namespace where Cloudflow will be installed
 * App instance name: The name of the Cloudflow installation.
-The Cloudflow installer will create a custom resource of this name that is of kind `cloudflows.cloudflow-installer.lightbend.com` (or `cloudflow` for short), a CustomResourceDefinition defined by the installer.
-The instantiation of this custom resource will then trigger the installation of other Cloudflow components.
-* `initImage` and `installerImage`
-These are images needed to initialize and launch the installer. Make sure their tags match your desired Cloudflow version.
 
 When you've verified all configuration values, click "Deploy" to deploy Cloudflow.
 

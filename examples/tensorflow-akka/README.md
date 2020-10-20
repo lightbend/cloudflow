@@ -39,7 +39,7 @@ The WineRecordGenerator Streamlet generates wine records. Creating a streamlet t
 
 ### Example Deployment on GKE
 
-* Make sure you have created a GKE cluster and installed Cloudflow as per the [installation guide](https://github.com/lightbend/cloudflow-installer).
+* Make sure you have created a GKE cluster and installed.
 Verify access to your cluster:
 
 ```bash

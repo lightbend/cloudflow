@@ -3,7 +3,6 @@
 :cloudflow-version: 2.1.0-SNAPSHOT
 :cloudflow-examples-version: 2.1.0-SNAPSHOT
 
-:installer-image-tag:          INSTALLER_IMAGE_TAG
 :kubernetes-platform-name:     Kubernetes
 :kubernetes-platform-version:  1.12
 :kubectl-plugin-version:       KUBECTL_PLUGIN_VERSION
