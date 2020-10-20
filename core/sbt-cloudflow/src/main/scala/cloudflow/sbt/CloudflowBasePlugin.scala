@@ -24,6 +24,7 @@ import com.typesafe.sbt.packager.archetypes._
 import scala.util.control._
 
 import cloudflow.sbt.CloudflowKeys._
+import cloudflow.blueprint.StreamletDescriptor
 
 /**
  * Base class for all Cloudflow runtime plugins for multi-image use case. Contains some
@@ -49,8 +50,6 @@ object CloudflowBasePlugin extends AutoPlugin {
 
   override def requires =
     StreamletDescriptorsPlugin && JavaAppPackaging && sbtdocker.DockerPlugin
-
-  import ImageNameExtensions._
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
@@ -92,10 +91,10 @@ object CloudflowBasePlugin extends AutoPlugin {
                   """.stripMargin)
         }.value,
     buildAndPublishImage := Def.taskDyn {
-          def buildAndPublishLog(log: sbt.internal.util.ManagedLogger)(imageName: ImageName, imageDigest: ImageDigest) = {
+          def buildAndPublishLog(log: sbt.internal.util.ManagedLogger)(imageRef: ImageRef) = {
             log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
             log.info("Successfully built and published the following image:")
-            log.info(imageName.referenceWithDigest(imageDigest))
+            log.info(imageRef.fullReference)
           }
 
           if (cloudflowDockerRegistry.value.isEmpty) Def.task {
@@ -103,18 +102,11 @@ object CloudflowBasePlugin extends AutoPlugin {
 
             val _           = docker.value
             val dockerImage = verifyDockerImage.value
-            val returnImageName = ImageName(
-              registry = dockerImage.registry,
-              namespace = dockerImage.namespace,
-              repository = dockerImage.repository,
-              tag = dockerImage.tag
-            )
 
-            val log          = streams.value.log
-            val imageVersion = (ThisProject / version).value
-            val imageDigest  = ImageDigest("", imageVersion, includeAlgorithm = false)
+            val log      = streams.value.log
+            val imageRef = BasicImageRef(dockerImage)
 
-            buildAndPublishLog(log)(returnImageName, imageDigest)
+            buildAndPublishLog(log)(imageRef)
 
             log.warn("""*** WARNING ***""")
             log.warn("""You haven't specified the "cloudflowDockerRegistry" in your build.sbt""")
@@ -122,7 +114,7 @@ object CloudflowBasePlugin extends AutoPlugin {
             log.warn("""in a docker registry accessible from your cluster nodes""")
             log.warn(s"""The Cloudflow application CR points to ${dockerImage}""")
 
-            ImageNameAndDigest(returnImageName, imageDigest) -> streamletDescriptors
+            (imageRef -> streamletDescriptors): (ImageRef, Map[String, StreamletDescriptor])
           } else
             Def.task {
               val streamletDescriptors = streamletDescriptorsInProject.value
@@ -132,9 +124,10 @@ object CloudflowBasePlugin extends AutoPlugin {
                 }
               if (imageNameToDigest.size > 1) throw TooManyImagesBuilt
               val (imageName, imageDigest) = imageNameToDigest.head
+              val imageRef                 = ShaImageRef(imageName, imageDigest)
 
-              buildAndPublishLog(streams.value.log)(imageName, imageDigest)
-              ImageNameAndDigest(imageName, imageDigest) -> streamletDescriptors
+              buildAndPublishLog(streams.value.log)(imageRef)
+              (imageRef -> streamletDescriptors): (ImageRef, Map[String, StreamletDescriptor])
             }
         }.value,
     fork in Compile := true,
@@ -198,4 +191,17 @@ final case class ImageDigest(val algorithm: String, val digest: String, includeA
       digest
     }
 }
-final case class ImageNameAndDigest(imageName: ImageName, imageId: ImageDigest)
+sealed trait ImageRef {
+  val fullReference: String
+}
+final case class ShaImageRef(imageName: ImageName, imageId: ImageDigest) extends ImageRef {
+  val fullReference = {
+    val registryString  = imageName.registry.fold("")(_ + "/")
+    val namespaceString = imageName.namespace.fold("")(_ + "/")
+    val imageNameStr    = registryString + namespaceString + imageName.repository
+    s"$imageNameStr@$imageId"
+  }
+}
+final case class BasicImageRef(imageName: ImageName) extends ImageRef {
+  val fullReference = imageName.toString
+}

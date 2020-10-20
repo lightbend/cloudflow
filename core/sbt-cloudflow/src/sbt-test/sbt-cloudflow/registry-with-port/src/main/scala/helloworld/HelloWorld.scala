@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package helloworld
 
-package cloudflow.sbt
-import sbtdocker.ImageName
+import akka.stream.scaladsl._
+import cloudflow.akkastream._
+import cloudflow.akkastream.scaladsl._
+import cloudflow.streamlets._
 
-object ImageNameExtensions {
-  // Extension method for the format, keep it here until we need it elsewhere
-  implicit class ExtendedImageName(val imageName: ImageName) {
-    def referenceWithDigest(imageDigest: ImageDigest) =
-      s"${imageName.toString().split(":").head}@$imageDigest"
+class HelloWorldShape extends AkkaStreamlet {
+  val shape = StreamletShape.empty
+
+  def createLogic = new RunnableGraphStreamletLogic() {
+    def runnableGraph = 
+      Source
+        .single("Hello, world!")
+        .map(println)
+        .to(Sink.ignore)
   }
 }
+

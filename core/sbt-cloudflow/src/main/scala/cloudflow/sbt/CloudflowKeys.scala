@@ -70,8 +70,8 @@ trait CloudflowTaskKeys {
   val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
 
   private[sbt] val buildAndPublishImage =
-    taskKey[(ImageNameAndDigest, Map[String, StreamletDescriptor])]("Build and publish a project image.")
-  private[sbt] val allBuildAndPublish    = taskKey[Map[ImageNameAndDigest, Map[String, StreamletDescriptor]]]("Build and push all the images.")
+    taskKey[(ImageRef, Map[String, StreamletDescriptor])]("Build and publish a project image.")
+  private[sbt] val allBuildAndPublish    = taskKey[Map[ImageRef, Map[String, StreamletDescriptor]]]("Build and push all the images.")
   private[sbt] val cloudflowWorkDir      = taskKey[File]("The directory under /target used for internal bookkeeping.")
   private[sbt] val cloudflowStageAppJars = taskKey[Unit]("Stages the jars for the application.")
   private[sbt] val cloudflowStageScript  = taskKey[Unit]("Stages the launch script for the application.")

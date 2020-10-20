@@ -24,7 +24,7 @@ prepare-swiss-knife:
 .PHONY: prepare-itest-osx
 prepare-itest-osx:
 	@echo '****** Download and unpack kubectl-cloudflow plugin'
-	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}\") )'"))
+	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))
 	(wget https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-${bintray_version}-darwin-amd64.tar.gz -O kubectl_cloudflow.tar.gz && \
 		tar -zxf kubectl_cloudflow.tar.gz --directory itest && \
 		xattr -d com.apple.quarantine itest/kubectl-cloudflow | true)
