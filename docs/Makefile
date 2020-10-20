@@ -39,11 +39,17 @@ get-version:
 set-antora-versions: get-version
 	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
 	yq write ../examples/snippets/base-antora.yml version "${version}" > ../examples/snippets/antora.yml
+	yq write homepage-source/docs/base-antora.yml version "${version}" > homepage-source/docs/antora.yml
 
 	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.cloudflow-version' "${version}" > docs-source/author-mode-site.yml
 	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
 	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
 	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+
+	yq write docs-source/base-site.yml 'asciidoc.attributes.cloudflow-version' "${version}" > docs-source/site.yml
+	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
+	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
+	yq write -i docs-source/site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
 
 html: clean set-antora-versions
 	docker run \
