@@ -63,3 +63,10 @@ docs/docs-source/docs/modules/ROOT/examples/
 ##
 docs/view.sh
 docs/shared-content-source/docs/modules/develop/examples
+
+examples/snippets/antora.yml
+docs/homepage-source/docs/antora.yml
+docs/shared-content-source/docs/antora.yml
+
+docs/docs-source/author-mode-site.yml
+docs/docs-source/site.yml

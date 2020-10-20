@@ -52,24 +52,9 @@ Adding a version of the documentation for a new release requires three steps:
 
 As we saw in the previous section, the latest development is called `dev` in the documentation. 
 When we create a new release, we need to promote `dev` to `current`.
-We do that by creating a new `x.y.z-docs` branch from the released version and applying the following changes in that branch:
+We do that by creating a new `x.y.z-docs` branch from the released version and, after a new release has pushed it's tag run:
 
-Update the documentation modules with their corresponding version:
-
-* In `docs/docs-source/docs/antora.yml`, update `version: dev` to `version: current`
-* In `docs/shared-content-source/docs/antora.yml`, update `version: x.y.z-SNAPSHOT` to `version: x.y.z`
-* In `examples/snippets/antora.yml`, update  `version: x.y.z-SNAPSHOT` to `version: x.y.z`
-
-Change the internal version references to the new versions:
-
-* In `docs/docs-source/docs/modules/ROOT/partials/include.adoc` 
-** update `:cloudflow-version:` to the new  `x.y.z` version
-** update `:cloudflow-examples-version:` to the new `x.y.z` version
-
-* In `docs/shared-content-source/docs/modules/ROOT/partials/include.adoc` 
-** update `:cloudflow-version:` to the new  `x.y.z` version
-** update `:cloudflow-examples-version:` to the new `x.y.z` version
-** update `:cloudflow-branch-version:` to the exact tag of the released Cloudflow version (i.e vx.y.z)
+    make set-antora-versions
 
 Note that internally, we use the actual version number to name our _modules_, while only the external-facing `docs-source` is called `current` to comply with the Lightbend conventions.
 
