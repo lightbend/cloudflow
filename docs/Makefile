@@ -50,7 +50,7 @@ set-antora-versions: get-version
 	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
 	yq write -i docs-source/site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
 
-html: clean set-antora-versions
+html: clean
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		--privileged \
@@ -62,7 +62,7 @@ html: clean set-antora-versions
 		docs/docs-source/site.yml
 	@echo "Done"
 
-html-author-mode: clean set-antora-versions
+html-author-mode: clean
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${ROOT_DIR}:/antora \
