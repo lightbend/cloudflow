@@ -77,7 +77,8 @@ spawn-gke-cluster:
 delete-gke-cluster:
 	@echo '****** Deleting your GKE cluster'
 	(echo $(eval machine-id=$(shell sh -c "system_profiler SPHardwareDataType | grep 'Serial Number (system)' | sed 's/Serial Number (system): //' | sed 's/ *//g' | tr '[:upper:]' '[:lower:]'")) && \
-		gcloud container clusters delete "it-${machine-id}")
+		gcloud container clusters delete "it-${machine-id}" && \
+		gcloud compute disks list --format="table[no-heading](name)" --filter="name~^gke-it-${machine-id}" | xargs -n1 gcloud compute disks delete)
 
 .PHONY: run-it-tests
 run-it-tests:
