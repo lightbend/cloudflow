@@ -70,7 +70,7 @@ func (conf *Config) append(data string) {
 }
 
 func (conf *Config) isEmpty() bool {
-	return conf.builder.Len() == 0
+	return len(strings.TrimSpace(conf.builder.String())) == 0
 }
 
 func (conf *Config) String() string {
@@ -187,6 +187,10 @@ func replaceEnvVars(config *Config) *Config {
 }
 
 func validateConfig(config *Config, applicationSpec cfapp.CloudflowApplicationSpec) error {
+	if config.isEmpty() {
+		return nil
+	}
+
 	streamletsK8sConfigs, err := getStreamletsKubernetesConfig(config, applicationSpec)
 	if err != nil {
 		return err
