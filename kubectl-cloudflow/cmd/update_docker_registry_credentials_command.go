@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/dockerclient"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/image"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8sclient"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
@@ -203,14 +203,14 @@ func createOrUpdateImagePullSecret(k8sClient *kubernetes.Clientset, appID string
 		},
 	}
 
-	configEntry := dockerclient.ConfigEntry{
+	configEntry := image.ConfigEntry{
 		Username: username,
 		Password: password,
 		Auth:     base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
 
-	newConfigJSON := dockerclient.ConfigJSON{
-		Auths: map[string]dockerclient.ConfigEntry{
+	newConfigJSON := image.ConfigJSON{
+		Auths: map[string]image.ConfigEntry{
 			dockerRegistryURL: configEntry,
 		},
 	}
@@ -229,7 +229,7 @@ func createOrUpdateImagePullSecret(k8sClient *kubernetes.Clientset, appID string
 			printutil.LogAndExit("Failed to create image pull secret, %s", err.Error())
 		}
 	} else {
-		updateConfigJSON := dockerclient.ConfigJSON{}
+		updateConfigJSON := image.ConfigJSON{}
 
 		if err := json.Unmarshal(imagePullSecret.Data[".dockerconfigjson"], &updateConfigJSON); err != nil {
 			printutil.LogAndExit("Failed to read docker config json from image pull secret %s, %s", imagePullSecretName, err.Error())

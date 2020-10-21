@@ -11,11 +11,10 @@ import (
 
 	"encoding/json"
 
-	"github.com/docker/docker/client"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/config"
-	"github.com/lightbend/cloudflow/kubectl-cloudflow/dockerclient"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/image"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/k8sclient"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/printutil"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/scale"
@@ -40,7 +39,7 @@ type deployOptions struct {
 	configFiles             []string
 }
 
-// Label to identify Kafka cluster configuration secrets
+// KafkaClusterNameLabel identifies Kafka cluster configuration secrets
 const KafkaClusterNameLabel = "cloudflow.lightbend.com/kafka-cluster-name"
 
 func init() {
@@ -146,7 +145,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 
 	namespace := applicationSpec.AppID
 
-	k8sClient, client, appClient := getClientsOrExit(namespace)
+	k8sClient, appClient := getClientsOrExit(namespace)
 
 	// TODO future: only create namespace if flag is provided to auto-create namespace.
 	createNamespaceIfNotExist(k8sClient, applicationSpec)
@@ -166,7 +165,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogErrorAndExit(err)
 	}
 
-	imageReference := getImageReferenceForDeployment(client, applicationSpec)
+	imageReference := getImageReferenceForDeployment(applicationSpec)
 
 	// Extract volume mounts and update the application spec with the name of the PVC's
 	applicationSpec, err = volume.ValidateVolumeMounts(k8sClient, applicationSpec, opts.volumeMounts)
@@ -226,7 +225,7 @@ func verifyPasswordOptions(opts *deployOptions) error {
 	return nil
 }
 
-func getClientsOrExit(namespace string) (*kubernetes.Clientset, *client.Client, *cfapp.CloudflowApplicationClient) {
+func getClientsOrExit(namespace string) (*kubernetes.Clientset, *cfapp.CloudflowApplicationClient) {
 	cloudflowApplicationClient, err := cfapp.GetCloudflowApplicationClient(namespace)
 	if err != nil {
 		printutil.LogAndExit("Failed to create a new client for Cloudflow application `%s`, %s", namespace, err.Error())
@@ -237,47 +236,24 @@ func getClientsOrExit(namespace string) (*kubernetes.Clientset, *client.Client, 
 		printutil.LogAndExit("Failed to create a new kubernetes client for Cloudflow application `%s`, %s", namespace, k8sErr.Error())
 	}
 
-	client, err := dockerclient.GetClientForAPIVersionWithFallback()
-	if err != nil {
-		printutil.LogAndExit("Failed to create a new docker client (%s)", err.Error())
-	}
-	return k8sClient, client, cloudflowApplicationClient
+	return k8sClient, cloudflowApplicationClient
 }
 
-// getImageReferenceForDeployment returns the image referenc for the image in the deployment
-func getImageReferenceForDeployment(client *client.Client, applicationSpec cfapp.CloudflowApplicationSpec) *dockerclient.ImageReference {
+// getImageReferenceForDeployment returns the image reference for the image in the deployment
+func getImageReferenceForDeployment(applicationSpec cfapp.CloudflowApplicationSpec) *image.ImageReference {
 	// Get the first available image, all images must be present in the same repository.
-	image := applicationSpec.Deployments[0].Image
+	imageRef := applicationSpec.Deployments[0].Image
 
-	imageReference, err := dockerclient.ParseImageReference(image)
+	imageReference, err := image.ParseImageReference(imageRef)
 
 	if err != nil {
-		printutil.LogAndExit("Failed to parse the docker image reference '%s' while deploying the application,%s", image, err.Error())
+		printutil.LogAndExit("Failed to parse the docker image reference '%s' while deploying the application,%s", imageRef, err.Error())
 	}
 
 	return imageReference
 }
 
-// updateImageRefsWithDigests updates the imagesRefs to include the digest of the pulled images
-func updateImageRefsWithDigests(spec cfapp.CloudflowApplicationSpec, pulledImages map[string]*dockerclient.PulledImage, dockerRegistryURL string, dockerRepository string) cfapp.CloudflowApplicationSpec {
-
-	// replace tagged images with digest based names
-	for i := range spec.Deployments {
-		digest := pulledImages[spec.Deployments[i].Name].Digest
-
-		var imageRef string
-		if dockerRegistryURL == "" {
-			imageRef = dockerRepository + "/" + digest
-		} else {
-			imageRef = dockerRegistryURL + "/" + dockerRepository + "/" + digest
-		}
-
-		spec.Deployments[i].Image = imageRef
-	}
-	return spec
-}
-
-func handleAuth(k8sClient *kubernetes.Clientset, namespace string, opts *deployOptions, imageReference *dockerclient.ImageReference) {
+func handleAuth(k8sClient *kubernetes.Clientset, namespace string, opts *deployOptions, imageReference *image.ImageReference) {
 	dockerRegistryURL := imageReference.Registry
 	if err := verifyPasswordOptions(opts); err == nil {
 		if terminal.IsTerminal(int(os.Stdin.Fd())) && (opts.username == "" || opts.password == "") {
@@ -309,7 +285,7 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 	if serviceAccount, nserr := k8sClient.CoreV1().ServiceAccounts(namespace).Get(cloudflowAppServiceAccountName, metav1.GetOptions{}); nserr == nil {
 		for _, secret := range serviceAccount.ImagePullSecrets {
 			if secret, err := k8sClient.CoreV1().Secrets(namespace).Get(secret.Name, metav1.GetOptions{}); err == nil {
-				var config dockerclient.ConfigJSON
+				var config image.ConfigJSON
 				if err := json.Unmarshal(secret.Data[".dockerconfigjson"], &config); err == nil {
 					_, exists := config.Auths[dockerRegistryURL]
 					if exists == true {
@@ -317,7 +293,7 @@ func dockerConfigEntryExists(k8sClient *kubernetes.Clientset, namespace string, 
 					}
 				}
 
-				var dockerConfig dockerclient.Config
+				var dockerConfig image.Config
 				if err := json.Unmarshal(secret.Data[".dockercfg"], &dockerConfig); err == nil {
 					_,
 						exists := dockerConfig[dockerRegistryURL]

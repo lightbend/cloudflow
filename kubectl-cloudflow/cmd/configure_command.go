@@ -59,7 +59,7 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 	// TODO namespace is currently always the same as application ID, this will probably change in the future.
 	namespace := applicationName
 
-	k8sClient, _, appClient := getClientsOrExit(namespace)
+	k8sClient, appClient := getClientsOrExit(namespace)
 
 	appCR, err := appClient.Get(applicationName)
 	if err != nil {
