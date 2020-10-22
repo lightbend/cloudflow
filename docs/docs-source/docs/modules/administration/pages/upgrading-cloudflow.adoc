@@ -15,8 +15,12 @@ To upgrade Cloudflow in your cluster to the latest version run
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --reuse-values
+    --set cloudflow_operator.persistentStorageClass=nfs \
+    --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 ----
+
+NOTE: Version 2.0.11 introduces the named Kafka clusters feature, which changes how the Kafka bootstrapServers are configured.
+When migrating from 2.0.10 to 2.0.11 it is important to not use `--reuse-values` since it clears out values that did not exist in the previous version
 
 == Selecting a specific version
 
@@ -26,8 +30,8 @@ To upgrade Cloudflow to a specific version, add the _--version_ flag. For exampl
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --reuse-values \
-    --version="{cloudflow-version}"
+    --set cloudflow_operator.persistentStorageClass=nfs \
+    --version="{cloudflow-version}" \
     --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 ----
 
