@@ -8,7 +8,10 @@ include::ROOT:partial$include.adoc[]
 Now that we have the application code implemented, let's build the application and exercise its functionality locally without requiring deploying it in a cluster.
 
 == Run the Streamlets Locally
-The `sbt runLocal` command allows you to run your application on your local machine without a Kubernetes cluster. 
+The `sbt runLocal` command allows you to run your application on your local machine without a Kubernetes cluster.
+
+NOTE: If you are trying to run the examples contained in the upstream cloudflow repository remember to run
+`export CLOUDFLOW_VERSION={cloudflow-version}` before invoking `sbt`.
 
 . From the `sbt` shell, invoke `runLocal`:
 +

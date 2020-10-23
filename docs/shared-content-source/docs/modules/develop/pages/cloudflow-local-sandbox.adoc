@@ -20,6 +20,9 @@ It is automatically available when an application enables support for Akka, Spar
 
 The _Sandbox_ is accessible as an `sbt` task called `runLocal` in the root build of your Cloudflow application.
 
+NOTE: If you are trying to run the examples contained in the upstream cloudflow repository remember to run
+`export CLOUDFLOW_VERSION={cloudflow-version}` before invoking `sbt`.
+
 It can be called directly from the command line, as we show here:
 
 [source,bash]
