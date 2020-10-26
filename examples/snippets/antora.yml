@@ -2,3 +2,9 @@ name: "docsnippets"
 title: ""
 prerelease: Beta
 version: dev
+asciidoc:
+  attributes:
+    cloudflow-version: dev
+    cloudflow-examples-version: dev
+    cloudflow-branch-version: dev
+    kubectl-plugin-version: not-available
