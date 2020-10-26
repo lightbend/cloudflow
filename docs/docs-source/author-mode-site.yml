@@ -24,10 +24,6 @@ asciidoc:
     review: ''
     todo: ''
     doc-title: 'Cloudflow Guide'
-    cloudflow-version: dev
-    cloudflow-examples-version: dev
-    cloudflow-branch-version: v2.0.11
-    kubectl-plugin-version: 2.0.11.785-51544d5
 output:
   dir: ./../target/staging
   clean: true
