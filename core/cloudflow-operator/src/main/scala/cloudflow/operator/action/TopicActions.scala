@@ -196,7 +196,8 @@ object TopicActions {
                bootstrapServers: String,
                labels: CloudflowLabels): ConfigMap =
     ConfigMap(
-      metadata = ObjectMeta(name = s"topic-${topic.id}", labels = labels(topic.id), namespace = namespace),
+      metadata =
+        ObjectMeta(name = Name.makeDNS1123CompatibleSubDomainName(s"topic-${topic.id}"), labels = labels(topic.id), namespace = namespace),
       data = Map(
           "id"                -> topic.id,
           "name"              -> topic.name,

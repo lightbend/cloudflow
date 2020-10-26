@@ -38,8 +38,9 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   // appId + ingress name more than 63 characters. Each 40 characters.
   val testApp01 = {
     val appVersion = "001"
-    val appId      = "longappid9012345678900123456789001234567890"
-    val image      = "image-1"
+    val appId =
+      "longappid9012345678900123456789001234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+    val image = "image-1"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -112,47 +113,47 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   }
 
   "Volumes" should {
-    "have long names truncate to 63 characters when coming from AkkaRunner" in {
+    "have long names truncate to 253 characters when coming from AkkaRunner" in {
       val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.volumes.foreach { vol ⇒
-        assert(vol.name.length <= 63)
+        assert(vol.name.length <= 253)
       }
 
     }
   }
 
   "Volume mounts" should {
-    "have long names truncate to 63 characters when coming from AkkaRunner" in {
+    "have long names truncate to 253 characters when coming from AkkaRunner" in {
       val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
-        assert(mount.name.length <= 63)
+        assert(mount.name.length <= 253)
       }
 
     }
   }
 
   "ConfigMaps" should {
-    "have long names truncate to 63 characters when coming from AkkaRunner" in {
+    "have long names truncate to 253 characters when coming from AkkaRunner" in {
       val configMap = AkkaRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
-      configMap.metadata.name.length mustEqual 63
+      configMap.metadata.name.length must be <= 253
 
     }
 
-    "have long names truncate to 63 characters when coming from SparkRunner" in {
+    "have long names truncate to 253 characters when coming from SparkRunner" in {
       val configMap = SparkRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
-      configMap.metadata.name.length mustEqual 63
+      configMap.metadata.name.length must be <= 253
 
     }
   }
 
   "Custom resources" should {
-    "have long names truncate to 63 characters when coming from SparkRunner" in {
+    "have long names truncate to 253 characters when coming from SparkRunner" in {
       val deployment = SparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()), namespace)
-
+      // name of pod is dns 1039 and max 63
       deployment.metadata.name.length mustEqual 63
 
     }
@@ -211,19 +212,19 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "keep only relevant letters when DNS-1123 normalized" in {
       val orig     = "This-αêÍ_and that.and-some_àôô.more"
       val expected = "this-ei-andthat.and-some-aoo.more"
-      Name.makeDNS1123Compatible(orig) mustEqual expected
+      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' after removing illegal characters when DNS-1123 normalized" in {
       val orig     = "α.test.a-α"
       val expected = "test.a"
-      Name.makeDNS1123Compatible(orig) mustEqual expected
+      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' when DNS-1123 normalized, with truncate" in {
       val orig     = "-2345678901234567890123456789012345678901234567890123456789012.456"
       val expected = "2345678901234567890123456789012345678901234567890123456789012"
-      Name.makeDNS1123Compatible(orig) mustEqual expected
+      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
     }
   }
 
