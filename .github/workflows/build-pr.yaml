@@ -1,6 +1,5 @@
 name: Build PRs
 on:
-  # Trigger the workflow on push only for the master branch
   pull_request:
 jobs:
   build-all:
@@ -16,13 +15,8 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
-    - name: Cache SBT Coursier cache
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/coursier
-        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-coursier-cache-
+    - name: Cache SBT and Coursier cache
+      uses: coursier/cache-action@v3
     - name: Build documentation
       run: |
         sudo snap install yq

@@ -32,21 +32,8 @@ jobs:
       run: |
         make -C .github/workflows/setup setup-local-all
 
-    - name: Cache SBT Coursier cache
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/coursier
-        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-coursier-cache-
-
-    - name: Cache SBT
-      uses: actions/cache@v1
-      with:
-        path: ~/.sbt
-        key: ${{ runner.os }}-sbt-home-${{ hashFiles('**/build.sbt') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-home-
+    - name: Cache SBT and Coursier cache
+      uses: coursier/cache-action@v3
 
     - name: build-and-test
       env:
