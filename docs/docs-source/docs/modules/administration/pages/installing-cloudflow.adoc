@@ -11,6 +11,7 @@ It also shows how to install Kafka, Spark, and Flink operators that integrate wi
 == Installing Cloudflow
 
 In this guide, we will use Helm to install Cloudflow.
+Please see xref:get-started:prepare-development-environment.adoc#_download_and_install_the_cloudflow_cli[Preparing a development environment] for how to download and install the Cloudflow CLI. 
 
 The first step is to create the namespace, if it does not exist yet, to install Cloudflow into:
 
