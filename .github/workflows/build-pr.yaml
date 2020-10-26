@@ -1,9 +1,8 @@
 name: Build PRs
 on:
-  # Trigger the workflow on push only for the master branch
   pull_request:
 jobs:
-  build-all:
+  build-core:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -16,18 +15,8 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
-    - name: Cache SBT Coursier cache
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/coursier
-        key: ${{ runner.os }}-sbt-coursier-cache-${{ hashFiles('**/build.sbt') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-coursier-cache-
-    - name: Build documentation
-      run: |
-        sudo snap install yq
-        cd docs
-        make all
+    - name: Cache SBT and Coursier cache
+      uses: coursier/cache-action@v3
     - name: Run integration tests of the sbt plugin
       run: |
         git config --global user.email "cloudflow@lightbend.com"
