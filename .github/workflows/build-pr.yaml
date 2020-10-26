@@ -2,7 +2,7 @@ name: Build PRs
 on:
   pull_request:
 jobs:
-  build-core:
+  build-all:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -17,6 +17,11 @@ jobs:
         architecture: x64
     - name: Cache SBT and Coursier cache
       uses: coursier/cache-action@v3
+    - name: Build documentation
+      run: |
+        sudo snap install yq
+        cd docs
+        make all
     - name: Run integration tests of the sbt plugin
       run: |
         git config --global user.email "cloudflow@lightbend.com"
