@@ -59,19 +59,19 @@ set-antora-versions-to-dev: get-version
 	yq write shared-content-source/docs/base-antora.yml version "dev" > shared-content-source/docs/antora.yml
 	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
 	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "vdev"
+	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
 	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
 
 	yq write ../examples/snippets/base-antora.yml version "dev" > ../examples/snippets/antora.yml
 	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
 	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "vdev"
+	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
 	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
 
 	yq write docs-source/docs/base-antora.yml version "dev" > docs-source/docs/antora.yml
 	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
 	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "vdev"
+	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
 	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
 
 html: clean
