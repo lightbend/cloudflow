@@ -4,17 +4,14 @@ site:
 content:
   sources:
     - url: ./../../
+      start-paths:
+        - docs/docs-source/docs
+        - docs/shared-content-source/docs
+        - examples/snippets
       branches: [HEAD]
-      start-path: docs/docs-source/docs
     - url: ./../../
-      branches: [HEAD]
       start-path: docs/homepage-source/docs
-    - url: ./../../
       branches: [HEAD]
-      start-path: docs/shared-content-source/docs
-    - url: ./../../
-      branches: [HEAD]
-      start-path: examples/snippets
 ui:
   bundle:
     url: https://github.com/lightbend/antora-ui-lightbend-cloud-theme/raw/master/build/ui-bundle.zip

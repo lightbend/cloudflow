@@ -50,6 +50,20 @@ set-antora-versions: get-version
 	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
 	yq write -i docs-source/site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
 
+set-antora-versions-to-dev: get-version
+	yq write shared-content-source/docs/base-antora.yml version "dev" > shared-content-source/docs/antora.yml
+	yq write ../examples/snippets/base-antora.yml version "dev" > ../examples/snippets/antora.yml
+
+	yq write docs-source/base-author-mode-site.yml 'asciidoc.attributes.cloudflow-version' "dev" > docs-source/author-mode-site.yml
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
+	yq write -i docs-source/author-mode-site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+
+	yq write docs-source/base-site.yml 'asciidoc.attributes.cloudflow-version' "dev" > docs-source/site.yml
+	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
+	yq write -i docs-source/site.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
+	yq write -i docs-source/site.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+
 html: clean
 	docker run \
 		-u $(shell id -u):$(shell id -g) \
