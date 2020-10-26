@@ -10,6 +10,8 @@ https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROO
 Full sources for all Cloudflow example applications can be found in the
 https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
+To use the examples directly remember to run
+`export CLOUDFLOW_VERSION={cloudflow-version}` before invoking `sbt`.
 
 A typical Cloudflow application uses the organization shown below. 
 We will implement the example in Scala. 
