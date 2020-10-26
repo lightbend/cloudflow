@@ -173,7 +173,9 @@ object TopicActions {
               .flatMap { resourceCreatedAction =>
                 createTopic()
                   .recoverWith {
-                    case t => CloudflowApplication.Status.errorAction(newApp, t.getMessage).execute(client)
+                    case t =>
+                      log.error(s"Error creating topic: ${t.getMessage}", t)
+                      CloudflowApplication.Status.errorAction(newApp, t.getMessage).execute(client)
                   }
                   .map(_ => resourceCreatedAction)
               }
