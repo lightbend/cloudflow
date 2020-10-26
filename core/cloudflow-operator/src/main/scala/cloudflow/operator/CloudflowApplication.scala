@@ -22,6 +22,7 @@ import scala.collection.immutable._
 import scala.util.Try
 import com.typesafe.config._
 
+import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
@@ -129,6 +130,7 @@ object CloudflowApplication {
     val Pending          = "Pending"
     val CrashLoopBackOff = "CrashLoopBackOff"
     val Error            = "Error"
+    private val log      = LoggerFactory.getLogger(Status.getClass)
 
     def apply(
         spec: CloudflowApplication.Spec
@@ -142,13 +144,15 @@ object CloudflowApplication {
       )
     }
 
-    def errorAction(app: CloudflowApplication.CR, msg: String): Action[ObjectResource] =
+    def errorAction(app: CloudflowApplication.CR, msg: String): Action[ObjectResource] = {
+      log.info(s"Setting error status for app ${app.spec.appId}")
       Status(app.spec)
         .copy(
           appStatus = Some(CloudflowApplication.Status.Error),
           appMessage = Some(msg)
         )
         .toAction(app)
+    }
 
     def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
       // TODO not match on runtime, this is not great for extensibility.
@@ -189,7 +193,6 @@ object CloudflowApplication {
                     appMessage: Option[String] = None) {
     def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
     def updateApp(newApp: CloudflowApplication.CR) = {
-      // copy PodStatus lists that already exist
       val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
         streamletStatuses
           .find(_.streamletName == newStreamletStatus.streamletName)
@@ -205,7 +208,6 @@ object CloudflowApplication {
         appStatus = Some(Status.calcAppStatus(newStreamletStatuses))
       )
     }
-
     def updatePod(streamletName: String, pod: Pod) = {
       val streamletStatus =
         streamletStatuses
@@ -233,7 +235,15 @@ object CloudflowApplication {
     }
 
     def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
-      Action.updateStatus(app.withStatus(this), editor)
+      Action.updateStatus(
+        app.withStatus(this),
+        editor,
+        (oldApp: Option[CloudflowApplication.CR], _: CloudflowApplication.CR) =>
+          oldApp.flatMap(_.status) match {
+            case Some(status) if status.appStatus == Some(Status.Error) => false
+            case _                                                      => true
+          }
+      )
   }
 
   object StreamletStatus {

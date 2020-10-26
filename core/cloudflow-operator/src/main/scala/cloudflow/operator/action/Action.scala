@@ -141,10 +141,12 @@ object Action {
   /**
    * Creates an [[UpdateStatusAction]].
    */
-  def updateStatus[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
-                                                                              resourceDefinition: ResourceDefinition[T],
-                                                                              statusEv: HasStatusSubresource[T]) =
-    new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor)
+  def updateStatus[T <: ObjectResource](
+      resource: T,
+      editor: ObjectEditor[T],
+      predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+  )(implicit format: Format[T], resourceDefinition: ResourceDefinition[T], statusEv: HasStatusSubresource[T]) =
+    new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor, predicateForUpdate)
 
   /**
    * Log message for when an [[Action]] is about to get executed.
@@ -282,10 +284,11 @@ class UpdateStatusAction[T <: ObjectResource](
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val statusEv: HasStatusSubresource[T],
-    val editor: ObjectEditor[T]
+    val editor: ObjectEditor[T],
+    predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
 ) extends ResourceAction[T] {
 
-  val name = "update"
+  val name = "updateStatus"
 
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
@@ -306,7 +309,13 @@ class UpdateStatusAction[T <: ObjectResource](
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
       res ← resourceVersionUpdated
-        .map(resourceToUpdate => recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus))
+        .map { resourceToUpdate =>
+          if (predicateForUpdate(existing, resourceToUpdate)) {
+            recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
+          } else {
+            Future.successful(resource)
+          }
+        }
         .getOrElse(Future.successful(resource))
     } yield res
 }
