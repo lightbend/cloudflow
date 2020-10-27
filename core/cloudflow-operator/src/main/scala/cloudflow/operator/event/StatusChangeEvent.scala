@@ -55,7 +55,6 @@ object StatusChangeEvent extends Event {
           val namespace    = obj.metadata.namespace
           val absoluteName = s"$namespace.$objName"
 
-          log.info(s"[Status changes] Detected Pod $absoluteName: ${changeInfo(watchEvent)}.")
           watchEvent._type match {
             case EventType.DELETED ⇒
               currentObjects = currentObjects - absoluteName
