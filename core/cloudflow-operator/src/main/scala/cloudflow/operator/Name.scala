@@ -31,9 +31,15 @@ object Name {
 
   /**
    * Limit the length of a name to 63 characters.
-   * Some subsystem of Kubernetes cannot manage longer names.
+   * Some subsystem of Kubernetes cannot manage longer names: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
    */
   private def truncateTo63Characters(name: String): String = name.take(63)
+
+  /**
+   * Limit the length of a name to 253 characters.
+   * Some subsystem of Kubernetes cannot manage longer names: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+   */
+  private def truncateTo253Characters(name: String): String = name.take(253)
 
   /**
    * Limit the length of a name to 63 characters, including the added suffix.
@@ -58,13 +64,25 @@ object Name {
   }
 
   /**
-   * Make a name compatible with DNS 1123 standard: like a full domain name.
+   * Makes a name compatible with DNS 1123 standard: like a full domain name, max 63 characters
    * Regex to follow: [a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
-   * Limit the resulting name to 63 characters
+   * Limits the resulting name to 63 characters
+   * https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
    */
-  private[operator] def makeDNS1123Compatible(name: String): String = {
+  private[operator] def makeDNS1123CompatibleLabelName(name: String): String = {
     val normalized = Normalizer.normalize(name, Normalizer.Form.NFKD).toLowerCase.replace('_', '-').replaceAll("[^-a-z0-9.]", "")
     trim(truncateTo63Characters(normalized), List('-', '.'))
+  }
+
+  /**
+   * Makes a name compatible with DNS 1123 standard: like a full domain name, max 253 characters
+   * Regex to follow: [a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
+   * Limits the resulting name to 253 characters
+   * https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+   */
+  private[operator] def makeDNS1123CompatibleSubDomainName(name: String): String = {
+    val normalized = Normalizer.normalize(name, Normalizer.Form.NFKD).toLowerCase.replace('_', '-').replaceAll("[^-a-z0-9.]", "")
+    trim(truncateTo253Characters(normalized), List('-', '.'))
   }
 
   def ofNamespace(appId: String) =
@@ -108,7 +126,7 @@ object Name {
     makeDNS1039Compatible(fixDots(streamletDeploymentName))
 
   def ofConfigMap(streamletDeploymentName: String) =
-    makeDNS1123Compatible(s"configmap-${fixDots(streamletDeploymentName)}")
+    makeDNS1123CompatibleSubDomainName(s"configmap-${fixDots(streamletDeploymentName)}")
 
   def ofLabelValue(name: String) =
     truncateTo63Characters(name)

@@ -48,9 +48,11 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 	}
 
 	if applicationCR.Status != nil {
-		printAppStatus(applicationCR, applicationCR.Status.AppStatus)
-		printEndpointStatuses(applicationCR)
-		printStreamletStatuses(applicationCR)
+		printAppStatus(applicationCR, applicationCR.Status.AppStatus, applicationCR.Status.AppMessage)
+		if applicationCR.Status.AppMessage == "" {
+			printEndpointStatuses(applicationCR)
+			printStreamletStatuses(applicationCR)
+		}
 	} else {
 		printutil.LogAndExit("%s status is unknown", applicationCR.Name)
 	}
@@ -65,12 +67,15 @@ func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func printAppStatus(applicationCR *cfapp.CloudflowApplication, appStatus string) {
+func printAppStatus(applicationCR *cfapp.CloudflowApplication, appStatus string, appMessage string) {
 	fmt.Printf("Name:             %s\n", applicationCR.Name)
 	fmt.Printf("Namespace:        %s\n", applicationCR.Namespace)
 	fmt.Printf("Version:          %s\n", applicationCR.Spec.AppVersion)
 	fmt.Printf("Created:          %s\n", applicationCR.ObjectMeta.CreationTimestamp.String())
 	fmt.Printf("Status:           %s\n", appStatus)
+	if appMessage != "" {
+		fmt.Printf("Error:            An unrecoverable error has occured, please undeploy the application. Reason: %s\n", appMessage)
+	}
 }
 
 func printEndpointStatuses(applicationCR *cfapp.CloudflowApplication) {

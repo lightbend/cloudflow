@@ -55,7 +55,6 @@ object StatusChangeEvent extends Event {
           val namespace    = obj.metadata.namespace
           val absoluteName = s"$namespace.$objName"
 
-          log.info(s"[Status changes] Detected Pod $absoluteName: ${changeInfo(watchEvent)}.")
           watchEvent._type match {
             case EventType.DELETED ⇒
               currentObjects = currentObjects - absoluteName
@@ -86,7 +85,7 @@ object StatusChangeEvent extends Event {
         var currentStatuses = Map[String, CloudflowApplication.Status]()
 
         {
-          case (Some(app), statusChangeEvent) ⇒
+          case (Some(app), statusChangeEvent) if app.status.flatMap(_.appStatus) != Some(CloudflowApplication.Status.Error) =>
             log.info(s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")
 
             val appId = app.spec.appId
@@ -113,6 +112,7 @@ object StatusChangeEvent extends Event {
                 }
             }
             currentStatuses.get(appId).map(_.toAction(app)).toList
+          case (Some(app), _) if app.status.flatMap(_.appStatus) == Some(CloudflowApplication.Status.Error) => List()
           case (None, statusChangeEvent) ⇒ // app could not be found, remove status
             log.info(
               s"[Status changes] App could not be found for StatusChange: ${changeInfo(statusChangeEvent.watchEvent)}, removing from current statuses."
