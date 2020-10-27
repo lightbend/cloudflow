@@ -74,7 +74,7 @@ func printAppStatus(applicationCR *cfapp.CloudflowApplication, appStatus string,
 	fmt.Printf("Created:          %s\n", applicationCR.ObjectMeta.CreationTimestamp.String())
 	fmt.Printf("Status:           %s\n", appStatus)
 	if appMessage != "" {
-		fmt.Printf("Error:            %s\n", appMessage)
+		fmt.Printf("Error:            An unrecoverable error has occured, please undeploy the application. eason: %s\n", appMessage)
 	}
 }
 
