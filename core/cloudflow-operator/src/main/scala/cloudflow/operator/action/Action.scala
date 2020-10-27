@@ -17,11 +17,11 @@
 package cloudflow.operator.action
 import akka.actor.ActorSystem
 import akka.pattern._
+import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
-
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -84,6 +84,7 @@ sealed trait Action[+T <: ObjectResource] {
  */
 object Action {
   val ConflictCode = 409
+  val log          = LoggerFactory.getLogger(Action.getClass)
 
   /**
    * Creates a [[CreateOrUpdateAction]].
@@ -313,6 +314,7 @@ class UpdateStatusAction[T <: ObjectResource](
           if (predicateForUpdate(existing, resourceToUpdate)) {
             recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
           } else {
+            Action.log.info(s"Ignoring status update for resource ${resource.metadata.name}")
             Future.successful(resource)
           }
         }
