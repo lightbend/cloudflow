@@ -212,19 +212,21 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "keep only relevant letters when DNS-1123 normalized" in {
       val orig     = "This-αêÍ_and that.and-some_àôô.more"
       val expected = "this-ei-andthat.and-some-aoo.more"
-      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
+      Name.makeDNS1123CompatibleSubDomainName(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' after removing illegal characters when DNS-1123 normalized" in {
       val orig     = "α.test.a-α"
       val expected = "test.a"
-      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
+      Name.makeDNS1123CompatibleSubDomainName(orig) mustEqual expected
     }
 
     "not end or start with '-' or '.' when DNS-1123 normalized, with truncate" in {
-      val orig     = "-2345678901234567890123456789012345678901234567890123456789012.456"
-      val expected = "2345678901234567890123456789012345678901234567890123456789012"
-      Name.makeDNS1123CompatibleLabelName(orig) mustEqual expected
+      val orig =
+        "-234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123.456"
+      val expected =
+        "234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123"
+      Name.makeDNS1123CompatibleSubDomainName(orig) mustEqual expected
     }
   }
 

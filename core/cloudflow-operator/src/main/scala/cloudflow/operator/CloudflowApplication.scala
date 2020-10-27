@@ -234,15 +234,19 @@ object CloudflowApplication {
       )
     }
 
+    def ignoreOnErrorStatus(oldApp: Option[CloudflowApplication.CR], newApp: CloudflowApplication.CR) = {
+      val _ = newApp
+      oldApp.flatMap(_.status) match {
+        case Some(status) if status.appStatus == Some(Status.Error) => false
+        case _                                                      => true
+      }
+    }
+
     def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
       Action.updateStatus(
         app.withStatus(this),
         editor,
-        (oldApp: Option[CloudflowApplication.CR], _: CloudflowApplication.CR) =>
-          oldApp.flatMap(_.status) match {
-            case Some(status) if status.appStatus == Some(Status.Error) => false
-            case _                                                      => true
-          }
+        ignoreOnErrorStatus
       )
   }
 

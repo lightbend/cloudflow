@@ -138,7 +138,7 @@ object TopicActions {
                                         topic: TopicInfo) = {
     val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
-    createAction(newApp, namespace, labels, topicInfo)
+    createTopicOrError(newApp, namespace, labels, topicInfo)
   }
 
   def maybeCreateActionFromAppConfigSecret(secretOption: Option[Secret],
@@ -152,61 +152,70 @@ object TopicActions {
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers
-    } yield createAction(newApp, namespace, labels, topicWithKafkaConfig)
+    } yield createTopicOrError(newApp, namespace, labels, topicWithKafkaConfig)
 
-  def createAction(newApp: CloudflowApplication.CR,
-                   appNamespace: String,
-                   labels: CloudflowLabels,
-                   topic: TopicInfo): Action[ObjectResource] =
+  def createTopicOrError(newApp: CloudflowApplication.CR,
+                         appNamespace: String,
+                         labels: CloudflowLabels,
+                         topic: TopicInfo): Action[ObjectResource] =
     (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) =>
-        val brokerConfig = topic.brokerConfig
-        val configMap    = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)
-        val adminClient  = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
-
-        new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
-          override def execute(
-              client: KubernetesClient
-          )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
-            super
-              .execute(client)
-              .flatMap { resourceCreatedAction =>
-                createTopic()
-                  .recoverWith {
-                    case t =>
-                      log.error(s"Error creating topic: ${t.getMessage}", t)
-                      CloudflowApplication.Status.errorAction(newApp, t.getMessage).execute(client)
-                  }
-                  .map(_ => resourceCreatedAction)
-              }
-
-          private def topicExists(name: String)(implicit executionContext: ExecutionContext) =
-            adminClient.listTopics().namesToListings().asScala.map(_.asScala.toMap).map(_.contains(name))
-
-          private def createTopic()(implicit ec: ExecutionContext) =
-            topicExists(topic.name).flatMap { exists =>
-              if (exists) {
-                log.info("Managed topic [{}] exists already, ignoring", topic.name)
-                Future.successful(akka.Done)
-              } else {
-                log.info("Creating managed topic [{}]", topic.name)
-                val newTopic = new NewTopic(topic.name, partitions, replicas.toShort).configs(topic.properties.asJava)
-                val result =
-                  adminClient.createTopics(
-                    Collections.singleton(newTopic),
-                    new CreateTopicsOptions()
-                  )
-                result.all().asScala.map(_ => akka.Done)
-              }
-            }
-        }
-
+        createAction(topic, labels, appNamespace, newApp, bootstrapServers, partitions, replicas)
       case _ =>
         val msg = s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
               topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
               ". Update installation of Cloudflow with Helm charts to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
         CloudflowApplication.Status.errorAction(newApp, msg)
     }
+
+  def createAction(topic: TopicInfo,
+                   labels: CloudflowLabels,
+                   appNamespace: String,
+                   newApp: CloudflowApplication.CR,
+                   bootstrapServers: String,
+                   partitions: Int,
+                   replicas: Int) = {
+    val brokerConfig = topic.brokerConfig
+    val configMap    = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)
+    val adminClient  = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
+
+    new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
+      override def execute(
+          client: KubernetesClient
+      )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
+        super
+          .execute(client)
+          .flatMap { resourceCreatedAction =>
+            createTopic()
+              .recoverWith {
+                case t =>
+                  log.error(s"Error creating topic: ${t.getMessage}", t)
+                  CloudflowApplication.Status.errorAction(newApp, t.getMessage).execute(client)
+              }
+              .map(_ => resourceCreatedAction)
+          }
+
+      private def topicExists(name: String)(implicit executionContext: ExecutionContext) =
+        adminClient.listTopics().namesToListings().asScala.map(_.asScala.toMap).map(_.contains(name))
+
+      private def createTopic()(implicit ec: ExecutionContext) =
+        topicExists(topic.name).flatMap { exists =>
+          if (exists) {
+            log.info("Managed topic [{}] exists already, ignoring", topic.name)
+            Future.successful(akka.Done)
+          } else {
+            log.info("Creating managed topic [{}]", topic.name)
+            val newTopic = new NewTopic(topic.name, partitions, replicas.toShort).configs(topic.properties.asJava)
+            val result =
+              adminClient.createTopics(
+                Collections.singleton(newTopic),
+                new CreateTopicsOptions()
+              )
+            result.all().asScala.map(_ => akka.Done)
+          }
+        }
+    }
+  }
 
   def resource(namespace: String,
                topic: TopicInfo,

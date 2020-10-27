@@ -85,7 +85,7 @@ object StatusChangeEvent extends Event {
         var currentStatuses = Map[String, CloudflowApplication.Status]()
 
         {
-          case (Some(app), statusChangeEvent) if app.status.flatMap(_.appStatus) != Some(CloudflowApplication.Status.Error) ⇒
+          case (Some(app), statusChangeEvent) if app.status.flatMap(_.appStatus) != Some(CloudflowApplication.Status.Error) =>
             log.info(s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")
 
             val appId = app.spec.appId
@@ -112,8 +112,7 @@ object StatusChangeEvent extends Event {
                 }
             }
             currentStatuses.get(appId).map(_.toAction(app)).toList
-          // app is in error state, no need to handle updates.
-          case (Some(_), _) => List()
+          case (Some(app), _) if app.status.flatMap(_.appStatus) == Some(CloudflowApplication.Status.Error) => List()
           case (None, statusChangeEvent) ⇒ // app could not be found, remove status
             log.info(
               s"[Status changes] App could not be found for StatusChange: ${changeInfo(statusChangeEvent.watchEvent)}, removing from current statuses."
