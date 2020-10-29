@@ -84,4 +84,4 @@ delete-gke-cluster:
 run-it-tests:
 	@echo '****** Run Integration Tests'
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
-	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
+	(export PATH=$$PWD/itest:$$PATH && cd itest && ginkgo -v)
