@@ -18,6 +18,15 @@ To upgrade Cloudflow in your cluster to the latest version run
     --reuse-values
 ----
 
+NOTE: Migrating from Cloudflow 2.0.10, a new setting `kafkaClusters.default.bootstrapServers` is required, which replaces the `cloudflow_operator.bootstrapServers` setting, so be sure to set this to your existing kafka cluster in the helm upgrade command as shown below:
+
+[source,shell script]
+----
+  helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
+    --namespace cloudflow \
+    --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
+----
+
 == Selecting a specific version
 
 To upgrade Cloudflow to a specific version, add the _--version_ flag. For example:
