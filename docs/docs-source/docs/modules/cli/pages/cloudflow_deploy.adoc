@@ -8,7 +8,7 @@ Deploys a Cloudflow application to the cluster.
 == Prerequisites
 
 To deploy a Flink or Spark application it is necessary that a PVC named `cloudflow-flink' or `cloudflow-spark` already exists in a namespace that is equal 
-to the application name. This name is the same that the json file you'll use to deploy but without the extension. e.g. For a file `swiss-knife.json` the namespace would be `swiss-knife`. Cloudflow will automatically mount this PVCs in the streamlets themselves to allow any job, Flink or Spark, to store its state.
+to the application name. This name is the exactly the same as the json file you'll use to deploy, excluding the extension. e.g. For a file `swiss-knife.json` the namespace would be `swiss-knife`. Cloudflow will automatically mount this PVCs in the streamlets themselves to allow any job, Flink or Spark, to store its state.
 
 == Synopsis
 
