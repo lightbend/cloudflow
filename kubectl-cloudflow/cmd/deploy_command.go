@@ -34,8 +34,6 @@ type deployOptions struct {
 	password                string
 	passwordStdin           bool
 	noRegistryCredentials   bool
-	noStreamletStorageDefault bool
-	noSsd 					bool
 	volumeMounts            []string
 	replicasByStreamletName map[string]int
 	configFiles             []string
@@ -83,17 +81,6 @@ same name as the application.
 
   kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name
 
-It necesary to runtimes as Flink of Spark to map an existing PVC on the cluster to be mounted into 
-every container of the type of the runtime. This can be done automatically if those PVCs are named 
-'cloudflow-flink-pvc' and/or 'cloudflow-spark-pvc' and already exist in the namespace with the same
-name as the Cloudflow application to be deploy.
-	
-	kubectl cloudflow deploy call-record-aggregator.json --streamlet-storage-default
-
-or
-
-	kubectl cloudflow deploy call-record-aggregator.json --ssd
-
 otherwise is necesary that those mounting get defined in the configuration when deploying. See documentation ¡€#¢¡€#¢#€
 
 It is also possible to specify more than one "volume-mount" parameter.
@@ -140,8 +127,6 @@ in an error and the application will not be deployed.
 	deployOpts.cmd.Flags().StringVarP(&deployOpts.password, "password", "p", "", "docker registry password.")
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.passwordStdin, "password-stdin", "", false, "Take the password from stdin.")
 	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noRegistryCredentials, "no-registry-credentials", "", false, "Use this flag if the Kubernetes cluster already has credentials configured for the Docker registry where the Cloudflow application images are located, or if the registry is public and requires no authentication.")
-	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noStreamletStorageDefault, "no-streamlet-storage-default", "", false, "Use this flag to indicate that the Kubernetes cluster already has pvcs for flink and/or spark, named 'cloudflow-flink-pvc' and/or 'cloudflow-spark-pvc' respectively.")
-	deployOpts.cmd.Flags().BoolVarP(&deployOpts.noSsd, "no-ssd", "", false, "abbreviation for streamlet-storage-default option")
 
 	deployOpts.cmd.Flags().StringArrayVar(&deployOpts.volumeMounts, "volume-mount", []string{}, "Accepts a key/value pair separated by an equal sign. The key should be the name of the volume mount, specified as '[streamlet-name].[volume-mount-name]'. The value should be the name of an existing persistent volume claim.")
 	deployOpts.cmd.Flags().StringToIntVar(&deployOpts.replicasByStreamletName, "scale", map[string]int{}, "Accepts key/value pairs for replicas per streamlet")

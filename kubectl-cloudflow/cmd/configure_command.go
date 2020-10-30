@@ -15,8 +15,6 @@ import (
 type configureApplicationCMD struct {
 	cmd         				*cobra.Command
 	configFiles 				[]string
-	noStreamletStorageDefault 	bool
-	noSsd 						bool
 }
 
 
@@ -51,8 +49,6 @@ The arguments passed with '[config-key]=[value]' pairs take precedence over the 
 		Args: validateConfigureCMDArgs,
 	}
 	configureCMD.cmd.Flags().StringArrayVar(&configureCMD.configFiles, "conf", []string{}, "Accepts one or more files in HOCON format.")
-	configureCMD.cmd.Flags().BoolVarP(&configureCMD.noStreamletStorageDefault, "no-streamlet-storage-default", "", false, "Use this flag to indicate that the Kubernetes cluster already has pvcs for flink and/or spark, named 'cloudflow-flink-pvc' and/or 'cloudflow-spark-pvc' respectively.")
-	configureCMD.cmd.Flags().BoolVarP(&configureCMD.noSsd, "no-ssd", "", false, "abbreviation for streamlet-storage-default option")
 
 	rootCmd.AddCommand(configureCMD.cmd)
 }

@@ -336,7 +336,7 @@ func Test_mountingExistingClaim(t *testing.T) {
 		volumes {
 			foo {
 				pvc {
-					name = cloudflow-flink-pvc
+					name = cloudflow-flink
 					read-only = false
 				}
 			}
@@ -365,7 +365,7 @@ func Test_mountingExistingClaim2(t *testing.T) {
 		volumes {
 			foo {
 				pvc {
-					name = cloudflow-other-pvc
+					name = cloudflow-other
 					read-only = false
 				}
 			}
@@ -392,8 +392,8 @@ func Test_mountingExistingMultipleClaims(t *testing.T) {
 	spec := createSpecForDefaultPVCs()
 	config, err = MountExistingPVCs(spec, config)	
 	assert.Empty(t, err)
-	assert.Contains(t, config.String(), "cloudflow-flink-pvc")
-	assert.Contains(t, config.String(), "cloudflow-spark-pvc")
+	assert.Contains(t, config.String(), "cloudflow-flink")
+	assert.Contains(t, config.String(), "cloudflow-spark")
 }
 
 func createSpecForDefaultPVCs() cfapp.CloudflowApplicationSpec {

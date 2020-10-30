@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudflow-spark-pvc
+  name: cloudflow-spark
 spec:
   accessModes:
     - ReadWriteMany

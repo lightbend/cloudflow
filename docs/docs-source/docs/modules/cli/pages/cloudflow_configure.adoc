@@ -44,6 +44,31 @@ $ kubectl cloudflow configure swiss-knife cloudflow.streamlets.spark-process.con
 
 The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the --conf flag.
 
+As pointed out in the xref:cloudflow_deploy.adoc[] prerequisites, some existing PVC is required to deploy a Flink or a Spark application. Choosing which PVC to use can be also configured through `--conf` and this will override the default values mentioned above. Here's an example:
+
+[source,bash]
+----
+cloudflow.runtimes.flink.kubernetes.pods.pod {
+	volumes {
+		foo {
+			pvc {
+				name = cloudflow-another-name
+				read-only = false
+			}
+		}
+	}
+	containers.container {
+		volume-mounts {
+			foo {
+				mount-path = "/mnt/flink/storage"
+				read-only = false
+			}
+		}
+	}
+}
+----
+
+This will use then `cloudflow-another-name` PVC instead of the default `cloudflow-flink`. You may override the default PVC configuration as long as `read-only` remains `false` and the `mount-path` is equal to `/mnt/[runtime]/storage`. Where `[runtime]` can be `flink` or `spark`. This configuration can only be applied to runtimes not streamlet individually. 
 
 == Options
 
@@ -55,5 +80,7 @@ The arguments passed with `[config-key]=[value]` pairs take precedence over the 
 ----
 
 == SEE ALSO
+
+* xref:develop:cloudflow-configuration.adoc[]
 
 * <<cloudflow.adoc#,kubectl cloudflow>> - Create, manage, deploy, and operate Cloudflow applications.

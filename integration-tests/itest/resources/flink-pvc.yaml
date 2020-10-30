@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudflow-flink-pvc
+  name: cloudflow-flink
 spec:
   accessModes:
     - ReadWriteMany
