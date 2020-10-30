@@ -23,6 +23,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import cloudflow.operator.action._
 import cloudflow.operator.event._
+import cloudflow.operator.flow._
 import play.api.libs.json.Format
 import skuber._
 import skuber.api.client._
@@ -71,8 +72,8 @@ object Operator {
 
     runStream(
       watch[CloudflowApplication.CR](client, DefaultWatchOptions)
-        .via(AppEvent.fromWatchEvent(logAttributes))
-        .via(AppEvent.toAction)
+        .via(AppEventFlow.fromWatchEvent(logAttributes))
+        .via(AppEventFlow.toAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right)
         .mapMaterializedValue {
