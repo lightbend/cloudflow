@@ -36,35 +36,13 @@ object AppEventFlow {
         // to prevent possibility of getting an out of sync CR from the cluster in mapToAppInSameNamespace (which might be a small chance).
         var currentApps = Map[String, WatchEvent[CloudflowApplication.CR]]()
         watchEvent ⇒ {
-          val (updatedApps, events) = toDeployEvent(currentApps, watchEvent)
+          val (updatedApps, events) = AppEvent.toDeployEvent(currentApps, watchEvent)
           currentApps = updatedApps
           events
         }
       }
       .log("app-event", AppEvent.detected)
       .withAttributes(logAttributes)
-
-  def toDeployEvent(
-      currentApps: Map[String, WatchEvent[CloudflowApplication.CR]],
-      watchEvent: WatchEvent[CloudflowApplication.CR]
-  ): (Map[String, WatchEvent[CloudflowApplication.CR]], List[AppEvent]) = {
-    val cr         = watchEvent._object
-    val namespace  = cr.metadata.namespace
-    val appId      = cr.spec.appId
-    val currentApp = currentApps.get(appId).map(_._object)
-    watchEvent._type match {
-      case EventType.DELETED ⇒
-        (currentApps - appId, List(UndeployEvent(cr, namespace, watchEvent._object)))
-      case EventType.ADDED | EventType.MODIFIED ⇒
-        if (currentApps.get(appId).forall { existingEvent ⇒
-              existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-              // the spec must change, otherwise it is not a deploy event (but likely a status update).
-              existingEvent._object.spec != watchEvent._object.spec
-            }) {
-          (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, namespace, watchEvent._object)))
-        } else (currentApps, List())
-    }
-  }
 
   /**
    * Transforms [[AppEvent]]s into [[Action]]s.
