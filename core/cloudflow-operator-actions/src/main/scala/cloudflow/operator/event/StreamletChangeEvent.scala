@@ -17,9 +17,10 @@
 package cloudflow.operator
 package event
 
+import scala.collection.immutable.Seq
+
 import akka.actor._
 import akka.NotUsed
-import akka.stream.scaladsl._
 
 import org.slf4j.LoggerFactory
 
@@ -43,82 +44,69 @@ case class StreamletChangeEvent[T <: ObjectResource](appId: String, streamletNam
 object StreamletChangeEvent extends Event {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  /**
-   * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
-   * Only watch events that have changed for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
-   */
-  def fromWatchEvent[O <: ObjectResource](): Flow[WatchEvent[O], StreamletChangeEvent[O], NotUsed] =
-    Flow[WatchEvent[O]]
-      .statefulMapConcat { () ⇒
-        var currentObjects = Map[String, WatchEvent[O]]()
-        watchEvent ⇒ {
-          val secret       = watchEvent._object
-          val metadata     = secret.metadata
-          val secretName   = secret.metadata.name
-          val namespace    = secret.metadata.namespace
-          val absoluteName = s"$namespace.$secretName"
+  def toStreamletChangeEvent(currentObjects: Map[String, WatchEvent[Secret]],
+                             watchEvent: WatchEvent[Secret]): (Map[String, WatchEvent[Secret]], List[StreamletChangeEvent[Secret]]) = {
+    val secret       = watchEvent._object
+    val metadata     = secret.metadata
+    val secretName   = secret.metadata.name
+    val namespace    = secret.metadata.namespace
+    val absoluteName = s"$namespace.$secretName"
 
-          def hasChanged(existingEvent: WatchEvent[O]) =
-            watchEvent._object.resourceVersion != existingEvent._object.resourceVersion
+    def hasChanged(existingEvent: WatchEvent[Secret]) =
+      watchEvent._object.resourceVersion != existingEvent._object.resourceVersion
 
-          watchEvent._type match {
-            case EventType.DELETED ⇒
-              currentObjects = currentObjects - absoluteName
-              (for {
-                appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-                streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
-              } yield {
-                StreamletChangeEvent(appId, streamletName, watchEvent)
-              }).toList
+    watchEvent._type match {
+      case EventType.DELETED ⇒
+        val events = (for {
+          appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+          streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+        } yield {
+          StreamletChangeEvent(appId, streamletName, watchEvent)
+        }).toList
+        (currentObjects - absoluteName, events)
+      case EventType.ADDED | EventType.MODIFIED ⇒
+        if (currentObjects.get(absoluteName).forall(hasChanged)) {
+          (for {
+            appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+            streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+          } yield {
+            (currentObjects + (absoluteName -> watchEvent), List(StreamletChangeEvent(appId, streamletName, watchEvent)))
+          }).getOrElse((currentObjects, List()))
+        } else (currentObjects, List())
+    }
+  }
 
-            case EventType.ADDED | EventType.MODIFIED ⇒
-              if (currentObjects.get(absoluteName).forall(hasChanged)) {
-                (for {
-                  appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-                  streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
-                } yield {
-                  currentObjects = currentObjects + (absoluteName -> watchEvent)
-                  StreamletChangeEvent(appId, streamletName, watchEvent)
-                }).toList
-              } else List()
+  def toActionList(mappedApp: Option[CloudflowApplication.CR],
+                   event: StreamletChangeEvent[Secret])(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+    (mappedApp, event) match {
+      case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
+        import streamletChangeEvent._
+        val secret   = watchEvent._object
+        val metadata = secret.metadata
+        metadata.labels
+          .get(CloudflowLabels.ConfigFormat)
+          .map { configFormat =>
+            if (configFormat == CloudflowLabels.StreamletDeploymentConfigFormat) {
+              log.debug(s"[app: ${streamletChangeEvent.appId} updating config for streamlet $streamletName]")
+              actionsForRunner(
+                app,
+                streamletChangeEvent
+              )
+            } else Nil
           }
-        }
-      }
+          .getOrElse(Nil)
+      case _ ⇒ Nil // app could not be found, do nothing.
+    }
 
-  def toConfigUpdateAction(
-      implicit system: ActorSystem,
-      ctx: DeploymentContext
-  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
-    Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
-      .mapConcat {
-        case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
-          import streamletChangeEvent._
-          val secret   = watchEvent._object
-          val metadata = secret.metadata
-          metadata.labels
-            .get(CloudflowLabels.ConfigFormat)
-            .map { configFormat =>
-              if (configFormat == CloudflowLabels.StreamletDeploymentConfigFormat) {
-                system.log.debug(s"[app: ${streamletChangeEvent.appId} updating config for streamlet $streamletName]")
-                actionsForRunner(
-                  app,
-                  streamletChangeEvent
-                )
-              } else Nil
-            }
-            .getOrElse(Nil)
-        case _ ⇒ Nil // app could not be found, do nothing.
-      }
-
-  private def actionsForRunner(app: CloudflowApplication.CR, streamletChangeEvent: StreamletChangeEvent[Secret])(
-      implicit system: ActorSystem,
+  def actionsForRunner(app: CloudflowApplication.CR, streamletChangeEvent: StreamletChangeEvent[Secret])(
+      implicit
       ctx: DeploymentContext
   ) = {
     import streamletChangeEvent._
     app.spec.deployments
       .find(_.streamletName == streamletName)
       .map { streamletDeployment ⇒
-        system.log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
+        log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
         val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
         val updateAction = streamletDeployment.runtime match {
           case AkkaRunner.runtime ⇒
