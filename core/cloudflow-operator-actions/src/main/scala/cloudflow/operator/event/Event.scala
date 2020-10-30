@@ -24,6 +24,7 @@ import akka.stream.scaladsl._
 import skuber._
 import skuber.api.client._
 
+object Event extends Event
 trait Event {
 
   def changeInfo[T <: ObjectResource](watchEvent: WatchEvent[T]) = {

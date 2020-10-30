@@ -108,10 +108,10 @@ object Operator {
     // into Output secret create actions.
     runStream(
       watch[Secret](client, watchOptions)
-        .via(ConfigInputChangeEvent.fromWatchEvent())
+        .via(ConfigInputChangeEventFlow.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
         .via(ConfigInputChangeEvent.mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEvent.toInputConfigUpdateAction)
+        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
