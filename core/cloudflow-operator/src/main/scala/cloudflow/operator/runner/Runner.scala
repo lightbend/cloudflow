@@ -107,32 +107,32 @@ trait Runner[T <: ObjectResource] {
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
-  def persistentVolumeClaim(appId: String,
-                            namespace: String,
-                            labels: CloudflowLabels,
-                            persistentStorageSettings: PersistentStorageSettings,
-                            ownerReferences: List[OwnerReference]): PersistentVolumeClaim = {
-    val metadata = ObjectMeta(
-      name = Name.ofPVCInstance(appId, runtime),
-      namespace = namespace,
-      labels = labels(Name.ofPVCComponent),
-      ownerReferences = ownerReferences
-    )
+  // def persistentVolumeClaim(appId: String,
+  //                           namespace: String,
+  //                           labels: CloudflowLabels,
+  //                           persistentStorageSettings: PersistentStorageSettings,
+  //                           ownerReferences: List[OwnerReference]): PersistentVolumeClaim = {
+  //   val metadata = ObjectMeta(
+  //     name = Name.ofPVCInstance(appId, runtime),
+  //     namespace = namespace,
+  //     labels = labels(Name.ofPVCComponent),
+  //     ownerReferences = ownerReferences
+  //   )
 
-    val pvcSpec = PersistentVolumeClaim.Spec(
-      accessModes = List(AccessMode.ReadWriteMany),
-      volumeMode = Some(VolumeMode.Filesystem),
-      resources = Some(
-        Resource.Requirements(
-          limits = Map(Resource.storage   -> persistentStorageSettings.resources.limit),
-          requests = Map(Resource.storage -> persistentStorageSettings.resources.request)
-        )
-      ),
-      storageClassName = Some(persistentStorageSettings.storageClassName),
-      selector = None
-    )
-    PersistentVolumeClaim(metadata = metadata, spec = Some(pvcSpec), status = None)
-  }
+  //   val pvcSpec = PersistentVolumeClaim.Spec(
+  //     accessModes = List(AccessMode.ReadWriteMany),
+  //     volumeMode = Some(VolumeMode.Filesystem),
+  //     resources = Some(
+  //       Resource.Requirements(
+  //         limits = Map(Resource.storage   -> persistentStorageSettings.resources.limit),
+  //         requests = Map(Resource.storage -> persistentStorageSettings.resources.request)
+  //       )
+  //     ),
+  //     storageClassName = Some(persistentStorageSettings.storageClassName),
+  //     selector = None
+  //   )
+  //   PersistentVolumeClaim(metadata = metadata, spec = Some(pvcSpec), status = None)
+  // }
 
   /**
    * Creates an action for creating a Persistent Volume Claim.

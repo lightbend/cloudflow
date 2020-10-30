@@ -117,17 +117,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       )
     )
 
-  override def persistentVolumeActions(app: CloudflowApplication.CR,
-                                       namespace: String,
-                                       labels: CloudflowLabels,
-                                       persistentStorageSettings: PersistentStorageSettings,
-                                       ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
-    Vector(
-      CreatePersistentVolumeClaimAction(
-        persistentVolumeClaim(app.spec.appId, namespace, labels, persistentStorageSettings, ownerReferences)
-      )
-    )
-
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -166,8 +155,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     // Volume mounting
     val pvcName = Name.ofPVCInstance(appId, runtime)
 
-    val pvcVolume      = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
-    val pvcVolumeMount = Volume.Mount(pvcVolume.name, "/mnt/spark/storage")
+    // val pvcVolume      = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
+    // val pvcVolumeMount = Volume.Mount(pvcVolume.name, "/mnt/spark/storage")
 
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
@@ -176,8 +165,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       Volume.Mount(mount.name, mount.path)
     })
 
-    val volumes      = streamletPvcVolume ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName) :+ pvcVolume :+ Runner.DownwardApiVolume
-    val volumeMounts = streamletVolumeMount :+ pvcVolumeMount :+ Runner.DownwardApiVolumeMount
+    val volumes      = streamletPvcVolume ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName) :+ Runner.DownwardApiVolume
+    val volumeMounts = streamletVolumeMount :+ Runner.DownwardApiVolumeMount
 
     // This is the group id of the user in the streamlet container,
     // its need to make volumes managed by certain volume plugins writable.
