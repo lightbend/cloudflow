@@ -145,7 +145,7 @@ func MountExistingPVCs(applicationSpec cfapp.CloudflowApplicationSpec, config *C
 
 }
 
-// If the config has already that volumen mount will not proceed
+// If the config has already that volume mount will not proceed
 // otherwise will add default PVC configuration.
 func mountExistingPVC(applicationSpec cfapp.CloudflowApplicationSpec, runtime string, config *Config) (string, error) {
 	if strings.Contains(config.String(), fmt.Sprintf("/mnt/%s/storage", runtime)) {
@@ -176,8 +176,7 @@ Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/
 						}
 					}
 				}`, runtime, runtime, runtime)
-		fmt.Printf(`default configuration will be provided to mount the PVC 'cloudflow-%s' on '/mnt/%s/storage'`
-			, runtime, runtime)
+		fmt.Printf(`default configuration will be provided to mount the PVC 'cloudflow-%s' on '/mnt/%s/storage'`, runtime, runtime)
 			return config, nil
 		}
 	}
