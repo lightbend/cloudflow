@@ -447,9 +447,7 @@ lazy val operatorActions =
             Skuber,
             ScalaTest,
             "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
-            AkkaStreamTestkit  % "test",
-            ScalaCheck         % "test",
-            Avro4sJson         % "test"
+            ScalaCheck         % "test"
           )
     )
 
