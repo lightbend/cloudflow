@@ -110,7 +110,7 @@ object Operator {
       watch[Secret](client, watchOptions)
         .via(ConfigInputChangeEventFlow.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(ConfigInputChangeEvent.mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
+        .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
         .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
@@ -138,7 +138,7 @@ object Operator {
     runStream(
       watch[Secret](client, watchOptions)
         .via(StreamletChangeEvent.fromWatchEvent())
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
+        .via(mapToAppInSameNamespace(client))
         .via(StreamletChangeEvent.toConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
@@ -154,7 +154,7 @@ object Operator {
       watch[Pod](client, DefaultWatchOptions)
         .via(StatusChangeEvent.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
-        .via(StatusChangeEvent.mapToAppInSameNamespace(client))
+        .via(mapToAppInSameNamespace(client))
         .via(StatusChangeEvent.toStatusUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
@@ -169,6 +169,21 @@ object Operator {
       .mapAsync(1)(actionExecutor.execute)
       .log("action", Action.executed)
       .withAttributes(logAttributes)
+
+  /**
+   * TODO rewrite using `ProvidedAction`, ensuring all K8s effects are executed in executeActions.
+   * Finds the associated [[CloudflowApplication.CR]]s for [[AppChangeEvent]]s.
+   * The resulting flow outputs tuples of the app and the streamlet change event.
+   */
+  def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
+      client: KubernetesClient
+  )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
+    Flow[E].mapAsync(1) { changeEvent ⇒
+      val ns = changeEvent.namespace
+      client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
+        cr -> changeEvent
+      }
+    }
 
   // NOTE: This watch can produce duplicate ADD events on startup, since it turns current resources into watch events,
   // and concatenates results of a subsequent watch. This can be improved.
