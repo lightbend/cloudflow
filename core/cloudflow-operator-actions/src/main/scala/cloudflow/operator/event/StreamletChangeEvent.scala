@@ -65,8 +65,8 @@ object StreamletChangeEvent extends Event {
             case EventType.DELETED ⇒
               currentObjects = currentObjects - absoluteName
               (for {
-                appId         ← metadata.labels.get(Operator.AppIdLabel)
-                streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+                appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+                streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
               } yield {
                 StreamletChangeEvent(appId, streamletName, watchEvent)
               }).toList
@@ -74,8 +74,8 @@ object StreamletChangeEvent extends Event {
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentObjects.get(absoluteName).forall(hasChanged)) {
                 (for {
-                  appId         ← metadata.labels.get(Operator.AppIdLabel)
-                  streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+                  appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+                  streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
                 } yield {
                   currentObjects = currentObjects + (absoluteName -> watchEvent)
                   StreamletChangeEvent(appId, streamletName, watchEvent)
@@ -119,7 +119,7 @@ object StreamletChangeEvent extends Event {
       .find(_.streamletName == streamletName)
       .map { streamletDeployment ⇒
         system.log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
-        val updateLabels = Map(Operator.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+        val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
         val updateAction = streamletDeployment.runtime match {
           case AkkaRunner.runtime ⇒
             Action.provided[Secret, ObjectResource](
