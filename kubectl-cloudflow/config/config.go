@@ -154,6 +154,7 @@ Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/
 `, runtime, runtime, runtime)
 		return config.String(), nil
 	}
+
 	for _, deployment := range applicationSpec.Deployments {
 		if deployment.Runtime == runtime {
 			config := fmt.Sprintf(
