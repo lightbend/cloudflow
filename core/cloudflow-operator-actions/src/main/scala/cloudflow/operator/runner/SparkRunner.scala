@@ -155,7 +155,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     // Volume mounting
     val pvcName = Name.ofPVCInstance(appId, runtime)
 
-    // val pvcVolume      = Volume("persistent-storage", Volume.PersistentVolumeClaimRef(pvcName))
     // val pvcVolumeMount = Volume.Mount(pvcVolume.name, "/mnt/spark/storage")
 
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
