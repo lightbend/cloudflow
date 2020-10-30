@@ -155,6 +155,11 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 		printutil.LogErrorAndExit(err)
 	}
 
+	appConfig, err = config.MountExistingPVCs(applicationSpec, appConfig)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
 	err = config.ReferencedPersistentVolumeClaimsExist(appConfig, namespace, applicationSpec, k8sClient)
 	if err != nil {
 		printutil.LogErrorAndExit(err)

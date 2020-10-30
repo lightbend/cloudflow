@@ -122,7 +122,6 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
       crd.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
-        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-flink-pvc")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
@@ -308,13 +307,11 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
       crd.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
-        Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef("some-app-id-flink-pvc")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
 
       crd.spec.volumeMounts mustBe Vector(
-        Volume.Mount("persistent-storage-vol", "/mnt/flink/storage"),
         Volume.Mount("secret-vol", "/etc/cloudflow-runner-secret"),
         Volume.Mount("config-map-vol", "/etc/cloudflow-runner"),
         Runner.DownwardApiVolumeMount

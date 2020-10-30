@@ -71,6 +71,11 @@ func (c *configureApplicationCMD) configureImpl(cmd *cobra.Command, args []strin
 		printutil.LogErrorAndExit(err)
 	}
 
+	appConfig, err = config.MountExistingPVCs(appCR.Spec, appConfig)
+	if err != nil {
+		printutil.LogErrorAndExit(err)
+	}
+
 	err = config.ReferencedPersistentVolumeClaimsExist(appConfig, namespace, appCR.Spec, k8sClient)
 	if err != nil {
 		printutil.LogErrorAndExit(err)

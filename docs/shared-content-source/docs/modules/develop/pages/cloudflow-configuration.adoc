@@ -239,9 +239,9 @@ This configuration will mount an existing Persistent Volume Claim `myclaim1` int
 [%autowidth]
 |===
 | resource  | key
-| `volumes` | `kubernetes.pods.pod.volume.[name].secret.name = [secret-name]`
-| `volumes` | `kubernetes.pods.pod.volume.[name].pvc.name = [pvc-name]`
-| `volumes` | `kubernetes.pods.pod.volume.[name].pvc.read-only = [true or false]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].secret.name = [secret-name]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.name = [pvc-name]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.read-only = [true or false]`
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
 |===

@@ -120,6 +120,69 @@ func GetAppConfiguration(
 	return appConfig, nil
 }
 
+func MountExistingPVCs(applicationSpec cfapp.CloudflowApplicationSpec, config *Config) (*Config, error) {
+	flinkPVCConfig, err := mountExistingPVC(applicationSpec, "flink", config)
+	if err != nil {
+		return config, err
+	}
+	err = validateConfig(newConfig(flinkPVCConfig), applicationSpec)
+	if err != nil {
+		return config, err
+	}
+	config.append(flinkPVCConfig)
+
+	sparkPVCConfig, err := mountExistingPVC(applicationSpec, "spark", config)
+	if err != nil {
+		return config, err
+	}
+	err = validateConfig(newConfig(sparkPVCConfig), applicationSpec)
+	if err != nil {
+		return config, err
+	}
+	config.append(sparkPVCConfig)
+
+	return config, nil
+
+}
+
+// If the config has already that volume mount will not proceed
+// otherwise will add default PVC configuration.
+func mountExistingPVC(applicationSpec cfapp.CloudflowApplicationSpec, runtime string, config *Config) (string, error) {
+	if strings.Contains(config.String(), fmt.Sprintf("/mnt/%s/storage", runtime)) {
+		fmt.Printf(`the configuration provided is already mounting a PVC on '/mnt/%s/storage'.
+Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/storage'
+`, runtime, runtime, runtime)
+		return config.String(), nil
+	}
+
+	for _, deployment := range applicationSpec.Deployments {
+		if deployment.Runtime == runtime {
+			config := fmt.Sprintf(
+				`cloudflow.runtimes.%s.kubernetes.pods.pod {
+					volumes {
+						foo {
+							pvc {
+								name = cloudflow-%s
+								read-only = false
+							}
+						}
+					}
+					containers.container {
+						volume-mounts {
+							foo {
+								mount-path = "/mnt/%s/storage"
+								read-only = false
+							}
+						}
+					}
+				}`, runtime, runtime, runtime)
+			fmt.Printf(`default configuration will be provided to mount the PVC 'cloudflow-%s' on '/mnt/%s/storage'`, runtime, runtime)
+			return config, nil
+		}
+	}
+	return "", nil
+}
+
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
 func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 	if len(configFiles) == 0 {

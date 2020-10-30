@@ -175,21 +175,6 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     }
   }
 
-  "PersistentVolumeClaim" should {
-    "have long names truncate to 63 characters when coming from PrepareNamespaceActions" in {
-      val appActions = PrepareNamespaceActions(testApp02, namespace, CloudflowLabels(testApp02), testApp02.metadata.ownerReferences)
-      appActions
-        .collect {
-          case a: ResourceAction[_] if a.resource.isInstanceOf[PersistentVolumeClaim] =>
-            a.resource.asInstanceOf[PersistentVolumeClaim]
-        }
-        .head
-        .metadata
-        .name
-        .length mustEqual 63
-    }
-  }
-
   "A name" should {
     "keep only relevant letters when DNS-1035 normalized" in {
       val orig     = "This-αêÍ_and that.and"

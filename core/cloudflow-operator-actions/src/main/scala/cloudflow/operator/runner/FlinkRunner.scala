@@ -103,17 +103,6 @@ object FlinkRunner extends Runner[CR] {
       )
     )
 
-  override def persistentVolumeActions(app: CloudflowApplication.CR,
-                                       namespace: String,
-                                       labels: CloudflowLabels,
-                                       persistentStorageSettings: PersistentStorageSettings,
-                                       ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
-    Vector(
-      CreatePersistentVolumeClaimAction(
-        persistentVolumeClaim(app.spec.appId, namespace, labels, persistentStorageSettings, ownerReferences)
-      )
-    )
-
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
@@ -294,16 +283,12 @@ object FlinkRunner extends Runner[CR] {
     // secret
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
-    // persistent storage
-    val pvcName   = Name.ofPVCInstance(app.spec.appId, runtime)
-    val pvcVolume = Volume("persistent-storage-vol", Volume.PersistentVolumeClaimRef(pvcName))
-
     // Streamlet volume mounting
     val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
 
-    streamletPvcVolume :+ configMapVolume :+ pvcVolume :+ secretVolume :+ Runner.DownwardApiVolume
+    streamletPvcVolume :+ configMapVolume :+ secretVolume :+ Runner.DownwardApiVolume
   }
 
   /**
@@ -329,7 +314,6 @@ object FlinkRunner extends Runner[CR] {
     })
 
     Vector(
-      Volume.Mount("persistent-storage-vol", "/mnt/flink/storage"),
       Volume.Mount("secret-vol", Runner.SecretMountPath),
       Volume.Mount("config-map-vol", "/etc/cloudflow-runner"),
       Runner.DownwardApiVolumeMount
