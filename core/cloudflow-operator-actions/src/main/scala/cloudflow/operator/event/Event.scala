@@ -17,13 +17,10 @@
 package cloudflow.operator
 package event
 
-import scala.concurrent._
-
-import akka.NotUsed
-import akka.stream.scaladsl._
 import skuber._
 import skuber.api.client._
 
+object Event extends Event
 trait Event {
 
   def changeInfo[T <: ObjectResource](watchEvent: WatchEvent[T]) = {
@@ -32,19 +29,4 @@ trait Event {
     s"(${getKind(obj)} ${metadata.name} ${watchEvent._type})"
   }
   def getKind(obj: ObjectResource) = if (obj.kind.isEmpty) obj.getClass.getSimpleName else obj.kind // sometimes kind is empty.
-
-  /**
-   * TODO rewrite using `ProvidedAction`, ensuring all K8s effects are executed in executeActions.
-   * Finds the associated [[CloudflowApplication.CR]]s for [[AppChangeEvent]]s.
-   * The resulting flow outputs tuples of the app and the streamlet change event.
-   */
-  def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
-      client: KubernetesClient
-  )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
-    Flow[E].mapAsync(1) { changeEvent ⇒
-      val ns = changeEvent.namespace
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
-        cr -> changeEvent
-      }
-    }
 }

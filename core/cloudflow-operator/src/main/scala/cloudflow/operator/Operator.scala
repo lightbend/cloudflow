@@ -23,6 +23,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import cloudflow.operator.action._
 import cloudflow.operator.event._
+import cloudflow.operator.flow._
 import play.api.libs.json.Format
 import skuber._
 import skuber.api.client._
@@ -71,8 +72,8 @@ object Operator {
 
     runStream(
       watch[CloudflowApplication.CR](client, DefaultWatchOptions)
-        .via(AppEvent.fromWatchEvent(logAttributes))
-        .via(AppEvent.toAction)
+        .via(AppEventFlow.fromWatchEvent(logAttributes))
+        .via(AppEventFlow.toAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right)
         .mapMaterializedValue {
@@ -107,10 +108,10 @@ object Operator {
     // into Output secret create actions.
     runStream(
       watch[Secret](client, watchOptions)
-        .via(ConfigInputChangeEvent.fromWatchEvent())
+        .via(ConfigInputChangeEventFlow.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(ConfigInputChangeEvent.mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEvent.toInputConfigUpdateAction)
+        .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
+        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
@@ -136,9 +137,9 @@ object Operator {
 
     runStream(
       watch[Secret](client, watchOptions)
-        .via(StreamletChangeEvent.fromWatchEvent())
-        .via(StreamletChangeEvent.mapToAppInSameNamespace(client))
-        .via(StreamletChangeEvent.toConfigUpdateAction)
+        .via(StreamletChangeEventFlow.fromWatchEvent())
+        .via(mapToAppInSameNamespace(client))
+        .via(StreamletChangeEventFlow.toConfigUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",
@@ -151,10 +152,10 @@ object Operator {
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client, DefaultWatchOptions)
-        .via(StatusChangeEvent.fromWatchEvent())
+        .via(StatusChangeEventFlow.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
-        .via(StatusChangeEvent.mapToAppInSameNamespace(client))
-        .via(StatusChangeEvent.toStatusUpdateAction)
+        .via(mapToAppInSameNamespace(client))
+        .via(StatusChangeEventFlow.toStatusUpdateAction)
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
@@ -168,6 +169,21 @@ object Operator {
       .mapAsync(1)(actionExecutor.execute)
       .log("action", Action.executed)
       .withAttributes(logAttributes)
+
+  /**
+   * TODO rewrite using `ProvidedAction`, ensuring all K8s effects are executed in executeActions.
+   * Finds the associated [[CloudflowApplication.CR]]s for [[AppChangeEvent]]s.
+   * The resulting flow outputs tuples of the app and the streamlet change event.
+   */
+  def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
+      client: KubernetesClient
+  )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
+    Flow[E].mapAsync(1) { changeEvent ⇒
+      val ns = changeEvent.namespace
+      client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
+        cr -> changeEvent
+      }
+    }
 
   // NOTE: This watch can produce duplicate ADD events on startup, since it turns current resources into watch events,
   // and concatenates results of a subsequent watch. This can be improved.
