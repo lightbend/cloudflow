@@ -167,5 +167,4 @@ final case class Settings(config: Config) extends Extension {
   }
 }
 
-final case class Resources(request: String, limit: String)
 final case class ApiSettings(bindInterface: String, bindPort: Int)
