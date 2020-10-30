@@ -17,7 +17,6 @@ type configureApplicationCMD struct {
 	configFiles []string
 }
 
-
 func init() {
 
 	configureCMD := &configureApplicationCMD{}

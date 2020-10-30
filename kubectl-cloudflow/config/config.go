@@ -120,7 +120,7 @@ func GetAppConfiguration(
 	return appConfig, nil
 }
 
-func MountExistingPVCs(applicationSpec cfapp.CloudflowApplicationSpec, config *Config)(*Config, error) {
+func MountExistingPVCs(applicationSpec cfapp.CloudflowApplicationSpec, config *Config) (*Config, error) {
 	flinkPVCConfig, err := mountExistingPVC(applicationSpec, "flink", config)
 	if err != nil {
 		return config, err
@@ -144,19 +144,20 @@ func MountExistingPVCs(applicationSpec cfapp.CloudflowApplicationSpec, config *C
 	return config, nil
 
 }
+
 // If the config has already that volumen mount will not proceed
-// otherwise will add default PVC configuration. 
-func mountExistingPVC(applicationSpec cfapp.CloudflowApplicationSpec, runtime string, config *Config)(string, error) {
-	 if strings.Contains(config.String(), fmt.Sprintf("/mnt/%s/storage",runtime)) {
-	 	fmt.Printf(`the configuration provided is already mounting a PVC on '/mnt/%s/storage'.
+// otherwise will add default PVC configuration.
+func mountExistingPVC(applicationSpec cfapp.CloudflowApplicationSpec, runtime string, config *Config) (string, error) {
+	if strings.Contains(config.String(), fmt.Sprintf("/mnt/%s/storage", runtime)) {
+		fmt.Printf(`the configuration provided is already mounting a PVC on '/mnt/%s/storage'.
 Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/storage'
 `, runtime, runtime, runtime)
-	 	return config.String(), nil
-	 }
-	 for _, deployment := range applicationSpec.Deployments {
-	 	if deployment.Runtime == runtime {
-	 		config := fmt.Sprintf(
-	 			`cloudflow.runtimes.%s.kubernetes.pods.pod {
+		return config.String(), nil
+	}
+	for _, deployment := range applicationSpec.Deployments {
+		if deployment.Runtime == runtime {
+			config := fmt.Sprintf(
+				`cloudflow.runtimes.%s.kubernetes.pods.pod {
 					volumes {
 						foo {
 							pvc {
@@ -173,11 +174,11 @@ Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/
 							}
 						}
 					}
-				}`,runtime, runtime, runtime)
+				}`, runtime, runtime, runtime)
 			return config, nil
-	 	}
-	 }
-	return 	""	, nil
+		}
+	}
+	return "", nil
 }
 
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config

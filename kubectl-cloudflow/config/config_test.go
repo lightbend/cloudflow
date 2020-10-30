@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"testing"
 	"strings"
+	"testing"
 
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
@@ -328,7 +328,7 @@ func Test_validateConfigFiles(t *testing.T) {
 
 func Test_mountingExistingClaim(t *testing.T) {
 	spec := createSpecForDefaultPVCs()
-	config, err := mountExistingPVC(spec, "flink", newConfig(""))	
+	config, err := mountExistingPVC(spec, "flink", newConfig(""))
 	assert.Empty(t, err)
 	expected := `
 	cloudflow.runtimes.flink.kubernetes.pods.pod {
@@ -349,18 +349,19 @@ func Test_mountingExistingClaim(t *testing.T) {
 			}
 		}
 	}`
-	expected = strings.Replace(expected,"\t","",-1)
-	expected = strings.Replace(expected,"\n","",-1)
-	config = strings.Replace(config,"\t","",-1)
-	config = strings.Replace(config,"\n","",-1)
-	assert.Equal(t, expected, config) 
+	expected = strings.Replace(expected, "\t", "", -1)
+	expected = strings.Replace(expected, "\n", "", -1)
+	config = strings.Replace(config, "\t", "", -1)
+	config = strings.Replace(config, "\n", "", -1)
+	assert.Equal(t, expected, config)
 }
+
 //cheking doesn't add if already exists in config
 // as when --conf is used
 func Test_mountingExistingClaim2(t *testing.T) {
 	spec := createSpecForDefaultPVCs()
 	prevConfig := newConfig(
-	`cloudflow.runtimes.flink.kubernetes.pods.pod {
+		`cloudflow.runtimes.flink.kubernetes.pods.pod {
 		volumes {
 			foo {
 				pvc {
@@ -378,18 +379,18 @@ func Test_mountingExistingClaim2(t *testing.T) {
 			}
 		}
 	}`)
-	config, err := mountExistingPVC(spec, "flink", prevConfig)	
+	config, err := mountExistingPVC(spec, "flink", prevConfig)
 	assert.Empty(t, err)
-	assert.Equal(t, prevConfig.String(), config) 
+	assert.Equal(t, prevConfig.String(), config)
 }
 
-// checking mounting multiple PVCs 
+// checking mounting multiple PVCs
 func Test_mountingExistingMultipleClaims(t *testing.T) {
 	//there is a preexisting config
 	config, err := loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
 
 	spec := createSpecForDefaultPVCs()
-	config, err = MountExistingPVCs(spec, config)	
+	config, err = MountExistingPVCs(spec, config)
 	assert.Empty(t, err)
 	assert.Contains(t, config.String(), "cloudflow-flink")
 	assert.Contains(t, config.String(), "cloudflow-spark")
