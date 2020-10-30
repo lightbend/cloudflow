@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"strings"
 
 	"github.com/go-akka/configuration"
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/cfapp"
@@ -115,6 +116,7 @@ func Test_loadAndMergeConfigs(t *testing.T) {
 
 	config, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
 	hoconConfig = configuration.ParseString(config.String())
+	fmt.Printf("configgggggggg %s", config.String())
 	assert.Empty(t, err)
 	assert.Equal(t, "5m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 	assert.Equal(t, "11m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
@@ -324,6 +326,103 @@ func Test_validateConfigFiles(t *testing.T) {
 	err = validateConfigurationAgainstDescriptor(spec, *config)
 	assert.NotEmpty(t, err)
 }
+
+func Test_mountingExistingClaim(t *testing.T) {
+	spec := createSpecForDefaultPVCs()
+	config, err := mountExistingPVC(spec, "flink", newConfig(""))	
+	assert.Empty(t, err)
+	expected := `
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				pvc {
+					name = cloudflow-flink-pvc
+					read-only = false
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mount-path = "/mnt/flink/storage"
+					read-only = false
+				}
+			}
+		}
+	}`
+	expected = strings.Replace(expected,"\t","",-1)
+	expected = strings.Replace(expected,"\n","",-1)
+	config = strings.Replace(config,"\t","",-1)
+	config = strings.Replace(config,"\n","",-1)
+	assert.Equal(t, expected, config) 
+}
+//cheking doesn't add if already exists in config
+// as when --conf is used
+func Test_mountingExistingClaim2(t *testing.T) {
+	spec := createSpecForDefaultPVCs()
+	prevConfig := newConfig(
+	`cloudflow.runtimes.flink.kubernetes.pods.pod {
+		volumes {
+			foo {
+				pvc {
+					name = cloudflow-other-pvc
+					read-only = false
+				}
+			}
+		}
+		containers.container {
+			volume-mounts {
+				foo {
+					mount-path = "/mnt/flink/storage"
+					read-only = false
+				}
+			}
+		}
+	}`)
+	config, err := mountExistingPVC(spec, "flink", prevConfig)	
+	assert.Empty(t, err)
+	assert.Equal(t, prevConfig.String(), config) 
+}
+
+// checking mounting multiple PVCs 
+func Test_mountingExistingMultipleClaims(t *testing.T) {
+	//there is a preexisting config
+	config, err := loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
+
+	spec := createSpecForDefaultPVCs()
+	config, err = MountExistingPVCs(spec, config)	
+	assert.Empty(t, err)
+	assert.Contains(t, config.String(), "cloudflow-flink-pvc")
+	assert.Contains(t, config.String(), "cloudflow-spark-pvc")
+}
+
+func createSpecForDefaultPVCs() cfapp.CloudflowApplicationSpec {
+	return cfapp.CloudflowApplicationSpec{
+		Streamlets: []cfapp.Streamlet{
+			{
+				Descriptor: cfapp.Descriptor{
+					ConfigParameters: []cfapp.ConfigParameterDescriptor{
+						{
+							Key:          "my-parameter",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+					},
+				},
+				Name: "my-streamlet",
+			},
+		},
+		Deployments: []cfapp.Deployment{
+			{
+				Runtime: "flink",
+			},
+			{
+				Runtime: "spark",
+			},
+		},
+	}
+}
+
 func createSpec() cfapp.CloudflowApplicationSpec {
 	return cfapp.CloudflowApplicationSpec{
 		Streamlets: []cfapp.Streamlet{
@@ -351,6 +450,7 @@ func createSpec() cfapp.CloudflowApplicationSpec {
 		},
 	}
 }
+
 func Test_validateConfig(t *testing.T) {
 	spec := createSpec()
 	noStreamletsOrRuntimes := newConfig("a.b.c { }")

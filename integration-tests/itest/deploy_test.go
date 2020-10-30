@@ -35,6 +35,8 @@ const (
 	UpdateSparkConfigurationFile   = "./resources/update_spark_config.conf"
 	UpdateMountingSecret           = "./resources/update_mounting_secret.conf"
 	UpdateMountingPVC              = "./resources/update_mounting_pvc.conf"
+	SparkPVCResourceFile           = "./resources/spark-pvc.yaml"
+	FlinkPVCResourceFile           = "./resources/flink-pvc.yaml"
 	PVCResourceFile                = "./resources/pvc.yaml"
 	PVCResourceName                = "myclaim"
 	PVCResourceLocalFileMountPath  = "./resources/imhere.txt"
@@ -89,6 +91,22 @@ var _ = Describe("Application deployment", func() {
 	})
 
 	Context("when I deploy an application", func() {
+
+		It("should create namespace to hold the pvcs", func() {
+			_, err := k8s.CreateNamespace(swissKnifeApp.Name)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should deploy a pvc for flink", func() {
+			_, err := k8s_pvc.CreatePVC(SparkPVCResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should deploy a pvc for spark", func() {
+			_, err := k8s_pvc.CreatePVC(FlinkPVCResourceFile, swissKnifeApp.Name, clientset)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should start a deployment", func() {
 			output, err := cli.Deploy(swissKnifeApp, "", "")
 			Expect(err).NotTo(HaveOccurred())

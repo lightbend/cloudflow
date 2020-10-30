@@ -120,6 +120,66 @@ func GetAppConfiguration(
 	return appConfig, nil
 }
 
+func mountExistingPVCs(args []string, applicationSpec cfapp.CloudflowApplicationSpec, config *Config)(*Config, error) {
+	flinkPVCConfig, err := mountExistingPVC(args, applicationSpec, "flink")
+	if err != nil {
+		return config, err
+	}
+	err = validateConfig(newConfig(flinkPVCConfig), applicationSpec)
+	if err != nil {
+		return config, err
+	}
+	config.append(flinkPVCConfig)
+
+	sparkPVCConfig, err := mountExistingPVC(args, applicationSpec, "spark")
+	if err != nil {
+		return config, err
+	}
+	err = validateConfig(newConfig(sparkPVCConfig), applicationSpec)
+	if err != nil {
+		return config, err
+	}
+	config.append(sparkPVCConfig)
+
+	return config, nil
+
+}
+
+func mountExistingPVC(args []string, applicationSpec cfapp.CloudflowApplicationSpec, runtime string)(string, error) {
+	// if args contains --ssd
+	for _, arg := range args {
+		if arg == "--ssd" || arg == "--streamlet-storage-default" {
+			 for _, deployment := range applicationSpec.Deployments {
+			 	if deployment.Runtime == runtime {
+			 		config := fmt.Sprintf(
+			 			`cloudflow.runtimes.%s.kubernetes.pods.pod {
+							volumes {
+								foo {
+									pvc {
+										name = cloudflow-%s-pvc
+										read-only = false
+									}
+								}
+							}
+							containers.container {
+								volume-mounts {
+									foo {
+										mount-path = "/mnt/%s/storage"
+										read-only = false
+									}
+								}
+							}
+						}`,runtime, runtime, runtime)
+					return config, nil
+			 	}
+			 }
+
+		}
+    	
+	} 
+	return 	""	, nil
+}
+
 //LoadAndMergeConfigs loads specified configuration files and merges them into one Config
 func loadAndMergeConfigs(configFiles []string) (*Config, error) {
 	if len(configFiles) == 0 {

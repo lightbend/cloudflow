@@ -28,6 +28,18 @@ func InitClient() *kubernetes.Clientset {
 	return clientset
 }
 
+func CreateNamespace(namespace string) (string, error) {
+	cmd := exec.Command("kubectl", "get", "ns", namespace)
+	out, _ := cmd.CombinedOutput()
+	response := string(out)
+	if strings.Contains(response,"NAME") {
+		return response, nil
+	} 
+	cmd = exec.Command("kubectl", "create", "ns", namespace)
+	out, err := cmd.CombinedOutput()
+	return string(out), err 
+}
+
 func ReadFile(namespace string, clientset *kubernetes.Clientset, podPartialName string, readFilePath string) (string, error) {
 
 	coreV1Client := clientset.CoreV1()
