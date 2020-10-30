@@ -34,6 +34,10 @@ case class CloudflowLabels(partOf: String, appVersion: String) {
 }
 
 object CloudflowLabels {
+  val AppIdLabel         = "com.lightbend.cloudflow/app-id"
+  val ConfigFormatLabel  = "com.lightbend.cloudflow/config-format"
+  val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
+  val ConfigUpdateLabel  = "com.lightbend.cloudflow/config-update"
 
   def apply(app: CloudflowApplication.CR): CloudflowLabels =
     CloudflowLabels(app.spec.appId, app.spec.appVersion)

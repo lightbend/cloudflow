@@ -213,8 +213,8 @@ object AkkaRunner extends Runner[Deployment] {
         .named(podName)
         .addLabels(
           labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
-                Operator.StreamletNameLabel -> deployment.streamletName,
-                Operator.AppIdLabel         -> appId
+                CloudflowLabels.StreamletNameLabel -> deployment.streamletName,
+                CloudflowLabels.AppIdLabel         -> appId
               ).mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")

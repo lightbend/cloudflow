@@ -35,6 +35,9 @@ case class DeploymentContext(akkaRunnerSettings: AkkaRunnerSettings,
   """
 }
 
+final case class PersistentStorageSettings(resources: Resources, storageClassName: String)
+final case class Resources(request: String, limit: String)
+
 final case class Host(name: String, port: Option[Int]) {
   override def toString = s"""$name:${port.getOrElse(80)}"""
 }

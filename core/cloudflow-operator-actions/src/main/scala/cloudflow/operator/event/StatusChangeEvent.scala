@@ -59,8 +59,8 @@ object StatusChangeEvent extends Event {
             case EventType.DELETED ⇒
               currentObjects = currentObjects - absoluteName
               (for {
-                appId         ← metadata.labels.get(Operator.AppIdLabel)
-                streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+                appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+                streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
               } yield {
                 log.info(s"[Status changes] Detected StatusChangeEvent for $absoluteName: ${changeInfo(watchEvent)}.")
                 StatusChangeEvent(appId, streamletName, watchEvent)
@@ -68,8 +68,8 @@ object StatusChangeEvent extends Event {
 
             case EventType.ADDED | EventType.MODIFIED ⇒
               (for {
-                appId         ← metadata.labels.get(Operator.AppIdLabel)
-                streamletName ← metadata.labels.get(Operator.StreamletNameLabel)
+                appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+                streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
               } yield {
                 currentObjects = currentObjects + (absoluteName -> watchEvent)
                 log.info(s"[Status changes] Detected StatusChangeEvent for $absoluteName: ${changeInfo(watchEvent)}.")
