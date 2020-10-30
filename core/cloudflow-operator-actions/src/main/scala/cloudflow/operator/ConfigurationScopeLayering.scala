@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator.event
+package cloudflow.operator
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.TopicActions
@@ -44,7 +44,7 @@ object ConfigurationScopeLayering {
   }
 
   // open for unit testing
-  private[event] def mergeToStreamletConfig(runtime: String, streamletName: String, appConfig: Config): Config = {
+  private[operator] def mergeToStreamletConfig(runtime: String, streamletName: String, appConfig: Config): Config = {
     val runtimeConfig    = getGlobalRuntimeConfigAtStreamletPath(runtime, streamletName, appConfig)
     val kubernetesConfig = getGlobalKubernetesConfigAtStreamletPath(runtime, streamletName, appConfig)
     var streamletConfig  = getMergedStreamletConfig(streamletName, appConfig, runtimeConfig, kubernetesConfig)
@@ -128,10 +128,10 @@ object ConfigurationScopeLayering {
    * If no cloudflow.topics.<topic> exists then use the named Kafka cluster if one exists, otherwise default.
    * The runner merges the secret on top of the configmap, which brings everything together.
    */
-  private[event] def moveTopicsConfigToPortMappings(deployment: StreamletDeployment,
-                                                    streamletConfig: Config,
-                                                    appConfig: Config,
-                                                    clusterSecretConfigs: Map[String, Config]): Config = {
+  private[operator] def moveTopicsConfigToPortMappings(deployment: StreamletDeployment,
+                                                       streamletConfig: Config,
+                                                       appConfig: Config,
+                                                       clusterSecretConfigs: Map[String, Config]): Config = {
     val defaultClusterConfig = clusterSecretConfigs.get(TopicActions.DefaultConfigurationName)
     val portMappingConfigs = deployment.portMappings.flatMap {
       case (port, topic) =>

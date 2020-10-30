@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package cloudflow.operator.event
+package cloudflow.operator
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.blueprint.deployment.Topic
 import org.scalatest.{ ConfigMap => _ }
 import org.scalatest._
-import cloudflow.operator.TestDeploymentContext
 import com.typesafe.config.ConfigFactory
 
 class ConfigurationScopeLayeringSpec
