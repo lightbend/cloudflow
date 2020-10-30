@@ -66,7 +66,7 @@ cloudflow.runtimes.flink.kubernetes.pods.pod {
 }
 ----
 
-This will use then `cloudflow-another-name` PVC instead of the default `cloudflow-flink`. You may override the default PVC configuration as long as `read-only` remains `false` and the `mount-path` is equal to `/mnt/[runtime]/storage`. Where `[runtime]` can be `flink` or `spark`. This configuration can only be applied to runtimes not streamlet individually. 
+This will use then `cloudflow-another-name` PVC instead of the default `cloudflow-flink`. You may override the default PVC configuration as long as `read-only` remains `false` and the `mount-path` is equal to `/mnt/[runtime]/storage`, where `[runtime]` can be `flink` or `spark`. This configuration can only be applied to runtimes, not individual streamlets. 
 
 
 The command supports a flag `--scale` to specify the scale of each streamlet on deploy in the form of key/value
