@@ -81,8 +81,6 @@ same name as the application.
 
   kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name
 
-otherwise is necesary that those mounting get defined in the configuration when deploying. See documentation ¡€#¢¡€#¢#€
-
 It is also possible to specify more than one "volume-mount" parameter.
 
   kubectl cloudflow deploy call-record-aggregator.json --volume-mount my-streamlet.mount=pvc-name --volume-mount my-other-streamlet.mount=pvc-name

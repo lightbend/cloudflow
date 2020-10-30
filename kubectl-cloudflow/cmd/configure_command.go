@@ -13,8 +13,8 @@ import (
 )
 
 type configureApplicationCMD struct {
-	cmd         				*cobra.Command
-	configFiles 				[]string
+	cmd         *cobra.Command
+	configFiles []string
 }
 
 
@@ -49,7 +49,6 @@ The arguments passed with '[config-key]=[value]' pairs take precedence over the 
 		Args: validateConfigureCMDArgs,
 	}
 	configureCMD.cmd.Flags().StringArrayVar(&configureCMD.configFiles, "conf", []string{}, "Accepts one or more files in HOCON format.")
-
 	rootCmd.AddCommand(configureCMD.cmd)
 }
 

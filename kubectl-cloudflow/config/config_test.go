@@ -116,7 +116,6 @@ func Test_loadAndMergeConfigs(t *testing.T) {
 
 	config, err = loadAndMergeConfigs([]string{"test_config_files/test1.conf", "test_config_files/test2.conf", "test_config_files/test3.conf"})
 	hoconConfig = configuration.ParseString(config.String())
-	fmt.Printf("configgggggggg %s", config.String())
 	assert.Empty(t, err)
 	assert.Equal(t, "5m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.watermark"))
 	assert.Equal(t, "11m", hoconConfig.GetString("cloudflow.streamlets.cdr-aggregator.config-parameters.group-by-window"))
