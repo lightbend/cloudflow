@@ -79,12 +79,12 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
     )
 
     val volumes = List(
-      Volume("persistent-storage", Volume.PersistentVolumeClaimRef(s"$appId-spark-pvc")),
+      // Volume("persistent-storage", Volume.PersistentVolumeClaimRef(s"$appId-spark-pvc")),
       Runner.DownwardApiVolume
     )
 
     val volumeMounts = List(
-      Volume.Mount("persistent-storage", "/mnt/spark/storage"),
+      // Volume.Mount("persistent-storage", "/mnt/spark/storage"),
       Runner.DownwardApiVolumeMount
     )
 
