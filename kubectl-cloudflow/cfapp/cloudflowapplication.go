@@ -143,6 +143,7 @@ type CloudflowApplicationStatus struct {
 	AppID             string            `json:"app_id"`
 	AppVersion        string            `json:"app_version"`
 	AppStatus         string            `json:"app_status"`
+	AppMessage        string            `json:"app_message"`
 	EndpointStatuses  []EndpointStatus  `json:"endpoint_statuses"`
 	StreamletStatuses []StreamletStatus `json:"streamlet_statuses"`
 }

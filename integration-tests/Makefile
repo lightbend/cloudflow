@@ -40,7 +40,7 @@ prepare-cluster:
 	helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
 	(for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
 	@echo '****** Installing NFS provisioner'
-	helm repo add stable https://kubernetes-charts.storage.googleapis.com/ | true
+	helm repo add stable https://charts.helm.sh/stable | true
 	helm repo update
 	helm upgrade -i nfs-server-provisioner stable/nfs-server-provisioner --set storageClass.provisionerName=cloudflow-nfs --namespace cloudflow
 	@echo '****** Installing Spark Operator'
@@ -84,4 +84,4 @@ delete-gke-cluster:
 run-it-tests:
 	@echo '****** Run Integration Tests'
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
-	(PATH=$$PWD/itest:$$PATH cd itest && ginkgo -v)
+	(export PATH=$$PWD/itest:$$PATH && cd itest && ginkgo -v)

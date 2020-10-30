@@ -167,7 +167,4 @@ final case class Settings(config: Config) extends Extension {
   }
 }
 
-final case class Resources(request: String, limit: String)
-
-final case class PersistentStorageSettings(resources: Resources, storageClassName: String)
 final case class ApiSettings(bindInterface: String, bindPort: Int)

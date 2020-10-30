@@ -1,4 +1,4 @@
-[![Join the chat at https://gitter.im/lightbend/cloudflow](https://badges.gitter.im/lightbend/cloudflow.svg)](https://gitter.im/lightbend/cloudflow?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://cloudflow.zulipchat.com/](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://cloudflow.zulipchat.com/)
 &nbsp;
 ![Build status](https://github.com/lightbend/cloudflow/workflows/Build%20and%20Test/badge.svg?branch=master)
 
@@ -82,6 +82,6 @@ Cloudflow aims to make this easier by integrating the most popular streaming fra
 * [Getting Started with Cloudflow](https://cloudflow.io/docs/current/get-started/index.html)
 * [Developing Applications with Cloudflow](https://cloudflow.io/docs/current/develop/cloudflow-streamlets.html)
 * [Setup Cloudflow on a Kubernetes Cluster](https://cloudflow.io/docs/current/administration/index.html)
-* Chat with us on [Gitter](https://gitter.im/lightbend/cloudflow)
+* Chat with us on [Zulip](https://cloudflow.zulipchat.com/)
 * Ask us a question on [Discuss](https://discuss.lightbend.com/c/cloudflow)
 * Want to [contribute](./CONTRIBUTING.md)?

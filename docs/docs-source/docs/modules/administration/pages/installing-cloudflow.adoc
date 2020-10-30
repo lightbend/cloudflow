@@ -37,7 +37,9 @@ The `kafkaClusters.default.bootstrapServers` parameter sets the address and port
 
 The following command installs Cloudflow using the Helm chart:
 
+[subs="attributes+"]
   helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
+    --version "{cloudflow-version}" \
     --set cloudflow_operator.persistentStorageClass=nfs \
     --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 
@@ -51,7 +53,9 @@ The `kafkaClusters.default.bootstrapServers` parameter sets the address and port
 
 The following command installs Cloudflow using the Helm chart:
 
+[subs="attributes+"]
   helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
+    --version "{cloudflow-version}" \
     --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 
 === Default and named Kafka clusters
@@ -90,7 +94,9 @@ kafkaClusters:
 
 Then use these values when you install or upgrade Cloudflow:
 
+[subs="attributes+"]
   helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
+    --version "{cloudflow-version}" \
     -f ./kafka-clusters.yaml
 
 You can provide as many additional named Kafka clusters as you like that can be referenced within the topic configuration of a blueprint (see the xref:develop:blueprints.adoc[Named Kafka Clusters] section of the Using Blueprint docs for more details).

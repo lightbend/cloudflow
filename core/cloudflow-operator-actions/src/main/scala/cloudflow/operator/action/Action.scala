@@ -17,11 +17,11 @@
 package cloudflow.operator.action
 import akka.actor.ActorSystem
 import akka.pattern._
+import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
-
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -84,6 +84,7 @@ sealed trait Action[+T <: ObjectResource] {
  */
 object Action {
   val ConflictCode = 409
+  val log          = LoggerFactory.getLogger(Action.getClass)
 
   /**
    * Creates a [[CreateOrUpdateAction]].
@@ -141,10 +142,12 @@ object Action {
   /**
    * Creates an [[UpdateStatusAction]].
    */
-  def updateStatus[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
-                                                                              resourceDefinition: ResourceDefinition[T],
-                                                                              statusEv: HasStatusSubresource[T]) =
-    new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor)
+  def updateStatus[T <: ObjectResource](
+      resource: T,
+      editor: ObjectEditor[T],
+      predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+  )(implicit format: Format[T], resourceDefinition: ResourceDefinition[T], statusEv: HasStatusSubresource[T]) =
+    new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor, predicateForUpdate)
 
   /**
    * Log message for when an [[Action]] is about to get executed.
@@ -282,10 +285,11 @@ class UpdateStatusAction[T <: ObjectResource](
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val statusEv: HasStatusSubresource[T],
-    val editor: ObjectEditor[T]
+    val editor: ObjectEditor[T],
+    predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
 ) extends ResourceAction[T] {
 
-  val name = "update"
+  val name = "updateStatus"
 
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
@@ -306,7 +310,14 @@ class UpdateStatusAction[T <: ObjectResource](
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
       res ← resourceVersionUpdated
-        .map(resourceToUpdate => recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus))
+        .map { resourceToUpdate =>
+          if (predicateForUpdate(existing, resourceToUpdate)) {
+            recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
+          } else {
+            Action.log.info(s"Ignoring status update for resource ${resource.metadata.name}")
+            Future.successful(resource)
+          }
+        }
         .getOrElse(Future.successful(resource))
     } yield res
 }

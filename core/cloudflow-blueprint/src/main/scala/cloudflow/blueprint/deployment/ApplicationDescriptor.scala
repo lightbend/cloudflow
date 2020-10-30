@@ -44,7 +44,7 @@ object ApplicationDescriptor {
    * The version of the Application Descriptor Format.
    * This version is also hardcoded in (versions of) kubectl-cloudflow in `domain.SupportedApplicationDescriptorVersion`.
    */
-  val Version = "4"
+  val Version = "5"
 
   val PrometheusAgentKey = "prometheus"
 

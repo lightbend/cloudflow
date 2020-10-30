@@ -20,7 +20,7 @@ import com.typesafe.config._
 object Topic {
   val LegalTopicChars   = "[a-zA-Z0-9\\._\\-]"
   val LegalTopicPattern = s"$LegalTopicChars+".r
-  val MaxLength         = 255
+  val MaxLength         = 249
 }
 
 /**

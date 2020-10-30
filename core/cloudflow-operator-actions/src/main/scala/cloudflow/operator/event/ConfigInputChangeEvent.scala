@@ -69,7 +69,7 @@ object ConfigInputChangeEvent extends Event {
             case EventType.ADDED | EventType.MODIFIED ⇒
               if (currentSecrets.get(absoluteName).forall(hasChanged)) {
                 (for {
-                  appId        ← metadata.labels.get(Operator.AppIdLabel)
+                  appId        ← metadata.labels.get(CloudflowLabels.AppIdLabel)
                   configFormat <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.InputConfig
                   _ = system.log.info(s"[app: $appId application configuration changed ${changeInfo(watchEvent)}]")
                 } yield {
@@ -211,9 +211,9 @@ object ConfigInputChangeEvent extends Event {
         namespace = app.metadata.namespace,
         labels =
           CloudflowLabels(app).baseLabels ++ Map(
-                Operator.AppIdLabel          -> app.spec.appId,
-                Operator.StreamletNameLabel  -> streamletDeployment.streamletName,
-                CloudflowLabels.ConfigFormat -> configFormat
+                CloudflowLabels.AppIdLabel         -> app.spec.appId,
+                CloudflowLabels.StreamletNameLabel -> streamletDeployment.streamletName,
+                CloudflowLabels.ConfigFormat       -> configFormat
               ),
         ownerReferences = CloudflowApplication.getOwnerReferences(app)
       ),

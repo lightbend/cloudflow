@@ -22,7 +22,7 @@ var ReleaseTag = "SNAPSHOT"
 
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.
-const ProtocolVersion = "2"
+const ProtocolVersion = "3"
 
 // ProtocolVersionKey is the key of the protocol version in the configmap
 const ProtocolVersionKey = "protocol-version"
@@ -41,7 +41,7 @@ const RequiredFlinkVersion = "v1beta1"
 
 // SupportedApplicationDescriptorVersion is the Application Descriptor Version that this version of kubectl-cloudflow supports.
 // This version must match up with the version that is added by sbt-cloudflow, which is hardcoded in `cloudflow.blueprint.deployment.ApplicationDescriptor`.
-const SupportedApplicationDescriptorVersion = "4"
+const SupportedApplicationDescriptorVersion = "5"
 
 // FailOnProtocolVersionMismatch fails and exits if the protocol version of kubectl-cloudflow does not match with the cloudflow operator protocol version.
 func FailOnProtocolVersionMismatch() {

@@ -435,6 +435,23 @@ lazy val localRunner =
     .settings(
       scalafmtOnCompile := true
     )
+lazy val operatorActions = 
+  cloudflowModule("cloudflow-operator-actions")
+    .dependsOn(blueprint % "compile->compile;test->test")
+    .settings(
+      scalafmtOnCompile := true,
+      libraryDependencies ++= Vector(
+            AkkaSlf4j,
+            Ficus,
+            Logback,
+            Skuber,
+            ScalaTest,
+            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
+            AkkaStreamTestkit  % "test",
+            ScalaCheck         % "test",
+            Avro4sJson         % "test"
+          )
+    )
 
 lazy val operator =
   cloudflowModule("cloudflow-operator")
@@ -445,6 +462,7 @@ lazy val operator =
       ScalafmtPlugin
     )
     .dependsOn(blueprint % "compile->compile;test->test")
+    .dependsOn(operatorActions)
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
