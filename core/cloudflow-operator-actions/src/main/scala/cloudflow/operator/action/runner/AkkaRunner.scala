@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import play.api.libs.json._
 import skuber.Volume._
@@ -25,6 +24,7 @@ import skuber.rbac._
 import skuber._
 
 import cloudflow.blueprint.deployment._
+import cloudflow.operator._
 import cloudflow.operator.action._
 
 /**

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
+
 import scala.collection.JavaConverters._
 import cloudflow.blueprint.deployment._
-import cloudflow.operator.runner.SparkResource._
+import SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
 
@@ -30,6 +30,7 @@ import skuber._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
+import cloudflow.operator._
 import cloudflow.operator.action.Action
 
 trait PatchProvider[T <: Patch] {

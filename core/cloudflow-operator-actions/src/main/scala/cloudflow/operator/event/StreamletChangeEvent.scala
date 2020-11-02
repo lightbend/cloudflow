@@ -29,8 +29,8 @@ import skuber.api.client._
 import skuber.json.format._
 
 import cloudflow.operator.action._
-import cloudflow.operator.runner._
-import cloudflow.operator.runner.SparkResource.SpecPatch
+import cloudflow.operator.action.runner._
+import cloudflow.operator.action.runner.SparkResource.SpecPatch
 
 /**
  * Indicates that a streamlet has changed.

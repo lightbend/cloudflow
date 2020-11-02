@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -29,6 +28,8 @@ import skuber.ResourceSpecification.Subresources
 import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+
+import cloudflow.operator._
 import cloudflow.operator.action.Action
 
 /**

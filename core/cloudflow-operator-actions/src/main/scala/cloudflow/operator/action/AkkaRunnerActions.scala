@@ -21,7 +21,7 @@ import scala.collection.immutable._
 
 import skuber._
 
-import cloudflow.operator.runner._
+import cloudflow.operator.action.runner._
 
 object AkkaRunnerActions extends RunnerActions(AkkaRunner) {
   def apply(

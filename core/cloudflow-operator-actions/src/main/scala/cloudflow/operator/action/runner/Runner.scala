@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import java.nio.charset.StandardCharsets
 
@@ -33,6 +32,8 @@ import skuber.PersistentVolume.AccessMode
 import skuber.PersistentVolumeClaim.VolumeMode
 import skuber._
 import cloudflow.blueprint.deployment._
+
+import cloudflow.operator._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
 

@@ -23,6 +23,8 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import skuber.Resource.Quantity
 
+import cloudflow.operator.action.runner._
+
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   override def lookup                                       = Settings
   override def createExtension(system: ExtendedActorSystem) = new Settings(system.settings.config)
@@ -104,18 +106,18 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   }
 
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
-    case runner.AkkaRunner.runtime ⇒
+    case AkkaRunner.runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case runner.SparkRunner.runtime ⇒
+    case SparkRunner.runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/spark.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case runner.FlinkRunner.runtime ⇒
+    case FlinkRunner.runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/flink.yaml",
@@ -145,9 +147,9 @@ final case class Settings(config: Config) extends Extension {
   val podName        = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
-  val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", runner.AkkaRunner.runtime)
-  val sparkRunnerSettings       = getSparkRunnerSettings(config, root, runner.SparkRunner.runtime)
-  val flinkRunnerSettings       = getFlinkRunnerSettings(config, root, runner.FlinkRunner.runtime)
+  val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", AkkaRunner.runtime)
+  val sparkRunnerSettings       = getSparkRunnerSettings(config, root, SparkRunner.runtime)
+  val flinkRunnerSettings       = getFlinkRunnerSettings(config, root, FlinkRunner.runtime)
   val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
 
   val api = ApiSettings(
