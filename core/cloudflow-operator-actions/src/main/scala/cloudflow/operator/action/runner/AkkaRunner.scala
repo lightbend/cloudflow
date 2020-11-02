@@ -245,18 +245,18 @@ object AkkaRunner extends Runner[Deployment] {
   private def createResourceRequirements(podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
     var resourceRequirements = Resource.Requirements(
       requests = Map(
-        Resource.cpu    -> ctx.akkaRunnerSettings.resourceConstraints.cpuRequests,
-        Resource.memory -> ctx.akkaRunnerSettings.resourceConstraints.memoryRequests
+        Resource.cpu    -> ctx.akkaRunnerDefaults.resourceConstraints.cpuRequests,
+        Resource.memory -> ctx.akkaRunnerDefaults.resourceConstraints.memoryRequests
       )
     )
 
-    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.cpuLimits
+    resourceRequirements = ctx.akkaRunnerDefaults.resourceConstraints.cpuLimits
       .map { cpuLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.cpu -> cpuLimit))
       }
       .getOrElse(resourceRequirements)
 
-    resourceRequirements = ctx.akkaRunnerSettings.resourceConstraints.memoryLimits
+    resourceRequirements = ctx.akkaRunnerDefaults.resourceConstraints.memoryLimits
       .map { memoryLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.memory -> memoryLimit))
       }
@@ -283,7 +283,7 @@ object AkkaRunner extends Runner[Deployment] {
       )
     } else Nil
 
-    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerSettings.javaOptions) :: prometheusEnvVars
+    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerDefaults.javaOptions) :: prometheusEnvVars
     val envVarsFomPodConfigMap = podsConfig.pods
       .get(PodsConfig.CloudflowPodName)
       .flatMap { podConfig =>

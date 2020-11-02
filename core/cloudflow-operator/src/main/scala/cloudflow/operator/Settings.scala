@@ -53,54 +53,54 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("limits-memory").map(v ⇒ Quantity(v))
   )
-  private def getSparkPodSettings(config: Config): SparkPodSettings = SparkPodSettings(
+  private def getSparkPodDefaults(config: Config): SparkPodDefaults = SparkPodDefaults(
     config.as[Option[String]]("requests-cpu").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("requests-memory").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("memory-overhead").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("java-opts")
   )
-  private def getFlinkPodResourceSettings(config: Config): FlinkPodResourceSettings = FlinkPodResourceSettings(
+  private def getFlinkPodResourceDefaults(config: Config): FlinkPodResourceDefaults = FlinkPodResourceDefaults(
     config.as[Option[String]]("requests-cpu").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("requests-memory").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
     config.as[Option[String]]("limits-memory").map(v ⇒ Quantity(v))
   )
 
-  private def getAkkaRunnerSettings(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerSettings = {
+  private def getAkkaRunnerDefaults(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerDefaults = {
     val runnerConfig = config.getConfig(runnerPath)
-    AkkaRunnerSettings(
+    AkkaRunnerDefaults(
       getResourceConstraints(runnerConfig),
       getNonEmptyString(runnerConfig, "java-opts"),
       getPrometheusRules(runnerStr)
     )
   }
 
-  private def getSparkRunnerSettings(config: Config, root: String, runnerStr: String): SparkRunnerSettings = {
+  private def getSparkRunnerDefaults(config: Config, root: String, runnerStr: String): SparkRunnerDefaults = {
     val driverPath   = s"$root.deployment.spark-runner-driver"
     val executorPath = s"$root.deployment.spark-runner-executor"
 
     val driverConfig   = config.getConfig(driverPath)
     val executorConfig = config.getConfig(executorPath)
 
-    SparkRunnerSettings(
-      getSparkPodSettings(driverConfig),
-      getSparkPodSettings(executorConfig),
+    SparkRunnerDefaults(
+      getSparkPodDefaults(driverConfig),
+      getSparkPodDefaults(executorConfig),
       getPrometheusRules(runnerStr)
     )
   }
 
-  private def getFlinkRunnerSettings(config: Config, root: String, runnerStr: String): FlinkRunnerSettings = {
+  private def getFlinkRunnerDefaults(config: Config, root: String, runnerStr: String): FlinkRunnerDefaults = {
     val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
 
     val jobManagerConfig  = flinkRunnerConfig.getConfig("jobmanager")
     val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
     val parallelism       = flinkRunnerConfig.as[Int]("parallelism")
 
-    FlinkRunnerSettings(
+    FlinkRunnerDefaults(
       parallelism,
-      FlinkJobManagerSettings(jobManagerConfig.as[Int]("replicas"), getFlinkPodResourceSettings(jobManagerConfig)),
-      FlinkTaskManagerSettings(taskManagerConfig.as[Int]("task-slots"), getFlinkPodResourceSettings(taskManagerConfig)),
+      FlinkJobManagerDefaults(jobManagerConfig.as[Int]("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
+      FlinkTaskManagerDefaults(taskManagerConfig.as[Int]("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)),
       getPrometheusRules(runnerStr)
     )
   }
@@ -147,10 +147,9 @@ final case class Settings(config: Config) extends Extension {
   val podName        = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
-  val akkaRunnerSettings        = getAkkaRunnerSettings(config, s"$root.deployment.akka-runner", AkkaRunner.runtime)
-  val sparkRunnerSettings       = getSparkRunnerSettings(config, root, SparkRunner.runtime)
-  val flinkRunnerSettings       = getFlinkRunnerSettings(config, root, FlinkRunner.runtime)
-  val persistentStorageSettings = config.as[PersistentStorageSettings](s"$root.deployment.persistent-storage")
+  val akkaRunnerSettings  = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.runtime)
+  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.runtime)
+  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.runtime)
 
   val api = ApiSettings(
     getNonEmptyString(config, s"$root.api.bind-interface"),
@@ -162,7 +161,6 @@ final case class Settings(config: Config) extends Extension {
       akkaRunnerSettings,
       sparkRunnerSettings,
       flinkRunnerSettings,
-      persistentStorageSettings,
       podName,
       podNamespace
     )
