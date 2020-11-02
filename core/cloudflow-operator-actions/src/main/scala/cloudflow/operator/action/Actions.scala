@@ -86,7 +86,7 @@ object Actions {
       namespace: String
   )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
     EndpointActions(newApp, currentApp, namespace) ++
-        AkkaRunnerActions(newApp, currentApp, namespace) ++
-        SparkRunnerActions(newApp, currentApp, namespace) ++
-        FlinkRunnerActions(newApp, currentApp, namespace)
+        runner.AkkaRunnerActions(newApp, currentApp, namespace) ++
+        runner.SparkRunnerActions(newApp, currentApp, namespace) ++
+        runner.FlinkRunnerActions(newApp, currentApp, namespace)
 }
