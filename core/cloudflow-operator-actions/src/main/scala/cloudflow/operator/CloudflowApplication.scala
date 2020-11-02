@@ -158,7 +158,7 @@ object CloudflowApplication {
       // TODO not match on runtime, this is not great for extensibility.
       // There are some plans to make replicas mandatory in the CR
       // and to indicate extraPods required in the deployment to prevent the code below specific to runtimes
-      import cloudflow.operator.runner._
+      import cloudflow.operator.action.runner._
       spec.deployments.map { deployment =>
         val expectedPodCount = deployment.runtime match {
           case AkkaRunner.runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)

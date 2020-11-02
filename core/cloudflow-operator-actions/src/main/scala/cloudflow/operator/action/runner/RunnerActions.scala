@@ -20,10 +20,10 @@ package action
 import scala.collection.immutable._
 
 import org.slf4j.LoggerFactory
-import skuber._
+import skuber.{ ObjectResource, Secret }
 import skuber.json.format._
 
-import cloudflow.operator.runner._
+import cloudflow.operator.action.runner._
 
 /**
  * Creates a sequence of resource actions for the runner changes

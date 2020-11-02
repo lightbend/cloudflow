@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 import scala.util._
-import scala.concurrent._
-import akka.actor._
 import com.typesafe.config._
 import play.api.libs.json._
 import org.slf4j._
-import skuber.api.client._
 import skuber.json.rbac.format._
 import skuber.rbac._
-import skuber.PersistentVolume.AccessMode
-import skuber.PersistentVolumeClaim.VolumeMode
 import skuber._
 import cloudflow.blueprint.deployment._
+
+import cloudflow.operator._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
 
@@ -88,58 +84,17 @@ trait Runner[T <: ObjectResource] {
       implicit ctx: DeploymentContext
   ) =
     appActions(app, namespace, labels, ownerReferences) ++
-        persistentVolumeActions(app, namespace, labels, ctx.persistentStorageSettings, ownerReferences) ++
         serviceAccountAction(namespace, labels, ownerReferences)
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
   ): Seq[Action[ObjectResource]]
 
-  def persistentVolumeActions(app: CloudflowApplication.CR,
-                              namespace: String,
-                              labels: CloudflowLabels,
-                              persistentStorageSettings: PersistentStorageSettings,
-                              ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] = {
-    val _ = (app, namespace, labels, persistentStorageSettings, ownerReferences) // to remove warning.
-    Seq()
-  }
-
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
-  /**
-   * Creates an action for creating a Persistent Volume Claim.
-   */
-  object CreatePersistentVolumeClaimAction {
-    def apply(service: PersistentVolumeClaim)(implicit format: Format[PersistentVolumeClaim],
-                                              resourceDefinition: ResourceDefinition[PersistentVolumeClaim]) =
-      new CreatePersistentVolumeClaimAction(service, format, resourceDefinition)
-  }
-
-  class CreatePersistentVolumeClaimAction(
-      override val resource: PersistentVolumeClaim,
-      format: Format[PersistentVolumeClaim],
-      resourceDefinition: ResourceDefinition[PersistentVolumeClaim]
-  ) extends CreateOrUpdateAction[PersistentVolumeClaim](resource, format, resourceDefinition, persistentVolumeClaimEditor) {
-    override def execute(
-        client: KubernetesClient
-    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[PersistentVolumeClaim]] =
-      for {
-        pvcResult ← client.getOption[PersistentVolumeClaim](resource.name)(format, resourceDefinition, lc)
-        res ← pvcResult
-          .map(_ ⇒ Future.successful(CreatePersistentVolumeClaimAction(resource)(format, resourceDefinition)))
-          .getOrElse(
-            client
-              .create(resource)(format, resourceDefinition, lc)
-              .map(o ⇒ CreatePersistentVolumeClaimAction(o)(format, resourceDefinition))
-          )
-      } yield res
-  }
-
   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-  def persistentVolumeClaimEditor: ObjectEditor[PersistentVolumeClaim] =
-    (obj: PersistentVolumeClaim, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
 
   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
@@ -186,9 +141,9 @@ trait Runner[T <: ObjectResource] {
     val labels          = CloudflowLabels(app)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val prometheusConfig = deployment.runtime match {
-      case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules)
-      case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerSettings.prometheusRules)
-      case FlinkRunner.runtime ⇒ PrometheusConfig(ctx.flinkRunnerSettings.prometheusRules)
+      case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerDefaults.prometheusRules)
+      case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerDefaults.prometheusRules)
+      case FlinkRunner.runtime ⇒ PrometheusConfig(ctx.flinkRunnerDefaults.prometheusRules)
     }
 
     val configData = Vector(

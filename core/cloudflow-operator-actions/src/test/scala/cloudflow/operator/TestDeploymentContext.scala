@@ -21,7 +21,7 @@ import skuber.Resource.Quantity
 trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
     DeploymentContext(
-      akkaRunnerSettings = AkkaRunnerSettings(
+      akkaRunnerDefaults = AkkaRunnerDefaults(
         resourceConstraints = ResourceConstraints(
           cpuRequests = Quantity("100m"),
           memoryRequests = Quantity("128m"),
@@ -31,15 +31,15 @@ trait TestDeploymentContext {
         javaOptions = "-Xmx1024",
         "(prometheus rules)"
       ),
-      sparkRunnerSettings = SparkRunnerSettings(
-        driverSettings = SparkPodSettings(
+      sparkRunnerDefaults = SparkRunnerDefaults(
+        driverDefaults = SparkPodDefaults(
           cores = Some(1),
           memory = Some("512m"),
           coreLimit = Some("1"),
           memoryOverhead = Some("0.1"),
           javaOptions = Some("-Xmx1024")
         ),
-        executorSettings = SparkPodSettings(
+        executorDefaults = SparkPodDefaults(
           cores = Some(1),
           memory = Some("512m"),
           coreLimit = Some("1"),
@@ -48,27 +48,23 @@ trait TestDeploymentContext {
         ),
         "(prometheus rules)"
       ),
-      flinkRunnerSettings = FlinkRunnerSettings(
+      flinkRunnerDefaults = FlinkRunnerDefaults(
         2,
-        jobManagerSettings = FlinkJobManagerSettings(1,
-                                                     FlinkPodResourceSettings(
+        jobManagerDefaults = FlinkJobManagerDefaults(1,
+                                                     FlinkPodResourceDefaults(
                                                        cpuRequest = Some("0.2"),
                                                        memoryRequest = Some("512m"),
                                                        cpuLimit = Some("1"),
                                                        memoryLimit = Some("0.1")
                                                      )),
-        taskManagerSettings = FlinkTaskManagerSettings(2,
-                                                       FlinkPodResourceSettings(
+        taskManagerDefaults = FlinkTaskManagerDefaults(2,
+                                                       FlinkPodResourceDefaults(
                                                          cpuRequest = Some("0.2"),
                                                          memoryRequest = Some("512m"),
                                                          cpuLimit = Some("1"),
                                                          memoryLimit = Some("1024m")
                                                        )),
         "(prometheus rules)"
-      ),
-      PersistentStorageSettings(
-        resources = Resources("1G", "2G"),
-        storageClassName = "storage"
       ),
       podName = "cloudflow-operator",
       podNamespace = "cloudflow"

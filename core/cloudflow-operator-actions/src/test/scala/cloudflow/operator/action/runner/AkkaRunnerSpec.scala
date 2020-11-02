@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator.runner
+package cloudflow.operator.action.runner
 
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }

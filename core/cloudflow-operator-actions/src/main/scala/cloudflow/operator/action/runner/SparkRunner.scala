@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
+
 import scala.collection.JavaConverters._
 import cloudflow.blueprint.deployment._
-import cloudflow.operator.runner.SparkResource._
+import SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
 
@@ -30,6 +30,7 @@ import skuber._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
+import cloudflow.operator._
 import cloudflow.operator.action.Action
 
 trait PatchProvider[T <: Patch] {
@@ -153,7 +154,6 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
     // Streamlet volume mounting
     // Volume mounting
-    val pvcName = Name.ofPVCInstance(appId, runtime)
 
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
@@ -189,11 +189,11 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
             .mapValues(Name.ofLabelValue)
 
-    import ctx.sparkRunnerSettings._
+    import ctx.sparkRunnerDefaults._
 
     val driver = addDriverResourceRequirements(
       Driver(
-        javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverSettings.javaOptions),
+        javaOptions = getJavaOptions(podsConfig, DriverPod).orElse(driverDefaults.javaOptions),
         labels = labels ++ getLabels(podsConfig, DriverPod),
         volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, DriverPod),
         secrets = secrets,
@@ -206,7 +206,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     )
     val executor = addExecutorResourceRequirements(
       Executor(
-        javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorSettings.javaOptions),
+        javaOptions = getJavaOptions(podsConfig, ExecutorPod).orElse(executorDefaults.javaOptions),
         instances = deployment.replicas.getOrElse(DefaultNrOfExecutorInstances),
         labels = labels ++ getLabels(podsConfig, ExecutorPod),
         volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, ExecutorPod),
@@ -234,12 +234,12 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       }
     }
 
-    val defaultDriverCores            = toIntCores(driverSettings.cores)
-    val defaultDriverMemory           = driverSettings.memory.map(_.value)
-    val defaultDriverMemoryOverhead   = driverSettings.memoryOverhead.map(_.value)
-    val defaultExecutorCores          = toIntCores(executorSettings.cores)
-    val defaultExecutorMemory         = executorSettings.memory.map(_.value)
-    val defaultExecutorMemoryOverhead = executorSettings.memoryOverhead.map(_.value)
+    val defaultDriverCores            = toIntCores(driverDefaults.cores)
+    val defaultDriverMemory           = driverDefaults.memory.map(_.value)
+    val defaultDriverMemoryOverhead   = driverDefaults.memoryOverhead.map(_.value)
+    val defaultExecutorCores          = toIntCores(executorDefaults.cores)
+    val defaultExecutorMemory         = executorDefaults.memory.map(_.value)
+    val defaultExecutorMemoryOverhead = executorDefaults.memoryOverhead.map(_.value)
 
     val sparkConf = getSparkConf(
       configSecret,
@@ -273,10 +273,10 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       implicit ctx: DeploymentContext
   ): Driver = {
     var updatedDriver = driver
-    import ctx.sparkRunnerSettings._
+    import ctx.sparkRunnerDefaults._
 
     updatedDriver = updatedDriver.copy(
-      coreLimit = driverSettings.coreLimit.map(_.value)
+      coreLimit = driverDefaults.coreLimit.map(_.value)
     )
     // you can set the "driver" pod or just "pod", which means it will be used for both driver and executor (as fallback).
     updatedDriver = podsConfig.pods
@@ -303,10 +303,10 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       implicit ctx: DeploymentContext
   ): Executor = {
     var updatedExecutor = executor
-    import ctx.sparkRunnerSettings._
+    import ctx.sparkRunnerDefaults._
 
     updatedExecutor = updatedExecutor.copy(
-      coreLimit = executorSettings.coreLimit.map(_.value)
+      coreLimit = executorDefaults.coreLimit.map(_.value)
     )
     // you can set the "executor" pod or just "pod", which means it will be used for both executor and executor (as fallback).
     updatedExecutor = podsConfig.pods

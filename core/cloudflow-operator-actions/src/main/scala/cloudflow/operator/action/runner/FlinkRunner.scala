@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -29,6 +28,8 @@ import skuber.ResourceSpecification.Subresources
 import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
+
+import cloudflow.operator._
 import cloudflow.operator.action.Action
 
 /**
@@ -120,10 +121,10 @@ object FlinkRunner extends Runner[CR] {
     val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
-    import ctx.flinkRunnerSettings._
+    import ctx.flinkRunnerDefaults._
 
     val jobManagerConfig = JobManagerConfig(
-      Some(jobManagerSettings.replicas),
+      Some(jobManagerDefaults.replicas),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
     )
@@ -131,7 +132,7 @@ object FlinkRunner extends Runner[CR] {
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
-      Some(taskManagerSettings.taskSlots),
+      Some(taskManagerDefaults.taskSlots),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
     )
@@ -146,7 +147,7 @@ object FlinkRunner extends Runner[CR] {
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      parallelism = scale.map(_ * taskManagerSettings.taskSlots).getOrElse(ctx.flinkRunnerSettings.parallelism),
+      parallelism = scale.map(_ * taskManagerDefaults.taskSlots).getOrElse(ctx.flinkRunnerDefaults.parallelism),
       entryClass = RuntimeMainClass,
       volumes = volumes,
       volumeMounts = volumeMounts,
@@ -179,16 +180,16 @@ object FlinkRunner extends Runner[CR] {
 
   private def getJobManagerResourceRequirements(podsConfig: PodsConfig,
                                                 podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
-    import ctx.flinkRunnerSettings._
+    import ctx.flinkRunnerDefaults._
 
     var resourceRequirements = Resource.Requirements(
       requests = List(
-        jobManagerSettings.resources.cpuRequest.map(req => Resource.cpu       -> req),
-        jobManagerSettings.resources.memoryRequest.map(req => Resource.memory -> req)
+        jobManagerDefaults.resources.cpuRequest.map(req => Resource.cpu       -> req),
+        jobManagerDefaults.resources.memoryRequest.map(req => Resource.memory -> req)
       ).flatten.toMap,
       limits = List(
-        jobManagerSettings.resources.memoryLimit.map(lim => Resource.memory -> lim),
-        jobManagerSettings.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
+        jobManagerDefaults.resources.memoryLimit.map(lim => Resource.memory -> lim),
+        jobManagerDefaults.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
       ).flatten.toMap
     )
 
@@ -210,16 +211,16 @@ object FlinkRunner extends Runner[CR] {
 
   private def getTaskManagerResourceRequirements(podsConfig: PodsConfig,
                                                  podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
-    import ctx.flinkRunnerSettings._
+    import ctx.flinkRunnerDefaults._
 
     var resourceRequirements = Resource.Requirements(
       requests = List(
-        taskManagerSettings.resources.cpuRequest.map(req => Resource.cpu       -> req),
-        taskManagerSettings.resources.memoryRequest.map(req => Resource.memory -> req)
+        taskManagerDefaults.resources.cpuRequest.map(req => Resource.cpu       -> req),
+        taskManagerDefaults.resources.memoryRequest.map(req => Resource.memory -> req)
       ).flatten.toMap,
       limits = List(
-        taskManagerSettings.resources.memoryLimit.map(lim => Resource.memory -> lim),
-        taskManagerSettings.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
+        taskManagerDefaults.resources.memoryLimit.map(lim => Resource.memory -> lim),
+        taskManagerDefaults.resources.cpuLimit.map(lim => Resource.cpu       -> lim)
       ).flatten.toMap
     )
 

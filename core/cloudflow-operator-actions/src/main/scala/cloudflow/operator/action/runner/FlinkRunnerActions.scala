@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action.runner
 
 import scala.collection.immutable._
 
-import skuber._
+import skuber.ObjectResource
 
-import cloudflow.operator.runner._
+import cloudflow.operator._
+import cloudflow.operator.action._
 
 object FlinkRunnerActions extends RunnerActions(FlinkRunner) {
   def apply(

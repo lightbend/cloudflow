@@ -19,14 +19,11 @@ package cloudflow.operator
 import skuber.Resource._
 
 /**
- * Provides contextual information for deployment.
- * TODO it is possible that a lot of these settings will come from the client,
- * and in many cases, will be defined per streamlet.
+ * Provides defaults for deployment.
  */
-case class DeploymentContext(akkaRunnerSettings: AkkaRunnerSettings,
-                             sparkRunnerSettings: SparkRunnerSettings,
-                             flinkRunnerSettings: FlinkRunnerSettings,
-                             persistentStorageSettings: PersistentStorageSettings,
+case class DeploymentContext(akkaRunnerDefaults: AkkaRunnerDefaults,
+                             sparkRunnerDefaults: SparkRunnerDefaults,
+                             flinkRunnerDefaults: FlinkRunnerDefaults,
                              podName: String,
                              podNamespace: String) {
   def infoMessage = s"""
@@ -35,7 +32,6 @@ case class DeploymentContext(akkaRunnerSettings: AkkaRunnerSettings,
   """
 }
 
-final case class PersistentStorageSettings(resources: Resources, storageClassName: String)
 final case class Resources(request: String, limit: String)
 
 final case class Host(name: String, port: Option[Int]) {
@@ -47,15 +43,15 @@ final case class DockerRegistrySettings(
     repository: String
 )
 
-sealed trait RunnerSettings {
+sealed trait RunnerDefaults {
   def prometheusRules: String
 }
 
-final case class AkkaRunnerSettings(
+final case class AkkaRunnerDefaults(
     resourceConstraints: ResourceConstraints,
     javaOptions: String,
     prometheusRules: String
-) extends RunnerSettings
+) extends RunnerDefaults
 
 final case class ResourceConstraints(
     cpuRequests: Quantity,
@@ -64,7 +60,7 @@ final case class ResourceConstraints(
     memoryLimits: Option[Quantity]
 )
 
-final case class SparkPodSettings(
+final case class SparkPodDefaults(
     cores: Option[Quantity],
     memory: Option[Quantity],
     coreLimit: Option[Quantity],
@@ -72,32 +68,32 @@ final case class SparkPodSettings(
     javaOptions: Option[String]
 )
 
-final case class SparkRunnerSettings(
-    driverSettings: SparkPodSettings,
-    executorSettings: SparkPodSettings,
+final case class SparkRunnerDefaults(
+    driverDefaults: SparkPodDefaults,
+    executorDefaults: SparkPodDefaults,
     prometheusRules: String
-) extends RunnerSettings
+) extends RunnerDefaults
 
-final case class FlinkPodResourceSettings(
+final case class FlinkPodResourceDefaults(
     cpuRequest: Option[Quantity] = None,
     memoryRequest: Option[Quantity] = None,
     cpuLimit: Option[Quantity] = None,
     memoryLimit: Option[Quantity] = None
 )
 
-final case class FlinkJobManagerSettings(
+final case class FlinkJobManagerDefaults(
     replicas: Int,
-    resources: FlinkPodResourceSettings
+    resources: FlinkPodResourceDefaults
 )
 
-final case class FlinkTaskManagerSettings(
+final case class FlinkTaskManagerDefaults(
     taskSlots: Int,
-    resources: FlinkPodResourceSettings
+    resources: FlinkPodResourceDefaults
 )
 
-final case class FlinkRunnerSettings(
+final case class FlinkRunnerDefaults(
     parallelism: Int,
-    jobManagerSettings: FlinkJobManagerSettings,
-    taskManagerSettings: FlinkTaskManagerSettings,
+    jobManagerDefaults: FlinkJobManagerDefaults,
+    taskManagerDefaults: FlinkTaskManagerDefaults,
     prometheusRules: String
-) extends RunnerSettings
+) extends RunnerDefaults

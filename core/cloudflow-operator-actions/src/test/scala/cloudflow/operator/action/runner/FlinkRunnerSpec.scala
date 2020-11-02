@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package runner
+package cloudflow.operator.action.runner
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
-import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
-import cloudflow.operator.runner.FlinkResource._
 import play.api.libs.json._
 import skuber.Resource.Quantity
 import skuber._
+
+import cloudflow.blueprint._
+import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.operator._
+import cloudflow.operator.action.runner.FlinkResource._
 
 class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
@@ -128,19 +129,19 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
       crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
       crd.spec.jobManagerConfig.resources.get.requests mustBe Map(
-        Resource.cpu    -> ctx.flinkRunnerSettings.jobManagerSettings.resources.cpuRequest.get,
+        Resource.cpu    -> ctx.flinkRunnerDefaults.jobManagerDefaults.resources.cpuRequest.get,
         Resource.memory -> Quantity("512M")
       )
       crd.spec.taskManagerConfig.resources.get.requests mustBe Map(
-        Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuRequest.get,
+        Resource.cpu    -> ctx.flinkRunnerDefaults.taskManagerDefaults.resources.cpuRequest.get,
         Resource.memory -> Quantity("512M")
       )
       crd.spec.jobManagerConfig.resources.get.limits mustBe Map(
-        Resource.cpu    -> ctx.flinkRunnerSettings.jobManagerSettings.resources.cpuLimit.get,
+        Resource.cpu    -> ctx.flinkRunnerDefaults.jobManagerDefaults.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
       crd.spec.taskManagerConfig.resources.get.limits mustBe Map(
-        Resource.cpu    -> ctx.flinkRunnerSettings.taskManagerSettings.resources.cpuLimit.get,
+        Resource.cpu    -> ctx.flinkRunnerDefaults.taskManagerDefaults.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
     }
@@ -324,10 +325,10 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
     "create a valid FlinkApplication CR without resource requests" in {
 
       val dc = ctx.copy(
-        flinkRunnerSettings = FlinkRunnerSettings(
+        flinkRunnerDefaults = FlinkRunnerDefaults(
           2,
-          jobManagerSettings = FlinkJobManagerSettings(1, FlinkPodResourceSettings()),
-          taskManagerSettings = FlinkTaskManagerSettings(2, FlinkPodResourceSettings()),
+          jobManagerDefaults = FlinkJobManagerDefaults(1, FlinkPodResourceDefaults()),
+          taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()),
           prometheusRules = "sample rules"
         )
       )

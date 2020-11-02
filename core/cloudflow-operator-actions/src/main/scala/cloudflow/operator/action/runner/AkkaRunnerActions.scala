@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action.runner
 
 import scala.collection.immutable._
 
 import skuber._
 
-import cloudflow.operator.runner._
+import cloudflow.operator._
+import cloudflow.operator.action._
 
-object SparkRunnerActions extends RunnerActions(SparkRunner) {
+object AkkaRunnerActions extends RunnerActions(AkkaRunner) {
   def apply(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],

@@ -100,7 +100,8 @@ lazy val root =
       runner,
       blueprint,
       plugin,
-      operator
+      operator,
+      operatorActions
     )
 
 lazy val streamlets =
