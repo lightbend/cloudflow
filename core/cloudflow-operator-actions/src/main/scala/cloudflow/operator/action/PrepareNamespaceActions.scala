@@ -28,18 +28,14 @@ import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, Spark
 object PrepareNamespaceActions {
   def apply(app: CloudflowApplication.CR,
             namespace: String,
+            runners: Map[String, Runner[_]],
             labels: CloudflowLabels,
-            ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val runners = extractRunners(app)
-    runners.flatMap { runner =>
-      runner.prepareNamespaceActions(app, namespace, labels, ownerReferences)
-    }
-  }
-
-  private def extractRunners(app: CloudflowApplication.CR): Vector[Runner[_]] =
-    app.spec.streamlets.map(streamlet => streamlet.descriptor.runtime.name).distinct.map {
-      case AkkaRunner.runtime  => AkkaRunner
-      case FlinkRunner.runtime => FlinkRunner
-      case SparkRunner.runtime => SparkRunner
-    }
+            ownerReferences: List[OwnerReference]): Seq[Action] =
+    app.spec.streamlets
+      .map(streamlet => streamlet.descriptor.runtime.name)
+      .distinct
+      .flatMap { runtime =>
+        runners.get(runtime).map(_.prepareNamespaceActions(app, namespace, labels, ownerReferences))
+      }
+      .flatten
 }

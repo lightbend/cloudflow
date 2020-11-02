@@ -19,9 +19,9 @@ package flow
 
 import akka.stream._
 import akka.stream.scaladsl._
-import skuber._
 import skuber.api.client._
 import cloudflow.operator.action._
+import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 
 object AppEventFlow {
@@ -47,7 +47,7 @@ object AppEventFlow {
   /**
    * Transforms [[AppEvent]]s into [[Action]]s.
    */
-  def toAction(implicit ctx: DeploymentContext): Flow[AppEvent, Action, _] =
+  def toAction(runners: Map[String, Runner[_]], podName: String, podNamespace: String): Flow[AppEvent, Action, _] =
     Flow[AppEvent]
-      .mapConcat(AppEvent.toActionList)
+      .mapConcat(AppEvent.toActionList(runners, podName, podNamespace))
 }

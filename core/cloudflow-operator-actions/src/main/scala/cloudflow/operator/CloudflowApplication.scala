@@ -161,9 +161,9 @@ object CloudflowApplication {
       import cloudflow.operator.action.runner._
       spec.deployments.map { deployment =>
         val expectedPodCount = deployment.runtime match {
-          case AkkaRunner.runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-          case SparkRunner.runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
-          case FlinkRunner.runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
+          case AkkaRunner.Runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
+          case SparkRunner.Runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
+          case FlinkRunner.Runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
         }
         StreamletStatus(
           deployment.streamletName,

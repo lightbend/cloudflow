@@ -33,6 +33,8 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
 
+import cloudflow.operator.action.runner.Runner
+
 object Operator {
   val ProtocolVersion              = "3"
   val ProtocolVersionKey           = "protocol-version"
@@ -65,15 +67,18 @@ object Operator {
   val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
 
   def handleAppEvents(
-      client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+      client: KubernetesClient,
+      runners: Map[String, Runner[_]],
+      podName: String,
+      podNamespace: String
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
 
     runStream(
       watch[CloudflowApplication.CR](client, DefaultWatchOptions)
         .via(AppEventFlow.fromWatchEvent(logAttributes))
-        .via(AppEventFlow.toAction)
+        .via(AppEventFlow.toAction(runners, podName, podNamespace))
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right)
         .mapMaterializedValue {
@@ -90,8 +95,9 @@ object Operator {
   }
 
   def handleConfigurationInput(
-      client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+      client: KubernetesClient,
+      podNamespace: String
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     // only watch secrets that contain input config
@@ -111,7 +117,7 @@ object Operator {
         .via(ConfigInputChangeEventFlow.fromWatchEvent())
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
         .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction)
+        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
@@ -120,8 +126,10 @@ object Operator {
   }
 
   def handleConfigurationUpdates(
-      client: KubernetesClient
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext, ctx: DeploymentContext) = {
+      client: KubernetesClient,
+      runners: Map[String, Runner[_]],
+      podName: String
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     // only watch secrets that contain output config
@@ -139,7 +147,7 @@ object Operator {
       watch[Secret](client, watchOptions)
         .via(StreamletChangeEventFlow.fromWatchEvent())
         .via(mapToAppInSameNamespace(client))
-        .via(StreamletChangeEventFlow.toConfigUpdateAction)
+        .via(StreamletChangeEventFlow.toConfigUpdateAction(runners, podName))
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",

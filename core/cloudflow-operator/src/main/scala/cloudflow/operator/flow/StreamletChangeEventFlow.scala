@@ -24,6 +24,7 @@ import skuber._
 import skuber.api.client._
 
 import cloudflow.operator.action._
+import cloudflow.operator.action.runner.Runner
 
 object StreamletChangeEventFlow {
 
@@ -45,10 +46,11 @@ object StreamletChangeEventFlow {
       }
 
   def toConfigUpdateAction(
-      implicit ctx: DeploymentContext
+      runners: Map[String, Runner[_]],
+      podName: String
   ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
       .mapConcat {
-        case (mappedApp, event) => toActionList(mappedApp, event)
+        case (mappedApp, event) => toActionList(mappedApp, event, runners, podName)
       }
 }

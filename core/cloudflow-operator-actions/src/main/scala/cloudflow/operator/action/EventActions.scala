@@ -20,7 +20,7 @@ import java.time.ZonedDateTime
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
 import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, SparkRunner }
-import cloudflow.operator.{ CloudflowApplication, CloudflowLabels, DeploymentContext }
+import cloudflow.operator.{ CloudflowApplication, CloudflowLabels }
 import skuber.json.format.eventFmt
 import skuber.{ Event, ObjectEditor, ObjectMeta, ObjectResource }
 
@@ -36,9 +36,11 @@ object EventActions {
     val Normal, Warning, Error = Value
   }
 
-  def deployEvents(app: CloudflowApplication.CR, currentApp: Option[CloudflowApplication.CR], namespace: String, cause: ObjectResource)(
-      implicit ctx: DeploymentContext
-  ): Seq[Action] = {
+  def deployEvents(app: CloudflowApplication.CR,
+                   currentApp: Option[CloudflowApplication.CR],
+                   namespace: String,
+                   podName: String,
+                   cause: ObjectResource): Seq[Action] = {
 
     val (reason, message) = currentApp match {
       case Some(_) ⇒ ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${namespace}")
@@ -48,11 +50,12 @@ object EventActions {
     val deployEvent = createEvent(
       app = app,
       namespace = namespace,
+      podName = podName,
       reason = reason,
       message = message,
       objectReference = cause
     )
-    deployEvent +: streamletScaledEvents(app, currentApp, namespace, cause)
+    deployEvent +: streamletScaledEvents(app, currentApp, namespace, podName, cause)
   }
 
   /**
@@ -63,17 +66,18 @@ object EventActions {
   private def streamletScaledEvents(app: CloudflowApplication.CR,
                                     currentAppOpt: Option[CloudflowApplication.CR],
                                     namespace: String,
-                                    cause: ObjectResource)(implicit ctx: DeploymentContext): Seq[Action] =
+                                    podName: String,
+                                    cause: ObjectResource): Seq[Action] =
     for {
       currentApp       ← currentAppOpt.toVector
       streamlet        ← app.spec.deployments
-      currentStreamlet ← currentApp.spec.deployments.find(_.name == streamlet.name)
-      if currentStreamlet.replicas != streamlet.replicas
+      currentStreamlet ← currentApp.spec.deployments.find(_.name == streamlet.name) if currentStreamlet.replicas != streamlet.replicas
       replicas        = replicasOrRunnerDefault(streamlet)
       currentReplicas = replicasOrRunnerDefault(currentStreamlet)
     } yield createEvent(
       app = app,
       namespace = namespace,
+      podName = podName,
       reason = "StreamletScaled",
       message =
         s"Scaled Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${namespace} from ${currentReplicas} to ${replicas}",
@@ -81,29 +85,32 @@ object EventActions {
       fieldPath = Some(s"spec.deployments{${streamlet.name}}")
     )
 
+  // TODO reuse, should be method on Runner, use runners.
   private def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.runtime match {
-    case AkkaRunner.runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-    case SparkRunner.runtime ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
-    case FlinkRunner.runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
+    case AkkaRunner.Runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
+    case SparkRunner.Runtime ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
+    case FlinkRunner.Runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
   }
 
-  def undeployEvent(app: CloudflowApplication.CR, namespace: String, cause: ObjectResource)(
-      implicit ctx: DeploymentContext
-  ): Action =
+  def undeployEvent(app: CloudflowApplication.CR, namespace: String, podName: String, cause: ObjectResource): Action =
     createEvent(
       app = app,
       namespace = namespace,
+      podName = podName,
       reason = "ApplicationUndeployed",
       message = s"Undeployed Cloudflow Application ${app.spec.appId} from namespace ${namespace}",
       objectReference = cause
     )
 
-  def streamletChangeEvent(app: CloudflowApplication.CR, streamlet: StreamletDeployment, namespace: String, cause: ObjectResource)(
-      implicit ctx: DeploymentContext
-  ): Action =
+  def streamletChangeEvent(app: CloudflowApplication.CR,
+                           streamlet: StreamletDeployment,
+                           namespace: String,
+                           podName: String,
+                           cause: ObjectResource): Action =
     createEvent(
       app = app,
       namespace = namespace,
+      podName = podName,
       reason = "StreamletConfigurationChanged",
       message =
         s"Changed streamlet configuration of Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${namespace}",
@@ -112,13 +119,14 @@ object EventActions {
 
   private[operator] def createEvent(app: CloudflowApplication.CR,
                                     namespace: String,
+                                    podName: String,
                                     reason: String,
                                     message: String,
                                     `type`: EventType = EventType.Normal,
                                     objectReference: skuber.ObjectReference,
-                                    fieldPath: Option[String] = None)(implicit ctx: DeploymentContext): CreateOrUpdateAction[Event] = {
+                                    fieldPath: Option[String] = None): CreateOrUpdateAction[Event] = {
     val eventTime    = ZonedDateTime.now()
-    val metadataName = newEventName(ctx.podName, app.spec.appId)
+    val metadataName = newEventName(podName, app.spec.appId)
 
     // the object reference fieldPath is irrelevant for application events.
     val refMaybeWithPath = fieldPath.map(path ⇒ objectReference.copy(fieldPath = path)).getOrElse(objectReference)

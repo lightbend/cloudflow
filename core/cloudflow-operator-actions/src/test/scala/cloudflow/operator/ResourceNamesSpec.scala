@@ -59,6 +59,8 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
     CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
   }
+  val akkaRunner  = new AkkaRunner(ctx.akkaRunnerDefaults)
+  val sparkRunner = new SparkRunner(ctx.sparkRunnerDefaults)
 
   // appId 80 characters.
   val testApp02 = {
@@ -86,7 +88,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   val secret = Secret(metadata = ObjectMeta())
   "Deployments" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -96,7 +98,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   "Pod templates" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
 
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.copySpec.template.metadata.name.length mustEqual 63
 
@@ -105,7 +107,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Containers" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.containers.head.name.length mustEqual 63
 
@@ -114,7 +116,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volumes" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.volumes.foreach { vol ⇒
         assert(vol.name.length <= 253)
@@ -125,7 +127,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volume mounts" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = AkkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
 
       deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
         assert(mount.name.length <= 253)
@@ -136,14 +138,14 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "ConfigMaps" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val configMap = AkkaRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
+      val configMap = akkaRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
       configMap.metadata.name.length must be <= 253
 
     }
 
     "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val configMap = SparkRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
+      val configMap = sparkRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
 
       configMap.metadata.name.length must be <= 253
 
@@ -152,7 +154,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Custom resources" should {
     "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val deployment = SparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()), namespace)
+      val deployment = sparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()), namespace)
       // name of pod is dns 1039 and max 63
       deployment.metadata.name.length mustEqual 63
 

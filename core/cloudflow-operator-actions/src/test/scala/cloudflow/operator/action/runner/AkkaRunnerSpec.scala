@@ -36,6 +36,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
   val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
+  val akkaRunner        = new AkkaRunner(ctx.akkaRunnerDefaults)
 
   "AkkaRunner" should {
 
@@ -78,7 +79,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
 
     "read from config custom labels and add them to the pod spec" in {
 
-      val crd = AkkaRunner.resource(
+      val crd = akkaRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -113,7 +114,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
 
     "read from config custom secrets and mount them" in {
 
-      val crd = AkkaRunner.resource(
+      val crd = akkaRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(

@@ -79,12 +79,12 @@ object AppEvent {
     }
   }
 
-  def toActionList(appEvent: AppEvent)(implicit ctx: DeploymentContext): Seq[Action] =
+  def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String)(appEvent: AppEvent): Seq[Action] =
     appEvent match {
       case DeployEvent(app, currentApp, namespace, cause) ⇒
-        Actions.deploy(app, currentApp, namespace, cause)
+        Actions.deploy(app, currentApp, runners, namespace, podName, podNamespace, cause)
       case UndeployEvent(app, namespace, cause) ⇒
-        Actions.undeploy(app, namespace, cause)
+        Actions.undeploy(app, namespace, podName, cause)
     }
 
   def detected(appEvent: AppEvent) = s"Detected $appEvent"

@@ -22,24 +22,41 @@ import skuber.apps.v1.Deployment
 import skuber.json.rbac.format._
 import skuber.rbac._
 import skuber._
-
+import skuber.json.format._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator._
 import cloudflow.operator.action._
 
+object AkkaRunner {
+  final val Runtime                     = "akka"
+  val JavaOptsEnvVar                    = "JAVA_OPTS"
+  val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
+  val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
+  val DefaultReplicas                   = 1
+  val ImagePullPolicy                   = Container.PullPolicy.Always
+
+  val HealthCheckPath = "/checks/healthy"
+  val ReadyCheckPath  = "/checks/ready"
+
+  val ProbeInitialDelaySeconds = 10
+  val ProbeTimeoutSeconds      = 1
+  val ProbePeriodSeconds       = 10
+}
+
 /**
  * Creates the Resources that define an Akka [[Runner]].
  */
-object AkkaRunner extends Runner[Deployment] {
+final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Deployment] {
+  import AkkaRunner._
+  import akkaRunnerDefaults._
   def format = implicitly[Format[Deployment]]
 
   def editor = (obj: Deployment, newMetadata: ObjectMeta) ⇒ {
     obj.copy(metadata = newMetadata)
   }
-  def configEditor = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-
+  def configEditor             = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  val runtime                  = Runtime
   def resourceDefinition       = implicitly[ResourceDefinition[Deployment]]
-  val runtime                  = "akka"
   val requiresPersistentVolume = false
 
   def appActions(app: CloudflowApplication.CR,
@@ -50,6 +67,24 @@ object AkkaRunner extends Runner[Deployment] {
     Vector(
       Action.createOrUpdate(roleAkka, roleEditor),
       Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
+    )
+  }
+  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+    val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+    Action.provided[skuber.Secret, ObjectResource](
+      streamletDeployment.secretName,
+      app.metadata.namespace, {
+        case Some(secret) =>
+          val _resource =
+            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+          val labeledResource =
+            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+          Action.createOrUpdate(labeledResource, editor)
+        case None =>
+          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+          log.error(msg)
+          CloudflowApplication.Status.errorAction(app, msg)
+      }
     )
   }
 
@@ -96,13 +131,15 @@ object AkkaRunner extends Runner[Deployment] {
     verbs = List("get", "list", "watch")
   )
 
+  def prometheusConfig = PrometheusConfig(prometheusRules)
+
   def resource(
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: skuber.Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
-  )(implicit ctx: DeploymentContext): Deployment = {
+  ): Deployment = {
     // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
 
     val labels          = CloudflowLabels(app)
@@ -243,21 +280,21 @@ object AkkaRunner extends Runner[Deployment] {
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofPod(deployment.name)
 
-  private def createResourceRequirements(podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
+  private def createResourceRequirements(podsConfig: PodsConfig) = {
     var resourceRequirements = Resource.Requirements(
       requests = Map(
-        Resource.cpu    -> ctx.akkaRunnerDefaults.resourceConstraints.cpuRequests,
-        Resource.memory -> ctx.akkaRunnerDefaults.resourceConstraints.memoryRequests
+        Resource.cpu    -> resourceConstraints.cpuRequests,
+        Resource.memory -> resourceConstraints.memoryRequests
       )
     )
 
-    resourceRequirements = ctx.akkaRunnerDefaults.resourceConstraints.cpuLimits
+    resourceRequirements = resourceConstraints.cpuLimits
       .map { cpuLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.cpu -> cpuLimit))
       }
       .getOrElse(resourceRequirements)
 
-    resourceRequirements = ctx.akkaRunnerDefaults.resourceConstraints.memoryLimits
+    resourceRequirements = resourceConstraints.memoryLimits
       .map { memoryLimit =>
         resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.memory -> memoryLimit))
       }
@@ -275,7 +312,7 @@ object AkkaRunner extends Runner[Deployment] {
       .getOrElse(resourceRequirements)
   }
 
-  private def createEnvironmentVariables(app: CloudflowApplication.CR, podsConfig: PodsConfig)(implicit ctx: DeploymentContext) = {
+  private def createEnvironmentVariables(app: CloudflowApplication.CR, podsConfig: PodsConfig) = {
     val agentPaths = app.spec.agentPaths
     val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
       List(
@@ -284,7 +321,7 @@ object AkkaRunner extends Runner[Deployment] {
       )
     } else Nil
 
-    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, ctx.akkaRunnerDefaults.javaOptions) :: prometheusEnvVars
+    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, javaOptions) :: prometheusEnvVars
     val envVarsFomPodConfigMap = podsConfig.pods
       .get(PodsConfig.CloudflowPodName)
       .flatMap { podConfig =>
@@ -305,17 +342,4 @@ object AkkaRunner extends Runner[Deployment] {
 
     (defaultEnvironmentVariablesMap ++ envVarsFomPodConfigMap).values.toList
   }
-
-  val JavaOptsEnvVar                    = "JAVA_OPTS"
-  val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
-  val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
-  val DefaultReplicas                   = 1
-  val ImagePullPolicy                   = Container.PullPolicy.Always
-
-  val HealthCheckPath = "/checks/healthy"
-  val ReadyCheckPath  = "/checks/ready"
-
-  val ProbeInitialDelaySeconds = 10
-  val ProbeTimeoutSeconds      = 1
-  val ProbePeriodSeconds       = 10
 }

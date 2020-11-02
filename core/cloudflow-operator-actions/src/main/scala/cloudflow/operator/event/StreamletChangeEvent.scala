@@ -74,7 +74,9 @@ object StreamletChangeEvent extends Event {
   }
 
   def toActionList(mappedApp: Option[CloudflowApplication.CR],
-                   event: StreamletChangeEvent[Secret])(implicit ctx: DeploymentContext): Seq[Action] =
+                   event: StreamletChangeEvent[Secret],
+                   runners: Map[String, Runner[_]],
+                   podName: String): Seq[Action] =
     (mappedApp, event) match {
       case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
         import streamletChangeEvent._
@@ -87,7 +89,9 @@ object StreamletChangeEvent extends Event {
               log.debug(s"[app: ${streamletChangeEvent.appId} updating config for streamlet $streamletName]")
               actionsForRunner(
                 app,
-                streamletChangeEvent
+                streamletChangeEvent,
+                podName,
+                runners
               )
             } else Nil
           }
@@ -95,72 +99,21 @@ object StreamletChangeEvent extends Event {
       case _ ⇒ Nil // app could not be found, do nothing.
     }
 
-  def actionsForRunner(app: CloudflowApplication.CR, streamletChangeEvent: StreamletChangeEvent[Secret])(
-      implicit
-      ctx: DeploymentContext
-  ) = {
+  def actionsForRunner(app: CloudflowApplication.CR,
+                       streamletChangeEvent: StreamletChangeEvent[Secret],
+                       podName: String,
+                       runners: Map[String, Runner[_]]) = {
     import streamletChangeEvent._
     app.spec.deployments
       .find(_.streamletName == streamletName)
       .map { streamletDeployment ⇒
         log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
         val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-        val updateAction = streamletDeployment.runtime match {
-          case AkkaRunner.runtime ⇒
-            Action.provided[Secret, ObjectResource](
-              streamletDeployment.secretName,
-              app.metadata.namespace, {
-                case Some(secret) =>
-                  val resource =
-                    AkkaRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                  val labeledResource =
-                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  Action.createOrUpdate(labeledResource, runner.AkkaRunner.editor)
-                case None =>
-                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-                  log.error(msg)
-                  CloudflowApplication.Status.errorAction(app, msg)
-              }
-            )
-          case SparkRunner.runtime ⇒
-            Action.provided[Secret, ObjectResource](
-              streamletDeployment.secretName,
-              app.metadata.namespace, {
-                case Some(secret) =>
-                  val resource =
-                    SparkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                  val labeledResource =
-                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  val patch = SpecPatch(labeledResource.spec)
-                  Action.createOrPatch(resource, patch)(SparkRunner.format, SparkRunner.patchFormat, SparkRunner.resourceDefinition)
-                case None =>
-                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-                  log.error(msg)
-                  CloudflowApplication.Status.errorAction(app, msg)
-              }
-            )
-          case FlinkRunner.runtime ⇒
-            Action.provided[Secret, ObjectResource](
-              streamletDeployment.secretName,
-              app.metadata.namespace, {
-                case Some(secret) =>
-                  val resource =
-                    FlinkRunner.resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-                  val labeledResource =
-                    resource.copy(metadata = resource.metadata.copy(labels = resource.metadata.labels ++ updateLabels))
-                  Action.createOrUpdate(labeledResource, runner.FlinkRunner.editor)
-                case None =>
-                  val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-
-                  log.error(msg)
-                  CloudflowApplication.Status.errorAction(app, msg)
-              }
-            )
-        }
+        val updateAction = runners.get(streamletDeployment.runtime).map(_.streamletChangeAction(app, streamletDeployment)).toList
         val streamletChangeEventAction =
-          EventActions.streamletChangeEvent(app, streamletDeployment, namespace, watchEvent._object)
+          EventActions.streamletChangeEvent(app, streamletDeployment, namespace, podName, watchEvent._object)
 
-        List(updateAction, streamletChangeEventAction)
+        updateAction :+ streamletChangeEventAction
       }
       .getOrElse(Nil)
   }

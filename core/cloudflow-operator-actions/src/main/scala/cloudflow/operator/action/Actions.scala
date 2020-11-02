@@ -19,6 +19,7 @@ package action
 
 import scala.collection.immutable._
 import skuber._
+import cloudflow.operator.action.runner.Runner
 
 /**
  * Creates sequences of resource [[Action]]s deployment and undeployment of applications.
@@ -36,15 +37,18 @@ object Actions {
   def deploy(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR] = None,
+      runners: Map[String, runner.Runner[_]],
       namespace: String,
+      podName: String,
+      podNamespace: String,
       cause: ObjectResource
-  )(implicit ctx: DeploymentContext): Seq[Action] = {
+  ): Seq[Action] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
-    prepareNamespace(newApp, namespace, labels, ownerReferences) ++
-      deployTopics(newApp, ctx.podNamespace) ++
-      deployRunners(newApp, currentApp, namespace) ++
+    prepareNamespace(newApp, namespace, runners, labels, ownerReferences) ++
+      deployTopics(newApp, podNamespace) ++
+      deployRunners(newApp, currentApp, namespace, runners) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
       newApp.status.flatMap { st =>
@@ -52,7 +56,7 @@ object Actions {
         if (newStatus != st) Some(newStatus.toAction(newApp))
         else None
       }.toList ++
-      EventActions.deployEvents(newApp, currentApp, namespace, cause)
+      EventActions.deployEvents(newApp, currentApp, namespace, podName, cause)
   }
 
   /**
@@ -61,17 +65,19 @@ object Actions {
   def undeploy(
       app: CloudflowApplication.CR,
       namespace: String,
+      podName: String,
       cause: ObjectResource
-  )(implicit ctx: DeploymentContext): Seq[Action] =
-    Seq(EventActions.undeployEvent(app, namespace, cause))
+  ): Seq[Action] =
+    Seq(EventActions.undeployEvent(app, namespace, podName, cause))
 
   def prepareNamespace(
       app: CloudflowApplication.CR,
       namespace: String,
+      runners: Map[String, runner.Runner[_]],
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]
   ): Seq[Action] =
-    PrepareNamespaceActions(app, namespace, labels, ownerReferences)
+    PrepareNamespaceActions(app, namespace, runners, labels, ownerReferences)
 
   private def deployTopics(
       newApp: CloudflowApplication.CR,
@@ -82,10 +88,9 @@ object Actions {
   private def deployRunners(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
-      namespace: String
-  )(implicit ctx: DeploymentContext): Seq[Action] =
+      namespace: String,
+      runners: Map[String, Runner[_]]
+  ): Seq[Action] =
     EndpointActions(newApp, currentApp, namespace) ++
-        runner.AkkaRunnerActions(newApp, currentApp, namespace) ++
-        runner.SparkRunnerActions(newApp, currentApp, namespace) ++
-        runner.FlinkRunnerActions(newApp, currentApp, namespace)
+        runners.map { case (_, runner) => runner.actions(newApp, currentApp, namespace) }.flatten
 }

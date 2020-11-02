@@ -39,6 +39,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
   val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
+  val sparkRunner       = new SparkRunner(ctx.sparkRunnerDefaults)
 
   "SparkRunner" should {
 
@@ -89,7 +90,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "create a valid SparkApplication CR" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(metadata = ObjectMeta()),
@@ -116,7 +117,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom labels and add them to the driver pod's spec" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -152,7 +153,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom labels and add them to the executor pod's spec" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -188,7 +189,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom labels and add them to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -224,7 +225,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom secrets and mount them to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -283,7 +284,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom secrets and mount them DIFFERENTLY to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -350,7 +351,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config DIFFERENT custom labels and add them to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -405,7 +406,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom pvc and mount them to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -448,7 +449,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom pvc and mount them DIFFERENTLY to the driver and executor pods specs" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -516,7 +517,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "convert the CRD to/from Json" in {
 
-      val crd = SparkRunner.resource(
+      val crd = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(metadata = ObjectMeta()),

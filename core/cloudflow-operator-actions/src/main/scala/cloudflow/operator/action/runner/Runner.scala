@@ -24,6 +24,7 @@ import com.typesafe.config._
 import play.api.libs.json._
 import org.slf4j._
 import skuber.json.rbac.format._
+import skuber.json.format._
 import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
@@ -77,6 +78,60 @@ trait Runner[T <: ObjectResource] {
 
   def runtime: String
 
+  def actions(
+      newApp: CloudflowApplication.CR,
+      currentApp: Option[CloudflowApplication.CR],
+      namespace: String
+  ): Seq[ResourceAction[ObjectResource]] = {
+    implicit val ft = format
+    implicit val rd = resourceDefinition
+
+    val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
+
+    val currentDeployments     = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
+    val currentDeploymentNames = currentDeployments.map(_.name)
+    val newDeploymentNames     = newDeployments.map(_.name)
+
+    // delete streamlet deployments by name that are in the current app but are not listed in the new app
+    val deleteActions = currentDeployments
+      .filterNot(deployment ⇒ newDeploymentNames.contains(deployment.name))
+      .flatMap { deployment ⇒
+        Seq(
+          Action.delete[T](resourceName(deployment), namespace),
+          Action.delete[T](configResourceName(deployment), namespace)
+        )
+      }
+
+    // create streamlet deployments by name that are not in the current app but are listed in the new app
+    val createActions = newDeployments
+      .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment ⇒
+        Seq(
+          Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor),
+          Action.provided[Secret, ObjectResource](
+            deployment.secretName,
+            namespace, {
+              case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret, namespace), editor)
+              case None =>
+                val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+                log.error(msg)
+                CloudflowApplication.Status.errorAction(newApp, msg)
+            }
+          )
+        )
+      }
+
+    // update streamlet deployments by name that are in both the current app and the new app
+    val _updateActions = newDeployments
+      .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment ⇒
+        updateActions(newApp, namespace, deployment)
+      }
+      .toSeq
+
+    deleteActions ++ createActions ++ _updateActions
+  }
+
   def prepareNamespaceActions(app: CloudflowApplication.CR,
                               namespace: String,
                               labels: CloudflowLabels,
@@ -88,6 +143,29 @@ trait Runner[T <: ObjectResource] {
                  namespace: String,
                  labels: CloudflowLabels,
                  ownerReferences: List[OwnerReference]): Seq[Action]
+
+  def updateActions(newApp: CloudflowApplication.CR,
+                    namespace: String,
+                    deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
+    implicit val f  = format
+    implicit val rd = resourceDefinition
+    Seq(
+      Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor),
+      Action.provided[Secret, ObjectResource](
+        deployment.secretName,
+        namespace, {
+          case Some(secret) =>
+            Action.createOrUpdate(resource(deployment, newApp, secret, namespace), editor)
+          case None =>
+            val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+            log.error(msg)
+            CloudflowApplication.Status.errorAction(newApp, msg)
+        }
+      )
+    )
+  }
+
+  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
 
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
@@ -129,6 +207,8 @@ trait Runner[T <: ObjectResource] {
   final val RunnerJarName      = "cloudflow-runner.jar"
   final val JavaOptsEnvVarName = "JAVA_OPTS"
 
+  def prometheusConfig: PrometheusConfig
+
   /**
    * Creates the configmap for the runner.
    */
@@ -136,14 +216,9 @@ trait Runner[T <: ObjectResource] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       namespace: String
-  )(implicit ctx: DeploymentContext): ConfigMap = {
+  ): ConfigMap = {
     val labels          = CloudflowLabels(app)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
-    val prometheusConfig = deployment.runtime match {
-      case AkkaRunner.runtime  ⇒ PrometheusConfig(ctx.akkaRunnerDefaults.prometheusRules)
-      case SparkRunner.runtime ⇒ PrometheusConfig(ctx.sparkRunnerDefaults.prometheusRules)
-      case FlinkRunner.runtime ⇒ PrometheusConfig(ctx.flinkRunnerDefaults.prometheusRules)
-    }
 
     val configData = Vector(
       RunnerConfig(app.spec.appId, app.spec.appVersion, deployment),
@@ -167,8 +242,6 @@ trait Runner[T <: ObjectResource] {
       configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
-  )(
-      implicit ctx: DeploymentContext
   ): T
 
   def getPodsConfig(secret: Secret): PodsConfig = {

@@ -40,6 +40,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
   val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
+  val flinkRunner       = new FlinkRunner(ctx.flinkRunnerDefaults)
 
   "FlinkRunner" should {
 
@@ -82,7 +83,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods specs" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -148,7 +149,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom labels and add them to the jobmanager and taskmanager pods specs" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -185,7 +186,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom secrets and mount them in jobmanager and taskmanager pods" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -239,7 +240,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -265,7 +266,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "configure env.java.opts from runtime Flink conf, overriding what is provided as JAVA_OPTS value in the pod configuration" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -293,7 +294,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "create a valid FlinkApplication CR" in {
 
-      val crd = FlinkRunner.resource(
+      val crd = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(metadata = ObjectMeta()),
@@ -324,20 +325,18 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "create a valid FlinkApplication CR without resource requests" in {
 
-      val dc = ctx.copy(
-        flinkRunnerDefaults = FlinkRunnerDefaults(
-          2,
-          jobManagerDefaults = FlinkJobManagerDefaults(1, FlinkPodResourceDefaults()),
-          taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()),
-          prometheusRules = "sample rules"
-        )
+      val flinkRunnerDefaults = FlinkRunnerDefaults(
+        2,
+        jobManagerDefaults = FlinkJobManagerDefaults(1, FlinkPodResourceDefaults()),
+        taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()),
+        prometheusRules = "sample rules"
       )
-      val crd = FlinkRunner.resource(
+      val crd = new FlinkRunner(flinkRunnerDefaults).resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(metadata = ObjectMeta()),
         namespace = namespace
-      )(dc)
+      )
 
       crd.spec.serviceAccountName mustBe Name.ofServiceAccount
       crd.spec.jobManagerConfig.resources mustBe None
@@ -346,7 +345,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "convert the CRD to/from Json" in {
 
-      val cr = FlinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(metadata = ObjectMeta()),
