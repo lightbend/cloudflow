@@ -80,15 +80,14 @@ trait Runner[T <: ObjectResource] {
   def prepareNamespaceActions(app: CloudflowApplication.CR,
                               namespace: String,
                               labels: CloudflowLabels,
-                              ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ) =
+                              ownerReferences: List[OwnerReference]) =
     appActions(app, namespace, labels, ownerReferences) ++
         serviceAccountAction(namespace, labels, ownerReferences)
 
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action]
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action]
 
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))

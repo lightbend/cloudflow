@@ -42,9 +42,10 @@ object AkkaRunner extends Runner[Deployment] {
   val runtime                  = "akka"
   val requiresPersistentVolume = false
 
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action] = {
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleAkka = akkaRole(namespace, labels, ownerReferences)
     Vector(
       Action.createOrUpdate(roleAkka, roleEditor),

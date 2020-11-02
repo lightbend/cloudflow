@@ -65,16 +65,16 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
 
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action] = {
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
 
     Vector(
       Action.createOrUpdate(roleSpark, roleEditor),
       Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor)
     )
-
   }
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(

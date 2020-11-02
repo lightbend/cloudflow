@@ -53,9 +53,10 @@ object FlinkRunner extends Runner[CR] {
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
 
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action] = {
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
     Vector(
       Action.createOrUpdate(roleFlink, roleEditor),

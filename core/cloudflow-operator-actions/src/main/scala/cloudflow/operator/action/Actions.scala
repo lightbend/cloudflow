@@ -70,7 +70,7 @@ object Actions {
       namespace: String,
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]
-  )(implicit ctx: DeploymentContext): Seq[Action] =
+  ): Seq[Action] =
     PrepareNamespaceActions(app, namespace, labels, ownerReferences)
 
   private def deployTopics(
