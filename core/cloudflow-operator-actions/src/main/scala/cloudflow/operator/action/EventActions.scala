@@ -19,7 +19,7 @@ import java.time.ZonedDateTime
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
-import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, SparkRunner }
+import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, SparkRunner }
 import cloudflow.operator.{ CloudflowApplication, CloudflowLabels }
 import skuber.json.format.eventFmt
 import skuber.{ Event, ObjectEditor, ObjectMeta, ObjectResource }
@@ -39,6 +39,7 @@ object EventActions {
   def deployEvents(app: CloudflowApplication.CR,
                    currentApp: Option[CloudflowApplication.CR],
                    namespace: String,
+                   runners: Map[String, Runner[_]],
                    podName: String,
                    cause: ObjectResource): Seq[Action] = {
 
@@ -55,7 +56,7 @@ object EventActions {
       message = message,
       objectReference = cause
     )
-    deployEvent +: streamletScaledEvents(app, currentApp, namespace, podName, cause)
+    deployEvent +: streamletScaledEvents(app, currentApp, namespace, runners, podName, cause)
   }
 
   /**
@@ -66,14 +67,15 @@ object EventActions {
   private def streamletScaledEvents(app: CloudflowApplication.CR,
                                     currentAppOpt: Option[CloudflowApplication.CR],
                                     namespace: String,
+                                    runners: Map[String, Runner[_]],
                                     podName: String,
                                     cause: ObjectResource): Seq[Action] =
     for {
       currentApp       ← currentAppOpt.toVector
       streamlet        ← app.spec.deployments
       currentStreamlet ← currentApp.spec.deployments.find(_.name == streamlet.name) if currentStreamlet.replicas != streamlet.replicas
-      replicas        = replicasOrRunnerDefault(streamlet)
-      currentReplicas = replicasOrRunnerDefault(currentStreamlet)
+      replicas        = replicasOrRunnerDefault(streamlet, runners)
+      currentReplicas = replicasOrRunnerDefault(currentStreamlet, runners)
     } yield createEvent(
       app = app,
       namespace = namespace,
@@ -85,12 +87,8 @@ object EventActions {
       fieldPath = Some(s"spec.deployments{${streamlet.name}}")
     )
 
-  // TODO reuse, should be method on Runner, use runners.
-  private def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.runtime match {
-    case AkkaRunner.Runtime  ⇒ streamlet.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-    case SparkRunner.Runtime ⇒ streamlet.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances)
-    case FlinkRunner.Runtime ⇒ streamlet.replicas.getOrElse(FlinkRunner.DefaultReplicas)
-  }
+  private def replicasOrRunnerDefault(streamlet: StreamletDeployment, runners: Map[String, Runner[_]]) =
+    runners.get(streamlet.runtime).map(_.replicasOrRunnerDefault(streamlet)).getOrElse(0)
 
   def undeployEvent(app: CloudflowApplication.CR, namespace: String, podName: String, cause: ObjectResource): Action =
     createEvent(

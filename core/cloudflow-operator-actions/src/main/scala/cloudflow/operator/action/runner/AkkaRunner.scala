@@ -88,6 +88,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     )
   }
 
+  def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.replicas.getOrElse(DefaultReplicas)
+
   private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(

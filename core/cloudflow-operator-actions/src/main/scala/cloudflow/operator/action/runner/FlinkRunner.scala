@@ -91,6 +91,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     )
   }
 
+  def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.replicas.getOrElse(DefaultReplicas)
+
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(

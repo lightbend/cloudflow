@@ -56,7 +56,7 @@ object Actions {
         if (newStatus != st) Some(newStatus.toAction(newApp))
         else None
       }.toList ++
-      EventActions.deployEvents(newApp, currentApp, namespace, podName, cause)
+      EventActions.deployEvents(newApp, currentApp, namespace, runners, podName, cause)
   }
 
   /**

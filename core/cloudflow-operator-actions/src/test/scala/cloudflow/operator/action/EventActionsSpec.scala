@@ -20,11 +20,14 @@ import org.scalatest._
 import cloudflow.blueprint._
 import BlueprintBuilder._
 import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
+import cloudflow.operator.action.runner.AkkaRunner
 
 class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
+  val runner     = new AkkaRunner(ctx.akkaRunnerDefaults)
+  val runners    = Map(AkkaRunner.Runtime -> runner)
   val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
@@ -54,7 +57,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val appCr = CloudflowApplication(app)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(appCr, None, namespace, ctx.podNamespace, appCr)
+      val actions = EventActions.deployEvents(appCr, None, namespace, runners, ctx.podNamespace, appCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -73,7 +76,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(appCr, Some(currentAppCr), namespace, ctx.podNamespace, currentAppCr)
+      val actions = EventActions.deployEvents(appCr, Some(currentAppCr), namespace, runners, ctx.podNamespace, currentAppCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -93,7 +96,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(app, Some(currentAppCr), namespace, ctx.podNamespace, currentAppCr)
+      val actions = EventActions.deployEvents(app, Some(currentAppCr), namespace, runners, ctx.podNamespace, currentAppCr)
 
       Then("Three events should be created")
       actions.size mustBe 3

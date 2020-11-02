@@ -30,6 +30,7 @@ import cloudflow.operator.action._
 sealed trait AppEvent {
   def app: CloudflowApplication.CR
 }
+
 case class DeployEvent(
     app: CloudflowApplication.CR,
     currentApp: Option[CloudflowApplication.CR],
