@@ -16,7 +16,7 @@
 
 package cloudflow.operator
 
-import skuber.Resource._
+import skuber.Resource.Quantity
 
 /**
  * Provides defaults for deployment.
