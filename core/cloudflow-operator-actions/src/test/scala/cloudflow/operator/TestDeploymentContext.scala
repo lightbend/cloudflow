@@ -66,10 +66,6 @@ trait TestDeploymentContext {
                                                        )),
         "(prometheus rules)"
       ),
-      PersistentStorageDefaults(
-        resources = Resources("1G", "2G"),
-        storageClassName = "storage"
-      ),
       podName = "cloudflow-operator",
       podNamespace = "cloudflow"
     )

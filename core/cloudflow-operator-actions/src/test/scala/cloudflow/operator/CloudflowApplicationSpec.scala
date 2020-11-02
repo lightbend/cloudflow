@@ -21,7 +21,7 @@ import org.scalatest.{ ConfigMap ⇒ _, _ }
 import play.api.libs.json.Json
 import skuber._
 import cloudflow.blueprint._
-import cloudflow.operator.runner._
+import cloudflow.operator.action.runner._
 import BlueprintBuilder._
 
 class CloudflowApplicationSpec

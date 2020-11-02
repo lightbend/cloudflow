@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action.runner
 
 import org.scalatest.{ ConfigMap ⇒ _, _ }
 import com.typesafe.config._
@@ -24,8 +23,9 @@ import skuber.apps.v1.Deployment
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import cloudflow.blueprint.deployment._
 import BlueprintBuilder._
-import cloudflow.operator.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
-import cloudflow.operator.runner._
+import cloudflow.operator._
+import cloudflow.operator.action._
+import cloudflow.operator.action.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
 
 class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
@@ -223,7 +223,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     mountedAppConfiguration mustEqual expectedAppConfiguration
     (configMap.data must contain).key(PrometheusConfig.PrometheusConfigFilename)
     val mountedPromConfiguration  = configMap.data(PrometheusConfig.PrometheusConfigFilename)
-    val expectedPromConfiguration = PrometheusConfig(ctx.akkaRunnerSettings.prometheusRules).data
+    val expectedPromConfiguration = PrometheusConfig(ctx.akkaRunnerDefaults.prometheusRules).data
     mountedPromConfiguration mustEqual expectedPromConfiguration
   }
 
@@ -288,9 +288,9 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     val readinessProbe = container.readinessProbe.value
     readinessProbe.action mustBe a[ExecAction]
 
-    val runnerSettings = ctx.akkaRunnerSettings
+    val runnerDefaults = ctx.akkaRunnerDefaults
 
-    val javaOptsEnvVar      = EnvVar(AkkaRunner.JavaOptsEnvVar, EnvVar.StringValue(runnerSettings.javaOptions))
+    val javaOptsEnvVar      = EnvVar(AkkaRunner.JavaOptsEnvVar, EnvVar.StringValue(runnerDefaults.javaOptions))
     val promPortEnvVar      = EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString)
     val promRulesPathEnvVar = EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
 
@@ -305,7 +305,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     container.ports must contain(Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort))
 
     val resourceRequirements = container.resources.value
-    val resourceConstraints  = runnerSettings.resourceConstraints
+    val resourceConstraints  = runnerDefaults.resourceConstraints
     resourceRequirements.requests must contain(Resource.cpu    -> resourceConstraints.cpuRequests)
     resourceRequirements.requests must contain(Resource.memory -> resourceConstraints.memoryRequests)
 

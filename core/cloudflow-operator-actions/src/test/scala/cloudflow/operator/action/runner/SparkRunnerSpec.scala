@@ -18,11 +18,13 @@ package cloudflow.operator.action.runner
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
-import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
-import cloudflow.operator.runner.SparkResource.{ AlwaysRestartPolicy, CR }
 import play.api.libs.json._
 import skuber._
+
+import cloudflow.blueprint._
+import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.operator.action.runner.SparkResource.{ AlwaysRestartPolicy, CR }
+import cloudflow.operator._
 
 class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
 
