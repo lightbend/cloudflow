@@ -111,6 +111,7 @@ object Main extends {
 
   private def exitWithFailure() = System.exit(-1)
 
+  //TODO move to helm charts and add schema.
   private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
     val crdTimeout = 20.seconds
     // TODO check if version is the same, if not, also create.
