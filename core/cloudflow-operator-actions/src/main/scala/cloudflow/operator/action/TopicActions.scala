@@ -49,7 +49,7 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  def apply(newApp: CloudflowApplication.CR)(implicit ctx: DeploymentContext): Seq[Action] = {
+  def apply(newApp: CloudflowApplication.CR, podNamespace: String): Seq[Action] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
       app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
 
@@ -68,7 +68,7 @@ object TopicActions {
           .headOption
           .map(_.secretName)
 
-        action(appConfigSecretName, newApp.namespace, labels, topic, newApp)
+        action(appConfigSecretName, newApp.namespace, labels, topic, newApp, podNamespace)
       }
     actions
   }
@@ -90,15 +90,14 @@ object TopicActions {
              namespace: String,
              labels: CloudflowLabels,
              topic: TopicInfo,
-             newApp: CloudflowApplication.CR)(
-      implicit ctx: DeploymentContext
-  ): ResourceAction[ObjectResource] = {
+             newApp: CloudflowApplication.CR,
+             podNamespace: String): ResourceAction[ObjectResource] = {
     def useClusterConfiguration(providedTopic: TopicInfo): ResourceAction[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
           Action.provided[Secret, ObjectResource](
             String.format(KafkaClusterNameFormat, cluster),
-            ctx.podNamespace, {
+            podNamespace, {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, labels, providedTopic)
               case None =>
                 val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
