@@ -20,8 +20,8 @@ package event
 import scala.collection.immutable.Seq
 import org.slf4j._
 
-import skuber._
-import skuber.api.client._
+import skuber.{ ObjectResource, Pod }
+import skuber.api.client.{ EventType, WatchEvent }
 
 import cloudflow.operator.action._
 

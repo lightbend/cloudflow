@@ -19,13 +19,10 @@ package event
 
 import scala.collection.immutable.Seq
 
-import akka.actor._
-import akka.NotUsed
-
 import org.slf4j.LoggerFactory
 
-import skuber._
-import skuber.api.client._
+import skuber.{ ObjectResource, Secret }
+import skuber.api.client.{ EventType, WatchEvent }
 import skuber.json.format._
 
 import cloudflow.operator.action._

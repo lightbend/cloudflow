@@ -19,8 +19,8 @@ package event
 
 import scala.collection.immutable.Seq
 
-import skuber._
-import skuber.api.client._
+import skuber.ObjectResource
+import skuber.api.client.{ EventType, WatchEvent }
 
 import cloudflow.operator.action._
 
