@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-import skuber._
-import skuber.apiextensions._
+import skuber.{ Container, CustomResource, ObjectEditor, ObjectMeta, ObjectResource, OwnerReference, Pod, ResourceDefinition }
+import skuber.apiextensions.CustomResourceDefinition
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint._
