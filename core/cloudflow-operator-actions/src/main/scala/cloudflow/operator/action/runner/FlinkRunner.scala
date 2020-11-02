@@ -118,7 +118,7 @@ object FlinkRunner extends Runner[CR] {
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+    val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
     import ctx.flinkRunnerDefaults._
@@ -274,9 +274,7 @@ object FlinkRunner extends Runner[CR] {
    * //   }
    * // ]
    */
-  private def makeVolumesSpec(deployment: StreamletDeployment,
-                              app: CloudflowApplication.CR,
-                              streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
+  private def makeVolumesSpec(deployment: StreamletDeployment, streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
     // config map
     val configMapName   = Name.ofConfigMap(deployment.name)
     val configMapVolume = Volume("config-map-vol", Volume.ConfigMapVolumeSource(configMapName))
