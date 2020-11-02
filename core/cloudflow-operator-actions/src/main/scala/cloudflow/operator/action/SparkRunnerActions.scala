@@ -19,7 +19,7 @@ package action
 
 import scala.collection.immutable._
 
-import skuber._
+import skuber.ObjectResource
 
 import cloudflow.operator.runner._
 

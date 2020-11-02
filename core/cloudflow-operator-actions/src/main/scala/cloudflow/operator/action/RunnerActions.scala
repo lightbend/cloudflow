@@ -20,7 +20,7 @@ package action
 import scala.collection.immutable._
 
 import org.slf4j.LoggerFactory
-import skuber._
+import skuber.{ ObjectResource, Secret }
 import skuber.json.format._
 
 import cloudflow.operator.runner._

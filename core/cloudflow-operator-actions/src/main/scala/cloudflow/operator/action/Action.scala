@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 /**
  * Captures an action to create, delete or update a Kubernetes resource.
  */
-sealed trait Action[+T <: ObjectResource] {
+sealed trait Action[+T] {
 
   /**
    * The action name
