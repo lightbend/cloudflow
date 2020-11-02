@@ -49,7 +49,7 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  def apply(newApp: CloudflowApplication.CR)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+  def apply(newApp: CloudflowApplication.CR)(implicit ctx: DeploymentContext): Seq[Action] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
       app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
 
@@ -92,8 +92,8 @@ object TopicActions {
              topic: TopicInfo,
              newApp: CloudflowApplication.CR)(
       implicit ctx: DeploymentContext
-  ): Action[ObjectResource] = {
-    def useClusterConfiguration(providedTopic: TopicInfo): Action[ObjectResource] =
+  ): ResourceAction[ObjectResource] = {
+    def useClusterConfiguration(providedTopic: TopicInfo): ResourceAction[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
           Action.provided[Secret, ObjectResource](
@@ -157,7 +157,7 @@ object TopicActions {
   def createTopicOrError(newApp: CloudflowApplication.CR,
                          appNamespace: String,
                          labels: CloudflowLabels,
-                         topic: TopicInfo): Action[ObjectResource] =
+                         topic: TopicInfo): ResourceAction[ObjectResource] =
     (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) =>
         createAction(topic, labels, appNamespace, newApp, bootstrapServers, partitions, replicas)
@@ -182,7 +182,7 @@ object TopicActions {
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
-      )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
+      )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[ResourceAction[ConfigMap]] =
         super
           .execute(client)
           .flatMap { resourceCreatedAction =>

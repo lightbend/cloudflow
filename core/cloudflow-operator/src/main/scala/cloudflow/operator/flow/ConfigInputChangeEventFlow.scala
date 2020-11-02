@@ -60,7 +60,7 @@ object ConfigInputChangeEventFlow {
 
   def toInputConfigUpdateAction(
       implicit ctx: DeploymentContext
-  ): Flow[(Option[CloudflowApplication.CR], ConfigInputChangeEvent), Action[ObjectResource], NotUsed] =
+  ): Flow[(Option[CloudflowApplication.CR], ConfigInputChangeEvent), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], ConfigInputChangeEvent)]
       .map {
         case (mappedApp, event) => toActionList(mappedApp, event, ctx.podNamespace)

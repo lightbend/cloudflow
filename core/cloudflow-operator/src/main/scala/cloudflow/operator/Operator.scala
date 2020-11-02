@@ -163,9 +163,8 @@ object Operator {
     )
   }
 
-  private def executeActions(actionExecutor: ActionExecutor,
-                             logAttributes: Attributes): Flow[Action[ObjectResource], Action[ObjectResource], NotUsed] =
-    Flow[Action[ObjectResource]]
+  private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action, Action, NotUsed] =
+    Flow[Action]
       .mapAsync(1)(actionExecutor.execute)
       .log("action", Action.executed)
       .withAttributes(logAttributes)

@@ -46,7 +46,7 @@ object StreamletChangeEventFlow {
 
   def toConfigUpdateAction(
       implicit ctx: DeploymentContext
-  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action[ObjectResource], NotUsed] =
+  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
       .mapConcat {
         case (mappedApp, event) => toActionList(mappedApp, event)

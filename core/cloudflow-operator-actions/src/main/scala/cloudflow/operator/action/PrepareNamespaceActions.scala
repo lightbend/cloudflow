@@ -28,7 +28,7 @@ import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, Spark
 object PrepareNamespaceActions {
   def apply(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
     val runners = extractRunners(app)
     runners.flatMap { runner =>
       runner.prepareNamespaceActions(app, namespace, labels, ownerReferences)

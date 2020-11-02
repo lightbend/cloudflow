@@ -71,7 +71,7 @@ object StatusChangeEvent extends Event {
 
   def toActionList(currentStatuses: Map[String, CloudflowApplication.Status],
                    mappedApp: Option[CloudflowApplication.CR],
-                   event: StatusChangeEvent): (Map[String, CloudflowApplication.Status], Seq[Action[ObjectResource]]) =
+                   event: StatusChangeEvent): (Map[String, CloudflowApplication.Status], Seq[Action]) =
     (mappedApp, event) match {
       case (Some(app), statusChangeEvent) if app.status.flatMap(_.appStatus) != Some(CloudflowApplication.Status.Error) =>
         log.info(s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")

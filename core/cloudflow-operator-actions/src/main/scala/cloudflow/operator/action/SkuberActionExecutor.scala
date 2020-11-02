@@ -19,6 +19,7 @@ package action
 
 import scala.concurrent._
 import scala.util.control.NonFatal
+import scala.util.Try
 
 import akka.actor.ActorSystem
 
@@ -33,21 +34,26 @@ final class SkuberActionExecutor(
 )(implicit system: ActorSystem, executionContext: ExecutionContext)
     extends ActionExecutor {
   implicit val lc = skuber.api.client.RequestLoggingContext()
-  def execute(action: Action[ObjectResource]): Future[Action[ObjectResource]] = {
-    // An appropriate KubernetesClient is built up for the object resource namespace
-    val namespace = action.namespace
-    system.log.debug(Action.executing(action))
-    val kubernetesClient =
-      k8sInit(k8sConfig.setCurrentNamespace(namespace))
-    action
-      .execute(kubernetesClient)
-      .map { executedAction ⇒
-        kubernetesClient.close
-        executedAction
-      }
-      .recoverWith {
-        case NonFatal(e) =>
-          Future.failed(new ActionException(action, e))
-      }
-  }
+  def execute(action: Action): Future[Action] =
+    action match {
+      case skAction: ResourceAction[_] =>
+        // An appropriate KubernetesClient is built up for the object resource namespace
+        val namespace = skAction.namespace
+        system.log.debug(Action.executing(skAction))
+        val kubernetesClient =
+          k8sInit(k8sConfig.setCurrentNamespace(namespace))
+        skAction
+          .execute(kubernetesClient)
+          .map { executedAction ⇒
+            Try(kubernetesClient.close)
+            executedAction
+          }
+          .recoverWith {
+            case NonFatal(cause) =>
+              Try(kubernetesClient.close)
+              Future.failed(new ActionException(skAction, cause))
+          }
+      case _ =>
+        Future.failed(new ActionException(action, s"SkuberActionExecutor cannot execute ${action.name}"))
+    }
 }

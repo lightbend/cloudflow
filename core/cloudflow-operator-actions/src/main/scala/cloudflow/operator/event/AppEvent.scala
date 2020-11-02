@@ -79,7 +79,7 @@ object AppEvent {
     }
   }
 
-  def toActionList(appEvent: AppEvent)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  def toActionList(appEvent: AppEvent)(implicit ctx: DeploymentContext): Seq[Action] =
     appEvent match {
       case DeployEvent(app, currentApp, namespace, cause) ⇒
         Actions.deploy(app, currentApp, namespace, cause)

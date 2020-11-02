@@ -55,7 +55,7 @@ object FlinkRunner extends Runner[CR] {
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
     Vector(
       Action.createOrUpdate(roleFlink, roleEditor),

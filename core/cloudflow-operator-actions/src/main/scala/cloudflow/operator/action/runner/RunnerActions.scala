@@ -36,7 +36,7 @@ abstract class RunnerActions[T <: ObjectResource](runner: Runner[T]) {
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+  )(implicit ctx: DeploymentContext): Seq[Action] = {
     implicit val format             = runner.format
     implicit val resourceDefinition = runner.resourceDefinition
 

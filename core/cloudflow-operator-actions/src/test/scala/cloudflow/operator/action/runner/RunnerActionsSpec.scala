@@ -65,12 +65,12 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("only 'create actions' must be created for every runner")
       val createActions = actions.collect {
-        case c: ResourceAction[_] ⇒ c
+        case c: SingleResourceAction[_] ⇒ c
       }
 
       val createDeploymentActions = actions.collect {
         case p: ProvidedAction[_, _] ⇒
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {
@@ -193,7 +193,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       val createDeploymentActions = actions.collect {
         case p: ProvidedAction[_, _] ⇒
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {

@@ -47,7 +47,7 @@ object AppEventFlow {
   /**
    * Transforms [[AppEvent]]s into [[Action]]s.
    */
-  def toAction(implicit ctx: DeploymentContext): Flow[AppEvent, Action[ObjectResource], _] =
+  def toAction(implicit ctx: DeploymentContext): Flow[AppEvent, Action, _] =
     Flow[AppEvent]
       .mapConcat(AppEvent.toActionList)
 }

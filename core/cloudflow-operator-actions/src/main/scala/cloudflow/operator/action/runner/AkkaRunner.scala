@@ -44,7 +44,7 @@ object AkkaRunner extends Runner[Deployment] {
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
     val roleAkka = akkaRole(namespace, labels, ownerReferences)
     Vector(
       Action.createOrUpdate(roleAkka, roleEditor),

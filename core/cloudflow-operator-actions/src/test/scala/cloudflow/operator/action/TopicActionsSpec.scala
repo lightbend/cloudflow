@@ -76,7 +76,7 @@ class TopicActionsSpec
             // fallback to get Kafka connection info from 'default' cluster secret
             fallbackProvidedAction
               .getAction(Option(defaultClusterSecret))
-              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+              .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         }
       val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size
@@ -133,7 +133,7 @@ class TopicActionsSpec
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
-        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         .resource
 
       configMap0 mustBe TopicActions.resource(
@@ -153,7 +153,7 @@ class TopicActionsSpec
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
-        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         .resource
 
       configMap1 mustBe TopicActions.resource(
@@ -204,7 +204,7 @@ class TopicActionsSpec
             // fallback to get Kafka connection info from 'cluster-baz' cluster secret
             fallbackProvidedAction
               .getAction(Option(clusterSecret))
-              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+              .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         }
       val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size

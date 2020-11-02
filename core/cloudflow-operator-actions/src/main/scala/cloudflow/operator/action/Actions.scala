@@ -38,7 +38,7 @@ object Actions {
       currentApp: Option[CloudflowApplication.CR] = None,
       namespace: String,
       cause: ObjectResource
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+  )(implicit ctx: DeploymentContext): Seq[Action] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
@@ -57,14 +57,12 @@ object Actions {
 
   /**
    * Creates the [[Action]]s to undeploy the application.
-   * The undeploy is derived by reverting the [[CreateOrUpdateAction]]s that defined the
-   * creation of the application.
    */
   def undeploy(
       app: CloudflowApplication.CR,
       namespace: String,
       cause: ObjectResource
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  )(implicit ctx: DeploymentContext): Seq[Action] =
     Seq(EventActions.undeployEvent(app, namespace, cause))
 
   def prepareNamespace(
@@ -72,19 +70,19 @@ object Actions {
       namespace: String,
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  )(implicit ctx: DeploymentContext): Seq[Action] =
     PrepareNamespaceActions(app, namespace, labels, ownerReferences)
 
   private def deployTopics(
       newApp: CloudflowApplication.CR
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  )(implicit ctx: DeploymentContext): Seq[Action] =
     TopicActions(newApp)
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  )(implicit ctx: DeploymentContext): Seq[Action] =
     EndpointActions(newApp, currentApp, namespace) ++
         runner.AkkaRunnerActions(newApp, currentApp, namespace) ++
         runner.SparkRunnerActions(newApp, currentApp, namespace) ++

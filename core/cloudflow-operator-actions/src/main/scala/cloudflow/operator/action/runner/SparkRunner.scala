@@ -67,7 +67,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
 
     Vector(

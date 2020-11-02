@@ -88,9 +88,9 @@ trait Runner[T <: ObjectResource] {
 
   def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]]
+  ): Seq[Action]
 
-  def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action[ObjectResource]] =
+  def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)

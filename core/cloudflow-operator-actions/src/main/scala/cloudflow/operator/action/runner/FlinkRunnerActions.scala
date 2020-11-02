@@ -28,5 +28,5 @@ object FlinkRunnerActions extends RunnerActions(FlinkRunner) {
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
-  )(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = actions(newApp, currentApp, namespace)
+  )(implicit ctx: DeploymentContext): Seq[Action] = actions(newApp, currentApp, namespace)
 }

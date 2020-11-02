@@ -28,10 +28,10 @@ import scala.concurrent.duration._
 /**
  * Captures an action to create, delete or update a Kubernetes resource.
  */
-sealed trait Action[+T] {
+sealed trait Action {
 
   /**
-   * The action name
+   * The action name.
    */
   def name: String
 
@@ -40,40 +40,10 @@ sealed trait Action[+T] {
    */
   def appId: Option[String] = None
 
-  /**
-   * The name of the resource that this action is applied to
-   */
-  def resourceName: String
-
-  /**
-   * The namespace that the action takes place in
+  /*
+   * The namespace that the action takes place in.
    */
   def namespace: String
-
-  /**
-   * Executes the action using a KubernetesClient.
-   * Returns the created or modified resource, or None if the resource is deleted.
-   */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]]
-
-  /**
-   * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
-   */
-  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
-      implicit sys: ActorSystem,
-      ec: ExecutionContext
-  ): Future[O] =
-    future.recoverWith {
-      case e: K8SException if (e.status.code == Some(Action.ConflictCode)) => {
-        if (retries > 0) {
-          sys.log.info(s"Recovering from K8SException, conflict in resource version: ${e.getMessage}")
-          f(client, retries)
-        } else {
-          sys.log.error(s"Exhausted retries recovering from conflict, giving up.")
-          throw e
-        }
-      }
-    }
 
   def executing: String
   def executed: String
@@ -83,8 +53,7 @@ sealed trait Action[+T] {
  * Creates actions.
  */
 object Action {
-  val ConflictCode = 409
-  val log          = LoggerFactory.getLogger(Action.getClass)
+  val log = LoggerFactory.getLogger(Action.getClass)
 
   /**
    * Creates a [[CreateOrUpdateAction]].
@@ -116,12 +85,13 @@ object Action {
   /**
    * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
-  def composite[T <: ObjectResource](actions: Vector[Action[T]]): CompositeAction[T] = CompositeAction(actions)
+  def composite[T <: ObjectResource](actions: Vector[ResourceAction[T]], namespace: String): CompositeAction[T] =
+    CompositeAction(actions, namespace)
 
   /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
-  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: Option[T] => Action[R])(
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, namespace: String, fAction: Option[T] => ResourceAction[R])(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ) =
@@ -133,7 +103,7 @@ object Action {
   def providedByLabel[T <: ObjectResource, R <: ObjectResource](labelKey: String,
                                                                 labelValues: Vector[String],
                                                                 namespace: String,
-                                                                fAction: ListResource[T] => Action[R])(
+                                                                fAction: ListResource[T] => ResourceAction[R])(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[ListResource[T]]
   ) =
@@ -152,18 +122,60 @@ object Action {
   /**
    * Log message for when an [[Action]] is about to get executed.
    */
-  def executing(action: Action[ObjectResource]) = action.executing
+  def executing(action: Action) = action.executing
 
   /**
    * Log message for when an [[Action]] has been executed.
    */
-  def executed(action: Action[ObjectResource]) = action.executed
+  def executed(action: Action) = action.executed
 }
 
-abstract class ResourceAction[T <: ObjectResource] extends Action[T] {
+object ResourceAction {
+  val ConflictCode = 409
+}
+
+abstract class ResourceAction[+T <: ObjectResource] extends Action {
+  import ResourceAction._
+
+  /**
+   * Executes the action using a KubernetesClient.
+   * Returns the created or modified resource, or None if the resource is deleted.
+   */
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]]
+
+  /**
+   * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
+   */
+  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
+      implicit sys: ActorSystem,
+      ec: ExecutionContext
+  ): Future[O] =
+    future.recoverWith {
+      case e: K8SException if (e.status.code == Some(ConflictCode)) => {
+        if (retries > 0) {
+          sys.log.info(s"Recovering from K8SException, conflict in resource version: ${e.getMessage}")
+          f(client, retries)
+        } else {
+          sys.log.error(s"Exhausted retries recovering from conflict, giving up.")
+          throw e
+        }
+      }
+    }
+}
+
+abstract class SingleResourceAction[T <: ObjectResource] extends ResourceAction[T] {
+
+  /**
+   * The resource that is applied
+   */
   def resource: T
+
+  /**
+   * The name of the resource that this action is applied to
+   */
   def resourceName = resource.metadata.name
   def namespace    = resource.metadata.namespace
+
   def executing =
     s"Executing $name action for ${resource.kind}/${resource.namespace}/${resource.metadata.name}"
   def executed =
@@ -179,14 +191,14 @@ class CreateOrUpdateAction[T <: ObjectResource](
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val editor: ObjectEditor[T]
-) extends ResourceAction[T] {
+) extends SingleResourceAction[T] {
 
   val name = "create-or-update"
 
   /**
    * Creates the resources if it does not exist. If it does exist it updates the resource as required.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     for {
       result <- executeCreate(client)
     } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
@@ -212,11 +224,6 @@ class CreateOrUpdateAction[T <: ObjectResource](
         .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreate))
     } yield res
   }
-
-  /**
-   * Reverts the action to create the resource.
-   */
-  def revert: DeleteAction[T] = DeleteAction(resource, resourceDefinition)
 }
 
 /**
@@ -228,14 +235,14 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends ResourceAction[T] {
+) extends SingleResourceAction[T] {
 
   val name = "create-or-patch"
 
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     for {
       result <- executeCreateOrPatch(client)
     } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
@@ -263,14 +270,14 @@ class PatchAction[T <: ObjectResource, O <: Patch](
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends ResourceAction[T] {
+) extends SingleResourceAction[T] {
 
   val name = "patch"
 
   /**
    * Updates the target resource using a patch
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     client
       .patch(resource.name, patch, Some(resource.ns))
       .map(r ⇒ new PatchAction(r, patch, format, patchWriter, resourceDefinition))
@@ -287,14 +294,14 @@ class UpdateStatusAction[T <: ObjectResource](
     implicit val statusEv: HasStatusSubresource[T],
     val editor: ObjectEditor[T],
     predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
-) extends ResourceAction[T] {
+) extends SingleResourceAction[T] {
 
   val name = "updateStatus"
 
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     for {
       result <- executeUpdateStatus(client)
     } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
@@ -332,20 +339,20 @@ object DeleteAction {
  */
 final case class DeleteAction[T <: ObjectResource](
     val resourceName: String,
-    namespace: String,
+    val namespace: String,
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends Action[T] {
+) extends ResourceAction[T] {
   val name = "delete"
 
-  def executing =
+  override def executing =
     s"Deleting $resourceName resource"
-  def executed =
+  override def executed =
     s"Deleted $resourceName resource"
 
-  /**
+  /*
    * Deletes the resource.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] = {
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
     client
       .usingNamespace(namespace)
@@ -355,47 +362,40 @@ final case class DeleteAction[T <: ObjectResource](
 }
 
 final case class CompositeAction[T <: ObjectResource](
-    actions: Vector[Action[T]]
-) extends Action[T] {
+    actions: Vector[ResourceAction[T]],
+    namespace: String
+) extends ResourceAction[T] {
+  require(actions.nonEmpty)
   val name = "composite"
 
-  def executing =
-    s"Executing $resourceName resource(s)"
-  def executed =
-    s"Executed $resourceName resource(s)"
-
-  /**
-   * The names of the resources that this action is applied to
-   */
-  override def resourceName: String = s"composite[${actions.map(_.resourceName).mkString(",")}]"
-
-  /**
-   * The namespaces that the actions take place in
-   */
-  override def namespace: String = s"composite[${actions.map(_.namespace).mkString(",")}]"
+  override def executing =
+    s"Composite action $name executing"
+  override def executed =
+    s"Composite action $name executed"
 
   /**
    * Executes all actions
    */
-  override def execute(client: RequestContext)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[T]] =
+  override def execute(
+      client: RequestContext
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     Future.sequence(actions.map(_.execute(client))).map(_ => this)
 }
 
 final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val resourceName: String,
     val namespace: String,
-    val getAction: Option[T] => Action[R],
+    val getAction: Option[T] => ResourceAction[R],
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T]
-) extends Action[R] {
+) extends ResourceAction[R] {
   val name = "provide"
-
-  def executing =
+  override def executing =
     s"Providing $namespace/$resourceName to next action"
-  def executed =
+  override def executed =
     s"Provided $namespace/$resourceName to next action"
 
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[R]] =
     executeWithRetry(
       client,
       delay = 1.second,
@@ -406,7 +406,7 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
       client: KubernetesClient,
       delay: FiniteDuration,
       retries: Int
-  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[R]] = {
     def getAndProvide =
       client
         .usingNamespace(namespace)
@@ -428,10 +428,10 @@ final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
     val labelKey: String,
     val labelValues: Vector[String],
     val namespace: String,
-    val getAction: ListResource[T] => Action[R],
+    val getAction: ListResource[T] => ResourceAction[R],
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[ListResource[T]]
-) extends Action[R] {
+) extends ResourceAction[R] {
   val name = "provideByLabel"
 
   val resourceName = "n/a"
@@ -441,7 +441,7 @@ final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
   def executed =
     s"Provided a list of resources in $namespace to next action"
 
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] =
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[R]] =
     executeWithRetry(
       client,
       delay = 1.second,
@@ -452,9 +452,9 @@ final class ProvidedByLabelAction[T <: ObjectResource, R <: ObjectResource](
       client: KubernetesClient,
       delay: FiniteDuration,
       retries: Int
-  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[R]] = {
+  )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[R]] = {
     val selector: LabelSelector = LabelSelector(LabelSelector.InRequirement(labelKey, labelValues.toList))
-    def getAndProvide: Future[Action[R]] =
+    def getAndProvide: Future[ResourceAction[R]] =
       client
         .usingNamespace(namespace)
         .listSelected[ListResource[T]](selector)(skuber.json.format.ListResourceFormat[T], resourceDefinition, lc)

@@ -74,7 +74,7 @@ object StreamletChangeEvent extends Event {
   }
 
   def toActionList(mappedApp: Option[CloudflowApplication.CR],
-                   event: StreamletChangeEvent[Secret])(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+                   event: StreamletChangeEvent[Secret])(implicit ctx: DeploymentContext): Seq[Action] =
     (mappedApp, event) match {
       case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
         import streamletChangeEvent._

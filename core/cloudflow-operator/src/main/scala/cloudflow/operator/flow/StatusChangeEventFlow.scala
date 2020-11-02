@@ -47,7 +47,7 @@ object StatusChangeEventFlow extends {
         }
       }
 
-  def toStatusUpdateAction: Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action[ObjectResource], NotUsed] =
+  def toStatusUpdateAction: Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StatusChangeEvent)]
       .statefulMapConcat { () ⇒
         var currentStatuses = Map[String, CloudflowApplication.Status]()

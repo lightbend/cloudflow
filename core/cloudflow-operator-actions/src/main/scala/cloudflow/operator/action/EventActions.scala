@@ -38,7 +38,7 @@ object EventActions {
 
   def deployEvents(app: CloudflowApplication.CR, currentApp: Option[CloudflowApplication.CR], namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
 
     val (reason, message) = currentApp match {
       case Some(_) ⇒ ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${namespace}")
@@ -63,7 +63,7 @@ object EventActions {
   private def streamletScaledEvents(app: CloudflowApplication.CR,
                                     currentAppOpt: Option[CloudflowApplication.CR],
                                     namespace: String,
-                                    cause: ObjectResource)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+                                    cause: ObjectResource)(implicit ctx: DeploymentContext): Seq[Action] =
     for {
       currentApp       ← currentAppOpt.toVector
       streamlet        ← app.spec.deployments
@@ -89,7 +89,7 @@ object EventActions {
 
   def undeployEvent(app: CloudflowApplication.CR, namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
-  ): Action[ObjectResource] =
+  ): Action =
     createEvent(
       app = app,
       namespace = namespace,
@@ -100,7 +100,7 @@ object EventActions {
 
   def streamletChangeEvent(app: CloudflowApplication.CR, streamlet: StreamletDeployment, namespace: String, cause: ObjectResource)(
       implicit ctx: DeploymentContext
-  ): Action[ObjectResource] =
+  ): Action =
     createEvent(
       app = app,
       namespace = namespace,

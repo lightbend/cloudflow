@@ -69,9 +69,7 @@ object ConfigInputChangeEvent extends Event {
     }
   }
 
-  def toActionList(mappedApp: Option[CloudflowApplication.CR],
-                   event: ConfigInputChangeEvent,
-                   podNamespace: String): Seq[Action[ObjectResource]] =
+  def toActionList(mappedApp: Option[CloudflowApplication.CR], event: ConfigInputChangeEvent, podNamespace: String): Seq[Action] =
     (mappedApp, event) match {
       case (Some(app), configInputChangeEvent) ⇒
         val appConfig = getConfigFromSecret(configInputChangeEvent)
@@ -105,7 +103,7 @@ object ConfigInputChangeEvent extends Event {
                 Action.createOrUpdate(configSecret, secretEditor)
             }
 
-            Action.composite(actions)
+            Action.composite(actions, app.metadata.namespace)
           }
         )
         List(providedAction)

@@ -33,7 +33,7 @@ import skuber.ResourceSpecification.Subresources
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
-import cloudflow.operator.action.Action
+import cloudflow.operator.action.{ Action, ResourceAction }
 
 /**
  * CloudflowApplication Custom Resource.
@@ -144,7 +144,7 @@ object CloudflowApplication {
       )
     }
 
-    def errorAction(app: CloudflowApplication.CR, msg: String): Action[ObjectResource] = {
+    def errorAction(app: CloudflowApplication.CR, msg: String): ResourceAction[CloudflowApplication.CR] = {
       log.info(s"Setting error status for app ${app.spec.appId}")
       Status(app.spec)
         .copy(
@@ -242,7 +242,7 @@ object CloudflowApplication {
       }
     }
 
-    def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
+    def toAction(app: CloudflowApplication.CR): ResourceAction[CloudflowApplication.CR] =
       Action.updateStatus(
         app.withStatus(this),
         editor,
