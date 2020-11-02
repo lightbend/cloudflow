@@ -20,7 +20,6 @@ import java.text.Normalizer
 
 /**
  * A collection of methods to apply names for common Kubernetes resources.
- * TODO Maybe refactor, keep names closer to where they are used, leave names that are shared.
  */
 object Name {
   private def maxStringLength(maxLength: Int)(s: String): String = {
