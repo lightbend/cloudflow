@@ -315,6 +315,7 @@ func PollUntilAppStatusIs(app App, expected string) (res string, err error) {
 		if appStatus.Status == expected {
 			return expected, nil
 		}
+		fmt.Printf("Waiting for %s, status is %s.\n", expected, appStatus.Status)
 
 		time.Sleep(pollSleepInterval)
 	}
