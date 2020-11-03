@@ -32,12 +32,23 @@ import FlinkResource._
 import cloudflow.operator._
 import cloudflow.operator.action.Action
 
+object FlinkRunner {
+  final val Runtime         = "flink"
+  final val PVCMountPath    = "/mnt/flink/storage"
+  final val DefaultReplicas = 2
+
+  final val JobManagerPod  = "job-manager"
+  final val TaskManagerPod = "task-manager"
+}
+
 /**
  * Creates the ConfigMap and the Runner resource (a FlinkResource.CR) that define a Flink [[Runner]].
  */
-object FlinkRunner extends Runner[CR] {
-  def format = implicitly[Format[CR]]
-
+final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner[CR] {
+  import FlinkRunner._
+  import flinkRunnerDefaults._
+  def format  = implicitly[Format[CR]]
+  val runtime = Runtime
   def editor = new ObjectEditor[CR] {
     override def updateMetadata(obj: CR, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
@@ -45,23 +56,43 @@ object FlinkRunner extends Runner[CR] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
 
-  def resourceDefinition    = implicitly[ResourceDefinition[CR]]
-  final val runtime         = "flink"
-  final val PVCMountPath    = "/mnt/flink/storage"
-  final val DefaultReplicas = 2
+  def resourceDefinition = implicitly[ResourceDefinition[CR]]
+  def prometheusConfig   = PrometheusConfig(prometheusRules)
 
-  final val JobManagerPod  = "job-manager"
-  final val TaskManagerPod = "task-manager"
-
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
     Vector(
       Action.createOrUpdate(roleFlink, roleEditor),
       Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor)
     )
   }
+
+  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+    val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+
+    Action.provided[Secret, ObjectResource](
+      streamletDeployment.secretName,
+      app.metadata.namespace, {
+        case Some(secret) =>
+          val _resource =
+            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+          val labeledResource =
+            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+          Action.createOrUpdate(labeledResource, editor)
+        case None =>
+          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+
+          log.error(msg)
+          CloudflowApplication.Status.errorAction(app, msg)
+      }
+    )
+  }
+
+  def defaultReplicas = DefaultReplicas
+
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
@@ -110,7 +141,7 @@ object FlinkRunner extends Runner[CR] {
       configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
-  )(implicit ctx: DeploymentContext): CR = {
+  ): CR = {
     val podsConfig = getPodsConfig(configSecret)
 
     val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
@@ -118,10 +149,8 @@ object FlinkRunner extends Runner[CR] {
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    val volumes      = makeVolumesSpec(deployment, app, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
+    val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
-
-    import ctx.flinkRunnerDefaults._
 
     val jobManagerConfig = JobManagerConfig(
       Some(jobManagerDefaults.replicas),
@@ -147,7 +176,7 @@ object FlinkRunner extends Runner[CR] {
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      parallelism = scale.map(_ * taskManagerDefaults.taskSlots).getOrElse(ctx.flinkRunnerDefaults.parallelism),
+      parallelism = scale.map(_ * taskManagerDefaults.taskSlots).getOrElse(flinkRunnerDefaults.parallelism),
       entryClass = RuntimeMainClass,
       volumes = volumes,
       volumeMounts = volumeMounts,
@@ -178,9 +207,7 @@ object FlinkRunner extends Runner[CR] {
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofFlinkApplication(deployment.name)
 
-  private def getJobManagerResourceRequirements(podsConfig: PodsConfig,
-                                                podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
-    import ctx.flinkRunnerDefaults._
+  private def getJobManagerResourceRequirements(podsConfig: PodsConfig, podName: String): Option[Requirements] = {
 
     var resourceRequirements = Resource.Requirements(
       requests = List(
@@ -209,9 +236,7 @@ object FlinkRunner extends Runner[CR] {
     else None
   }
 
-  private def getTaskManagerResourceRequirements(podsConfig: PodsConfig,
-                                                 podName: String)(implicit ctx: DeploymentContext): Option[Requirements] = {
-    import ctx.flinkRunnerDefaults._
+  private def getTaskManagerResourceRequirements(podsConfig: PodsConfig, podName: String): Option[Requirements] = {
 
     var resourceRequirements = Resource.Requirements(
       requests = List(
@@ -274,9 +299,7 @@ object FlinkRunner extends Runner[CR] {
    * //   }
    * // ]
    */
-  private def makeVolumesSpec(deployment: StreamletDeployment,
-                              app: CloudflowApplication.CR,
-                              streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
+  private def makeVolumesSpec(deployment: StreamletDeployment, streamletToDeploy: Option[StreamletInstance]): Vector[Volume] = {
     // config map
     val configMapName   = Name.ofConfigMap(deployment.name)
     val configMapVolume = Volume("config-map-vol", Volume.ConfigMapVolumeSource(configMapName))

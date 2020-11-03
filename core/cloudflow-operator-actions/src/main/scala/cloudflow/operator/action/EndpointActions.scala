@@ -37,7 +37,7 @@ object EndpointActions {
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
-  ): Seq[Action[ObjectResource]] = {
+  ): Seq[Action] = {
     val labels = CloudflowLabels(newApp)
     val ownerReferences = List(
       OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
@@ -112,7 +112,7 @@ object EndpointActions {
   ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
     override def execute(
         client: KubernetesClient
-    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action[Service]] =
+    )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[Service]] =
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
         res ← serviceResult

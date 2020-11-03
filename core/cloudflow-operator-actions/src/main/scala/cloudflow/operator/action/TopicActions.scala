@@ -49,7 +49,7 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  def apply(newApp: CloudflowApplication.CR)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] = {
+  def apply(newApp: CloudflowApplication.CR, namedClustersNamespace: String): Seq[Action] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
       app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
 
@@ -68,7 +68,7 @@ object TopicActions {
           .headOption
           .map(_.secretName)
 
-        action(appConfigSecretName, newApp.namespace, labels, topic, newApp)
+        action(appConfigSecretName, newApp.namespace, labels, topic, newApp, namedClustersNamespace)
       }
     actions
   }
@@ -90,15 +90,14 @@ object TopicActions {
              namespace: String,
              labels: CloudflowLabels,
              topic: TopicInfo,
-             newApp: CloudflowApplication.CR)(
-      implicit ctx: DeploymentContext
-  ): Action[ObjectResource] = {
-    def useClusterConfiguration(providedTopic: TopicInfo): Action[ObjectResource] =
+             newApp: CloudflowApplication.CR,
+             namedClustersNamespace: String): ResourceAction[ObjectResource] = {
+    def useClusterConfiguration(providedTopic: TopicInfo): ResourceAction[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
           Action.provided[Secret, ObjectResource](
             String.format(KafkaClusterNameFormat, cluster),
-            ctx.podNamespace, {
+            namedClustersNamespace, {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, labels, providedTopic)
               case None =>
                 val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
@@ -157,7 +156,7 @@ object TopicActions {
   def createTopicOrError(newApp: CloudflowApplication.CR,
                          appNamespace: String,
                          labels: CloudflowLabels,
-                         topic: TopicInfo): Action[ObjectResource] =
+                         topic: TopicInfo): ResourceAction[ObjectResource] =
     (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) =>
         createAction(topic, labels, appNamespace, newApp, bootstrapServers, partitions, replicas)
@@ -182,7 +181,7 @@ object TopicActions {
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
-      )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action[ConfigMap]] =
+      )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[ResourceAction[ConfigMap]] =
         super
           .execute(client)
           .flatMap { resourceCreatedAction =>

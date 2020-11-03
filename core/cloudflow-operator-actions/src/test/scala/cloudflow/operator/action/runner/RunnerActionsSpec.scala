@@ -34,6 +34,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
   val secret     = Secret(metadata = ObjectMeta())
+  val akkaRunner = new AkkaRunner(ctx.akkaRunnerDefaults)
+
   "RunnerActions" should {
     "create resources for runners when there is no previous application deployment" in {
 
@@ -61,16 +63,16 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("runner actions are created from a new app")
-      val actions = AkkaRunnerActions(newApp, currentApp, namespace)
+      val actions = akkaRunner.actions(newApp, currentApp, namespace)
 
       Then("only 'create actions' must be created for every runner")
       val createActions = actions.collect {
-        case c: ResourceAction[_] ⇒ c
+        case c: SingleResourceAction[_] ⇒ c
       }
 
       val createDeploymentActions = actions.collect {
         case p: ProvidedAction[_, _] ⇒
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {
@@ -116,7 +118,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
-      val actions = AkkaRunnerActions(newApp, currentApp, namespace)
+      val actions = akkaRunner.actions(newApp, currentApp, namespace)
 
       Then("update actions should be created")
       val updateActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
@@ -154,7 +156,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-      val actions = AkkaRunnerActions(newApp, Some(currentApp), namespace)
+      val actions = akkaRunner.actions(newApp, Some(currentApp), namespace)
 
       Then("delete actions should be created")
       val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
@@ -188,12 +190,12 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for runner resources should be created for the new endpoint")
-      val actions       = AkkaRunnerActions(newApp, Some(currentApp), namespace)
+      val actions       = akkaRunner.actions(newApp, Some(currentApp), namespace)
       val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
       val createDeploymentActions = actions.collect {
         case p: ProvidedAction[_, _] ⇒
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
+          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {

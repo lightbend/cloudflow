@@ -51,9 +51,15 @@ object Main extends {
       installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)
 
-      Operator.handleAppEvents(client)
-      Operator.handleConfigurationUpdates(client)
-      Operator.handleConfigurationInput(client)
+      import cloudflow.operator.action.runner._
+      val runners = Map(
+        AkkaRunner.Runtime  -> new AkkaRunner(ctx.akkaRunnerDefaults),
+        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
+        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults)
+      )
+      Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
+      Operator.handleConfigurationUpdates(client, runners, ctx.podName)
+      Operator.handleConfigurationInput(client, ctx.podNamespace)
       Operator.handleStatusUpdates(client)
     } catch {
       case t: Throwable ⇒
@@ -105,6 +111,7 @@ object Main extends {
 
   private def exitWithFailure() = System.exit(-1)
 
+  //TODO move to helm charts and add schema.
   private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
     val crdTimeout = 20.seconds
     // TODO check if version is the same, if not, also create.

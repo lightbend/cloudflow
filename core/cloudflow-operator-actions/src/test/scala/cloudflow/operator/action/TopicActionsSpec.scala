@@ -58,7 +58,7 @@ class TopicActionsSpec
       val newApp = createApp()
 
       When("savepoint actions are created from a new app")
-      val actions = TopicActions(newApp)
+      val actions = TopicActions(newApp, ctx.podNamespace)
 
       Then("only create topic actions must be created between the streamlets")
       val createActions =
@@ -76,7 +76,7 @@ class TopicActionsSpec
             // fallback to get Kafka connection info from 'default' cluster secret
             fallbackProvidedAction
               .getAction(Option(defaultClusterSecret))
-              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+              .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         }
       val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size
@@ -124,7 +124,7 @@ class TopicActionsSpec
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
-      val Seq(foosAction, barsAction) = TopicActions(newApp)
+      val Seq(foosAction, barsAction) = TopicActions(newApp, ctx.podNamespace)
 
       val configMap0 = foosAction
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
@@ -133,7 +133,7 @@ class TopicActionsSpec
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
-        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         .resource
 
       configMap0 mustBe TopicActions.resource(
@@ -153,7 +153,7 @@ class TopicActionsSpec
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
-        .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+        .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         .resource
 
       configMap1 mustBe TopicActions.resource(
@@ -186,7 +186,7 @@ class TopicActionsSpec
       val newApp = createApp(Option(clusterName))
 
       When("savepoint actions are created from a new app")
-      val actions = TopicActions(newApp)
+      val actions = TopicActions(newApp, ctx.podNamespace)
 
       Then("only create topic actions must be created between the streamlets")
       val createActions =
@@ -204,7 +204,7 @@ class TopicActionsSpec
             // fallback to get Kafka connection info from 'cluster-baz' cluster secret
             fallbackProvidedAction
               .getAction(Option(clusterSecret))
-              .asInstanceOf[ResourceAction[TopicActions.TopicResource]]
+              .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
         }
       val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size

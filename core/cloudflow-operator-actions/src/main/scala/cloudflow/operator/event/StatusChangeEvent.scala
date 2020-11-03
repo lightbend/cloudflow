@@ -20,8 +20,8 @@ package event
 import scala.collection.immutable.Seq
 import org.slf4j._
 
-import skuber._
-import skuber.api.client._
+import skuber.{ ObjectResource, Pod }
+import skuber.api.client.{ EventType, WatchEvent }
 
 import cloudflow.operator.action._
 
@@ -71,7 +71,7 @@ object StatusChangeEvent extends Event {
 
   def toActionList(currentStatuses: Map[String, CloudflowApplication.Status],
                    mappedApp: Option[CloudflowApplication.CR],
-                   event: StatusChangeEvent): (Map[String, CloudflowApplication.Status], Seq[Action[ObjectResource]]) =
+                   event: StatusChangeEvent): (Map[String, CloudflowApplication.Status], Seq[Action]) =
     (mappedApp, event) match {
       case (Some(app), statusChangeEvent) if app.status.flatMap(_.appStatus) != Some(CloudflowApplication.Status.Error) =>
         log.info(s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")

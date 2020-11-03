@@ -31,7 +31,7 @@ import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.operator._
-import cloudflow.operator.action.Action
+import cloudflow.operator.action._
 
 trait PatchProvider[T <: Patch] {
   def patchFormat: Writes[T]
@@ -41,14 +41,21 @@ trait PatchProvider[T <: Patch] {
       configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String]
-  )(implicit ctx: DeploymentContext): T
+  ): T
+}
+
+object SparkRunner {
+  final val Runtime                = "spark"
+  val DefaultNrOfExecutorInstances = 1
 }
 
 /**
  * Creates the ConfigMap and the Runner resource (a SparkResource.CR) that define a Spark [[Runner]].
  */
-object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
-
+final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner[CR] with PatchProvider[SpecPatch] {
+  import SparkRunner._
+  import sparkRunnerDefaults._
+  val runtime                        = Runtime
   def format                         = implicitly[Format[CR]]
   def patchFormat: Format[SpecPatch] = implicitly[Format[SpecPatch]]
   def editor = new ObjectEditor[CR] {
@@ -58,24 +65,68 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     override def updateMetadata(obj: ConfigMap, newMetadata: ObjectMeta) = obj.copy(metadata = newMetadata)
   }
 
-  def resourceDefinition       = implicitly[ResourceDefinition[CR]]
-  val runtime                  = "spark"
+  def resourceDefinition = implicitly[ResourceDefinition[CR]]
+  def prometheusConfig   = PrometheusConfig(prometheusRules)
+
   val requiresPersistentVolume = true
 
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
 
-  def appActions(app: CloudflowApplication.CR, namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference])(
-      implicit ctx: DeploymentContext
-  ): Seq[Action[ObjectResource]] = {
+  def appActions(app: CloudflowApplication.CR,
+                 namespace: String,
+                 labels: CloudflowLabels,
+                 ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
 
     Vector(
       Action.createOrUpdate(roleSpark, roleEditor),
       Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor)
     )
-
   }
+
+  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+    val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
+
+    Action.provided[Secret, ObjectResource](
+      streamletDeployment.secretName,
+      app.metadata.namespace, {
+        case Some(secret) =>
+          val _resource =
+            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
+          val labeledResource =
+            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+          val patch = SpecPatch(labeledResource.spec)
+          Action.createOrPatch(_resource, patch)(format, patchFormat, resourceDefinition)
+        case None =>
+          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+          log.error(msg)
+          CloudflowApplication.Status.errorAction(app, msg)
+      }
+    )
+  }
+  override def updateActions(newApp: CloudflowApplication.CR,
+                             namespace: String,
+                             deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
+    val patchAction = Action.provided[Secret, ObjectResource](
+      deployment.secretName,
+      namespace, {
+        case Some(secret) =>
+          val _resource = resource(deployment, newApp, secret, namespace)
+          val _patch    = patch(deployment, newApp, secret, namespace)
+          Action.patch(_resource, _patch)(format, patchFormat, resourceDefinition)
+        case None =>
+          val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+          log.error(msg)
+          CloudflowApplication.Status.errorAction(newApp, msg)
+      }
+    )
+    val configAction = Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor)
+    Seq(configAction, patchAction)
+  }
+
+  def defaultReplicas = DefaultNrOfExecutorInstances
+
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
@@ -124,7 +175,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
-  )(implicit ctx: DeploymentContext): CR = {
+  ): CR = {
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
     val _spec           = patch(deployment, app, configSecret, namespace, updateLabels)
     val name            = resourceName(deployment)
@@ -140,7 +191,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
       configSecret: Secret,
       namespace: String,
       updateLabels: Map[String, String] = Map()
-  )(implicit ctx: DeploymentContext): SpecPatch = {
+  ): SpecPatch = {
     val podsConfig = getPodsConfig(configSecret)
 
     val appLabels     = CloudflowLabels(app)
@@ -189,7 +240,7 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
           Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
             .mapValues(Name.ofLabelValue)
 
-    import ctx.sparkRunnerDefaults._
+    //import ctx.sparkRunnerDefaults._
 
     val driver = addDriverResourceRequirements(
       Driver(
@@ -263,17 +314,12 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     SpecPatch(spec)
   }
 
-  val DefaultNrOfExecutorInstances = 1
-
   // Lifecycle Management
   private val OnFailureRetryIntervalSecs           = 10
   private val OnSubmissionFailureRetryIntervalSecs = 60
 
-  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig, deployment: StreamletDeployment)(
-      implicit ctx: DeploymentContext
-  ): Driver = {
+  private def addDriverResourceRequirements(driver: Driver, podsConfig: PodsConfig, deployment: StreamletDeployment): Driver = {
     var updatedDriver = driver
-    import ctx.sparkRunnerDefaults._
 
     updatedDriver = updatedDriver.copy(
       coreLimit = driverDefaults.coreLimit.map(_.value)
@@ -299,11 +345,8 @@ object SparkRunner extends Runner[CR] with PatchProvider[SpecPatch] {
     updatedDriver
   }
 
-  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig, deployment: StreamletDeployment)(
-      implicit ctx: DeploymentContext
-  ): Executor = {
+  private def addExecutorResourceRequirements(executor: Executor, podsConfig: PodsConfig, deployment: StreamletDeployment): Executor = {
     var updatedExecutor = executor
-    import ctx.sparkRunnerDefaults._
 
     updatedExecutor = updatedExecutor.copy(
       coreLimit = executorDefaults.coreLimit.map(_.value)

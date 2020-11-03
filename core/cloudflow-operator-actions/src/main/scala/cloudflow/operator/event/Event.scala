@@ -17,8 +17,8 @@
 package cloudflow.operator
 package event
 
-import skuber._
-import skuber.api.client._
+import skuber.ObjectResource
+import skuber.api.client.WatchEvent
 
 object Event extends Event
 trait Event {

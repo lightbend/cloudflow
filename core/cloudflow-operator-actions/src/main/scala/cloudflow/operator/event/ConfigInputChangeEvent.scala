@@ -20,14 +20,13 @@ package event
 import java.nio.charset.StandardCharsets
 
 import scala.util.Try
-import akka.actor._
 import com.typesafe.config._
 
 import org.slf4j.LoggerFactory
 
-import skuber._
-import skuber.api.client._
-import skuber.json.format._
+import skuber.{ ListResource, ObjectEditor, ObjectMeta, ObjectResource, Secret }
+import skuber.api.client.{ EventType, WatchEvent }
+import skuber.json.format.secretFmt
 
 import cloudflow.operator.action._
 import cloudflow.blueprint.deployment.StreamletDeployment
@@ -70,9 +69,7 @@ object ConfigInputChangeEvent extends Event {
     }
   }
 
-  def toActionList(mappedApp: Option[CloudflowApplication.CR],
-                   event: ConfigInputChangeEvent,
-                   podNamespace: String): Seq[Action[ObjectResource]] =
+  def toActionList(mappedApp: Option[CloudflowApplication.CR], event: ConfigInputChangeEvent, podNamespace: String): Seq[Action] =
     (mappedApp, event) match {
       case (Some(app), configInputChangeEvent) ⇒
         val appConfig = getConfigFromSecret(configInputChangeEvent)
@@ -106,7 +103,7 @@ object ConfigInputChangeEvent extends Event {
                 Action.createOrUpdate(configSecret, secretEditor)
             }
 
-            Action.composite(actions)
+            Action.composite(actions, app.metadata.namespace)
           }
         )
         List(providedAction)

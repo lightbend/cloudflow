@@ -26,14 +26,14 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-import skuber._
-import skuber.apiextensions._
+import skuber.{ Container, CustomResource, ObjectEditor, ObjectMeta, ObjectResource, OwnerReference, Pod, ResourceDefinition }
+import skuber.apiextensions.CustomResourceDefinition
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
-import cloudflow.operator.action.Action
+import cloudflow.operator.action.{ Action, ResourceAction }
 
 /**
  * CloudflowApplication Custom Resource.
@@ -144,7 +144,7 @@ object CloudflowApplication {
       )
     }
 
-    def errorAction(app: CloudflowApplication.CR, msg: String): Action[ObjectResource] = {
+    def errorAction(app: CloudflowApplication.CR, msg: String): ResourceAction[CloudflowApplication.CR] = {
       log.info(s"Setting error status for app ${app.spec.appId}")
       Status(app.spec)
         .copy(
@@ -155,15 +155,15 @@ object CloudflowApplication {
     }
 
     def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
-      // TODO not match on runtime, this is not great for extensibility.
-      // There are some plans to make replicas mandatory in the CR
+      // TODO FIX FOR RUNNERS. Do not match on runtime, this is not great for extensibility.
+      // There are some plans to make replicas mandatory in the CR,
       // and to indicate extraPods required in the deployment to prevent the code below specific to runtimes
       import cloudflow.operator.action.runner._
       spec.deployments.map { deployment =>
         val expectedPodCount = deployment.runtime match {
-          case AkkaRunner.runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-          case SparkRunner.runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
-          case FlinkRunner.runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
+          case AkkaRunner.Runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
+          case SparkRunner.Runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
+          case FlinkRunner.Runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
         }
         StreamletStatus(
           deployment.streamletName,
@@ -242,7 +242,7 @@ object CloudflowApplication {
       }
     }
 
-    def toAction(app: CloudflowApplication.CR): Action[ObjectResource] =
+    def toAction(app: CloudflowApplication.CR): ResourceAction[CloudflowApplication.CR] =
       Action.updateStatus(
         app.withStatus(this),
         editor,

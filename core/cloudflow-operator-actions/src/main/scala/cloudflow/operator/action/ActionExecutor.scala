@@ -19,8 +19,6 @@ package action
 
 import scala.concurrent.Future
 
-import skuber._
-
 /**
  * Executes Kubernetes resource actions.
  * Any non-fatal exception in execute should result in a failure containing an [[ActionException]]
@@ -31,11 +29,17 @@ trait ActionExecutor {
    * Executes the action. Returns the action as executed, containing the object as it was returned by the action.
    * In the case of deletion, the original resource is returned.
    */
-  def execute(action: Action[ObjectResource]): Future[Action[ObjectResource]]
+  def execute(action: Action): Future[Action]
 }
 
 /**
  * Exception thrown when the action failed to make the appropriate change(s) for the application identified by `appId`.
  */
-case class ActionException(action: Action[ObjectResource], cause: Throwable)
-    extends Exception(s"Action ${action.name} failed: ${cause.getMessage}", cause)
+case class ActionException(action: Action, msg: String, cause: Throwable) extends Exception(msg, cause) {
+  def this(action: Action, cause: Throwable) {
+    this(action, s"Action ${action.name} failed: ${cause.getMessage}", cause)
+  }
+  def this(action: Action, msg: String) {
+    this(action, s"Action ${action.name} failed: ${msg}", null)
+  }
+}

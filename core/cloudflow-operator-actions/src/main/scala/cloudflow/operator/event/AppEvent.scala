@@ -19,8 +19,8 @@ package event
 
 import scala.collection.immutable.Seq
 
-import skuber._
-import skuber.api.client._
+import skuber.ObjectResource
+import skuber.api.client.{ EventType, WatchEvent }
 
 import cloudflow.operator.action._
 
@@ -30,6 +30,7 @@ import cloudflow.operator.action._
 sealed trait AppEvent {
   def app: CloudflowApplication.CR
 }
+
 case class DeployEvent(
     app: CloudflowApplication.CR,
     currentApp: Option[CloudflowApplication.CR],
@@ -79,12 +80,12 @@ object AppEvent {
     }
   }
 
-  def toActionList(appEvent: AppEvent)(implicit ctx: DeploymentContext): Seq[Action[ObjectResource]] =
+  def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String)(appEvent: AppEvent): Seq[Action] =
     appEvent match {
       case DeployEvent(app, currentApp, namespace, cause) ⇒
-        Actions.deploy(app, currentApp, namespace, cause)
+        Actions.deploy(app, currentApp, runners, namespace, podName, podNamespace, cause)
       case UndeployEvent(app, namespace, cause) ⇒
-        Actions.undeploy(app, namespace, cause)
+        Actions.undeploy(app, namespace, podName, cause)
     }
 
   def detected(appEvent: AppEvent) = s"Detected $appEvent"

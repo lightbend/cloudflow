@@ -20,11 +20,14 @@ import org.scalatest._
 import cloudflow.blueprint._
 import BlueprintBuilder._
 import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
+import cloudflow.operator.action.runner.AkkaRunner
 
 class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
 
   case class Foo(name: String)
   case class Bar(name: String)
+  val runner     = new AkkaRunner(ctx.akkaRunnerDefaults)
+  val runners    = Map(AkkaRunner.Runtime -> runner)
   val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
@@ -54,7 +57,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val appCr = CloudflowApplication(app)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(appCr, None, namespace, appCr)
+      val actions = EventActions.deployEvents(appCr, None, namespace, runners, ctx.podNamespace, appCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -73,7 +76,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(appCr, Some(currentAppCr), namespace, currentAppCr)
+      val actions = EventActions.deployEvents(appCr, Some(currentAppCr), namespace, runners, ctx.podNamespace, currentAppCr)
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -93,7 +96,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(app, Some(currentAppCr), namespace, currentAppCr)
+      val actions = EventActions.deployEvents(app, Some(currentAppCr), namespace, runners, ctx.podNamespace, currentAppCr)
 
       Then("Three events should be created")
       actions.size mustBe 3
@@ -115,7 +118,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created for a streamlet")
-      val action = EventActions.streamletChangeEvent(currentAppCr, currentApp.deployments.head, namespace, currentAppCr)
+      val action = EventActions.streamletChangeEvent(currentAppCr, currentApp.deployments.head, namespace, ctx.podName, currentAppCr)
 
       Then("An StreamletConfigurationChanged event should be created")
       action.asInstanceOf[CreateOrUpdateAction[_]].resource.asInstanceOf[skuber.Event].reason.contains("StreamletConfigurationChanged")
@@ -127,7 +130,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       val currentAppCr = CloudflowApplication(currentApp)
 
       When("Event actions are created for a streamlet")
-      val action = EventActions.undeployEvent(currentAppCr, namespace, currentAppCr)
+      val action = EventActions.undeployEvent(currentAppCr, namespace, ctx.podName, currentAppCr)
 
       Then("An ApplicationUndeployed event should be created")
       action.asInstanceOf[CreateOrUpdateAction[_]].resource.asInstanceOf[skuber.Event].reason.contains("ApplicationUndeployed")

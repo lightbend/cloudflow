@@ -106,18 +106,18 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   }
 
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
-    case AkkaRunner.runtime ⇒
+    case AkkaRunner.Runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case SparkRunner.runtime ⇒
+    case SparkRunner.Runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/spark.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case FlinkRunner.runtime ⇒
+    case FlinkRunner.Runtime ⇒
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/flink.yaml",
@@ -147,9 +147,9 @@ final case class Settings(config: Config) extends Extension {
   val podName        = getNonEmptyString(config, s"$root.pod-name")
   val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
 
-  val akkaRunnerSettings  = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.runtime)
-  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.runtime)
-  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.runtime)
+  val akkaRunnerSettings  = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
+  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
+  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
   val api = ApiSettings(
     getNonEmptyString(config, s"$root.api.bind-interface"),
