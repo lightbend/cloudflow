@@ -125,7 +125,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     Seq(configAction, patchAction)
   }
 
-  def replicasOrRunnerDefault(streamlet: StreamletDeployment) = streamlet.replicas.getOrElse(DefaultNrOfExecutorInstances)
+  def defaultReplicas = DefaultNrOfExecutorInstances
 
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(

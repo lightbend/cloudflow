@@ -88,7 +88,7 @@ object EventActions {
     )
 
   private def replicasOrRunnerDefault(streamlet: StreamletDeployment, runners: Map[String, Runner[_]]) =
-    runners.get(streamlet.runtime).map(_.replicasOrRunnerDefault(streamlet)).getOrElse(0)
+    runners.get(streamlet.runtime).map(runner => streamlet.replicas.getOrElse(runner.defaultReplicas)).getOrElse(0)
 
   def undeployEvent(app: CloudflowApplication.CR, namespace: String, podName: String, cause: ObjectResource): Action =
     createEvent(
