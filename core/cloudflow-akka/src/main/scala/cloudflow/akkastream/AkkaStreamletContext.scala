@@ -46,19 +46,20 @@ trait AkkaStreamletContext extends StreamletContext {
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
+  ): SourceWithContext[T, CommittableOffset, Future[akka.kafka.scaladsl.Consumer.Control]]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
 
-  private[akkastream] def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed]
+  private[akkastream] def plainSource[T](inlet: CodecInlet[T],
+                                         resetPosition: ResetPosition): Source[T, akka.kafka.scaladsl.Consumer.Control]
   private[akkastream] def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed]
   private[akkastream] def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest,
       kafkaTimeout: FiniteDuration = 10.seconds
-  ): Source[T, Future[NotUsed]]
+  ): Source[T, Future[akka.kafka.scaladsl.Consumer.Control]]
 
   private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]

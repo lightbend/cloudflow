@@ -157,7 +157,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+  ): SourceWithContext[T, CommittableOffset, Future[akka.kafka.scaladsl.Consumer.Control]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout)
 
   /**
@@ -169,7 +169,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[akka.kafka.scaladsl.Consumer.Control]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout).asJava
 
   /**
@@ -178,18 +178,21 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * It has no support for committing offsets to Kafka.
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
+  def plainSource[T](inlet: CodecInlet[T],
+                     resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, akka.kafka.scaladsl.Consumer.Control] =
     context.plainSource(inlet, resetPosition)
 
   /**
    * Java API
    */
-  def getPlainSource[T](inlet: CodecInlet[T]): akka.stream.javadsl.Source[T, NotUsed] = plainSource(inlet).asJava
+  def getPlainSource[T](inlet: CodecInlet[T]): akka.stream.javadsl.Source[T, akka.kafka.scaladsl.Consumer.Control] =
+    plainSource(inlet).asJava
 
   /**
    * Java API
    */
-  def getPlainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): akka.stream.javadsl.Source[T, NotUsed] =
+  def getPlainSource[T](inlet: CodecInlet[T],
+                        resetPosition: ResetPosition): akka.stream.javadsl.Source[T, akka.kafka.scaladsl.Consumer.Control] =
     plainSource(inlet, resetPosition).asJava
 
   /**
@@ -212,26 +215,30 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
                                   resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[akka.kafka.scaladsl.Consumer.Control]] =
     context.shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout)
 
   /**
    * Java API
    */
   @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                     shardEntity: Entity[M, E],
-                                     kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+  def getShardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration
+  ): akka.stream.javadsl.Source[T, Future[akka.kafka.scaladsl.Consumer.Control]] =
     shardedPlainSource(inlet, shardEntity, Latest, kafkaTimeout).asJava
 
   /**
    * Java API
    */
   @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                     shardEntity: Entity[M, E],
-                                     resetPosition: ResetPosition = Latest,
-                                     kafkaTimeout: FiniteDuration = 10.seconds): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+  def getShardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds
+  ): akka.stream.javadsl.Source[T, Future[akka.kafka.scaladsl.Consumer.Control]] =
     shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout).asJava
 
   /**

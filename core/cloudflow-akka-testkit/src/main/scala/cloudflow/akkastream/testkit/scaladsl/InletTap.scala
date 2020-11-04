@@ -16,7 +16,6 @@
 
 package cloudflow.akkastream.testkit.scaladsl
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerMessage._
 import akka.stream._
@@ -25,7 +24,8 @@ import akka.stream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
-case class SourceInletTap[T](inlet: CodecInlet[T], source: Source[(T, Committable), NotUsed]) extends InletTap[T] {
+case class SourceInletTap[T](inlet: CodecInlet[T], source: Source[(T, Committable), akka.kafka.scaladsl.Consumer.Control])
+    extends InletTap[T] {
   def portName = inlet.name
 }
 
@@ -35,9 +35,12 @@ case class QueueInletTap[T](inlet: CodecInlet[T])(implicit system: ActorSystem) 
   private val qSource           = Source.queue[T](bufferSize, OverflowStrategy.backpressure)
   private[testkit] val (q, src) = qSource.toMat(hub)(Keep.both).run()
 
-  val portName = inlet.name
-  val source = src.map { t ⇒
-    (t, TestCommittableOffset())
-  }
+  val portName                                      = inlet.name
+  val control: akka.kafka.scaladsl.Consumer.Control = akka.kafka.scaladsl.Consumer.NoopControl
+  val source = src
+    .mapMaterializedValue(_ => control)
+    .map { t ⇒
+      (t, TestCommittableOffset())
+    }
   val queue: SourceQueueWithComplete[T] = q
 }

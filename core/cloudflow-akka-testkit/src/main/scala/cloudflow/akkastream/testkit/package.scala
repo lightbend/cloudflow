@@ -18,7 +18,7 @@ package cloudflow.akkastream
 
 package testkit {
   import scala.concurrent.Future
-  import akka.{ Done, NotUsed }
+  import akka.Done
   import akka.stream.scaladsl._
   import cloudflow.streamlets.CodecOutlet
   import akka.kafka.ConsumerMessage._
@@ -27,7 +27,7 @@ package testkit {
     def portName: String
 
     // This is for internal usage so using a scaladsl Source and a Tuple is no problem
-    private[testkit] def source: Source[(T, Committable), NotUsed]
+    private[testkit] def source: Source[(T, Committable), akka.kafka.scaladsl.Consumer.Control]
   }
 
   trait OutletTap[T] {

@@ -24,7 +24,7 @@ package object scaladsl {
 
   type FlowWithCommittableContext[-In, +Out] = FlowWithContext[In, Committable, Out, Committable, NotUsed]
 
-  type SourceWithCommittableContext[+T] = SourceWithContext[T, Committable, _]
+  type SourceWithCommittableContext[+T] = SourceWithContext[T, Committable, akka.kafka.scaladsl.Consumer.Control]
 
   object FlowWithCommittableContext {
 

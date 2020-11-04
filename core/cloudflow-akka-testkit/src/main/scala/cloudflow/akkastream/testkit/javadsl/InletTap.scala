@@ -16,7 +16,6 @@
 
 package cloudflow.akkastream.testkit.javadsl
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerMessage._
 import akka.stream._
@@ -27,7 +26,8 @@ import cloudflow.akkastream.testkit._
 
 // The use of Tuple here is OK since the creation of the tuple is handled
 // internally by the AkkaStreamletTestKit when creating instances of this class
-case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.stream.javadsl.Source[(T, Committable), NotUsed])
+case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T],
+                                               src: akka.stream.javadsl.Source[(T, Committable), akka.kafka.scaladsl.Consumer.Control])
     extends InletTap[T] {
   val portName = inlet.name
 
@@ -53,9 +53,11 @@ case class QueueInletTap[T](inlet: CodecInlet[T])(implicit system: ActorSystem) 
   private[testkit] val (q, src) = qSource.toMat(hub)(Keep.both).run()
 
   val portName = inlet.name
-  val source = src.map { t ⇒
-    (t, TestCommittableOffset())
-  }
+  val source = src
+    .mapMaterializedValue(_ => akka.kafka.scaladsl.Consumer.NoopControl)
+    .map { t ⇒
+      (t, TestCommittableOffset())
+    }
   val queue: akka.stream.javadsl.SourceQueueWithComplete[T] = q
 }
 

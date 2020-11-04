@@ -88,8 +88,13 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
   /**
    *
    */
-  def inletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] =
-    SourceInletTap[T](inlet, source.map(t ⇒ (t, TestCommittableOffset())))
+  def inletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] = {
+    val control: akka.kafka.scaladsl.Consumer.Control = akka.kafka.scaladsl.Consumer.NoopControl
+    SourceInletTap[T](inlet,
+                      source
+                        .mapMaterializedValue(_ => control)
+                        .map(t ⇒ (t, TestCommittableOffset())))
+  }
 
   /**
    * Creates an outlet tap. An outlet tap provides a probe that can be used to assert elements produced to the specified outlet.

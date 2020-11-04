@@ -59,12 +59,12 @@ private[testkit] case class TestContext(
 
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]) = sourceWithContext(inlet)
 
-  private def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] =
+  private def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, akka.kafka.scaladsl.Consumer.Control] =
     inletTaps
       .find(_.portName == inlet.name)
       .map(
         _.source
-          .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
+          .asInstanceOf[Source[(T, CommittableOffset), akka.kafka.scaladsl.Consumer.Control]]
           .via(killSwitch.flow)
           .mapError {
             case cause: Throwable ⇒
@@ -80,14 +80,14 @@ private[testkit] case class TestContext(
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+  ): SourceWithContext[T, CommittableOffset, Future[akka.kafka.scaladsl.Consumer.Control]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
 
     Source
       .futureSource(
         Future {
           sourceWithContext(inlet).asSource
-            .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
+            .asInstanceOf[Source[(T, CommittableOffset), akka.kafka.scaladsl.Consumer.Control]]
         }(system.dispatcher)
       )
       .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
@@ -157,13 +157,13 @@ private[testkit] case class TestContext(
   def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
-    sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
+  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, akka.kafka.scaladsl.Consumer.Control] =
+    sourceWithCommittableContext[T](inlet).asSource.map(_._1)
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
                                   resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
+                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[akka.kafka.scaladsl.Consumer.Control]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
     Source.futureSource(
       Future {
