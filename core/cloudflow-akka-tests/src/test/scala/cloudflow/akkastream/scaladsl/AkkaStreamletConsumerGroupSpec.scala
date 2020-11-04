@@ -41,6 +41,7 @@ object AkkaStreamletConsumerGroupSpec {
         stdout-loglevel = "OFF"
         loglevel = "OFF"
       }
+      akka.kafka.consumer.stop-timeout = 0s
       """)
 }
 
