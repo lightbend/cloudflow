@@ -12,8 +12,6 @@ work_dir := ${ROOT_DIR}/docs/target
 
 staging_dir := ${work_dir}/staging
 
-javascaladoc_dir := ${staging_dir}/docs/current/api
-
 all: build
 
 local-preview: html-author-mode
@@ -28,7 +26,7 @@ show:
 clean:
 	rm -rf ${work_dir}
 
-build: clean html javascaladoc_staged print-site
+build: clean html all_javascaladocs print-site
 
 get-version:
 	# get latest tag
@@ -115,23 +113,10 @@ list-todos: html
 		--cache-dir=./.cache/antora \
 		-c 'find /antora/docs-source/build/site/cloudflow/${version} -name "*.html" -print0 | xargs -0 grep -iE "TODO|FIXME|REVIEWERS|adoc"'
 
-# Generate the ScalaDoc and the JavaDoc, and put it in ${output}/scaladoc and ${output}/javadoc
-javascaladoc: 
-	cd ${ROOT_DIR}/core && sbt clean unidoc
-
-javascaladoc_staged: ${javascaladoc_dir} javascaladoc
-	cp -r ${ROOT_DIR}/core/target/scala-2.12/unidoc ${javascaladoc_dir}/scaladoc
-	cp -r ${ROOT_DIR}/core/target/javaunidoc ${javascaladoc_dir}/javadoc
-
-${work_dir}: 
-	mkdir -p ${work_dir}
-
-${staging_dir}:
-	mkdir -p ${staging_dir}
-
-${javascaladoc_dir}: 	
-	mkdir -p ${javascaladoc_dir}/scaladoc
-	mkdir -p ${javascaladoc_dir}/javadoc
+# Generate the ScalaDoc and the JavaDoc, for the old versions
+all_javascaladocs:
+	@echo "Building old java and scala docs"
+	(yq r docs-source/site.yml 'content.sources[0].branches.*' | xargs -n1 ./build-javascaladocs.sh)
 
 print-site:
 	# The result directory with the contents of this build:
