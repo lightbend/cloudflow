@@ -35,7 +35,7 @@ import cloudflow.operator.action.Action
 object FlinkRunner {
   final val Runtime         = "flink"
   final val PVCMountPath    = "/mnt/flink/storage"
-  final val DefaultReplicas = 2
+  final val DefaultReplicas = 1
 
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
