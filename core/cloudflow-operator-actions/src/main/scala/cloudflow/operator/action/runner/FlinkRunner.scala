@@ -183,7 +183,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val scale = deployment.replicas
 
     val taskManagerConfig = TaskManagerConfig(
-      // TODO support taskmanager.numberOfTaskSlots from flink config.
       Some(
         flinkConfig
           .get("taskmanager.numberOfTaskSlots")
@@ -197,7 +196,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      // TODO support parallelism.default from flink config.
       parallelism = scale
         .map(_ * taskManagerDefaults.taskSlots)
         .getOrElse(
