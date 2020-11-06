@@ -16,6 +16,8 @@
 
 package cloudflow.operator.action.runner
 
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.collection.JavaConverters._
 import scala.util.Try
 import com.typesafe.config._
@@ -33,9 +35,10 @@ import cloudflow.operator._
 import cloudflow.operator.action.Action
 
 object FlinkRunner {
-  final val Runtime         = "flink"
-  final val PVCMountPath    = "/mnt/flink/storage"
-  final val DefaultReplicas = 2
+  final val Runtime                    = "flink"
+  final val PVCMountPath               = "/mnt/flink/storage"
+  final val DefaultTaskManagerReplicas = 1
+  final val DefaultJobManagerReplicas  = 1
 
   final val JobManagerPod  = "job-manager"
   final val TaskManagerPod = "task-manager"
@@ -47,6 +50,11 @@ object FlinkRunner {
 final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner[CR] {
   import FlinkRunner._
   import flinkRunnerDefaults._
+
+  var nrOfJobManagers  = new AtomicReference(Map[String, Int]()) //DefaultJobManagerReplicas
+  var nrOfTaskManagers = new AtomicReference(Map[String, Int]()) //DefaultTaskManagerReplicas
+  var parallelism      = new AtomicReference(Map[String, Int]()) //flinkRunnerDefaults.parallelism
+
   def format  = implicitly[Format[CR]]
   val runtime = Runtime
   def editor = new ObjectEditor[CR] {
@@ -70,7 +78,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
     Action.provided[Secret, ObjectResource](
@@ -86,12 +94,18 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
 
           log.error(msg)
-          CloudflowApplication.Status.errorAction(app, msg)
+          CloudflowApplication.Status.errorAction(app, runners, msg)
       }
     )
   }
 
-  def defaultReplicas = DefaultReplicas
+  def defaultReplicas = DefaultTaskManagerReplicas
+
+  def expectedPodCount(deployment: StreamletDeployment) =
+    deployment.replicas.getOrElse(parallelism.get().get(deployment.name).getOrElse(FlinkRunner.DefaultTaskManagerReplicas)) + nrOfJobManagers
+          .get()
+          .get(deployment.name)
+          .getOrElse(DefaultJobManagerReplicas)
 
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
@@ -152,20 +166,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
-    val jobManagerConfig = JobManagerConfig(
-      Some(jobManagerDefaults.replicas),
-      getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
-    )
-
-    val scale = deployment.replicas
-
-    val taskManagerConfig = TaskManagerConfig(
-      Some(taskManagerDefaults.taskSlots),
-      getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
-    )
-
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                    -> "filesystem",
         "state.backend.fs.checkpointdir"   -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
@@ -173,10 +173,48 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
       ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
+    val nrOfJobManagersForResource = flinkConfig
+    // This adds configuration option that does not exist in Flink,
+    // but allows users to configure number of jobmanagers and try out HA options.
+      .get("jobmanager.replicas")
+      .flatMap(configuredJobManagerReplicas => Try(configuredJobManagerReplicas.toInt).toOption)
+      .getOrElse(jobManagerDefaults.replicas)
+    nrOfJobManagers.getAndUpdate(old => old + (deployment.name -> nrOfJobManagersForResource))
+    val jobManagerConfig = JobManagerConfig(
+      Some(
+        nrOfJobManagersForResource
+      ),
+      getJobManagerResourceRequirements(podsConfig, JobManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
+    )
+
+    val scale = deployment.replicas
+    val nrOfTaskManagersForResource = flinkConfig
+      .get("taskmanager.numberOfTaskSlots")
+      .flatMap(configuredSlots => Try(configuredSlots.toInt).toOption)
+      .getOrElse(taskManagerDefaults.taskSlots)
+    nrOfTaskManagers.getAndUpdate(old => old + (deployment.name -> nrOfTaskManagersForResource))
+
+    val taskManagerConfig = TaskManagerConfig(
+      Some(
+        nrOfTaskManagersForResource
+      ),
+      getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
+    )
+    val parallelismForResource = scale
+      .map(_ * taskManagerDefaults.taskSlots)
+      .getOrElse(
+        flinkConfig
+          .get("parallelism.default")
+          .flatMap(configuredParallelism => Try(configuredParallelism.toInt).toOption)
+          .getOrElse(flinkRunnerDefaults.parallelism)
+      )
+    parallelism.getAndUpdate(old => old + (deployment.name -> parallelismForResource))
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      parallelism = scale.map(_ * taskManagerDefaults.taskSlots).getOrElse(flinkRunnerDefaults.parallelism),
+      parallelism = parallelismForResource,
       entryClass = RuntimeMainClass,
       volumes = volumes,
       volumeMounts = volumeMounts,

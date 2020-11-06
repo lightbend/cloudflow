@@ -58,7 +58,7 @@ class TopicActionsSpec
       val newApp = createApp()
 
       When("savepoint actions are created from a new app")
-      val actions = TopicActions(newApp, ctx.podNamespace)
+      val actions = TopicActions(newApp, runners, ctx.podNamespace)
 
       Then("only create topic actions must be created between the streamlets")
       val createActions =
@@ -124,7 +124,7 @@ class TopicActionsSpec
       val savepoint = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
-      val Seq(foosAction, barsAction) = TopicActions(newApp, ctx.podNamespace)
+      val Seq(foosAction, barsAction) = TopicActions(newApp, runners, ctx.podNamespace)
 
       val configMap0 = foosAction
         .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
@@ -186,7 +186,7 @@ class TopicActionsSpec
       val newApp = createApp(Option(clusterName))
 
       When("savepoint actions are created from a new app")
-      val actions = TopicActions(newApp, ctx.podNamespace)
+      val actions = TopicActions(newApp, runners, ctx.podNamespace)
 
       Then("only create topic actions must be created between the streamlets")
       val createActions =

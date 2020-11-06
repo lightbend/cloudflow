@@ -85,7 +85,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
     Action.provided[Secret, ObjectResource](
@@ -101,12 +101,13 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         case None =>
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
           log.error(msg)
-          CloudflowApplication.Status.errorAction(app, msg)
+          CloudflowApplication.Status.errorAction(app, runners, msg)
       }
     )
   }
   override def updateActions(newApp: CloudflowApplication.CR,
                              namespace: String,
+                             runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
     val patchAction = Action.provided[Secret, ObjectResource](
       deployment.secretName,
@@ -118,15 +119,15 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         case None =>
           val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
           log.error(msg)
-          CloudflowApplication.Status.errorAction(newApp, msg)
+          CloudflowApplication.Status.errorAction(newApp, runners, msg)
       }
     )
     val configAction = Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor)
     Seq(configAction, patchAction)
   }
 
-  def defaultReplicas = DefaultNrOfExecutorInstances
-
+  def defaultReplicas                                   = DefaultNrOfExecutorInstances
+  def expectedPodCount(deployment: StreamletDeployment) = deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(

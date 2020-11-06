@@ -18,11 +18,14 @@ package cloudflow.operator
 package action
 
 import java.util.Collections
+import scala.collection.immutable._
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters._
 
 import akka.actor.ActorSystem
-import cloudflow.blueprint.Blueprint
-import cloudflow.blueprint.deployment._
-import cloudflow.operator.event.ConfigInputChangeEvent
 import com.typesafe.config.Config
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
@@ -35,12 +38,9 @@ import skuber._
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
 
-import scala.collection.immutable._
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters._
+import cloudflow.blueprint.Blueprint
+import cloudflow.blueprint.deployment._
+import cloudflow.operator.event.ConfigInputChangeEvent
 
 /**
  * Creates topic actions for managed topics.
@@ -49,7 +49,11 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  def apply(newApp: CloudflowApplication.CR, namedClustersNamespace: String): Seq[Action] = {
+  def apply(
+      newApp: CloudflowApplication.CR,
+      runners: Map[String, runner.Runner[_]],
+      namedClustersNamespace: String
+  ): Seq[Action] = {
     def distinctTopics(app: CloudflowApplication.Spec): Set[TopicInfo] =
       app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
 
@@ -68,7 +72,7 @@ object TopicActions {
           .headOption
           .map(_.secretName)
 
-        action(appConfigSecretName, newApp.namespace, labels, topic, newApp, namedClustersNamespace)
+        action(appConfigSecretName, newApp.namespace, runners, labels, topic, newApp, namedClustersNamespace)
       }
     actions
   }
@@ -88,6 +92,7 @@ object TopicActions {
    */
   def action(appConfigSecretName: Option[String],
              namespace: String,
+             runners: Map[String, runner.Runner[_]],
              labels: CloudflowLabels,
              topic: TopicInfo,
              newApp: CloudflowApplication.CR,
@@ -98,11 +103,11 @@ object TopicActions {
           Action.provided[Secret, ObjectResource](
             String.format(KafkaClusterNameFormat, cluster),
             namedClustersNamespace, {
-              case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, labels, providedTopic)
+              case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, runners, labels, providedTopic)
               case None =>
                 val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
                 log.error(msg)
-                CloudflowApplication.Status.errorAction(newApp, msg)
+                CloudflowApplication.Status.errorAction(newApp, runners, msg)
             }
           )
         }
@@ -111,7 +116,7 @@ object TopicActions {
             val msg =
               "A default Kafka configuration was not defined during installation of cloudflow-operator. Cannot create managed topics."
             log.error(msg)
-            CloudflowApplication.Status.errorAction(newApp, msg)
+            CloudflowApplication.Status.errorAction(newApp, runners, msg)
           } else {
             useClusterConfiguration(topic.copy(cluster = Some(DefaultConfigurationName)))
           }
@@ -122,7 +127,7 @@ object TopicActions {
         Action.provided[Secret, ObjectResource](
           name,
           namespace, { secretOption =>
-            maybeCreateActionFromAppConfigSecret(secretOption, newApp, namespace, labels, topic)
+            maybeCreateActionFromAppConfigSecret(secretOption, newApp, namespace, runners, labels, topic)
               .getOrElse(useClusterConfiguration(topic))
           }
         )
@@ -133,16 +138,18 @@ object TopicActions {
   def createActionFromKafkaConfigSecret(secret: Secret,
                                         newApp: CloudflowApplication.CR,
                                         namespace: String,
+                                        runners: Map[String, runner.Runner[_]],
                                         labels: CloudflowLabels,
                                         topic: TopicInfo) = {
     val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
-    createTopicOrError(newApp, namespace, labels, topicInfo)
+    createTopicOrError(newApp, namespace, runners, labels, topicInfo)
   }
 
   def maybeCreateActionFromAppConfigSecret(secretOption: Option[Secret],
                                            newApp: CloudflowApplication.CR,
                                            namespace: String,
+                                           runners: Map[String, runner.Runner[_]],
                                            labels: CloudflowLabels,
                                            topic: TopicInfo) =
     for {
@@ -151,25 +158,27 @@ object TopicActions {
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers
-    } yield createTopicOrError(newApp, namespace, labels, topicWithKafkaConfig)
+    } yield createTopicOrError(newApp, namespace, runners, labels, topicWithKafkaConfig)
 
   def createTopicOrError(newApp: CloudflowApplication.CR,
                          appNamespace: String,
+                         runners: Map[String, runner.Runner[_]],
                          labels: CloudflowLabels,
                          topic: TopicInfo): ResourceAction[ObjectResource] =
     (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) =>
-        createAction(topic, labels, appNamespace, newApp, bootstrapServers, partitions, replicas)
+        createAction(topic, labels, appNamespace, runners, newApp, bootstrapServers, partitions, replicas)
       case _ =>
         val msg = s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
               topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
               ". Update installation of Cloudflow with Helm charts to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
-        CloudflowApplication.Status.errorAction(newApp, msg)
+        CloudflowApplication.Status.errorAction(newApp, runners, msg)
     }
 
   def createAction(topic: TopicInfo,
                    labels: CloudflowLabels,
                    appNamespace: String,
+                   runners: Map[String, runner.Runner[_]],
                    newApp: CloudflowApplication.CR,
                    bootstrapServers: String,
                    partitions: Int,
@@ -189,7 +198,7 @@ object TopicActions {
               .recoverWith {
                 case t =>
                   log.error(s"Error creating topic: ${t.getMessage}", t)
-                  CloudflowApplication.Status.errorAction(newApp, t.getMessage).execute(client)
+                  CloudflowApplication.Status.errorAction(newApp, runners, t.getMessage).execute(client)
               }
               .map(_ => resourceCreatedAction)
           }

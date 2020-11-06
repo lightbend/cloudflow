@@ -47,12 +47,12 @@ object Actions {
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
     prepareNamespace(newApp, namespace, runners, labels, ownerReferences) ++
-      deployTopics(newApp, podNamespace) ++
+      deployTopics(newApp, runners, podNamespace) ++
       deployRunners(newApp, currentApp, namespace, runners) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
       newApp.status.flatMap { st =>
-        val newStatus = st.updateApp(newApp)
+        val newStatus = st.updateApp(newApp, runners)
         if (newStatus != st) Some(newStatus.toAction(newApp))
         else None
       }.toList ++
@@ -81,9 +81,10 @@ object Actions {
 
   private def deployTopics(
       newApp: CloudflowApplication.CR,
+      runners: Map[String, runner.Runner[_]],
       podNamespace: String
   ): Seq[Action] =
-    TopicActions(newApp, podNamespace)
+    TopicActions(newApp, runners, podNamespace)
 
   private def deployRunners(
       newApp: CloudflowApplication.CR,
@@ -92,5 +93,5 @@ object Actions {
       runners: Map[String, Runner[_]]
   ): Seq[Action] =
     EndpointActions(newApp, currentApp, namespace) ++
-        runners.map { case (_, runner) => runner.actions(newApp, currentApp, namespace) }.flatten
+        runners.map { case (_, runner) => runner.actions(newApp, currentApp, namespace, runners) }.flatten
 }

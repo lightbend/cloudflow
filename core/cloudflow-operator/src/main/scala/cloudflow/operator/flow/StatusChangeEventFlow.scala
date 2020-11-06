@@ -25,6 +25,7 @@ import skuber._
 import skuber.api.client._
 
 import cloudflow.operator.action._
+import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 
 object StatusChangeEventFlow extends {
@@ -47,14 +48,14 @@ object StatusChangeEventFlow extends {
         }
       }
 
-  def toStatusUpdateAction: Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action, NotUsed] =
+  def toStatusUpdateAction(runners: Map[String, Runner[_]]): Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StatusChangeEvent)]
       .statefulMapConcat { () ⇒
         var currentStatuses = Map[String, CloudflowApplication.Status]()
 
         {
           case (mappedApp, event) =>
-            val (updatedStatuses, actionList) = toActionList(currentStatuses, mappedApp, event)
+            val (updatedStatuses, actionList) = toActionList(currentStatuses, mappedApp, runners, event)
             currentStatuses = updatedStatuses
             actionList
         }

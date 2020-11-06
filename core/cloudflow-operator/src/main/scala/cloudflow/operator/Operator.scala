@@ -157,7 +157,10 @@ object Operator {
     )
   }
 
-  def handleStatusUpdates(client: KubernetesClient)(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
+  def handleStatusUpdates(
+      client: KubernetesClient,
+      runners: Map[String, Runner[_]]
+  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
@@ -165,7 +168,7 @@ object Operator {
         .via(StatusChangeEventFlow.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
         .via(mapToAppInSameNamespace(client))
-        .via(StatusChangeEventFlow.toStatusUpdateAction)
+        .via(StatusChangeEventFlow.toStatusUpdateAction(runners))
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",

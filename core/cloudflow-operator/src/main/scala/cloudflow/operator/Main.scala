@@ -60,7 +60,7 @@ object Main extends {
       Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
       Operator.handleConfigurationUpdates(client, runners, ctx.podName)
       Operator.handleConfigurationInput(client, ctx.podNamespace)
-      Operator.handleStatusUpdates(client)
+      Operator.handleStatusUpdates(client, runners)
     } catch {
       case t: Throwable ⇒
         system.log.error(t, "Unexpected error starting cloudflow operator, terminating.")
