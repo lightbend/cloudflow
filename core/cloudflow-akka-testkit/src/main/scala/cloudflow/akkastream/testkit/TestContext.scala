@@ -16,8 +16,6 @@
 
 package cloudflow.akkastream.testkit
 
-import java.util.concurrent.atomic.AtomicReference
-
 import scala.collection.immutable
 import scala.concurrent._
 import akka.NotUsed
@@ -30,9 +28,11 @@ import akka.stream._
 import akka.stream.scaladsl._
 import com.typesafe.config._
 import cloudflow.akkastream._
+import cloudflow.akkastream.internal.StreamletExecutionImpl
 import cloudflow.streamlets._
 
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
+import scala.util.Failure
 
 private[testkit] abstract class Completed
 
@@ -44,11 +44,7 @@ private[testkit] case class TestContext(
     volumeMounts: List[VolumeMount],
     override val config: Config = ConfigFactory.empty()
 ) extends AkkaStreamletContext {
-  private val readyPromise      = Promise[Dun]()
-  private val completionPromise = Promise[Dun]()
-  private val completionFuture  = completionPromise.future
-  val killSwitch                = KillSwitches.shared(streamletRef)
-  implicit val sys              = system
+  implicit val sys = system
 
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
@@ -68,7 +64,7 @@ private[testkit] case class TestContext(
           .via(killSwitch.flow)
           .mapError {
             case cause: Throwable ⇒
-              completionPromise.failure(cause)
+              execution.complete(Failure(cause))
               cause
           }
           .asSourceWithContext(_._2)
@@ -106,7 +102,7 @@ private[testkit] case class TestContext(
           .via(killSwitch.flow)
           .mapError {
             case cause: Throwable ⇒
-              completionPromise.failure(cause)
+              execution.complete(Failure(cause))
               cause
           }
           .alsoTo(
@@ -130,7 +126,7 @@ private[testkit] case class TestContext(
           .via(killSwitch.flow)
           .mapError {
             case cause: Throwable ⇒
-              completionPromise.failure(cause)
+              execution.complete(Failure(cause))
               cause
           }
           .alsoTo(
@@ -188,7 +184,7 @@ private[testkit] case class TestContext(
               .via(killSwitch.flow)
               .mapError {
                 case cause: Throwable ⇒
-                  completionPromise.failure(cause)
+                  execution.complete(Failure(cause))
                   cause
               }
               .to(outletTap.sink)
@@ -202,38 +198,27 @@ private[testkit] case class TestContext(
       }
     }
 
-  def streamletExecution: StreamletExecution = new StreamletExecution() {
-    val readyFuture            = readyPromise.future
-    def completed: Future[Dun] = completionFuture
-    def ready: Future[Dun]     = readyFuture
-    def stop(): Future[Dun]    = TestContext.this.stop()
-  }
+  private val execution                               = new StreamletExecutionImpl(this)
+  override val streamletExecution: StreamletExecution = execution
 
-  private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
+  override def ready(localMode: Boolean): Unit = {}
 
-  def onStop(f: () ⇒ Future[Dun]): Unit =
-    stoppers.getAndUpdate(old ⇒ old :+ f)
+  override def alive(localMode: Boolean): Unit = {}
 
-  def signalReady(): Boolean = readyPromise.trySuccess(Dun)
+  override def signalReady(): Boolean = execution.signalReady()
 
-  def stop(): Future[Dun] = {
+  override def stop(): Future[Dun] = {
     killSwitch.shutdown()
     import system.dispatcher
-    Future
-      .sequence(
-        stoppers.get.map { f ⇒
-          f().recover {
-            case _ ⇒ Dun
-          }
-        }
-      )
-      .flatMap { _ ⇒
-        completionPromise.trySuccess(Dun)
-        completionFuture
-      }
+    Stoppers
+      .stop()
+      .flatMap(_ => execution.complete())
   }
 
-  def metricTags(): Map[String, String] =
+  override def stopOnException(nonFatal: Throwable): Unit =
+    stop()
+
+  override def metricTags(): Map[String, String] =
     Map()
 }
 

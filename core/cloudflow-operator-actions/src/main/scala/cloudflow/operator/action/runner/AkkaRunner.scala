@@ -198,6 +198,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       volumeMounts = List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount
     )
 
+    // See cloudflow.akkastream.internal.HealthCheckFiles
     val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
