@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-import skuber.{ Container, CustomResource, ObjectEditor, ObjectMeta, ObjectResource, OwnerReference, Pod, ResourceDefinition }
+import skuber.{ Container, CustomResource, ObjectEditor, ObjectMeta, OwnerReference, Pod, ResourceDefinition }
 import skuber.apiextensions.CustomResourceDefinition
 import skuber.ResourceSpecification.Subresources
 
@@ -125,7 +125,7 @@ object CloudflowApplication {
   }
 
   object Status {
-    val Unknown          = "Unknown"
+    //val Unknown          = "Unknown"
     val Running          = "Running"
     val Pending          = "Pending"
     val CrashLoopBackOff = "CrashLoopBackOff"
@@ -140,7 +140,7 @@ object CloudflowApplication {
         spec.appId,
         spec.appVersion,
         streamletStatuses,
-        Some(Unknown)
+        Some(Pending)
       )
     }
 
@@ -191,7 +191,7 @@ object CloudflowApplication {
                     streamletStatuses: Vector[StreamletStatus],
                     appStatus: Option[String],
                     appMessage: Option[String] = None) {
-    def aggregatedStatus = appStatus.getOrElse(Status.Unknown)
+    def aggregatedStatus = appStatus.getOrElse(Status.Pending)
     def updateApp(newApp: CloudflowApplication.CR) = {
       val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
         streamletStatuses
