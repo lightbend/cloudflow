@@ -176,7 +176,7 @@ Skipping adding default configuration for mounting PVC cloudflow-%s on '/mnt/%s/
 						}
 					}
 				}`, runtime, runtime, runtime)
-			fmt.Printf(`default configuration will be provided to mount the PVC 'cloudflow-%s' on '/mnt/%s/storage'`, runtime, runtime)
+			fmt.Printf("Default configuration will be provided to mount the PVC 'cloudflow-%s' on '/mnt/%s/storage'\n", runtime, runtime)
 			return config, nil
 		}
 	}
