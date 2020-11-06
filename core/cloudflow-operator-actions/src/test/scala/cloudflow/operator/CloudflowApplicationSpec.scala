@@ -178,7 +178,7 @@ class CloudflowApplicationSpec
         status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
       }
 
-      (1 to FlinkRunner.DefaultReplicas + 1).foreach { _ =>
+      (1 to FlinkRunner.DefaultTaskManagerReplicas + 1).foreach { _ =>
         status = status.updatePod(
           "flink-egress",
           mkRunningReadyPod("flink-egress")
