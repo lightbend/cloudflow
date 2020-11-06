@@ -11,8 +11,6 @@ VERSION=$1
 	cd core && \
 	(sbt -mem 2048 clean unidoc | true) && \
   cd ../../../ && \
-  echo "$PWD" && \
-  echo "./target/staging/docs/$DIR/api/scaladoc" && \
 	mkdir -p "./target/staging/docs/$DIR/api/scaladoc" && \
 	mkdir -p "./target/staging/docs/$DIR/api/javadoc" && \
 	cp -r "./target/cloudflow/core/target/scala-2.12/unidoc/" "./target/staging/docs/$DIR/api/scaladoc" && \
