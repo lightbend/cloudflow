@@ -21,7 +21,7 @@ jobs:
       run: |
         sudo snap install yq
         cd docs
-        make all
+        make html-author-mode
     - name: Run integration tests of the sbt plugin
       run: |
         git config --global user.email "cloudflow@lightbend.com"
