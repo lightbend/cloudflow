@@ -16,6 +16,8 @@
 
 package cloudflow.operator.action.runner
 
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.collection.JavaConverters._
 import scala.util.Try
 import com.typesafe.config._
@@ -49,9 +51,9 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   import FlinkRunner._
   import flinkRunnerDefaults._
 
-  var nrOfJobManagers  = Map[String, Int]() //DefaultJobManagerReplicas
-  var nrOfTaskManagers = Map[String, Int]() //DefaultTaskManagerReplicas
-  var parallelism      = Map[String, Int]() //flinkRunnerDefaults.parallelism
+  var nrOfJobManagers  = new AtomicReference(Map[String, Int]()) //DefaultJobManagerReplicas
+  var nrOfTaskManagers = new AtomicReference(Map[String, Int]()) //DefaultTaskManagerReplicas
+  var parallelism      = new AtomicReference(Map[String, Int]()) //flinkRunnerDefaults.parallelism
 
   def format  = implicitly[Format[CR]]
   val runtime = Runtime
@@ -100,7 +102,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   def defaultReplicas = DefaultTaskManagerReplicas
 
   def expectedPodCount(deployment: StreamletDeployment) =
-    deployment.replicas.getOrElse(parallelism.get(deployment.name).getOrElse(FlinkRunner.DefaultTaskManagerReplicas)) + nrOfJobManagers
+    deployment.replicas.getOrElse(parallelism.get().get(deployment.name).getOrElse(FlinkRunner.DefaultTaskManagerReplicas)) + nrOfJobManagers
+          .get()
           .get(deployment.name)
           .getOrElse(DefaultJobManagerReplicas)
 
@@ -170,46 +173,48 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
       ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
-    val nrOfJobManagers = flinkConfig
+    val nrOfJobManagersForResource = flinkConfig
     // This adds configuration option that does not exist in Flink,
     // but allows users to configure number of jobmanagers and try out HA options.
       .get("jobmanager.replicas")
       .flatMap(configuredJobManagerReplicas => Try(configuredJobManagerReplicas.toInt).toOption)
       .getOrElse(jobManagerDefaults.replicas)
-
+    nrOfJobManagers.getAndUpdate(old => old + (deployment.name -> nrOfJobManagersForResource))
     val jobManagerConfig = JobManagerConfig(
       Some(
-        nrOfJobManagers
+        nrOfJobManagersForResource
       ),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
     )
 
     val scale = deployment.replicas
-    nrOfTaskManagers = nrOfTaskManagers + (deployment.name -> flinkConfig
-                .get("taskmanager.numberOfTaskSlots")
-                .flatMap(configuredSlots => Try(configuredSlots.toInt).toOption)
-                .getOrElse(taskManagerDefaults.taskSlots))
+    val nrOfTaskManagersForResource = flinkConfig
+      .get("taskmanager.numberOfTaskSlots")
+      .flatMap(configuredSlots => Try(configuredSlots.toInt).toOption)
+      .getOrElse(taskManagerDefaults.taskSlots)
+    nrOfTaskManagers.getAndUpdate(old => old + (deployment.name -> nrOfTaskManagersForResource))
 
     val taskManagerConfig = TaskManagerConfig(
       Some(
-        nrOfTaskManagers(deployment.name)
+        nrOfTaskManagersForResource
       ),
       getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
     )
-    parallelism = parallelism + (deployment.name -> scale
-                .map(_ * taskManagerDefaults.taskSlots)
-                .getOrElse(
-                  flinkConfig
-                    .get("parallelism.default")
-                    .flatMap(configuredParallelism => Try(configuredParallelism.toInt).toOption)
-                    .getOrElse(flinkRunnerDefaults.parallelism)
-                ))
+    val parallelismForResource = scale
+      .map(_ * taskManagerDefaults.taskSlots)
+      .getOrElse(
+        flinkConfig
+          .get("parallelism.default")
+          .flatMap(configuredParallelism => Try(configuredParallelism.toInt).toOption)
+          .getOrElse(flinkRunnerDefaults.parallelism)
+      )
+    parallelism.getAndUpdate(old => old + (deployment.name -> parallelismForResource))
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      parallelism = parallelism(deployment.name),
+      parallelism = parallelismForResource,
       entryClass = RuntimeMainClass,
       volumes = volumes,
       volumeMounts = volumeMounts,
