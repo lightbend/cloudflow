@@ -16,24 +16,26 @@
 
 package cloudflow.operator
 
+import scala.concurrent._
+import scala.concurrent.duration._
 import scala.reflect._
+import scala.util._
+import scala.util.control.NonFatal
+
 import akka.NotUsed
 import akka.actor._
 import akka.stream._
 import akka.stream.scaladsl._
-import cloudflow.operator.action._
-import cloudflow.operator.event._
-import cloudflow.operator.flow._
 import play.api.libs.json.Format
+
 import skuber._
 import skuber.api.client._
 import skuber.json.format._
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
-
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
+import cloudflow.operator.event._
+import cloudflow.operator.flow._
 
 object Operator {
   val ProtocolVersion              = "3"
@@ -222,42 +224,46 @@ object Operator {
      * On failing watches this code becomes a polling loop of listing resources which are turned into events.
      * Events that have already been processed are discarded in AppEvents.fromWatchEvent.
      * ==================================================*/
-    system.log.info(s"Starting watch, getting current events for ${classTag[O].runtimeClass.getName}")
+    system.log.info(s"Getting current events for ${classTag[O].runtimeClass.getName}")
 
-    val eventsResult = getCurrentEvents[O](client, options)
+    val eventsResult = getCurrentEvents[O](client, options, 0)
 
-    Source
-      .future(eventsResult)
-      .mapConcat(identity _)
-      .concat(
-        client
-          .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
-          .mapMaterializedValue(_ ⇒ NotUsed)
-      )
-      .recoverWithRetries(
-        -1, {
-          case _: TcpIdleTimeoutException ⇒
-            system.log.warning("Restarting watch on TCP idle timeout.")
-            watch[O](client, options)
-          case e: skuber.api.client.K8SException ⇒
-            system.log.info(s"""Ignoring Skuber K8SException (status message: '${e.status.message.getOrElse("")}'.)""")
-            watch[O](client, options)
-        }
-      )
+    RestartSource.withBackoff(
+      minBackoff = 3.seconds,
+      maxBackoff = 30.seconds,
+      randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
+      maxRestarts = -1    // limits the amount of restarts to 20
+    ) { () =>
+      system.log.info(s"Starting watch for ${classTag[O].runtimeClass.getName}")
+      Source
+        .future(eventsResult)
+        .mapConcat(identity _)
+        .concat(
+          client
+            .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
+            .mapMaterializedValue(_ ⇒ NotUsed)
+        )
+    }
   }
 
   private def getCurrentEvents[O <: ObjectResource](
       client: KubernetesClient,
-      options: ListOptions
+      options: ListOptions,
+      attempt: Int
   )(implicit lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],
     lc: LoggingContext,
+    system: ActorSystem,
     ec: ExecutionContext): Future[List[WatchEvent[O]]] =
-    for {
+    (for {
       namespaces ← client.getNamespaceNames
       lists      ← Future.sequence(namespaces.map(ns ⇒ client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
       watchEvents = lists.flatMap(_.items.map(item ⇒ WatchEvent(EventType.ADDED, item)))
-    } yield watchEvents
+    } yield watchEvents).recoverWith {
+      case NonFatal(e) =>
+        system.log.warning(s"Could not get current events, attempt number $attempt", e)
+        getCurrentEvents(client, options, attempt + 1)
+    }
 
   private def runStream(
       graph: RunnableGraph[Future[_]],
