@@ -152,20 +152,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
-    val jobManagerConfig = JobManagerConfig(
-      Some(jobManagerDefaults.replicas),
-      getJobManagerResourceRequirements(podsConfig, JobManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
-    )
-
-    val scale = deployment.replicas
-
-    val taskManagerConfig = TaskManagerConfig(
-      Some(taskManagerDefaults.taskSlots),
-      getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
-      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
-    )
-
     val flinkConfig: Map[String, String] = Map(
         "state.backend"                    -> "filesystem",
         "state.backend.fs.checkpointdir"   -> s"file://${PVCMountPath}/checkpoints/${deployment.streamletName}",
@@ -173,10 +159,45 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
       ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
+    val jobManagerConfig = JobManagerConfig(
+      Some(
+        flinkConfig
+        // This adds configuration option that does not exist in Flink,
+        // but allows users to configure number of jobmanagers and try out HA options.
+          .get("jobmanager.replicas")
+          .flatMap(configuredJobManagerReplicas => Try(configuredJobManagerReplicas.toInt).toOption)
+          .getOrElse(jobManagerDefaults.replicas)
+      ),
+      getJobManagerResourceRequirements(podsConfig, JobManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
+    )
+
+    val scale = deployment.replicas
+
+    val taskManagerConfig = TaskManagerConfig(
+      // TODO support taskmanager.numberOfTaskSlots from flink config.
+      Some(
+        flinkConfig
+          .get("taskmanager.numberOfTaskSlots")
+          .flatMap(configuredSlots => Try(configuredSlots.toInt).toOption)
+          .getOrElse(taskManagerDefaults.taskSlots)
+      ),
+      getTaskManagerResourceRequirements(podsConfig, TaskManagerPod),
+      Some(EnvConfig(getEnvironmentVariables(podsConfig, TaskManagerPod)))
+    )
+
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
-      parallelism = scale.map(_ * taskManagerDefaults.taskSlots).getOrElse(flinkRunnerDefaults.parallelism),
+      // TODO support parallelism.default from flink config.
+      parallelism = scale
+        .map(_ * taskManagerDefaults.taskSlots)
+        .getOrElse(
+          flinkConfig
+            .get("parallelism.default")
+            .flatMap(configuredParallelism => Try(configuredParallelism.toInt).toOption)
+            .getOrElse(flinkRunnerDefaults.parallelism)
+        ),
       entryClass = RuntimeMainClass,
       volumes = volumes,
       volumeMounts = volumeMounts,
