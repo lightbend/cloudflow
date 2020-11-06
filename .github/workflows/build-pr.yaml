@@ -6,7 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '8', '11', '13' ]
+        java: [ '8' ]
+        # for now...
+        # , '11', '13' ]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
