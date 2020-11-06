@@ -47,6 +47,9 @@ object FlinkRunner {
 final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner[CR] {
   import FlinkRunner._
   import flinkRunnerDefaults._
+
+  @volatile var nrOfJobManagers = 1
+
   def format  = implicitly[Format[CR]]
   val runtime = Runtime
   def editor = new ObjectEditor[CR] {
@@ -94,7 +97,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   def defaultReplicas = DefaultReplicas
 
   def expectedPodCount(deployment: StreamletDeployment) =
-    deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
+    deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + nrOfJobManagers
+
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
@@ -161,14 +165,16 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         "state.savepoints.dir"             -> s"file://${PVCMountPath}/savepoints/${deployment.streamletName}"
       ) ++ javaOptions.map("env.java.opts" -> _) ++ getFlinkConfig(configSecret)
 
+    val nrOfJobManagers = flinkConfig
+    // This adds configuration option that does not exist in Flink,
+    // but allows users to configure number of jobmanagers and try out HA options.
+      .get("jobmanager.replicas")
+      .flatMap(configuredJobManagerReplicas => Try(configuredJobManagerReplicas.toInt).toOption)
+      .getOrElse(jobManagerDefaults.replicas)
+
     val jobManagerConfig = JobManagerConfig(
       Some(
-        flinkConfig
-        // This adds configuration option that does not exist in Flink,
-        // but allows users to configure number of jobmanagers and try out HA options.
-          .get("jobmanager.replicas")
-          .flatMap(configuredJobManagerReplicas => Try(configuredJobManagerReplicas.toInt).toOption)
-          .getOrElse(jobManagerDefaults.replicas)
+        nrOfJobManagers
       ),
       getJobManagerResourceRequirements(podsConfig, JobManagerPod),
       Some(EnvConfig(getEnvironmentVariables(podsConfig, JobManagerPod)))
