@@ -23,11 +23,9 @@ import org.slf4j.LoggerFactory
 
 import skuber.{ ObjectResource, Secret }
 import skuber.api.client.{ EventType, WatchEvent }
-import skuber.json.format._
 
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
-import cloudflow.operator.action.runner.SparkResource.SpecPatch
 
 /**
  * Indicates that a streamlet has changed.
@@ -108,8 +106,7 @@ object StreamletChangeEvent extends Event {
       .find(_.streamletName == streamletName)
       .map { streamletDeployment ⇒
         log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
-        val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-        val updateAction = runners.get(streamletDeployment.runtime).map(_.streamletChangeAction(app, streamletDeployment)).toList
+        val updateAction = runners.get(streamletDeployment.runtime).map(_.streamletChangeAction(app, runners, streamletDeployment)).toList
         val streamletChangeEventAction =
           EventActions.streamletChangeEvent(app, streamletDeployment, namespace, podName, watchEvent._object)
 

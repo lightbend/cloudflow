@@ -81,7 +81,8 @@ trait Runner[T <: ObjectResource] {
   def actions(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
-      namespace: String
+      namespace: String,
+      runners: Map[String, Runner[_]]
   ): Seq[ResourceAction[ObjectResource]] = {
     implicit val ft = format
     implicit val rd = resourceDefinition
@@ -115,7 +116,7 @@ trait Runner[T <: ObjectResource] {
               case None =>
                 val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
                 log.error(msg)
-                CloudflowApplication.Status.errorAction(newApp, msg)
+                CloudflowApplication.Status.errorAction(newApp, runners, msg)
             }
           )
         )
@@ -125,7 +126,7 @@ trait Runner[T <: ObjectResource] {
     val _updateActions = newDeployments
       .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
-        updateActions(newApp, namespace, deployment)
+        updateActions(newApp, namespace, runners, deployment)
       }
       .toSeq
 
@@ -146,6 +147,7 @@ trait Runner[T <: ObjectResource] {
 
   def updateActions(newApp: CloudflowApplication.CR,
                     namespace: String,
+                    runners: Map[String, Runner[_]],
                     deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
     implicit val f  = format
     implicit val rd = resourceDefinition
@@ -159,19 +161,21 @@ trait Runner[T <: ObjectResource] {
           case None =>
             val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
             log.error(msg)
-            CloudflowApplication.Status.errorAction(newApp, msg)
+            CloudflowApplication.Status.errorAction(newApp, runners, msg)
         }
       )
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
+  def streamletChangeAction(app: CloudflowApplication.CR,
+                            runners: Map[String, Runner[_]],
+                            streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
 
   def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
 
   def defaultReplicas: Int
-
+  def expectedPodCount(deployment: StreamletDeployment): Int
   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
 

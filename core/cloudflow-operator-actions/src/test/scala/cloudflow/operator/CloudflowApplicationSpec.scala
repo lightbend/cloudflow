@@ -64,9 +64,9 @@ class CloudflowApplicationSpec
       customResource.spec mustBe cr.spec
     }
 
-    "report its status as Unknown when there are no pod statuses yet" in {
+    "report its status as Pending when there are no pod statuses yet" in {
       val status = mkTestStatus()
-      status.aggregatedStatus mustBe CloudflowApplication.Status.Unknown
+      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
     }
 
     "report its status as Pending when one pod is not ready" in {
@@ -243,7 +243,7 @@ class CloudflowApplicationSpec
       .value
 
     val newApp = mkApp(verifiedBlueprint)
-    CloudflowApplication.Status(newApp)
+    CloudflowApplication.Status(newApp, runners)
   }
 
   def mkTestStatusMixedApp() = {
@@ -267,7 +267,7 @@ class CloudflowApplicationSpec
       .value
 
     val newApp = mkApp(verifiedBlueprint)
-    CloudflowApplication.Status(newApp)
+    CloudflowApplication.Status(newApp, runners)
   }
 
   def mkApp(verifiedBlueprint: VerifiedBlueprint) =

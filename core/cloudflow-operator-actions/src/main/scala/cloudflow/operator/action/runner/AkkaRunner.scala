@@ -69,7 +69,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
     )
   }
-  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
     Action.provided[skuber.Secret, ObjectResource](
       streamletDeployment.secretName,
@@ -83,12 +83,13 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         case None =>
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
           log.error(msg)
-          CloudflowApplication.Status.errorAction(app, msg)
+          CloudflowApplication.Status.errorAction(app, runners, msg)
       }
     )
   }
 
-  def defaultReplicas = DefaultReplicas
+  def defaultReplicas                                   = DefaultReplicas
+  def expectedPodCount(deployment: StreamletDeployment) = deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
 
   private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(

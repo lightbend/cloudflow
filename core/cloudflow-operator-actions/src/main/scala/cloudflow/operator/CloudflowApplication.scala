@@ -34,6 +34,7 @@ import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
 import cloudflow.operator.action.{ Action, ResourceAction }
+import cloudflow.operator.action.runner.Runner
 
 /**
  * CloudflowApplication Custom Resource.
@@ -133,9 +134,10 @@ object CloudflowApplication {
     private val log      = LoggerFactory.getLogger(Status.getClass)
 
     def apply(
-        spec: CloudflowApplication.Spec
+        spec: CloudflowApplication.Spec,
+        runners: Map[String, Runner[_]]
     ): Status = {
-      val streamletStatuses = createStreamletStatuses(spec)
+      val streamletStatuses = createStreamletStatuses(spec, runners)
       Status(
         spec.appId,
         spec.appVersion,
@@ -144,9 +146,9 @@ object CloudflowApplication {
       )
     }
 
-    def errorAction(app: CloudflowApplication.CR, msg: String): ResourceAction[CloudflowApplication.CR] = {
+    def errorAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], msg: String): ResourceAction[CloudflowApplication.CR] = {
       log.info(s"Setting error status for app ${app.spec.appId}")
-      Status(app.spec)
+      Status(app.spec, runners)
         .copy(
           appStatus = Some(CloudflowApplication.Status.Error),
           appMessage = Some(msg)
@@ -154,23 +156,17 @@ object CloudflowApplication {
         .toAction(app)
     }
 
-    def createStreamletStatuses(spec: CloudflowApplication.Spec) = {
-      // TODO FIX FOR RUNNERS. Do not match on runtime, this is not great for extensibility.
-      // There are some plans to make replicas mandatory in the CR,
-      // and to indicate extraPods required in the deployment to prevent the code below specific to runtimes
-      import cloudflow.operator.action.runner._
+    def createStreamletStatuses(
+        spec: CloudflowApplication.Spec,
+        runners: Map[String, Runner[_]]
+    ) =
       spec.deployments.map { deployment =>
-        val expectedPodCount = deployment.runtime match {
-          case AkkaRunner.Runtime  ⇒ deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
-          case SparkRunner.Runtime ⇒ deployment.replicas.getOrElse(SparkRunner.DefaultNrOfExecutorInstances) + 1
-          case FlinkRunner.Runtime ⇒ deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
-        }
+        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(0)
         StreamletStatus(
           deployment.streamletName,
           expectedPodCount
         )
       }
-    }
 
     def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
       if (streamletStatuses.forall { streamletStatus =>
@@ -192,8 +188,8 @@ object CloudflowApplication {
                     appStatus: Option[String],
                     appMessage: Option[String] = None) {
     def aggregatedStatus = appStatus.getOrElse(Status.Pending)
-    def updateApp(newApp: CloudflowApplication.CR) = {
-      val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec).map { newStreamletStatus =>
+    def updateApp(newApp: CloudflowApplication.CR, runners: Map[String, Runner[_]]) = {
+      val newStreamletStatuses = Status.createStreamletStatuses(newApp.spec, runners).map { newStreamletStatus =>
         streamletStatuses
           .find(_.streamletName == newStreamletStatus.streamletName)
           .map { streamletStatus =>

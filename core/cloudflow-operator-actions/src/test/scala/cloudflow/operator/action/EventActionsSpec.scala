@@ -27,7 +27,6 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
   case class Foo(name: String)
   case class Bar(name: String)
   val runner     = new AkkaRunner(ctx.akkaRunnerDefaults)
-  val runners    = Map(AkkaRunner.Runtime -> runner)
   val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 

@@ -70,7 +70,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
     Action.provided[Secret, ObjectResource](
@@ -86,13 +86,15 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
 
           log.error(msg)
-          CloudflowApplication.Status.errorAction(app, msg)
+          CloudflowApplication.Status.errorAction(app, runners, msg)
       }
     )
   }
 
   def defaultReplicas = DefaultReplicas
 
+  def expectedPodCount(deployment: StreamletDeployment) =
+    deployment.replicas.getOrElse(FlinkRunner.DefaultReplicas) + 1
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(

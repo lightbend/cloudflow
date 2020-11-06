@@ -63,7 +63,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("runner actions are created from a new app")
-      val actions = akkaRunner.actions(newApp, currentApp, namespace)
+      val actions = akkaRunner.actions(newApp, currentApp, namespace, runners)
 
       Then("only 'create actions' must be created for every runner")
       val createActions = actions.collect {
@@ -118,7 +118,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
-      val actions = akkaRunner.actions(newApp, currentApp, namespace)
+      val actions = akkaRunner.actions(newApp, currentApp, namespace, runners)
 
       Then("update actions should be created")
       val updateActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
@@ -156,7 +156,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-      val actions = akkaRunner.actions(newApp, Some(currentApp), namespace)
+      val actions = akkaRunner.actions(newApp, Some(currentApp), namespace, runners)
 
       Then("delete actions should be created")
       val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
@@ -190,7 +190,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for runner resources should be created for the new endpoint")
-      val actions       = akkaRunner.actions(newApp, Some(currentApp), namespace)
+      val actions       = akkaRunner.actions(newApp, Some(currentApp), namespace, runners)
       val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
       val createDeploymentActions = actions.collect {
