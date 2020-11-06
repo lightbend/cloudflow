@@ -18,8 +18,6 @@ else
     cd ../../../ && \
     ls -al "./target/cloudflow/core/target" && \
     ls -al "./target/cloudflow/core/target/scala-2.12" && \
-    mkdir -p "./target/staging/docs/$DIR/api/scaladoc" && \
-    mkdir -p "./target/staging/docs/$DIR/api/javadoc" && \
-    cp -r "./target/cloudflow/core/target/scala-2.12/unidoc/" "./target/staging/docs/$DIR/api/scaladoc" && \
-    cp -r "./target/cloudflow/core/target/javaunidoc/" "./target/staging/docs/$DIR/api/javadoc")
+    mv "./target/cloudflow/core/target/scala-2.12/unidoc" "./target/staging/docs/$DIR/api/scaladoc" && \
+    mv "./target/cloudflow/core/target/javaunidoc" "./target/staging/docs/$DIR/api/javadoc")
 fi
