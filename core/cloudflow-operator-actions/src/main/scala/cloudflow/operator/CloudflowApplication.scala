@@ -126,7 +126,6 @@ object CloudflowApplication {
   }
 
   object Status {
-    //val Unknown          = "Unknown"
     val Running          = "Running"
     val Pending          = "Pending"
     val CrashLoopBackOff = "CrashLoopBackOff"
@@ -161,7 +160,7 @@ object CloudflowApplication {
         runners: Map[String, Runner[_]]
     ) =
       spec.deployments.map { deployment =>
-        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(0)
+        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
         StreamletStatus(
           deployment.streamletName,
           expectedPodCount
