@@ -163,6 +163,13 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
+    val dockerContainerGroupId = Runner.DockerContainerGroupId
+    val securityContext =
+      if (streamletToDeploy.exists(_.descriptor.volumeMounts.exists(_.accessMode == "ReadWriteMany")))
+        Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId)))
+      else
+        None
+
     val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
@@ -214,6 +221,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
+      securityContext = securityContext,
       parallelism = parallelismForResource,
       entryClass = RuntimeMainClass,
       volumes = volumes,
