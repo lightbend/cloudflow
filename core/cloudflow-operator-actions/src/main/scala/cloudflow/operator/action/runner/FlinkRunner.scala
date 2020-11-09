@@ -437,6 +437,7 @@ object FlinkResource {
     ImagePullPolicy               apiv1.PullPolicy             `json:"imagePullPolicy,omitempty" protobuf:"bytes,14,opt,name=imagePullPolicy,casttype=PullPolicy"`
     ImagePullSecrets              []apiv1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,15,rep,name=imagePullSecrets"`
     ServiceAccountName            string                       `json:"serviceAccountName,omitempty"`
+    SecurityContext               *apiv1.PodSecurityContext    `json:"securityContext,omitempty"`
     FlinkConfig                   FlinkConfig                  `json:"flinkConfig"`
     FlinkVersion                  string                       `json:"flinkVersion"`
     TaskManagerConfig             TaskManagerConfig            `json:"taskManagerConfig,omitempty"`
@@ -448,6 +449,7 @@ object FlinkResource {
     // Deprecated: use SavepointPath instead
     SavepointInfo                  SavepointInfo               `json:"savepointInfo,omitempty"`
     SavepointPath                  string                      `json:"savepointPath,omitempty"`
+    SavepointDisabled              bool                        `json:"savepointDisabled"`
     DeploymentMode                 DeploymentMode              `json:"deploymentMode,omitempty"`
     RPCPort                        *int32                      `json:"rpcPort,omitempty"`
     BlobPort                       *int32                      `json:"blobPort,omitempty"`
@@ -461,7 +463,9 @@ object FlinkResource {
     AllowNonRestoredState          bool                        `json:"allowNonRestoredState,omitempty"`
     ForceRollback                  bool                        `json:"forceRollback"`
     MaxCheckpointRestoreAgeSeconds *int32                      `json:"maxCheckpointRestoreAgeSeconds,omitempty"`
-  } */
+    TearDownVersionHash            string                      `json:"tearDownVersionHash,omitempty"`
+  }
+   */
 
   final case class Spec(
       image: String = "", // required parameter
@@ -497,7 +501,9 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
+  implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
+
+  // TODO figure out why this is not used for fsGroup.
   implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
 
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
