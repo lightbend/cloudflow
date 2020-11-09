@@ -158,7 +158,6 @@ object ConfigurationScopeLayering {
           portMappingWithFallbackConfig
             .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
             // Need to retain the topic.id
-            // Adding bootstrap-servers key for backwards compatibility
             .withFallback(ConfigFactory.parseString(s"""
                 cloudflow.runner.streamlet.context.port_mappings.$port.id = ${topic.id}
               """))
