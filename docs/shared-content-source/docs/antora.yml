@@ -1,10 +1,10 @@
 name: shared-content
 title: ""
 prerelease: Beta
-version: dev
+version: 2.0.13
 asciidoc:
   attributes:
-    cloudflow-version: dev
-    cloudflow-examples-version: dev
-    cloudflow-branch-version: dev
-    kubectl-plugin-version: not-available
+    cloudflow-version: 2.0.13
+    cloudflow-examples-version: 2.0.13
+    cloudflow-branch-version: v2.0.13
+    kubectl-plugin-version: 2.0.13.841-40cc6eb
