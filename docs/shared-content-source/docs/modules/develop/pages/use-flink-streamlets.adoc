@@ -30,7 +30,7 @@ Each outlet also allows the user to define a partitioning function that will be 
 
 == `StreamletShape`
 
-The `StreamletShape` captures the connectivity and compatibility details of a Spark-based streamlet.
+The `StreamletShape` captures the connectivity and compatibility details of a Flink-based streamlet.
 It captures which—and how many—inlets and outlets the streamlet has.
 
 The `sbt-cloudflow` plugin extracts—amongst other things—the _shape_ from the streamlet that it finds on the classpath.
@@ -111,8 +111,7 @@ In Cloudflow, streamlets communicate with each other through Kafka - hence the s
 
 A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators are fully supported within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
 
-PVCs are automatically provisioned for each Cloudflow application.
-The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
+To deploy a Flink application it is necessary that a PVC already exists in the namespace for the application. Cloudflow will automatically mount this PVC in the streamlets themselves to allow state storage, as long as it has a `/mnt/flink/storage` mount path. Cloudflow will look for a PVC named `cloudflow-flink` by default that mounts this path. It is also possible to create a differently named PVC, that mounts `/mnt/flink/storage` and mount it using a configuration file, as described in xref:develop:cloudflow-configuration.adoc[The Configuration Model]. The access mode for the PVC has to be `ReadWriteMany`.
 
 Flink's runtime encodes all state and writes them into checkpoints. And since checkpoints in Flink offer an exactly-once guarantee of semantics, all application state are preserved safely throughout the lifetime of the streamlet. In case of failures, recovery will be done from checkpoints, and there will be no data loss.
 

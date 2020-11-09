@@ -189,8 +189,7 @@ This includes stateful processing, from time-based aggregations to arbitrary sta
 All stateful processing relies on snapshots and a state store for the bookkeeping of the offsets processed and the  computed state at any time.
 In Cloudflow, this state store is deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
 
-PVCs are automatically provisioned for each Cloudflow application.
-The volumes are claimed for as long as the Pipeline application is deployed, allowing for seamless re-deployment, upgrades, and recovery in case of failure.
+To deploy a Spark application it is necessary that a PVC already exists in the namespace for the application. Cloudflow will automatically mount this PVC in the streamlets themselves to allow state storage, as long as it has a `/mnt/spark/storage` mount path. Cloudflow will look for a PVC named `cloudflow-spark` by default that mounts this path. It is also possible to create a differently named PVC, that mounts `/mnt/spark/storage` and mount it using a configuration file, as described in xref:develop:cloudflow-configuration.adoc[The Configuration Model]. The access mode for the PVC has to be `ReadWriteMany`.
 
 We can use the managed storage to safely store checkpoint data. 
 Checkpoint information is managed by Cloudflow for all streamlets that use the `context.writeStream` method.
