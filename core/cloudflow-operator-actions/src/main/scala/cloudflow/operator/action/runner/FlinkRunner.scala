@@ -381,7 +381,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
 
 object FlinkResource {
 
-  final case class SecurityContext(fsGroup: Option[Int])
   final case class HostPath(path: String, `type`: String)
   final case class NamePath(name: String, path: String)
   final case class NamePathSecretType(name: String, path: String, secretType: String = "Generic")
@@ -472,6 +471,7 @@ object FlinkResource {
       imagePullPolicy: String = "Always",
       flinkVersion: String = "1.10",
       serviceAccountName: String = Name.ofServiceAccount,
+      securityContext: Option[PodSecurityContext] = None,
       jarName: String,
       parallelism: Int,
       entryClass: String = "",
@@ -502,9 +502,6 @@ object FlinkResource {
   )
 
   implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
-
-  // TODO figure out why this is not used for fsGroup.
-  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
 
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
   implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]
