@@ -163,6 +163,13 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val image             = deployment.image
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
+    val dockerContainerGroupId = Runner.DockerContainerGroupId
+    val securityContext =
+      if (streamletToDeploy.exists(_.descriptor.volumeMounts.exists(_.accessMode == "ReadWriteMany")))
+        Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId)))
+      else
+        None
+
     val volumes      = makeVolumesSpec(deployment, streamletToDeploy) ++ getVolumes(podsConfig, PodsConfig.CloudflowPodName)
     val volumeMounts = makeVolumeMountsSpec(streamletToDeploy) ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName)
 
@@ -214,6 +221,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val _spec = Spec(
       image = image,
       jarName = RunnerJarName,
+      securityContext = securityContext,
       parallelism = parallelismForResource,
       entryClass = RuntimeMainClass,
       volumes = volumes,
@@ -345,7 +353,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     // secret
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
-    // Streamlet volume mounting
+    // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
@@ -356,10 +364,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   /**
    * For every volume we need a volume mount spec
    * // "volumeMounts": [
-   * //   {
-   * //     "name": "persistent-storage",
-   * //     "mountPath": "/mnt/flink/storage"
-   * //   },
    * //   {
    * //     "name": "config-vol",
    * //     "mountPath": "/etc/cloudflow-runner"
@@ -385,7 +389,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
 
 object FlinkResource {
 
-  final case class SecurityContext(fsGroup: Option[Int])
   final case class HostPath(path: String, `type`: String)
   final case class NamePath(name: String, path: String)
   final case class NamePathSecretType(name: String, path: String, secretType: String = "Generic")
@@ -441,6 +444,7 @@ object FlinkResource {
     ImagePullPolicy               apiv1.PullPolicy             `json:"imagePullPolicy,omitempty" protobuf:"bytes,14,opt,name=imagePullPolicy,casttype=PullPolicy"`
     ImagePullSecrets              []apiv1.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,15,rep,name=imagePullSecrets"`
     ServiceAccountName            string                       `json:"serviceAccountName,omitempty"`
+    SecurityContext               *apiv1.PodSecurityContext    `json:"securityContext,omitempty"`
     FlinkConfig                   FlinkConfig                  `json:"flinkConfig"`
     FlinkVersion                  string                       `json:"flinkVersion"`
     TaskManagerConfig             TaskManagerConfig            `json:"taskManagerConfig,omitempty"`
@@ -452,6 +456,7 @@ object FlinkResource {
     // Deprecated: use SavepointPath instead
     SavepointInfo                  SavepointInfo               `json:"savepointInfo,omitempty"`
     SavepointPath                  string                      `json:"savepointPath,omitempty"`
+    SavepointDisabled              bool                        `json:"savepointDisabled"`
     DeploymentMode                 DeploymentMode              `json:"deploymentMode,omitempty"`
     RPCPort                        *int32                      `json:"rpcPort,omitempty"`
     BlobPort                       *int32                      `json:"blobPort,omitempty"`
@@ -465,13 +470,16 @@ object FlinkResource {
     AllowNonRestoredState          bool                        `json:"allowNonRestoredState,omitempty"`
     ForceRollback                  bool                        `json:"forceRollback"`
     MaxCheckpointRestoreAgeSeconds *int32                      `json:"maxCheckpointRestoreAgeSeconds,omitempty"`
-  } */
+    TearDownVersionHash            string                      `json:"tearDownVersionHash,omitempty"`
+  }
+   */
 
   final case class Spec(
       image: String = "", // required parameter
       imagePullPolicy: String = "Always",
       flinkVersion: String = "1.10",
       serviceAccountName: String = Name.ofServiceAccount,
+      securityContext: Option[PodSecurityContext] = None,
       jarName: String,
       parallelism: Int,
       entryClass: String = "",
@@ -501,8 +509,7 @@ object FlinkResource {
       submissionTime: Option[String] // may need to parse it as a date later on
   )
 
-  implicit val hostPathFmt: Format[HostPath]               = Json.format[HostPath]
-  implicit val securityContextFmt: Format[SecurityContext] = Json.format[SecurityContext]
+  implicit val hostPathFmt: Format[HostPath] = Json.format[HostPath]
 
   implicit val namePathFmt: Format[NamePath]                     = Json.format[NamePath]
   implicit val namePathSecretTypeFmt: Format[NamePathSecretType] = Json.format[NamePathSecretType]

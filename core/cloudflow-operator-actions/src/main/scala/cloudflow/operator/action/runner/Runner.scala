@@ -411,9 +411,6 @@ object PodsConfig {
     }.toList
   }
 
-  /**
-   * TODO How to make this optional?
-   */
   implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
     val res: Option[Volume.Source] = config.root().keySet().toArray().headOption.map {
       case "secret" =>

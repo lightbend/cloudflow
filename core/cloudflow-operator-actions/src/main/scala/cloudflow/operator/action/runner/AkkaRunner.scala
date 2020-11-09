@@ -54,10 +54,9 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   def editor = (obj: Deployment, newMetadata: ObjectMeta) ⇒ {
     obj.copy(metadata = newMetadata)
   }
-  def configEditor             = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-  val runtime                  = Runtime
-  def resourceDefinition       = implicitly[ResourceDefinition[Deployment]]
-  val requiresPersistentVolume = false
+  def configEditor       = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  val runtime            = Runtime
+  def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
 
   def appActions(app: CloudflowApplication.CR,
                  namespace: String,
@@ -165,8 +164,9 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val volume = Volume(configMapName, ConfigMapVolumeSource(configMapName))
 
-    // Streamlet volume mounting
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+
+    // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val pvcRefVolumes =
       streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
     val pvcVolumeMounts = streamletToDeploy
@@ -225,20 +225,20 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       )
 
     // This is the group id of the user in the streamlet container,
-    // its need to make volumes managed by certain volume plugins writable.
+    // it needs to make volumes managed by certain volume plugins writable.
     // If the image used with the container changes, this value most likely
-    // have to be updated
+    // will have to be updated
     val dockerContainerGroupId = Runner.DockerContainerGroupId
-    // We only need to set this when we want to write to the a volume in a pod
-    val fsGroup = pvcVolumeMounts
-      .find(volume ⇒ volume.readOnly == true)
+    // We only need to set this when we want to write to a volume in a pod
+    val securityContext = pvcVolumeMounts
+      .find(volume ⇒ volume.readOnly == false)
       .flatMap(_ ⇒ Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId))))
 
     val podSpec =
       Pod
         .Spec(serviceAccountName = Name.ofServiceAccount(),
               volumes = pvcRefVolumes.getOrElse(List.empty[Volume]),
-              securityContext = fsGroup)
+              securityContext = securityContext)
         .addContainer(container)
         .addVolume(volume)
         .addVolume(secretVolume)

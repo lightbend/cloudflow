@@ -15,7 +15,6 @@ To upgrade Cloudflow in your cluster to the latest version run
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --set cloudflow_operator.persistentStorageClass=nfs \
     --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 ----
 
@@ -30,7 +29,6 @@ To upgrade Cloudflow to a specific version, add the _--version_ flag. For exampl
 ----
   helm upgrade cloudflow cloudflow-helm-charts/cloudflow \
     --namespace cloudflow \
-    --set cloudflow_operator.persistentStorageClass=nfs \
     --version="{cloudflow-version}" \
     --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
 ----
