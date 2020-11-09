@@ -345,7 +345,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     // secret
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
-    // Streamlet volume mounting
+    // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
@@ -356,10 +356,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   /**
    * For every volume we need a volume mount spec
    * // "volumeMounts": [
-   * //   {
-   * //     "name": "persistent-storage",
-   * //     "mountPath": "/mnt/flink/storage"
-   * //   },
    * //   {
    * //     "name": "config-vol",
    * //     "mountPath": "/etc/cloudflow-runner"

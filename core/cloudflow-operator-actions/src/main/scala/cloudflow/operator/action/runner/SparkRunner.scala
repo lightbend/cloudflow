@@ -68,8 +68,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   def resourceDefinition = implicitly[ResourceDefinition[CR]]
   def prometheusConfig   = PrometheusConfig(prometheusRules)
 
-  val requiresPersistentVolume = true
-
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
 
@@ -204,9 +202,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
     val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
 
-    // Streamlet volume mounting
-    // Volume mounting
-
+    // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
@@ -240,8 +236,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
           updateLabels ++
           Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
             .mapValues(Name.ofLabelValue)
-
-    //import ctx.sparkRunnerDefaults._
 
     val driver = addDriverResourceRequirements(
       Driver(
