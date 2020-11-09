@@ -24,29 +24,8 @@ First, we add the Cloudflow Helm repository and update the local index:
   helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
   helm repo update
 
-=== Installing (with persistent storage support for Spark or Flink)
+=== Installing
 
-Spark and Flink require persistent storage to keep state.
-Cloudflow creates persistent volume claims for this purpose, using a storage class.  The `persistentStorageClass` parameter sets the storage class to `nfs`. This storage class, as mentioned in xref:installation-prerequisites.adoc[], has to be of the type `ReadWriteMany`. In our example, we are using the `nfs` storage class.
-
-  cloudflow_operator.persistentStorageClass=nfs
-
-The `kafkaClusters.default.bootstrapServers` parameter sets the address and port of the Kafka cluster that Cloudflow will use. In this example, we have used the address of a Strimzi created Kafka cluster located in the `cloudflow` namespace.
-
-  kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
-
-The following command installs Cloudflow using the Helm chart:
-
-[subs="attributes+"]
-  helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
-    --version "{cloudflow-version}" \
-    --set cloudflow_operator.persistentStorageClass=nfs \
-    --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
-
-
-=== Installing (without persistent storage support)
-
-If you do not intend to use Spark or Flink, you can omit the `persistentStorageClass` parameter.
 The `kafkaClusters.default.bootstrapServers` parameter sets the address and port of the default Kafka cluster that Cloudflow will use. In this example, we have used the address of a Strimzi created Kafka cluster located in the `cloudflow` namespace.
 
   kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092

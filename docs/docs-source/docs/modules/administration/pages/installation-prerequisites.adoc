@@ -38,7 +38,7 @@ See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a
 
 === Storage requirements (for use with Spark or Flink)
 
-**If you plan to write Cloudflow applications using Spark or Flink**, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed. The name of the `ReadWriteMany` storage class name is required when installing Cloudflow.
+**If you plan to write Cloudflow applications using Spark or Flink**, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed.
 
 For testing purposes, we suggest using the NFS Server Provisioner, which can be found here: https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner[NFS Server Provisioner Helm chart]
 
@@ -72,8 +72,6 @@ NAME                 PROVISIONER            AGE
 nfs                  cloudflow-nfs          29s
 standard (default)   kubernetes.io/gce-pd   2m57s
 ----
-
-NOTE: When installing Cloudflow, we will use the name `nfs` to indicate that Cloudflow should use the NFS storage class.
 
 NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
 

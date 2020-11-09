@@ -62,7 +62,6 @@ prepare-cluster:
 	(helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
 		--atomic \
 		--version "${version}" \
-		--set cloudflow_operator.persistentStorageClass=nfs \
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** The cluster is ready for integration tests!'
