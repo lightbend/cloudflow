@@ -22,7 +22,7 @@ var ReleaseTag = "SNAPSHOT"
 
 // ProtocolVersion is the protocol version, which is shared between the cloudflow-operator and kubectl-cloudflow. The cloudflow-operator creates
 // a configmap on bootstrap that kubectl-cloudflow reads to verify that it is compatible.
-const ProtocolVersion = "3"
+const ProtocolVersion = "4"
 
 // ProtocolVersionKey is the key of the protocol version in the configmap
 const ProtocolVersionKey = "protocol-version"

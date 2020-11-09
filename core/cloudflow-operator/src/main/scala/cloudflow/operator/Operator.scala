@@ -38,7 +38,7 @@ import cloudflow.operator.event._
 import cloudflow.operator.flow._
 
 object Operator {
-  val ProtocolVersion              = "3"
+  val ProtocolVersion              = "4"
   val ProtocolVersionKey           = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
   def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = ConfigMap(
