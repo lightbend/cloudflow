@@ -186,7 +186,7 @@ class ConfigurationScopeLayeringSpec
       maybeValidConfig.getConfig("connection-config").getString("connection.foo.bar") mustBe "default-baz"
       maybeValidConfig.getConfig("producer-config").getString("producer.foo.bar") mustBe "default-baz"
       maybeValidConfig.getConfig("consumer-config").getString("consumer.foo.bar") mustBe "default-baz"
-
+      configs.streamlet.getString("cloudflow.kafka.bootstrap-servers") mustBe "default-named-cluster:9092"
       // 'sometimes' port uses global topic configuration from app config, and falls back 'default' named config for bootstrap.servers and other config
       val sometimesPort   = "sometimes"
       val sometimesConfig = configs.streamlet.getConfig(s"cloudflow.runner.streamlet.context.port_mappings.$sometimesPort.config")

@@ -133,6 +133,9 @@ object ConfigurationScopeLayering {
                                                        appConfig: Config,
                                                        clusterSecretConfigs: Map[String, Config]): Config = {
     val defaultClusterConfig = clusterSecretConfigs.get(TopicActions.DefaultConfigurationName)
+    // Adding bootstrap-servers key for backwards compatibility
+    val kafkaBootstrapServersCompat2010 = defaultClusterConfig.map(_.getString("bootstrap.servers"))
+
     val portMappingConfigs = deployment.portMappings.flatMap {
       case (port, topic) =>
         Try {
@@ -155,14 +158,21 @@ object ConfigurationScopeLayering {
           portMappingWithFallbackConfig
             .atPath(s"cloudflow.runner.streamlet.context.port_mappings.$port.config")
             // Need to retain the topic.id
+            // Adding bootstrap-servers key for backwards compatibility
             .withFallback(ConfigFactory.parseString(s"""
                 cloudflow.runner.streamlet.context.port_mappings.$port.id = ${topic.id}
               """))
         }.toOption
     }
-    portMappingConfigs.foldLeft(streamletConfig) { (acc, el) =>
-      acc.withFallback(el)
-    }
+    val conf = portMappingConfigs
+      .foldLeft(streamletConfig) { (acc, el) =>
+        acc.withFallback(el)
+      }
+    kafkaBootstrapServersCompat2010
+      .map { bs =>
+        conf.withFallback(ConfigFactory.parseString(s"""cloudflow.kafka.bootstrap-servers="${bs}""""))
+      }
+      .getOrElse(conf)
   }
 
   private def extractPodsConfig(streamletConfig: Config) =
