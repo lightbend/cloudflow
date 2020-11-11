@@ -349,11 +349,52 @@ func Test_mountingExistingClaim(t *testing.T) {
 			}
 		}
 	}`
-	expected = strings.Replace(expected, "\t", "", -1)
-	expected = strings.Replace(expected, "\n", "", -1)
-	config = strings.Replace(config, "\t", "", -1)
-	config = strings.Replace(config, "\n", "", -1)
-	assert.Equal(t, expected, config)
+	assert.Equal(t, trim(expected), trim(config))
+}
+
+//checks it adds it even there is some other /mnt/flink/storage
+// but not as mount-path already in the prevConfig
+func Test_mountingExistingClaimFix(t *testing.T) {
+	spec := createSpecForDefaultFlinkPVCs()
+	prevConfig := newConfig(`
+		cloudflow.runtimes.flink {
+			config {
+				state.checkpoints.dir = file:///mnt/flink/storage/externalized-checkpoints/my-streamlet
+			}
+		}`)
+	config, err := MountExistingPVCs(spec, prevConfig)
+	assert.Empty(t, err)
+	expected := `
+	cloudflow.runtimes.flink {
+		config {
+			state.checkpoints.dir = file:///mnt/flink/storage/externalized-checkpoints/my-streamlet
+		}
+	}	
+	cloudflow.runtimes.flink.kubernetes.pods.pod {
+			volumes {
+				foo {
+					pvc {
+						name = cloudflow-flink
+						read-only = false
+					}
+				}
+			}
+			containers.container {
+				volume-mounts {
+					foo {
+						mount-path = "/mnt/flink/storage"
+						read-only = false
+					}
+				}
+			}
+	}`
+	assert.Equal(t, trim(expected), trim(config.String()))
+}
+
+func trim(input string) string {
+	input = strings.Replace(input, "\t", "", -1)
+	input = strings.Replace(input, "\n", "", -1)
+	return strings.Replace(input, "\r", "", -1)
 }
 
 //cheking doesn't add if already exists in config
@@ -418,6 +459,30 @@ func createSpecForDefaultPVCs() cfapp.CloudflowApplicationSpec {
 			},
 			{
 				Runtime: "spark",
+			},
+		},
+	}
+}
+
+func createSpecForDefaultFlinkPVCs() cfapp.CloudflowApplicationSpec {
+	return cfapp.CloudflowApplicationSpec{
+		Streamlets: []cfapp.Streamlet{
+			{
+				Descriptor: cfapp.Descriptor{
+					ConfigParameters: []cfapp.ConfigParameterDescriptor{
+						{
+							Key:          "my-parameter",
+							DefaultValue: "10m",
+							Type:         "duration",
+						},
+					},
+				},
+				Name: "my-streamlet",
+			},
+		},
+		Deployments: []cfapp.Deployment{
+			{
+				Runtime: "flink",
 			},
 		},
 	}
