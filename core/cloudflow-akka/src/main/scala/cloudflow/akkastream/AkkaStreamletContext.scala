@@ -22,6 +22,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.collection.immutable
 import akka.{ Done, NotUsed }
 import akka.actor.ActorSystem
+import akka.annotation.InternalApi
 import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 import akka.kafka.CommitterSettings
@@ -91,7 +92,9 @@ trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def streamletExecution: StreamletExecution
 
-  protected object Stoppers {
+  @InternalApi
+  private[akkastream] object Stoppers {
+
     private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
 
     def add(f: () => Future[Dun]): Unit = stoppers.getAndUpdate(old => old :+ f)
