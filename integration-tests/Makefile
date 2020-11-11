@@ -64,6 +64,10 @@ prepare-cluster:
 		--version "${version}" \
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
+	@echo '****** Creating namspace and PVCs for Swiss-knife'
+	kubectl create namespace swiss-knife
+	kubectl create -f itest/resources/spark-pvc.yaml -n swiss-knife
+	kubectl create -f itest/resources/flink-pvc.yaml -n swiss-knife
 	@echo '****** The cluster is ready for integration tests!'
 
 .PHONY: spawn-gke-cluster
