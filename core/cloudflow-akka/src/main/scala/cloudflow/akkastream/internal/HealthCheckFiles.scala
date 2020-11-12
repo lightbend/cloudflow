@@ -37,7 +37,8 @@ object HealthCheckFiles {
     val tempDir = System.getProperty("java.io.tmpdir")
     val path    = java.nio.file.Paths.get(tempDir, relativePath)
 
-    Files.write(Paths.get(path.toString), s"an akka streamlet $streamletRef".getBytes(StandardCharsets.UTF_8))
+    Files.write(path, s"an akka streamlet $streamletRef".getBytes(StandardCharsets.UTF_8))
+    path.toFile.deleteOnExit()
   }
 
 }
