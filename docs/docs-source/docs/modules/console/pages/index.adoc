@@ -5,11 +5,8 @@
 
 include::ROOT:partial$include.adoc[]
 
-Available with a Lightbend Platform subscription, Lightbend Console provides deep insights and observability for Cloudflow applications. It helps you verify that your application looks as you expect--with the correct streamlets and the proper connections, each using the desired schema. In the Console, you can watch your application run, check on key performance indicators, such as latency and throughput, and observe the health of each streamlet and the monitors computed on them.
+Available with a Lightbend Platform subscription and on Google Cloud Platform marketplace, Lightbend Console provides deep insights and observability for Cloudflow applications. It helps you verify that your application looks as you expect--with the correct streamlets and the proper connections, each using the desired schema. In the Console, you can watch your application run, check on key performance indicators, such as latency and throughput, and observe the health of each streamlet and the monitors computed on them.
 
-Before you can use Console, you need to have been completed  xref:administration:installing-enterprise.adoc[installing Cloudflow Enterprise components]
-
-ifdef::review[REVIEWERS: not sure what the "monitors computed on them" means?]
 
 TIP: All Console pages have in-app help. Click the **?** icon in the upper right of any panel to display the help. To hide the help overlay, click **CLOSE** in the upper right.
 
