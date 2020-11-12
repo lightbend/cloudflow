@@ -59,7 +59,7 @@ object Main extends {
       )
       Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
       Operator.handleConfigurationUpdates(client, runners, ctx.podName)
-      Operator.handleConfigurationInput(client, ctx.podNamespace)
+      Operator.handleConfigurationInput(client, runners, ctx.podNamespace)
       Operator.handleStatusUpdates(client, runners)
     } catch {
       case t: Throwable ⇒
