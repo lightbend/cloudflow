@@ -22,7 +22,7 @@ import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
 
 final case class ProtoOutlet[T <: GeneratedMessageV3](
     name: String,
-    partitioner: T ⇒ String,
+    partitioner: T => String,
     clazz: Class[T]
 ) extends CodecOutlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
@@ -35,5 +35,5 @@ final case class ProtoOutlet[T <: GeneratedMessageV3](
   /**
    * Returns a CodecOutlet with the partitioner set.
    */
-  override def withPartitioner(partitioner: T ⇒ String): ProtoOutlet[T] = copy(partitioner = partitioner)
+  override def withPartitioner(partitioner: T => String): ProtoOutlet[T] = copy(partitioner = partitioner)
 }

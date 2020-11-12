@@ -37,16 +37,16 @@ trait StreamletLoader {
   def loadStreamletClass(streamletClassName: String): Try[Streamlet[StreamletContext]] =
     for {
       instance ← ClassOps.instanceOf(streamletClassName).recoverWith {
-        case _: ClassNotFoundException ⇒ Failure(new StreamletClassNotFound(streamletClassName))
-        case _: InstantiationException ⇒ Failure(new NoArgsConstructorExpectedException(streamletClassName))
+        case _: ClassNotFoundException => Failure(new StreamletClassNotFound(streamletClassName))
+        case _: InstantiationException => Failure(new NoArgsConstructorExpectedException(streamletClassName))
       }
       streamlet ← Try(instance.asInstanceOf[Streamlet[StreamletContext]]).recoverWith {
-        case ex: ClassCastException ⇒ Failure(new InvalidStreamletClass(streamletClassName, ex))
+        case ex: ClassCastException => Failure(new InvalidStreamletClass(streamletClassName, ex))
       }
     } yield streamlet
 
   def loadStreamlet(streamletConfig: StreamletDefinition): Try[LoadedStreamlet] =
-    loadStreamletClass(streamletConfig.streamletClass).map { streamlet ⇒
+    loadStreamletClass(streamletConfig.streamletClass).map { streamlet =>
       LoadedStreamlet(streamlet, streamletConfig)
     }
 

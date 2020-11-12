@@ -53,9 +53,9 @@ object ConfigInputChangeEvent extends Event {
       watchEvent._object.resourceVersion != existingEvent._object.resourceVersion && getData(existingEvent._object) != getData(secret)
 
     watchEvent._type match {
-      case EventType.DELETED ⇒
+      case EventType.DELETED =>
         (currentSecrets - absoluteName, List())
-      case EventType.ADDED | EventType.MODIFIED ⇒
+      case EventType.ADDED | EventType.MODIFIED =>
         if (currentSecrets.get(absoluteName).forall(hasChanged)) {
           (for {
             appId        ← metadata.labels.get(CloudflowLabels.AppIdLabel)
@@ -71,7 +71,7 @@ object ConfigInputChangeEvent extends Event {
 
   def toActionList(mappedApp: Option[CloudflowApplication.CR], event: ConfigInputChangeEvent, podNamespace: String): Seq[Action] =
     (mappedApp, event) match {
-      case (Some(app), configInputChangeEvent) ⇒
+      case (Some(app), configInputChangeEvent) =>
         val appConfig = getConfigFromSecret(configInputChangeEvent)
 
         val clusterNames = (for {
@@ -83,7 +83,7 @@ object ConfigInputChangeEvent extends Event {
         val providedAction = Action.providedByLabel[Secret, Secret](TopicActions.KafkaClusterNameLabel, clusterNames, app, podNamespace) {
           clusterSecrets =>
             val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets)
-            val actions = app.spec.deployments.map { streamletDeployment ⇒
+            val actions = app.spec.deployments.map { streamletDeployment =>
               val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig, allNamedClusters)
 
               // create update action for output secret action which is mounted as config by runtime specific deployments
@@ -104,7 +104,7 @@ object ConfigInputChangeEvent extends Event {
         }
 
         List(providedAction)
-      case _ ⇒ Nil // app could not be found, do nothing.
+      case _ => Nil // app could not be found, do nothing.
     }
 
   val SecretDataKey        = "secret.conf"

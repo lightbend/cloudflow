@@ -38,17 +38,17 @@ object EndpointActions {
       currentApp: Option[CloudflowApplication.CR]
   ): Seq[Action] = {
     def distinctEndpoints(app: CloudflowApplication.Spec) =
-      app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
+      app.deployments.flatMap(deployment => deployment.endpoint).toSet
 
     val currentEndpoints = currentApp.map(cr => distinctEndpoints(cr.spec)).getOrElse(Set.empty[Endpoint])
     val newEndpoints     = distinctEndpoints(newApp.spec)
 
-    val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
+    val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint =>
       Seq(
         Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp)
       )
     }.toList
-    val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
+    val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint =>
       Seq(
         createServiceAction(endpoint, newApp, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet))
       )
@@ -99,7 +99,7 @@ object EndpointActions {
       new CreateServiceAction(service, app, format, resourceDefinition)
   }
 
-  private val serviceEditor: ObjectEditor[Service] = (obj: Service, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  private val serviceEditor: ObjectEditor[Service] = (obj: Service, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
   /**
    * Creates an action for creating a service.
@@ -117,13 +117,13 @@ object EndpointActions {
       for {
         serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
         res ← serviceResult
-          .map { existingService ⇒
+          .map { existingService =>
             val resourceVersionUpdated = resource
               .withResourceVersion(existingService.metadata.resourceVersion)
               .withClusterIP(existingService.spec.map(_.clusterIP).getOrElse(""))
-            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o, app))
+            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o => CreateServiceAction(o, app))
           }
-          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o, app)))
+          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o => CreateServiceAction(o, app)))
       } yield res
   }
 }

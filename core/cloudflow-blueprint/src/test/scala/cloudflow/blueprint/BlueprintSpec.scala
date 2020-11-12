@@ -42,7 +42,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       blueprint.problems must contain theSameElementsAs Vector(EmptyStreamlets)
     }
 
-    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { name ⇒
+    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { name =>
       s"verify if it uses a streamlet with a valid name ('${name}')" in {
         val ingress    = randomStreamlet().asIngress[Foo]
         val ingressRef = ingress.ref(name)
@@ -54,7 +54,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { name ⇒
+    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { name =>
       s"fail verification if it uses a streamlet with an invalid name ('${name}')" in {
         val ingress    = randomStreamlet().asIngress[Foo]
         val ingressRef = ingress.ref(name)
@@ -67,7 +67,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("-ab", "ab-", "1ab", "a/b", "a+b").foreach { className ⇒
+    List("-ab", "ab-", "1ab", "a/b", "a+b").foreach { className =>
       s"fail verification if it uses a streamlet with an invalid class name ('${className}')" in {
         val ingress = streamlet(className).asBox
         val ref     = ingress.randomRef
@@ -79,7 +79,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { outletName ⇒
+    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { outletName =>
       s"verify if it uses a streamlet with a valid outlet name ('${outletName}')" in {
         val ingress    = randomStreamlet().asIngress[Foo](outletName)
         val ingressRef = ingress.randomRef
@@ -91,7 +91,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { outletName ⇒
+    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { outletName =>
       s"fail verification if it uses a streamlet with an invalid outlet name ('${outletName}')" in {
         val ingress    = randomStreamlet().asIngress[Foo](outletName)
         val ingressRef = ingress.randomRef
@@ -104,7 +104,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { inletName ⇒
+    List("a", "abcd", "a-b", "ab--cd", "1ab2", "1ab", "1-2").foreach { inletName =>
       s"verify if it uses a streamlet with a valid inlet name ('${inletName}')" in {
         val ingress      = randomStreamlet().asIngress[Foo]
         val processor    = randomStreamlet().asProcessor[Foo, Foo](inletName = inletName)
@@ -121,7 +121,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
       }
     }
 
-    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { inletName ⇒
+    List("A", "aBcd", "9B", "-ab", "ab-", "a_b", "a/b", "a+b").foreach { inletName =>
       s"fail verification if it uses a streamlet with an invalid inlet name ('${inletName}')" in {
         val ingress      = randomStreamlet().asIngress[Foo]
         val processor    = randomStreamlet().asProcessor[Foo, Foo](inletName = inletName)
@@ -249,7 +249,7 @@ class BlueprintSpec extends WordSpec with MustMatchers with EitherValues with Op
         .upsertStreamletRef(egress1Ref.name)
         .upsertStreamletRef(egress2Ref.name)
 
-      blueprint.problems.collect { case unconnected: UnconnectedInlets ⇒ unconnected }.size mustBe 0
+      blueprint.problems.collect { case unconnected: UnconnectedInlets => unconnected }.size mustBe 0
       val paths = Vector(VerifiedPortPath(ingressRef.name, "out"), VerifiedPortPath(egress2Ref.name, "in"))
         .sortBy(_.toString)
       blueprint.problems.filter {

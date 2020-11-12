@@ -89,8 +89,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
             val default    = (generate in AvroConfig).taskValue
             val schemaLang = schemaCodeGenerator.value
             schemaLang match {
-              case SchemaCodeGenerator.Java  ⇒ Def.task(default.value)
-              case SchemaCodeGenerator.Scala ⇒ Def.task { Seq.empty[File] }
+              case SchemaCodeGenerator.Java  => Def.task(default.value)
+              case SchemaCodeGenerator.Scala => Def.task { Seq.empty[File] }
             }
           }.value,
       AvroConfig / javaSource := (crossTarget in Compile).value / "java_avro", // sbt-avro generated java source
@@ -106,8 +106,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
         val clean      = filterGeneratorTask(generators, generate, AvroConfig)
 
         schemaLang match {
-          case SchemaCodeGenerator.Java  ⇒ clean :+ (generate in AvroConfig).taskValue
-          case SchemaCodeGenerator.Scala ⇒ clean :+ (avroScalaGenerateSpecific in Compile).taskValue
+          case SchemaCodeGenerator.Java  => clean :+ (generate in AvroConfig).taskValue
+          case SchemaCodeGenerator.Scala => clean :+ (avroScalaGenerateSpecific in Compile).taskValue
         }
       }
     ) ++ inConfig(Compile)(
@@ -123,10 +123,10 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       for (k ← Option(entry.value.asInstanceOf[ScopedKey[_]]))
         yield (k.key, k.scope.config)
 
-    generators.filterNot { task ⇒
+    generators.filterNot { task =>
       task.info.attributes.entries.toList.map(toScopedKey).exists {
-        case Some((key, Select(ConfigKey(configName)))) ⇒ taskKey.key == key && configName == config.name
-        case _                                          ⇒ false
+        case Some((key, Select(ConfigKey(configName)))) => taskKey.key == key && configName == config.name
+        case _                                          => false
       }
     }
   }

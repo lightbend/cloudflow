@@ -57,11 +57,11 @@ object StreamletScannerPlugin extends AutoPlugin {
     val streamletDescriptors = StreamletScanner.scanForStreamletDescriptors(classLoader, projectId)
 
     streamletDescriptors.flatMap {
-      case (streamletClassName, Success(descriptor)) ⇒
+      case (streamletClassName, Success(descriptor)) =>
         log.info(s"Streamlet '$streamletClassName' found")
         Some(streamletClassName -> descriptor)
 
-      case (_, Failure(error)) ⇒
+      case (_, Failure(error)) =>
         log.error(error.getMessage)
         None
     }
@@ -71,7 +71,7 @@ object StreamletScannerPlugin extends AutoPlugin {
     val file = (classDirectory in Compile).value / "streamlet-descriptors.conf"
     val scan = scanForStreamlets.value
     val config = scan.foldLeft(ConfigFactory.empty) {
-      case (acc, (name, conf)) ⇒
+      case (acc, (name, conf)) =>
         // TODO cleanup
         acc.withValue(
           s""""$name"""",
@@ -80,7 +80,7 @@ object StreamletScannerPlugin extends AutoPlugin {
             .withValue(
               "image",
               cloudflowDockerImageName.value
-                .map(din ⇒ ConfigValueFactory.fromAnyRef(din.asTaggedName))
+                .map(din => ConfigValueFactory.fromAnyRef(din.asTaggedName))
                 .getOrElse(ConfigValueFactory.fromAnyRef("placeholder"))
             )
         )

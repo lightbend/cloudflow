@@ -34,7 +34,7 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
     // find outlets and inlets of shared schema.
     val defined = blueprint
       .define(descriptors)
-    val refsAdded = descriptors.foldLeft(defined) { (bp, descriptor) ⇒
+    val refsAdded = descriptors.foldLeft(defined) { (bp, descriptor) =>
       bp.use(descriptor.randomRef)
     }
     refsAdded.verify
@@ -48,25 +48,25 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
    */
   def connectedBlueprint(streamletDescriptors: StreamletDescriptor*): Blueprint = {
     val refsAdded = unconnectedBlueprint(streamletDescriptors: _*)
-    val connected = streamletDescriptors.sliding(2, 1).foldLeft(refsAdded) { (bp, pair) ⇒
+    val connected = streamletDescriptors.sliding(2, 1).foldLeft(refsAdded) { (bp, pair) =>
       val out    = pair.head
       val in     = pair.last
       val outRef = refsAdded.streamlets.find(_.className == out.className).get
       val inRef  = refsAdded.streamlets.find(_.className == in.className).get
 
       out.outlets
-        .map { outlet ⇒
+        .map { outlet =>
           Topic(
             s"${outRef.name}.${outlet.name}",
             in.inlets
               .filter(_.schema == outlet.schema)
-              .map { inlet ⇒
+              .map { inlet =>
                 s"${inRef.name}.${inlet.name}"
               }
               .toVector :+ s"${outRef.name}.${outlet.name}"
           )
         }
-        .foldLeft(bp) { (connectingBlueprint, topic) ⇒
+        .foldLeft(bp) { (connectingBlueprint, topic) =>
           connectingBlueprint.connect(topic, topic.connections)
         }
     }
@@ -131,21 +131,21 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
     ): Blueprint =
       streamlets
         .find(_.name == streamletRef)
-        .map { streamletRef ⇒
+        .map { streamletRef =>
           val streamletRefWithClassNameUpdated =
             className
-              .map(r ⇒ streamletRef.copy(className = r))
+              .map(r => streamletRef.copy(className = r))
               .getOrElse(streamletRef)
           val streamletRefWithMetadataUpdated =
             metadata
-              .map(_ ⇒ streamletRefWithClassNameUpdated.copy(metadata = metadata))
+              .map(_ => streamletRefWithClassNameUpdated.copy(metadata = metadata))
               .getOrElse(streamletRefWithClassNameUpdated)
 
           copy(streamlets = streamlets.filterNot(_.name == streamletRef.name) :+ streamletRefWithMetadataUpdated).verify
         }
         .getOrElse(
           className
-            .map(streamletDescriptorRef ⇒ use(StreamletRef(name = streamletRef, className = streamletDescriptorRef, metadata = metadata)))
+            .map(streamletDescriptorRef => use(StreamletRef(name = streamletRef, className = streamletDescriptorRef, metadata = metadata)))
             .getOrElse(blueprint)
         )
 

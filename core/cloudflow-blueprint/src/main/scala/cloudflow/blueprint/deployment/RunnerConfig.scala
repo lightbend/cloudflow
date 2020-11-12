@@ -69,7 +69,7 @@ object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
   private def toPortMappingsJson(portMappings: Map[String, Topic]) =
     JsObject(
       portMappings.map {
-        case (portName, topic) ⇒ portName -> topic.toJson
+        case (portName, topic) => portName -> topic.toJson
       }
     )
 
@@ -78,7 +78,7 @@ object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
       volumeMounts
         .getOrElse(Vector())
         .map {
-          case VolumeMountDescriptor(name, path, accessMode, _) ⇒
+          case VolumeMountDescriptor(name, path, accessMode, _) =>
             JsObject(
               "name"        -> JsString(name),
               "path"        -> JsString(path),

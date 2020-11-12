@@ -248,7 +248,7 @@ class CreateOrUpdateAction[T <: ObjectResource](
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       res ← existing
-        .map { existingResource ⇒
+        .map { existingResource =>
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
           recoverFromConflict(
@@ -296,7 +296,7 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       res ← existing
-        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
+        .map(_ => recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
         .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
   }
@@ -319,7 +319,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     client
       .patch(resource.name, patch, Some(resource.ns))
-      .map(r ⇒ new PatchAction(r, app, patch, format, patchWriter, resourceDefinition))
+      .map(r => new PatchAction(r, app, patch, format, patchWriter, resourceDefinition))
 }
 
 /**
@@ -353,7 +353,7 @@ class UpdateStatusAction[T <: ObjectResource](
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       resourceVersionUpdated = existing
-        .map(existingResource ⇒
+        .map(existingResource =>
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
       res ← resourceVersionUpdated
@@ -398,7 +398,7 @@ final case class DeleteAction[T <: ObjectResource](
     client
       .usingNamespace(namespace)
       .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
-      .map(_ ⇒ this)
+      .map(_ => this)
   }
 }
 

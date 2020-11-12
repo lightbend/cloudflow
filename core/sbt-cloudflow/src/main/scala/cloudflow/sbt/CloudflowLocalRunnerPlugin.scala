@@ -152,7 +152,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               logger.info("Attempting to terminate local application")
               processes.foreach(_.destroy())
             } catch {
-              case ex: Throwable ⇒
+              case ex: Throwable =>
                 logger.warn("Stopping process failed.")
                 ex.printStackTrace()
             } finally {
@@ -211,7 +211,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     EmbeddedKafka.start()
     log.debug(s"Setting up embedded Kafka broker on port: $port")
 
-    topics.foreach { topic ⇒
+    topics.foreach { topic =>
       log.debug(s"Kafka Setup: creating topic: $topic")
       EmbeddedKafka.createCustomTopic(topic)
     }
@@ -380,7 +380,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
-    val classpathStr = classpath.collect { case url if !url.toString.contains("logback") ⇒ new File(url.toURI) }.mkString(separator)
+    val classpathStr = classpath.collect { case url if !url.toString.contains("logback") => new File(url.toURI) }.mkString(separator)
     val options: Seq[String] = Seq(
       Some(applicationDescriptorFile.toFile.getAbsolutePath),
       Some(outputFile.getAbsolutePath),
@@ -391,23 +391,23 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     Fork.java.fork(forkOptions, cmd)
   }
 
-  def failOnEmpty[T](opt: Option[T])(ex: ⇒ Exception): Try[T] = Try {
+  def failOnEmpty[T](opt: Option[T])(ex: => Exception): Try[T] = Try {
     opt.getOrElse(throw ex)
   }
 
-  case class Exceptions(values: Seq[Throwable]) extends Exception(values.map(ex ⇒ ex.getMessage).mkString(", "))
+  case class Exceptions(values: Seq[Throwable]) extends Exception(values.map(ex => ex.getMessage).mkString(", "))
   def tryOverrideVolumeMounts(
       streamlets: Vector[StreamletInstance],
       localConf: Config,
       localStorageDir: Path
   ): Try[Vector[StreamletInstance]] = {
 
-    val updatedStreamlets = streamlets.map { streamlet ⇒
+    val updatedStreamlets = streamlets.map { streamlet =>
       val streamletName       = streamlet.name
       val confPath            = s"cloudflow.streamlets.$streamletName.volume-mounts"
       val streamletVolumeConf = if (localConf.hasPath(confPath)) localConf.getConfig(confPath) else ConfigFactory.empty()
       val volumeMounts        = streamlet.descriptor.volumeMounts
-      val localVolumeMounts = volumeMounts.map { volumeMount ⇒
+      val localVolumeMounts = volumeMounts.map { volumeMount =>
         val tryLocalPath = streamletVolumeConf
           .as[Option[String]](volumeMount.name)
           .map(Success(_))
@@ -418,9 +418,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               path.getAbsolutePath
             }
           }
-        tryLocalPath.map(localPath ⇒ volumeMount.copy(path = localPath))
+        tryLocalPath.map(localPath => volumeMount.copy(path = localPath))
       }
-      foldExceptions(localVolumeMounts).map(volumeMounts ⇒
+      foldExceptions(localVolumeMounts).map(volumeMounts =>
         streamlet.copy(descriptor = streamlet.descriptor.copy(volumeMounts = volumeMounts.toVector))
       )
     }
@@ -430,11 +430,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   def foldExceptions[T](collection: Seq[Try[T]]): Try[Seq[T]] = {
     val zero: Try[Seq[T]] = Success(Seq())
     collection.foldLeft(zero) {
-      case (Success(seq), Success(elem))          ⇒ Success(elem +: seq)
-      case (Success(_), Failure(f))               ⇒ Failure(Exceptions(Seq(f)))
-      case (Failure(f), Success(_))               ⇒ Failure(f)
-      case (Failure(Exceptions(exs)), Failure(f)) ⇒ Failure(Exceptions(f +: exs))
-      case (Failure(f1), Failure(f2))             ⇒ Failure(Exceptions(Seq(f1, f2)))
+      case (Success(seq), Success(elem))          => Success(elem +: seq)
+      case (Success(_), Failure(f))               => Failure(Exceptions(Seq(f)))
+      case (Failure(f), Success(_))               => Failure(f)
+      case (Failure(Exceptions(exs)), Failure(f)) => Failure(Exceptions(f +: exs))
+      case (Failure(f1), Failure(f2))             => Failure(Exceptions(Seq(f1, f2)))
     }
   }
 
@@ -453,7 +453,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   def streamletInfo(descriptor: ApplicationDescriptor): Seq[String] = {
     val streamletInstances: Seq[StreamletInstance] = descriptor.streamlets.sortBy(_.name)
 
-    streamletInstances.map { streamlet ⇒
+    streamletInstances.map { streamlet =>
       val streamletDeployment = descriptor.deployments.find(_.streamletName == streamlet.name)
       val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
         if (sd.config.hasPath(ServerAttribute.configPath)) {
@@ -466,12 +466,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
 
       val volumeMounts = streamlet.descriptor.volumeMounts
-        .map { mount ⇒
+        .map { mount =>
           s"\t- mount [${mount.name}] available at [${mount.path}]"
         }
         .mkString("\n")
 
-      val endpointMessage = serverPort.map(port ⇒ s"\t- HTTP port [$port]").getOrElse("")
+      val endpointMessage = serverPort.map(port => s"\t- HTTP port [$port]").getOrElse("")
       s"${streamlet.name} [${streamlet.descriptor.className}]" +
         newLineIfNotEmpty(endpointMessage) +
         newLineIfNotEmpty(volumeMounts)
