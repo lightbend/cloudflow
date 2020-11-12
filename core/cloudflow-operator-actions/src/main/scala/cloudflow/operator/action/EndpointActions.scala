@@ -38,10 +38,6 @@ object EndpointActions {
       currentApp: Option[CloudflowApplication.CR],
       namespace: String
   ): Seq[Action] = {
-    val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(
-      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
-    )
     def distinctEndpoints(app: CloudflowApplication.Spec) =
       app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
 
@@ -55,12 +51,7 @@ object EndpointActions {
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
       Seq(
-        createServiceAction(endpoint,
-                            newApp,
-                            StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet),
-                            namespace,
-                            labels,
-                            ownerReferences)
+        createServiceAction(endpoint, newApp, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet))
       )
     }.toList
     deleteActions ++ createActions
@@ -91,11 +82,14 @@ object EndpointActions {
 
   private def createServiceAction(endpoint: Endpoint,
                                   app: CloudflowApplication.CR,
-                                  streamletDeploymentName: String,
-                                  namespace: String,
-                                  labels: CloudflowLabels,
-                                  ownerReferences: List[OwnerReference]): CreateServiceAction =
-    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, namespace, labels, ownerReferences), app)
+                                  streamletDeploymentName: String): CreateServiceAction = {
+    val labels = CloudflowLabels(app)
+    val ownerReferences = List(
+      OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true))
+    )
+
+    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, app.namespace, labels, ownerReferences), app)
+  }
 
   /**
    * Creates an action for creating a service.
