@@ -9,6 +9,7 @@ object Version {
   val AkkaGrpc      = "1.0.1"
   val AlpakkaKafka  = "2.0.5"
   val Scala         = "2.12.11"
+  val ScalaOperator = "2.13.3"
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
   val KafkaClients  = "2.5.0"
