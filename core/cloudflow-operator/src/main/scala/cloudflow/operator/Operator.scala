@@ -24,6 +24,7 @@ import scala.util.control.NonFatal
 
 import akka.NotUsed
 import akka.actor._
+import akka.pattern._
 import akka.stream._
 import akka.stream.scaladsl._
 import play.api.libs.json.Format
@@ -229,7 +230,7 @@ object Operator {
      * ==================================================*/
     system.log.info(s"Getting current events for ${classTag[O].runtimeClass.getName}")
 
-    val eventsResult = getCurrentEvents[O](client, options, 0)
+    val eventsResult = getCurrentEvents[O](client, options, 0, 3.seconds)
 
     RestartSource.withBackoff(
       minBackoff = 3.seconds,
@@ -252,7 +253,8 @@ object Operator {
   private def getCurrentEvents[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions,
-      attempt: Int
+      attempt: Int,
+      delay: FiniteDuration
   )(implicit lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],
     lc: LoggingContext,
@@ -265,7 +267,7 @@ object Operator {
     } yield watchEvents).recoverWith {
       case NonFatal(e) =>
         system.log.warning(s"Could not get current events, attempt number $attempt", e)
-        getCurrentEvents(client, options, attempt + 1)
+        after(delay, system.scheduler)(getCurrentEvents(client, options, attempt + 1, delay))
     }
 
   private def runStream(
