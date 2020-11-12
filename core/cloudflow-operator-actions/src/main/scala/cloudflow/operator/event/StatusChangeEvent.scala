@@ -51,8 +51,8 @@ object StatusChangeEvent extends Event {
     watchEvent._type match {
       case EventType.DELETED =>
         val events = (for {
-          appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-          streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+          appId         <- metadata.labels.get(CloudflowLabels.AppIdLabel)
+          streamletName <- metadata.labels.get(CloudflowLabels.StreamletNameLabel)
         } yield {
           log.info(s"[Status changes] Detected StatusChangeEvent for $absoluteName: ${changeInfo(watchEvent)}.")
           StatusChangeEvent(appId, streamletName, watchEvent)
@@ -61,8 +61,8 @@ object StatusChangeEvent extends Event {
 
       case EventType.ADDED | EventType.MODIFIED =>
         (for {
-          appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-          streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+          appId         <- metadata.labels.get(CloudflowLabels.AppIdLabel)
+          streamletName <- metadata.labels.get(CloudflowLabels.StreamletNameLabel)
         } yield {
           log.info(s"[Status changes] Detected StatusChangeEvent for $absoluteName: ${changeInfo(watchEvent)}.")
           (currentObjects + (absoluteName -> watchEvent), List(StatusChangeEvent(appId, streamletName, watchEvent)))

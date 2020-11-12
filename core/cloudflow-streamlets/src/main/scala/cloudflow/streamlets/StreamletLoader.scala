@@ -30,17 +30,17 @@ trait StreamletLoader {
 
   def loadStreamlet(config: Config): Try[LoadedStreamlet] =
     for {
-      streamletConfig ← StreamletDefinition.read(config)
-      loadedStreamlet ← loadStreamlet(streamletConfig)
+      streamletConfig <- StreamletDefinition.read(config)
+      loadedStreamlet <- loadStreamlet(streamletConfig)
     } yield loadedStreamlet
 
   def loadStreamletClass(streamletClassName: String): Try[Streamlet[StreamletContext]] =
     for {
-      instance ← ClassOps.instanceOf(streamletClassName).recoverWith {
+      instance <- ClassOps.instanceOf(streamletClassName).recoverWith {
         case _: ClassNotFoundException => Failure(new StreamletClassNotFound(streamletClassName))
         case _: InstantiationException => Failure(new NoArgsConstructorExpectedException(streamletClassName))
       }
-      streamlet ← Try(instance.asInstanceOf[Streamlet[StreamletContext]]).recoverWith {
+      streamlet <- Try(instance.asInstanceOf[Streamlet[StreamletContext]]).recoverWith {
         case ex: ClassCastException => Failure(new InvalidStreamletClass(streamletClassName, ex))
       }
     } yield streamlet

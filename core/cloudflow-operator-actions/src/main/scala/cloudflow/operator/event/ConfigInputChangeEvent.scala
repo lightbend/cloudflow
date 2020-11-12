@@ -58,7 +58,7 @@ object ConfigInputChangeEvent extends Event {
       case EventType.ADDED | EventType.MODIFIED =>
         if (currentSecrets.get(absoluteName).forall(hasChanged)) {
           (for {
-            appId        ← metadata.labels.get(CloudflowLabels.AppIdLabel)
+            appId        <- metadata.labels.get(CloudflowLabels.AppIdLabel)
             configFormat <- metadata.labels.get(CloudflowLabels.ConfigFormat) if configFormat == CloudflowLabels.InputConfig
             _ = log.info(s"[app: $appId application configuration changed ${changeInfo(watchEvent)}]")
           } yield {

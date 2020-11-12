@@ -115,8 +115,8 @@ object EndpointActions {
         client: KubernetesClient
     )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[Service]] =
       for {
-        serviceResult ← client.getOption[Service](resource.name)(format, resourceDefinition, lc)
-        res ← serviceResult
+        serviceResult <- client.getOption[Service](resource.name)(format, resourceDefinition, lc)
+        res <- serviceResult
           .map { existingService =>
             val resourceVersionUpdated = resource
               .withResourceVersion(existingService.metadata.resourceVersion)

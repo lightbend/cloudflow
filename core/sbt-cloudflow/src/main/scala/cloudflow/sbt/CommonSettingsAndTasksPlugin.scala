@@ -120,7 +120,7 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
   // because sourceGenerator's are a list of SBT Task's that have no equality semantics.
   def filterGeneratorTask(generators: Seq[Task[Seq[File]]], taskKey: TaskKey[_], config: Configuration) = {
     def toScopedKey(entry: AttributeEntry[_]) =
-      for (k ← Option(entry.value.asInstanceOf[ScopedKey[_]]))
+      for (k <- Option(entry.value.asInstanceOf[ScopedKey[_]]))
         yield (k.key, k.scope.config)
 
     generators.filterNot { task =>

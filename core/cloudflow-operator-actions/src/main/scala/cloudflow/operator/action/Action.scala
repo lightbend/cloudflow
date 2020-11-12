@@ -244,10 +244,10 @@ class CreateOrUpdateAction[T <: ObjectResource](
                             retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
     val nextRetries = retries - 1
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
-      res ← existing
+      res <- existing
         .map { existingResource =>
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
@@ -292,10 +292,10 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     val nextRetries = retries - 1
 
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
-      res ← existing
+      res <- existing
         .map(_ => recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
         .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
@@ -349,14 +349,14 @@ class UpdateStatusAction[T <: ObjectResource](
   def executeUpdateStatus(client: KubernetesClient,
                           retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       resourceVersionUpdated = existing
         .map(existingResource =>
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-      res ← resourceVersionUpdated
+      res <- resourceVersionUpdated
         .map { resourceToUpdate =>
           if (predicateForUpdate(existing, resourceToUpdate)) {
             recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)

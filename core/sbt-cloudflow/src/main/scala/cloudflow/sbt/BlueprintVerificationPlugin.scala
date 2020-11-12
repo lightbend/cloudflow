@@ -95,8 +95,8 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       val libraryVersion  = (ThisProject / cloudflowVersion).value
 
       for {
-        BlueprintVerified(bp, _) ← verificationResult.value.toOption
-        verifiedBlueprint        ← bp.verified.toOption
+        BlueprintVerified(bp, _) <- verificationResult.value.toOption
+        verifiedBlueprint        <- bp.verified.toOption
       } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap, libraryVersion)
     },
     fork in Compile := true

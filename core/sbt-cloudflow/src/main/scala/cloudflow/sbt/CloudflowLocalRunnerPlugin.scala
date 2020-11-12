@@ -288,10 +288,10 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val log4jConfig =
       prepareLog4JFile(configDir, log4jConfigFile)
     for {
-      appDescriptor     ← prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
-      outputFile        ← createOutputFile(targetDir, projectId)
-      logFile           ← log4jConfig
-      appDescriptorFile ← prepareApplicationFile(appDescriptor)
+      appDescriptor     <- prepareApplicationDescriptor(descriptor, localConfig.content, targetDir)
+      outputFile        <- createOutputFile(targetDir, projectId)
+      logFile           <- log4jConfig
+      appDescriptorFile <- prepareApplicationFile(appDescriptor)
     } yield {
       RuntimeDescriptor(appDescriptor.appId, appDescriptor, appDescriptorFile, outputFile, logFile, localConfig.path)
     }
