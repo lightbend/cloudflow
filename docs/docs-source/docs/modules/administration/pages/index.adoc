@@ -17,5 +17,5 @@ When you develop your Cloudflow application, you have the option to use Akka Str
 
 For information on upgrading Cloudflow and migrating applications, see:
 * xref:upgrading-cloudflow.adoc[]
-* xref:project-info.adoc[]
+* xref:project-info:index.adoc[]
 
