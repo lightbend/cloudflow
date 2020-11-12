@@ -1,10 +1,6 @@
-= Installing Cloudflow
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:administration:page$installing-cloudflow.adoc[]
 
 This guide shows how to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
 It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.

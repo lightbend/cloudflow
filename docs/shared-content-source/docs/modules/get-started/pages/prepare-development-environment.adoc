@@ -1,22 +1,22 @@
 :page-partial:
 
-To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, the `sbt` build tool, the Cloudflow CLI, and a Kubernetes cluster. 
-This page describes the required environment to prepare for development. 
-Please see xref:administration:installing-cloudflow.adoc[Installing Cloudflow] for instructions to install Cloudflow on a Kubernetes cluster.
+include::ROOT:partial$include.adoc[]
+
+To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Docker, a Kubernetes cluster, the `sbt` build tool, and the Cloudflow CLI, which is an extension for `kubectl`. This page describes the required environment to prepare for development. Please see xref:administration:installing-cloudflow.adoc[Installing Cloudflow] for instructions to install Cloudflow on a Kubernetes cluster.
 
 == Prerequisites
 
 First, make sure that you have the following installed:
 
-* Java(JDK) >= 8
-* https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
-* https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
-* https://helm.sh/docs/intro/install/[Helm,window=_blank], version 2 or higher. We recommend version 3 to avoid dealing with tiller.
+* Java(JDK) {supported-java-v}
+* https://www.scala-sbt.org/[sbt,window=_blank], {supported-sbt-v}
+* https://www.docker.com/community-edition[Docker,window=_blank], {supported-docker-v}
+* https://helm.sh/docs/intro/install/[Helm,window=_blank], {supported-helm-v}. We recommend version 3 to avoid dealing with tiller.
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
 
 == Download and install the Cloudflow CLI
 
-Using one the links below, download the Cloudflow CLI version appropriate for your development platform.
+Using one of the links below, download the Cloudflow CLI appropriate for your development platform.
 Install it on your local system by unzipping the archive and moving the executable into your `PATH`.
 
 * https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-{kubectl-plugin-version}-linux-amd64.tar.gz[Linux]
