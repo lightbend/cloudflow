@@ -1,0 +1,28 @@
+= Supported versions of dependencies
+
+include::ROOT:partial$include.adoc[]
+
+Cloudflow makes use of a number of open source projects. This page summarizes the supported version of each of these projects that Cloudflow has been tested to be compatible with.
+
+ifdef::review[REVIEWERS: I've moved the version numbers into modules/ROOT/partials/include.adoc because that file's purpose is to keep all of these in one place.]
+
+**Akka**
+
+* https://github.com/akka/akka[Akka]: {supported-akka-v}
+
+**Apache Spark**
+
+* https://github.com/apache/spark[Apache Spark]: {supported-apache-spark-v}
+* https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/[spark-on-k8s-operator]: {supported-gcp-spark-v}
+* https://github.com/helm/charts/tree/master/incubator/sparkoperator[Helm chart] of spark-on-k8s-operator: {supported-helm-spark-v}
+
+**Apache Flink**
+
+* https://github.com/apache/flink[Apache Flink]: {supported-apache-flink-v}
+* https://github.com/lyft/flinkk8soperator[flinkk8soperator]: {supported-flink-8-v}
+* https://github.com/lightbend/flink-operator[Helm chart] of flinkk8soperator: {supported-helm-flink-8-v}
+
+**Apache Kafka**
+
+* https://github.com/apache/kafka[Apache Kafka]: {supported-apache-kafka-v}
+* https://github.com/strimzi/strimzi-kafka-operator[strimzi-kafka-operator]: {supported-strimzi-kafka-v}
