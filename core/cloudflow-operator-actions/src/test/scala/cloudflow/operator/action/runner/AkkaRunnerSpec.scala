@@ -44,7 +44,6 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
     val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
     val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-    val namespace  = "test-ns"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -103,8 +102,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
       crd.spec.get.template.metadata.labels.get("key1") mustBe Some("value1")
@@ -150,8 +148,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
               |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
       crd.spec.get.template.spec.get.volumes must contain allElementsOf List(

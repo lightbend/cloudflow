@@ -38,7 +38,6 @@ object Actions {
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR] = None,
       runners: Map[String, runner.Runner[_]],
-      namespace: String,
       podName: String,
       podNamespace: String,
       cause: ObjectResource
@@ -46,9 +45,9 @@ object Actions {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels          = CloudflowLabels(newApp)
     val ownerReferences = CloudflowApplication.getOwnerReferences(newApp)
-    prepareNamespace(newApp, namespace, runners, labels, ownerReferences) ++
+    prepareNamespace(newApp, runners, labels, ownerReferences) ++
       deployTopics(newApp, runners, podNamespace) ++
-      deployRunners(newApp, currentApp, namespace, runners) ++
+      deployRunners(newApp, currentApp, runners) ++
       // If an existing status is there, update status based on app (expected pod counts)
       // in case pod events do not occur, for instance when a operator delegated to is not responding
       newApp.status.flatMap { st =>
@@ -56,7 +55,7 @@ object Actions {
         if (newStatus != st) Some(newStatus.toAction(newApp))
         else None
       }.toList ++
-      EventActions.deployEvents(newApp, currentApp, namespace, runners, podName, cause)
+      EventActions.deployEvents(newApp, currentApp, runners, podName, cause)
   }
 
   /**
@@ -64,20 +63,18 @@ object Actions {
    */
   def undeploy(
       app: CloudflowApplication.CR,
-      namespace: String,
       podName: String,
       cause: ObjectResource
   ): Seq[Action] =
-    Seq(EventActions.undeployEvent(app, namespace, podName, cause))
+    Seq(EventActions.undeployEvent(app, podName, cause))
 
   def prepareNamespace(
       app: CloudflowApplication.CR,
-      namespace: String,
       runners: Map[String, runner.Runner[_]],
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]
   ): Seq[Action] =
-    PrepareNamespaceActions(app, namespace, runners, labels, ownerReferences)
+    PrepareNamespaceActions(app, runners, labels, ownerReferences)
 
   private def deployTopics(
       newApp: CloudflowApplication.CR,
@@ -89,9 +86,8 @@ object Actions {
   private def deployRunners(
       newApp: CloudflowApplication.CR,
       currentApp: Option[CloudflowApplication.CR],
-      namespace: String,
       runners: Map[String, Runner[_]]
   ): Seq[Action] =
-    EndpointActions(newApp, currentApp, namespace) ++
-        runners.map { case (_, runner) => runner.actions(newApp, currentApp, namespace, runners) }.flatten
+    EndpointActions(newApp, currentApp) ++
+        runners.map { case (_, runner) => runner.actions(newApp, currentApp, runners) }.flatten
 }

@@ -39,7 +39,6 @@ trait PatchProvider[T <: Patch] {
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: Secret,
-      namespace: String,
       updateLabels: Map[String, String]
   ): T
 }
@@ -71,58 +70,48 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   val DriverPod   = "driver"
   val ExecutorPod = "executor"
 
-  def appActions(app: CloudflowApplication.CR,
-                 namespace: String,
-                 labels: CloudflowLabels,
-                 ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleSpark = sparkRole(namespace, labels, ownerReferences)
+  def appActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
+    val roleSpark = sparkRole(app.namespace, labels, ownerReferences)
 
     Vector(
       Action.createOrUpdate(roleSpark, app, roleEditor),
-      Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), app, roleBindingEditor)
+      Action.createOrUpdate(sparkRoleBinding(app.namespace, roleSpark, labels, ownerReferences), app, roleBindingEditor)
     )
   }
 
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.provided[Secret, ObjectResource](
-      streamletDeployment.secretName,
-      app,
-      app.metadata.namespace, {
-        case Some(secret) =>
-          val _resource =
-            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-          val labeledResource =
-            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-          val patch = SpecPatch(labeledResource.spec)
-          Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
-        case None =>
-          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-          log.error(msg)
-          CloudflowApplication.Status.errorAction(app, runners, msg)
-      }
-    )
+    Action.provided[Secret, ObjectResource](streamletDeployment.secretName, app) {
+      case Some(secret) =>
+        val _resource =
+          resource(streamletDeployment, app, secret, updateLabels)
+        val labeledResource =
+          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+        val patch = SpecPatch(labeledResource.spec)
+        Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
+      case None =>
+        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+        log.error(msg)
+        CloudflowApplication.Status.errorAction(app, runners, msg)
+    }
+
   }
   override def updateActions(newApp: CloudflowApplication.CR,
-                             namespace: String,
                              runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
-    val patchAction = Action.provided[Secret, ObjectResource](
-      deployment.secretName,
-      newApp,
-      namespace, {
-        case Some(secret) =>
-          val _resource = resource(deployment, newApp, secret, namespace)
-          val _patch    = patch(deployment, newApp, secret, namespace)
-          Action.patch(_resource, newApp, _patch)(format, patchFormat, resourceDefinition)
-        case None =>
-          val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-          log.error(msg)
-          CloudflowApplication.Status.errorAction(newApp, runners, msg)
-      }
-    )
-    val configAction = Action.createOrUpdate(configResource(deployment, newApp, namespace), newApp, configEditor)
+    val patchAction = Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+      case Some(secret) =>
+        val _resource = resource(deployment, newApp, secret)
+        val _patch    = patch(deployment, newApp, secret)
+        Action.patch(_resource, newApp, _patch)(format, patchFormat, resourceDefinition)
+      case None =>
+        val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+        log.error(msg)
+        CloudflowApplication.Status.errorAction(newApp, runners, msg)
+    }
+
+    val configAction = Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor)
     Seq(configAction, patchAction)
   }
 
@@ -174,14 +163,13 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: Secret,
-      namespace: String,
       updateLabels: Map[String, String] = Map()
   ): CR = {
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
-    val _spec           = patch(deployment, app, configSecret, namespace, updateLabels)
+    val _spec           = patch(deployment, app, configSecret, updateLabels)
     val name            = resourceName(deployment)
     CustomResource[Spec, Status](_spec.spec)
-      .withMetadata(ObjectMeta(name = name, namespace = namespace, ownerReferences = ownerReferences))
+      .withMetadata(ObjectMeta(name = name, namespace = app.namespace, ownerReferences = ownerReferences))
   }
 
   def resourceName(deployment: StreamletDeployment): String = Name.ofSparkApplication(deployment.name)
@@ -190,7 +178,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: Secret,
-      namespace: String,
       updateLabels: Map[String, String] = Map()
   ): SpecPatch = {
     val podsConfig = getPodsConfig(configSecret)

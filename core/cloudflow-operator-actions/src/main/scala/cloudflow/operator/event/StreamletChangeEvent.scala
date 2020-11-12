@@ -108,7 +108,7 @@ object StreamletChangeEvent extends Event {
         log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
         val updateAction = runners.get(streamletDeployment.runtime).map(_.streamletChangeAction(app, runners, streamletDeployment)).toList
         val streamletChangeEventAction =
-          EventActions.streamletChangeEvent(app, streamletDeployment, namespace, podName, watchEvent._object)
+          EventActions.streamletChangeEvent(app, streamletDeployment, podName, watchEvent._object)
 
         updateAction :+ streamletChangeEventAction
       }

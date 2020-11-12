@@ -27,7 +27,6 @@ import cloudflow.operator.action.runner.Runner
  */
 object PrepareNamespaceActions {
   def apply(app: CloudflowApplication.CR,
-            namespace: String,
             runners: Map[String, Runner[_]],
             labels: CloudflowLabels,
             ownerReferences: List[OwnerReference]): Seq[Action] =
@@ -35,7 +34,7 @@ object PrepareNamespaceActions {
       .map(streamlet => streamlet.descriptor.runtime.name)
       .distinct
       .flatMap { runtime =>
-        runners.get(runtime).map(_.prepareNamespaceActions(app, namespace, labels, ownerReferences))
+        runners.get(runtime).map(_.prepareNamespaceActions(app, labels, ownerReferences))
       }
       .flatten
 }

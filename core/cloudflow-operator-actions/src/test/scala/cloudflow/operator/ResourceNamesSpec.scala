@@ -88,7 +88,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   val secret = Secret(metadata = ObjectMeta())
   "Deployments" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
       deployment.metadata.name.length mustEqual 63
 
@@ -98,7 +98,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
   "Pod templates" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
 
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
       deployment.copySpec.template.metadata.name.length mustEqual 63
 
@@ -107,7 +107,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Containers" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
       deployment.getPodSpec.get.containers.head.name.length mustEqual 63
 
@@ -116,7 +116,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volumes" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
       deployment.getPodSpec.get.volumes.foreach { vol ⇒
         assert(vol.name.length <= 253)
@@ -127,7 +127,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Volume mounts" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret, namespace)
+      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
       deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
         assert(mount.name.length <= 253)
@@ -138,14 +138,14 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "ConfigMaps" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val configMap = akkaRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
+      val configMap = akkaRunner.configResource(testApp01.spec.deployments.head, testApp01)
 
       configMap.metadata.name.length must be <= 253
 
     }
 
     "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val configMap = sparkRunner.configResource(testApp01.spec.deployments.head, testApp01, namespace)
+      val configMap = sparkRunner.configResource(testApp01.spec.deployments.head, testApp01)
 
       configMap.metadata.name.length must be <= 253
 
@@ -154,7 +154,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Custom resources" should {
     "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val deployment = sparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()), namespace)
+      val deployment = sparkRunner.resource(testApp01.spec.deployments.head, testApp01, Secret(metadata = ObjectMeta()))
       // name of pod is dns 1039 and max 63
       deployment.metadata.name.length mustEqual 63
 
@@ -163,7 +163,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
   "Services" should {
     "have long names truncate to 63 characters when coming from EndpointActions" in {
-      val endpointActions = EndpointActions(testApp01, None, namespace)
+      val endpointActions = EndpointActions(testApp01, None)
 
       endpointActions
         .collect {

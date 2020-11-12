@@ -35,8 +35,7 @@ import cloudflow.blueprint.deployment._
 object EndpointActions {
   def apply(
       newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      namespace: String
+      currentApp: Option[CloudflowApplication.CR]
   ): Seq[Action] = {
     def distinctEndpoints(app: CloudflowApplication.Spec) =
       app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
@@ -46,7 +45,7 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
-        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp, namespace)
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒

@@ -68,9 +68,14 @@ object Action {
   /**
    * Creates a [[DeleteAction]].
    */
+  def delete[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR)(
+      implicit resourceDefinition: ResourceDefinition[T]
+  ): DeleteAction[T] =
+    delete(resourceName, app, app.namespace)
+
   def delete[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, namespace: String)(
       implicit resourceDefinition: ResourceDefinition[T]
-  ) =
+  ): DeleteAction[T] =
     DeleteAction(resourceName, app, namespace, resourceDefinition)
 
   def createOrPatch[T <: ObjectResource, O <: Patch](
@@ -98,17 +103,25 @@ object Action {
                                      namespace: String): CompositeAction[T] =
     CompositeAction(actions, app, namespace)
 
+  def composite[T <: ObjectResource](actions: Vector[ResourceAction[T]], app: CloudflowApplication.CR): CompositeAction[T] =
+    composite(actions, app, app.namespace)
+
   /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
-  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String,
-                                                         app: CloudflowApplication.CR,
-                                                         namespace: String,
-                                                         fAction: Option[T] => ResourceAction[R])(
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, namespace: String)(
+      fAction: Option[T] => ResourceAction[R]
+  )(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
-  ) =
+  ): ProvidedAction[T, R] =
     new ProvidedAction(resourceName, app, namespace, fAction, format, resourceDefinition)
+
+  def provided[T <: ObjectResource, R <: ObjectResource](resourceName: String,
+                                                         app: CloudflowApplication.CR)(fAction: Option[T] => ResourceAction[R])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[T]
+  ): ProvidedAction[T, R] = provided(resourceName, app, app.namespace)(fAction)
 
   /**
    * Creates an action provided that a list of resources with a label in a namespace are found.
@@ -116,12 +129,20 @@ object Action {
   def providedByLabel[T <: ObjectResource, R <: ObjectResource](labelKey: String,
                                                                 labelValues: Vector[String],
                                                                 app: CloudflowApplication.CR,
-                                                                namespace: String,
-                                                                fAction: ListResource[T] => ResourceAction[R])(
+                                                                namespace: String)(fAction: ListResource[T] => ResourceAction[R])(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[ListResource[T]]
-  ) =
+  ): ProvidedByLabelAction[T, R] =
     new ProvidedByLabelAction(labelKey, labelValues, app, namespace, fAction, format, resourceDefinition)
+
+  def providedByLabel[T <: ObjectResource, R <: ObjectResource](
+      labelKey: String,
+      labelValues: Vector[String],
+      app: CloudflowApplication.CR
+  )(fAction: ListResource[T] => ResourceAction[R])(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[ListResource[T]]
+  ): ProvidedByLabelAction[T, R] = providedByLabel(labelKey, labelValues, app, app.namespace)(fAction)
 
   /**
    * Creates an [[UpdateStatusAction]].
