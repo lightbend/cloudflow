@@ -67,7 +67,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   }
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-    Action.provided[skuber.Secret, ObjectResource](streamletDeployment.secretName, app, app.namespace) {
+    Action.providedRetry[skuber.Secret, ObjectResource](streamletDeployment.secretName, app) {
       case Some(secret) =>
         val _resource =
           resource(streamletDeployment, app, secret, updateLabels)

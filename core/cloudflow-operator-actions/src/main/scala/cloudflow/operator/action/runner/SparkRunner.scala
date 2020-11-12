@@ -82,7 +82,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.provided[Secret, ObjectResource](streamletDeployment.secretName, app) {
+    Action.providedRetry[Secret, ObjectResource](streamletDeployment.secretName, app) {
       case Some(secret) =>
         val _resource =
           resource(streamletDeployment, app, secret, updateLabels)
