@@ -19,7 +19,7 @@ import java.time.ZonedDateTime
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
-import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, SparkRunner }
+import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.{ CloudflowApplication, CloudflowLabels }
 import skuber.json.format.eventFmt
 import skuber.{ Event, ObjectEditor, ObjectMeta, ObjectResource }
@@ -145,7 +145,7 @@ object EventActions {
       source = Some(OperatorSource)
     )
 
-    Action.createOrUpdate(event, eventEditor)
+    Action.createOrUpdate(event, app, eventEditor)
   }
 
   private def newEventName(sourceResource: String, appId: String): String = {

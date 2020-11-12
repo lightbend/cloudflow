@@ -78,8 +78,8 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val roleSpark = sparkRole(namespace, labels, ownerReferences)
 
     Vector(
-      Action.createOrUpdate(roleSpark, roleEditor),
-      Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), roleBindingEditor)
+      Action.createOrUpdate(roleSpark, app, roleEditor),
+      Action.createOrUpdate(sparkRoleBinding(namespace, roleSpark, labels, ownerReferences), app, roleBindingEditor)
     )
   }
 
@@ -88,6 +88,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
     Action.provided[Secret, ObjectResource](
       streamletDeployment.secretName,
+      app,
       app.metadata.namespace, {
         case Some(secret) =>
           val _resource =
@@ -95,7 +96,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
           val labeledResource =
             _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
           val patch = SpecPatch(labeledResource.spec)
-          Action.createOrPatch(_resource, patch)(format, patchFormat, resourceDefinition)
+          Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
         case None =>
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
           log.error(msg)
@@ -109,18 +110,19 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
     val patchAction = Action.provided[Secret, ObjectResource](
       deployment.secretName,
+      newApp,
       namespace, {
         case Some(secret) =>
           val _resource = resource(deployment, newApp, secret, namespace)
           val _patch    = patch(deployment, newApp, secret, namespace)
-          Action.patch(_resource, _patch)(format, patchFormat, resourceDefinition)
+          Action.patch(_resource, newApp, _patch)(format, patchFormat, resourceDefinition)
         case None =>
           val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
           log.error(msg)
           CloudflowApplication.Status.errorAction(newApp, runners, msg)
       }
     )
-    val configAction = Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor)
+    val configAction = Action.createOrUpdate(configResource(deployment, newApp, namespace), newApp, configEditor)
     Seq(configAction, patchAction)
   }
 

@@ -73,8 +73,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
                  ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleFlink = flinkRole(namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleFlink, roleEditor),
-      Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor)
+      Action.createOrUpdate(roleFlink, app, roleEditor),
+      Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), app, roleBindingEditor)
     )
   }
 
@@ -83,13 +83,14 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
 
     Action.provided[Secret, ObjectResource](
       streamletDeployment.secretName,
+      app,
       app.metadata.namespace, {
         case Some(secret) =>
           val _resource =
             resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
           val labeledResource =
             _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-          Action.createOrUpdate(labeledResource, editor)
+          Action.createOrUpdate(labeledResource, app, editor)
         case None =>
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
 

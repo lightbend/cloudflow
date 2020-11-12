@@ -98,8 +98,8 @@ trait Runner[T <: ObjectResource] {
       .filterNot(deployment ⇒ newDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         Seq(
-          Action.delete[T](resourceName(deployment), namespace),
-          Action.delete[T](configResourceName(deployment), namespace)
+          Action.delete[T](resourceName(deployment), newApp, namespace),
+          Action.delete[T](configResourceName(deployment), newApp, namespace)
         )
       }
 
@@ -108,11 +108,12 @@ trait Runner[T <: ObjectResource] {
       .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment ⇒
         Seq(
-          Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor),
+          Action.createOrUpdate(configResource(deployment, newApp, namespace), newApp, configEditor),
           Action.provided[Secret, ObjectResource](
             deployment.secretName,
+            newApp,
             namespace, {
-              case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret, namespace), editor)
+              case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret, namespace), newApp, editor)
               case None =>
                 val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
                 log.error(msg)
@@ -138,7 +139,7 @@ trait Runner[T <: ObjectResource] {
                               labels: CloudflowLabels,
                               ownerReferences: List[OwnerReference]) =
     appActions(app, namespace, labels, ownerReferences) ++
-        serviceAccountAction(namespace, labels, ownerReferences)
+        serviceAccountAction(app, namespace, labels, ownerReferences)
 
   def appActions(app: CloudflowApplication.CR,
                  namespace: String,
@@ -152,12 +153,13 @@ trait Runner[T <: ObjectResource] {
     implicit val f  = format
     implicit val rd = resourceDefinition
     Seq(
-      Action.createOrUpdate(configResource(deployment, newApp, namespace), configEditor),
+      Action.createOrUpdate(configResource(deployment, newApp, namespace), newApp, configEditor),
       Action.provided[Secret, ObjectResource](
         deployment.secretName,
+        newApp,
         namespace, {
           case Some(secret) =>
-            Action.createOrUpdate(resource(deployment, newApp, secret, namespace), editor)
+            Action.createOrUpdate(resource(deployment, newApp, secret, namespace), newApp, editor)
           case None =>
             val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
             log.error(msg)
@@ -171,8 +173,11 @@ trait Runner[T <: ObjectResource] {
                             runners: Map[String, Runner[_]],
                             streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
 
-  def serviceAccountAction(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
-    Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), roleBindingEditor))
+  def serviceAccountAction(app: CloudflowApplication.CR,
+                           namespace: String,
+                           labels: CloudflowLabels,
+                           ownerReferences: List[OwnerReference]): Seq[Action] =
+    Vector(Action.createOrUpdate(roleBinding(namespace, labels, ownerReferences), app, roleBindingEditor))
 
   def defaultReplicas: Int
   def expectedPodCount(deployment: StreamletDeployment): Int

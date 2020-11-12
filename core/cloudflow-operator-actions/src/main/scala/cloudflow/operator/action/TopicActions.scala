@@ -102,6 +102,7 @@ object TopicActions {
         .map { cluster =>
           Action.provided[Secret, ObjectResource](
             String.format(KafkaClusterNameFormat, cluster),
+            newApp,
             namedClustersNamespace, {
               case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, runners, labels, providedTopic)
               case None =>
@@ -126,6 +127,7 @@ object TopicActions {
       .map { name =>
         Action.provided[Secret, ObjectResource](
           name,
+          newApp,
           namespace, { secretOption =>
             maybeCreateActionFromAppConfigSecret(secretOption, newApp, namespace, runners, labels, topic)
               .getOrElse(useClusterConfiguration(topic))
@@ -187,7 +189,7 @@ object TopicActions {
     val configMap    = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)
     val adminClient  = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
-    new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
+    new CreateOrUpdateAction[ConfigMap](configMap, newApp, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[ResourceAction[ConfigMap]] =

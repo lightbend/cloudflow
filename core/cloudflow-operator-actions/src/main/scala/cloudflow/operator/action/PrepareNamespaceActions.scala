@@ -19,7 +19,7 @@ package action
 
 import scala.collection.immutable._
 import skuber._
-import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, SparkRunner }
+import cloudflow.operator.action.runner.Runner
 
 /**
  * Creates a sequence of resource actions for preparing the namespace where the application is

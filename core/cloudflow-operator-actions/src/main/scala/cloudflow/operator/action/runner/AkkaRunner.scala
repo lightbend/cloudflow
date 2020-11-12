@@ -64,21 +64,22 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
                  ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleAkka = akkaRole(namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleAkka, roleEditor),
-      Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
+      Action.createOrUpdate(roleAkka, app, roleEditor),
+      Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), app, roleBindingEditor)
     )
   }
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
     Action.provided[skuber.Secret, ObjectResource](
       streamletDeployment.secretName,
+      app,
       app.metadata.namespace, {
         case Some(secret) =>
           val _resource =
             resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
           val labeledResource =
             _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-          Action.createOrUpdate(labeledResource, editor)
+          Action.createOrUpdate(labeledResource, app, editor)
         case None =>
           val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
           log.error(msg)

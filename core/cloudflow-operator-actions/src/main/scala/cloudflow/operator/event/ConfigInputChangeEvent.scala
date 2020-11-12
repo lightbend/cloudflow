@@ -83,6 +83,7 @@ object ConfigInputChangeEvent extends Event {
         val providedAction = Action.providedByLabel[Secret, Secret](
           TopicActions.KafkaClusterNameLabel,
           clusterNames,
+          app,
           podNamespace, { clusterSecrets =>
             val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets)
             val actions = app.spec.deployments.map {
@@ -100,10 +101,10 @@ object ConfigInputChangeEvent extends Event {
                     configs.pods,
                     CloudflowLabels.StreamletDeploymentConfigFormat
                   )
-                Action.createOrUpdate(configSecret, secretEditor)
+                Action.createOrUpdate(configSecret, app, secretEditor)
             }
 
-            Action.composite(actions, app.metadata.namespace)
+            Action.composite(actions, app, app.metadata.namespace)
           }
         )
         List(providedAction)
