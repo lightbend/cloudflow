@@ -16,9 +16,6 @@
 
 package cloudflow.akkastream
 
-import java.nio.file.{ Files, Paths }
-import java.nio.charset.StandardCharsets
-
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.discovery.Discovery
@@ -31,6 +28,8 @@ import com.typesafe.config._
 
 import scala.util.Failure
 import net.ceedubs.ficus.Ficus._
+
+import scala.util.control.NonFatal
 
 /**
  * Extend from this class to build Akka-based Streamlets.
@@ -88,37 +87,20 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
   override final def run(context: AkkaStreamletContext): StreamletExecution =
     try {
-      // readiness probe to be done at operator using this
-      // the streamlet context has been created and the streamlet is ready to take requests
-      // needs to be done only in cluster mode - not in local running
-
       val localMode = context.config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
-      if (!localMode) createTempFile(s"${context.streamletRef}-ready.txt", context.streamletRef)
+      context.ready(localMode)
 
       val logic = createLogic()
 
-      // create a marker file indicating that the streamlet has started running
-      // this will be used for pod liveness probe
-      // needs to be done only in cluster mode - not in local running
-
-      if (!localMode) createTempFile(s"${context.streamletRef}-live.txt", context.streamletRef)
-
+      context.alive(localMode)
       logic.run()
       signalReadyAfterStart()
       context.streamletExecution
     } catch {
-      case e: Throwable =>
-        // TODO fix this for failure.
-        context.streamletExecution.stop()
+      case NonFatal(e) =>
+        context.stopOnException(e)
         throw e
     }
-
-  private def createTempFile(relativePath: String, streamletRef: String): Unit = {
-    val tempDir = System.getProperty("java.io.tmpdir")
-    val path    = java.nio.file.Paths.get(tempDir, relativePath)
-
-    Files.write(Paths.get(path.toString), s"an akka streamlet $streamletRef".getBytes(StandardCharsets.UTF_8))
-  }
 
   override def logStartRunnerMessage(buildInfo: String): Unit =
     log.info(s"""

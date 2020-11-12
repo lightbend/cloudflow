@@ -198,6 +198,6 @@ abstract class HttpServerLogic(
       .andThen {
         case Failure(cause) ⇒
           system.log.error(cause, s"Failed to bind to $port.")
-          context.stop()
+          context.stopOnException(cause)
       }
 }

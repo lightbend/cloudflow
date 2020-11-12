@@ -16,22 +16,21 @@
 
 package cloudflow.akkastream
 
-import java.util.concurrent.atomic.AtomicReference
-import java.nio.file.{ Files, Paths }
+import java.nio.charset.StandardCharsets
 
 import scala.collection.immutable
 import scala.concurrent._
 import scala.util._
 import akka._
-import akka.actor.ActorSystem
+import akka.actor.{ ActorSystem, CoordinatedShutdown }
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
 import akka.kafka.ConsumerMessage._
 import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.kafka.scaladsl._
-import akka.stream._
 import akka.stream.scaladsl._
+import cloudflow.akkastream.internal.{ HealthCheckFiles, StreamletExecutionImpl }
 import com.typesafe.config._
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -47,22 +46,13 @@ final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem
 ) extends AkkaStreamletContext {
+
   implicit val system: ActorSystem = sys
 
   override def config: Config = streamletDefinition.config
 
-  private val readyPromise      = Promise[Dun]()
-  private val completionPromise = Promise[Dun]()
-  private val completionFuture  = completionPromise.future
-
-  val killSwitch = KillSwitches.shared(streamletRef)
-
-  val streamletExecution = new StreamletExecution() {
-    val readyFuture            = readyPromise.future
-    def completed: Future[Dun] = completionFuture
-    def ready: Future[Dun]     = readyFuture
-    def stop(): Future[Dun]    = AkkaStreamletContextImpl.this.stop()
-  }
+  private val execution                               = new StreamletExecutionImpl(this)
+  override val streamletExecution: StreamletExecution = execution
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
@@ -327,60 +317,71 @@ final class AkkaStreamletContextImpl(
       runtimeBootstrapServers(topic),
       topic,
       killSwitch,
-      completionPromise
+      execution.completionPromise
     )
   }
 
-  private def keyBytes(key: String) = if (key != null) key.getBytes("UTF8") else null
-
-  private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
-
-  def onStop(f: () ⇒ Future[Dun]): Unit =
-    stoppers.getAndUpdate(old ⇒ old :+ f)
-
-  private def streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
+  private def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
 
   private def handleTermination[T]: Flow[T, T, NotUsed] =
     Flow[T]
       .via(killSwitch.flow)
       .alsoTo(
-        Sink.onComplete {
-          case Success(_) ⇒
-            system.log.error(
-              s"Stream has completed. Shutting down streamlet $streamletDefinitionMsg."
-            )
-            completionPromise.trySuccess(Dun)
-          case Failure(e) ⇒
-            system.log.error(e, s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.")
-            completionPromise.tryFailure(e)
-        }
-      )
-
-  def signalReady(): Boolean = readyPromise.trySuccess(Dun)
-
-  def stop(): Future[Dun] = {
-    // we created this file when the pod started running (see AkkaStreamlet#run)
-    Files.deleteIfExists(Paths.get(s"/tmp/$streamletRef.txt"))
-
-    killSwitch.shutdown()
-    import system.dispatcher
-    Future
-      .sequence(
-        stoppers.get.map { f ⇒
-          f().recover {
-            case cause ⇒
-              system.log.error(cause, "onStop callback failed.")
-              Dun
+        Sink.onComplete { res =>
+          execution.complete(res)
+          val streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
+          res match {
+            case Success(_) ⇒
+              system.log.info(
+                s"Stream has completed. Shutting down streamlet $streamletDefinitionMsg."
+              )
+            case Failure(e) ⇒
+              system.log.error(e, s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.")
           }
         }
       )
-      .flatMap { _ ⇒
-        completionPromise.trySuccess(Dun)
-        completionFuture
-      }
+
+  def signalReady(): Boolean = execution.signalReady()
+
+  override def ready(localMode: Boolean): Unit = {
+    // readiness probe to be done at operator using this
+    // the streamlet context has been created and the streamlet is ready to take requests
+    // needs to be done only in cluster mode - not in local running
+    if (!localMode) HealthCheckFiles.createReady(streamletRef)
+    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, s"akka-streamlet-${streamletRef}-unbind") { () =>
+      serviceUnbind()
+    }
+    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeClusterShutdown, s"akka-streamlet-${streamletRef}-stop") { () =>
+      stop().map(_ => Done)(system.dispatcher)
+    }
   }
 
-  def metricTags(): Map[String, String] =
+  override def alive(localMode: Boolean): Unit =
+    // create a marker file indicating that the streamlet has started running
+    // this will be used for pod liveness probe
+    // needs to be done only in cluster mode - not in local running
+    if (!localMode) HealthCheckFiles.createAlive(streamletRef)
+
+  private def serviceUnbind(): Future[Done] =
+    Future {
+      HealthCheckFiles.deleteReady(streamletRef)
+      Done
+    }(system.dispatcher)
+
+  override def stop(): Future[Dun] = {
+    HealthCheckFiles.deleteReady(streamletRef)
+
+    killSwitch.shutdown()
+    import system.dispatcher
+    Stoppers
+      .stop()
+      .flatMap(_ => execution.complete())
+  }
+
+  override def stopOnException(nonFatal: Throwable): Unit =
+    stop()
+
+  override def metricTags(): Map[String, String] =
     Map(
       "app-id"        -> streamletDefinition.appId,
       "app-version"   -> streamletDefinition.appVersion,

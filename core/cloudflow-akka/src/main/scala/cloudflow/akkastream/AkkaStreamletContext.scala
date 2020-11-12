@@ -16,14 +16,17 @@
 
 package cloudflow.akkastream
 
-import scala.concurrent.Future
-import scala.collection.immutable
+import java.util.concurrent.atomic.AtomicReference
 
-import akka.NotUsed
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.collection.immutable
+import akka.{ Done, NotUsed }
 import akka.actor.ActorSystem
+import akka.annotation.InternalApi
 import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.kafka.ConsumerMessage.{ Committable, CommittableOffset }
 import akka.kafka.CommitterSettings
+import akka.stream.KillSwitches
 import akka.stream.scaladsl._
 import cloudflow.streamlets._
 
@@ -85,8 +88,32 @@ trait AkkaStreamletContext extends StreamletContext {
    * The system in which the AkkaStreamlet will be run.
    */
   implicit def system: ActorSystem
+  protected val killSwitch = KillSwitches.shared(streamletRef)
 
   private[akkastream] def streamletExecution: StreamletExecution
+
+  @InternalApi
+  private[akkastream] object Stoppers {
+
+    private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
+
+    def add(f: () => Future[Dun]): Unit = stoppers.getAndUpdate(old => old :+ f)
+
+    def stop(): Future[Done] = {
+      implicit val ec: ExecutionContext = system.dispatcher
+      Future
+        .sequence(
+          stoppers.get.map { f =>
+            f().recover {
+              case cause =>
+                system.log.error(cause, "onStop callback failed.")
+                Dun
+            }
+          }
+        )
+        .map(_ => Done)
+    }
+  }
 
   /**
    * Signals that the streamlet is ready to process data.
@@ -101,6 +128,21 @@ trait AkkaStreamletContext extends StreamletContext {
   def signalReady(): Boolean
 
   /**
+   * Marks the streamlet pod "ready" for Kubernetes.
+   */
+  def ready(localMode: Boolean): Unit
+
+  /**
+   * Marks the streamlet pod "alive" for Kubernetes.
+   */
+  def alive(localMode: Boolean): Unit
+
+  /**
+   * Stops the streamlet knowing an exception occured.
+   */
+  def stopOnException(nonFatal: Throwable): Unit
+
+  /**
    * Stops the streamlet.
    */
   def stop(): Future[Dun]
@@ -109,7 +151,7 @@ trait AkkaStreamletContext extends StreamletContext {
    * Registers a callback, which is called when the streamlet is stopped.
    * It is usually used to close resources that have been created in the streamlet.
    */
-  def onStop(f: () ⇒ Future[Dun]): Unit
+  def onStop(f: () => Future[Dun]): Unit = Stoppers.add(f)
 
   private[akkastream] def metricTags(): Map[String, String]
 }
