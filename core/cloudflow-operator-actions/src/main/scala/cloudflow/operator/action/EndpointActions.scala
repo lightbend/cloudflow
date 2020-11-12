@@ -35,13 +35,8 @@ import cloudflow.blueprint.deployment._
 object EndpointActions {
   def apply(
       newApp: CloudflowApplication.CR,
-      currentApp: Option[CloudflowApplication.CR],
-      namespace: String
+      currentApp: Option[CloudflowApplication.CR]
   ): Seq[Action] = {
-    val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(
-      OwnerReference(newApp.apiVersion, newApp.kind, newApp.metadata.name, newApp.metadata.uid, Some(true), Some(true))
-    )
     def distinctEndpoints(app: CloudflowApplication.Spec) =
       app.deployments.flatMap(deployment ⇒ deployment.endpoint).toSet
 
@@ -50,12 +45,12 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint ⇒
       Seq(
-        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), namespace)
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint ⇒
       Seq(
-        createServiceAction(endpoint, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet), namespace, labels, ownerReferences)
+        createServiceAction(endpoint, newApp, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet))
       )
     }.toList
     deleteActions ++ createActions
@@ -85,18 +80,23 @@ object EndpointActions {
   }
 
   private def createServiceAction(endpoint: Endpoint,
-                                  streamletDeploymentName: String,
-                                  namespace: String,
-                                  labels: CloudflowLabels,
-                                  ownerReferences: List[OwnerReference]): CreateServiceAction =
-    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, namespace, labels, ownerReferences))
+                                  app: CloudflowApplication.CR,
+                                  streamletDeploymentName: String): CreateServiceAction = {
+    val labels = CloudflowLabels(app)
+    val ownerReferences = List(
+      OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true))
+    )
+
+    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, app.namespace, labels, ownerReferences), app)
+  }
 
   /**
    * Creates an action for creating a service.
    */
   object CreateServiceAction {
-    def apply(service: Service)(implicit format: Format[Service], resourceDefinition: ResourceDefinition[Service]) =
-      new CreateServiceAction(service, format, resourceDefinition)
+    def apply(service: Service, app: CloudflowApplication.CR)(implicit format: Format[Service],
+                                                              resourceDefinition: ResourceDefinition[Service]) =
+      new CreateServiceAction(service, app, format, resourceDefinition)
   }
 
   private val serviceEditor: ObjectEditor[Service] = (obj: Service, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
@@ -107,9 +107,10 @@ object EndpointActions {
    */
   class CreateServiceAction(
       override val resource: Service,
+      override val app: CloudflowApplication.CR,
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
-  ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
+  ) extends CreateOrUpdateAction[Service](resource, app, format, resourceDefinition, serviceEditor) {
     override def execute(
         client: KubernetesClient
     )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[Service]] =
@@ -120,9 +121,9 @@ object EndpointActions {
             val resourceVersionUpdated = resource
               .withResourceVersion(existingService.metadata.resourceVersion)
               .withClusterIP(existingService.spec.map(_.clusterIP).getOrElse(""))
-            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o))
+            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o, app))
           }
-          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o)))
+          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o ⇒ CreateServiceAction(o, app)))
       } yield res
   }
 }

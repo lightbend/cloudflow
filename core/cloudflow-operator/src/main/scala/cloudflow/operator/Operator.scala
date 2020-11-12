@@ -24,6 +24,7 @@ import scala.util.control.NonFatal
 
 import akka.NotUsed
 import akka.actor._
+import akka.pattern._
 import akka.stream._
 import akka.stream.scaladsl._
 import play.api.libs.json.Format
@@ -81,7 +82,7 @@ object Operator {
       watch[CloudflowApplication.CR](client, DefaultWatchOptions)
         .via(AppEventFlow.fromWatchEvent(logAttributes))
         .via(AppEventFlow.toAction(runners, podName, podNamespace))
-        .via(executeActions(actionExecutor, logAttributes))
+        .via(executeActions(actionExecutor, runners, logAttributes))
         .toMat(Sink.ignore)(Keep.right)
         .mapMaterializedValue {
           _.flatMap { value =>
@@ -98,6 +99,7 @@ object Operator {
 
   def handleConfigurationInput(
       client: KubernetesClient,
+      runners: Map[String, Runner[_]],
       podNamespace: String
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
@@ -120,7 +122,7 @@ object Operator {
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
         .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
         .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
-        .via(executeActions(actionExecutor, logAttributes))
+        .via(executeActions(actionExecutor, runners, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
       "The configuration input stream failed, terminating."
@@ -150,7 +152,7 @@ object Operator {
         .via(StreamletChangeEventFlow.fromWatchEvent())
         .via(mapToAppInSameNamespace(client))
         .via(StreamletChangeEventFlow.toConfigUpdateAction(runners, podName))
-        .via(executeActions(actionExecutor, logAttributes))
+        .via(executeActions(actionExecutor, runners, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",
       "The config updates stream failed, terminating."
@@ -169,16 +171,22 @@ object Operator {
         .log("status-change-event", StatusChangeEvent.detected)
         .via(mapToAppInSameNamespace(client))
         .via(StatusChangeEventFlow.toStatusUpdateAction(runners))
-        .via(executeActions(actionExecutor, logAttributes))
+        .via(executeActions(actionExecutor, runners, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
       "The status changes stream failed, terminating."
     )
   }
 
-  private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action, Action, NotUsed] =
+  private def executeActions(actionExecutor: ActionExecutor, runners: Map[String, Runner[_]], logAttributes: Attributes)(
+      implicit ec: ExecutionContext
+  ): Flow[Action, Action, NotUsed] =
     Flow[Action]
-      .mapAsync(1)(actionExecutor.execute)
+      .mapAsync(1)(action =>
+        actionExecutor.execute(action).recoverWith {
+          case NonFatal(cause) => actionExecutor.execute(CloudflowApplication.Status.errorAction(action.app, runners, cause.getMessage))
+        }
+      )
       .log("action", Action.executed)
       .withAttributes(logAttributes)
 
@@ -229,7 +237,7 @@ object Operator {
      * ==================================================*/
     system.log.info(s"Getting current events for ${classTag[O].runtimeClass.getName}")
 
-    val eventsResult = getCurrentEvents[O](client, options, 0)
+    val eventsResult = getCurrentEvents[O](client, options, 0, 3.seconds)
 
     RestartSource.withBackoff(
       minBackoff = 3.seconds,
@@ -252,7 +260,8 @@ object Operator {
   private def getCurrentEvents[O <: ObjectResource](
       client: KubernetesClient,
       options: ListOptions,
-      attempt: Int
+      attempt: Int,
+      delay: FiniteDuration
   )(implicit lfmt: Format[ListResource[O]],
     rd: ResourceDefinition[O],
     lc: LoggingContext,
@@ -265,7 +274,7 @@ object Operator {
     } yield watchEvents).recoverWith {
       case NonFatal(e) =>
         system.log.warning(s"Could not get current events, attempt number $attempt", e)
-        getCurrentEvents(client, options, attempt + 1)
+        after(delay, system.scheduler)(getCurrentEvents(client, options, attempt + 1, delay))
     }
 
   private def runStream(

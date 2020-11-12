@@ -72,7 +72,7 @@ object TopicActions {
           .headOption
           .map(_.secretName)
 
-        action(appConfigSecretName, newApp.namespace, runners, labels, topic, newApp, namedClustersNamespace)
+        action(appConfigSecretName, runners, labels, topic, newApp, namedClustersNamespace)
       }
     actions
   }
@@ -91,7 +91,6 @@ object TopicActions {
    * 3. Default topic cluster configuration
    */
   def action(appConfigSecretName: Option[String],
-             namespace: String,
              runners: Map[String, runner.Runner[_]],
              labels: CloudflowLabels,
              topic: TopicInfo,
@@ -100,16 +99,13 @@ object TopicActions {
     def useClusterConfiguration(providedTopic: TopicInfo): ResourceAction[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
-          Action.provided[Secret, ObjectResource](
-            String.format(KafkaClusterNameFormat, cluster),
-            namedClustersNamespace, {
-              case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, namespace, runners, labels, providedTopic)
-              case None =>
-                val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
-                log.error(msg)
-                CloudflowApplication.Status.errorAction(newApp, runners, msg)
-            }
-          )
+          Action.provided[Secret, ObjectResource](String.format(KafkaClusterNameFormat, cluster), newApp, namedClustersNamespace) {
+            case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, runners, labels, providedTopic)
+            case None =>
+              val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
+              log.error(msg)
+              CloudflowApplication.Status.errorAction(newApp, runners, msg)
+          }
         }
         .getOrElse {
           if (topic.cluster.eq(Some(DefaultConfigurationName))) {
@@ -124,31 +120,27 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        Action.provided[Secret, ObjectResource](
-          name,
-          namespace, { secretOption =>
-            maybeCreateActionFromAppConfigSecret(secretOption, newApp, namespace, runners, labels, topic)
-              .getOrElse(useClusterConfiguration(topic))
-          }
-        )
+        Action.provided[Secret, ObjectResource](name, newApp) { secretOption =>
+          maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
+            .getOrElse(useClusterConfiguration(topic))
+        }
+
       }
       .getOrElse(useClusterConfiguration(topic))
   }
 
   def createActionFromKafkaConfigSecret(secret: Secret,
                                         newApp: CloudflowApplication.CR,
-                                        namespace: String,
                                         runners: Map[String, runner.Runner[_]],
                                         labels: CloudflowLabels,
                                         topic: TopicInfo) = {
     val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
-    createTopicOrError(newApp, namespace, runners, labels, topicInfo)
+    createTopicOrError(newApp, runners, labels, topicInfo)
   }
 
   def maybeCreateActionFromAppConfigSecret(secretOption: Option[Secret],
                                            newApp: CloudflowApplication.CR,
-                                           namespace: String,
                                            runners: Map[String, runner.Runner[_]],
                                            labels: CloudflowLabels,
                                            topic: TopicInfo) =
@@ -158,16 +150,15 @@ object TopicActions {
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers
-    } yield createTopicOrError(newApp, namespace, runners, labels, topicWithKafkaConfig)
+    } yield createTopicOrError(newApp, runners, labels, topicWithKafkaConfig)
 
   def createTopicOrError(newApp: CloudflowApplication.CR,
-                         appNamespace: String,
                          runners: Map[String, runner.Runner[_]],
                          labels: CloudflowLabels,
                          topic: TopicInfo): ResourceAction[ObjectResource] =
     (topic.bootstrapServers, topic.partitions, topic.replicationFactor) match {
       case (Some(bootstrapServers), Some(partitions), Some(replicas)) =>
-        createAction(topic, labels, appNamespace, runners, newApp, bootstrapServers, partitions, replicas)
+        createAction(topic, labels, runners, newApp, bootstrapServers, partitions, replicas)
       case _ =>
         val msg = s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
               topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
@@ -177,17 +168,16 @@ object TopicActions {
 
   def createAction(topic: TopicInfo,
                    labels: CloudflowLabels,
-                   appNamespace: String,
                    runners: Map[String, runner.Runner[_]],
                    newApp: CloudflowApplication.CR,
                    bootstrapServers: String,
                    partitions: Int,
                    replicas: Int) = {
     val brokerConfig = topic.brokerConfig
-    val configMap    = resource(appNamespace, topic, partitions, replicas, bootstrapServers, labels)
+    val configMap    = resource(newApp.namespace, topic, partitions, replicas, bootstrapServers, labels)
     val adminClient  = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
-    new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
+    new CreateOrUpdateAction[ConfigMap](configMap, newApp, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[ResourceAction[ConfigMap]] =

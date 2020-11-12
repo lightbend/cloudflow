@@ -240,6 +240,7 @@ object CloudflowApplication {
     def toAction(app: CloudflowApplication.CR): ResourceAction[CloudflowApplication.CR] =
       Action.updateStatus(
         app.withStatus(this),
+        app,
         editor,
         ignoreOnErrorStatus
       )

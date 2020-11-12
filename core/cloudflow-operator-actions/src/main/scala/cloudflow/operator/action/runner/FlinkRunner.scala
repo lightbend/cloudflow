@@ -67,36 +67,31 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   def resourceDefinition = implicitly[ResourceDefinition[CR]]
   def prometheusConfig   = PrometheusConfig(prometheusRules)
 
-  def appActions(app: CloudflowApplication.CR,
-                 namespace: String,
-                 labels: CloudflowLabels,
-                 ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleFlink = flinkRole(namespace, labels, ownerReferences)
+  def appActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
+    val roleFlink = flinkRole(app.namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleFlink, roleEditor),
-      Action.createOrUpdate(flinkRoleBinding(namespace, roleFlink, labels, ownerReferences), roleBindingEditor)
+      Action.createOrUpdate(roleFlink, app, roleEditor),
+      Action.createOrUpdate(flinkRoleBinding(app.namespace, roleFlink, labels, ownerReferences), app, roleBindingEditor)
     )
   }
 
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.provided[Secret, ObjectResource](
-      streamletDeployment.secretName,
-      app.metadata.namespace, {
-        case Some(secret) =>
-          val _resource =
-            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-          val labeledResource =
-            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-          Action.createOrUpdate(labeledResource, editor)
-        case None =>
-          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+    Action.provided[Secret, ObjectResource](streamletDeployment.secretName, app, app.metadata.namespace) {
+      case Some(secret) =>
+        val _resource =
+          resource(streamletDeployment, app, secret, updateLabels)
+        val labeledResource =
+          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+        Action.createOrUpdate(labeledResource, app, editor)
+      case None =>
+        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
 
-          log.error(msg)
-          CloudflowApplication.Status.errorAction(app, runners, msg)
-      }
-    )
+        log.error(msg)
+        CloudflowApplication.Status.errorAction(app, runners, msg)
+    }
+
   }
 
   def defaultReplicas = DefaultTaskManagerReplicas
@@ -153,7 +148,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: Secret,
-      namespace: String,
       updateLabels: Map[String, String] = Map()
   ): CR = {
     val podsConfig = getPodsConfig(configSecret)
@@ -243,7 +237,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       .withMetadata(
         ObjectMeta(
           name = name,
-          namespace = namespace,
+          namespace = app.namespace,
           annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
           labels = labels,
           ownerReferences = ownerReferences

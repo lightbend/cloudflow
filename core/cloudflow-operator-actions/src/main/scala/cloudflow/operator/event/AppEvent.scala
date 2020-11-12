@@ -34,18 +34,16 @@ sealed trait AppEvent {
 case class DeployEvent(
     app: CloudflowApplication.CR,
     currentApp: Option[CloudflowApplication.CR],
-    namespace: String,
     cause: ObjectResource
 ) extends AppEvent {
-  override def toString() = s"DeployEvent for application ${app.spec.appId} in namespace $namespace"
+  override def toString() = s"DeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
 }
 
 case class UndeployEvent(
     app: CloudflowApplication.CR,
-    namespace: String,
     cause: ObjectResource
 ) extends AppEvent {
-  override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace $namespace"
+  override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
 }
 
 /**
@@ -63,29 +61,28 @@ object AppEvent {
       watchEvent: WatchEvent[CloudflowApplication.CR]
   ): (Map[String, WatchEvent[CloudflowApplication.CR]], List[AppEvent]) = {
     val cr         = watchEvent._object
-    val namespace  = cr.metadata.namespace
     val appId      = cr.spec.appId
     val currentApp = currentApps.get(appId).map(_._object)
     watchEvent._type match {
       case EventType.DELETED ⇒
-        (currentApps - appId, List(UndeployEvent(cr, namespace, watchEvent._object)))
+        (currentApps - appId, List(UndeployEvent(cr, watchEvent._object)))
       case EventType.ADDED | EventType.MODIFIED ⇒
         if (currentApps.get(appId).forall { existingEvent ⇒
               existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
               // the spec must change, otherwise it is not a deploy event (but likely a status update).
               existingEvent._object.spec != watchEvent._object.spec
             }) {
-          (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, namespace, watchEvent._object)))
+          (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, watchEvent._object)))
         } else (currentApps, List())
     }
   }
 
   def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String)(appEvent: AppEvent): Seq[Action] =
     appEvent match {
-      case DeployEvent(app, currentApp, namespace, cause) ⇒
-        Actions.deploy(app, currentApp, runners, namespace, podName, podNamespace, cause)
-      case UndeployEvent(app, namespace, cause) ⇒
-        Actions.undeploy(app, namespace, podName, cause)
+      case DeployEvent(app, currentApp, cause) ⇒
+        Actions.deploy(app, currentApp, runners, podName, podNamespace, cause)
+      case UndeployEvent(app, cause) ⇒
+        Actions.undeploy(app, podName, cause)
     }
 
   def detected(appEvent: AppEvent) = s"Detected $appEvent"

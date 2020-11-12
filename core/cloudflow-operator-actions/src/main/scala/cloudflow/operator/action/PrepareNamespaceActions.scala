@@ -19,7 +19,7 @@ package action
 
 import scala.collection.immutable._
 import skuber._
-import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, SparkRunner }
+import cloudflow.operator.action.runner.Runner
 
 /**
  * Creates a sequence of resource actions for preparing the namespace where the application is
@@ -27,7 +27,6 @@ import cloudflow.operator.action.runner.{ AkkaRunner, FlinkRunner, Runner, Spark
  */
 object PrepareNamespaceActions {
   def apply(app: CloudflowApplication.CR,
-            namespace: String,
             runners: Map[String, Runner[_]],
             labels: CloudflowLabels,
             ownerReferences: List[OwnerReference]): Seq[Action] =
@@ -35,7 +34,7 @@ object PrepareNamespaceActions {
       .map(streamlet => streamlet.descriptor.runtime.name)
       .distinct
       .flatMap { runtime =>
-        runners.get(runtime).map(_.prepareNamespaceActions(app, namespace, labels, ownerReferences))
+        runners.get(runtime).map(_.prepareNamespaceActions(app, labels, ownerReferences))
       }
       .flatten
 }

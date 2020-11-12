@@ -36,7 +36,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
   val image             = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
   val clusterName       = "cloudflow-strimzi"
   val pvcName           = "my-pvc"
-  val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
   val sparkRunner       = new SparkRunner(ctx.sparkRunnerDefaults)
@@ -47,7 +46,6 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
     val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
     val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-    val namespace  = "test-ns"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -90,34 +88,32 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "create a valid SparkApplication CR" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
+        configSecret = Secret(metadata = ObjectMeta())
       )
 
-      crd.metadata.namespace mustBe namespace
-      crd.metadata.name mustBe appId
-      crd.spec.`type` mustBe "Scala"
-      crd.spec.mode mustBe "cluster"
+      cr.metadata.name mustBe appId
+      cr.spec.`type` mustBe "Scala"
+      cr.spec.mode mustBe "cluster"
       val imageWithoutRegistry = image.split("/").tail.mkString("/")
-      crd.spec.image must include(imageWithoutRegistry)
-      crd.spec.mainClass mustBe "cloudflow.runner.Runner"
-      crd.spec.volumes mustBe volumes
-      crd.spec.driver.volumeMounts mustBe volumeMounts
-      crd.spec.executor.volumeMounts mustBe volumeMounts
-      crd.kind mustBe "SparkApplication"
-      crd.spec.restartPolicy mustBe a[AlwaysRestartPolicy]
-      crd.spec.monitoring.exposeDriverMetrics mustBe true
-      crd.spec.monitoring.exposeExecutorMetrics mustBe true
-      crd.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths(CloudflowApplication.PrometheusAgentKey)
-      crd.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
+      cr.spec.image must include(imageWithoutRegistry)
+      cr.spec.mainClass mustBe "cloudflow.runner.Runner"
+      cr.spec.volumes mustBe volumes
+      cr.spec.driver.volumeMounts mustBe volumeMounts
+      cr.spec.executor.volumeMounts mustBe volumeMounts
+      cr.kind mustBe "SparkApplication"
+      cr.spec.restartPolicy mustBe a[AlwaysRestartPolicy]
+      cr.spec.monitoring.exposeDriverMetrics mustBe true
+      cr.spec.monitoring.exposeExecutorMetrics mustBe true
+      cr.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths(CloudflowApplication.PrometheusAgentKey)
+      cr.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 
     "read from config custom labels and add them to the driver pod's spec" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -141,19 +137,18 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.driver.labels.get("key1") mustBe Some("value1")
-      crd.spec.executor.labels.get("key1") mustBe None
-      crd.spec.driver.labels.get("key2") mustBe Some("value2")
-      crd.spec.executor.labels.get("key2") mustBe None
+      cr.spec.driver.labels.get("key1") mustBe Some("value1")
+      cr.spec.executor.labels.get("key1") mustBe None
+      cr.spec.driver.labels.get("key2") mustBe Some("value2")
+      cr.spec.executor.labels.get("key2") mustBe None
     }
 
     "read from config custom labels and add them to the executor pod's spec" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -177,19 +172,18 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.executor.labels.get("key1") mustBe Some("value1")
-      crd.spec.driver.labels.get("key1") mustBe None
-      crd.spec.executor.labels.get("key2") mustBe Some("value2")
-      crd.spec.driver.labels.get("key2") mustBe None
+      cr.spec.executor.labels.get("key1") mustBe Some("value1")
+      cr.spec.driver.labels.get("key1") mustBe None
+      cr.spec.executor.labels.get("key2") mustBe Some("value2")
+      cr.spec.driver.labels.get("key2") mustBe None
     }
 
     "read from config custom labels and add them to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -213,19 +207,18 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.driver.labels.get("key1") mustBe Some("value1")
-      crd.spec.executor.labels.get("key1") mustBe Some("value1")
-      crd.spec.driver.labels.get("key2") mustBe Some("value2")
-      crd.spec.executor.labels.get("key2") mustBe Some("value2")
+      cr.spec.driver.labels.get("key1") mustBe Some("value1")
+      cr.spec.executor.labels.get("key1") mustBe Some("value1")
+      cr.spec.driver.labels.get("key2") mustBe Some("value2")
+      cr.spec.executor.labels.get("key2") mustBe Some("value2")
     }
 
     "read from config custom secrets and mount them to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -261,21 +254,20 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.volumes must contain allElementsOf List(
+      cr.spec.volumes must contain allElementsOf List(
         Volume("foo", Volume.Secret(secretName = "mysecret")),
         Volume("bar", Volume.Secret(secretName = "yoursecret"))
       )
 
-      crd.spec.driver.volumeMounts must contain allElementsOf List(
+      cr.spec.driver.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", true),
         Volume.Mount("bar", "/etc/mc/fly", false)
       )
 
-      crd.spec.executor.volumeMounts must contain allElementsOf List(
+      cr.spec.executor.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", true),
         Volume.Mount("bar", "/etc/mc/fly", false)
       )
@@ -284,7 +276,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom secrets and mount them DIFFERENTLY to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -330,20 +322,19 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.volumes must contain allElementsOf List(
+      cr.spec.volumes must contain allElementsOf List(
         Volume("foo", Volume.Secret(secretName = "mysecret")),
         Volume("bar", Volume.Secret(secretName = "yoursecret"))
       )
 
-      crd.spec.driver.volumeMounts must contain allElementsOf List(
+      cr.spec.driver.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", true)
       )
 
-      crd.spec.executor.volumeMounts must contain allElementsOf List(
+      cr.spec.executor.volumeMounts must contain allElementsOf List(
         Volume.Mount("bar", "/etc/mc/fly", false)
       )
 
@@ -351,7 +342,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config DIFFERENT custom labels and add them to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -391,22 +382,21 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.driver.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
-      crd.spec.executor.env.get mustBe Vector(EnvVar("FFF", EnvVar.StringValue("BBB")))
+      cr.spec.driver.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      cr.spec.executor.env.get mustBe Vector(EnvVar("FFF", EnvVar.StringValue("BBB")))
 
-      crd.spec.driver.labels.get("key1") mustBe Some("value1")
-      crd.spec.driver.labels.get("key2") mustBe Some("value2")
-      crd.spec.executor.labels.get("key3") mustBe Some("value3")
-      crd.spec.executor.labels.get("key4") mustBe Some("value4")
+      cr.spec.driver.labels.get("key1") mustBe Some("value1")
+      cr.spec.driver.labels.get("key2") mustBe Some("value2")
+      cr.spec.executor.labels.get("key3") mustBe Some("value3")
+      cr.spec.executor.labels.get("key4") mustBe Some("value4")
     }
 
     "read from config custom pvc and mount them to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -434,22 +424,21 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.volumes must contain allElementsOf List(
+      cr.spec.volumes must contain allElementsOf List(
         Volume("foo", Volume.PersistentVolumeClaimRef(claimName = "myclaim", readOnly = false))
       )
 
-      crd.spec.driver.volumeMounts must contain allElementsOf List(
+      cr.spec.driver.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", false)
       )
     }
 
     "read from config custom pvc and mount them DIFFERENTLY to the driver and executor pods specs" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -497,34 +486,32 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.volumes must contain allElementsOf List(
+      cr.spec.volumes must contain allElementsOf List(
         Volume("foo", Volume.PersistentVolumeClaimRef(claimName = "myclaim1", readOnly = false)),
         Volume("bar", Volume.PersistentVolumeClaimRef(claimName = "myclaim2", readOnly = false))
       )
 
-      crd.spec.driver.volumeMounts must contain allElementsOf List(
+      cr.spec.driver.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", true)
       )
-      crd.spec.executor.volumeMounts must contain allElementsOf List(
+      cr.spec.executor.volumeMounts must contain allElementsOf List(
         Volume.Mount("bar", "/etc/mc/fly", false)
       )
 
     }
 
-    "convert the CRD to/from Json" in {
+    "convert the CR to/from Json" in {
 
-      val crd = sparkRunner.resource(
+      val cr = sparkRunner.resource(
         deployment = deployment,
         app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
+        configSecret = Secret(metadata = ObjectMeta())
       )
 
-      val jsonString = Json.toJson(crd).toString()
+      val jsonString = Json.toJson(cr).toString()
       val fromJson   = Json.parse(jsonString).validate[CR]
       fromJson match {
         case err: JsError ⇒ fail(err.toString)

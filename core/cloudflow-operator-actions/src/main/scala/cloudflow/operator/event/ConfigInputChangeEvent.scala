@@ -80,32 +80,29 @@ object ConfigInputChangeEvent extends Event {
             cluster    <- topic.cluster.toVector
           } yield cluster) :+ TopicActions.DefaultConfigurationName
 
-        val providedAction = Action.providedByLabel[Secret, Secret](
-          TopicActions.KafkaClusterNameLabel,
-          clusterNames,
-          podNamespace, { clusterSecrets =>
+        val providedAction = Action.providedByLabel[Secret, Secret](TopicActions.KafkaClusterNameLabel, clusterNames, app, podNamespace) {
+          clusterSecrets =>
             val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets)
-            val actions = app.spec.deployments.map {
-              streamletDeployment ⇒
-                val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig, allNamedClusters)
+            val actions = app.spec.deployments.map { streamletDeployment ⇒
+              val configs = ConfigurationScopeLayering.configs(streamletDeployment, appConfig, allNamedClusters)
 
-                // create update action for output secret action which is mounted as config by runtime specific deployments
-                val configSecret =
-                  createSecret(
-                    streamletDeployment.secretName,
-                    app,
-                    streamletDeployment,
-                    configs.streamlet,
-                    configs.runtime,
-                    configs.pods,
-                    CloudflowLabels.StreamletDeploymentConfigFormat
-                  )
-                Action.createOrUpdate(configSecret, secretEditor)
+              // create update action for output secret action which is mounted as config by runtime specific deployments
+              val configSecret =
+                createSecret(
+                  streamletDeployment.secretName,
+                  app,
+                  streamletDeployment,
+                  configs.streamlet,
+                  configs.runtime,
+                  configs.pods,
+                  CloudflowLabels.StreamletDeploymentConfigFormat
+                )
+              Action.createOrUpdate(configSecret, app, secretEditor)
             }
 
-            Action.composite(actions, app.metadata.namespace)
-          }
-        )
+            Action.composite(actions, app, app.metadata.namespace)
+        }
+
         List(providedAction)
       case _ ⇒ Nil // app could not be found, do nothing.
     }

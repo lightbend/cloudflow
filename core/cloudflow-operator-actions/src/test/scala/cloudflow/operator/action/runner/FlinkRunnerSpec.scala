@@ -37,7 +37,6 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
   val image             = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
   val clusterName       = "cloudflow-strimzi"
   val pvcName           = "my-pvc"
-  val namespace         = "test-ns"
   val prometheusJarPath = "/app/prometheus/prometheus.jar"
   val prometheusConfig  = PrometheusConfig("(prometheus rules)")
   val flinkRunner       = new FlinkRunner(ctx.flinkRunnerDefaults)
@@ -48,7 +47,6 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
     val appVersion = "42-abcdef0"
     val agentPaths = Map(CloudflowApplication.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
     val image      = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
-    val namespace  = "test-ns"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
     val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
@@ -83,7 +81,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config environment variables and resource requirements and add them to the jobmanager and taskmanager pods specs" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -112,36 +110,34 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |}
               |""".stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.metadata.namespace mustBe namespace
-      crd.metadata.name mustBe appId
+      cr.metadata.name mustBe appId
       val imageWithoutRegistry = image.split("/").tail.mkString("/")
-      crd.spec.image must include(imageWithoutRegistry)
-      crd.spec.entryClass mustBe "cloudflow.runner.Runner"
+      cr.spec.image must include(imageWithoutRegistry)
+      cr.spec.entryClass mustBe "cloudflow.runner.Runner"
 
-      crd.spec.volumes mustBe Vector(
+      cr.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
-      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
-      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
-      crd.spec.jobManagerConfig.resources.get.requests mustBe Map(
+      cr.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      cr.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      cr.spec.jobManagerConfig.resources.get.requests mustBe Map(
         Resource.cpu    -> ctx.flinkRunnerDefaults.jobManagerDefaults.resources.cpuRequest.get,
         Resource.memory -> Quantity("512M")
       )
-      crd.spec.taskManagerConfig.resources.get.requests mustBe Map(
+      cr.spec.taskManagerConfig.resources.get.requests mustBe Map(
         Resource.cpu    -> ctx.flinkRunnerDefaults.taskManagerDefaults.resources.cpuRequest.get,
         Resource.memory -> Quantity("512M")
       )
-      crd.spec.jobManagerConfig.resources.get.limits mustBe Map(
+      cr.spec.jobManagerConfig.resources.get.limits mustBe Map(
         Resource.cpu    -> ctx.flinkRunnerDefaults.jobManagerDefaults.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
-      crd.spec.taskManagerConfig.resources.get.limits mustBe Map(
+      cr.spec.taskManagerConfig.resources.get.limits mustBe Map(
         Resource.cpu    -> ctx.flinkRunnerDefaults.taskManagerDefaults.resources.cpuLimit.get,
         Resource.memory -> Quantity("1024M")
       )
@@ -149,7 +145,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read from config custom labels and add them to the jobmanager and taskmanager pods specs" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -173,20 +169,19 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                   |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
-      crd.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      cr.spec.jobManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
+      cr.spec.taskManagerConfig.envConfig.get.env.get mustBe Vector(EnvVar("FOO", EnvVar.StringValue("BAR")))
 
-      crd.metadata.labels.get("key1") mustBe Some("value1")
-      crd.metadata.labels.get("key2") mustBe Some("value2")
+      cr.metadata.labels.get("key1") mustBe Some("value1")
+      cr.metadata.labels.get("key2") mustBe Some("value2")
     }
 
     "read from config custom secrets and mount them in jobmanager and taskmanager pods" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -222,16 +217,15 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
                 |}
                 """.stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.volumes must contain allElementsOf List(
+      cr.spec.volumes must contain allElementsOf List(
         Volume("foo", Volume.Secret(secretName = "mysecret")),
         Volume("bar", Volume.Secret(secretName = "yoursecret"))
       )
 
-      crd.spec.volumeMounts must contain allElementsOf List(
+      cr.spec.volumeMounts must contain allElementsOf List(
         Volume.Mount("foo", "/etc/my/file", true),
         Volume.Mount("bar", "/etc/mc/fly", false)
       )
@@ -240,7 +234,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
 
     "read values from pod configuration key JAVA_OPTS and put it in Flink conf in env.java.opts" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -257,16 +251,15 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |}
               |""".stripMargin.getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:MaxRAMPercentage=40.0")
+      cr.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:MaxRAMPercentage=40.0")
     }
 
     "configure env.java.opts from runtime Flink conf, overriding what is provided as JAVA_OPTS value in the pod configuration" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
         configSecret = Secret(
@@ -285,42 +278,39 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
             cloudflow.operator.event.ConfigInputChangeEvent.RuntimeConfigDataKey ->
                 """flink.env.java.opts = "-XX:-DisableExplicitGC"""".getBytes()
           )
-        ),
-        namespace = namespace
+        )
       )
 
-      crd.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:-DisableExplicitGC")
+      cr.spec.flinkConfig.get("env.java.opts") mustBe Some("-XX:-DisableExplicitGC")
     }
 
     "create a valid FlinkApplication CR" in {
 
-      val crd = flinkRunner.resource(
+      val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
+        configSecret = Secret(metadata = ObjectMeta())
       )
 
-      crd.metadata.namespace mustBe namespace
-      crd.metadata.name mustBe appId
+      cr.metadata.name mustBe appId
       val imageWithoutRegistry = image.split("/").tail.mkString("/")
-      crd.spec.image must include(imageWithoutRegistry)
-      crd.spec.entryClass mustBe "cloudflow.runner.Runner"
+      cr.spec.image must include(imageWithoutRegistry)
+      cr.spec.entryClass mustBe "cloudflow.runner.Runner"
 
-      crd.spec.volumes mustBe Vector(
+      cr.spec.volumes mustBe Vector(
         Volume("config-map-vol", Volume.ConfigMapVolumeSource("configmap-some-app-id")),
         Volume("secret-vol", Volume.Secret("flink-streamlet")),
         Runner.DownwardApiVolume
       )
 
-      crd.spec.volumeMounts mustBe Vector(
+      cr.spec.volumeMounts mustBe Vector(
         Volume.Mount("secret-vol", "/etc/cloudflow-runner-secret"),
         Volume.Mount("config-map-vol", "/etc/cloudflow-runner"),
         Runner.DownwardApiVolumeMount
       )
 
-      crd.kind mustBe "FlinkApplication"
-      crd.spec.serviceAccountName mustBe Name.ofServiceAccount
+      cr.kind mustBe "FlinkApplication"
+      cr.spec.serviceAccountName mustBe Name.ofServiceAccount
     }
 
     "create a valid FlinkApplication CR without resource requests" in {
@@ -331,16 +321,15 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()),
         prometheusRules = "sample rules"
       )
-      val crd = new FlinkRunner(flinkRunnerDefaults).resource(
+      val cr = new FlinkRunner(flinkRunnerDefaults).resource(
         deployment = deployment,
         app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
+        configSecret = Secret(metadata = ObjectMeta())
       )
 
-      crd.spec.serviceAccountName mustBe Name.ofServiceAccount
-      crd.spec.jobManagerConfig.resources mustBe None
-      crd.spec.taskManagerConfig.resources mustBe None
+      cr.spec.serviceAccountName mustBe Name.ofServiceAccount
+      cr.spec.jobManagerConfig.resources mustBe None
+      cr.spec.taskManagerConfig.resources mustBe None
     }
 
     "convert the CRD to/from Json" in {
@@ -348,8 +337,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val cr = flinkRunner.resource(
         deployment = deployment,
         app = app,
-        configSecret = Secret(metadata = ObjectMeta()),
-        namespace = namespace
+        configSecret = Secret(metadata = ObjectMeta())
       )
 
       val jsonString = Json.toJson(cr).toString()

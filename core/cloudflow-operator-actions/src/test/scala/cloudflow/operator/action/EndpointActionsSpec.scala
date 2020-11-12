@@ -35,7 +35,6 @@ class EndpointActionsSpec
 
   case class Foo(name: String)
   case class Bar(name: String)
-  val namespace  = "ns"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
   "EndpointActions" should {
@@ -65,7 +64,7 @@ class EndpointActionsSpec
       val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
 
       When("endpoint actions are created from a new app")
-      val actions = EndpointActions(newApp, currentApp, namespace)
+      val actions = EndpointActions(newApp, currentApp)
 
       Then("only create endpoint actions must be created for all server attributed streamlets")
       val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
@@ -108,7 +107,7 @@ class EndpointActionsSpec
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
-      val actions = EndpointActions(newApp, currentApp, namespace)
+      val actions = EndpointActions(newApp, currentApp)
 
       Then("no actions should be created")
       actions mustBe empty
@@ -140,7 +139,7 @@ class EndpointActionsSpec
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp =
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-      val actions = EndpointActions(newApp, Some(currentApp), namespace)
+      val actions = EndpointActions(newApp, Some(currentApp))
 
       Then("delete actions should be created")
       actions.size mustBe 1
@@ -180,7 +179,7 @@ class EndpointActionsSpec
         CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
 
       Then("create actions for service should be created for the new endpoint")
-      val actions = EndpointActions(newApp, Some(currentApp), namespace)
+      val actions = EndpointActions(newApp, Some(currentApp))
       actions.size mustBe 1
       val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
 
@@ -199,7 +198,6 @@ class EndpointActionsSpec
     val deployment = app.deployments.find(deployment ⇒ Name.ofService(deployment.name) == service.metadata.name).value
     val endpoint   = deployment.endpoint.value
     service.metadata.name mustEqual Name.ofService(deployment.name)
-    service.metadata.namespace mustEqual namespace
     val serviceSelector: Option[Map[String, String]] = service.spec.map(spec ⇒ spec.selector)
     serviceSelector.value(CloudflowLabels.Name) mustEqual Name.ofPod(deployment.name)
     service.spec.value._type mustEqual Service.Type.ClusterIP

@@ -58,33 +58,27 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   val runtime            = Runtime
   def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
 
-  def appActions(app: CloudflowApplication.CR,
-                 namespace: String,
-                 labels: CloudflowLabels,
-                 ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleAkka = akkaRole(namespace, labels, ownerReferences)
+  def appActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
+    val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleAkka, roleEditor),
-      Action.createOrUpdate(akkaRoleBinding(namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
+      Action.createOrUpdate(roleAkka, app, roleEditor),
+      Action.createOrUpdate(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences), app, roleBindingEditor)
     )
   }
   def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-    Action.provided[skuber.Secret, ObjectResource](
-      streamletDeployment.secretName,
-      app.metadata.namespace, {
-        case Some(secret) =>
-          val _resource =
-            resource(streamletDeployment, app, secret, app.metadata.namespace, updateLabels)
-          val labeledResource =
-            _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-          Action.createOrUpdate(labeledResource, editor)
-        case None =>
-          val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-          log.error(msg)
-          CloudflowApplication.Status.errorAction(app, runners, msg)
-      }
-    )
+    Action.provided[skuber.Secret, ObjectResource](streamletDeployment.secretName, app, app.namespace) {
+      case Some(secret) =>
+        val _resource =
+          resource(streamletDeployment, app, secret, updateLabels)
+        val labeledResource =
+          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+        Action.createOrUpdate(labeledResource, app, editor)
+      case None =>
+        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
+        log.error(msg)
+        CloudflowApplication.Status.errorAction(app, runners, msg)
+    }
   }
 
   def defaultReplicas                                   = DefaultReplicas
@@ -139,7 +133,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       deployment: StreamletDeployment,
       app: CloudflowApplication.CR,
       configSecret: skuber.Secret,
-      namespace: String,
       updateLabels: Map[String, String] = Map()
   ): Deployment = {
     // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
@@ -265,7 +258,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val deploymentResource = Deployment(
       metadata = ObjectMeta(name = podName,
-                            namespace = namespace,
+                            namespace = app.namespace,
                             labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
                             ownerReferences = ownerReferences)
     ).withReplicas(deployment.replicas.getOrElse(DefaultReplicas))
