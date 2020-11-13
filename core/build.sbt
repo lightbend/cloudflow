@@ -69,6 +69,7 @@ lazy val root =
       name := "root",
       skip in publish := true,
       scalafmtOnCompile := true,
+      crossScalaVersions := Seq(),
       commands += InternalReleaseCommand.command,
       unidocAllSources in (JavaUnidoc, unidoc) ~= { v =>
         v.map(_.filterNot(f => javadocDisabledFor.exists(f.getAbsolutePath.endsWith(_))))
