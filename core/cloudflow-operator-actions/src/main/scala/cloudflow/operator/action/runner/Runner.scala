@@ -108,12 +108,17 @@ trait Runner[T <: ObjectResource] {
       .flatMap { deployment ⇒
         Seq(
           Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor),
-          Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+          Action.providedRetry[Secret, ObjectResource](deployment.secretName, newApp) {
             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), newApp, editor)
             case None =>
-              val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-              log.error(msg)
-              CloudflowApplication.Status.errorAction(newApp, runners, msg)
+              val msg =
+                s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              log.info(msg)
+              CloudflowApplication.Status.pendingAction(
+                newApp,
+                runners,
+                s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
+              )
           }
         )
       }
@@ -155,7 +160,8 @@ trait Runner[T <: ObjectResource] {
 
   def streamletChangeAction(app: CloudflowApplication.CR,
                             runners: Map[String, Runner[_]],
-                            streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret): ResourceAction[ObjectResource]
 
   def serviceAccountAction(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(app.namespace, labels, ownerReferences), app, roleBindingEditor))

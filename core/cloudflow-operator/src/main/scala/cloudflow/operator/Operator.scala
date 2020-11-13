@@ -163,7 +163,7 @@ object Operator {
       client: KubernetesClient,
       runners: Map[String, Runner[_]]
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Debug)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client, DefaultWatchOptions)

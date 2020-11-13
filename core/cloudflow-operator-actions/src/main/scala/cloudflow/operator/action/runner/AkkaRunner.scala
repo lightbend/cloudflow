@@ -22,7 +22,6 @@ import skuber.apps.v1.Deployment
 import skuber.json.rbac.format._
 import skuber.rbac._
 import skuber._
-import skuber.json.format._
 import cloudflow.blueprint.deployment._
 import cloudflow.operator._
 import cloudflow.operator.action._
@@ -65,20 +64,16 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       Action.createOrUpdate(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences), app, roleBindingEditor)
     )
   }
-  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR,
+                            runners: Map[String, Runner[_]],
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
-    Action.provided[skuber.Secret, ObjectResource](streamletDeployment.secretName, app, app.namespace) {
-      case Some(secret) =>
-        val _resource =
-          resource(streamletDeployment, app, secret, updateLabels)
-        val labeledResource =
-          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-        Action.createOrUpdate(labeledResource, app, editor)
-      case None =>
-        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-        log.error(msg)
-        CloudflowApplication.Status.errorAction(app, runners, msg)
-    }
+    val _resource =
+      resource(streamletDeployment, app, secret, updateLabels)
+    val labeledResource =
+      _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+    Action.createOrUpdate(labeledResource, app, editor)
   }
 
   def defaultReplicas                                   = DefaultReplicas

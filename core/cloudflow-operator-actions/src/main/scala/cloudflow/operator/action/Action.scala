@@ -46,7 +46,6 @@ sealed trait Action {
    * The namespace that the action takes place in.
    */
   def namespace: String
-
   def executing: String
   def executed: String
 }
@@ -122,6 +121,24 @@ object Action {
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ): ProvidedAction[T, R] = provided(resourceName, app, app.namespace)(fAction)
+
+  def providedRetry[T <: ObjectResource, R <: ObjectResource](resourceName: String,
+                                                              app: CloudflowApplication.CR,
+                                                              namespace: String,
+                                                              getRetries: Int)(
+      fAction: Option[T] => ResourceAction[R]
+  )(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[T]
+  ): ProvidedAction[T, R] =
+    new ProvidedAction(resourceName, app, namespace, fAction, format, resourceDefinition, getRetries)
+
+  def providedRetry[T <: ObjectResource, R <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, getRetries: Int = 60)(
+      fAction: Option[T] => ResourceAction[R]
+  )(
+      implicit format: Format[T],
+      resourceDefinition: ResourceDefinition[T]
+  ): ProvidedAction[T, R] = providedRetry(resourceName, app, app.namespace, getRetries)(fAction)
 
   /**
    * Creates an action provided that a list of resources with a label in a namespace are found.
@@ -430,7 +447,8 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     val namespace: String,
     val getAction: Option[T] => ResourceAction[R],
     implicit val format: Format[T],
-    implicit val resourceDefinition: ResourceDefinition[T]
+    implicit val resourceDefinition: ResourceDefinition[T],
+    getRetries: Int = 0
 ) extends ResourceAction[R] {
   val name = "provide"
   override def executing =
@@ -442,27 +460,39 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
     executeWithRetry(
       client,
       delay = 1.second,
-      retries = 60
+      retries = 60,
+      retriesGet = getRetries
     )
 
   private def executeWithRetry(
       client: KubernetesClient,
       delay: FiniteDuration,
-      retries: Int
+      retries: Int,
+      retriesGet: Int
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[R]] = {
-    def getAndProvide =
+    def getAndProvide(retriesGet: Int): Future[ResourceAction[R]] =
       client
         .usingNamespace(namespace)
         .getOption[T](resourceName)
-        .flatMap { existing =>
-          getAction(existing).execute(client)
+        .flatMap { maybe =>
+          maybe match {
+            case Some(_) => getAction(maybe).execute(client)
+            case None if retriesGet > 0 =>
+              sys.log.info(
+                s"Scheduling retry to get resource $namespace/$resourceName, retries left: ${retriesGet - 1}"
+              )
+              after(delay, sys.scheduler)(getAndProvide(retriesGet - 1))
+            case None =>
+              sys.log.info(s"Did not find resource $namespace/$resourceName")
+              getAction(maybe).execute(client)
+          }
         }
-    getAndProvide.recoverWith {
-      case t: K8SException if retries > 0 =>
+    getAndProvide(retriesGet).recoverWith {
+      case e: K8SException if retries > 0 =>
         sys.log.info(
-          s"Scheduling retry to get resource $namespace/$resourceName, cause: ${t.getClass.getSimpleName} message: ${t.getMessage}"
+          s"Scheduling retry to get resource $namespace/$resourceName, cause: ${e.getClass.getSimpleName} message: ${e.getMessage}"
         )
-        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1, retriesGet))
     }
   }
 }

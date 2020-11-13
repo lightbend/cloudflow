@@ -145,12 +145,26 @@ object CloudflowApplication {
       )
     }
 
+    def pendingAction(app: CloudflowApplication.CR,
+                      runners: Map[String, Runner[_]],
+                      msg: String): ResourceAction[CloudflowApplication.CR] = {
+      log.info(s"Setting pending status for app ${app.spec.appId}")
+      Status(app.spec, runners)
+        .copy(
+          appStatus = Some(CloudflowApplication.Status.Pending),
+          appMessage = Some(msg)
+        )
+        .toAction(app)
+    }
+
     def errorAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], msg: String): ResourceAction[CloudflowApplication.CR] = {
       log.info(s"Setting error status for app ${app.spec.appId}")
       Status(app.spec, runners)
         .copy(
           appStatus = Some(CloudflowApplication.Status.Error),
-          appMessage = Some(msg)
+          appMessage = Some(
+            s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}"
+          )
         )
         .toAction(app)
     }

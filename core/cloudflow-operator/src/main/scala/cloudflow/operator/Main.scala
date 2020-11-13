@@ -81,12 +81,6 @@ object Main extends {
       |${formatBuildInfo}
       |\n${box("JVM Resources")}
       |${getJVMRuntimeParameters}
-      |\n${box("Akka Deployment Config")}
-      |\n${prettyPrintConfig(deploymentConfig)}
-      |\n${box("Akka Default Blocking IO Dispatcher Config")}
-      |\n${prettyPrintConfig(blockingIODispatcherConfig)}
-      |\n${box("Akka Default Dispatcher Config")}
-      |\n${prettyPrintConfig(dispatcherConfig)}
       |\n${box("GC Type")}
       |\n${getGCInfo}
       |\n${box("Cloudflow Context")}

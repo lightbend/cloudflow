@@ -120,7 +120,7 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        Action.provided[Secret, ObjectResource](name, newApp) { secretOption =>
+        Action.providedRetry[Secret, ObjectResource](name, newApp, getRetries = 2) { secretOption =>
           maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
             .getOrElse(useClusterConfiguration(topic))
         }
