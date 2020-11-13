@@ -151,11 +151,6 @@ final case class Settings(config: Config) extends Extension {
   val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
   val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
-  val api = ApiSettings(
-    getNonEmptyString(config, s"$root.api.bind-interface"),
-    getPort(config, s"$root.api.bind-port")
-  )
-
   val deploymentContext = {
     DeploymentContext(
       akkaRunnerSettings,
@@ -166,5 +161,3 @@ final case class Settings(config: Config) extends Extension {
     )
   }
 }
-
-final case class ApiSettings(bindInterface: String, bindPort: Int)

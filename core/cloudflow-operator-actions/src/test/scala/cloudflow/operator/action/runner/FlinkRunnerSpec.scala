@@ -24,7 +24,7 @@ import skuber._
 
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
-import cloudflow.operator._
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner.FlinkResource._
 
 class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {

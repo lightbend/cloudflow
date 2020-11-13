@@ -23,7 +23,6 @@ import skuber.json.rbac.format._
 import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
-import cloudflow.operator._
 import cloudflow.operator.action._
 
 object AkkaRunner {

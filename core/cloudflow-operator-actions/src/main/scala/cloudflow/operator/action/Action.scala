@@ -25,7 +25,6 @@ import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
-import cloudflow.operator.CloudflowApplication
 
 /**
  * Captures an action to create, delete or update a Kubernetes resource.

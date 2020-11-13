@@ -23,7 +23,6 @@ import skuber.apps.v1.Deployment
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import cloudflow.blueprint.deployment._
 import BlueprintBuilder._
-import cloudflow.operator._
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
 

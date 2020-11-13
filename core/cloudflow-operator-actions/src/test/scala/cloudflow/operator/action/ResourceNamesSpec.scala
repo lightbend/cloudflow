@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
-import action._
 import skuber._
 import org.scalatest.{ ConfigMap => _, _ }
 

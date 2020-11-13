@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 import scala.jdk.CollectionConverters._
 import scala.util.Try

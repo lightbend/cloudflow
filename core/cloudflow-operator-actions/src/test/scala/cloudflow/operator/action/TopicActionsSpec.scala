@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
-
+package cloudflow.operator.action
 import org.scalatest._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import BlueprintBuilder._

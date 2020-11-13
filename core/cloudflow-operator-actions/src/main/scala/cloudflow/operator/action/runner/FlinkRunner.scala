@@ -32,7 +32,7 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
 
-import cloudflow.operator._
+import cloudflow.operator.action._
 import cloudflow.operator.action.Action
 
 object FlinkRunner {

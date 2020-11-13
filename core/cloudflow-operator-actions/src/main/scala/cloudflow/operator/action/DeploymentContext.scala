@@ -16,24 +16,16 @@
 
 package cloudflow.operator.action
 
-import scala.collection.immutable._
-import skuber._
-import cloudflow.operator.action.runner.Runner
-
 /**
- * Creates a sequence of resource actions for preparing the namespace where the application is
- * installed
+ * Provides defaults for deployment.
  */
-object PrepareNamespaceActions {
-  def apply(app: CloudflowApplication.CR,
-            runners: Map[String, Runner[_]],
-            labels: CloudflowLabels,
-            ownerReferences: List[OwnerReference]): Seq[Action] =
-    app.spec.streamlets
-      .map(streamlet => streamlet.descriptor.runtime.name)
-      .distinct
-      .flatMap { runtime =>
-        runners.get(runtime).map(_.prepareNamespaceActions(app, labels, ownerReferences))
-      }
-      .flatten
+case class DeploymentContext(akkaRunnerDefaults: AkkaRunnerDefaults,
+                             sparkRunnerDefaults: SparkRunnerDefaults,
+                             flinkRunnerDefaults: FlinkRunnerDefaults,
+                             podName: String,
+                             podNamespace: String) {
+  def infoMessage = s"""
+   | pod-name:                         ${podName}
+   | pod-namespace                     ${podNamespace}
+  """
 }
