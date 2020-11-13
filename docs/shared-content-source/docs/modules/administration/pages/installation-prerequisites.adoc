@@ -2,32 +2,31 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide shows how to prepare your environment to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
-It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
+To prepare your environment to install Cloudflow, you will need:
 
-== Prerequisites
+* Helm {supported-helm-v} (check with `helm version`)
+* Kubectl
+* Kafka
+* If using Spark or Flink, configure storage requirements
 
-=== CLI Tools
+== Helm
 
-Make sure you have the following prerequisites installed before continuing:
+Install Helm {supported-helm-v}. 
 
-- Helm, version 3 or later (check with `helm version`)
-- Kubectl
+== kubectl
 
 Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster to install Cloudflow. This can be done with the following command:
 
     kubectl version
 
-=== Kafka
+== Kafka
 
-Kafka is used by Cloudflow to connect streamlets together in a blueprint.
-If you intend to connect streamlets in this way then at least one Kafka cluster should be available before installation.
-Cloudflow may be used without Kafka (for example, when your application contains a single streamlet, or an xref:develop:clustering-akka-streamlet.adoc[Akka cluster]), but if your team intends to connect streamlets together and not include Kafka connection information in each topic they define then it's recommended to define a `default` Kafka cluster at install time.
+Kafka is used by Cloudflow to connect streamlets together in a blueprint. If you intend to connect streamlets in this way,  at least one Kafka cluster should be available before installation. Cloudflow may be used without Kafka (for example, when your application contains a single streamlet, or an xref:develop:clustering-akka-streamlet.adoc[Akka cluster]), but if your team intends to connect streamlets together and not include Kafka connection information in each topic they define then it's recommended to define a `default` Kafka cluster at install time.
 
 The Kafka broker bootstrap configuration string is a comma-separated list of host/port pairs used by Cloudflow to establish the connection to a Kafka cluster.
 The configuration string should have the following format:
 
-    broker-1-address:broker-1-port, broker-2-address;broker-2-port
+`broker-1-address:broker-1-port, broker-2-address;broker-2-port`
 
 If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi, a third-party Kafka operator that can create and manage Kafka clusters.
 
@@ -72,9 +71,8 @@ standard (default)   kubernetes.io/gce-pd   2m57s
 
 NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
 
-== More Storage Options
 
-Continue with xref:more-storage-options.adoc[]
+The next page shows xref:more-storage-options.adoc[]
 
 == Next: Installing Cloudflow
 
