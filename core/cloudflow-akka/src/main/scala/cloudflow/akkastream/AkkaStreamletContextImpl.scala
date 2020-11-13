@@ -58,8 +58,9 @@ final class AkkaStreamletContextImpl(
 
   override def config: Config = streamletDefinition.config
 
+  private val StopTimeoutSetting = "cloudflow.akka.consumer-stop-timeout"
   private val consumerStopTimeout: FiniteDuration =
-    FiniteDuration(sys.settings.config.getDuration("cloudflow.streamlet.akka.consumer-stop-timeout").toMillis, TimeUnit.MILLISECONDS).toCoarsest
+    FiniteDuration(sys.settings.config.getDuration(StopTimeoutSetting).toMillis, TimeUnit.MILLISECONDS).toCoarsest
 
   private val execution                               = new StreamletExecutionImpl(this)
   override val streamletExecution: StreamletExecution = execution
@@ -445,7 +446,7 @@ final class AkkaStreamletContextImpl(
     KafkaControls
       .stopInflow()
       .flatMap { _ =>
-        log.debug("Waiting {} (consumer-stop-timeout) until {} consumers are shut down",
+        log.debug(s"Waiting {} ($StopTimeoutSetting) until {} consumers are shut down",
                   consumerStopTimeout: Any,
                   streamletDefinitionMsg: Any)
         akka.pattern.after(consumerStopTimeout)(Future.successful(Done))
