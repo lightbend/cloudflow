@@ -133,7 +133,7 @@ object Action {
   ): ProvidedAction[T, R] =
     new ProvidedAction(resourceName, app, namespace, fAction, format, resourceDefinition, getRetries)
 
-  def providedRetry[T <: ObjectResource, R <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, getRetries: Int = 20)(
+  def providedRetry[T <: ObjectResource, R <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, getRetries: Int = 60)(
       fAction: Option[T] => ResourceAction[R]
   )(
       implicit format: Format[T],
