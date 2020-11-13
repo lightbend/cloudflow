@@ -483,7 +483,9 @@ final class ProvidedAction[T <: ObjectResource, R <: ObjectResource](
                 s"Scheduling retry to get resource $namespace/$resourceName, retries left: ${retriesGet - 1}"
               )
               after(delay, sys.scheduler)(getAndProvide(retriesGet - 1))
-            case None => getAction(maybe).execute(client)
+            case None =>
+              sys.log.info(s"Did not find resource $namespace/$resourceName")
+              getAction(maybe).execute(client)
           }
         }
     getAndProvide(retriesGet).recoverWith {
