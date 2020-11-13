@@ -32,7 +32,7 @@ echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
 cd $DIR/../core
-sbt --supershell=false "; scalafmtCheck ; $TARGET  ; publishLocal"
+sbt --supershell=false "; scalafmtCheck ; $TARGET  ; +publishLocal"
 RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
 
