@@ -79,24 +79,20 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR,
+                            runners: Map[String, Runner[_]],
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.providedRetry[Secret, ObjectResource](streamletDeployment.secretName, app) {
-      case Some(secret) =>
-        val _resource =
-          resource(streamletDeployment, app, secret, updateLabels)
-        val labeledResource =
-          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-        val patch = SpecPatch(labeledResource.spec)
-        Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
-      case None =>
-        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-        log.error(msg)
-        CloudflowApplication.Status.errorAction(app, runners, msg)
-    }
-
+    val _resource =
+      resource(streamletDeployment, app, secret, updateLabels)
+    val labeledResource =
+      _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+    val patch = SpecPatch(labeledResource.spec)
+    Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
   }
+
   override def updateActions(newApp: CloudflowApplication.CR,
                              runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
