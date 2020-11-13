@@ -5,4 +5,4 @@
 
 
 include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:administration:page$upgrading-cloudflow.adoc[]
+include::{cloudflow-version}@shared-content:administration:page$more-storage-options.adoc[]
