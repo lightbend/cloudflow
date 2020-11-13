@@ -18,7 +18,8 @@ package cloudflow.operator.action.runner
 
 import java.util.concurrent.atomic.AtomicReference
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+
 import scala.util.Try
 import com.typesafe.config._
 import play.api.libs.json._
@@ -99,7 +100,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
-        name = Name.ofFlinkRole(),
+        name = Name.ofFlinkRole,
         namespace = namespace,
         labels = labels(Name.ofFlinkRole),
         ownerReferences = ownerReferences
@@ -121,7 +122,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofFlinkRoleBinding(),
+        name = Name.ofFlinkRoleBinding,
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
@@ -222,7 +223,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> app.spec.appId)
+          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> app.spec.appId).view
             .mapValues(Name.ofLabelValue) ++
           getLabels(podsConfig, PodsConfig.CloudflowPodName)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
@@ -522,7 +523,7 @@ object FlinkResource {
     group = "flink.k8s.io",
     version = "v1beta1",
     kind = "FlinkApplication",
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]

@@ -18,7 +18,7 @@ package cloudflow.operator.action.runner
 
 import java.nio.charset.StandardCharsets
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util._
 import com.typesafe.config._
 import play.api.libs.json._
@@ -174,9 +174,9 @@ trait Runner[T <: ObjectResource] {
   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofRoleBinding(),
+        name = Name.ofRoleBinding,
         namespace = namespace,
-        labels = labels(Name.ofRoleBinding()),
+        labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
@@ -328,7 +328,6 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-import collection.JavaConverters._
 import skuber.Resource.Quantity
 
 object PodsConfig {

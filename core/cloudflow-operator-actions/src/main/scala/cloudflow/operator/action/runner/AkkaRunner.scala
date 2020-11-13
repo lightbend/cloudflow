@@ -82,7 +82,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
-        name = Name.ofAkkaRole(),
+        name = Name.ofAkkaRole,
         namespace = namespace,
         labels = labels(Name.ofAkkaRole),
         ownerReferences = ownerReferences
@@ -97,7 +97,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofAkkaRoleBinding(),
+        name = Name.ofAkkaRoleBinding,
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
@@ -137,7 +137,9 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val appId           = app.spec.appId
     val podName         = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
-      deployment.endpoint.map(endpoint => Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
+      deployment.endpoint
+        .map(endpoint => Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort)))
+        .toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
     val podsConfig = getPodsConfig(configSecret)
@@ -225,7 +227,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val podSpec =
       Pod
-        .Spec(serviceAccountName = Name.ofServiceAccount(),
+        .Spec(serviceAccountName = Name.ofServiceAccount,
               volumes = pvcRefVolumes.getOrElse(List.empty[Volume]),
               securityContext = securityContext)
         .addContainer(container)

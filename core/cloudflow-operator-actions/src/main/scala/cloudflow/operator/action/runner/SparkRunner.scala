@@ -16,8 +16,7 @@
 
 package cloudflow.operator.action.runner
 
-import scala.collection.JavaConverters._
-import cloudflow.blueprint.deployment._
+import scala.jdk.CollectionConverters._
 import SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
@@ -30,6 +29,7 @@ import skuber._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
+import cloudflow.blueprint.deployment._
 import cloudflow.operator._
 import cloudflow.operator.action._
 
@@ -116,7 +116,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
-        name = Name.ofSparkRole(),
+        name = Name.ofSparkRole,
         namespace = namespace,
         labels = labels(Name.ofSparkRole),
         ownerReferences = ownerReferences
@@ -138,7 +138,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofSparkRoleBinding(),
+        name = Name.ofSparkRoleBinding,
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
@@ -219,7 +219,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
+          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId).view
             .mapValues(Name.ofLabelValue)
 
     val driver = addDriverResourceRequirements(
@@ -399,7 +399,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 }
 
 object SparkResource {
-  private val SparkServiceAccount = Name.ofServiceAccount()
+  private val SparkServiceAccount = Name.ofServiceAccount
 
   final case class SecurityContext(fsGroup: Option[Int])
 
@@ -551,7 +551,7 @@ object SparkResource {
     group = "sparkoperator.k8s.io",
     version = "v1beta2",
     kind = "SparkApplication",
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
