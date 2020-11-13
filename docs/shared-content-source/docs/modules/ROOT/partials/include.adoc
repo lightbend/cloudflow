@@ -3,7 +3,7 @@
 :supported-java-v: >= 8
 :supported-sbt-v: version 1.2.8 or higher
 :supported-docker-v: version 18.09 or higher
-:supported-helm-v: version 2 or higher
+:supported-helm-v: version 3 or higher
 
 :kubernetes-platform-name:     Kubernetes
 :kubernetes-platform-version:  1.12

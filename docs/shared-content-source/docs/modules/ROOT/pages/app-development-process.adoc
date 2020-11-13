@@ -92,12 +92,10 @@ $ sbt verifyBlueprint
 [success] /cloudflow/examples/spark-sensors/src/main/blueprint/blueprint.conf verified.
 ----
 
-The verification uses the schema information provided by the blueprint to check that all connections between streamlets are compatible. 
-Once the blueprint verification succeeds, you know that the components of your streaming application can talk to each other. 
-After verification, you can run the complete application. 
+The verification uses the schema information provided by the blueprint to check that all connections between streamlets are compatible. Once the blueprint verification succeeds, you know that the components of your streaming application can talk to each other. After verification, you can run the complete application. 
 
-IMPORTANT: The verification task is usually performed as a pre-requisite of other tasks, like `runLocal` or `buildApp` that we see next. 
-While it's possible to run it independently as shown here, it is most often used indirectly as part of those larger build tasks.
+IMPORTANT: The verification task is usually performed as a pre-requisite of other tasks, like `runLocal` or `buildApp` that we see next. While it's possible to run it independently as shown here, it is most often used indirectly as part of those larger build tasks.
+
 
 [[local-testing]]
 == Test Locally Using the Sandbox
@@ -250,8 +248,9 @@ Next, we see how to use the application descriptor to deploy the application to 
 
 == Deploy with `kubectl` Extensions for a YAML-less Experience 
 
-After testing and packaging, you are ready to deploy the application to a Cloudflow-enabled Kubernetes cluster. 
-In contrast with the usual YAML-full experience that typical K8s deployments require, Cloudflow uses the blueprint information and the streamlet definitions to auto-generate an application deployment. 
+After testing and packaging, you are ready to deploy the application to a Cloudflow-enabled Kubernetes cluster. A Cloudflow-enabled Kubernetes cluster has Cloudflow installed as well as Spark and/or Flink, if your streamlets use them. In contrast with the usual YAML-full experience that typical K8s deployments require, Cloudflow uses the blueprint information and the streamlet definitions to auto-generate an application deployment. 
+
+Kafka is used by Cloudflow to connect streamlets together in a blueprint. If you intend to connect streamlets in this way, at least one Kafka cluster should be available before you install Cloudflow. Cloudflow may be used without Kafka (for example, when your application contains a single streamlet, or an xref:develop:clustering-akka-streamlet.adoc[Akka cluster]), but if your team intends to connect streamlets together and not include Kafka connection information in each topic they define then it's recommended to define a `default` Kafka cluster at install time.
 
 Cloudflow also comes with a `kubectl` plugin that augments the capabilities of your local `kubectl` installation to work with Cloudflow applications. 
 You use your usual `kubectl` commands to `auth` against your target cluster. 
