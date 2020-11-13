@@ -25,8 +25,8 @@ final class StreamletScannerSpec extends WordSpec with TryValues with OptionValu
   "StreamletScanner.scan" should {
     val classLoader       = this.getClass.getClassLoader
     val results           = StreamletScanner.scan(classLoader)
-    val (valid, invalid)  = results.partition { case (_, triedDiscoveredStreamlet) ⇒ triedDiscoveredStreamlet.isSuccess }
-    val validStreamlets   = valid.collect { case (k, Success(discovered)) ⇒ (k, discovered) }
+    val (valid, invalid)  = results.partition { case (_, triedDiscoveredStreamlet) => triedDiscoveredStreamlet.isSuccess }
+    val validStreamlets   = valid.collect { case (k, Success(discovered)) => (k, discovered) }
     val invalidStreamlets = invalid.toMap
 
     // These are all valid streamlets defined in TestStreamlets.scala
@@ -59,7 +59,7 @@ final class StreamletScannerSpec extends WordSpec with TryValues with OptionValu
       validStreamlets(key)
         .getConfigList("config_parameters")
         .asScala
-        .map { confParConf ⇒
+        .map { confParConf =>
           confParConf.getString("description") mustBe expected.GoldPrice.description
           confParConf.getString("key") mustBe expected.GoldPrice.key
           confParConf.getString("validation_type") mustBe expected.GoldPrice.toDescriptor.validationType
@@ -74,7 +74,7 @@ final class StreamletScannerSpec extends WordSpec with TryValues with OptionValu
       validStreamlets(key)
         .getConfigList("config_parameters")
         .asScala
-        .map { confParConf ⇒
+        .map { confParConf =>
           confParConf.getString("description") mustBe expected.GoldPrice.description
           confParConf.getString("key") mustBe expected.GoldPrice.key
           confParConf.getString("validation_type") mustBe expected.GoldPrice.toDescriptor.validationType

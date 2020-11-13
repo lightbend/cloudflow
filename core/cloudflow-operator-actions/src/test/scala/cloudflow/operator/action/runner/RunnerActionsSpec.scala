@@ -16,7 +16,7 @@
 
 package cloudflow.operator.action.runner
 
-import org.scalatest.{ ConfigMap ⇒ _, _ }
+import org.scalatest.{ ConfigMap => _, _ }
 import com.typesafe.config._
 import skuber._
 import skuber.apps.v1.Deployment
@@ -66,16 +66,16 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("only 'create actions' must be created for every runner")
       val createActions = actions.collect {
-        case c: SingleResourceAction[_] ⇒ c
+        case c: SingleResourceAction[_] => c
       }
 
       val createDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] ⇒
+        case p: ProvidedAction[_, _] =>
           p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {
-        case configMap: ConfigMap ⇒ configMap
+        case configMap: ConfigMap => configMap
       }
       val akkaDeployments = createDeploymentActions.map(_.resource)
 
@@ -84,10 +84,10 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       createActions.size + createDeploymentActions.size mustBe actions.size
       configMaps.size mustBe streamletDeployments.size
       akkaDeployments.size mustBe streamletDeployments.size
-      configMaps.foreach { configMap ⇒
+      configMaps.foreach { configMap =>
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
-      akkaDeployments.foreach { deployment ⇒
+      akkaDeployments.foreach { deployment =>
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
@@ -120,9 +120,9 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = akkaRunner.actions(newApp, currentApp, runners)
 
       Then("update actions should be created")
-      val updateActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
+      val updateActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
       val updateDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] ⇒
+        case p: ProvidedAction[_, _] =>
           p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
       }
 
@@ -158,7 +158,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
 
       Then("delete actions should be created")
-      val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
+      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
       deleteActions.size mustBe 2
     }
 
@@ -190,32 +190,32 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
       Then("create actions for runner resources should be created for the new endpoint")
       val actions       = akkaRunner.actions(newApp, Some(currentApp), runners)
-      val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
+      val createActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
 
       val createDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] ⇒
+        case p: ProvidedAction[_, _] =>
           p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {
-        case configMap: ConfigMap ⇒ configMap
+        case configMap: ConfigMap => configMap
       }
       val akkaDeployments = createDeploymentActions.map(_.resource)
       // create and update
       configMaps.size mustBe 2
       akkaDeployments.size mustBe 2
 
-      configMaps.foreach { configMap ⇒
+      configMaps.foreach { configMap =>
         assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
       }
-      akkaDeployments.foreach { deployment ⇒
+      akkaDeployments.foreach { deployment =>
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
   }
 
   def assertConfigMap(configMap: ConfigMap, app: CloudflowApplication.Spec, appId: String, appVersion: String, ctx: DeploymentContext) = {
-    val deployment = app.deployments.find(deployment ⇒ Name.ofConfigMap(deployment.name) == configMap.name).value
+    val deployment = app.deployments.find(deployment => Name.ofConfigMap(deployment.name) == configMap.name).value
     (configMap.data must contain).key(RunnerConfig.AppConfigFilename)
     val mountedAppConfiguration = ConfigFactory.parseString(configMap.data(RunnerConfig.AppConfigFilename))
     val expectedAppConfiguration =
@@ -232,14 +232,14 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
                            app: CloudflowApplication.Spec,
                            appId: String,
                            ctx: DeploymentContext) = {
-    val streamletDeployment = app.deployments.find(streamletDeployment ⇒ Name.ofPod(streamletDeployment.name) == deployment.name).value
-    val configMap           = configMaps.find(cm ⇒ Name.ofConfigMap(streamletDeployment.name) == cm.name).value
+    val streamletDeployment = app.deployments.find(streamletDeployment => Name.ofPod(streamletDeployment.name) == deployment.name).value
+    val configMap           = configMaps.find(cm => Name.ofConfigMap(streamletDeployment.name) == cm.name).value
     val podSpec             = deployment.getPodSpec.value
     val containers          = podSpec.containers
     val volumeMounts        = containers.flatMap(_.volumeMounts)
 
     volumeMounts.size mustBe 3
-    forExactly(1, volumeMounts) { volumeMount ⇒
+    forExactly(1, volumeMounts) { volumeMount =>
       volumeMount.name mustBe configMap.metadata.name
       volumeMount.readOnly mustBe true
       volumeMount.mountPath mustBe Runner.ConfigMapMountPath
@@ -250,7 +250,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     forExactly(1, volumeMounts)(_.name mustBe volumes.head.name)
 
     volumes.size mustBe 3
-    forExactly(1, volumes) { volume ⇒
+    forExactly(1, volumes) { volume =>
       val vol = volume.source
       vol mustBe a[Volume.ConfigMapVolumeSource]
       val configMapVolumeSource = vol.asInstanceOf[Volume.ConfigMapVolumeSource]
@@ -294,7 +294,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
 
     (container.env must contain).allOf(javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
 
-    streamletDeployment.endpoint.map { ep ⇒
+    streamletDeployment.endpoint.map { ep =>
       val exposedStreamletPort = container.ports.find(_.containerPort == ep.containerPort).value
       exposedStreamletPort.name mustEqual Name.ofContainerPort(ep.containerPort)
       exposedStreamletPort.name.length must be <= 15

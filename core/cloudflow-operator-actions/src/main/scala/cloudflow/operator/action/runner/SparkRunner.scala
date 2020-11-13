@@ -185,13 +185,13 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val configMapName = Name.ofConfigMap(deployment.name)
     val configMaps    = Seq(NamePath(configMapName, Runner.ConfigMapMountPath))
 
-    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
-    val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
-    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume.Mount(mount.name, mount.path)
     })
 
@@ -525,14 +525,14 @@ object SparkResource {
 
     implicit val reads: Reads[RestartPolicy] =
       __.read[OnFailureRestartPolicy]
-        .map(x ⇒ x: RestartPolicy)
-        .orElse(__.read[AlwaysRestartPolicy].map(x ⇒ x: RestartPolicy))
-        .orElse(__.read[NeverRestartPolicy].map(x ⇒ x: RestartPolicy))
+        .map(x => x: RestartPolicy)
+        .orElse(__.read[AlwaysRestartPolicy].map(x => x: RestartPolicy))
+        .orElse(__.read[NeverRestartPolicy].map(x => x: RestartPolicy))
 
     implicit val writes: Writes[RestartPolicy] = {
-      case never: NeverRestartPolicy         ⇒ neverRestartPolicyWrites.writes(never)
-      case always: AlwaysRestartPolicy       ⇒ alwaysRestartPolicyWrites.writes(always)
-      case onFailure: OnFailureRestartPolicy ⇒ onFailureRestartPolicyWrites.writes(onFailure)
+      case never: NeverRestartPolicy         => neverRestartPolicyWrites.writes(never)
+      case always: AlwaysRestartPolicy       => alwaysRestartPolicyWrites.writes(always)
+      case onFailure: OnFailureRestartPolicy => onFailureRestartPolicyWrites.writes(onFailure)
     }
   }
 

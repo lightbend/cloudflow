@@ -24,7 +24,7 @@ import scala.reflect._
 
 import AvroUtil._
 
-case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partitioner: T ⇒ String = RoundRobinPartitioner)
+case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partitioner: T => String = RoundRobinPartitioner)
     extends CodecOutlet[T] {
   def codec            = new AvroCodec[T](makeSchema)
   def schemaDefinition = createSchemaDefinition(makeSchema)
@@ -33,12 +33,12 @@ case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partition
   /**
    * Returns a CodecOutlet with the partitioner set.
    */
-  def withPartitioner(partitioner: T ⇒ String): AvroOutlet[T] = copy(partitioner = partitioner)
+  def withPartitioner(partitioner: T => String): AvroOutlet[T] = copy(partitioner = partitioner)
 }
 
 object AvroOutlet {
   // Java API
-  def create[T <: SpecificRecordBase](name: String, partitioner: T ⇒ String, clazz: Class[T]): AvroOutlet[T] =
+  def create[T <: SpecificRecordBase](name: String, partitioner: T => String, clazz: Class[T]): AvroOutlet[T] =
     AvroOutlet[T](name, partitioner)(ClassTag.apply(clazz))
 
   def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroOutlet[T] =

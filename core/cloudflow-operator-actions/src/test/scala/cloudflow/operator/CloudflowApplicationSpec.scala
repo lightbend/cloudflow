@@ -16,7 +16,7 @@
 
 package cloudflow.operator
 
-import org.scalatest.{ ConfigMap ⇒ _, _ }
+import org.scalatest.{ ConfigMap => _, _ }
 
 import play.api.libs.json.Json
 import skuber._

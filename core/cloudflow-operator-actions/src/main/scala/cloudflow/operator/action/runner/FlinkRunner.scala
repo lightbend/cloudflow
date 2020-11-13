@@ -149,7 +149,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
 
     val image             = deployment.image
-    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     val dockerContainerGroupId = Runner.DockerContainerGroupId
     val securityContext =
@@ -342,7 +342,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
-    val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
 
@@ -363,7 +363,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
    * // ]
    */
   private def makeVolumeMountsSpec(streamletToDeploy: Option[StreamletInstance]): Vector[Volume.Mount] = {
-    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume.Mount(mount.name, mount.path)
     })
 
@@ -384,20 +384,20 @@ object FlinkResource {
   final case class ResourceRequests(memory: Option[String] = None, cpu: Option[String] = None)
   object ResourceRequests {
     def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceRequests] = (memory, cpu) match {
-      case (Some(_), Some(_)) ⇒ Some(ResourceRequests(memory, cpu))
-      case (Some(_), None)    ⇒ Some(ResourceRequests(memory, None))
-      case (None, Some(_))    ⇒ Some(ResourceRequests(None, cpu))
-      case (None, None)       ⇒ None
+      case (Some(_), Some(_)) => Some(ResourceRequests(memory, cpu))
+      case (Some(_), None)    => Some(ResourceRequests(memory, None))
+      case (None, Some(_))    => Some(ResourceRequests(None, cpu))
+      case (None, None)       => None
     }
   }
 
   final case class ResourceLimits(memory: Option[String] = None, cpu: Option[String] = None)
   object ResourceLimits {
     def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceLimits] = (memory, cpu) match {
-      case (Some(_), Some(_)) ⇒ Some(ResourceLimits(memory, cpu))
-      case (Some(_), None)    ⇒ Some(ResourceLimits(memory, None))
-      case (None, Some(_))    ⇒ Some(ResourceLimits(None, cpu))
-      case (None, None)       ⇒ None
+      case (Some(_), Some(_)) => Some(ResourceLimits(memory, cpu))
+      case (Some(_), None)    => Some(ResourceLimits(memory, None))
+      case (None, Some(_))    => Some(ResourceLimits(None, cpu))
+      case (None, None)       => None
     }
   }
 
@@ -405,10 +405,10 @@ object FlinkResource {
   object Resources {
     def make(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None): Option[Resources] =
       (requests, limits) match {
-        case (Some(_), Some(_)) ⇒ Some(Resources(requests, limits))
-        case (Some(_), None)    ⇒ Some(Resources(requests, None))
-        case (None, Some(_))    ⇒ Some(Resources(None, limits))
-        case (None, None)       ⇒ None
+        case (Some(_), Some(_)) => Some(Resources(requests, limits))
+        case (Some(_), None)    => Some(Resources(requests, None))
+        case (None, Some(_))    => Some(Resources(None, limits))
+        case (None, None)       => None
       }
   }
 

@@ -51,7 +51,7 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
       Map("Scala MergeN" -> createScalaMergeStreamlet(inletCount), "Java MergeN" -> createJavaMergeStreamlet(inletCount))
 
     createMergeStreamletInstances(2).foreach {
-      case (name, mergeStreamletInstance) ⇒
+      case (name, mergeStreamletInstance) =>
         s"merge two streams into one using $name" in {
           val source0 = Source(Vector(Data(1, "a"), Data(3, "c"), Data(5, "e")))
           val source1 = Source(Vector(Data(2, "b"), Data(4, "d")))
@@ -64,7 +64,7 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
             mergeStreamletInstance,
             List(in0, in1),
             out,
-            () ⇒ {
+            () => {
 
               out.probe.expectMsg(("1", Data(1, "a")))
               out.probe.expectMsg(("2", Data(2, "b")))
@@ -78,17 +78,17 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
         }
     }
 
-    (2 to 10).foreach { inletCount ⇒
+    (2 to 10).foreach { inletCount =>
       createMergeStreamletInstances(inletCount).foreach {
-        case (name, mergeStreamletInstance) ⇒
+        case (name, mergeStreamletInstance) =>
           s"merge many streams into one using $name with $inletCount inlets" in {
-            val sources   = (0 until inletCount).map(idx ⇒ Source(Vector(Data(idx, idx.toString))))
-            val inletTaps = sources.zip(mergeStreamletInstance.inletPorts).map { case (src, inlet) ⇒ testkit.inletFromSource(inlet, src) }
+            val sources   = (0 until inletCount).map(idx => Source(Vector(Data(idx, idx.toString))))
+            val inletTaps = sources.zip(mergeStreamletInstance.inletPorts).map { case (src, inlet) => testkit.inletFromSource(inlet, src) }
             val out       = testkit.outletAsTap(mergeStreamletInstance.outlet)
             testkit.run(mergeStreamletInstance,
                         inletTaps.toList,
                         out,
-                        () ⇒ (0 until inletCount).map(idx ⇒ out.probe.expectMsg((idx.toString, Data(idx, idx.toString)))))
+                        () => (0 until inletCount).map(idx => out.probe.expectMsg((idx.toString, Data(idx, idx.toString)))))
 
             out.probe.expectMsg(Completed)
           }
@@ -96,7 +96,7 @@ class MergeSpec extends WordSpec with MustMatchers with ScalaFutures with Before
     }
 
     "not accept inlet counts less than 2" in {
-      for (i ← Seq(-1, 0, 1)) {
+      for (i <- Seq(-1, 0, 1)) {
         assertThrows[IllegalArgumentException] {
           createScalaMergeStreamlet(i)
         }
@@ -116,7 +116,7 @@ abstract class TestMerge extends AkkaStreamlet {
 class ScalaTestMerge(inletCount: Int) extends TestMerge {
   require(inletCount >= 2)
   val outlet     = AvroOutlet[Data]("out", _.id.toString)
-  val inletPorts = (0 until inletCount).map(i ⇒ AvroInlet[Data](s"in-$i")).toIndexedSeq
+  val inletPorts = (0 until inletCount).map(i => AvroInlet[Data](s"in-$i")).toIndexedSeq
 
   final override val shape = StreamletShape
     .withInlets(inletPorts.head, inletPorts.tail: _*)
@@ -135,7 +135,7 @@ class ScalaTestMerge(inletCount: Int) extends TestMerge {
 class JavaTestMerge(inletCount: Int) extends TestMerge {
   require(inletCount >= 2)
   val outlet                                   = AvroOutlet[Data]("out", _.id.toString)
-  val inletPorts: IndexedSeq[CodecInlet[Data]] = (0 until inletCount).map(i ⇒ AvroInlet[Data](s"in-$i")).toIndexedSeq
+  val inletPorts: IndexedSeq[CodecInlet[Data]] = (0 until inletCount).map(i => AvroInlet[Data](s"in-$i")).toIndexedSeq
 
   final override val shape = StreamletShape
     .withInlets(inletPorts.head, inletPorts.tail: _*)

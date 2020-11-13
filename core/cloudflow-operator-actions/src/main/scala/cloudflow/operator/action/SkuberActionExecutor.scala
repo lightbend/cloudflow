@@ -44,7 +44,7 @@ final class SkuberActionExecutor(
           k8sInit(k8sConfig.setCurrentNamespace(namespace))
         skAction
           .execute(kubernetesClient)
-          .map { executedAction ⇒
+          .map { executedAction =>
             Try(kubernetesClient.close)
             executedAction
           }

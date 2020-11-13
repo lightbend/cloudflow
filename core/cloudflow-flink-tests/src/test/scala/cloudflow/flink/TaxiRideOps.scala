@@ -44,9 +44,9 @@ object TaxiRideOps {
         val rideId = tokens(0).toLong
 
         val (isStart, startTime, endTime) = tokens(1) match {
-          case "START" ⇒ (true, parseDateTime(tokens(2)), parseDateTime(tokens(3)))
-          case "END"   ⇒ (false, parseDateTime(tokens(3)), parseDateTime(tokens(2)))
-          case _       ⇒ throw new RuntimeException(s"Invalid record: $ride")
+          case "START" => (true, parseDateTime(tokens(2)), parseDateTime(tokens(3)))
+          case "END"   => (false, parseDateTime(tokens(3)), parseDateTime(tokens(2)))
+          case _       => throw new RuntimeException(s"Invalid record: $ride")
         }
 
         new TaxiRide(
@@ -62,7 +62,7 @@ object TaxiRideOps {
           startTime.getMillis(),
           endTime.getMillis()
         )
-      }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $ride", e)))
+      }.transform(s => Success(s), e => Failure(new RuntimeException(s"Invalid record: $ride", e)))
   }
 
   def getEventTime(ride: TaxiRide): Long =

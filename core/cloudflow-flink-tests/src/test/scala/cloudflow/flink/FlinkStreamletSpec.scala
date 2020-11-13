@@ -32,7 +32,7 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       @transient lazy val env = StreamExecutionEnvironment.getExecutionEnvironment
 
       // build data and send to inlet tap
-      val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+      val data = (1 to 10).map(i => new Data(i, s"name$i"))
 
       // setup inlet tap on inlet port
       val in: FlinkInletTap[Data] = inletAsTap[Data](FlinkProcessor.in, env.addSource(FlinkSource.CollectionSourceFunction(data)))

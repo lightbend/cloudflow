@@ -64,10 +64,10 @@ object AppEvent {
     val appId      = cr.spec.appId
     val currentApp = currentApps.get(appId).map(_._object)
     watchEvent._type match {
-      case EventType.DELETED ⇒
+      case EventType.DELETED =>
         (currentApps - appId, List(UndeployEvent(cr, watchEvent._object)))
-      case EventType.ADDED | EventType.MODIFIED ⇒
-        if (currentApps.get(appId).forall { existingEvent ⇒
+      case EventType.ADDED | EventType.MODIFIED =>
+        if (currentApps.get(appId).forall { existingEvent =>
               existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
               // the spec must change, otherwise it is not a deploy event (but likely a status update).
               existingEvent._object.spec != watchEvent._object.spec
@@ -79,9 +79,9 @@ object AppEvent {
 
   def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String)(appEvent: AppEvent): Seq[Action] =
     appEvent match {
-      case DeployEvent(app, currentApp, cause) ⇒
+      case DeployEvent(app, currentApp, cause) =>
         Actions.deploy(app, currentApp, runners, podName, podNamespace, cause)
-      case UndeployEvent(app, cause) ⇒
+      case UndeployEvent(app, cause) =>
         Actions.undeploy(app, podName, cause)
     }
 

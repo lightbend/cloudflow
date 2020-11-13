@@ -94,8 +94,8 @@ trait Runner[T <: ObjectResource] {
 
     // delete streamlet deployments by name that are in the current app but are not listed in the new app
     val deleteActions = currentDeployments
-      .filterNot(deployment ⇒ newDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filterNot(deployment => newDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         Seq(
           Action.delete[T](resourceName(deployment), newApp),
           Action.delete[T](configResourceName(deployment), newApp)
@@ -104,8 +104,8 @@ trait Runner[T <: ObjectResource] {
 
     // create streamlet deployments by name that are not in the current app but are listed in the new app
     val createActions = newDeployments
-      .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         Seq(
           Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor),
           Action.providedRetry[Secret, ObjectResource](deployment.secretName, newApp) {
@@ -125,8 +125,8 @@ trait Runner[T <: ObjectResource] {
 
     // update streamlet deployments by name that are in both the current app and the new app
     val _updateActions = newDeployments
-      .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filter(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         updateActions(newApp, runners, deployment)
       }
       .toSeq
@@ -168,8 +168,8 @@ trait Runner[T <: ObjectResource] {
 
   def defaultReplicas: Int
   def expectedPodCount(deployment: StreamletDeployment): Int
-  def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-  def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
+  def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
@@ -224,7 +224,7 @@ trait Runner[T <: ObjectResource] {
     val name = Name.ofConfigMap(deployment.name)
     ConfigMap(
       metadata = ObjectMeta(name = name, namespace = app.namespace, labels = labels(name), ownerReferences = ownerReferences),
-      data = configData.map(cd ⇒ cd.filename -> cd.data).toMap
+      data = configData.map(cd => cd.filename -> cd.data).toMap
     )
   }
   def configResourceName(deployment: StreamletDeployment) = Name.ofConfigMap(deployment.name)
@@ -372,7 +372,7 @@ object PodsConfig {
     ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
   }
 
-  implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config ⇒
+  implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config =>
     asConfigObjectToMap[PodConfig](config)
   }
 
@@ -426,7 +426,7 @@ object PodsConfig {
     )
   }
 
-  implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
+  implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config =>
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
@@ -472,7 +472,7 @@ object PodsConfig {
     else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
   def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
-    config.root.keySet.asScala.map(key ⇒ key → config.as[T](key)).toMap
+    config.root.keySet.asScala.map(key => key → config.as[T](key)).toMap
 }
 
 final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {

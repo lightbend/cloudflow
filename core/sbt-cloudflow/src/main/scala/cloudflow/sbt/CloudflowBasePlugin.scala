@@ -34,7 +34,7 @@ import cloudflow.blueprint.StreamletDescriptor
 object CloudflowBasePlugin extends AutoPlugin {
   final val AppHome                          = "${app_home}"
   final val AppTargetDir: String             = "/app"
-  final val AppTargetSubdir: String ⇒ String = dir ⇒ s"$AppTargetDir/$dir"
+  final val AppTargetSubdir: String => String = dir => s"$AppTargetDir/$dir"
   final val AppJarsDir: String               = "app-jars"
   final val DepJarsDir: String               = "dep-jars"
   final val OptAppDir                        = "/opt/cloudflow/"
@@ -45,7 +45,7 @@ object CloudflowBasePlugin extends AutoPlugin {
   // If you change this, you have to make sure that all references to this value are changed
   // - fsGroups on streamlet pods uses the GID to make volumes readable
   val UserInImage                   = "185" // default non-root user in the spark image
-  val userAsOwner: String ⇒ String  = usr ⇒ s"$usr:cloudflow"
+  val userAsOwner: String => String  = usr => s"$usr:cloudflow"
   val StreamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
 
   override def requires =
@@ -68,7 +68,7 @@ object CloudflowBasePlugin extends AutoPlugin {
       val registry  = cloudflowDockerRegistry.value
       val namespace = cloudflowDockerRepository.value
 
-      cloudflowDockerImageName.value.map { imageName ⇒
+      cloudflowDockerImageName.value.map { imageName =>
         sbtdocker.ImageName(
           registry = registry,
           namespace = namespace,

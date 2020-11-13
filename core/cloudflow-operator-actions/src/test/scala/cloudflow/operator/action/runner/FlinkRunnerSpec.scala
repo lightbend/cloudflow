@@ -343,8 +343,8 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val jsonString = Json.toJson(cr).toString()
       val fromJson   = Json.parse(jsonString).validate[CR]
       fromJson match {
-        case err: JsError ⇒ fail(err.toString)
-        case _            ⇒
+        case err: JsError => fail(err.toString)
+        case _            =>
       }
     }
   }

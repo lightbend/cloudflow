@@ -264,11 +264,11 @@ class CreateOrUpdateAction[T <: ObjectResource](
                             retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
     val nextRetries = retries - 1
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
-      res ← existing
-        .map { existingResource ⇒
+      res <- existing
+        .map { existingResource =>
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
           recoverFromError(
@@ -312,11 +312,11 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     val nextRetries = retries - 1
 
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
-      res ← existing
-        .map(_ ⇒ recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
+      res <- existing
+        .map(_ => recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
         .getOrElse(recoverFromError(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
   }
@@ -339,7 +339,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[T]] =
     client
       .patch(resource.name, patch, Some(resource.ns))
-      .map(r ⇒ new PatchAction(r, app, patch, format, patchWriter, resourceDefinition))
+      .map(r => new PatchAction(r, app, patch, format, patchWriter, resourceDefinition))
 }
 
 /**
@@ -369,14 +369,14 @@ class UpdateStatusAction[T <: ObjectResource](
   def executeUpdateStatus(client: KubernetesClient,
                           retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
-      existing ← client
+      existing <- client
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       resourceVersionUpdated = existing
-        .map(existingResource ⇒
+        .map(existingResource =>
           editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
         )
-      res ← resourceVersionUpdated
+      res <- resourceVersionUpdated
         .map { resourceToUpdate =>
           if (predicateForUpdate(existing, resourceToUpdate)) {
             recoverFromError(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
@@ -418,7 +418,7 @@ final case class DeleteAction[T <: ObjectResource](
     client
       .usingNamespace(namespace)
       .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
-      .map(_ ⇒ this)
+      .map(_ => this)
   }
 }
 

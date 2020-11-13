@@ -53,7 +53,7 @@ case class QueueInletTap[T](inlet: CodecInlet[T])(implicit system: ActorSystem) 
   private[testkit] val (q, src) = qSource.toMat(hub)(Keep.both).run()
 
   val portName = inlet.name
-  val source = src.map { t ⇒
+  val source = src.map { t =>
     (t, TestCommittableOffset())
   }
   val queue: akka.stream.javadsl.SourceQueueWithComplete[T] = q

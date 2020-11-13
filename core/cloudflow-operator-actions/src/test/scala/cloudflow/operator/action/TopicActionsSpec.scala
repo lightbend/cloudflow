@@ -63,7 +63,7 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: ProvidedAction[_, _] ⇒
+          case p: ProvidedAction[_, _] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
               .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
@@ -82,7 +82,7 @@ class TopicActionsSpec
       createActions.size mustBe actions.size
       // topics must be created to connect ingress, processor, egress
       createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.name)).distinct.size
-      topics.foreach { topic ⇒
+      topics.foreach { topic =>
         val resource = createActions
           .find(_.resource.metadata.name == s"topic-${topic.name}")
           .value
@@ -191,7 +191,7 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: ProvidedAction[_, _] ⇒
+          case p: ProvidedAction[_, _] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
               .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
@@ -210,7 +210,7 @@ class TopicActionsSpec
       createActions.size mustBe actions.size
       // topics must be created to connect ingress, processor, egress
       createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.name)).distinct.size
-      topics.foreach { topic ⇒
+      topics.foreach { topic =>
         val resource = createActions
           .find(_.resource.metadata.name == s"topic-${topic.name}")
           .value

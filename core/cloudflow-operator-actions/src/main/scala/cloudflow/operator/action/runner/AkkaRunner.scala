@@ -50,10 +50,10 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   import akkaRunnerDefaults._
   def format = implicitly[Format[Deployment]]
 
-  def editor = (obj: Deployment, newMetadata: ObjectMeta) ⇒ {
+  def editor = (obj: Deployment, newMetadata: ObjectMeta) => {
     obj.copy(metadata = newMetadata)
   }
-  def configEditor       = (obj: ConfigMap, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  def configEditor       = (obj: ConfigMap, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
   val runtime            = Runtime
   def resourceDefinition = implicitly[ResourceDefinition[Deployment]]
 
@@ -137,7 +137,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val appId           = app.spec.appId
     val podName         = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
-      deployment.endpoint.map(endpoint ⇒ Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
+      deployment.endpoint.map(endpoint => Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort))).toList
     val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
 
     val podsConfig = getPodsConfig(configSecret)
@@ -152,16 +152,16 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val volume = Volume(configMapName, ConfigMapVolumeSource(configMapName))
 
-    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val pvcRefVolumes =
-      streamletToDeploy.map(_.descriptor.volumeMounts.map(mount ⇒ Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
+      streamletToDeploy.map(_.descriptor.volumeMounts.map(mount => Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)
     val pvcVolumeMounts = streamletToDeploy
-      .map(_.descriptor.volumeMounts.map { mount ⇒
+      .map(_.descriptor.volumeMounts.map { mount =>
         val readOnly = mount.accessMode match {
-          case "ReadWriteMany" ⇒ false
-          case "ReadOnlyMany"  ⇒ true
+          case "ReadWriteMany" => false
+          case "ReadOnlyMany"  => true
         }
         Volume.Mount(mount.name, mount.path, readOnly)
       }.toList)
@@ -220,8 +220,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val dockerContainerGroupId = Runner.DockerContainerGroupId
     // We only need to set this when we want to write to a volume in a pod
     val securityContext = pvcVolumeMounts
-      .find(volume ⇒ volume.readOnly == false)
-      .flatMap(_ ⇒ Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId))))
+      .find(volume => volume.readOnly == false)
+      .flatMap(_ => Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId))))
 
     val podSpec =
       Pod
@@ -261,9 +261,9 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))
 
     deploymentResource.copy(
-      spec = deploymentResource.spec.map(s ⇒
+      spec = deploymentResource.spec.map(s =>
         s.copy(strategy = deployment.endpoint
-          .map(_ ⇒ Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
+          .map(_ => Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
           .orElse(Some(Deployment.Strategy(Deployment.StrategyType.Recreate)))
         )
       )

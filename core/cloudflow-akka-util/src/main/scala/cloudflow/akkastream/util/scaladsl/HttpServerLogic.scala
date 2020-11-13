@@ -101,8 +101,8 @@ object HttpServerLogic {
 
   private def putOrPost[Out](writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
     (put | post) {
-      entity(as[Out]) { out ⇒
-        onSuccess(writer.write(out)) { _ ⇒
+      entity(as[Out]) { out =>
+        onSuccess(writer.write(out)) { _ =>
           complete(StatusCodes.Accepted)
         }
       }
@@ -111,15 +111,15 @@ object HttpServerLogic {
   final def defaultStreamingRoute[Out](
       writer: WritableSinkRef[Out]
   )(implicit mat: Materializer, ec: ExecutionContext, fbs: FromByteStringUnmarshaller[Out], ess: EntityStreamingSupport): Route =
-    entity(asSourceOf[Out]) { elements ⇒
+    entity(asSourceOf[Out]) { elements =>
       val written: Future[_] =
         elements
-          .mapAsync(1)(out ⇒ writer.write(out))
+          .mapAsync(1)(out => writer.write(out))
           .toMat(Sink.ignore)(Keep.right)
           .run
 
       complete {
-        written.map { _ ⇒
+        written.map { _ =>
           StatusCodes.Accepted
         }
       }
@@ -144,9 +144,9 @@ object HttpServerLogic {
  *      val writer = sinkRef(outlet)
  *      override def route(): Route = {
  *        put {
- *          entity(as[Data]) { data ⇒
+ *          entity(as[Data]) { data =>
  *            if (data.id == 42) {
- *              onSuccess(writer.write(data)) { _ ⇒
+ *              onSuccess(writer.write(data)) { _ =>
  *                complete(StatusCodes.OK)
  *              }
  *            } else complete(StatusCodes.BadRequest)
@@ -183,20 +183,20 @@ abstract class HttpServerLogic(
     Http()
       .newServerAt("0.0.0.0", port)
       .bind(route)
-      .map { binding ⇒
+      .map { binding =>
         context.signalReady()
         system.log.info(
           s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} for the streamlet ${context.streamletRef}"
         )
         // this only completes when StreamletRef executes cleanup.
-        context.onStop { () ⇒
+        context.onStop { () =>
           system.log.info(s"Unbinding from ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
-          binding.unbind().map(_ ⇒ Dun)
+          binding.unbind().map(_ => Dun)
         }
         binding
       }
       .andThen {
-        case Failure(cause) ⇒
+        case Failure(cause) =>
           system.log.error(cause, s"Failed to bind to $port.")
           context.stopOnException(cause)
       }

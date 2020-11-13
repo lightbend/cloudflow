@@ -51,19 +51,19 @@ object StreamletChangeEvent extends Event {
       watchEvent._object.resourceVersion != existingEvent._object.resourceVersion
 
     watchEvent._type match {
-      case EventType.DELETED ⇒
+      case EventType.DELETED =>
         val events = (for {
-          appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-          streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+          appId         <- metadata.labels.get(CloudflowLabels.AppIdLabel)
+          streamletName <- metadata.labels.get(CloudflowLabels.StreamletNameLabel)
         } yield {
           StreamletChangeEvent(appId, streamletName, watchEvent)
         }).toList
         (currentObjects - absoluteName, events)
-      case EventType.ADDED | EventType.MODIFIED ⇒
+      case EventType.ADDED | EventType.MODIFIED =>
         if (currentObjects.get(absoluteName).forall(hasChanged)) {
           (for {
-            appId         ← metadata.labels.get(CloudflowLabels.AppIdLabel)
-            streamletName ← metadata.labels.get(CloudflowLabels.StreamletNameLabel)
+            appId         <- metadata.labels.get(CloudflowLabels.AppIdLabel)
+            streamletName <- metadata.labels.get(CloudflowLabels.StreamletNameLabel)
           } yield {
             (currentObjects + (absoluteName -> watchEvent), List(StreamletChangeEvent(appId, streamletName, watchEvent)))
           }).getOrElse((currentObjects, List()))
@@ -76,7 +76,7 @@ object StreamletChangeEvent extends Event {
                    runners: Map[String, Runner[_]],
                    podName: String): Seq[Action] =
     (mappedApp, event) match {
-      case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED ⇒
+      case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent._type == EventType.MODIFIED =>
         import streamletChangeEvent._
         val secret   = watchEvent._object
         val metadata = secret.metadata
@@ -94,7 +94,7 @@ object StreamletChangeEvent extends Event {
             } else Nil
           }
           .getOrElse(Nil)
-      case _ ⇒ Nil // app could not be found, do nothing.
+      case _ => Nil // app could not be found, do nothing.
     }
 
   def actionsForRunner(app: CloudflowApplication.CR,
@@ -104,7 +104,7 @@ object StreamletChangeEvent extends Event {
     import streamletChangeEvent._
     app.spec.deployments
       .find(_.streamletName == streamletName)
-      .map { streamletDeployment ⇒
+      .map { streamletDeployment =>
         log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
         val updateAction = runners
           .get(streamletDeployment.runtime)

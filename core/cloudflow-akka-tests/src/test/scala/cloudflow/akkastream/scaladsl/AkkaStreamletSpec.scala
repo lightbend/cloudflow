@@ -60,7 +60,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
         override final def createLogic = new RunnableGraphStreamletLogic() {
           val nameFilter    = streamletConfig.getString(NameFilter.key)
-          val flow          = Flow[Data].filter(data ⇒ data.name == nameFilter)
+          val flow          = Flow[Data].filter(data => data.name == nameFilter)
           def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
         }
       }
@@ -77,7 +77,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       configTestKit.run(ConfigTestProcessor,
                         in,
                         out,
-                        () ⇒ out.probe.receiveN(1) mustBe Vector(Data(2, "b")).map(d ⇒ ConfigTestProcessor.out.partitioner(d) -> d))
+                        () => out.probe.receiveN(1) mustBe Vector(Data(2, "b")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
     }
 
     "Verify that a call to `streamletContext` in a streamlet with no configuration parameters yields an empty config" in {
@@ -105,7 +105,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       configTestKit.run(ConfigTestProcessor,
                         in,
                         out,
-                        () ⇒ out.probe.receiveN(1) mustBe Vector(Data(1, "a")).map(d ⇒ ConfigTestProcessor.out.partitioner(d) -> d))
+                        () => out.probe.receiveN(1) mustBe Vector(Data(1, "a")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
     }
 
     "Be able to access VolumeMounts" in {
@@ -140,7 +140,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       volumeMountTestKit.run(
         VolumeMountTestProcessor,
         out,
-        () => out.probe.receiveN(1) mustBe Vector(expectedDataOut).map(d ⇒ VolumeMountTestProcessor.out.partitioner(d) -> d)
+        () => out.probe.receiveN(1) mustBe Vector(expectedDataOut).map(d => VolumeMountTestProcessor.out.partitioner(d) -> d)
       )
 
     }
@@ -152,7 +152,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
       val out = testkit.outletAsTap(ingress.out)
 
-      testkit.run(ingress, out, () ⇒ out.probe.receiveN(3) mustBe data.map(d ⇒ ingress.out.partitioner(d) -> d))
+      testkit.run(ingress, out, () => out.probe.receiveN(3) mustBe data.map(d => ingress.out.partitioner(d) -> d))
 
       out.probe.expectMsg(Completed)
     }
@@ -164,18 +164,18 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       val egress = new TestEgress(sink)
 
       val in = testkit.inletFromSource(egress.in, source)
-      testkit.run(egress, in, () ⇒ egress.result mustBe data)
+      testkit.run(egress, in, () => egress.result mustBe data)
     }
 
     "Allow for several formats" in {
       val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
-      val pdata  = data.map(d ⇒ PData(d.name))
+      val pdata  = data.map(d => PData(d.name))
       val source = Source(data)
       val proc   = new TestMix
       val in     = testkit.inletFromSource(proc.in, source)
       val out    = testkit.outletAsTap(proc.out)
 
-      testkit.run(proc, in, out, () ⇒ out.probe.receiveN(3) mustBe pdata.map(d ⇒ proc.out.partitioner(d) -> d))
+      testkit.run(proc, in, out, () => out.probe.receiveN(3) mustBe pdata.map(d => proc.out.partitioner(d) -> d))
 
       out.probe.expectMsg(Completed)
     }
@@ -228,7 +228,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     val out                  = ProtoOutlet[PData]("out", _.name.toString)
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
-    val flow = Flow[Data].map(d ⇒ PData(d.name))
+    val flow = Flow[Data].map(d => PData(d.name))
     override final def createLogic = new RunnableGraphStreamletLogic() {
       def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
     }

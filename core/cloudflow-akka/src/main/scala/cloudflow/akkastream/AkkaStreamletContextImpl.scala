@@ -71,13 +71,13 @@ final class AkkaStreamletContextImpl(
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
       // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
       .asSource
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+      .mapMaterializedValue(_ => NotUsed) // TODO we should likely use control to gracefully stop.
       .via(handleTermination)
       .map {
-        case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+        case (record, committableOffset) => inlet.codec.decode(record.value) -> committableOffset
       }
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
+      .asSourceWithContext { case (_, committableOffset) => committableOffset }
+      .map { case (record, _) => record }
   }
 
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
@@ -130,15 +130,15 @@ final class AkkaStreamletContextImpl(
             .sourceWithOffsetContext(consumerSettings, subscription)
             // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
             .asSource
-            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .mapMaterializedValue(_ => NotUsed) // TODO we should likely use control to gracefully stop.
             .via(handleTermination)
             .map {
-              case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+              case (record, committableOffset) => inlet.codec.decode(record.value) -> committableOffset
             }
         }(system.dispatcher)
       }
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
+      .asSourceWithContext { case (_, committableOffset) => committableOffset }
+      .map { case (record, _) => record }
   }
 
   override def shardedSourceWithCommittableContext[T, M, E](
@@ -160,7 +160,7 @@ final class AkkaStreamletContextImpl(
 
     Flow[(T, Committable)]
       .map {
-        case (value, committable) ⇒
+        case (value, committable) =>
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
@@ -207,7 +207,7 @@ final class AkkaStreamletContextImpl(
 
     Flow[(T, CommittableOffset)]
       .map {
-        case (value, committable) ⇒
+        case (value, committable) =>
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
@@ -231,9 +231,9 @@ final class AkkaStreamletContextImpl(
 
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+      .mapMaterializedValue(_ => NotUsed) // TODO we should likely use control to gracefully stop.
       .via(handleTermination)
-      .map { record ⇒
+      .map { record =>
         inlet.codec.decode(record.value)
       }
   }
@@ -281,9 +281,9 @@ final class AkkaStreamletContextImpl(
 
           Consumer
             .plainSource(consumerSettings, subscription)
-            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .mapMaterializedValue(_ => NotUsed) // TODO we should likely use control to gracefully stop.
             .via(handleTermination)
-            .map { record ⇒
+            .map { record =>
               inlet.codec.decode(record.value)
             }
         }(system.dispatcher)
@@ -297,7 +297,7 @@ final class AkkaStreamletContextImpl(
       .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
-      .map { value ⇒
+      .map { value =>
         val key        = outlet.partitioner(value)
         val bytesKey   = keyBytes(key)
         val bytesValue = outlet.codec.encode(value)
@@ -305,7 +305,7 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .to(Producer.plainSink(producerSettings))
-      .mapMaterializedValue(_ ⇒ NotUsed)
+      .mapMaterializedValue(_ => NotUsed)
   }
 
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
@@ -331,11 +331,11 @@ final class AkkaStreamletContextImpl(
           execution.complete(res)
           val streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
           res match {
-            case Success(_) ⇒
+            case Success(_) =>
               system.log.info(
                 s"Stream has completed. Shutting down streamlet $streamletDefinitionMsg."
               )
-            case Failure(e) ⇒
+            case Failure(e) =>
               system.log.error(e, s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.")
           }
         }

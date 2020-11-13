@@ -298,7 +298,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   @deprecated("Use `committableSink` instead.", "1.3.1")
   def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
-    context.sinkWithOffsetContext(committerSettings).mapMaterializedValue(_ ⇒ NotUsed)
+    context.sinkWithOffsetContext(committerSettings).mapMaterializedValue(_ => NotUsed)
 
   /**
    * Creates a sink, purely for committing the offsets that have been read further upstream.
@@ -313,7 +313,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getCommittableSink[T](outlet: CodecOutlet[T],
                             committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
-    committableSink[T](outlet, committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+    committableSink[T](outlet, committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
    * Java API
@@ -325,7 +325,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   def getCommittableSink[T](committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
-    committableSink[T](committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+    committableSink[T](committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
    * Java API
@@ -348,7 +348,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings
   ): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
-    committableSink[T](outlet, committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+    committableSink[T](outlet, committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
    * Java API
@@ -357,7 +357,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getSinkWithOffsetContext[T](
       committerSettings: CommitterSettings
   ): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
-    committableSink[T](committerSettings).asJava.contramap { case pair ⇒ (pair.first, pair.second) }
+    committableSink[T](committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
    * Java API
