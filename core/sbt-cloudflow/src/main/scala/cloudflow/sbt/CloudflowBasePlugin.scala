@@ -32,20 +32,20 @@ import cloudflow.blueprint.StreamletDescriptor
  * `CloudflowAkkaPlugin` and `CloudflowSparkPlugin`.
  */
 object CloudflowBasePlugin extends AutoPlugin {
-  final val AppHome                          = "${app_home}"
-  final val AppTargetDir: String             = "/app"
+  final val AppHome                           = "${app_home}"
+  final val AppTargetDir: String              = "/app"
   final val AppTargetSubdir: String => String = dir => s"$AppTargetDir/$dir"
-  final val AppJarsDir: String               = "app-jars"
-  final val DepJarsDir: String               = "dep-jars"
-  final val OptAppDir                        = "/opt/cloudflow/"
-  final val ScalaVersion                     = "2.12"
+  final val AppJarsDir: String                = "app-jars"
+  final val DepJarsDir: String                = "dep-jars"
+  final val OptAppDir                         = "/opt/cloudflow/"
+  final val ScalaVersion                      = "2.12"
 
   // NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // The UID and GID of the `jboss` user is used in different parts of Cloudflow
   // If you change this, you have to make sure that all references to this value are changed
   // - fsGroups on streamlet pods uses the GID to make volumes readable
   val UserInImage                   = "185" // default non-root user in the spark image
-  val userAsOwner: String => String  = usr => s"$usr:cloudflow"
+  val userAsOwner: String => String = usr => s"$usr:cloudflow"
   val StreamletDescriptorsLabelName = "com.lightbend.cloudflow.streamlet-descriptors"
 
   override def requires =
