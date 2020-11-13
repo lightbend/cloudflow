@@ -247,7 +247,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
           labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
                 CloudflowLabels.StreamletNameLabel -> deployment.streamletName,
                 CloudflowLabels.AppIdLabel         -> appId
-              ).mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
+              ).view.mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)
