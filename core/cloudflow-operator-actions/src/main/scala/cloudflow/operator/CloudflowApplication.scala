@@ -99,7 +99,7 @@ object CloudflowApplication {
     singular = Some("cloudflowapplication"),
     plural = Some("cloudflowapplications"),
     shortNames = List("cloudflowapp"),
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]

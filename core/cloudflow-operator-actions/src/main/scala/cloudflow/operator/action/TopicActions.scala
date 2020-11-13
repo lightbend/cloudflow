@@ -310,7 +310,7 @@ object TopicActions {
 
   implicit class KafkaFutureConverter[T](fut: KafkaFuture[T]) {
     def asScala: Future[T] = {
-      val promise = Promise[T]
+      val promise = Promise[T]()
       fut.whenComplete { (res, error) =>
         if (error == null) promise.success(res)
         else promise.failure(error)
