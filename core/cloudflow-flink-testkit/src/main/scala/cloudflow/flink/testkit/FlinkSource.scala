@@ -25,7 +25,7 @@ object FlinkSource {
   case class CollectionSourceFunction[T](data: Seq[T]) extends SourceFunction[T] {
     def cancel(): Unit = {}
     def run(ctx: SourceContext[T]): Unit =
-      data.foreach(d ⇒ ctx.collect(d))
+      data.foreach(d => ctx.collect(d))
   }
 
   /**

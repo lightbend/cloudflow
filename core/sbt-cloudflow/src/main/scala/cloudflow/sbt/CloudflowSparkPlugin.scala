@@ -54,10 +54,10 @@ object CloudflowSparkPlugin extends AutoPlugin {
 
             val appJarDir = new File(stagingDir, AppJarsDir)
             val depJarDir = new File(stagingDir, DepJarsDir)
-            projectJars.foreach { jar ⇒
+            projectJars.foreach { jar =>
               IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
-            depJars.foreach { jar ⇒
+            depJars.foreach { jar =>
               IO.copyFile(jar, new File(depJarDir, jar.getName))
             }
           }

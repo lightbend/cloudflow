@@ -36,7 +36,7 @@ case class StreamletDefinition(appId: String,
 
   private val portNameToTopicMap: Map[String, Topic] = {
     portMappings.map {
-      case PortMapping(port, topic) ⇒ port -> topic
+      case PortMapping(port, topic) => port -> topic
     }.toMap
   }
 
@@ -90,18 +90,18 @@ case class PortMapping(port: String, topic: Topic)
 
 object StreamletDefinition {
   implicit val contextDataReader: ValueReader[StreamletContextData] =
-    ValueReader.relative { config ⇒
+    ValueReader.relative { config =>
       val json = config.root().render(ConfigRenderOptions.concise())
 
       StreamletContextDataJsonSupport
         .fromJson(json)
         .recoverWith {
-          case cause ⇒
+          case cause =>
             Failure(new ConfigException.BadValue("context", s"invalid context: ${cause.getMessage}", cause))
         }
         .get
     }
-  implicit val configReader: ValueReader[StreamletDefinition] = ValueReader.relative { config ⇒
+  implicit val configReader: ValueReader[StreamletDefinition] = ValueReader.relative { config =>
     val streamletRef         = config.as[String]("streamlet_ref")
     val streamletContextData = config.as[StreamletContextData]("context")
     StreamletDefinition(
@@ -151,13 +151,13 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     val jsReadWriteMany = JsString("ReadWriteMany")
     val jsReadOnlyMany  = JsString("ReadOnlyMany")
     def write(accessMode: AccessMode): JsValue = accessMode match {
-      case ReadWriteMany ⇒ jsReadWriteMany
-      case ReadOnlyMany  ⇒ jsReadOnlyMany
+      case ReadWriteMany => jsReadWriteMany
+      case ReadOnlyMany  => jsReadOnlyMany
     }
     def read(json: JsValue): AccessMode = json match {
-      case `jsReadWriteMany` ⇒ ReadWriteMany
-      case `jsReadOnlyMany`  ⇒ ReadOnlyMany
-      case x                 ⇒ throw new InvalidObjectException(s"'$x' is not a valid Access Mode.")
+      case `jsReadWriteMany` => ReadWriteMany
+      case `jsReadOnlyMany`  => ReadOnlyMany
+      case x                 => throw new InvalidObjectException(s"'$x' is not a valid Access Mode.")
     }
   }
 

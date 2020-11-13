@@ -43,7 +43,7 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
     override def buildExecutionGraph = {
       val rides: DataStream[TaxiRide] =
         readStream(inTaxiRide)
-          .filter { ride ⇒
+          .filter { ride =>
             ride.isStart.booleanValue
           }
           .keyBy("rideId")

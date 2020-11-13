@@ -87,33 +87,33 @@ object Name {
   def ofNamespace(appId: String) =
     s"app-$appId"
 
-  def ofCloudflowOperatorDeployment() = "cloudflow-operator"
+  def ofCloudflowOperatorDeployment = "cloudflow-operator"
 
-  def ofServiceAccount() =
+  def ofServiceAccount =
     "cloudflow-app-serviceaccount"
 
-  def ofAkkaRoleBinding() =
+  def ofAkkaRoleBinding =
     "cloudflow-app-akka-rolebinding"
 
-  def ofAkkaRole() =
+  def ofAkkaRole =
     "cloudflow-app-akka-role"
 
-  def ofSparkRoleBinding() =
+  def ofSparkRoleBinding =
     "cloudflow-app-spark-rolebinding"
 
-  def ofSparkRole() =
+  def ofSparkRole =
     "cloudflow-app-spark-role"
 
-  def ofFlinkRoleBinding() =
+  def ofFlinkRoleBinding =
     "cloudflow-app-flink-rolebinding"
 
-  def ofFlinkRole() =
+  def ofFlinkRole =
     "cloudflow-app-flink-role"
 
   def ofDockerRegistrySecret =
     "cloudflow-app-docker-registry"
 
-  def ofRoleBinding() =
+  def ofRoleBinding =
     "cloudflow-app-rolebinding"
 
   def ofSparkApplication(streamletDeploymentName: String) =

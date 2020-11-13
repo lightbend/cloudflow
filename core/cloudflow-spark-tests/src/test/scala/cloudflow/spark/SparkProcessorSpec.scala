@@ -41,7 +41,7 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
       val out: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out)
 
       // build data and send to inlet tap
-      val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
+      val data = (1 to 10).map(i => Data(i, s"name$i"))
       in.addData(data)
 
       val run = testKit.run(instance, Seq(in), Seq(out))

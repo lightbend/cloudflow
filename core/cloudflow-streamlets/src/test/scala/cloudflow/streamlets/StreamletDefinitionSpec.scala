@@ -37,7 +37,7 @@ class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues 
         "accepted" -> Topic("accepted"),
         "rejected" -> Topic("rejected")
       )
-      ports.foreach(portMapping ⇒ expectedPorts(portMapping.port) must be(portMapping.topic))
+      ports.foreach(portMapping => expectedPorts(portMapping.port) must be(portMapping.topic))
     }
 
     "a loaded instance must have its own configuration" in {

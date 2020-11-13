@@ -63,7 +63,7 @@ private[testkit] case class TestContext(
           .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
           .via(killSwitch.flow)
           .mapError {
-            case cause: Throwable ⇒
+            case cause: Throwable =>
               execution.complete(Failure(cause))
               cause
           }
@@ -86,8 +86,8 @@ private[testkit] case class TestContext(
             .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
         }(system.dispatcher)
       )
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
+      .asSourceWithContext { case (_, committableOffset) => committableOffset }
+      .map { case (record, _) => record }
 
   }
 
@@ -96,19 +96,19 @@ private[testkit] case class TestContext(
 
     outletTaps
       .find(_.portName == outlet.name)
-      .map { outletTap ⇒
+      .map { outletTap =>
         val tout = outletTap.asInstanceOf[OutletTap[T]]
         flow
           .via(killSwitch.flow)
           .mapError {
-            case cause: Throwable ⇒
+            case cause: Throwable =>
               execution.complete(Failure(cause))
               cause
           }
           .alsoTo(
-            Flow[T].map(t ⇒ tout.toPartitionedValue(t)).to(tout.sink)
+            Flow[T].map(t => tout.toPartitionedValue(t)).to(tout.sink)
           )
-          .asFlowWithContext[T, Committable, Committable]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
+          .asFlowWithContext[T, Committable, Committable]((el, _) => el)(_ => TestCommittableOffset())
       }
       .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
@@ -120,19 +120,19 @@ private[testkit] case class TestContext(
 
     outletTaps
       .find(_.portName == outlet.name)
-      .map { outletTap ⇒
+      .map { outletTap =>
         val tout = outletTap.asInstanceOf[OutletTap[T]]
         flow
           .via(killSwitch.flow)
           .mapError {
-            case cause: Throwable ⇒
+            case cause: Throwable =>
               execution.complete(Failure(cause))
               cause
           }
           .alsoTo(
-            Flow[immutable.Seq[T]].mapConcat(identity).map(t ⇒ tout.toPartitionedValue(t)).to(tout.sink)
+            Flow[immutable.Seq[T]].mapConcat(identity).map(t => tout.toPartitionedValue(t)).to(tout.sink)
           )
-          .asFlowWithContext[immutable.Seq[T], Committable, Committable]((el, _) ⇒ el)(_ ⇒ TestCommittableOffset())
+          .asFlowWithContext[immutable.Seq[T], Committable, Committable]((el, _) => el)(_ => TestCommittableOffset())
       }
       .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
@@ -154,7 +154,7 @@ private[testkit] case class TestContext(
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
-    sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ ⇒ NotUsed)
+    sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ => NotUsed)
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
@@ -168,7 +168,7 @@ private[testkit] case class TestContext(
     )
   }
 
-  def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el ⇒
+  def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el =>
     (el, TestCommittableOffset())
   }
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] =
@@ -177,13 +177,13 @@ private[testkit] case class TestContext(
         val flow = Flow[(T, Committable)]
         outletTaps
           .find(_.portName == outlet.name)
-          .map { tap ⇒
+          .map { tap =>
             val outletTap = tap.asInstanceOf[OutletTap[T]]
             flow
-              .map { case (t, _) ⇒ outletTap.toPartitionedValue(t) }
+              .map { case (t, _) => outletTap.toPartitionedValue(t) }
               .via(killSwitch.flow)
               .mapError {
-                case cause: Throwable ⇒
+                case cause: Throwable =>
                   execution.complete(Failure(cause))
                   cause
               }
@@ -193,7 +193,7 @@ private[testkit] case class TestContext(
       }
 
       def write(value: T): Future[T] = {
-        Source.single(value).runWith(sink.contramap[T](t ⇒ (t, TestCommittableOffset())))
+        Source.single(value).runWith(sink.contramap[T](t => (t, TestCommittableOffset())))
         Future.successful(value)
       }
     }

@@ -97,7 +97,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    */
   def makeInletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] =
-    SourceInletTap[T](inlet, source.map(t ⇒ (t, TestCommittableOffset())))
+    SourceInletTap[T](inlet, source.map(t => (t, TestCommittableOffset())))
 
   /**
    * Creates an outlet tap. An outlet tap provides a probe that can be used to assert elements produced to the specified outlet.
@@ -144,20 +144,20 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    * Runs the `streamlet` using a list of `inletTaps` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTaps: JList[OutletTap[_]], assertions: () ⇒ Any): Unit =
+  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTaps: JList[OutletTap[_]], assertions: () => Any): Unit =
     run(streamlet, inletTaps.asScala.toList, outletTaps.asScala.toList, assertions)
 
   /**
    * Runs the `streamlet` using a list of `inletTaps` as the source and an `outletTap` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTap: OutletTap[T], assertions: () ⇒ Any): Unit =
+  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTap: OutletTap[T], assertions: () => Any): Unit =
     run(streamlet, inletTaps.asScala.toList, List(outletTap), assertions)
 
   /**
    * Runs the `streamlet` using an `inlettap` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTap: InletTap[_], outletTaps: JList[OutletTap[_]], assertions: () ⇒ Any): Unit =
+  def run[T](streamlet: AkkaStreamlet, inletTap: InletTap[_], outletTaps: JList[OutletTap[_]], assertions: () => Any): Unit =
     run(streamlet, List(inletTap), outletTaps.asScala.toList, assertions)
 }

@@ -77,7 +77,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
 
   override protected final def createContext(config: Config): FlinkStreamletContext =
     (for {
-      streamletDefinition ← StreamletDefinition.read(config)
+      streamletDefinition <- StreamletDefinition.read(config)
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
       new FlinkStreamletContextImpl(streamletDefinition,
@@ -86,7 +86,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
                                     ),
                                     updatedConfig)
     }).recoverWith {
-      case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
+      case th => Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
   /**
@@ -205,7 +205,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
 
   override final def run(context: FlinkStreamletContext): StreamletExecution = {
     val configStr = getFlinkConfigInfo(context.env).foldLeft("\n") {
-      case (acc, (k, v)) ⇒
+      case (acc, (k, v)) =>
         s"$acc\n$k = $v"
     }
 
@@ -248,7 +248,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         val readyFuture = readyPromise.future
 
         def completed: Future[Dun] =
-          jobResult.map(_ ⇒ Dun)
+          jobResult.map(_ => Dun)
         def ready: Future[Dun]  = readyFuture
         def stop(): Future[Dun] = ???
       }
@@ -265,13 +265,13 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       Try {
         createLogic.executeStreamingQueries(context.env)
       }.fold(
-        th ⇒
+        th =>
           th match {
             // rethrow for Flink to catch as Flink control flow depends on this
-            case pax: OptimizerPlanEnvironment.ProgramAbortException ⇒ throw pax
-            case _: Throwable                                        ⇒ completionPromise.tryFailure(th)
+            case pax: OptimizerPlanEnvironment.ProgramAbortException => throw pax
+            case _: Throwable                                        => completionPromise.tryFailure(th)
           },
-        _ ⇒ completionPromise.trySuccess(Dun)
+        _ => completionPromise.trySuccess(Dun)
       )
 
       new StreamletExecution {
@@ -321,7 +321,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
  *    override def createLogic() = new FlinkStreamletLogic {
  *      override def buildExecutionGraph = {
  *        val ins: DataStream[Data] = readStream(in)
- *        val simples: DataStream[Simple] = ins.map(r ⇒ new Simple(r.getName()))
+ *        val simples: DataStream[Simple] = ins.map(r => new Simple(r.getName()))
  *        writeStream(out, simples)
  *      }
  *    }

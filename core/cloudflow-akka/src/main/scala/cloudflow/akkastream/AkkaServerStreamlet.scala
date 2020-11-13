@@ -33,7 +33,7 @@ abstract class AkkaServerStreamlet extends AkkaStreamlet with Server
  * It returns the TCP port that is opened on the container.
  * A [[ServerStreamletLogic]] requires an implementation of this trait (for instance an [[AkkaServerStreamlet]]) when it is created.
  */
-trait Server { this: AkkaStreamlet ⇒
+trait Server { this: AkkaStreamlet =>
   protected[cloudflow] override def attributes = Set(ServerAttribute) ++ customAttributes
 
   /**

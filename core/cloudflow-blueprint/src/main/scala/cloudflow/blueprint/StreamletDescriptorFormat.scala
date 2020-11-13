@@ -33,8 +33,8 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
     def write(runtime: StreamletRuntimeDescriptor) = JsString(runtime.name)
     def read(json: JsValue) =
       json match {
-        case JsString(name) ⇒ StreamletRuntimeDescriptor(name)
-        case str            ⇒ deserializationError("Expected StreamletRuntimeDescriptor as JsString, but got " + str)
+        case JsString(name) => StreamletRuntimeDescriptor(name)
+        case str            => deserializationError("Expected StreamletRuntimeDescriptor as JsString, but got " + str)
       }
   }
 

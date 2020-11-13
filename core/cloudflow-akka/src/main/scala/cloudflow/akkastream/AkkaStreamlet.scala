@@ -43,7 +43,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
    */
   override protected final def createContext(config: Config): AkkaStreamletContext =
     (for {
-      streamletDefinition ← StreamletDefinition.read(config)
+      streamletDefinition <- StreamletDefinition.read(config)
     } yield {
 
       val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
@@ -82,7 +82,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
       }
     }).recoverWith {
-      case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
+      case th => Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
   override final def run(context: AkkaStreamletContext): StreamletExecution =

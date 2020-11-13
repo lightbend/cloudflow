@@ -54,8 +54,8 @@ object RunnerConfigUtils {
   private def readDownwardApi(downwardApiVolumeMountPath: String, filename: String): String = {
     val path = s"$downwardApiVolumeMountPath/$filename"
     Try(Source.fromFile(path).getLines.mkString) match {
-      case Success(contents) ⇒ contents
-      case Failure(ex) ⇒
+      case Success(contents) => contents
+      case Failure(ex) =>
         throw new Exception(s"An error occurred while attempting to access the downward API volume mount with path '$path'", ex)
     }
   }

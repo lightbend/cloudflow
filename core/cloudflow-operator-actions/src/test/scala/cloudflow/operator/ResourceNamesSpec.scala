@@ -18,7 +18,7 @@ package cloudflow.operator
 
 import action._
 import skuber._
-import org.scalatest.{ ConfigMap ⇒ _, _ }
+import org.scalatest.{ ConfigMap => _, _ }
 
 import cloudflow.blueprint._
 import BlueprintBuilder._
@@ -118,7 +118,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
       val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
-      deployment.getPodSpec.get.volumes.foreach { vol ⇒
+      deployment.getPodSpec.get.volumes.foreach { vol =>
         assert(vol.name.length <= 253)
       }
 
@@ -129,7 +129,7 @@ class ResourceNamesSpec extends WordSpec with MustMatchers with GivenWhenThen wi
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
       val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
 
-      deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount ⇒
+      deployment.getPodSpec.get.containers.head.volumeMounts.foreach { mount =>
         assert(mount.name.length <= 253)
       }
 

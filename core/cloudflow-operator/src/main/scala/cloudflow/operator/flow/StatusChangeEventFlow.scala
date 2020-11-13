@@ -39,9 +39,9 @@ object StatusChangeEventFlow extends {
    */
   def fromWatchEvent(): Flow[WatchEvent[Pod], StatusChangeEvent, NotUsed] =
     Flow[WatchEvent[Pod]]
-      .statefulMapConcat { () ⇒
+      .statefulMapConcat { () =>
         var currentObjects = Map[String, WatchEvent[Pod]]()
-        watchEvent ⇒ {
+        watchEvent => {
           val (updatedObjects, events) = toStatusChangeEvent(currentObjects, watchEvent)
           currentObjects = updatedObjects
           events
@@ -50,7 +50,7 @@ object StatusChangeEventFlow extends {
 
   def toStatusUpdateAction(runners: Map[String, Runner[_]]): Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StatusChangeEvent)]
-      .statefulMapConcat { () ⇒
+      .statefulMapConcat { () =>
         var currentStatuses = Map[String, CloudflowApplication.Status]()
 
         {

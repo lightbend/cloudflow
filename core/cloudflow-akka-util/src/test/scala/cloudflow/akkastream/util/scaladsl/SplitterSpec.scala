@@ -42,7 +42,7 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
     val shape = StreamletShape(in).withOutlets(left, right)
 
     override def createLogic = new RunnableGraphStreamletLogic() {
-      def flow = FlowWithCommittableContext[Data]().map { data ⇒
+      def flow = FlowWithCommittableContext[Data]().map { data =>
         if (data.id % 2 == 0) Right(data) else Left(BadData(data.name))
       }
 
@@ -60,7 +60,7 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
       val left  = testkit.outletAsTap(MyPartitioner.left)
       val right = testkit.outletAsTap(MyPartitioner.right)
 
-      testkit.run(MyPartitioner, in, List(left, right), () ⇒ {
+      testkit.run(MyPartitioner, in, List(left, right), () => {
         left.probe.expectMsg(("a", BadData("a")))
         right.probe.expectMsg(("2", Data(2, "b")))
       })

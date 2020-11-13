@@ -31,11 +31,11 @@ object AppEventFlow {
    */
   def fromWatchEvent(logAttributes: Attributes) =
     Flow[WatchEvent[CloudflowApplication.CR]]
-      .statefulMapConcat { () ⇒
+      .statefulMapConcat { () =>
         // TODO make this available in other streams directly through an Actor
         // to prevent possibility of getting an out of sync CR from the cluster in mapToAppInSameNamespace (which might be a small chance).
         var currentApps = Map[String, WatchEvent[CloudflowApplication.CR]]()
-        watchEvent ⇒ {
+        watchEvent => {
           val (updatedApps, events) = AppEvent.toDeployEvent(currentApps, watchEvent)
           currentApps = updatedApps
           events

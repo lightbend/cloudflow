@@ -50,7 +50,7 @@ final class KafkaSinkRef[T](
 
     Flow[(T, Committable)]
       .map {
-        case (value, offset) ⇒
+        case (value, offset) =>
           val key        = outlet.partitioner(value)
           val bytesValue = outlet.codec.encode(value)
           ProducerMessage.Message[Array[Byte], Array[Byte], Committable](new ProducerRecord(topic.name, key.getBytes("UTF8"), bytesValue),
@@ -59,7 +59,7 @@ final class KafkaSinkRef[T](
       .via(Producer.flexiFlow(producerSettings.withProducer(producer)))
       .via(handleTermination)
       .to(Sink.ignore)
-      .mapMaterializedValue(_ ⇒ NotUsed)
+      .mapMaterializedValue(_ => NotUsed)
   }
 
   private def handleTermination[I]: Flow[I, I, NotUsed] =
@@ -67,10 +67,10 @@ final class KafkaSinkRef[T](
       .via(killSwitch.flow)
       .alsoTo(
         Sink.onComplete {
-          case Success(_) ⇒
+          case Success(_) =>
             system.log.error(s"Stream has completed. Shutting down streamlet...")
             completionPromise.success(Dun)
-          case Failure(e) ⇒
+          case Failure(e) =>
             system.log.error(e, "Stream has failed. Shutting down streamlet...")
             completionPromise.failure(e)
         }

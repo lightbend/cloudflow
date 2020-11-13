@@ -53,7 +53,7 @@ object TaxiFareOps {
           parseFloat(tokens(6)),
           parseFloat(tokens(7))
         )
-      }.transform(s ⇒ Success(s), e ⇒ Failure(new RuntimeException(s"Invalid record: $fare", e)))
+      }.transform(s => Success(s), e => Failure(new RuntimeException(s"Invalid record: $fare", e)))
   }
 
   def getEventTime(fare: TaxiFare): Long = fare.startTime

@@ -90,7 +90,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       Given("a current app and a new app")
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val app =
-        CloudflowApplication(currentApp.copy(deployments = currentApp.deployments.map(deployment ⇒ deployment.copy(replicas = Some(2)))))
+        CloudflowApplication(currentApp.copy(deployments = currentApp.deployments.map(deployment => deployment.copy(replicas = Some(2)))))
 
       val currentAppCr = CloudflowApplication(currentApp)
 

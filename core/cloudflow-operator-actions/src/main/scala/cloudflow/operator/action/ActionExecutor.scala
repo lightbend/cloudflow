@@ -36,10 +36,10 @@ trait ActionExecutor {
  * Exception thrown when the action failed to make the appropriate change(s) for the application identified by `appId`.
  */
 case class ActionException(action: Action, msg: String, cause: Throwable) extends Exception(msg, cause) {
-  def this(action: Action, cause: Throwable) {
+  def this(action: Action, cause: Throwable) = {
     this(action, s"Action ${action.name} failed: ${cause.getMessage}", cause)
   }
-  def this(action: Action, msg: String) {
+  def this(action: Action, msg: String) = {
     this(action, s"Action ${action.name} failed: ${msg}", null)
   }
 }

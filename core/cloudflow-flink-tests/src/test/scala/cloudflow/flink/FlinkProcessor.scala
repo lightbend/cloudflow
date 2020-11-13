@@ -37,7 +37,7 @@ object FlinkProcessor extends FlinkStreamlet {
   override def createLogic() = new FlinkStreamletLogic {
     override def buildExecutionGraph = {
       val ins: DataStream[Data]       = readStream(in)
-      val simples: DataStream[Simple] = ins.map(r ⇒ new Simple(r.name))
+      val simples: DataStream[Simple] = ins.map(r => new Simple(r.name))
       writeStream(out, simples)
     }
   }
