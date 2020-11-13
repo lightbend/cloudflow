@@ -585,7 +585,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
               inquireVersions,
               runClean,
               runTest,
-              releaseStepCommandAndRemaining("publishSigned"),
+              releaseStepCommandAndRemaining("+publishSigned"),
               releaseStepCommand("sonatypeBundleRelease"),
               pushChanges
             ),
