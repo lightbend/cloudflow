@@ -481,7 +481,6 @@ lazy val operator =
     )
     .settings(
       scalaVersion := Version.ScalaOperator,
-      crossScalaVersions := Vector(scalaVersion.value),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
       mainClass in Compile := Some("cloudflow.operator.Main"),
