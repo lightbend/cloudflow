@@ -59,9 +59,7 @@ final class AkkaStreamletContextImpl(
   override def config: Config = streamletDefinition.config
 
   private val consumerStopTimeout: FiniteDuration =
-    if (config.hasPath("consumer-stop-timeout"))
-      FiniteDuration(config.getDuration("consumer-stop-timeout").toMillis, TimeUnit.MILLISECONDS).toCoarsest
-    else 5.seconds
+    FiniteDuration(sys.settings.config.getDuration("cloudflow.streamlet.akka.consumer-stop-timeout").toMillis, TimeUnit.MILLISECONDS).toCoarsest
 
   private val execution                               = new StreamletExecutionImpl(this)
   override val streamletExecution: StreamletExecution = execution
