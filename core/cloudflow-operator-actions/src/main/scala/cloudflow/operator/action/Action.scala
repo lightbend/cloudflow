@@ -199,21 +199,24 @@ abstract class ResourceAction[+T <: ObjectResource] extends Action {
   /**
    * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
    */
-  protected def recoverFromConflict[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
+  protected def recoverFromError[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
       implicit sys: ActorSystem,
       ec: ExecutionContext
-  ): Future[O] =
-    future.recoverWith {
-      case e: K8SException if (e.status.code == Some(ConflictCode)) => {
-        if (retries > 0) {
-          sys.log.info(s"Recovering from K8SException, conflict in resource version: ${e.getMessage}")
-          f(client, retries)
-        } else {
-          sys.log.error(s"Exhausted retries recovering from conflict, giving up.")
-          throw e
-        }
+  ): Future[O] = {
+    def recover(e: Throwable) =
+      if (retries > 0) {
+        sys.log.info(s"Recovering from error: ${e.getMessage}")
+        f(client, retries)
+      } else {
+        sys.log.error(s"Exhausted retries recovering from error, giving up.")
+        throw e
       }
+
+    future.recoverWith {
+      case e: K8SException if (e.status.code == Some(ConflictCode)) => recover(e)
+      case e: akka.stream.StreamTcpException                        => recover(e)
     }
+  }
 }
 
 abstract class SingleResourceAction[T <: ObjectResource] extends ResourceAction[T] {
@@ -268,14 +271,14 @@ class CreateOrUpdateAction[T <: ObjectResource](
         .map { existingResource ⇒
           val resourceVersionUpdated =
             editor.updateMetadata(resource, resource.metadata.copy(resourceVersion = existingResource.metadata.resourceVersion))
-          recoverFromConflict(
+          recoverFromError(
             client.update(resourceVersionUpdated),
             client,
             nextRetries,
             executeCreate
           )
         }
-        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreate))
+        .getOrElse(recoverFromError(client.create(resource), client, nextRetries, executeCreate))
     } yield res
   }
 }
@@ -313,8 +316,8 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
         .usingNamespace(namespace)
         .getOption[T](resource.name)
       res ← existing
-        .map(_ ⇒ recoverFromConflict(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
-        .getOrElse(recoverFromConflict(client.create(resource), client, nextRetries, executeCreateOrPatch))
+        .map(_ ⇒ recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
+        .getOrElse(recoverFromError(client.create(resource), client, nextRetries, executeCreateOrPatch))
     } yield res
   }
 }
@@ -376,7 +379,7 @@ class UpdateStatusAction[T <: ObjectResource](
       res ← resourceVersionUpdated
         .map { resourceToUpdate =>
           if (predicateForUpdate(existing, resourceToUpdate)) {
-            recoverFromConflict(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
+            recoverFromError(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
           } else {
             Action.log.info(s"Ignoring status update for resource ${resource.metadata.name}")
             Future.successful(resource)
