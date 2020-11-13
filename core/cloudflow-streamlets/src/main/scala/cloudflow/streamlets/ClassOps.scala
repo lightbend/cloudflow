@@ -50,8 +50,8 @@ object ClassOps {
    */
   private def instanceFromClass(name: String): Try[Any] =
     for {
-      c ← loadClass(name)
-      i ← Clazz(c).instance
+      c <- loadClass(name)
+      i <- Clazz(c).instance
     } yield i
 
   /**
@@ -59,8 +59,8 @@ object ClassOps {
    */
   private def instanceFromObject(name: String): Try[Any] =
     for {
-      c ← loadClass(name + "$")
-      i ← Obj(c).instance
+      c <- loadClass(name + "$")
+      i <- Obj(c).instance
     } yield i
 
   /**
@@ -83,17 +83,17 @@ object ClassOps {
         // if the instantiation fails, it may be due to a variety of reasons including
         // the fact that the class may not have a no-arg constructor or the name passed
         // is that of a singleton object
-        case _: InstantiationException ⇒
+        case _: InstantiationException =>
           // try instantiating assuming it's an object
           instanceFromObject(className).map(identity).recoverWith {
 
             // remember we are in the branch where the class was loaded but we got an
             // `InstantiationException` earlier. If we still cannot load this class, we roll back
             // to the earlier exception
-            case _: Exception ⇒ Failure(new InstantiationException(className))
+            case _: Exception => Failure(new InstantiationException(className))
           }
 
-        case ex: Exception ⇒ Failure(ex)
+        case ex: Exception => Failure(ex)
       }
     }
 

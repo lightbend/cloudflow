@@ -99,8 +99,8 @@ trait StreamletContext {
    */
   def getMountedPath(volumeMount: VolumeMount): Path =
     streamletDefinition.volumeMounts
-      .find(vm ⇒ vm.name == volumeMount.name)
-      .map(mount ⇒ Paths.get(mount.path))
+      .find(vm => vm.name == volumeMount.name)
+      .map(mount => Paths.get(mount.path))
       .getOrElse(throw MountedPathUnavailableException(volumeMount))
 
   case class MountedPathUnavailableException(volumeMount: VolumeMount)

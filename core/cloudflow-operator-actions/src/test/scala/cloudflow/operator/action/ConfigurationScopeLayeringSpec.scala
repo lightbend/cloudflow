@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.blueprint.deployment.Topic

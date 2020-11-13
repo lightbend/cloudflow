@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
+
+import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.TopicActions
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
-import scala.collection.JavaConverters._
-import scala.util.Try
 
 /**
  * Implementation of https://cloudflow.io/docs/current/develop/cloudflow-configuration.html

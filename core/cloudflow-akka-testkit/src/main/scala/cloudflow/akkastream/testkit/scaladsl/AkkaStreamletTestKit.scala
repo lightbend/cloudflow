@@ -48,7 +48,7 @@ object AkkaStreamletTestKit {
  * in.queue.offer(Data(2, "b"))
  *
  * // run the testkit
- * testkit.run(SimpleFlowProcessor, in, out, () ⇒ {
+ * testkit.run(SimpleFlowProcessor, in, out, () => {
  *   out.probe.expectMsg(("2", Data(2, "b")))
  * })
  * }}}
@@ -89,7 +89,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    */
   def inletFromSource[T](inlet: CodecInlet[T], source: Source[T, NotUsed]): SourceInletTap[T] =
-    SourceInletTap[T](inlet, source.map(t ⇒ (t, TestCommittableOffset())))
+    SourceInletTap[T](inlet, source.map(t => (t, TestCommittableOffset())))
 
   /**
    * Creates an outlet tap. An outlet tap provides a probe that can be used to assert elements produced to the specified outlet.
@@ -108,7 +108,7 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    *
    * ...
    *
-   * testkit.run(SimpleFlowProcessor, in, out, () ⇒ {
+   * testkit.run(SimpleFlowProcessor, in, out, () => {
    *   out.probe.expectMsg(("2", Data(2, "b")))
    * })
    * }}}

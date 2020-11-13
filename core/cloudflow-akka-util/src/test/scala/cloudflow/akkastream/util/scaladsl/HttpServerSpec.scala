@@ -57,7 +57,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
     // CONNECT request is not allowed, possibly because of use of singleRequest, or absolute URI?
     // Removed for now. (The test responds with 400 Bad Request)
     // Error in log: Illegal request, responding with status '400 Bad Request': CONNECT requests are not supported: Rejecting CONNECT request to '/'
-    List(GET, DELETE, HEAD, OPTIONS, PATCH).foreach { method ⇒
+    List(GET, DELETE, HEAD, OPTIONS, PATCH).foreach { method =>
       s"reject ${method.value} requests when using the default route" in {
         startIngress()
         val request  = HttpRequest(method, Uri(s"http://127.0.0.1:$port"), Nil, HttpEntity.Empty)
@@ -123,9 +123,9 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
       val writer = sinkRef(outlet)
       override def route(): Route =
         put {
-          entity(as[Data]) { data ⇒
+          entity(as[Data]) { data =>
             if (data.id == 42) {
-              onSuccess(writer.write(data)) { _ ⇒
+              onSuccess(writer.write(data)) { _ =>
                 complete(StatusCodes.OK)
               }
             } else complete(StatusCodes.BadRequest)

@@ -42,10 +42,10 @@ object Merger {
   def graph[T](
       sources: Seq[SourceWithContext[T, Committable, _]]
   ): Graph[SourceShape[(T, Committable)], NotUsed] =
-    GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
+    GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
       import GraphDSL.Implicits._
       val merge = builder.add(Merge[(T, Committable)](sources.size))
-      sources.foreach(inlet ⇒ inlet ~> merge)
+      sources.foreach(inlet => inlet ~> merge)
       SourceShape[(T, Committable)](merge.out)
     }
 
@@ -57,7 +57,7 @@ object Merger {
   def source[T](
       sources: Seq[SourceWithContext[T, Committable, _]]
   ): SourceWithContext[T, Committable, _] =
-    Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) ⇒ offset }.map { case (t, _) ⇒ t }
+    Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) => offset }.map { case (t, _) => t }
 
   /**
    * Merges two or more inlets into one source.
@@ -67,8 +67,8 @@ object Merger {
   def source[T](
       inlets: Seq[CodecInlet[T]]
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
-    Source.fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_)))).asSourceWithContext { case (_, offset) ⇒ offset }.map {
-      case (t, _) ⇒ t
+    Source.fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_)))).asSourceWithContext { case (_, offset) => offset }.map {
+      case (t, _) => t
     }
   def source[T](
       inlet: CodecInlet[T],
@@ -76,8 +76,8 @@ object Merger {
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
     Source
       .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_))))
-      .asSourceWithContext { case (_, offset) ⇒ offset }
-      .map { case (t, _) ⇒ t }
+      .asSourceWithContext { case (_, offset) => offset }
+      .map { case (t, _) => t }
 }
 
 /**
@@ -98,10 +98,10 @@ class MergeLogic[T](
    */
   override def runnableGraph() = {
 
-    val inlets = inletPorts.map(inlet ⇒ sourceWithCommittableContext[T](inlet)).toList
+    val inlets = inletPorts.map(inlet => sourceWithCommittableContext[T](inlet)).toList
     val out    = committableSink[T](outlet)
 
-    RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] ⇒
+    RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
       import GraphDSL.Implicits._
       val merge = builder.add(Merger.graph(inlets))
       merge ~> out

@@ -64,7 +64,7 @@ object Operator {
   val MaxObjectBufSize = 8 * 1024 * 1024
 
   val decider: Supervision.Decider = {
-    case _ ⇒ Supervision.Stop
+    case _ => Supervision.Stop
   }
 
   val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
@@ -163,7 +163,7 @@ object Operator {
       client: KubernetesClient,
       runners: Map[String, Runner[_]]
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Debug)
     val actionExecutor = new SkuberActionExecutor()
     runStream(
       watch[Pod](client, DefaultWatchOptions)
@@ -198,7 +198,7 @@ object Operator {
   def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
       client: KubernetesClient
   )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
-    Flow[E].mapAsync(1) { changeEvent ⇒
+    Flow[E].mapAsync(1) { changeEvent =>
       val ns = changeEvent.namespace
       client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
         cr -> changeEvent
@@ -252,7 +252,7 @@ object Operator {
         .concat(
           client
             .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
-            .mapMaterializedValue(_ ⇒ NotUsed)
+            .mapMaterializedValue(_ => NotUsed)
         )
     }
   }
@@ -268,9 +268,9 @@ object Operator {
     system: ActorSystem,
     ec: ExecutionContext): Future[List[WatchEvent[O]]] =
     (for {
-      namespaces ← client.getNamespaceNames
-      lists      ← Future.sequence(namespaces.map(ns ⇒ client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
-      watchEvents = lists.flatMap(_.items.map(item ⇒ WatchEvent(EventType.ADDED, item)))
+      namespaces <- client.getNamespaceNames
+      lists      <- Future.sequence(namespaces.map(ns => client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
+      watchEvents = lists.flatMap(_.items.map(item => WatchEvent(EventType.ADDED, item)))
     } yield watchEvents).recoverWith {
       case NonFatal(e) =>
         system.log.warning(s"Could not get current events, attempt number $attempt", e)
@@ -283,12 +283,12 @@ object Operator {
       errorMsg: String
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) =
     graph.withAttributes(StreamAttributes).run.onComplete {
-      case Success(_) ⇒
+      case Success(_) =>
         system.log.warning(unexpectedCompletionMsg)
         system.registerOnTermination(exitWithFailure)
         system.terminate()
 
-      case Failure(t) ⇒
+      case Failure(t) =>
         system.log.error(t, errorMsg)
         system.registerOnTermination(exitWithFailure)
         system.terminate()

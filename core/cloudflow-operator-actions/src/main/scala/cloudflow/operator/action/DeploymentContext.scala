@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package cloudflow.flink
-package testkit
+package cloudflow.operator.action
 
-import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import scala.collection.JavaConverters._
-
-object FlinkSource {
-  case class CollectionSourceFunction[T](data: Seq[T]) extends SourceFunction[T] {
-    def cancel(): Unit = {}
-    def run(ctx: SourceContext[T]): Unit =
-      data.foreach(d => ctx.collect(d))
-  }
-
-  /**
-   * Java API
-   */
-  def collectionSourceFunction[T](data: java.util.List[T]) =
-    CollectionSourceFunction(data.asScala.toSeq)
+/**
+ * Provides defaults for deployment.
+ */
+case class DeploymentContext(akkaRunnerDefaults: AkkaRunnerDefaults,
+                             sparkRunnerDefaults: SparkRunnerDefaults,
+                             flinkRunnerDefaults: FlinkRunnerDefaults,
+                             podName: String,
+                             podNamespace: String) {
+  def infoMessage = s"""
+   | pod-name:                         ${podName}
+   | pod-namespace                     ${podNamespace}
+  """
 }

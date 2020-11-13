@@ -18,7 +18,7 @@ package cloudflow.operator.action.runner
 
 import java.nio.charset.StandardCharsets
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util._
 import com.typesafe.config._
 import play.api.libs.json._
@@ -29,7 +29,6 @@ import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
 
-import cloudflow.operator._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
 
@@ -94,8 +93,8 @@ trait Runner[T <: ObjectResource] {
 
     // delete streamlet deployments by name that are in the current app but are not listed in the new app
     val deleteActions = currentDeployments
-      .filterNot(deployment ⇒ newDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filterNot(deployment => newDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         Seq(
           Action.delete[T](resourceName(deployment), newApp),
           Action.delete[T](configResourceName(deployment), newApp)
@@ -104,24 +103,29 @@ trait Runner[T <: ObjectResource] {
 
     // create streamlet deployments by name that are not in the current app but are listed in the new app
     val createActions = newDeployments
-      .filterNot(deployment ⇒ currentDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         Seq(
           Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor),
-          Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+          Action.providedRetry[Secret, ObjectResource](deployment.secretName, newApp) {
             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), newApp, editor)
             case None =>
-              val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-              log.error(msg)
-              CloudflowApplication.Status.errorAction(newApp, runners, msg)
+              val msg =
+                s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              log.info(msg)
+              CloudflowApplication.Status.pendingAction(
+                newApp,
+                runners,
+                s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
+              )
           }
         )
       }
 
     // update streamlet deployments by name that are in both the current app and the new app
     val _updateActions = newDeployments
-      .filter(deployment ⇒ currentDeploymentNames.contains(deployment.name))
-      .flatMap { deployment ⇒
+      .filter(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
         updateActions(newApp, runners, deployment)
       }
       .toSeq
@@ -155,22 +159,23 @@ trait Runner[T <: ObjectResource] {
 
   def streamletChangeAction(app: CloudflowApplication.CR,
                             runners: Map[String, Runner[_]],
-                            streamletDeployment: StreamletDeployment): ResourceAction[ObjectResource]
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret): ResourceAction[ObjectResource]
 
   def serviceAccountAction(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Vector(Action.createOrUpdate(roleBinding(app.namespace, labels, ownerReferences), app, roleBindingEditor))
 
   def defaultReplicas: Int
   def expectedPodCount(deployment: StreamletDeployment): Int
-  def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
-  def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) ⇒ obj.copy(metadata = newMetadata)
+  def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
+  def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofRoleBinding(),
+        name = Name.ofRoleBinding,
         namespace = namespace,
-        labels = labels(Name.ofRoleBinding()),
+        labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
       ),
       kind = "RoleBinding",
@@ -218,7 +223,7 @@ trait Runner[T <: ObjectResource] {
     val name = Name.ofConfigMap(deployment.name)
     ConfigMap(
       metadata = ObjectMeta(name = name, namespace = app.namespace, labels = labels(name), ownerReferences = ownerReferences),
-      data = configData.map(cd ⇒ cd.filename -> cd.data).toMap
+      data = configData.map(cd => cd.filename -> cd.data).toMap
     )
   }
   def configResourceName(deployment: StreamletDeployment) = Name.ofConfigMap(deployment.name)
@@ -322,7 +327,6 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-import collection.JavaConverters._
 import skuber.Resource.Quantity
 
 object PodsConfig {
@@ -366,7 +370,7 @@ object PodsConfig {
     ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
   }
 
-  implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config ⇒
+  implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config =>
     asConfigObjectToMap[PodConfig](config)
   }
 
@@ -420,7 +424,7 @@ object PodsConfig {
     )
   }
 
-  implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config ⇒
+  implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config =>
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
@@ -466,7 +470,7 @@ object PodsConfig {
     else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
   def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
-    config.root.keySet.asScala.map(key ⇒ key → config.as[T](key)).toMap
+    config.root.keySet.asScala.map(key => key → config.as[T](key)).toMap
 }
 
 final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {

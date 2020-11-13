@@ -39,7 +39,7 @@ class SparkEgressSpec extends SparkScalaTestSupport {
       val in: SparkInletTap[Data] = testKit.inletAsTap[Data](instance.in)
 
       // build data and send to inlet tap
-      val data = (1 to 10).map(i ⇒ Data(i, s"name$i"))
+      val data = (1 to 10).map(i => Data(i, s"name$i"))
       in.addData(data)
 
       val run = testKit.run(instance, Seq(in), Seq.empty)
@@ -64,7 +64,7 @@ class MySparkEgress extends SparkStreamlet {
 
     private def process(inDataset: Dataset[Data]): StreamletQueryExecution = {
       val q1 = inDataset
-        .map { d ⇒
+        .map { d =>
           d.name
         }
         .writeStream
@@ -76,7 +76,7 @@ class MySparkEgress extends SparkStreamlet {
         .start()
 
       val q2 = inDataset
-        .map { d ⇒
+        .map { d =>
           d.name.toUpperCase
         }
         .writeStream

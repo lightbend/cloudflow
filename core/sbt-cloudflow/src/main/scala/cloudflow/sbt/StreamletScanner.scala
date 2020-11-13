@@ -33,9 +33,9 @@ object StreamletScanner {
 
   def scanForStreamletDescriptors(classLoader: ClassLoader, projectId: String): Map[String, Try[Config]] =
     scan(classLoader)
-      .map { case (s, c) ⇒ s -> enrichDescriptorWithProjectId(projectId)(c) }
+      .map { case (s, c) => s -> enrichDescriptorWithProjectId(projectId)(c) }
 
-  def enrichDescriptorWithProjectId(projectId: String): Try[Config] ⇒ Try[Config] = { rawStreamlet ⇒
+  def enrichDescriptorWithProjectId(projectId: String): Try[Config] => Try[Config] = { rawStreamlet =>
     rawStreamlet.map(_.withValue("project_id", ConfigValueFactory.fromAnyRef(projectId)))
   }
 
@@ -48,22 +48,22 @@ object StreamletScanner {
       .asScala
       .toList
     Thread.currentThread.setContextClassLoader(classLoader)
-    val nonAbstractClasses: List[Class[_]] = scanResult.map(nonAbstract(_, classLoader)).collect { case Success(x) ⇒ x }
+    val nonAbstractClasses: List[Class[_]] = scanResult.map(nonAbstract(_, classLoader)).collect { case Success(x) => x }
     val descriptors = nonAbstractClasses
-      .map(clazz ⇒ clazz.getName -> getDescriptor(clazz))
+      .map(clazz => clazz.getName -> getDescriptor(clazz))
       .toMap
     Thread.currentThread.setContextClassLoader(currentClassLoader)
     descriptors
   }
 
   private def nonAbstract(className: String, classLoader: ClassLoader): Try[Class[_]] =
-    loadClass(className, classLoader).filter { clazz ⇒
+    loadClass(className, classLoader).filter { clazz =>
       !Modifier.isAbstract(clazz.getModifiers)
     }
 
   private[sbt] def getDescriptor(streamletClass: Class[_]): Try[Config] =
     getInstance(streamletClass)
-      .flatMap { streamletInstance ⇒
+      .flatMap { streamletInstance =>
         val descriptorMethod = streamletClass.getMethod(StreamletDescriptorMethod, EmptyParameterTypes: _*)
         if (descriptorMethod == null) {
           // This should be impossible since any class that matches the Streamlet trait should have this method...
@@ -76,14 +76,14 @@ object StreamletScanner {
             ConfigFactory.parseString(descriptor.toString)
           }.recoverWith {
             // This should be either impossible or extremely rare since it is our own method we are calling
-            case error ⇒ Failure(DescriptorMethodFailure(streamletClass, error))
+            case error => Failure(DescriptorMethodFailure(streamletClass, error))
           }
         }
       }
 
   private def getInstance(clazz: Class[_]): Try[Any] =
     getInstanceFromScalaObject(clazz).recoverWith {
-      case _ ⇒ getInstanceFromDefaultConstructor(clazz)
+      case _ => getInstanceFromDefaultConstructor(clazz)
     }
 
   private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] =
@@ -91,7 +91,7 @@ object StreamletScanner {
       Failure(ConstructorMissing(streamletClass))
     } else {
       Try(streamletClass.getDeclaredConstructor().newInstance()).recoverWith {
-        case error ⇒ Failure(ConstructorFailure(streamletClass, error))
+        case error => Failure(ConstructorFailure(streamletClass, error))
       }
     }
 

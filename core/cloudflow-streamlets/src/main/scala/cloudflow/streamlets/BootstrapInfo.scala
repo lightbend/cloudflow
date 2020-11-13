@@ -24,7 +24,7 @@ import com.typesafe.config._
 object BootstrapInfo {
   private def getGCInfo: List[(String, javax.management.ObjectName)] = {
     val gcMxBeans = ManagementFactory.getGarbageCollectorMXBeans()
-    gcMxBeans.asScala.map(b ⇒ (b.getName, b.getObjectName)).toList
+    gcMxBeans.asScala.map(b => (b.getName, b.getObjectName)).toList
   }
 
   def box(str: String): String =

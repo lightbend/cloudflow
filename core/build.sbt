@@ -69,6 +69,7 @@ lazy val root =
       name := "root",
       skip in publish := true,
       scalafmtOnCompile := true,
+      crossScalaVersions := Seq(),
       commands += InternalReleaseCommand.command,
       unidocAllSources in (JavaUnidoc, unidoc) ~= { v =>
         v.map(_.filterNot(f => javadocDisabledFor.exists(f.getAbsolutePath.endsWith(_))))
@@ -358,6 +359,7 @@ lazy val blueprint =
       publishArtifact in Test := true
     )
     .settings(
+      crossScalaVersions := List(Version.Scala, Version.ScalaOperator),
       buildInfoKeys := Seq[BuildInfoKey](
             name,
             version
@@ -440,6 +442,7 @@ lazy val operatorActions =
   cloudflowModule("cloudflow-operator-actions")
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
+      scalaVersion := Version.ScalaOperator,
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
@@ -478,7 +481,7 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := Version.Scala,
+      scalaVersion := Version.ScalaOperator,
       crossScalaVersions := Vector(scalaVersion.value),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
@@ -521,14 +524,12 @@ lazy val operator =
             "-Xlog-reflective-calls",
             "-Xlint",
             "-Ywarn-unused",
-            "-Ywarn-unused-import",
             "-deprecation",
             "-feature",
             "-language:_",
             "-unchecked"
           ),
       scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
@@ -584,7 +585,7 @@ lazy val commonSettings = bintraySettings ++ Seq(
               inquireVersions,
               runClean,
               runTest,
-              releaseStepCommandAndRemaining("publishSigned"),
+              releaseStepCommandAndRemaining("+publishSigned"),
               releaseStepCommand("sonatypeBundleRelease"),
               pushChanges
             ),
@@ -596,7 +597,6 @@ lazy val commonSettings = bintraySettings ++ Seq(
               "-Xlog-reflective-calls",
               "-Xlint",
               "-Ywarn-unused",
-              "-Ywarn-unused-import",
               "-deprecation",
               "-feature",
               "-language:_",
