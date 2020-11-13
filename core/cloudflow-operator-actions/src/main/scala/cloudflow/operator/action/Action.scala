@@ -46,7 +46,6 @@ sealed trait Action {
    * The namespace that the action takes place in.
    */
   def namespace: String
-
   def executing: String
   def executed: String
 }

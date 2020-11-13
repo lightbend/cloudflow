@@ -105,10 +105,11 @@ object StatusChangeEvent extends Event {
       case (Some(app), _) if app.status.flatMap(_.appStatus) == Some(CloudflowApplication.Status.Error) =>
         (currentStatuses, List())
       case (None, statusChangeEvent) ⇒ // app could not be found, remove status
-        log.info(
-          s"[Status changes] App could not be found for StatusChange: ${changeInfo(statusChangeEvent.watchEvent)}, removing from current statuses."
-        )
-        (currentStatuses - statusChangeEvent.appId, List())
+        if (currentStatuses.contains(statusChangeEvent.appId)) {
+          log.info(
+            s"[Status changes] App could not be found for StatusChange: ${changeInfo(statusChangeEvent.watchEvent)}, removing from current statuses."
+          )
+          (currentStatuses - statusChangeEvent.appId, List())
+        } else (currentStatuses, List())
     }
-
 }
