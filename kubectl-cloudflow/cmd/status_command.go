@@ -54,9 +54,8 @@ func (c *getStatusCMD) statusImpl(cmd *cobra.Command, args []string) {
 			printStreamletStatuses(applicationCR)
 		}
 	} else {
-		printutil.LogAndExit("%s status is unknown", applicationCR.Name)
+		printAppStatus(applicationCR, "Unknown", "")
 	}
-
 }
 
 func validateStatusCmdArgs(cmd *cobra.Command, args []string) error {
