@@ -318,7 +318,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         }
       }
       .getOrElse(updatedDriver)
-    log.info(s"""
+    log.debug(s"""
     Streamlet ${deployment.streamletName} - resources for driver pod:
       coreLimit:      ${updatedDriver.coreLimit}
     """)
@@ -347,7 +347,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       }
       .getOrElse(updatedExecutor)
 
-    log.info(s"""
+    log.debug(s"""
     Streamlet ${deployment.streamletName} - resources for executor pod:
       coreRequest:    ${updatedExecutor.coreRequest}
       coreLimit:      ${updatedExecutor.coreLimit}
@@ -392,7 +392,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
           .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
           .toMap
       )
-      log.info(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
+      log.debug(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
       sparkConfMap
     }
   }
