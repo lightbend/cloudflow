@@ -89,10 +89,10 @@ object StatusChangeEvent extends Event {
           case StatusChangeEvent(appId, streamletName, watchEvent) ⇒
             watchEvent match {
               case WatchEvent(EventType.ADDED | EventType.MODIFIED, pod: Pod) ⇒
-                log.info(s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
+                log.debug(s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                 currentStatuses + (appId -> appStatus.updatePod(streamletName, pod))
               case WatchEvent(EventType.DELETED, pod: Pod) ⇒
-                log.info(s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
+                log.debug(s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                 currentStatuses + (appId -> appStatus.deletePod(streamletName, pod))
               case _ ⇒
                 log.warn(
