@@ -111,9 +111,14 @@ trait Runner[T <: ObjectResource] {
           Action.providedRetry[Secret, ObjectResource](deployment.secretName, newApp) {
             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), newApp, editor)
             case None =>
-              val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-              log.error(msg)
-              CloudflowApplication.Status.errorAction(newApp, runners, msg)
+              val msg =
+                s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              log.info(msg)
+              CloudflowApplication.Status.pendingAction(
+                newApp,
+                runners,
+                s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
+              )
           }
         )
       }
