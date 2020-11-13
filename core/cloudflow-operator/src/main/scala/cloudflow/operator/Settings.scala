@@ -23,6 +23,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import skuber.Resource.Quantity
 
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
@@ -151,6 +152,11 @@ final case class Settings(config: Config) extends Extension {
   val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
   val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
+  val api = ApiSettings(
+    getNonEmptyString(config, s"$root.api.bind-interface"),
+    getPort(config, s"$root.api.bind-port")
+  )
+
   val deploymentContext = {
     DeploymentContext(
       akkaRunnerSettings,
@@ -161,3 +167,5 @@ final case class Settings(config: Config) extends Extension {
     )
   }
 }
+
+final case class ApiSettings(bindInterface: String, bindPort: Int)
