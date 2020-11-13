@@ -29,7 +29,6 @@ import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
 
-import cloudflow.operator._
 import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
 

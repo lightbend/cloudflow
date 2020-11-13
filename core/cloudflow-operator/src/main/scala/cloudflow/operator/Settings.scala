@@ -23,6 +23,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import skuber.Resource.Quantity
 
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 import org.scalatest.{ ConfigMap => _, _ }
 
 import play.api.libs.json.Json
 import skuber._
 import cloudflow.blueprint._
-import cloudflow.operator.action.runner._
 import BlueprintBuilder._
+import cloudflow.operator.action.runner._
 
 class CloudflowApplicationSpec
     extends WordSpec

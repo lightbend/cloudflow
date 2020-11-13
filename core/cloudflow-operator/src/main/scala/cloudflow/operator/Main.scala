@@ -31,6 +31,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
 import skuber.apps.v1.Deployment
+import cloudflow.operator.action._
 
 object Main extends {
 

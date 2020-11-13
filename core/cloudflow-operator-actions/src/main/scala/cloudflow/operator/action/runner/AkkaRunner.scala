@@ -23,7 +23,6 @@ import skuber.json.rbac.format._
 import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
-import cloudflow.operator._
 import cloudflow.operator.action._
 
 object AkkaRunner {
@@ -247,7 +246,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
           labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
                 CloudflowLabels.StreamletNameLabel -> deployment.streamletName,
                 CloudflowLabels.AppIdLabel         -> appId
-              ).mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
+              ).view.mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
         .addLabels(updateLabels)

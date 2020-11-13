@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action
 
 import java.util.Collections
 import scala.collection.immutable._
