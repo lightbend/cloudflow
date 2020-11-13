@@ -41,7 +41,7 @@ jobs:
       run: |
         export PATH="$HOME/opt/sbt/bin:$PATH"
         cd scripts
-        ./build-all.sh test
+        ./build-all.sh +test
 
 
   build-and-test-cli:
