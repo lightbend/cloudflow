@@ -33,8 +33,8 @@ abstract class GrpcServerLogic(server: Server, context: AkkaStreamletContext) ex
   def handlers(): JList[Function[HttpRequest, CompletionStage[HttpResponse]]]
 
   override def createRoute(): Route = {
-    import scala.collection.JavaConverters._
-    val handler = ServiceHandler.concatOrNotFound(handlers().asScala: _*)
+    import scala.jdk.CollectionConverters._
+    val handler = ServiceHandler.concatOrNotFound(handlers().asScala.toSeq: _*)
 
     concat(
       pathEndOrSingleSlash(() => complete(OK, "")),

@@ -3,7 +3,7 @@
 lazy val sensorData =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.13.2",
       runLocalConfigFile := Some("src/main/resources/local.conf"), //<1>
       runLocalLog4jConfigFile := Some("src/main/resources/log4j.xml"), //<2>
       name := "sensor-data-scala",
@@ -32,15 +32,13 @@ lazy val sensorData =  (project in file("."))
         "-Xlog-reflective-calls",
         "-Xlint",
         "-Ywarn-unused",
-        "-Ywarn-unused-import",
         "-deprecation",
         "-feature",
         "-language:_",
         "-unchecked"
       ),
-      
 
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused"),
       scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
     )
 

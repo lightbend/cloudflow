@@ -8,8 +8,8 @@ object Version {
   val AkkaMgmt      = "1.0.8"
   val AkkaGrpc      = "1.0.1"
   val AlpakkaKafka  = "2.0.5"
-  val Scala         = "2.12.11"
-  val ScalaOperator = "2.13.3"
+  val Scala212      = "2.12.12"
+  val Scala213      = "2.13.4"
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
   val KafkaClients  = "2.5.0"
@@ -50,7 +50,7 @@ object Library {
   val Slf4jLog4jBridge      = "org.slf4j"              % "slf4j-log4j12"            % "1.7.30"            
 
   val SprayJson             = "io.spray"              %% "spray-json"               % "1.3.5"
-  val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.6"
+  val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.7"
 
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 

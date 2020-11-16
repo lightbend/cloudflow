@@ -48,7 +48,7 @@ object LocalRunner extends StreamletLoader {
 
   def shutdownHook(outputStream: OutputStream) =
     new Thread(new Runnable {
-      def run() {
+      def run() = {
         System.setOut(consoleOut)
         System.setErr(errOut)
         withResourceDo(outputStream)(_.flush)
@@ -133,7 +133,7 @@ object LocalRunner extends StreamletLoader {
         StreamletDeployment(appDescriptor.appId,
                             streamletInstance,
                             "",
-                            existingPortMappings,
+                            existingPortMappings.toMap,
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 

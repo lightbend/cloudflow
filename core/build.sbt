@@ -110,6 +110,7 @@ lazy val streamlets =
   cloudflowModule("cloudflow-streamlets")
     .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             SprayJson,
@@ -126,6 +127,7 @@ lazy val akkastream =
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(streamlets)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
@@ -151,6 +153,7 @@ lazy val akkastreamUtil =
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaHttp,
@@ -176,6 +179,7 @@ lazy val akkastreamTestkit =
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
@@ -200,6 +204,7 @@ lazy val akkastreamTests =
     .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(akkastream, akkastreamTestkit % Test)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaHttpTestkit,
@@ -360,7 +365,7 @@ lazy val blueprint =
       publishArtifact in Test := true
     )
     .settings(
-      crossScalaVersions := List(Version.Scala, Version.ScalaOperator),
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       buildInfoKeys := Seq[BuildInfoKey](
             name,
             version
@@ -375,7 +380,7 @@ lazy val plugin =
     .settings(
       scalafmtOnCompile := true,
       sbtPlugin := true,
-      crossSbtVersions := Vector("1.2.8"),
+      crossSbtVersions := Vector("1.4.3"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
       addSbtPlugin("se.marcuslonnberg"       % "sbt-docker"          % "1.8.0"),
@@ -409,6 +414,7 @@ lazy val runner =
       blueprint
     )
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies += Ficus
     )
@@ -439,6 +445,7 @@ lazy val localRunner =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .dependsOn(streamlets, blueprint)
     .settings(
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true
     )
 lazy val operatorActions =
@@ -448,7 +455,7 @@ lazy val operatorActions =
     )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
-      scalaVersion := Version.ScalaOperator,
+      scalaVersion := Version.Scala213,
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
@@ -487,7 +494,7 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := Version.ScalaOperator,
+      scalaVersion := Version.Scala213,
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
       mainClass in Compile := Some("cloudflow.operator.Main"),
@@ -582,7 +589,7 @@ lazy val bintraySettings =
 lazy val commonSettings = bintraySettings ++ Seq(
         organization := "com.lightbend.cloudflow",
         headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-        scalaVersion := Version.Scala,
+        scalaVersion := Version.Scala212,
         autoAPIMappings := true,
         useGpgAgent := false,
         releaseProcess := Seq[ReleaseStep](
