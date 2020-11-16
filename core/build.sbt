@@ -584,7 +584,8 @@ lazy val commonSettings = bintraySettings ++ Seq(
         autoAPIMappings := true,
         useGpgAgent := false,
         releaseProcess := Seq[ReleaseStep](
-              checkSnapshotDependencies,
+              // TODO: re-introduce this command
+              // checkSnapshotDependencies,
               inquireVersions,
               runClean,
               releaseStepCommand("+test"),
