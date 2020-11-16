@@ -7,11 +7,11 @@ To prepare your environment to install Cloudflow, you will need:
 * Helm {supported-helm-v} (check with `helm version`)
 * Kubectl
 * Kafka
-* If using Spark or Flink, configure storage requirements
+* If using Spark or Flink, storage configuration
 
 == Helm
 
-Install Helm {supported-helm-v}. 
+Follow the https://helm.sh/docs/intro/install/[documentation] to install Helm {supported-helm-v}. 
 
 == kubectl
 
@@ -32,7 +32,7 @@ If you want to test Cloudflow and need a Kafka cluster, we recommend using Strim
 
 See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a guide on how to configure and install a Kafka cluster using Strimzi.
 
-=== Storage requirements (for use with Spark or Flink)
+== Storage requirements (for use with Spark or Flink)
 
 **If you plan to write Cloudflow applications using Spark or Flink**, the Kubernetes cluster will need to have a storage class of the `ReadWriteMany` type installed.
 
