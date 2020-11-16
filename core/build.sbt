@@ -441,6 +441,9 @@ lazy val localRunner =
     )
 lazy val operatorActions = 
   cloudflowModule("cloudflow-operator-actions")
+    .enablePlugins(
+      ScalafmtPlugin
+    )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
       scalaVersion := Version.ScalaOperator,
