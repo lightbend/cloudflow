@@ -470,7 +470,7 @@ object PodsConfig {
     else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
   def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
-    config.root.keySet.asScala.map(key => key → config.as[T](key)).toMap
+    config.root.keySet.asScala.map(key => key -> config.as[T](key)).toMap
 }
 
 final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
