@@ -13,6 +13,8 @@ https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
 To use the examples directly remember to run
 `export CLOUDFLOW_VERSION={cloudflow-version}` before invoking `sbt`.
 
+NOTE: Currently Cloudflow can run with sbt up to version 1.3.X.
+
 A typical Cloudflow application uses the organization shown below. 
 We will implement the example in Scala. 
 
