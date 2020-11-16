@@ -32,7 +32,7 @@ echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
 cd $DIR/../core
-sbt --supershell=false "; scalafmtCheck ; $TARGET  ; +publishLocal"
+sbt -mem 2048 --supershell=false "; scalafmtCheck ; $TARGET  ; +publishLocal"
 RETVAL=$?
 [ $RETVAL -ne 0 ] && echo "Failure in building of core" && exit -1
 
@@ -56,10 +56,10 @@ for prj in $PROJECTS; do
   cd $prj
   case "$prj" in
     *-java)
-      sbt --supershell=false "; $TARGET ; verifyBlueprint "
+      sbt -mem 2048 --supershell=false "; $TARGET ; verifyBlueprint "
       ;;
     *)
-      sbt --supershell=false "; scalafmtCheck ; $TARGET ; verifyBlueprint "
+      sbt -mem 2048 --supershell=false "; scalafmtCheck ; $TARGET ; verifyBlueprint "
       ;;
   esac
   RETVAL=$?

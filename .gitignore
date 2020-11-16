@@ -13,6 +13,7 @@ project/activator-sbt*
 examples/*/target-env.sbt
 
 .env
+.bsp
 
 # IntelliJ
 .idea/
