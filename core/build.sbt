@@ -74,14 +74,15 @@ lazy val root =
       unidocAllSources in (JavaUnidoc, unidoc) ~= { v =>
         v.map(_.filterNot(f => javadocDisabledFor.exists(f.getAbsolutePath.endsWith(_))))
       },
-      unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
             streamlets,
             akkastream,
             akkastreamUtil,
             akkastreamTestkit,
             spark,
             sparkTestkit
-          )
+          ),
+      JavaUnidoc / unidoc / unidocProjectFilter := (ScalaUnidoc / unidoc / unidocProjectFilter).value
     )
     .withId("root")
     .settings(commonSettings)
@@ -482,7 +483,6 @@ lazy val operator =
     )
     .settings(
       scalaVersion := Version.ScalaOperator,
-      crossScalaVersions := Vector(scalaVersion.value),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
       mainClass in Compile := Some("cloudflow.operator.Main"),
