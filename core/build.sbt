@@ -36,7 +36,7 @@ val javadocDisabledFor = Set(
   "/cloudflow-spark-testkit/target/java/cloudflow/spark/testkit/SparkStreamletTestkit.java",
   "/cloudflow-spark-testkit/target/java/cloudflow/spark/testkit/TestContextException.java",
   "/cloudflow-spark/target/java/cloudflow/spark/SparkStreamletRuntime.java",
-  "/cloudflow-spark/target/java/cloudflow/spark/avro/EncodedKV.java",
+  "/cloudflow-spark/target/java/cloudflow/spark/kafka/EncodedKV.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/AkkaClusterAttribute.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/BooleanValidationType.java",
   "/cloudflow-streamlets/target/java/cloudflow/streamlets/BootstrapServersForTopicNotFound.java",
@@ -441,6 +441,9 @@ lazy val localRunner =
     )
 lazy val operatorActions = 
   cloudflowModule("cloudflow-operator-actions")
+    .enablePlugins(
+      ScalafmtPlugin
+    )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
       scalaVersion := Version.ScalaOperator,
