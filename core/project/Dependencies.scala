@@ -12,8 +12,9 @@ object Version {
   val ScalaOperator = "2.13.3"
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
-  val KafkaClients  = "2.5.0"
   val EmbeddedKafka = "2.5.0" 
+  val KafkaClients  = "2.5.0"
+  val TestcontainersKafka = "1.15.0" 
 }
 
 object Library {
@@ -41,8 +42,9 @@ object Library {
 
   val AkkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Version.AkkaGrpc
 
-  val EmbeddedKafkaOrg      = "io.github.embeddedkafka"
-  val EmbeddedKafka         = EmbeddedKafkaOrg        %% "embedded-kafka"           % Version.EmbeddedKafka 
+  val EmbeddedKafka         = "io.github.embeddedkafka"        %% "embedded-kafka"           % Version.EmbeddedKafka 
+  val TestcontainersKafka   = "org.testcontainers"     % "kafka"                    % Version.TestcontainersKafka
+  val KafkaClient           = "org.apache.kafka"      %% "kafka"                    % "2.5.1"
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
   val JodaTime              = "joda-time"              % "joda-time"                % "2.10.6"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
