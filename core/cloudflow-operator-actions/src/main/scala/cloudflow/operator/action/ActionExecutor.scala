@@ -17,6 +17,8 @@
 package cloudflow.operator.action
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import scala.collection.immutable.Seq
 
 /**
  * Executes Kubernetes resource actions.
@@ -29,6 +31,13 @@ trait ActionExecutor {
    * In the case of deletion, the original resource is returned.
    */
   def execute(action: Action): Future[Action]
+
+  /**
+   * Executes the actions. Returns the actions as executed, containing the objects as they were returned by the actions.
+   * In the case of deletion, the original resource is returned.
+   */
+  def execute(actions: Seq[Action])(implicit ec: ExecutionContext): Future[Seq[Action]] =
+    Future.sequence(actions.map(execute))
 }
 
 /**
