@@ -17,6 +17,7 @@
 package cloudflow.operator
 package flow
 
+import java.util.concurrent.atomic.AtomicReference
 import akka.stream._
 import akka.stream.scaladsl._
 import skuber.api.client._
@@ -25,7 +26,8 @@ import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 
 object AppEventFlow {
-
+  val appsRef = new AtomicReference(Map[String, WatchEvent[CloudflowApplication.CR]]())
+  
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[AppEvent]]s.
    */
