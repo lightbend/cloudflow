@@ -17,6 +17,7 @@
 package cloudflow.operator
 package flow
 
+import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.stream.scaladsl._
 import org.slf4j._
@@ -33,31 +34,29 @@ object StatusChangeEventFlow extends {
 
   lazy val log = LoggerFactory.getLogger(this.getClass)
 
+  val podsRef   = new AtomicReference(Map[String, WatchEvent[Pod]]())
+  val statusRef = new AtomicReference(Map[String, CloudflowApplication.Status]())
+
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[StatusChangeEvent]]s.
    * Only watch events for resources that have been created by the cloudflow operator are turned into [[StatusChangeEvent]]s.
    */
   def fromWatchEvent(): Flow[WatchEvent[Pod], StatusChangeEvent, NotUsed] =
     Flow[WatchEvent[Pod]]
-      .statefulMapConcat { () =>
-        var currentObjects = Map[String, WatchEvent[Pod]]()
-        watchEvent => {
-          val (updatedObjects, events) = toStatusChangeEvent(currentObjects, watchEvent)
-          currentObjects = updatedObjects
-          events
-        }
+      .mapConcat { watchEvent =>
+        val currentObjects           = podsRef.get
+        val (updatedObjects, events) = toStatusChangeEvent(currentObjects, watchEvent)
+        podsRef.set(updatedObjects)
+        events
       }
 
   def toStatusUpdateAction(runners: Map[String, Runner[_]]): Flow[(Option[CloudflowApplication.CR], StatusChangeEvent), Action, NotUsed] =
     Flow[(Option[CloudflowApplication.CR], StatusChangeEvent)]
-      .statefulMapConcat { () =>
-        var currentStatuses = Map[String, CloudflowApplication.Status]()
-
-        {
-          case (mappedApp, event) =>
-            val (updatedStatuses, actionList) = toActionList(currentStatuses, mappedApp, runners, event)
-            currentStatuses = updatedStatuses
-            actionList
-        }
+      .mapConcat {
+        case (mappedApp, event) =>
+          val currentStatuses               = statusRef.get
+          val (updatedStatuses, actionList) = toActionList(currentStatuses, mappedApp, runners, event)
+          statusRef.set(updatedStatuses)
+          actionList
       }
 }
