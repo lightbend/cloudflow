@@ -52,14 +52,11 @@ object ConfigInputChangeEventFlow {
    */
   def fromWatchEvent(): Flow[WatchEvent[Secret], ConfigInputChangeEvent, NotUsed] =
     Flow[WatchEvent[Secret]]
-      .statefulMapConcat { () =>
-        val currentSecrets = secretsRef.get
-
-        watchEvent => {
-          val (updatedSecrets, events) = toConfigInputChangeEvent(currentSecrets, watchEvent)
-          secretsRef.set(updatedSecrets)
-          events
-        }
+      .mapConcat { watchEvent =>
+        val currentSecrets           = secretsRef.get
+        val (updatedSecrets, events) = toConfigInputChangeEvent(currentSecrets, watchEvent)
+        secretsRef.set(updatedSecrets)
+        events
       }
 
   def toInputConfigUpdateAction(

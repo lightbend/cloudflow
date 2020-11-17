@@ -39,13 +39,11 @@ object StreamletChangeEventFlow {
    */
   def fromWatchEvent(): Flow[WatchEvent[Secret], StreamletChangeEvent[Secret], NotUsed] =
     Flow[WatchEvent[Secret]]
-      .statefulMapConcat { () =>
-        val currentObjects = secretsRef.get
-        watchEvent => {
-          val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)
-          secretsRef.set(updatedObjects)
-          events
-        }
+      .mapConcat { watchEvent =>
+        val currentObjects           = secretsRef.get
+        val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)
+        secretsRef.set(updatedObjects)
+        events
       }
 
   def toConfigUpdateAction(

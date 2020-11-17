@@ -34,13 +34,11 @@ object AppEventFlow {
    */
   def fromWatchEvent(logAttributes: Attributes) =
     Flow[WatchEvent[CloudflowApplication.CR]]
-      .statefulMapConcat { () =>
-        var currentApps = appsRef.get
-        watchEvent => {
-          val (updatedApps, events) = AppEvent.toDeployEvent(currentApps, watchEvent)
-          appsRef.set(updatedApps)
-          events
-        }
+      .mapConcat { watchEvent =>
+        val currentApps           = appsRef.get
+        val (updatedApps, events) = AppEvent.toDeployEvent(currentApps, watchEvent)
+        appsRef.set(updatedApps)
+        events
       }
       .log("app-event", AppEvent.detected)
       .withAttributes(logAttributes)
