@@ -17,6 +17,7 @@
 package cloudflow.operator
 package flow
 
+import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.stream.scaladsl._
 import org.slf4j._
@@ -33,6 +34,8 @@ object StatusChangeEventFlow extends {
 
   lazy val log = LoggerFactory.getLogger(this.getClass)
 
+  val podsRef = new AtomicReference(Map[String, WatchEvent[Pod]]())
+
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[StatusChangeEvent]]s.
    * Only watch events for resources that have been created by the cloudflow operator are turned into [[StatusChangeEvent]]s.
@@ -40,10 +43,10 @@ object StatusChangeEventFlow extends {
   def fromWatchEvent(): Flow[WatchEvent[Pod], StatusChangeEvent, NotUsed] =
     Flow[WatchEvent[Pod]]
       .statefulMapConcat { () =>
-        var currentObjects = Map[String, WatchEvent[Pod]]()
+        val currentObjects = podsRef.get
         watchEvent => {
           val (updatedObjects, events) = toStatusChangeEvent(currentObjects, watchEvent)
-          currentObjects = updatedObjects
+          podsRef.set(updatedObjects)
           events
         }
       }

@@ -33,6 +33,7 @@
 package cloudflow.operator
 package flow
 
+import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.stream.scaladsl._
 import skuber._
@@ -43,17 +44,20 @@ import cloudflow.operator.event._
 object ConfigInputChangeEventFlow {
   import ConfigInputChangeEvent._
 
+  // keeps state of config input across stream restarts
+  val secretsRef = new AtomicReference(Map[String, WatchEvent[Secret]]())
+
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[ConfigInputChangeEvent]]s.
    */
   def fromWatchEvent(): Flow[WatchEvent[Secret], ConfigInputChangeEvent, NotUsed] =
     Flow[WatchEvent[Secret]]
       .statefulMapConcat { () =>
-        var currentSecrets = Map[String, WatchEvent[Secret]]()
+        val currentSecrets = secretsRef.get
 
         watchEvent => {
           val (updatedSecrets, events) = toConfigInputChangeEvent(currentSecrets, watchEvent)
-          currentSecrets = updatedSecrets
+          secretsRef.set(updatedSecrets)
           events
         }
       }
