@@ -35,7 +35,7 @@ object CloudflowLibraryPlugin extends AutoPlugin {
   /** Set default values for keys. */
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-streamlets" % (ThisProject / cloudflowVersion).value
+          "com.lightbend.cloudflow" % s"cloudflow-streamlets_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value
         )
   )
 

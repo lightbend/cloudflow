@@ -35,8 +35,8 @@ object CloudflowSparkPlugin extends AutoPlugin {
   override def projectSettings = Seq(
     cloudflowSparkBaseImage := None,
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-spark"         % (ThisProject / cloudflowVersion).value,
-          "com.lightbend.cloudflow" %% "cloudflow-spark-testkit" % (ThisProject / cloudflowVersion).value % "test"
+          "com.lightbend.cloudflow" % s"cloudflow-spark_${(ThisProject / scalaBinaryVersion).value}"         % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" % s"cloudflow-spark-testkit_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value % "test"
         ),
     cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))

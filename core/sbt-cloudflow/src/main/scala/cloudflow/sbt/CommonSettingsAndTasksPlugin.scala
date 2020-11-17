@@ -68,8 +68,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
           }.value,
       publishArtifact in (Compile, packageDoc) := false,
       publishArtifact in (Compile, packageSrc) := false,
-      libraryDependencies += "com.twitter"     %% "bijection-avro" % "0.9.7",
-      libraryDependencies += "org.apache.avro" % "avro"            % "1.8.2",
+      libraryDependencies += "com.twitter"     % s"bijection-avro_${(ThisProject / scalaBinaryVersion).value}" % "0.9.7",
+      libraryDependencies += "org.apache.avro" % "avro"                                                        % "1.8.2",
       // TODO move all of this to schema plugins, possibly specific for runtime (when specific versions of libraries are needed, like Spark and Avro 1.8.2)
       // Also needs some cleanup.
       schemaCodeGenerator := SchemaCodeGenerator.Scala,
