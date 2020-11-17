@@ -421,8 +421,7 @@ lazy val runner =
     .settings(
       artifactName in (Compile, packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
         "runner" + "." + artifact.extension
-      },
-      crossPaths := false
+      }
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
