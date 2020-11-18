@@ -30,7 +30,9 @@ Install it on your local system by unzipping the archive and moving the executab
 Please make sure you have the executable in your path with proper permission settings. 
 For Linux or MacOS, put the executables in `/usr/local/bin` with permission settings of `755`.
 
-NOTE:: On MacOS Catalina and later, the default behavior is to not allow unsigned executables downloaded from the internet. 
+[NOTE] 
+====
+On MacOS Catalina and later, the default behavior is to not allow unsigned executables downloaded from the internet. 
 It is planned to sign the executable with an Apple developer certificate to fix this but, in the mean time, there is a very simple workaround.
 After downloading and unpacking the executable, please execute the following command to remove the "downloaded from the internet" filesystem flag that blocks the file from being executed:
 +
@@ -39,5 +41,6 @@ xattr -d com.apple.quarantine [path to]/kubectl-cloudflow
 ....
 +
 More details can be found in the https://github.com/lightbend/cloudflow/issues/47[associated issue].
+====
 
 ifdef::review[Reviewers:still need recommendations for Windows.]
