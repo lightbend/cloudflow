@@ -1,4 +1,4 @@
-= Supported versions of dependencies
+
 
 include::ROOT:partial$include.adoc[]
 
