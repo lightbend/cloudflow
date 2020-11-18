@@ -63,15 +63,18 @@ object AppEvent {
     val cr         = watchEvent._object
     val appId      = cr.spec.appId
     val currentApp = currentApps.get(appId).map(_._object)
+
+    def hasChanged = currentApps.get(appId).forall { existingEvent =>
+      existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
+      // the spec must change, otherwise it is not a deploy event (but likely a status update).
+      existingEvent._object.spec != watchEvent._object.spec
+    }
+
     watchEvent._type match {
       case EventType.DELETED =>
         (currentApps - appId, List(UndeployEvent(cr, watchEvent._object)))
       case EventType.ADDED | EventType.MODIFIED =>
-        if (currentApps.get(appId).forall { existingEvent =>
-              existingEvent._object.resourceVersion != watchEvent._object.resourceVersion &&
-              // the spec must change, otherwise it is not a deploy event (but likely a status update).
-              existingEvent._object.spec != watchEvent._object.spec
-            }) {
+        if (hasChanged) {
           (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, watchEvent._object)))
         } else (currentApps, List())
     }
