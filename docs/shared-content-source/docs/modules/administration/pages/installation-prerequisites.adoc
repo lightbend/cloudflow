@@ -15,9 +15,11 @@ Follow the https://helm.sh/docs/intro/install/[documentation] to install Helm {s
 
 == kubectl
 
-Before proceeding, make sure that `kubectl` is correctly installed and access the Kubernetes cluster to install Cloudflow. This can be done with the following command:
+Before proceeding, make sure that `kubectl` for your Kubernetes distribution is correctly installed and access the Kubernetes cluster to install Cloudflow. Cloudflow supports a variety of distributions, see xref:versions.adoc[Supported component versions].
 
-    kubectl version
+Check the version with the following command:
+
+    `kubectl version`
 
 == Kafka
 

@@ -82,4 +82,4 @@ For more information about configuring GlusterFS on Openshift, please read https
 
 == What's next
 
-With this overview of storage, it's time to check xref:installing-cloudflow.adoc[].
+With this overview of storage, it's time to xref:installing-cloudflow.adoc[install Cloudflow].
