@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 import java.security.MessageDigest
 
@@ -61,13 +61,13 @@ object CloudflowApplication {
 
   implicit val streamletAttributeDescriptorFmt: Format[StreamletAttributeDescriptor] = Json.format[StreamletAttributeDescriptor]
   implicit val streamletRuntimeDescriptorFmt: Format[StreamletRuntimeDescriptor] = Format[StreamletRuntimeDescriptor](
-    Reads { jsValue ⇒
+    Reads { jsValue =>
       jsValue match {
-        case JsString(runtime) ⇒ JsSuccess(StreamletRuntimeDescriptor(runtime))
-        case _                 ⇒ JsError("Expected JsString for StreamletRuntimeDescriptor")
+        case JsString(runtime) => JsSuccess(StreamletRuntimeDescriptor(runtime))
+        case _                 => JsError("Expected JsString for StreamletRuntimeDescriptor")
       }
     },
-    Writes(r ⇒ JsString(r.name))
+    Writes(r => JsString(r.name))
   )
   implicit val schemaDescriptorFmt: Format[SchemaDescriptor]                   = Json.format[SchemaDescriptor]
   implicit val outletDescriptorFmt: Format[OutletDescriptor]                   = Json.format[OutletDescriptor]
@@ -78,10 +78,10 @@ object CloudflowApplication {
   implicit val streamletFmt: Format[StreamletInstance]                         = Json.format[StreamletInstance]
 
   implicit val configFmt: Format[Config] = Format[Config](
-    Reads(jsValue ⇒
-      Try(ConfigFactory.parseString(jsValue.toString)).fold[JsResult[Config]](e ⇒ JsError(e.getMessage), conf ⇒ JsSuccess(conf))
+    Reads(jsValue =>
+      Try(ConfigFactory.parseString(jsValue.toString)).fold[JsResult[Config]](e => JsError(e.getMessage), conf => JsSuccess(conf))
     ),
-    Writes(conf ⇒ Json.parse(conf.root().render(ConfigRenderOptions.concise())))
+    Writes(conf => Json.parse(conf.root().render(ConfigRenderOptions.concise())))
   )
   implicit val savepointFmt: Format[AppDescriptorTopic]   = Json.format[AppDescriptorTopic]
   implicit val endpointFmt: Format[Endpoint]              = Json.format[Endpoint]
@@ -99,7 +99,7 @@ object CloudflowApplication {
     singular = Some("cloudflowapplication"),
     plural = Some("cloudflowapplications"),
     shortNames = List("cloudflowapp"),
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]
@@ -145,12 +145,26 @@ object CloudflowApplication {
       )
     }
 
+    def pendingAction(app: CloudflowApplication.CR,
+                      runners: Map[String, Runner[_]],
+                      msg: String): ResourceAction[CloudflowApplication.CR] = {
+      log.info(s"Setting pending status for app ${app.spec.appId}")
+      Status(app.spec, runners)
+        .copy(
+          appStatus = Some(CloudflowApplication.Status.Pending),
+          appMessage = Some(msg)
+        )
+        .toAction(app)
+    }
+
     def errorAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], msg: String): ResourceAction[CloudflowApplication.CR] = {
       log.info(s"Setting error status for app ${app.spec.appId}")
       Status(app.spec, runners)
         .copy(
           appStatus = Some(CloudflowApplication.Status.Error),
-          appMessage = Some(msg)
+          appMessage = Some(
+            s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}"
+          )
         )
         .toAction(app)
     }
@@ -308,11 +322,11 @@ object CloudflowApplication {
       } else {
         status.phase
           .map {
-            case Pod.Phase.Pending   ⇒ getStatusFromContainerStates(containerStates, nrOfContainers)
-            case Pod.Phase.Running   ⇒ getStatusFromContainerStates(containerStates, nrOfContainers)
-            case Pod.Phase.Succeeded ⇒ Succeeded
-            case Pod.Phase.Failed    ⇒ Failed
-            case Pod.Phase.Unknown   ⇒ Unknown
+            case Pod.Phase.Pending   => getStatusFromContainerStates(containerStates, nrOfContainers)
+            case Pod.Phase.Running   => getStatusFromContainerStates(containerStates, nrOfContainers)
+            case Pod.Phase.Succeeded => Succeeded
+            case Pod.Phase.Failed    => Failed
+            case Pod.Phase.Unknown   => Unknown
           }
           .getOrElse(getStatusFromContainerStates(containerStates, nrOfContainers))
       }

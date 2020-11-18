@@ -23,7 +23,7 @@ import org.apache.flink.streaming.connectors.kafka._
 
 import com.typesafe.config._
 import cloudflow.streamlets._
-import java.{ util ⇒ ju }
+import java.{ util => ju }
 
 /**
  * An implementation of `FlinkStreamletContext`

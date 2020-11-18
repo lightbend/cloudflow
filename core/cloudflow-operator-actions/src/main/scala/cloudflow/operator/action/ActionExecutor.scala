@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import scala.collection.immutable.Seq
 
 /**
  * Executes Kubernetes resource actions.
@@ -30,16 +31,23 @@ trait ActionExecutor {
    * In the case of deletion, the original resource is returned.
    */
   def execute(action: Action): Future[Action]
+
+  /**
+   * Executes the actions. Returns the actions as executed, containing the objects as they were returned by the actions.
+   * In the case of deletion, the original resource is returned.
+   */
+  def execute(actions: Seq[Action])(implicit ec: ExecutionContext): Future[Seq[Action]] =
+    Future.sequence(actions.map(execute))
 }
 
 /**
  * Exception thrown when the action failed to make the appropriate change(s) for the application identified by `appId`.
  */
 case class ActionException(action: Action, msg: String, cause: Throwable) extends Exception(msg, cause) {
-  def this(action: Action, cause: Throwable) {
+  def this(action: Action, cause: Throwable) = {
     this(action, s"Action ${action.name} failed: ${cause.getMessage}", cause)
   }
-  def this(action: Action, msg: String) {
+  def this(action: Action, msg: String) = {
     this(action, s"Action ${action.name} failed: ${msg}", null)
   }
 }

@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action
 
 import org.scalatest._
 
@@ -67,16 +66,16 @@ class EndpointActionsSpec
       val actions = EndpointActions(newApp, currentApp)
 
       Then("only create endpoint actions must be created for all server attributed streamlets")
-      val createActions = actions.collect { case c: CreateOrUpdateAction[_] ⇒ c }
+      val createActions = actions.collect { case c: CreateOrUpdateAction[_] => c }
 
       val services = createActions.map(_.resource).collect {
-        case service: Service ⇒ service
+        case service: Service => service
       }
       val endpoints = newApp.spec.deployments.flatMap(_.endpoint).distinct
 
       createActions.size mustBe actions.size
       services.size mustBe endpoints.size
-      services.foreach { service ⇒
+      services.foreach { service =>
         assertService(service, newApp.spec)
       }
     }
@@ -143,7 +142,7 @@ class EndpointActionsSpec
 
       Then("delete actions should be created")
       actions.size mustBe 1
-      val deleteActions = actions.collect { case d: DeleteAction[_] ⇒ d }
+      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
 
       val serviceNames = deleteActions.map(_.resourceName)
 
@@ -181,30 +180,30 @@ class EndpointActionsSpec
       Then("create actions for service should be created for the new endpoint")
       val actions = EndpointActions(newApp, Some(currentApp))
       actions.size mustBe 1
-      val createActions = actions.collect { case a: CreateOrUpdateAction[_] ⇒ a }
+      val createActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
 
       val services = createActions.map(_.resource).collect {
-        case service: Service ⇒ service
+        case service: Service => service
       }
 
       services.size mustBe 1
-      services.foreach { service ⇒
+      services.foreach { service =>
         assertService(service, newApp.spec)
       }
     }
   }
 
   def assertService(service: Service, app: CloudflowApplication.Spec) = {
-    val deployment = app.deployments.find(deployment ⇒ Name.ofService(deployment.name) == service.metadata.name).value
+    val deployment = app.deployments.find(deployment => Name.ofService(deployment.name) == service.metadata.name).value
     val endpoint   = deployment.endpoint.value
     service.metadata.name mustEqual Name.ofService(deployment.name)
-    val serviceSelector: Option[Map[String, String]] = service.spec.map(spec ⇒ spec.selector)
+    val serviceSelector: Option[Map[String, String]] = service.spec.map(spec => spec.selector)
     serviceSelector.value(CloudflowLabels.Name) mustEqual Name.ofPod(deployment.name)
     service.spec.value._type mustEqual Service.Type.ClusterIP
     val ports = service.spec.value.ports
     ports must have size 1
 
-    forAll(ports) { port ⇒
+    forAll(ports) { port =>
       port.port mustEqual endpoint.containerPort
       port.name mustEqual Name.ofContainerPort(endpoint.containerPort)
       port.targetPort.value mustEqual Right(Name.ofContainerPort(endpoint.containerPort))

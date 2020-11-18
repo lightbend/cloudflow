@@ -29,11 +29,11 @@ object AvroUtil {
 
   def makeSchema[T <: SpecificRecordBase: ClassTag]: Schema =
     Try(classTag[T].runtimeClass.getDeclaredMethod("SCHEMA$")) match {
-      case Success(schema) ⇒ schema.invoke(null).asInstanceOf[Schema]
-      case Failure(_) ⇒ {
+      case Success(schema) => schema.invoke(null).asInstanceOf[Schema]
+      case Failure(_) => {
         Try(classTag[T].runtimeClass.getDeclaredField("SCHEMA$")) match {
-          case Success(schema) ⇒ schema.get(null).asInstanceOf[Schema]
-          case Failure(ex)     ⇒ throw new RuntimeException(s"Error fetching avro schema for class ${classTag[T].runtimeClass}", ex)
+          case Success(schema) => schema.get(null).asInstanceOf[Schema]
+          case Failure(ex)     => throw new RuntimeException(s"Error fetching avro schema for class ${classTag[T].runtimeClass}", ex)
         }
       }
     }

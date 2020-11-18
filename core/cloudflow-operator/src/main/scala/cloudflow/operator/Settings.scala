@@ -23,6 +23,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import skuber.Resource.Quantity
 
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
@@ -50,21 +51,21 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   private def getResourceConstraints(config: Config): ResourceConstraints = ResourceConstraints(
     getNonEmptyString(config, "requests-cpu"),
     getNonEmptyString(config, "requests-memory"),
-    config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("limits-memory").map(v ⇒ Quantity(v))
+    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
+    config.as[Option[String]]("limits-memory").map(v => Quantity(v))
   )
   private def getSparkPodDefaults(config: Config): SparkPodDefaults = SparkPodDefaults(
-    config.as[Option[String]]("requests-cpu").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("requests-memory").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("memory-overhead").map(v ⇒ Quantity(v)),
+    config.as[Option[String]]("requests-cpu").map(v => Quantity(v)),
+    config.as[Option[String]]("requests-memory").map(v => Quantity(v)),
+    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
+    config.as[Option[String]]("memory-overhead").map(v => Quantity(v)),
     config.as[Option[String]]("java-opts")
   )
   private def getFlinkPodResourceDefaults(config: Config): FlinkPodResourceDefaults = FlinkPodResourceDefaults(
-    config.as[Option[String]]("requests-cpu").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("requests-memory").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("limits-cpu").map(v ⇒ Quantity(v)),
-    config.as[Option[String]]("limits-memory").map(v ⇒ Quantity(v))
+    config.as[Option[String]]("requests-cpu").map(v => Quantity(v)),
+    config.as[Option[String]]("requests-memory").map(v => Quantity(v)),
+    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
+    config.as[Option[String]]("limits-memory").map(v => Quantity(v))
   )
 
   private def getAkkaRunnerDefaults(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerDefaults = {
@@ -106,18 +107,18 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   }
 
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
-    case AkkaRunner.Runtime ⇒
+    case AkkaRunner.Runtime =>
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case SparkRunner.Runtime ⇒
+    case SparkRunner.Runtime =>
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/spark.yaml",
         "prometheus-rules/kafka-client.yaml"
       )
-    case FlinkRunner.Runtime ⇒
+    case FlinkRunner.Runtime =>
       appendResourcesToString(
         "prometheus-rules/base.yaml",
         "prometheus-rules/flink.yaml",
@@ -127,13 +128,13 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 
   private def appendResourcesToString(paths: String*): String =
     paths.foldLeft("") {
-      case (acc, path) ⇒
+      case (acc, path) =>
         var source: BufferedSource = null
         try {
           source = Source.fromResource(path)
           acc + source.getLines.mkString("\n") + "\n"
         } catch {
-          case t: Throwable ⇒ throw new Exception(s"Could not load file from resources with path $path", t)
+          case t: Throwable => throw new Exception(s"Could not load file from resources with path $path", t)
         } finally {
           source.close()
         }

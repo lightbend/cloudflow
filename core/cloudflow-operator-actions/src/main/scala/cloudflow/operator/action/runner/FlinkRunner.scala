@@ -18,7 +18,8 @@ package cloudflow.operator.action.runner
 
 import java.util.concurrent.atomic.AtomicReference
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+
 import scala.util.Try
 import com.typesafe.config._
 import play.api.libs.json._
@@ -31,7 +32,7 @@ import skuber._
 import cloudflow.blueprint.deployment._
 import FlinkResource._
 
-import cloudflow.operator._
+import cloudflow.operator.action._
 import cloudflow.operator.action.Action
 
 object FlinkRunner {
@@ -75,23 +76,17 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR,
+                            runners: Map[String, Runner[_]],
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.provided[Secret, ObjectResource](streamletDeployment.secretName, app, app.metadata.namespace) {
-      case Some(secret) =>
-        val _resource =
-          resource(streamletDeployment, app, secret, updateLabels)
-        val labeledResource =
-          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-        Action.createOrUpdate(labeledResource, app, editor)
-      case None =>
-        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-
-        log.error(msg)
-        CloudflowApplication.Status.errorAction(app, runners, msg)
-    }
-
+    val _resource =
+      resource(streamletDeployment, app, secret, updateLabels)
+    val labeledResource =
+      _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+    Action.createOrUpdate(labeledResource, app, editor)
   }
 
   def defaultReplicas = DefaultTaskManagerReplicas
@@ -105,7 +100,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   private def flinkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
-        name = Name.ofFlinkRole(),
+        name = Name.ofFlinkRole,
         namespace = namespace,
         labels = labels(Name.ofFlinkRole),
         ownerReferences = ownerReferences
@@ -127,7 +122,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   private def flinkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofFlinkRoleBinding(),
+        name = Name.ofFlinkRoleBinding,
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
@@ -155,7 +150,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val javaOptions = getJavaOptions(podsConfig, PodsConfig.CloudflowPodName)
 
     val image             = deployment.image
-    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     val dockerContainerGroupId = Runner.DockerContainerGroupId
     val securityContext =
@@ -228,7 +223,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val name      = resourceName(deployment)
     val appLabels = CloudflowLabels(app)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) ++ updateLabels ++
-          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> app.spec.appId)
+          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> app.spec.appId).view
             .mapValues(Name.ofLabelValue) ++
           getLabels(podsConfig, PodsConfig.CloudflowPodName)
     val ownerReferences = List(OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true)))
@@ -348,7 +343,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     val secretVolume = Volume("secret-vol", Volume.Secret(deployment.secretName))
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
-    val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
 
@@ -369,7 +364,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
    * // ]
    */
   private def makeVolumeMountsSpec(streamletToDeploy: Option[StreamletInstance]): Vector[Volume.Mount] = {
-    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume.Mount(mount.name, mount.path)
     })
 
@@ -390,20 +385,20 @@ object FlinkResource {
   final case class ResourceRequests(memory: Option[String] = None, cpu: Option[String] = None)
   object ResourceRequests {
     def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceRequests] = (memory, cpu) match {
-      case (Some(_), Some(_)) ⇒ Some(ResourceRequests(memory, cpu))
-      case (Some(_), None)    ⇒ Some(ResourceRequests(memory, None))
-      case (None, Some(_))    ⇒ Some(ResourceRequests(None, cpu))
-      case (None, None)       ⇒ None
+      case (Some(_), Some(_)) => Some(ResourceRequests(memory, cpu))
+      case (Some(_), None)    => Some(ResourceRequests(memory, None))
+      case (None, Some(_))    => Some(ResourceRequests(None, cpu))
+      case (None, None)       => None
     }
   }
 
   final case class ResourceLimits(memory: Option[String] = None, cpu: Option[String] = None)
   object ResourceLimits {
     def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceLimits] = (memory, cpu) match {
-      case (Some(_), Some(_)) ⇒ Some(ResourceLimits(memory, cpu))
-      case (Some(_), None)    ⇒ Some(ResourceLimits(memory, None))
-      case (None, Some(_))    ⇒ Some(ResourceLimits(None, cpu))
-      case (None, None)       ⇒ None
+      case (Some(_), Some(_)) => Some(ResourceLimits(memory, cpu))
+      case (Some(_), None)    => Some(ResourceLimits(memory, None))
+      case (None, Some(_))    => Some(ResourceLimits(None, cpu))
+      case (None, None)       => None
     }
   }
 
@@ -411,10 +406,10 @@ object FlinkResource {
   object Resources {
     def make(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None): Option[Resources] =
       (requests, limits) match {
-        case (Some(_), Some(_)) ⇒ Some(Resources(requests, limits))
-        case (Some(_), None)    ⇒ Some(Resources(requests, None))
-        case (None, Some(_))    ⇒ Some(Resources(None, limits))
-        case (None, None)       ⇒ None
+        case (Some(_), Some(_)) => Some(Resources(requests, limits))
+        case (Some(_), None)    => Some(Resources(requests, None))
+        case (None, Some(_))    => Some(Resources(None, limits))
+        case (None, None)       => None
       }
   }
 
@@ -528,7 +523,7 @@ object FlinkResource {
     group = "flink.k8s.io",
     version = "v1beta1",
     kind = "FlinkApplication",
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]

@@ -68,13 +68,13 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
 
   override protected final def createContext(config: Config): SparkStreamletContext =
     (for {
-      streamletConfig ← StreamletDefinition.read(config)
-      session         ← makeSparkSession(makeSparkConfig).map(updateSparkSession)
+      streamletConfig <- StreamletDefinition.read(config)
+      session         <- makeSparkSession(makeSparkConfig).map(updateSparkSession)
     } yield {
       val updatedConfig = streamletConfig.config.withFallback(config)
       new kafka.SparkStreamletContextImpl(streamletConfig, session, updatedConfig)
     }).recoverWith {
-      case th ⇒ Failure(new Exception(s"Failed to create context from $config", th))
+      case th => Failure(new Exception(s"Failed to create context from $config", th))
     }.get
 
   protected def createLogic(): SparkStreamletLogic

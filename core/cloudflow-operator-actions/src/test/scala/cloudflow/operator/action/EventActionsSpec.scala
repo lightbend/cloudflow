@@ -19,7 +19,6 @@ package cloudflow.operator.action
 import org.scalatest._
 import cloudflow.blueprint._
 import BlueprintBuilder._
-import cloudflow.operator.{ CloudflowApplication, CloudflowApplicationSpecBuilder, TestDeploymentContext }
 import cloudflow.operator.action.runner.AkkaRunner
 
 class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen with EitherValues with Inspectors with TestDeploymentContext {
@@ -90,7 +89,7 @@ class EventActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wit
       Given("a current app and a new app")
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val app =
-        CloudflowApplication(currentApp.copy(deployments = currentApp.deployments.map(deployment ⇒ deployment.copy(replicas = Some(2)))))
+        CloudflowApplication(currentApp.copy(deployments = currentApp.deployments.map(deployment => deployment.copy(replicas = Some(2)))))
 
       val currentAppCr = CloudflowApplication(currentApp)
 

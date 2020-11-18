@@ -17,12 +17,15 @@
 package cloudflow.akkastream
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 import scala.collection.immutable
 import scala.concurrent._
 import scala.util._
 import akka._
 import akka.actor.{ ActorSystem, CoordinatedShutdown }
+import akka.annotation.InternalApi
 import akka.cluster.sharding.external.ExternalShardAllocationStrategy
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka._
@@ -36,23 +39,84 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization._
 import cloudflow.streamlets._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 
 /**
  * Implementation of the StreamletContext trait.
  */
+@InternalApi
 final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem
 ) extends AkkaStreamletContext {
+  private val log                            = LoggerFactory.getLogger(classOf[AkkaStreamletContextImpl])
+  private val streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
 
   implicit val system: ActorSystem = sys
 
   override def config: Config = streamletDefinition.config
 
+  private val StopTimeoutSetting = "cloudflow.akka.consumer-stop-timeout"
+  private val consumerStopTimeout: FiniteDuration =
+    FiniteDuration(sys.settings.config.getDuration(StopTimeoutSetting).toMillis, TimeUnit.MILLISECONDS).toCoarsest
+
   private val execution                               = new StreamletExecutionImpl(this)
   override val streamletExecution: StreamletExecution = execution
+
+  /**
+   * See https://doc.akka.io/docs/alpakka-kafka/current/consumer.html#controlled-shutdown
+   */
+  @InternalApi
+  object KafkaControls {
+    import akka.kafka.scaladsl.Consumer.Control
+    private val controls = new AtomicReference(Set[Control]())
+
+    def add(c: Control): Control = {
+      controls.updateAndGet(set => set + c)
+      c
+    }
+
+    def get: Set[Control] = controls.get()
+
+    /**
+     * Stop producing messages from all inlets and complete the streams.
+     *
+     * The underlying Kafka consumer stays alive so that it can handle commits for the
+     * already enqueued messages. It does not unsubscribe from any topics/partitions
+     * as that could trigger a consumer group rebalance.
+     */
+    def stopInflow()(implicit ec: ExecutionContext) = {
+      log.debug("Stopping inflow from {}", streamletDefinitionMsg)
+      Future
+        .sequence(controls.get.map(_.stop().recover {
+          case cause =>
+            log.error("stopping the consumer source failed.", cause)
+            Done
+        }))
+        .map(_ => Done)
+    }
+
+    /**
+     * Shut down the consumer `Source`.
+     *
+     * After this no more commits from enqueued messages can be handled.
+     * The actor will wait for acknowledgements of the already sent offset commits from the Kafka broker before shutting down.
+     */
+    def shutdownConsumers()(implicit ec: ExecutionContext) = {
+      log.debug("Shutting down consumers of {}", streamletDefinitionMsg)
+      Future
+        .sequence(
+          controls.get.map(_.shutdown().recover {
+            case cause =>
+              log.error("shutting down the consumer source failed.", cause)
+              Done
+          })
+        )
+        .map(_ => Done)
+    }
+  }
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
@@ -69,15 +133,12 @@ final class AkkaStreamletContextImpl(
 
     Consumer
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
-      // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
-      .asSource
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
-      .via(handleTermination)
-      .map {
-        case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+      .mapMaterializedValue { c =>
+        KafkaControls.add(c)
+        NotUsed
       }
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
+      .map(record => inlet.codec.decode(record.value))
+      .via(handleTermination)
   }
 
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
@@ -128,17 +189,17 @@ final class AkkaStreamletContextImpl(
 
           Consumer
             .sourceWithOffsetContext(consumerSettings, subscription)
-            // TODO clean this up, once SourceWithContext has mapError and mapMaterializedValue
-            .asSource
-            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
-            .via(handleTermination)
-            .map {
-              case (record, committableOffset) ⇒ inlet.codec.decode(record.value) -> committableOffset
+            .mapMaterializedValue { c =>
+              KafkaControls.add(c)
+              NotUsed
             }
+            .map(record => inlet.codec.decode(record.value))
+            .via(handleTermination)
+            .asSource
         }(system.dispatcher)
       }
-      .asSourceWithContext { case (_, committableOffset) ⇒ committableOffset }
-      .map { case (record, _) ⇒ record }
+      .asSourceWithContext { case (_, committableOffset) => committableOffset }
+      .map { case (record, _) => record }
   }
 
   override def shardedSourceWithCommittableContext[T, M, E](
@@ -160,7 +221,7 @@ final class AkkaStreamletContextImpl(
 
     Flow[(T, Committable)]
       .map {
-        case (value, committable) ⇒
+        case (value, committable) =>
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
@@ -207,7 +268,7 @@ final class AkkaStreamletContextImpl(
 
     Flow[(T, CommittableOffset)]
       .map {
-        case (value, committable) ⇒
+        case (value, committable) =>
           val key        = outlet.partitioner(value)
           val bytesKey   = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
@@ -231,9 +292,12 @@ final class AkkaStreamletContextImpl(
 
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
-      .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+      .mapMaterializedValue { c =>
+        KafkaControls.add(c)
+        NotUsed
+      }
       .via(handleTermination)
-      .map { record ⇒
+      .map { record =>
         inlet.codec.decode(record.value)
       }
   }
@@ -281,9 +345,12 @@ final class AkkaStreamletContextImpl(
 
           Consumer
             .plainSource(consumerSettings, subscription)
-            .mapMaterializedValue(_ ⇒ NotUsed) // TODO we should likely use control to gracefully stop.
+            .mapMaterializedValue { c =>
+              KafkaControls.add(c)
+              NotUsed
+            }
             .via(handleTermination)
-            .map { record ⇒
+            .map { record =>
               inlet.codec.decode(record.value)
             }
         }(system.dispatcher)
@@ -297,7 +364,7 @@ final class AkkaStreamletContextImpl(
       .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
-      .map { value ⇒
+      .map { value =>
         val key        = outlet.partitioner(value)
         val bytesKey   = keyBytes(key)
         val bytesValue = outlet.codec.encode(value)
@@ -305,7 +372,7 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .to(Producer.plainSink(producerSettings))
-      .mapMaterializedValue(_ ⇒ NotUsed)
+      .mapMaterializedValue(_ => NotUsed)
   }
 
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
@@ -329,14 +396,11 @@ final class AkkaStreamletContextImpl(
       .alsoTo(
         Sink.onComplete { res =>
           execution.complete(res)
-          val streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
           res match {
-            case Success(_) ⇒
-              system.log.info(
-                s"Stream has completed. Shutting down streamlet $streamletDefinitionMsg."
-              )
-            case Failure(e) ⇒
-              system.log.error(e, s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.")
+            case Success(_) =>
+              log.info("Stream has completed. Shutting down streamlet {}.", streamletDefinitionMsg)
+            case Failure(e) =>
+              log.error(s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.", e)
           }
         }
       )
@@ -348,11 +412,19 @@ final class AkkaStreamletContextImpl(
     // the streamlet context has been created and the streamlet is ready to take requests
     // needs to be done only in cluster mode - not in local running
     if (!localMode) HealthCheckFiles.createReady(streamletRef)
+
+    import system.dispatcher
     CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, s"akka-streamlet-${streamletRef}-unbind") { () =>
       serviceUnbind()
     }
     CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeClusterShutdown, s"akka-streamlet-${streamletRef}-stop") { () =>
-      stop().map(_ => Done)(system.dispatcher)
+      stop().map(_ => Done)
+    }
+    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseActorSystemTerminate, s"akka-streamlet-${streamletRef}-terminate") { () =>
+      Future {
+        HealthCheckFiles.deleteAlive(streamletRef)
+        Done
+      }
     }
   }
 
@@ -362,19 +434,33 @@ final class AkkaStreamletContextImpl(
     // needs to be done only in cluster mode - not in local running
     if (!localMode) HealthCheckFiles.createAlive(streamletRef)
 
-  private def serviceUnbind(): Future[Done] =
-    Future {
-      HealthCheckFiles.deleteReady(streamletRef)
-      Done
-    }(system.dispatcher)
+  private def serviceUnbind(): Future[Done] = {
+    HealthCheckFiles.deleteReady(streamletRef)
+    KafkaControls.stopInflow()(system.dispatcher)
+  }
 
   override def stop(): Future[Dun] = {
     HealthCheckFiles.deleteReady(streamletRef)
 
-    killSwitch.shutdown()
     import system.dispatcher
-    Stoppers
-      .stop()
+    KafkaControls
+      .stopInflow()
+      .flatMap { _ =>
+        log.debug(s"Waiting {} ($StopTimeoutSetting) until {} consumers are shut down",
+                  consumerStopTimeout: Any,
+                  streamletDefinitionMsg: Any)
+        akka.pattern.after(consumerStopTimeout)(Future.successful(Done))
+      }
+      .flatMap { _ =>
+        KafkaControls.shutdownConsumers()
+      }
+      .map { _ =>
+        // The kill switch wouldn't do anything in most cases
+        // as `stopInflow` completes the sources and the stream should be completed by now
+        log.debug("Triggering kill switch of {}", streamletDefinitionMsg)
+        killSwitch.shutdown()
+      }
+      .flatMap(_ => Stoppers.stop())
       .flatMap(_ => execution.complete())
   }
 

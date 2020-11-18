@@ -36,14 +36,14 @@ class AvroCodec[T <: SpecificRecordBase](avroSchema: Schema) extends Codec[T] {
 }
 
 private[avro] class AvroSerde[T <: SpecificRecordBase](injection: Injection[T, Array[Byte]]) extends Serializable {
-  val inverted: Array[Byte] ⇒ Try[T] = injection.invert _
+  val inverted: Array[Byte] => Try[T] = injection.invert _
 
   def encode(value: T): Array[Byte] = injection(value)
 
   // TODO fix up the exception, maybe pas through input
   def decode(bytes: Array[Byte]): T =
     Try(inverted(bytes).get).recoverWith {
-      case t ⇒
+      case t =>
         Failure(DecodeException("Could not decode.", t))
     }.get
 }

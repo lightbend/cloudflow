@@ -23,8 +23,8 @@ import scala.concurrent.duration._
 
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{ DataStream ⇒ JDataStream }
-import org.apache.flink.streaming.api.environment.{ StreamExecutionEnvironment ⇒ JStreamExecutionEnvironment }
+import org.apache.flink.streaming.api.datastream.{ DataStream => JDataStream }
+import org.apache.flink.streaming.api.environment.{ StreamExecutionEnvironment => JStreamExecutionEnvironment }
 import com.typesafe.config._
 
 import cloudflow.flink.FlinkStreamlet
@@ -62,14 +62,14 @@ import cloudflow.streamlets._
  *       override def createLogic() = new FlinkStreamletLogic {
  *         override def buildExecutionGraph = {
  *           val ins: DataStream[Data] = readStream(in)
- *           val simples: DataStream[Simple] = ins.map(r ⇒ new Simple(r.getName()))
+ *           val simples: DataStream[Simple] = ins.map(r => new Simple(r.getName()))
  *           writeStream(out, simples)
  *         }
  *       }
  *     }
  *
  *     // build data to send to inlet tap
- *     val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+ *     val data = (1 to 10).map(i => new Data(i, s"name$i"))
  *
  *     // setup inlet tap on inlet port and load input data
  *     val in: FlinkInletTap[Data] = inletAsTap[Data](FlinkProcessor.in,

@@ -39,7 +39,7 @@ object StreamletJsonOps {
       json.asJsObject().fields.values.toSeq
 
     def stringField(name: String): Option[String] =
-      json.asJsObject().fields.get(name).collect { case JsString(txt) ⇒ txt }
+      json.asJsObject().fields.get(name).collect { case JsString(txt) => txt }
 
     def mustBeAStreamletPortDescriptorFor(port: StreamletPort): Unit = {
       val jObj = json.asJsObject
@@ -52,7 +52,7 @@ object StreamletJsonOps {
       val format = port.schemaDefinition.format
       schema.field("format").value must haveStringValue(format)
 
-      val fls1 = schema.fields.collect { case JsString(s) ⇒ s }.toList
+      val fls1 = schema.fields.collect { case JsString(s) => s }.toList
       val fls2 =
         List(port.schemaDefinition.fingerprint, port.schemaDefinition.format, port.schemaDefinition.name, port.schemaDefinition.schema)
       fls1 must equal(fls2)
@@ -64,7 +64,7 @@ object StreamletJsonOps {
       streamletDescriptor.field("description").value must haveStringValue(streamlet.description)
       streamletDescriptor.arrayElement("labels") must haveStringValues(streamlet.labels)
 
-      def validatePorts(ports: Seq[StreamletPort], fieldName: String): Unit = ports.foreach { port ⇒
+      def validatePorts(ports: Seq[StreamletPort], fieldName: String): Unit = ports.foreach { port =>
         val descriptor = streamletDescriptor.arrayElement(fieldName).findElement("name", port.name).value
         descriptor.mustBeAStreamletPortDescriptorFor(port)
       }
@@ -76,7 +76,7 @@ object StreamletJsonOps {
 
   implicit class JsonSeqOps(val jsonSeq: Seq[JsValue]) extends AnyVal {
     def findElement(field: String, value: String): Option[JsValue] =
-      jsonSeq.find(entry ⇒ entry.asJsObject.fields(field) == JsString(value))
+      jsonSeq.find(entry => entry.asJsObject.fields(field) == JsString(value))
   }
 }
 

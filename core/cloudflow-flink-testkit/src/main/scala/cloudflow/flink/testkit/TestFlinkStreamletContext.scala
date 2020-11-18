@@ -54,7 +54,7 @@ class TestFlinkStreamletContext(override val streamletRef: String,
   override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] =
     outletTaps
       .find(_.portName == outlet.name)
-      .map { _ ⇒
+      .map { _ =>
         stream.addSink(new SinkFunction[Out]() {
           override def invoke(out: Out) =
             TestFlinkStreamletContext.result.add(out.toString())

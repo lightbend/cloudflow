@@ -8,10 +8,12 @@ To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Do
 
 First, make sure that you have the following installed:
 
+
 * Java(JDK) {supported-java-v}
 * https://www.scala-sbt.org/[sbt,window=_blank], {supported-sbt-v}
 * https://www.docker.com/community-edition[Docker,window=_blank], {supported-docker-v}
 * https://helm.sh/docs/intro/install/[Helm,window=_blank], {supported-helm-v}. We recommend version 3 to avoid dealing with tiller.
+
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
 
 == Download and install the Cloudflow CLI

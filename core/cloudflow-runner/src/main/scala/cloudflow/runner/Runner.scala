@@ -34,10 +34,10 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   sys.props.get("os.name") match {
-    case Some(os) if os.startsWith("Win") ⇒
+    case Some(os) if os.startsWith("Win") =>
       log.error("cloudflow.runner.Runner is NOT compatible with Windows!!")
     case Some(os) => log.info(s"Runner running on $os")
-    case None     ⇒ log.warn("""sys.props.get("os.name") returned None!""")
+    case None     => log.warn("""sys.props.get("os.name") returned None!""")
   }
 
   val PVCMountPath: String               = "/mnt/spark/storage"
@@ -48,12 +48,12 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
   private def run(): Unit = {
 
     val result: Try[(Config, LoadedStreamlet)] = for {
-      runnerConfig    ← makeConfig
-      loadedStreamlet ← loadStreamlet(runnerConfig)
+      runnerConfig    <- makeConfig
+      loadedStreamlet <- loadStreamlet(runnerConfig)
     } yield (runnerConfig, loadedStreamlet)
 
     result match {
-      case Success((runnerConfig, loadedStreamlet)) ⇒
+      case Success((runnerConfig, loadedStreamlet)) =>
         val withStorageConfig    = addStorageConfig(runnerConfig, PVCMountPath)
         val withPodRuntimeConfig = addPodRuntimeConfig(withStorageConfig, DownwardApiVolumeMountPath)
 
@@ -75,12 +75,12 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
           Await.result(streamletExecution.completed, Duration.Inf)
           shutdown(loadedStreamlet)
         } catch {
-          case ex @ ExceptionAcc(exceptions @ _) ⇒
+          case ex @ ExceptionAcc(exceptions @ _) =>
             shutdown(loadedStreamlet, Some(ex))
           case ex: Throwable =>
             shutdown(loadedStreamlet, Some(ex))
         }
-      case Failure(ex) ⇒ throw new Exception(ex)
+      case Failure(ex) => throw new Exception(ex)
     }
   }
 

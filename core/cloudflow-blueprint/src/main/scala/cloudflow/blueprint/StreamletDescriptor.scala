@@ -35,7 +35,7 @@ final case class StreamletDescriptor(
 ) {
   def isIngress: Boolean = inlets.isEmpty && outlets.nonEmpty
   def isServer: Boolean  = attributes.exists(_.attributeName == StreamletDescriptor.Server)
-  def getAttribute(name: String): Option[StreamletAttributeDescriptor] = attributes.find { attrib ⇒
+  def getAttribute(name: String): Option[StreamletAttributeDescriptor] = attributes.find { attrib =>
     attrib.attributeName == name
   }
 }

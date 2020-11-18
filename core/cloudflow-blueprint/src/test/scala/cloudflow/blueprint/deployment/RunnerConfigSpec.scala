@@ -47,7 +47,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
         .toVector
 
       ports must have size 1
-      forExactly(1, ports) { port ⇒
+      forExactly(1, ports) { port =>
         val topicConfig = portMappingConfig.getConfig(port)
 
         ingressDeployment.portMappings must contain(

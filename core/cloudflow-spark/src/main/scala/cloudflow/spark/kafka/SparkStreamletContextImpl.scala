@@ -68,7 +68,7 @@ class SparkStreamletContextImpl(
       typeTag: TypeTag[Out]
   ): StreamingQuery = {
 
-    val encodedStream = stream.map { value ⇒
+    val encodedStream = stream.map { value =>
       val key = outPort.partitioner match {
         case RoundRobinPartitioner => null
         case _                     => outPort.partitioner(value).getBytes()

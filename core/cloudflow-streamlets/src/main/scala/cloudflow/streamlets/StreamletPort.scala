@@ -86,12 +86,12 @@ trait CodecOutlet[T] extends Outlet {
   /**
    * Returns a CodecOutlet with the partitioner set.
    */
-  def withPartitioner(partitioner: T ⇒ String): CodecOutlet[T]
+  def withPartitioner(partitioner: T => String): CodecOutlet[T]
 
   /**
    * Partitions the data that is written to the outlet.
    */
-  def partitioner: T ⇒ String
+  def partitioner: T => String
 
   /**
    * Serializes the data that is written to the outlet.
@@ -108,7 +108,7 @@ trait CodecOutlet[T] extends Outlet {
  * A round-robin partitioning function.
  * Elements written to a [[CodecOutlet]] that uses this partitioner will be distributed in round-robin fashion across the topic partitions.
  */
-object RoundRobinPartitioner extends (Any ⇒ String) with Serializable {
+object RoundRobinPartitioner extends (Any => String) with Serializable {
 
   /**
    * The key is null for any record. The Kafka Producer will use the default (round-robin) partitioner
@@ -119,5 +119,5 @@ object RoundRobinPartitioner extends (Any ⇒ String) with Serializable {
   /**
    * Java API
    */
-  def getInstance[T <: Any]: T ⇒ String = this
+  def getInstance[T <: Any]: T => String = this
 }

@@ -20,7 +20,6 @@ import java.time.ZonedDateTime
 import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
 import cloudflow.operator.action.runner.Runner
-import cloudflow.operator.{ CloudflowApplication, CloudflowLabels }
 import skuber.json.format.eventFmt
 import skuber.{ Event, ObjectEditor, ObjectMeta, ObjectResource }
 
@@ -43,8 +42,8 @@ object EventActions {
                    cause: ObjectResource): Seq[Action] = {
 
     val (reason, message) = currentApp match {
-      case Some(_) ⇒ ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
-      case _       ⇒ ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
+      case Some(_) => ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
+      case _       => ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
     }
 
     val deployEvent = createEvent(
@@ -68,9 +67,9 @@ object EventActions {
                                     podName: String,
                                     cause: ObjectResource): Seq[Action] =
     for {
-      currentApp       ← currentAppOpt.toVector
-      streamlet        ← app.spec.deployments
-      currentStreamlet ← currentApp.spec.deployments.find(_.name == streamlet.name) if currentStreamlet.replicas != streamlet.replicas
+      currentApp       <- currentAppOpt.toVector
+      streamlet        <- app.spec.deployments
+      currentStreamlet <- currentApp.spec.deployments.find(_.name == streamlet.name) if currentStreamlet.replicas != streamlet.replicas
       replicas        = replicasOrRunnerDefault(streamlet, runners)
       currentReplicas = replicasOrRunnerDefault(currentStreamlet, runners)
     } yield createEvent(
@@ -116,7 +115,7 @@ object EventActions {
     val metadataName = newEventName(podName, app.spec.appId)
 
     // the object reference fieldPath is irrelevant for application events.
-    val refMaybeWithPath = fieldPath.map(path ⇒ objectReference.copy(fieldPath = path)).getOrElse(objectReference)
+    val refMaybeWithPath = fieldPath.map(path => objectReference.copy(fieldPath = path)).getOrElse(objectReference)
 
     val event = Event(
       metadata = ObjectMeta(
