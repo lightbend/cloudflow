@@ -22,7 +22,7 @@ import akka.{ Done, NotUsed }
 import akka.actor.ActorSystem
 import akka.japi.Pair
 import akka.stream.scaladsl._
-import akka.testkit.javadsl.{ TestKit ⇒ JTestKit }
+import akka.testkit.javadsl.{ TestKit => JTestKit }
 
 import cloudflow.streamlets._
 import cloudflow.akkastream.testkit.PartitionedValue
@@ -34,7 +34,7 @@ case class SinkOutletTap[T](outlet: CodecOutlet[T], val snk: akka.stream.javadsl
     Flow[PartitionedValue[T]]
       .alsoTo(
         Flow[PartitionedValue[T]]
-          .map(pv ⇒ Pair(pv.key, pv.value))
+          .map(pv => Pair(pv.key, pv.value))
           .to(snk)
       )
       .toMat(Sink.ignore)(Keep.right)
@@ -49,7 +49,7 @@ case class ProbeOutletTap[T](outlet: CodecOutlet[T])(implicit system: ActorSyste
     Flow[PartitionedValue[T]]
       .alsoTo(
         Flow[PartitionedValue[T]]
-          .map(pv ⇒ Pair(pv.key, pv.value))
+          .map(pv => Pair(pv.key, pv.value))
           .to(Sink.actorRef[Pair[String, T]](probe.getTestActor, Completed, Failed))
       )
       .toMat(Sink.ignore)(Keep.right)

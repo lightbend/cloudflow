@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 import skuber.Resource.Quantity
 import cloudflow.operator.action.runner._

@@ -43,13 +43,13 @@ object Splitter {
       left: Sink[(L, Committable), NotUsed],
       right: Sink[(R, Committable), NotUsed]
   ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
-    GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
+    GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] => (il, ir) =>
       import GraphDSL.Implicits._
 
       val toEitherFlow = builder.add(flow.asFlow)
       val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
-        case (Left(e), offset)  ⇒ Left((e, offset))
-        case (Right(e), offset) ⇒ Right((e, offset))
+        case (Left(e), offset)  => Left((e, offset))
+        case (Right(e), offset) => Right((e, offset))
       }
       val partitioner = builder.add(partitionWith)
 
@@ -133,13 +133,13 @@ abstract class SplitterLogic[I, L, R](
     val right = committableSink[R](rightOutlet)
 
     val splitterGraph = RunnableGraph.fromGraph(
-      GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] ⇒ (il, ir) ⇒
+      GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] => (il, ir) =>
         import GraphDSL.Implicits._
 
         val toEitherFlow = builder.add(flow.asFlow)
         val partitionWith = PartitionWith[(Either[L, R], Committable), (L, Committable), (R, Committable)] {
-          case (Left(e), offset)  ⇒ Left((e, offset))
-          case (Right(e), offset) ⇒ Right((e, offset))
+          case (Left(e), offset)  => Left((e, offset))
+          case (Right(e), offset) => Right((e, offset))
         }
         val partitioner = builder.add(partitionWith)
 

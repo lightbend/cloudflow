@@ -16,8 +16,7 @@
 
 package cloudflow.operator.action.runner
 
-import scala.collection.JavaConverters._
-import cloudflow.blueprint.deployment._
+import scala.jdk.CollectionConverters._
 import SparkResource._
 import com.typesafe.config._
 import play.api.libs.json._
@@ -30,6 +29,7 @@ import skuber._
 import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
+import cloudflow.blueprint.deployment._
 import cloudflow.operator._
 import cloudflow.operator.action._
 
@@ -79,24 +79,20 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     )
   }
 
-  def streamletChangeAction(app: CloudflowApplication.CR, runners: Map[String, Runner[_]], streamletDeployment: StreamletDeployment) = {
+  def streamletChangeAction(app: CloudflowApplication.CR,
+                            runners: Map[String, Runner[_]],
+                            streamletDeployment: StreamletDeployment,
+                            secret: skuber.Secret) = {
     val updateLabels = Map(CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)
 
-    Action.provided[Secret, ObjectResource](streamletDeployment.secretName, app) {
-      case Some(secret) =>
-        val _resource =
-          resource(streamletDeployment, app, secret, updateLabels)
-        val labeledResource =
-          _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-        val patch = SpecPatch(labeledResource.spec)
-        Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
-      case None =>
-        val msg = s"Secret ${streamletDeployment.secretName} is missing for streamlet deployment '${streamletDeployment.name}'."
-        log.error(msg)
-        CloudflowApplication.Status.errorAction(app, runners, msg)
-    }
-
+    val _resource =
+      resource(streamletDeployment, app, secret, updateLabels)
+    val labeledResource =
+      _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
+    val patch = SpecPatch(labeledResource.spec)
+    Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
   }
+
   override def updateActions(newApp: CloudflowApplication.CR,
                              runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
@@ -120,7 +116,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   private def sparkRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role =
     Role(
       metadata = ObjectMeta(
-        name = Name.ofSparkRole(),
+        name = Name.ofSparkRole,
         namespace = namespace,
         labels = labels(Name.ofSparkRole),
         ownerReferences = ownerReferences
@@ -142,7 +138,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   private def sparkRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
     RoleBinding(
       metadata = ObjectMeta(
-        name = Name.ofSparkRoleBinding(),
+        name = Name.ofSparkRoleBinding,
         namespace = namespace,
         labels = labels(Name.ofRoleBinding),
         ownerReferences = ownerReferences
@@ -189,13 +185,13 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val configMapName = Name.ofConfigMap(deployment.name)
     val configMaps    = Seq(NamePath(configMapName, Runner.ConfigMapMountPath))
 
-    val streamletToDeploy = app.spec.streamlets.find(streamlet ⇒ streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
-    val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume(mount.name, Volume.PersistentVolumeClaimRef(mount.pvcName))
     })
-    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount ⇒
+    val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       Volume.Mount(mount.name, mount.path)
     })
 
@@ -223,7 +219,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
+          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId).view
             .mapValues(Name.ofLabelValue)
 
     val driver = addDriverResourceRequirements(
@@ -322,7 +318,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         }
       }
       .getOrElse(updatedDriver)
-    log.info(s"""
+    log.debug(s"""
     Streamlet ${deployment.streamletName} - resources for driver pod:
       coreLimit:      ${updatedDriver.coreLimit}
     """)
@@ -351,7 +347,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       }
       .getOrElse(updatedExecutor)
 
-    log.info(s"""
+    log.debug(s"""
     Streamlet ${deployment.streamletName} - resources for executor pod:
       coreRequest:    ${updatedExecutor.coreRequest}
       coreLimit:      ${updatedExecutor.coreLimit}
@@ -396,14 +392,14 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
           .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
           .toMap
       )
-      log.info(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
+      log.debug(s"Setting SparkConf from secret ${configSecret.metadata.namespace}/${configSecret.metadata.name}: $sparkConfMap")
       sparkConfMap
     }
   }
 }
 
 object SparkResource {
-  private val SparkServiceAccount = Name.ofServiceAccount()
+  private val SparkServiceAccount = Name.ofServiceAccount
 
   final case class SecurityContext(fsGroup: Option[Int])
 
@@ -529,14 +525,14 @@ object SparkResource {
 
     implicit val reads: Reads[RestartPolicy] =
       __.read[OnFailureRestartPolicy]
-        .map(x ⇒ x: RestartPolicy)
-        .orElse(__.read[AlwaysRestartPolicy].map(x ⇒ x: RestartPolicy))
-        .orElse(__.read[NeverRestartPolicy].map(x ⇒ x: RestartPolicy))
+        .map(x => x: RestartPolicy)
+        .orElse(__.read[AlwaysRestartPolicy].map(x => x: RestartPolicy))
+        .orElse(__.read[NeverRestartPolicy].map(x => x: RestartPolicy))
 
     implicit val writes: Writes[RestartPolicy] = {
-      case never: NeverRestartPolicy         ⇒ neverRestartPolicyWrites.writes(never)
-      case always: AlwaysRestartPolicy       ⇒ alwaysRestartPolicyWrites.writes(always)
-      case onFailure: OnFailureRestartPolicy ⇒ onFailureRestartPolicyWrites.writes(onFailure)
+      case never: NeverRestartPolicy         => neverRestartPolicyWrites.writes(never)
+      case always: AlwaysRestartPolicy       => alwaysRestartPolicyWrites.writes(always)
+      case onFailure: OnFailureRestartPolicy => onFailureRestartPolicyWrites.writes(onFailure)
     }
   }
 
@@ -555,7 +551,7 @@ object SparkResource {
     group = "sparkoperator.k8s.io",
     version = "v1beta2",
     kind = "SparkApplication",
-    subresources = Some(Subresources().withStatusSubresource)
+    subresources = Some(Subresources().withStatusSubresource())
   )
 
   implicit val statusSubEnabled = CustomResource.statusMethodsEnabler[CR]

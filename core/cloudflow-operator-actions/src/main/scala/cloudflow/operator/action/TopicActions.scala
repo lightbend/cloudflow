@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-package action
+package cloudflow.operator.action
 
 import java.util.Collections
 import scala.collection.immutable._
@@ -120,7 +119,7 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        Action.provided[Secret, ObjectResource](name, newApp) { secretOption =>
+        Action.providedRetry[Secret, ObjectResource](name, newApp, getRetries = 2) { secretOption =>
           maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
             .getOrElse(useClusterConfiguration(topic))
         }
@@ -310,7 +309,7 @@ object TopicActions {
 
   implicit class KafkaFutureConverter[T](fut: KafkaFuture[T]) {
     def asScala: Future[T] = {
-      val promise = Promise[T]
+      val promise = Promise[T]()
       fut.whenComplete { (res, error) =>
         if (error == null) promise.success(res)
         else promise.failure(error)

@@ -17,6 +17,7 @@
 package cloudflow.operator
 package event
 
+import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.stream.scaladsl._
 
@@ -30,19 +31,19 @@ object StreamletChangeEventFlow {
 
   import StreamletChangeEvent._
 
+  val secretsRef = new AtomicReference(Map[String, WatchEvent[Secret]]())
+
   /**
    * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
    * Only watch events that have changed for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
    */
   def fromWatchEvent(): Flow[WatchEvent[Secret], StreamletChangeEvent[Secret], NotUsed] =
     Flow[WatchEvent[Secret]]
-      .statefulMapConcat { () =>
-        var currentObjects = Map[String, WatchEvent[Secret]]()
-        watchEvent => {
-          val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)
-          currentObjects = updatedObjects
-          events
-        }
+      .mapConcat { watchEvent =>
+        val currentObjects           = secretsRef.get
+        val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)
+        secretsRef.set(updatedObjects)
+        events
       }
 
   def toConfigUpdateAction(

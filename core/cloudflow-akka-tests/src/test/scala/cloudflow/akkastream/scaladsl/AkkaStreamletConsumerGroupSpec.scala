@@ -41,6 +41,7 @@ object AkkaStreamletConsumerGroupSpec {
         stdout-loglevel = "OFF"
         loglevel = "OFF"
       }
+      cloudflow.akka.consumer-stop-timeout = 5 s
       """)
 }
 

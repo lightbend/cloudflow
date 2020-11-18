@@ -31,6 +31,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
 import skuber.apps.v1.Deployment
+import cloudflow.operator.action._
 
 object Main extends {
 
@@ -62,7 +63,7 @@ object Main extends {
       Operator.handleConfigurationInput(client, runners, ctx.podNamespace)
       Operator.handleStatusUpdates(client, runners)
     } catch {
-      case t: Throwable ⇒
+      case t: Throwable =>
         system.log.error(t, "Unexpected error starting cloudflow operator, terminating.")
         system.registerOnTermination(exitWithFailure)
         system.terminate()
@@ -81,12 +82,6 @@ object Main extends {
       |${formatBuildInfo}
       |\n${box("JVM Resources")}
       |${getJVMRuntimeParameters}
-      |\n${box("Akka Deployment Config")}
-      |\n${prettyPrintConfig(deploymentConfig)}
-      |\n${box("Akka Default Blocking IO Dispatcher Config")}
-      |\n${prettyPrintConfig(blockingIODispatcherConfig)}
-      |\n${box("Akka Default Dispatcher Config")}
-      |\n${prettyPrintConfig(dispatcherConfig)}
       |\n${box("GC Type")}
       |\n${getGCInfo}
       |\n${box("Cloudflow Context")}
@@ -116,8 +111,8 @@ object Main extends {
     val crdTimeout = 20.seconds
     // TODO check if version is the same, if not, also create.
     Await.result(
-      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).flatMap { result ⇒
-        result.fold(client.create(CloudflowApplication.CRD)) { crd ⇒
+      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).flatMap { result =>
+        result.fold(client.create(CloudflowApplication.CRD)) { crd =>
           if (crd.spec.version != CloudflowApplication.CRD.spec.version) {
             client.create(CloudflowApplication.CRD)
           } else {
@@ -134,7 +129,7 @@ object Main extends {
     val protocolVersionTimeout = 20.seconds
     Await.result(
       client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).flatMap {
-        _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap ⇒
+        _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap =>
           if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
             client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))
           } else {
@@ -148,7 +143,7 @@ object Main extends {
 
   private def getGCInfo: List[(String, javax.management.ObjectName)] = {
     val gcMxBeans = ManagementFactory.getGarbageCollectorMXBeans()
-    gcMxBeans.asScala.map(b ⇒ (b.getName, b.getObjectName)).toList
+    gcMxBeans.asScala.map(b => (b.getName, b.getObjectName)).toList
   }
 
   private def box(str: String): String =

@@ -14,34 +14,10 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
-
+package cloudflow.operator.action
 import skuber.Resource.Quantity
 
-/**
- * Provides defaults for deployment.
- */
-case class DeploymentContext(akkaRunnerDefaults: AkkaRunnerDefaults,
-                             sparkRunnerDefaults: SparkRunnerDefaults,
-                             flinkRunnerDefaults: FlinkRunnerDefaults,
-                             podName: String,
-                             podNamespace: String) {
-  def infoMessage = s"""
-   | pod-name:                         ${podName}
-   | pod-namespace                     ${podNamespace}
-  """
-}
-
 final case class Resources(request: String, limit: String)
-
-final case class Host(name: String, port: Option[Int]) {
-  override def toString = s"""$name:${port.getOrElse(80)}"""
-}
-
-final case class DockerRegistrySettings(
-    host: Host,
-    repository: String
-)
 
 sealed trait RunnerDefaults {
   def prometheusRules: String

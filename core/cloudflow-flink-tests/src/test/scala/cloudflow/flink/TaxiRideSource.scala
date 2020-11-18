@@ -73,12 +73,12 @@ case class TaxiRideSource(
 
     val emitSchedule: PriorityQueue[(Long, Any)] = new PriorityQueue(
       32,
-      (o1, o2) ⇒ o1._1.compare(o2._1)
+      (o1, o2) => o1._1.compare(o2._1)
     )
 
     def readFirstRideAndUpdateEmitSchedule(emitSchedule: PriorityQueue[(Long, Any)], rand: Random): Unit =
       getNextRide() match {
-        case Success(ride) ⇒
+        case Success(ride) =>
           // extract starting timestamp
           dataStartTime = getEventTime(ride)
 
@@ -92,13 +92,13 @@ case class TaxiRideSource(
           val nextWatermark = new Watermark(watermarkTime - maxDelayMsecs - 1)
           emitSchedule.add((watermarkTime, nextWatermark))
 
-        case Failure(ex) ⇒ throw ex
+        case Failure(ex) => throw ex
       }
 
     readFirstRideAndUpdateEmitSchedule(emitSchedule, rand)
 
     getNextRide() match {
-      case Success(r) ⇒ {
+      case Success(r) => {
         var ride = r
 
         // read rides one-by-one and emit a random ride from the buffer each time
@@ -116,11 +116,11 @@ case class TaxiRideSource(
             emitSchedule.add((delayedEventTime, ride))
 
             getNextRide() match {
-              case Success(r) ⇒ {
+              case Success(r) => {
                 ride = r
                 rideEventTime = getEventTime(ride)
               }
-              case Failure(_) ⇒ {
+              case Failure(_) => {
                 rideEventTime = -1
                 ride = null
               }
@@ -138,19 +138,19 @@ case class TaxiRideSource(
           Thread.sleep(if (waitTime > 0) waitTime else 0)
 
           head._2 match {
-            case emitRide: TaxiRide ⇒ sourceContext.collectWithTimestamp(emitRide, getEventTime(emitRide))
-            case emitWatermark: Watermark ⇒ {
+            case emitRide: TaxiRide => sourceContext.collectWithTimestamp(emitRide, getEventTime(emitRide))
+            case emitWatermark: Watermark => {
               sourceContext.emitWatermark(emitWatermark)
               // schedule next watermark
               val watermarkTime = delayedEventTime + watermarkDelayMSecs
               val nextWatermark = new Watermark(watermarkTime - maxDelayMsecs - 1)
               emitSchedule.add((watermarkTime, nextWatermark))
             }
-            case _ ⇒ throw new RuntimeException("Unexpected data found. TaxiRide or Watermark expected")
+            case _ => throw new RuntimeException("Unexpected data found. TaxiRide or Watermark expected")
           }
         }
       }
-      case Failure(ex) ⇒ throw ex
+      case Failure(ex) => throw ex
     }
 
   }
@@ -177,8 +177,8 @@ case class TaxiRideSource(
       if (reader != null) reader.close()
       if (gzipStream != null) gzipStream.close()
     }.transform(
-        s ⇒ Success(s),
-        ioe ⇒ Failure(new RuntimeException("Could not cancel SourceFunction", ioe))
+        s => Success(s),
+        ioe => Failure(new RuntimeException("Could not cancel SourceFunction", ioe))
       )
       .get
 

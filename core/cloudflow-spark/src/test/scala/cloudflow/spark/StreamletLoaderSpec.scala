@@ -101,12 +101,12 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
 
     "create a new streamlet instance on each call" in {
       for {
-        LoadedStreamlet(streamlet1, _) ← loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
-        LoadedStreamlet(streamlet2, _) ← loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
+        LoadedStreamlet(streamlet1, _) <- loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
+        LoadedStreamlet(streamlet2, _) <- loadStreamlet(flowConfig(appId, appVersion, streamletObjectImpl))
       } yield (streamlet1 mustNot be(theSameInstanceAs(streamlet2)))
     }
 
-    val checkContextForStreamlet: String ⇒ Unit = { streamletImpl ⇒
+    val checkContextForStreamlet: String => Unit = { streamletImpl =>
       val LoadedStreamlet(_, conf) = loadStreamlet(flowConfig(appId, appVersion, streamletImpl)).success.value
       conf.config.getString("fake-config-value") mustBe "bla"
     }

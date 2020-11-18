@@ -24,7 +24,7 @@ import skuber._
 
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
-import cloudflow.operator._
+import cloudflow.operator.action._
 import cloudflow.operator.action.runner.FlinkResource._
 
 class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers with GivenWhenThen with TestDeploymentContext {
@@ -343,8 +343,8 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
       val jsonString = Json.toJson(cr).toString()
       val fromJson   = Json.parse(jsonString).validate[CR]
       fromJson match {
-        case err: JsError ⇒ fail(err.toString)
-        case _            ⇒
+        case err: JsError => fail(err.toString)
+        case _            =>
       }
     }
   }

@@ -22,7 +22,7 @@ private[blueprint] object NameUtils {
 
   final def isDnsLabelCompatible(name: String): Boolean =
     name match {
-      case DNSLabelPattern(_) ⇒ true
-      case _                  ⇒ false
+      case DNSLabelPattern(_) => true
+      case _                  => false
     }
 }

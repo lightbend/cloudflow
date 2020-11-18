@@ -60,7 +60,7 @@ object Dns1123Formatter {
     val subDomainMaxLenght = 253
     name
       .split('.')
-      .map(label ⇒ trim(normalize(label)))
+      .map(label => trim(normalize(label)))
       .mkString(".")
       .take(subDomainMaxLenght)
       .stripSuffix(".")

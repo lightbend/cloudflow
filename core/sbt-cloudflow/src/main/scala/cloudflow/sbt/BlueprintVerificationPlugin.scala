@@ -44,7 +44,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
           Def.task {
             val defaultBlueprint = blueprintConf(baseDirectory.value)
             blueprint.value
-              .map { bpFilename ⇒
+              .map { bpFilename =>
                 baseDirectory.value / "src" / "main" / "blueprint" / bpFilename
               }
               .getOrElse(defaultBlueprint)
@@ -83,7 +83,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
         }.value,
     mappings in (Compile, packageBin) ++= {
       val _ = verifyBlueprint.value // dependency
-      verifiedBlueprintFile.value.map { bpFile ⇒
+      verifiedBlueprintFile.value.map { bpFile =>
         bpFile -> bpFile.getName
       }
     },
@@ -95,8 +95,8 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       val libraryVersion  = (ThisProject / cloudflowVersion).value
 
       for {
-        BlueprintVerified(bp, _) ← verificationResult.value.toOption
-        verifiedBlueprint        ← bp.verified.toOption
+        BlueprintVerified(bp, _) <- verificationResult.value.toOption
+        verifiedBlueprint        <- bp.verified.toOption
       } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap, libraryVersion)
     },
     fork in Compile := true
@@ -110,7 +110,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
   ): Def.Initialize[Task[Either[BlueprintVerificationFailed, BlueprintVerified]]] = Def.task {
 
     val detectedStreamletDescriptors = detectedStreamlets.map {
-      case (_, configDescriptor) ⇒
+      case (_, configDescriptor) =>
         configDescriptor
           .root()
           .render(ConfigRenderOptions.concise())
@@ -125,7 +125,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
     bpFile.allPaths
       .get()
       .headOption
-      .map { bpFile ⇒
+      .map { bpFile =>
         val blueprint = Blueprint.parseString(IO.read(bpFile), streamletDescriptors.toVector)
         if (blueprint.problems.isEmpty) {
           Right(BlueprintVerified(blueprint, bpFile))
@@ -141,7 +141,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
   private def writeVerifiedBlueprintFile(
       results: Either[BlueprintVerificationFailed, BlueprintVerified]
   ): Def.Initialize[Task[Option[File]]] = Def.task {
-    results.toOption.map { blueprintVerified ⇒
+    results.toOption.map { blueprintVerified =>
       val file = (target in Compile).value / "blueprint" / blueprintVerified.file.getName
       IO.copyFile(blueprintVerified.file, file)
       file
@@ -150,16 +150,16 @@ object BlueprintVerificationPlugin extends AutoPlugin {
 
   private def feedbackResults(results: Either[BlueprintVerificationFailed, BlueprintVerified], log: sbt.internal.util.ManagedLogger): Unit =
     results match {
-      case Left(BlueprintDoesNotExist(file)) ⇒
+      case Left(BlueprintDoesNotExist(file)) =>
         throw new BlueprintVerificationError(s"The blueprint file does not exist:\n${file.toString}")
-      case Left(BlueprintRuleViolations(blueprint, file)) ⇒
+      case Left(BlueprintRuleViolations(blueprint, file)) =>
         val problemsMsg = blueprint.problems
-          .map { p ⇒
+          .map { p =>
             BlueprintProblem.toMessage(p)
           }
           .mkString("\n")
         throw new BlueprintVerificationError(s"${file.toString}:\n$problemsMsg")
-      case Right(BlueprintVerified(_, file)) ⇒
+      case Right(BlueprintVerified(_, file)) =>
         log.success(s"${file.toString} verified.")
     }
 }

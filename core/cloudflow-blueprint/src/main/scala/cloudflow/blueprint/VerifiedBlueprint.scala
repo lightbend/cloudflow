@@ -81,12 +81,12 @@ object VerifiedPort {
     verifiedStreamlets
       .find(_.name == verifiedPortPath.streamletRef)
       .toRight(PortPathNotFound(portPath))
-      .flatMap { verifiedStreamlet ⇒
+      .flatMap { verifiedStreamlet =>
         val ports = verifiedStreamlet.descriptor.outlets ++ verifiedStreamlet.descriptor.inlets
 
         ports
-          .find(port ⇒ port.name == verifiedPortPath.portName)
-          .map { portDescriptor ⇒
+          .find(port => port.name == verifiedPortPath.portName)
+          .map { portDescriptor =>
             if (verifiedStreamlet.descriptor.outlets.exists(_.name == portDescriptor.name))
               VerifiedOutlet(verifiedStreamlet, portDescriptor.name, portDescriptor.schema)
             else VerifiedInlet(verifiedStreamlet, portDescriptor.name, portDescriptor.schema)

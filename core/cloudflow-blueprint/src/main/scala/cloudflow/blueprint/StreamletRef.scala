@@ -32,14 +32,14 @@ final case class StreamletRef(
       if (NameUtils.isDnsLabelCompatible(name)) None else Some(InvalidStreamletName(name))
 
     val refProblem = className match {
-      case ClassNamePattern(_) ⇒ None
-      case _                   ⇒ Some(InvalidStreamletClassName(name, className))
+      case ClassNamePattern(_) => None
+      case _                   => Some(InvalidStreamletClassName(name, className))
     }
     val foundDescriptor = streamletDescriptors.find(_.className == className)
     val descriptorFound: Either[BlueprintProblem, StreamletDescriptor] =
       foundDescriptor match {
-        case Some(streamlet) ⇒ Right(streamlet)
-        case None ⇒ {
+        case Some(streamlet) => Right(streamlet)
+        case None => {
           val matchingPartially = streamletDescriptors.filter { descriptor =>
             descriptor.className == className ||
             descriptor.className == s"$className$$"
@@ -58,7 +58,7 @@ final case class StreamletRef(
     copy(
       className = descriptorFound.toOption.map(_.className).getOrElse(this.className), // use the raw value as found in the blueprint
       problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq,
-      verified = descriptorFound.toOption.map(descriptor ⇒ VerifiedStreamlet(name, descriptor))
+      verified = descriptorFound.toOption.map(descriptor => VerifiedStreamlet(name, descriptor))
     )
   }
 }

@@ -1,12 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <logger name="akka" level="${LOGLEVEL_AKKA:-OFF}" />
+  <logger name="akka.actor.TimerScheduler" level="INFO"/>
+  <logger name="akka.kafka" level="DEBUG"/>
+
+  <logger name="org.apache.zookeeper" level="WARN"/>
+  <logger name="org.I0Itec.zkclient" level="WARN"/>
+
+  <logger name="kafka" level="WARN"/>
+  <logger name="org.apache.kafka" level="WARN"/>
+  <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
+  <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
+
+  <logger name="com.github.dockerjava" level="INFO"/>
+  <logger name="org.testcontainers" level="INFO"/>
 
   <root level="${LOGLEVEL_ROOT:-OFF}">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
       <target>System.out</target>
       <encoder>
-        <pattern>%d{ISO8601} %-5level [%logger{0}] - %msg%n</pattern>
+        <pattern>%d{ISO8601} %-5level [%-20.20thread] [%-36.36logger{36}]  %msg%n%rEx</pattern>
       </encoder>
     </appender>
   </root>

@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package cloudflow.operator
+package cloudflow.operator.action
 
 case class CloudflowLabels(partOf: String, appVersion: String) {
 
   import CloudflowLabels._
 
   val baseLabels: Map[String, String] = Map(
-    PartOf    -> cloudflow.operator.Name.ofLabelValue(partOf),
+    PartOf    -> cloudflow.operator.action.Name.ofLabelValue(partOf),
     ManagedBy -> CloudflowLabels.ManagedByCloudflow,
-    Version   -> cloudflow.operator.Name.ofLabelValue(appVersion)
+    Version   -> cloudflow.operator.action.Name.ofLabelValue(appVersion)
   )
 
   def apply(name: String): Map[String, String] =
-    baseLabels + (Name -> cloudflow.operator.Name.ofLabelValue(name))
+    baseLabels + (Name -> cloudflow.operator.action.Name.ofLabelValue(name))
 
   def withComponent(name: String, component: String): Map[String, String] =
-    this(name) + (CloudflowLabels.Component -> cloudflow.operator.Name.ofLabelValue(component))
+    this(name) + (CloudflowLabels.Component -> cloudflow.operator.action.Name.ofLabelValue(component))
 }
 
 object CloudflowLabels {

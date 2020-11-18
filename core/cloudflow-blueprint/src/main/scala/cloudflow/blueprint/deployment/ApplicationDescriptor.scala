@@ -60,7 +60,7 @@ object ApplicationDescriptor {
     val deployments =
       namedStreamletDescriptors
         .map {
-          case (streamlet, instance) ⇒
+          case (streamlet, instance) =>
             StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
         }
 
@@ -149,7 +149,7 @@ object StreamletDeployment {
   private def configAndEndpoint(appId: String, streamlet: StreamletInstance, containerPort: Int): Tuple2[Config, Option[Endpoint]] =
     streamlet.descriptor
       .getAttribute(ServerAttributeName)
-      .map { serverAttribute ⇒
+      .map { serverAttribute =>
         (
           ConfigFactory.parseString(s"${serverAttribute.configPath} = ${containerPort}"),
           Some(Endpoint(appId, streamlet.name, containerPort))

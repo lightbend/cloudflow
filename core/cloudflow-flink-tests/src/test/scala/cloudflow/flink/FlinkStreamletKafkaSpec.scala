@@ -43,7 +43,7 @@ class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matche
 
         override def createLogic() = new FlinkStreamletLogic {
           override def buildExecutionGraph = {
-            val data                  = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
+            val data                  = (1 to 10).map(i => new Data(i, s"name$i"))
             val ins: DataStream[Data] = env.addSource(FlinkSource.CollectionSourceFunction(data))
             writeStream(out, ins)
           }

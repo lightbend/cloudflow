@@ -70,7 +70,7 @@ class TestSparkStreamletContext(override val streamletRef: String,
     }
     val streamingQuery = outletTaps
       .find(_.portName == outPort.name)
-      .map { outletTap ⇒
+      .map { outletTap =>
         stream.writeStream
           .outputMode(outputMode)
           .format("memory")

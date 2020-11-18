@@ -32,11 +32,11 @@ object HealthChecks {
         settings.api.bindPort
       )
       .onComplete {
-        case Success(serverBinding) ⇒
+        case Success(serverBinding) =>
           system.log.info(s"Bound to ${serverBinding.localAddress}.")
-        case Failure(e) ⇒
+        case Failure(e) =>
           system.log.error(e, s"Failed to bind.")
-          system.terminate().foreach { _ ⇒
+          system.terminate().foreach { _ =>
             println("Exiting, could not bind http.")
             sys.exit(-1)
           }

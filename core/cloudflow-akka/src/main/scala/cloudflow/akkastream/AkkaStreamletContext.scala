@@ -95,7 +95,7 @@ trait AkkaStreamletContext extends StreamletContext {
   @InternalApi
   private[akkastream] object Stoppers {
 
-    private val stoppers = new AtomicReference(Vector.empty[() ⇒ Future[Dun]])
+    private val stoppers = new AtomicReference(Vector.empty[() => Future[Dun]])
 
     def add(f: () => Future[Dun]): Unit = stoppers.getAndUpdate(old => old :+ f)
 

@@ -80,7 +80,7 @@ final case class ConfigParameterValue private (configParameterKey: String, value
  *      val out: SparkOutletTap[Simple] = outletAsTap[Simple](processor.shape.outlet)
  *
  *      // 6. Prepare input data and send it to the inlet tap(s)
- *      val data = (1 to 10).map(i ⇒ Data(i, s"name\$i"))
+ *      val data = (1 to 10).map(i => Data(i, s"name\$i"))
  *      in.addData(data)
  *
  *      // 7. Run the test
@@ -113,7 +113,7 @@ final case class SparkStreamletTestkit(session: SparkSession, config: Config = C
   def withConfigParameterValues(configParameterValues: ConfigParameterValue*): SparkStreamletTestkit = {
     val parameterValueConfig = ConfigFactory.parseString(
       configParameterValues
-        .map(parameterValue ⇒ s"cloudflow.streamlets.$TestStreamletName.${parameterValue.configParameterKey} = ${parameterValue.value}")
+        .map(parameterValue => s"cloudflow.streamlets.$TestStreamletName.${parameterValue.configParameterKey} = ${parameterValue.value}")
         .mkString("\n")
     )
     this.copy(config = config.withFallback(parameterValueConfig).resolve)
