@@ -19,6 +19,7 @@ package cloudflow.sbt
 import java.nio.file._
 import java.io._
 import java.util.concurrent.atomic.AtomicReference
+import java.util.UUID
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
@@ -33,6 +34,7 @@ import com.github.mdr.ascii.layout._
 import com.github.mdr.ascii.graph._
 import org.testcontainers.{ utility => tcutility }
 import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
@@ -208,6 +210,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
         val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
           .withExposedPorts(KafkaPort)
+          .waitingFor(
+            Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1)
+          )
         k.start()
         kafka.set(k)
 
@@ -218,26 +223,34 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
     log.debug(s"Setting up Kafka broker in Docker on port: $kafkaPort")
 
-    topics.foreach { topic =>
-      log.debug(s"Kafka Setup: creating topic: $topic")
+    import org.apache.kafka.clients.admin.{ AdminClient, AdminClientConfig, NewTopic }
+    import scala.collection.JavaConverters._
 
-      import org.apache.kafka.clients.admin.{ AdminClient, AdminClientConfig, NewTopic }
-      import scala.collection.JavaConverters._
+    var retry = 5
 
-      val newTopic = new NewTopic(topic, 1, 1.toShort)
-
+    while (retry > 0) {
       val adminClient = AdminClient.create(
         Map[String, Object](
           AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> s"localhost.:${kafkaPort}",
-          AdminClientConfig.CLIENT_ID_CONFIG         -> "embedded-kafka-admin-client"
+          AdminClientConfig.CLIENT_ID_CONFIG         -> UUID.randomUUID().toString
         ).asJava
       )
-
       try {
-        adminClient
-          .createTopics(Seq(newTopic).asJava)
-          .all
-          .get()
+        topics.foreach { topic =>
+          log.debug(s"Kafka Setup: creating topic: $topic")
+
+          val newTopic = new NewTopic(topic, 1, 1.toShort)
+
+          adminClient
+            .createTopics(Seq(newTopic).asJava)
+            .all
+            .get()
+        }
+
+        retry = 0
+      } catch {
+        case _: Throwable =>
+          retry -= 1
       } finally {
         adminClient.close()
       }
