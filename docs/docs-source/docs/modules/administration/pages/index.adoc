@@ -9,6 +9,7 @@ When you develop your Cloudflow application, you have the option to use Akka Str
 
 
 * xref:installation-prerequisites.adoc[]
+* xref:versions.adoc[]
 * xref:installing-cloudflow.adoc[]
 * xref:how-to-install-and-use-strimzi.adoc[]
 * xref:installing-spark-operator.adoc[]
