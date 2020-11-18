@@ -153,7 +153,10 @@ my-topic-name {
 }
 ----
 
-For more information on setting up named Kafka clusters see the xref:administration:installing-cloudflow.adoc[Default and named Kafka clusters] section of the Installing Cloudflow docs.
+ifdef::oss[For more information on setting up named Kafka clusters see the xref:administration:installing-cloudflow.adoc[Default and named Kafka clusters] section of the Installing Cloudflow docs.]
+
+ifdef::adp[For more information on setting up named Kafka clusters see the xref:install:installing-cloudflow.adoc[Default and named Kafka clusters] section of the Installing Cloudflow docs.]
+
 
 [[advanced-config]]
 === Advanced Topic Configuration
