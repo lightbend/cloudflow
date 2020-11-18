@@ -16,20 +16,53 @@
 
 package cloudflow.akkastream.util.scaladsl
 
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.util.Try
+
 import akka.actor.ActorSystem
+import akka.testkit.TestKit
 import akka.kafka.testkit.internal.TestFrameworkInterface
-import akka.kafka.testkit.scaladsl._
+// import akka.kafka.testkit.scaladsl._
 
 import org.scalatest._
 import org.scalatest.Suite
 import org.scalatest.concurrent._
+import org.testcontainers.{ utility => tcutility }
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.wait.strategy.Wait
 
-abstract class EmbeddedKafkaSpec(kafkaPort: Int, zkPort: Int, system: ActorSystem)
-    extends KafkaSpec(kafkaPort, zkPort, system)
+abstract class EmbeddedKafkaSpec(system: ActorSystem)
+    extends TestKit(system)
     with Suite
     with WordSpecLike
     with MustMatchers
-    with EmbeddedKafkaLike
     with ScalaFutures
     with TestFrameworkInterface.Scalatest { this: Suite =>
+
+  private val KafkaPort = 9093
+
+  val kafka = new AtomicReference[KafkaContainer]()
+
+  lazy val kafkaPort = kafka.get().getMappedPort(KafkaPort)
+
+  override def setUp() = {
+    val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+      .withExposedPorts(KafkaPort)
+      .withEnv("KAFKA_BROKER_ID", "1")
+      .withEnv("KAFKA_NUM_PARTITIONS", "53")
+      .withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+      .withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "3")
+      .waitingFor(
+        Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1)
+      )
+    k.start()
+    kafka.set(k)
+  }
+
+  override def cleanUp() =
+    Try {
+      kafka.get().stop()
+      kafka.set(null)
+    }
 }

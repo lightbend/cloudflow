@@ -204,7 +204,7 @@ lazy val akkastreamTests =
       libraryDependencies ++= Vector(
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
-            EmbeddedKafka % Test,
+            TestcontainersKafka % Test,
             Logback       % Test,
             ScalaTest,
             Junit
