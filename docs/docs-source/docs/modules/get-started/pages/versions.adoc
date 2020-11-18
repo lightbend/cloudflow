@@ -1,5 +1,5 @@
 = Supported versions of dependencies
 
 include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:get-started:page$prepare-development-environment.adoc[]
+include::{cloudflow-version}@shared-content:get-started:page$versions.adoc[]
 
