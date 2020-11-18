@@ -216,7 +216,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         Thread.currentThread().setContextClassLoader(cl)
       }
 
-    log.debug(s"Setting up embedded Kafka broker on port: $kafkaPort")
+    log.debug(s"Setting up Kafka broker in Docker on port: $kafkaPort")
 
     topics.foreach { topic =>
       log.debug(s"Kafka Setup: creating topic: $topic")
