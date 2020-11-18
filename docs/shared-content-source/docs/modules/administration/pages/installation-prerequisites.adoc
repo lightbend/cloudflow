@@ -72,8 +72,4 @@ standard (default)   kubernetes.io/gce-pd   2m57s
 NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
 
 
-The next page shows xref:more-storage-options.adoc[]
 
-== Next: Installing Cloudflow
-
-Continue with xref:installing-cloudflow.adoc[]

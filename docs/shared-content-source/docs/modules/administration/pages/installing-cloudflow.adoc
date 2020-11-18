@@ -1,5 +1,4 @@
 
-
 include::ROOT:partial$include.adoc[]
 
 This guide shows how to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
