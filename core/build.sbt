@@ -360,7 +360,7 @@ lazy val blueprint =
       publishArtifact in Test := true
     )
     .settings(
-      crossScalaVersions := List(Version.Scala, Version.ScalaOperator),
+      crossScalaVersions := Version.CrossVersions,
       buildInfoKeys := Seq[BuildInfoKey](
             name,
             version
@@ -446,7 +446,7 @@ lazy val operatorActions =
     )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
-      scalaVersion := Version.ScalaOperator,
+      crossScalaVersions := Version.CrossVersions,
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
@@ -485,7 +485,7 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := Version.ScalaOperator,
+      crossScalaVersions := Version.CrossVersions,
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
       mainClass in Compile := Some("cloudflow.operator.Main"),
@@ -580,7 +580,7 @@ lazy val bintraySettings =
 lazy val commonSettings = bintraySettings ++ Seq(
         organization := "com.lightbend.cloudflow",
         headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-        scalaVersion := Version.Scala,
+        scalaVersion := Version.Scala212,
         autoAPIMappings := true,
         useGpgAgent := false,
         releaseProcess := Seq[ReleaseStep](
