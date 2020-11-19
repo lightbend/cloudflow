@@ -100,7 +100,7 @@ object BuildAppPlugin extends AutoPlugin {
     val newApplicationDescriptor = appDescriptor.copy(deployments = newDeployments)
 
     // create the CR
-    val cr = makeCR(newApplicationDescriptor, (ThisProject / version).value)
+    val cr = makeCR(newApplicationDescriptor, (ThisProject / cloudflowVersion).value)
 
     // generate the CR file in the current location
     new File("target").mkdir()
