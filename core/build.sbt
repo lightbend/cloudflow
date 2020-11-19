@@ -586,7 +586,6 @@ lazy val commonSettings = bintraySettings ++ Seq(
         releaseProcess := Seq[ReleaseStep](
               // TODO: re-introduce this command
               // checkSnapshotDependencies,
-              inquireVersions,
               runClean,
               releaseStepCommand("+test"),
               releaseStepCommandAndRemaining("+publishSigned"),
