@@ -23,7 +23,6 @@ import scala.util.Try
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import akka.kafka.testkit.internal.TestFrameworkInterface
-// import akka.kafka.testkit.scaladsl._
 
 import org.scalatest._
 import org.scalatest.Suite
