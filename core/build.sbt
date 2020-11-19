@@ -389,6 +389,7 @@ lazy val operatorActions =
     )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
+      skip in publish := scalaVersion.value == Version.Scala212,
       crossScalaVersions := Version.CrossVersions,
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
