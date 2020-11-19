@@ -186,7 +186,12 @@ object Operator {
     Flow[Action]
       .mapAsync(1)(action =>
         actionExecutor.execute(action).recoverWith {
-          case NonFatal(cause) => actionExecutor.execute(CloudflowApplication.Status.errorAction(action.app, runners, cause.getMessage))
+          case NonFatal(cause) =>
+            action match {
+              case resourceAction: ResourceAction[_] =>
+                actionExecutor.execute(CloudflowApplication.Status.errorAction(resourceAction.app, runners, cause.getMessage))
+              case _ => throw new ActionException(action, "Cannot set app status from this action.")
+            }
         }
       )
       .log("action", Action.executed)

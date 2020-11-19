@@ -36,11 +36,6 @@ sealed trait Action {
    */
   def name: String
 
-  /**
-   * The app this action is executed for.
-   */
-  def app: CloudflowApplication.CR
-
   /*
    * The namespace that the action takes place in.
    */
@@ -188,6 +183,11 @@ object ResourceAction {
 
 abstract class ResourceAction[+T <: ObjectResource] extends Action {
   import ResourceAction._
+
+  /**
+   * The app this action is executed for.
+   */
+  def app: CloudflowApplication.CR
 
   /**
    * Executes the action using a KubernetesClient.
