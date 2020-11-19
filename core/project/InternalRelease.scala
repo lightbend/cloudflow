@@ -33,13 +33,9 @@ object InternalReleaseCommand {
        */
       releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies,
-        inquireVersions,
         runClean,
         runTest,
-        setReleaseVersion,
-        tagReleaseWithChecks,
         publishArtifacts,
-        setNextVersion,
         pushChanges
       )), state)
 
