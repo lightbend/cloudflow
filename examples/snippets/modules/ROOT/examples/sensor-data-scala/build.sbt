@@ -3,7 +3,7 @@
 lazy val sensorData =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.13.2",
+      scalaVersion := "2.13.4",
       runLocalConfigFile := Some("src/main/resources/local.conf"), //<1>
       runLocalLog4jConfigFile := Some("src/main/resources/log4j.xml"), //<2>
       name := "sensor-data-scala",
