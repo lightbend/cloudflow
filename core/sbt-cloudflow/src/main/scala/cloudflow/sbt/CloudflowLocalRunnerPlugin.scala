@@ -18,6 +18,8 @@ package cloudflow.sbt
 
 import java.nio.file._
 import java.io._
+import java.util.concurrent.atomic.AtomicReference
+import java.util.UUID
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
@@ -30,7 +32,9 @@ import sbt.Keys._
 import spray.json._
 import com.github.mdr.ascii.layout._
 import com.github.mdr.ascii.graph._
-import net.manub.embeddedkafka.{ EmbeddedKafka, EmbeddedKafkaConfig }
+import org.testcontainers.{ utility => tcutility }
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
@@ -48,11 +52,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
   val Log4J            = "log4j" % "log4j" % "1.2.17"
 
-  // kafka config keys
-  val BootstrapServersKey = "bootstrap.servers"
-  val EmbeddedKafkaKey    = "embedded-kafka"
-
-  // kafka local values
   val KafkaPort = 9093
 
   // Banner decorators
@@ -133,7 +132,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               }
               .distinct
               .sorted
-            setupKafka(KafkaPort, topics)
+            val kafkaPort = setupKafka(topics)
 
             printAppLayout(resolveConnections(appDescriptor))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
@@ -142,7 +141,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               case (pid, rd) =>
                 val classpath               = cpByProject(pid)
                 val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
-                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath)
+                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath, kafkaPort)
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -199,25 +198,78 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     s"$org/$name"
   }
 
+  val kafka = new AtomicReference[KafkaContainer]()
+
+  def setupKafka(topics: Seq[String])(implicit log: Logger) = {
+
+    val cl = Thread.currentThread().getContextClassLoader()
+    val kafkaPort =
+      try {
+        val c = getClass().getClassLoader()
+        Thread.currentThread().setContextClassLoader(c)
+
+        val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+          .withExposedPorts(KafkaPort)
+          .waitingFor(
+            Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1)
+          )
+        k.start()
+        kafka.set(k)
+
+        k.getMappedPort(KafkaPort)
+      } finally {
+        Thread.currentThread().setContextClassLoader(cl)
+      }
+
+    log.debug(s"Setting up Kafka broker in Docker on port: $kafkaPort")
+
+    import org.apache.kafka.clients.admin.{ AdminClient, AdminClientConfig, NewTopic }
+    import scala.collection.JavaConverters._
+
+    var retry = 5
+
+    while (retry > 0) {
+      val adminClient = AdminClient.create(
+        Map[String, Object](
+          AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> s"localhost.:${kafkaPort}",
+          AdminClientConfig.CLIENT_ID_CONFIG         -> UUID.randomUUID().toString
+        ).asJava
+      )
+      try {
+        topics.foreach { topic =>
+          log.debug(s"Kafka Setup: creating topic: $topic")
+
+          val newTopic = new NewTopic(topic, 1, 1.toShort)
+
+          adminClient
+            .createTopics(Seq(newTopic).asJava)
+            .all
+            .get()
+        }
+
+        retry = 0
+      } catch {
+        case _: Throwable =>
+          retry -= 1
+      } finally {
+        adminClient.close()
+      }
+    }
+
+    kafkaPort
+  }
+
+  def stopKafka() = Try {
+    kafka.get().stop()
+    kafka.set(null)
+  }
+
   case class RuntimeDescriptor(id: String,
                                appDescriptor: ApplicationDescriptor,
                                appDescriptorFile: Path,
                                outputFile: File,
                                logConfig: Path,
                                localConfPath: Option[String])
-
-  def setupKafka(port: Int, topics: Seq[String])(implicit log: Logger) = {
-    implicit val kafkaConfig = EmbeddedKafkaConfig(kafkaPort = port)
-    EmbeddedKafka.start()
-    log.debug(s"Setting up embedded Kafka broker on port: $port")
-
-    topics.foreach { topic =>
-      log.debug(s"Kafka Setup: creating topic: $topic")
-      EmbeddedKafka.createCustomTopic(topic)
-    }
-  }
-  def stopKafka() =
-    EmbeddedKafka.stop()
 
   def getDescriptorsOrFail(
       descriptors: Iterable[(String, Try[RuntimeDescriptor])]
@@ -365,7 +417,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                      classpath: Array[URL],
                      outputFile: File,
                      log4JConfigFile: Path,
-                     localConfPath: Option[String])(
+                     localConfPath: Option[String],
+                     kafkaPort: Int)(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -381,9 +434,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withConnectInput(false)
       .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
     val classpathStr = classpath.collect { case url if !url.toString.contains("logback") => new File(url.toURI) }.mkString(separator)
+
     val options: Seq[String] = Seq(
       Some(applicationDescriptorFile.toFile.getAbsolutePath),
       Some(outputFile.getAbsolutePath),
+      Some(kafkaPort.toString),
       localConfPath
     ).flatten
 

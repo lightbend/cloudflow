@@ -30,13 +30,10 @@ import cloudflow.akkastream.testdata._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
-import net.manub.embeddedkafka._
 import org.scalatest.time._
 
 object AkkaStreamletConsumerGroupSpec {
-  val kafkaPort = 1234
-  val zkPort    = 5678
-  val config    = ConfigFactory.parseString("""
+  val config = ConfigFactory.parseString("""
       akka {
         stdout-loglevel = "OFF"
         loglevel = "OFF"
@@ -47,19 +44,10 @@ object AkkaStreamletConsumerGroupSpec {
 
 import AkkaStreamletConsumerGroupSpec._
 
-class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(kafkaPort, zkPort, ActorSystem("test", config)) {
+class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem("test", config)) {
+  import system.dispatcher
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(10, Seconds), interval = Span(20, Millis))
-
-  override def createKafkaConfig: EmbeddedKafkaConfig =
-    EmbeddedKafkaConfig(kafkaPort,
-                        zooKeeperPort,
-                        Map(
-                          "broker.id"                        -> "1",
-                          "num.partitions"                   -> "53",
-                          "offsets.topic.replication.factor" -> "1",
-                          "offsets.topic.num.partitions"     -> "3"
-                        ))
 
   "Akka streamlet instances" should {
     "consume from an outlet as a group per streamlet reference" in {
