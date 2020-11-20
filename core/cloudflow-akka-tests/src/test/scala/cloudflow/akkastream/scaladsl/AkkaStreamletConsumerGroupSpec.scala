@@ -44,7 +44,7 @@ object AkkaStreamletConsumerGroupSpec {
 
 import AkkaStreamletConsumerGroupSpec._
 
-class AkkaStreamletConsumerGroupSpec extends EmbeddedKafkaSpec(ActorSystem("test", config)) {
+class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem("test", config)) {
   import system.dispatcher
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(10, Seconds), interval = Span(20, Millis))

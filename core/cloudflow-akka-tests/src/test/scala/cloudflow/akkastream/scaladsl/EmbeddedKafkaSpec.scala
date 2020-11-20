@@ -31,7 +31,7 @@ import org.testcontainers.{ utility => tcutility }
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.wait.strategy.Wait
 
-abstract class EmbeddedKafkaSpec(system: ActorSystem)
+abstract class TestcontainersKafkaSpec(system: ActorSystem)
     extends TestKit(system)
     with Suite
     with WordSpecLike
