@@ -56,7 +56,6 @@ object LocalRunner extends StreamletLoader {
     })
 
   val BootstrapServersKey = "bootstrap.servers"
-  val EmbeddedKafkaKey    = "embedded-kafka"
 
   /**
    * Starts the local runner using an Application Descriptor JSON file and
