@@ -34,8 +34,8 @@ object CloudflowFlinkPlugin extends AutoPlugin {
   override def projectSettings = Seq(
     cloudflowFlinkBaseImage := None,
     libraryDependencies ++= Vector(
-          "com.lightbend.cloudflow" %% "cloudflow-flink"         % (ThisProject / cloudflowVersion).value,
-          "com.lightbend.cloudflow" %% "cloudflow-flink-testkit" % (ThisProject / cloudflowVersion).value % "test"
+          "com.lightbend.cloudflow" % s"cloudflow-flink_${(ThisProject / scalaBinaryVersion).value}"         % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" % s"cloudflow-flink-testkit_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value % "test"
         ),
     cloudflowStageAppJars := Def.taskDyn {
           Def.task {
@@ -49,9 +49,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
               IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
             depJars.foreach { jar =>
-              if (jar.name.startsWith("cloudflow-runner-")) {
-                IO.copyFile(jar, new File(depJarDir, "cloudflow-runner.jar"))
-              } else IO.copyFile(jar, new File(depJarDir, jar.getName))
+              IO.copyFile(jar, new File(depJarDir, jar.getName))
             }
           }
         }.value,
@@ -69,7 +67,9 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         addInstructions(extraDockerInstructions.value)
-        runRaw(s"cp ${OptAppDir}cloudflow-runner.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar")
+        runRaw(
+          s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
+        )
       }
     }
   )

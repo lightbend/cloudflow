@@ -2,7 +2,8 @@ lazy val helloWorld =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
       scalaVersion := "2.12.11",
-      cloudflowVersion := "2.0.10",
+      // TODO: re-enable this after the first Cloudflow release with cross-built runtime
+      // cloudflowVersion := "2.0.10",
       name := "hello-world",
       cloudflowAkkaBaseImage := Some("lightbend/akka-base:2.0.10-cloudflow-akka-2.6.9-scala-2.12"),
 
@@ -17,5 +18,6 @@ checkCloudflowVersion := {
 
   val libraryVersion = data("spec")("library_version").str
 
-  assert { libraryVersion == "2.0.10" }
+  // TODO: re-enable this after the first Cloudflow release with cross-built runtime
+  // assert { libraryVersion == "2.0.10" }
 }
