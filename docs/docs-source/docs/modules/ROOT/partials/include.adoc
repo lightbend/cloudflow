@@ -1,34 +1,3 @@
 
 // global attributes, if you update, make sure to update in shared-content-source ROOT:partials:include.adoc too
-:supported-java-v: >= 8
-:supported-sbt-v: version 1.2.8 or higher
-:supported-docker-v: version 18.09 or higher
-:supported-helm-v: version 2 or higher
-
-:kubernetes-platform-name:     Kubernetes
-:kubernetes-platform-version:  1.12
-:kubectl-plugin-version:       KUBECTL_PLUGIN_VERSION
-
-:cli:                          kubectl
-:cli-plugin:                   kubectl
-
-:latest-openshift-platform-version:        3.11
-:minimum-kubernetes-on-openshift-version:  1.11
-:minimum-openshift-platform-version:       3.11
-:minimum-platform-version-major-dot-minor: 3.11
-:minimum-sbt-version:                      0.13.7
-:latest-sbt-version: 					   1.4.4	 
-
-
-:supported-akka-v: 2.6.6 
-
-:supported-apache-spark-v: 2.4.5
-:supported-gcp-spark-v: v1beta2-1.1.2-2.4.5
-:supported-helm-spark-v: 0.6.7
-
-:supported-apache-flink-v: 1.10.0
-:supported-flink-8-v: 0.5.0
-:supported-helm-flink-8-v: 0.8.2
-
-:supported-apache-kafka-v: 2.4.0
-:supported-strimzi-kafka-v: 0.16.2
+// see the include file in shared-content:ROOT:partials:include.adoc

@@ -83,6 +83,7 @@ cloudflow {
 You need to specify at least one of the sections shown above.
 
 ==== Environment variables
+
 Environment / shell variables can be specified in the config as `$\{variable_name}`, `$variable_name`, or `${?variable_name}`. 
 
 ifdef::review[REVIEWERS: I needed to escape the {} in the first variable_name above to prevent antora from complaining about an undefined variable.]
