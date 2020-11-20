@@ -204,7 +204,7 @@ lazy val akkastreamTests =
       libraryDependencies ++= Vector(
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
-            EmbeddedKafka % Test,
+            TestcontainersKafka % Test,
             Logback       % Test,
             ScalaTest,
             Junit
@@ -241,8 +241,8 @@ lazy val spark =
             SparkProto,
             ScalaTest
           ),
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
     .settings(
@@ -260,8 +260,8 @@ lazy val sparkTestkit =
             ScalaTestUnscoped,
             Junit
           ),
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
 
@@ -276,8 +276,8 @@ lazy val sparkTests =
             ScalaTest,
             Junit
           ),
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.11.2" ,
-      dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
+      dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
     )
     .settings(
@@ -388,13 +388,15 @@ lazy val plugin =
       libraryDependencies ++= Vector(
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
-            EmbeddedKafka,
             Logback               % Test,
             "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
-            ScalaTest
+            ScalaTest,
+            TestcontainersKafka,
+            KafkaClient
           ),
-      scriptedLaunchOpts := { scriptedLaunchOpts.value ++
-        Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+      scriptedLaunchOpts := {
+        scriptedLaunchOpts.value ++
+          Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
       },
       scriptedBufferLog := false
     )
@@ -439,7 +441,7 @@ lazy val localRunner =
     .settings(
       scalafmtOnCompile := true
     )
-lazy val operatorActions = 
+lazy val operatorActions =
   cloudflowModule("cloudflow-operator-actions")
     .enablePlugins(
       ScalafmtPlugin
@@ -532,7 +534,7 @@ lazy val operator =
             "-language:_",
             "-unchecked"
           ),
-      scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
+      scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import")
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](

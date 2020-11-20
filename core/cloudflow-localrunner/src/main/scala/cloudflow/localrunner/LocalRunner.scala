@@ -56,7 +56,6 @@ object LocalRunner extends StreamletLoader {
     })
 
   val BootstrapServersKey = "bootstrap.servers"
-  val EmbeddedKafkaKey    = "embedded-kafka"
 
   /**
    * Starts the local runner using an Application Descriptor JSON file and
@@ -64,15 +63,17 @@ object LocalRunner extends StreamletLoader {
    *
    * @param args: args(0) must be the JSON-encoded Application Descriptor
    *             args(1) must be the file to use for the output
+   *             args(2) must be the port where kafka is running on
    */
   def main(args: Array[String]): Unit = {
-    val usage = "Usage: localRunner <applicationFileJson> <outputFile> [localConfigFile]"
-    val (appDescriptorFilename, outputFilename, localConfig) = args.toList match {
-      case app :: out :: conf :: Nil => (app, out, ConfigFactory.parseFile(new File(conf)).resolve)
-      case app :: out :: Nil         => (app, out, ConfigFactory.empty())
-      case Nil                       => throw new RuntimeException(s"Missing application configuration file and output file for Local Runner\n$usage")
-      case _ :: Nil                  => throw new RuntimeException(s"Missing output file for Local Runner\n$usage")
-      case _                         => throw new RuntimeException(s"Missing parameters for Local Runner. \n$usage")
+    val usage = "Usage: localRunner <applicationFileJson> <outputFile> <kafka-port> [localConfigFile]"
+    val (appDescriptorFilename, outputFilename, kafkaPort, localConfig) = args.toList match {
+      case app :: out :: kafkaPort :: conf :: Nil => (app, out, kafkaPort, ConfigFactory.parseFile(new File(conf)).resolve)
+      case app :: out :: kafkaPort :: Nil         => (app, out, kafkaPort, ConfigFactory.empty())
+      case Nil                                    => throw new RuntimeException(s"Missing application configuration file and output file for Local Runner\n$usage")
+      case _ :: Nil                               => throw new RuntimeException(s"Missing output file for Local Runner\n$usage")
+      case _ :: _ :: Nil                          => throw new RuntimeException(s"Missing kafka port\n$usage")
+      case _                                      => throw new RuntimeException(s"Missing parameters for Local Runner. \n$usage")
     }
 
     val outputFile = new File(outputFilename)
@@ -87,7 +88,7 @@ object LocalRunner extends StreamletLoader {
         System.setErr(new PrintStream(fos))
         readDescriptorFile(appDescriptorFilename) match {
           case Success(applicationDescriptor) =>
-            run(applicationDescriptor, localConfig)
+            run(applicationDescriptor, localConfig, kafkaPort)
           case Failure(ex) =>
             log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
             System.exit(1)
@@ -96,9 +97,7 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
-  private def run(appDescriptor: ApplicationDescriptor, localConfig: Config): Unit = {
-
-    val kafkaPort = 9093
+  private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaPort: String): Unit = {
     val bootstrapServers =
       if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
     val topicConfig = ConfigFactory.parseString(s"""bootstrap.servers = "$bootstrapServers"""")
