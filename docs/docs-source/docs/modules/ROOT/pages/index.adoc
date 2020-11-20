@@ -62,9 +62,11 @@ Cloudflow dramatically accelerates your application development efforts, reducin
 
 * For deploying to Kubernetes clusters, the Cloudflow operator takes care of orchestrating the deployment of the different parts of a streaming pipeline as an end-to-end application.
 
-Lightbend's commercial version of Cloudflow, https://developer.lightbend.com/docs/cloudflow/current/index.html[Akka Data Pipelines], includes support along with https://developer.lightbend.com/docs/telemetry/current/home.html[Telemetry] and https://developer.lightbend.com/docs/cloudflow/current/console/index.html[Lightbend Console], which provide visibility into your running Cloudflow apps.
+ifdef::todo[TODO: add the following back in once the commercial versions are ready. Text might need editing.]
 
-You can also use https://developer.lightbend.com/docs/cloudflow/current/gcp/index.html[Akka Data Pipelines on Google Cloud Platform]. 
+// Lightbend's commercial version of Cloudflow, https://developer.lightbend.com/docs/cloudflow/current/index.html[Akka Data Pipelines], includes support along with https://developer.lightbend.com/docs/telemetry/current/home.html[Telemetry] and https://developer.lightbend.com/docs/cloudflow/current/console/index.html[Lightbend Console], which provide visibility into your running Cloudflow apps.
+
+// You can also use https://developer.lightbend.com/docs/cloudflow/current/gcp/index.html[Akka Data Pipelines on Google Cloud Platform]. 
 
 == What's next
 

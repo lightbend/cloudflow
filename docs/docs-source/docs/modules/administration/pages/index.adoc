@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-When you develop your Cloudflow application, you have the option to use Akka Streams, Spark, and Flink. Cloudflow relies on Kafka for persisting messages. This chapter contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools. It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow and how to expose your services to external access.
+When you develop your Cloudflow application, you have the option to use Akka Streams, Spark, Flink and Kafka. This chapter contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools. It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow and how to expose your services to external access.
 
 
 * xref:installation-prerequisites.adoc[]

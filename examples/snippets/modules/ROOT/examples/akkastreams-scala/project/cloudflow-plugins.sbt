@@ -6,4 +6,4 @@ val latestVersion = {
   )(identity)
 }
 
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % latestVersion)
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % latestVersion) // <1>
