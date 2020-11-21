@@ -12,7 +12,7 @@ There are two general groups of windows `session-based` and `time-based` windows
 Time-based windows group data basing on time. Typically we can choose either event-time - 
 a timestamp derived from each data element, or processing-time - the wall-clock time at the moment the event is processed.
 There are two main types of time-based windows: 
-* `Tumbling windows`have a fixed (time) size and do not overlap. In this cases time is divided into non-overlapping parts 
+* `Tumbling windows` have a fixed (time) size and do not overlap. In this cases time is divided into non-overlapping parts 
 and each data element belongs to a single window. 
 * `Sliding windows`, parametrised by length and step. These windows overlap, and each data element can belong to multiple windows. 
 

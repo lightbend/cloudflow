@@ -1,0 +1,145 @@
+:page-partial:
+:page-supergroup-scala: Language
+
+== Windows Support
+
+=== Use case
+
+Streaming systems are built for unbounded data. To cope with the infinite nature of such data,
+https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/[Streaming 101]
+introduces a notion of windowing for the incoming data.
+In a nutshell windowing splits the stream into `buckets` of finite size, over which we can apply computations.
+There is also an excellent https://softwaremill.com/windowing-data-in-akka-streams/[blog post]
+summarizing the idea supported by examples.
+
+There are two general groups of windows `session-based` and `time-based` windows.
+
+Time-based windows group data based on time. Typically we can choose either `event-time` -
+a timestamp derived from each data element, or `processing-time` - the time at which the event is processed.
+There are two main types of time-based windows:
+
+- `Tumbling windows` are a fixed (time) size and do not overlap. In this case time is divided into non-overlapping parts
+and each data element belongs to a single window.
+- `Sliding windows`, parametrised by length and step. These windows overlap, and each data element can belong to multiple windows.
+
+Session windows can vary in length, and are grouped based on a session id derived from each data element.
+Alternatively, session window can be time based and combines events between gaps of inactivity.
+
+Additional issue with windowing is that events often don’t arrive in order (e.g. if the data comes from
+a mobile or IoT device, there might be connectivity breaks or the clocks on each device might differ).
+We have to deal with that somehow, in a way that keeps memory usage under control: we can only keep a
+limited number of windows "open", that is accepting data. At some point old windows have to be "closed"
+(and discarded, thus freeing memory), and that is usually done through a watermarking mechanism.
+A watermark specifies that there will be no events older than a given time; or that if there will be, they will be dropped.
+For example, we can say that at any time the watermark is the timestamp of the newest event minus 10 minutes.
+Or maybe we have well-behaved data and they always arrive in order? Then our live is a bit easier.
+Note that watermarks only apply to event-time case and impact both performance and memory usage.
+
+Akka Streams currently provides several operators that can be (sort off) used for windowing:
+
+- https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/groupedWithin.html[groupedWithin]:
+Chunk up the stream into groups of elements received within a time window, or limited by the number of the
+elements. This can be considered as a tumbling window.
+- https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/sliding.html[sliding]:
+Provide a sliding window over the incoming stream and pass the windows as groups of elements downstream.
+- https://index.scala-lang.org/efekahraman/akka-streams-session-window/akka-stream-session-window/0.1.0?target=_2.12[sessionWindow]
+implement time-based session windows - helps to identify periods of activity.
+
+Although these operators are very usefull, they are based on the amount of elements - not directly time
+and do not work with `FlowWithCommittableContext` (ensuring at most once processing)
+used for majority of cloudflow implementations.
+
+=== Examples
+
+Implementation provides several types of windows.
+
+
+==== TumblingWindow
+Implements tumbling window, that can be used as following:
+[source,scala]
+----
+sourceWithCommittableContext(in)
+      .via(TumblingWindow[SimpleMessage](duration = 3.second, time_extractor = (msg) ⇒ msg.ts, watermark = 1.2.second))
+----
+The complete set of parameters for Tumbling windows is:
+
+- duration - windows duration
+- time_extractor - function for retrieving event-time (in ms). Default is using processing time
+- maxsize - max size for collected data. If the window length is greater then maxsize, only
+the last maxsize elements will be returned. Default value is 1000.
+- watermark - time to wait for late arriving events (only applicable for event-time). Here watermark is only checked
+every watermakInterval, so the watermark is always rounded to watermakInterval boundry.
+- watermakInterval - time interval for watermark testing. Default is 100 millisecond. Default is 100 millisecond
+
+==== SlidingWindow
+Implement sliding window, that can be used as following:
+[source,scala]
+----
+ sourceWithCommittableContext(in)
+       .via(SlidingWindow[SimpleMessage](duration = 3.second, slide = 1.5.second, time_extractor = (msg) ⇒ msg.ts, watermark = 1.2.second))
+----
+The complete set of parameters for Tumbling windows is:
+
+- duration - windows duration
+- slide - time after which a new window is created
+- time_extractor - function for retrieving event-time (in ms). Default is using processing time
+- maxsize - max size for collected data. If the window length is greater then maxsize, only
+the last maxsize elements will be returned. Default value is 1000.
+- watermark - time to wait for late arriving events (only applicable for event-time). Here watermark is only checked
+every watermakInterval, so the watermark is always rounded to watermakInterval boundry.
+- watermakInterval - time interval for watermark testing. Default is 100 millisecond
+
+==== SessionInactivityWindows
+Implements session window based on inactivity, that can be used as following:
+[source,scala]
+----
+sourceWithCommittableContext(in)
+      .via(SessionInactivityWindow[SimpleMessage](inactivity = 1.second, time_extractor = (msg) ⇒ msg.ts))
+----
+The complete set of parameters for Tumbling windows is:
+
+- inactivity - time of inactivity constituting end of the session
+- time_extractor - function for retrieving event-time. Default is using processing time
+- maxsize - max size for collected data. If the window length is greater then maxsize, only
+the last maxsize elements will be returned. Default value is 1000.
+- inactivityInterval - time interval for inactivity testing. Default is 100 millisecond
+
+==== SessionValueWindow
+Implements session window based on session value (string), that can be used as following:
+[source,scala]
+----
+sourceWithCommittableContext(in)
+.via(SessionValueWindow[SimpleMessageSession](session_extractor = (msg) ⇒ msg.session, inactivity = 1.second))
+----
+
+The complete set of parameters for Tumbling windows is:
+
+- inactivity - time of inactivity constituting end of the session
+- session_extractor - function for retrieving session value (string)
+- maxsize - max size for collected data. If the window length is greater then maxsize, only
+the last maxsize elements will be returned. Default value is 1000.
+- inactivityInterval - time interval for inactivity testing. Default is 100 millisecond
+
+
+=== Using windows in Cloudflow stream processing
+
+All of these implementation produce `CommittableOffsetBatch`. Due to the current limitations, window
+usage requires the the usage of the following commiter settings:
+[source,scala]
+----
+   val committerSettings = CommitterSettings(system).withCommitWhen(CommitWhen.OffsetFirstObserved)
+----
+
+Below is a snipet of code for using TumblingWindow in the streamlet:
+[source,scala]
+----
+    val committerSettings = CommitterSettings(system).withCommitWhen(CommitWhen.OffsetFirstObserved)
+
+    def runnableGraph() = sourceWithCommittableContext(in)
+      .via(TumblingWindow[SimpleMessage](duration = 3.second, time_extractor = (msg) ⇒ msg.ts, watermark = 1.2.second))
+      .map(records ⇒ {
+        println("Got new Tumbling window")
+        records.foreach(record ⇒ println(s"      time ${record.ts} - value ${record.value}"))
+      })
+      .to(committableSink(committerSettings))
+----
