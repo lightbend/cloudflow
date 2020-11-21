@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "window.datamodel";
+
+message SimpleMessageSession{
+    int64 ts = 1;
+    int64 value = 2;
+    string session = 3;
+}
