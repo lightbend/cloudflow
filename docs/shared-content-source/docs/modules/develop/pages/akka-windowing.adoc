@@ -1,6 +1,8 @@
 :page-partial:
 :page-supergroup-scala: Language
 
+include::ROOT:partial$include.adoc[]
+
 == Windows Support
 
 === Use case
