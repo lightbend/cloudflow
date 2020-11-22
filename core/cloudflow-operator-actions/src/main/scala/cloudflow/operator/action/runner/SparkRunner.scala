@@ -30,7 +30,6 @@ import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint.deployment._
-import cloudflow.operator._
 import cloudflow.operator.action._
 
 trait PatchProvider[T <: Patch] {
@@ -219,7 +218,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val name = resourceName(deployment)
     val labels = appLabels.withComponent(name, CloudflowLabels.StreamletComponent) + ("version" -> "2.4.5") ++
           updateLabels ++
-          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId).view
+          Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> appId)
             .mapValues(Name.ofLabelValue)
 
     val driver = addDriverResourceRequirements(
