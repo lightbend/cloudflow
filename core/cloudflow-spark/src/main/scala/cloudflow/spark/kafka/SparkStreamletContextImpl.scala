@@ -36,6 +36,7 @@ class SparkStreamletContextImpl(
   val storageDir           = config.getString("storage.mountPath")
   val maxOffsetsPerTrigger = config.getLong("cloudflow.spark.read.options.max-offsets-per-trigger")
   def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = {
+
     val topic    = findTopicForPort(inPort)
     val srcTopic = topic.name
     val brokers  = runtimeBootstrapServers(topic)

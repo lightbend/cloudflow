@@ -42,22 +42,30 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def sourceWithCommittableContext[T](
-      inlet: CodecInlet[T]
+      inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T]
   ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T]
 
   private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
-  private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
+  private[akkastream] def sourceWithOffsetContext[T](
+      inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T]
+  ): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
 
-  private[akkastream] def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed]
+  private[akkastream] def plainSource[T](inlet: CodecInlet[T],
+                                         dataconverter: InletDataPConverter[T],
+                                         resetPosition: ResetPosition): Source[T, NotUsed]
   private[akkastream] def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed]
   private[akkastream] def shardedPlainSource[T, M, E](
       inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T],
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest,
       kafkaTimeout: FiniteDuration = 10.seconds

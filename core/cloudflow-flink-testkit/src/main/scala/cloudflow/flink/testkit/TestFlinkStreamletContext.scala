@@ -41,7 +41,8 @@ class TestFlinkStreamletContext(override val streamletRef: String,
    * Returns a `DataStream[In]` from the `inlet` to be added as the data source
    * of the computation graph
    */
-  override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] =
+  override def readStream[In: TypeInformation](inlet: CodecInlet[In],
+                                               dataconverter: InletDataPConverter[In] = DefaultInletDataPConverter[In]): DataStream[In] =
     inletTaps
       .find(_.portName == inlet.name)
       .map(_.inStream.asInstanceOf[DataStream[In]])

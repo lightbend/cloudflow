@@ -20,7 +20,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.connectors.kafka._
-import cloudflow.streamlets.{ CodecInlet, CodecOutlet, RoundRobinPartitioner }
+import cloudflow.streamlets.{ CodecOutlet, RoundRobinPartitioner }
 import org.apache.flink.api.java.typeutils.TypeExtractor
 
 private[flink] class FlinkKafkaCodecSerializationSchema[T: TypeInformation](outlet: CodecOutlet[T], topic: String)

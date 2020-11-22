@@ -65,11 +65,16 @@ object Merger {
    * in semi-random order and with equal priority for all inlets.
    */
   def source[T](
-      inlets: Seq[CodecInlet[T]]
+      inlets: Seq[CodecInlet[T]],
+      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
-    Source.fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_)))).asSourceWithContext { case (_, offset) => offset }.map {
-      case (t, _) => t
-    }
+    Source
+      .fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_, dataconverter))))
+      .asSourceWithContext { case (_, offset) => offset }
+      .map { case (t, _) => t }
+
+  /*
+  This method requires dataconverter, but can't add it here
   def source[T](
       inlet: CodecInlet[T],
       inlets: CodecInlet[T]*
@@ -78,6 +83,7 @@ object Merger {
       .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_))))
       .asSourceWithContext { case (_, offset) => offset }
       .map { case (t, _) => t }
+ */
 }
 
 /**

@@ -337,8 +337,9 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    * @param inlet the inlet port to read from
    * @return the data read as `DataStream[In]`
    */
-  final def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] =
-    context.readStream(inlet)
+  final def readStream[In: TypeInformation](inlet: CodecInlet[In],
+                                            dataconverter: InletDataPConverter[In] = DefaultInletDataPConverter[In]): DataStream[In] =
+    context.readStream(inlet, dataconverter)
 
   /**
    * Java API
@@ -348,8 +349,13 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    * @param clazz the class of data flowing from `inlet`
    * @return the data read as `DataStream[In]`
    */
-  final def readStream[In](inlet: CodecInlet[In], clazz: Class[In]): JDataStream[In] =
-    context.readStream(inlet)(TypeInformation.of[In](clazz)).javaStream
+  final def readStream[In](inlet: CodecInlet[In],
+                           clazz: Class[In] /*,
+                           dataconverter: InletDataPConverter[In] = DefaultInletDataPConverter[In]
+                           We can't do this because of Scala compiler issues https://stackoverflow.com/questions/4652095/why-does-the-scala-compiler-disallow-overloaded-methods-with-default-arguments
+   */
+  ): JDataStream[In] =
+    context.readStream(inlet, DefaultInletDataPConverter[In])(TypeInformation.of[In](clazz)).javaStream
 
   /**
    * Write to the external storage using the outlet `outlet` from the stream `stream`

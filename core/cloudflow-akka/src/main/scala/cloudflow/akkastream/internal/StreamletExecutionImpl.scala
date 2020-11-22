@@ -18,7 +18,7 @@ package cloudflow.akkastream.internal
 
 import akka.Done
 import akka.annotation.InternalApi
-import cloudflow.akkastream.{ AkkaStreamletContext, AkkaStreamletContextImpl }
+import cloudflow.akkastream.AkkaStreamletContext
 import cloudflow.streamlets.{ Dun, StreamletExecution }
 
 import scala.concurrent.{ Future, Promise }

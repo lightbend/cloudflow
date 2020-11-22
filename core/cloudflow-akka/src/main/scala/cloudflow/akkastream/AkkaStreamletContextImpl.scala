@@ -119,7 +119,10 @@ final class AkkaStreamletContextImpl(
   }
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
-  private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
+  private[akkastream] def sourceWithContext[T](
+      inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T]
+  ): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
@@ -131,21 +134,28 @@ final class AkkaStreamletContextImpl(
 
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
+    dataconverter.forInlet(inlet)
+
     Consumer
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
       .mapMaterializedValue { c =>
         KafkaControls.add(c)
         NotUsed
       }
-      .map(record => inlet.codec.decode(record.value))
+      .map(record => dataconverter.convertData(record.value))
+      .collect { case Some(v) => v }
       .via(handleTermination)
   }
 
-  override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
-    sourceWithContext[T](inlet)
+  override def sourceWithCommittableContext[T](
+      inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T]
+  ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
+    sourceWithContext[T](inlet, dataconverter)
 
   private[akkastream] def shardedSourceWithContext[T, M, E](
       inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
@@ -157,6 +167,8 @@ final class AkkaStreamletContextImpl(
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withProperties(topic.kafkaConsumerProperties)
+
+    dataconverter.forInlet(inlet)
 
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
@@ -193,7 +205,8 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map(record => inlet.codec.decode(record.value))
+            .map(record => dataconverter.convertData(record.value))
+            .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
         }(system.dispatcher)
@@ -204,14 +217,16 @@ final class AkkaStreamletContextImpl(
 
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
-    shardedSourceWithContext(inlet, shardEntity)
+    shardedSourceWithContext(inlet, dataconverter, shardEntity)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
-  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
-    sourceWithContext[T](inlet)
+  override def sourceWithOffsetContext[T](inlet: CodecInlet[T],
+                                          dataconverter: InletDataPConverter[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+    sourceWithContext[T](inlet, dataconverter)
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
@@ -280,7 +295,9 @@ final class AkkaStreamletContextImpl(
   private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
+  def plainSource[T](inlet: CodecInlet[T],
+                     dataconverter: InletDataPConverter[T],
+                     resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
@@ -290,6 +307,8 @@ final class AkkaStreamletContextImpl(
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
       .withProperties(topic.kafkaConsumerProperties)
 
+    dataconverter.forInlet(inlet)
+
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
       .mapMaterializedValue { c =>
@@ -298,11 +317,14 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .map { record =>
-        inlet.codec.decode(record.value)
+        dataconverter.convertData(record.value())
       }
+      .collect { case Some(v) => v }
+
   }
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                  dataconverter: InletDataPConverter[T],
                                   shardEntity: Entity[M, E],
                                   resetPosition: ResetPosition = Latest,
                                   kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
@@ -331,6 +353,8 @@ final class AkkaStreamletContextImpl(
         settings = consumerSettings
       )
 
+    dataconverter.forInlet(inlet)
+
     Source
       .futureSource {
         messageExtractor.map { m =>
@@ -351,8 +375,9 @@ final class AkkaStreamletContextImpl(
             }
             .via(handleTermination)
             .map { record =>
-              inlet.codec.decode(record.value)
+              dataconverter.convertData(record.value())
             }
+            .collect { case Some(v) => v }
         }(system.dispatcher)
       }
   }

@@ -20,10 +20,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka._
-
 import com.typesafe.config._
 import cloudflow.streamlets._
 import java.{ util => ju }
+
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.util.Collector
 
 /**
  * An implementation of `FlinkStreamletContext`
@@ -41,7 +43,7 @@ class FlinkStreamletContextImpl(
    * @param inlet the inlet port to read from
    * @return the data read as `DataStream[In]`
    */
-  override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
+  override def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataPConverter[In]): DataStream[In] = {
     val topic            = findTopicForPort(inlet)
     val srcTopic         = topic.name
     val groupId          = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
@@ -58,13 +60,22 @@ class FlinkStreamletContextImpl(
       properties
     )
 
+    dataconverter.forInlet(inlet)
+
     // whether consumer should commit offsets back to Kafka on checkpoints
     // this is true by default: still making it explicit here. As such, Flink manages offsets
     // on its own - it just commits to Kafka for your information only
     // also this setting is honored only when checkpointing is on - otherwise the property in Kafka
     // "enable.auto.commit" is considered
     consumer.setCommitOffsetsOnCheckpoints(true)
-    env.addSource(consumer).map(inlet.codec.decode(_))
+    env
+      .addSource(consumer)
+      .flatMap(new FlatMapFunction[Array[Byte], In]() {
+        override def flatMap(value: Array[Byte], out: Collector[In]): Unit = dataconverter.convertData(value) match {
+          case Some(v) => out.collect(v)
+          case _       =>
+        }
+      })
   }
 
   /**

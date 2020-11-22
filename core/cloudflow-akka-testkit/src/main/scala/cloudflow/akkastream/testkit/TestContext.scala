@@ -50,10 +50,15 @@ private[testkit] case class TestContext(
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
-  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+  override def sourceWithOffsetContext[T](
+      inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+  ): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext(inlet)
 
-  override def sourceWithCommittableContext[T](inlet: CodecInlet[T]) = sourceWithContext(inlet)
+  override def sourceWithCommittableContext[T](inlet: CodecInlet[T],
+                                               dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]) =
+    sourceWithContext(inlet)
 
   private def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] =
     inletTaps
@@ -72,8 +77,9 @@ private[testkit] case class TestContext(
       )
       .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
-  def shardedSourceWithCommittableContext[T, M, E](
+  override private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
+      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
@@ -153,17 +159,20 @@ private[testkit] case class TestContext(
   def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
+  override def plainSource[T](inlet: CodecInlet[T],
+                              dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                              resetPosition: ResetPosition = Latest): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ => NotUsed)
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
+  override def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
+                                           dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                                           shardEntity: Entity[M, E],
+                                           resetPosition: ResetPosition = Latest,
+                                           kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
     Source.futureSource(
       Future {
-        plainSource(inlet, resetPosition)
+        plainSource(inlet)
       }(system.dispatcher)
     )
   }
