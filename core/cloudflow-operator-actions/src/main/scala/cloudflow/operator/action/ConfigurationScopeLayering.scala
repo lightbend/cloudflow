@@ -20,7 +20,6 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 import cloudflow.blueprint.deployment.StreamletDeployment
-import cloudflow.operator.action.TopicActions
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 

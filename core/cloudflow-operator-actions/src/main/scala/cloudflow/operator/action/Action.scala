@@ -162,7 +162,7 @@ object Action {
       resource: T,
       app: CloudflowApplication.CR,
       editor: ObjectEditor[T],
-      predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+      predicateForUpdate: ((Option[T], T) => Boolean) = (_: Option[T], _: T) => true
   )(implicit format: Format[T], resourceDefinition: ResourceDefinition[T], statusEv: HasStatusSubresource[T]) =
     new UpdateStatusAction(resource, app, format, resourceDefinition, statusEv, editor, predicateForUpdate)
 
@@ -352,7 +352,7 @@ class UpdateStatusAction[T <: ObjectResource](
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val statusEv: HasStatusSubresource[T],
     val editor: ObjectEditor[T],
-    predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+    predicateForUpdate: ((Option[T], T) => Boolean) = (_: Option[T], _: T) => true
 ) extends SingleResourceAction[T] {
 
   val name = "updateStatus"
