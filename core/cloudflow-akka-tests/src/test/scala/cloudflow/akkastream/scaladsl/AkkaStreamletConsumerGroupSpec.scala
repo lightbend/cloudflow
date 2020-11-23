@@ -200,7 +200,7 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
     val flow = Flow[Data].map(_.copy(name = s"$instance"))
 
     override final def createLogic = new RunnableGraphStreamletLogic() {
-      def runnableGraph = plainSource(in, Earliest).via(flow).to(sink)
+      def runnableGraph = plainSource(inlet = in, resetPosition = Earliest).via(flow).to(sink)
     }
   }
 }

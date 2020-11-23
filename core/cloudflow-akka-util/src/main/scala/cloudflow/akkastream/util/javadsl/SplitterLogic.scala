@@ -21,12 +21,10 @@ import akka.japi.Pair
 import akka.kafka._
 import akka.stream.javadsl._
 import akka.kafka.ConsumerMessage._
-import akka.stream.scaladsl
 import cloudflow._
 import cloudflow.akkastream._
 import cloudflow.akkastream.javadsl._
 import cloudflow.akkastream.javadsl.util.{ Either => JEither }
-import cloudflow.akkastream.scaladsl.FlowWithCommittableContext
 import cloudflow.streamlets._
 
 /**

@@ -107,7 +107,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   def sourceWithOffsetContext[T](inlet: CodecInlet[T],
-                                 dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]): SourceWithOffsetContext[T] =
+                                 dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]): SourceWithOffsetContext[T] =
     context.sourceWithOffsetContext(inlet, dataconverter)
 
   /**
@@ -124,7 +124,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def sourceWithCommittableContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]
   ): SourceWithCommittableContext[T] =
     context.sourceWithCommittableContext(inlet, dataconverter)
 
@@ -134,7 +134,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @deprecated("Use getSourceWithCommittableContext", "1.3.4")
   def getSourceWithOffsetContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]
   ): akka.stream.javadsl.SourceWithContext[T, CommittableOffset, _] =
     sourceWithOffsetContext(inlet, dataconverter).asJava
 
@@ -144,7 +144,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   def getSourceWithCommittableContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.sourceWithCommittableContext(inlet, dataconverter).asJava
 
@@ -167,7 +167,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, dataconverter, shardEntity, kafkaTimeout)
@@ -180,7 +180,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, dataconverter, shardEntity, kafkaTimeout).asJava
@@ -192,7 +192,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
   def plainSource[T](inlet: CodecInlet[T],
-                     dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                     dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                      resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
     context.plainSource(inlet, dataconverter, resetPosition)
 
@@ -200,7 +200,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   def getPlainSource[T](inlet: CodecInlet[T],
-                        dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                        dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                         resetPosition: ResetPosition = Latest): akka.stream.javadsl.Source[T, NotUsed] =
     plainSource(inlet, dataconverter).asJava
 
@@ -214,7 +214,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
                         We can't do this because of Scala compiler issues https://stackoverflow.com/questions/4652095/why-does-the-scala-compiler-disallow-overloaded-methods-with-default-arguments
    */
   ): akka.stream.javadsl.Source[T, NotUsed] =
-    plainSource(inlet, DefaultInletDataPConverter[T], Latest).asJava
+    plainSource(inlet, DefaultInletDataConverter[T], Latest).asJava
 
   /**
    * This source is designed to function the same as [[plainSource]]
@@ -235,7 +235,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @ApiMayChange
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                   shardEntity: Entity[M, E],
-                                  dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                                  dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                                   resetPosition: ResetPosition = Latest,
                                   kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
     context.shardedPlainSource(inlet, dataconverter, shardEntity, resetPosition, kafkaTimeout)
@@ -246,7 +246,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @ApiMayChange
   def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
                                      shardEntity: Entity[M, E],
-                                     dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                                     dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                                      kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
     shardedPlainSource(inlet, shardEntity, dataconverter, Latest, kafkaTimeout).asJava
 
@@ -262,7 +262,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
                           We can't do this because of Scala compiler issues https://stackoverflow.com/questions/4652095/why-does-the-scala-compiler-disallow-overloaded-methods-with-default-arguments
    */
   ): akka.stream.javadsl.Source[T, Future[NotUsed]] =
-    shardedPlainSource(inlet, shardEntity, DefaultInletDataPConverter[T], Latest, 10.seconds).asJava
+    shardedPlainSource(inlet, shardEntity, DefaultInletDataConverter[T], Latest, 10.seconds).asJava
 
   /**
    * Creates a sink for publishing `T` records to the outlet. The records are partitioned according to the `partitioner` of the `outlet`.

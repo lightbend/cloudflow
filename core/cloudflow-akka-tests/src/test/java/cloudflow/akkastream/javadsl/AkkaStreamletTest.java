@@ -20,7 +20,6 @@ import akka.Done;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
 import akka.kafka.ConsumerMessage;
-import akka.kafka.ConsumerMessage.CommittableOffset;
 import akka.kafka.ConsumerMessage.Committable;
 import akka.stream.javadsl.Flow;
 import akka.testkit.TestKit;
@@ -145,7 +144,7 @@ public class AkkaStreamletTest extends JUnitSuite {
     public AkkaStreamletLogic createLogic() {
       return new AkkaStreamletLogic(getContext()) {
         public void run() {
-          getSourceWithCommittableContext(inlet)
+          getSourceWithCommittableContext(inlet, new DefaultInletDataConverter<Data>())
               .via(Flow.<Pair<Data, Committable>>create()) // no-op flow
               .to(getCommittableSink(outlet))
               .run(system());
@@ -178,7 +177,7 @@ public class AkkaStreamletTest extends JUnitSuite {
       Path mountedPath = getContext().getMountedPath(defineVolumeMounts()[0]);
       return new AkkaStreamletLogic(getContext()) {
         public void run() {
-          getSourceWithCommittableContext(inlet)
+          getSourceWithCommittableContext(inlet, new DefaultInletDataConverter<Data>())
               .via(
                   Flow.<Pair<Data, ConsumerMessage.Committable>>create()
                       .map(
@@ -217,7 +216,7 @@ public class AkkaStreamletTest extends JUnitSuite {
         public void run() {
           String configuredNameToFilterFor = streamletConfig().getString(nameFilter.getKey());
 
-          getSourceWithCommittableContext(inlet)
+          getSourceWithCommittableContext(inlet, new DefaultInletDataConverter<Data>())
               .filter(data -> data.name().equals(configuredNameToFilterFor))
               .to(getCommittableSink(outlet))
               .run(system());

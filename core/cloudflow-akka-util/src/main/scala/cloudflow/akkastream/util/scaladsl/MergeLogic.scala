@@ -66,7 +66,7 @@ object Merger {
    */
   def source[T](
       inlets: Seq[CodecInlet[T]],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
     Source
       .fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_, dataconverter))))

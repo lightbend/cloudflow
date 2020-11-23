@@ -52,7 +52,7 @@ public class SplitterTest extends JUnitSuite {
     public RunnableGraphStreamletLogic createLogic() {
       return new RunnableGraphStreamletLogic(getContext()) {
         public RunnableGraph createRunnableGraph() {
-          return getSourceWithCommittableContext(inlet)
+          return getSourceWithCommittableContext(inlet, new DefaultInletDataConverter<Data>())
               .to(Splitter.sink(createFlow(), badOutlet, goodOutlet, getContext()));
         }
 

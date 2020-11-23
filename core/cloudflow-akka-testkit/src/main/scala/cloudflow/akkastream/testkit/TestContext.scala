@@ -52,12 +52,11 @@ private[testkit] case class TestContext(
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
   override def sourceWithOffsetContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]
   ): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext(inlet)
 
-  override def sourceWithCommittableContext[T](inlet: CodecInlet[T],
-                                               dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T]) =
+  override def sourceWithCommittableContext[T](inlet: CodecInlet[T], dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T]) =
     sourceWithContext(inlet)
 
   private def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] =
@@ -79,7 +78,7 @@ private[testkit] case class TestContext(
 
   override private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+      dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
@@ -160,12 +159,12 @@ private[testkit] case class TestContext(
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
   override def plainSource[T](inlet: CodecInlet[T],
-                              dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                              dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                               resetPosition: ResetPosition = Latest): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ => NotUsed)
 
   override def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                           dataconverter: InletDataPConverter[T] = DefaultInletDataPConverter[T],
+                                           dataconverter: InletDataConverter[T] = DefaultInletDataConverter[T],
                                            shardEntity: Entity[M, E],
                                            resetPosition: ResetPosition = Latest,
                                            kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {

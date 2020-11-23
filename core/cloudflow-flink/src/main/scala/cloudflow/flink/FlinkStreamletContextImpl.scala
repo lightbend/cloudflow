@@ -43,7 +43,7 @@ class FlinkStreamletContextImpl(
    * @param inlet the inlet port to read from
    * @return the data read as `DataStream[In]`
    */
-  override def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataPConverter[In]): DataStream[In] = {
+  override def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataConverter[In]): DataStream[In] = {
     val topic            = findTopicForPort(inlet)
     val srcTopic         = topic.name
     val groupId          = topic.groupId(streamletDefinition.appId, streamletRef, inlet)

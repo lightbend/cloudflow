@@ -19,14 +19,14 @@ package cloudflow.streamlets
 // This data converter is used for both Akka Streams and Flink
 // Spark does not support optional, so we need a separate implementation for Spark
 
-abstract class InletDataPConverter[T] {
+abstract class InletDataConverter[T] {
   protected var inlet: CodecInlet[T] = _
 
   def forInlet(in: CodecInlet[T]): Unit = inlet = in
   def convertData(data: Array[Byte]): Option[T]
 }
 
-case class DefaultInletDataPConverter[T]() extends InletDataPConverter[T] {
+case class DefaultInletDataConverter[T]() extends InletDataConverter[T] {
 
   override def convertData(data: Array[Byte]): Option[T] =
     try {

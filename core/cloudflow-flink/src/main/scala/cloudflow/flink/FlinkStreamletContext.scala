@@ -36,7 +36,7 @@ abstract case class FlinkStreamletContext(
    * @param inlet the inlet port to read from
    * @return the data read as `DataStream[In]`
    */
-  def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataPConverter[In]): DataStream[In]
+  def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataConverter[In]): DataStream[In]
 
   /**
    * Write to the external storage using the outlet `outPort` from the stream `stream`

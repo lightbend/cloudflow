@@ -121,7 +121,7 @@ final class AkkaStreamletContextImpl(
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T]
+      dataconverter: InletDataConverter[T]
   ): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
     val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
@@ -149,13 +149,13 @@ final class AkkaStreamletContextImpl(
 
   override def sourceWithCommittableContext[T](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T]
+      dataconverter: InletDataConverter[T]
   ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet, dataconverter)
 
   private[akkastream] def shardedSourceWithContext[T, M, E](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T],
+      dataconverter: InletDataConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
@@ -217,7 +217,7 @@ final class AkkaStreamletContextImpl(
 
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
-      dataconverter: InletDataPConverter[T],
+      dataconverter: InletDataConverter[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds
   ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
@@ -225,7 +225,7 @@ final class AkkaStreamletContextImpl(
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
   override def sourceWithOffsetContext[T](inlet: CodecInlet[T],
-                                          dataconverter: InletDataPConverter[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+                                          dataconverter: InletDataConverter[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext[T](inlet, dataconverter)
 
   def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
@@ -296,7 +296,7 @@ final class AkkaStreamletContextImpl(
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T],
-                     dataconverter: InletDataPConverter[T],
+                     dataconverter: InletDataConverter[T],
                      resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val topic = findTopicForPort(inlet)
@@ -324,7 +324,7 @@ final class AkkaStreamletContextImpl(
   }
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  dataconverter: InletDataPConverter[T],
+                                  dataconverter: InletDataConverter[T],
                                   shardEntity: Entity[M, E],
                                   resetPosition: ResetPosition = Latest,
                                   kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {

@@ -338,7 +338,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    * @return the data read as `DataStream[In]`
    */
   final def readStream[In: TypeInformation](inlet: CodecInlet[In],
-                                            dataconverter: InletDataPConverter[In] = DefaultInletDataPConverter[In]): DataStream[In] =
+                                            dataconverter: InletDataConverter[In] = DefaultInletDataConverter[In]): DataStream[In] =
     context.readStream(inlet, dataconverter)
 
   /**
@@ -355,7 +355,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
                            We can't do this because of Scala compiler issues https://stackoverflow.com/questions/4652095/why-does-the-scala-compiler-disallow-overloaded-methods-with-default-arguments
    */
   ): JDataStream[In] =
-    context.readStream(inlet, DefaultInletDataPConverter[In])(TypeInformation.of[In](clazz)).javaStream
+    context.readStream(inlet, DefaultInletDataConverter[In])(TypeInformation.of[In](clazz)).javaStream
 
   /**
    * Write to the external storage using the outlet `outlet` from the stream `stream`
