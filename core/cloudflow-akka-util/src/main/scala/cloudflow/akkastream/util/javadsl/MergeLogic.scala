@@ -52,6 +52,13 @@ object Merger {
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlets.asScala)(context).asJava
 
+  def source[T](
+      context: AkkaStreamletContext,
+      inlets: java.util.List[CodecInlet[T]],
+      dataconverter: InletDataConverter[T]
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+    cloudflow.akkastream.util.scaladsl.Merger.source(inlets.asScala, dataconverter)(context).asJava
+
   @varargs
   def source[T](
       context: AkkaStreamletContext,
@@ -59,6 +66,15 @@ object Merger {
       inlets: CodecInlet[T]*
   ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlet +: inlets)(context).asJava
+
+  @varargs
+  def source[T](
+      context: AkkaStreamletContext,
+      inlet: CodecInlet[T],
+      dataconverter: InletDataConverter[T],
+      inlets: CodecInlet[T]*
+  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+    cloudflow.akkastream.util.scaladsl.Merger.source(inlet +: inlets, dataconverter)(context).asJava
 }
 
 /**

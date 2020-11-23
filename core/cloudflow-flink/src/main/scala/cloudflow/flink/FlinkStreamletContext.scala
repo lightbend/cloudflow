@@ -34,6 +34,7 @@ abstract case class FlinkStreamletContext(
    * Read from the underlying external storage through the inlet `inPort` and return a DataStream
    *
    * @param inlet the inlet port to read from
+   * @param dataconverter data converter class allowing for custom error handling
    * @return the data read as `DataStream[In]`
    */
   def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataConverter[In]): DataStream[In]

@@ -73,17 +73,25 @@ object Merger {
       .asSourceWithContext { case (_, offset) => offset }
       .map { case (t, _) => t }
 
-  /*
-  This method requires dataconverter, but can't add it here
   def source[T](
       inlet: CodecInlet[T],
       inlets: CodecInlet[T]*
   )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
     Source
-      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_))))
+      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_, DefaultInletDataConverter[T]))))
       .asSourceWithContext { case (_, offset) => offset }
       .map { case (t, _) => t }
- */
+
+  def source[T](
+      inlet: CodecInlet[T],
+      dataconverter: InletDataConverter[T],
+      inlets: CodecInlet[T]*
+  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
+    Source
+      .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_, dataconverter))))
+      .asSourceWithContext { case (_, offset) => offset }
+      .map { case (t, _) => t }
+
 }
 
 /**

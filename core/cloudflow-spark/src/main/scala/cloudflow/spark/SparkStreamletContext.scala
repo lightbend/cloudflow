@@ -41,9 +41,11 @@ abstract case class SparkStreamletContext(
    * Stream from the underlying external storage and return a DataFrame
    *
    * @param inPort the inlet port to read from
+   * @param dataconverter dataconverter allowing to overwrite error handling
    * @return the data read as `Dataset[In]`
    */
-  def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In]
+  def readStream[In](inPort: CodecInlet[In], dataconverter: SparkInletDataConverter[In])(implicit encoder: Encoder[In],
+                                                                                         typeTag: TypeTag[In]): Dataset[In]
 
   /**
    * Start the execution of a StreamingQuery that writes the encodedStream to

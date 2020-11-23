@@ -222,8 +222,11 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   /**
    * Read from inlet to generate a `Dataset`.
    */
-  final def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
-    context.readStream(inPort)
+  final def readStream[In](
+      inPort: CodecInlet[In],
+      dataconverter: SparkInletDataConverter[In] = DefaultSparkInletDataConverter[In]
+  )(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
+    context.readStream(inPort, dataconverter)
 
   /**
    * Write a `StreamingQuery` into outlet using the specified `OutputMode`

@@ -24,7 +24,6 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.kafka.CommitterSettings
 import akka.kafka.ConsumerMessage._
-import akka.stream._
 import akka.stream.scaladsl._
 import com.typesafe.config._
 import cloudflow.akkastream._

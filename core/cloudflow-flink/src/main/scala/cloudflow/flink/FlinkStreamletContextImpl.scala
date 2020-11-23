@@ -41,6 +41,7 @@ class FlinkStreamletContextImpl(
    * of the computation graph
    *
    * @param inlet the inlet port to read from
+   * @param dataconverter data converter allowing to overwrite error handling
    * @return the data read as `DataStream[In]`
    */
   override def readStream[In: TypeInformation](inlet: CodecInlet[In], dataconverter: InletDataConverter[In]): DataStream[In] = {

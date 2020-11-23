@@ -16,8 +16,6 @@
 
 package cloudflow.akkastream.util.scaladsl
 
-import scala.collection.immutable
-
 import akka._
 import akka.kafka._
 import akka.stream._

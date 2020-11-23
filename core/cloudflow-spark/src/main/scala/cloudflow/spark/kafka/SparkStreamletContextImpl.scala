@@ -21,7 +21,7 @@ import java.io.File
 import com.typesafe.config.Config
 import org.apache.spark.sql._
 import org.apache.spark.sql.streaming._
-import cloudflow.spark.SparkStreamletContext
+import cloudflow.spark._
 import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.streamlets._
 
@@ -35,11 +35,15 @@ class SparkStreamletContextImpl(
 
   val storageDir           = config.getString("storage.mountPath")
   val maxOffsetsPerTrigger = config.getLong("cloudflow.spark.read.options.max-offsets-per-trigger")
-  def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = {
+  def readStream[In](inPort: CodecInlet[In], dataconverter: SparkInletDataConverter[In])(implicit encoder: Encoder[In],
+                                                                                         typeTag: TypeTag[In]): Dataset[In] = {
 
     val topic    = findTopicForPort(inPort)
     val srcTopic = topic.name
     val brokers  = runtimeBootstrapServers(topic)
+
+    dataconverter.forInlet(inPort)
+
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -54,15 +58,18 @@ class SparkStreamletContextImpl(
 
     val rawDataset = src.select($"value").as[Array[Byte]]
 
-    rawDataset.map(inPort.codec.decode(_))
+    rawDataset.map(dataconverter.convertData(_)).filter(validateNotNull[In](_))
   }
 
-  def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
+  private def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
-  def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
+
+  private def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
+
+  private def validateNotNull[T](message: T): Boolean = message != null
 
   def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
