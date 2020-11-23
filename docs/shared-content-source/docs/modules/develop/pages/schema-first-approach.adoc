@@ -65,6 +65,66 @@ Cloudflow ensures the following compile time guarantees through this type defini
 +
 For example, when implementing `createLogic` if you do `readStream(in)` where `in` is an inlet parameterized by a type other than `CallRecord`, the compiler will complain.
 
+== Dealing with "bad" messages
+
+Despite the fact, that Cloudflow is build on `Schema first approach` "bad" messages can still arrive to the
+Streamlet. There are two main types of "bad" messages:
+
+* Syntactically bad messages - those are messages that do not conform to the message schema and
+will fail unmarshalling.
+* Semantically bad messages - those are messages that are semantically correct but their content is not applicable for Streamlet.
+
+In order to avoid Streamlet's failures in these cituations Cloudflow Kafka readers
+support pluggable `InletDataConverter`, that allows to provide a custom logic for the cases of "bad" messages.
+The default implementation of the `InletDataConverter` only checks for semantical correctness
+of the incoming messages. It logs bad messages and skips them. The implementation is as follows:
+
+[source,scala]
+----
+case class DefaultInletDataConverter[T]() extends InletDataConverter[T] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  override def convertData(data: Array[Byte]): Option[T] =
+    try {
+      Some(inlet.codec.decode(data))
+    } catch {
+      case t: Throwable =>
+        logger.error(s"Input data $data can not be transformed and will be skipped")
+        logger.error(s"Data transformation error id ${t.getMessage}")
+        None
+    }
+}
+----
+The `source` APIs allow to overwrite this default implementation with the custom ones, which can:
+
+* Add semantic validation to the unmarshalled message
+* Replace logging with the custom processing, for example, writing bad messages to the `dead-letter` topic.
+* Replace skipping of bad messages with, for example, passing through predefined messages.
+
+This implementation works fine for Akka Streams and Flink, but not Spark. The issue is that Spark
+Streaming does not support Optional. To deal with this for Spark we are using a similar implementation
+that instead of Optional return nullable value:
+
+[source,scala]
+----
+case class DefaultSparkInletDataConverter[T]() extends SparkInletDataConverter[T] {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  override def convertData(data: Array[Byte]): T =
+    try {
+      inlet.codec.decode(data)
+    } catch {
+      case t: Throwable =>
+        logger.error(s"Input data $data can not be transformed and will be skipped")
+        logger.error(s"Data transformation error id ${t.getMessage}")
+        null.asInstanceOf[T]
+    }
+}
+----
+
+
 == Outlets and the partitioning function
 
 Similar to inlets, the user can define an outlet as: 
