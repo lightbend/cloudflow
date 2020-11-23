@@ -53,11 +53,8 @@ object CloudflowBasePlugin extends AutoPlugin {
 
   override def projectSettings = Seq(
     libraryDependencies ++= Vector(
-          // this artifact needs to have `%` and not `%%` as we build the runner jar
-          // without version information. This is required for Flink runtime as a fixed name
-          // jar needs to be uploaded to a specific location for Flink operator to pick up
-          "com.lightbend.cloudflow" % "cloudflow-runner"       % (ThisProject / cloudflowVersion).value,
-          "com.lightbend.cloudflow" %% "cloudflow-localrunner" % (ThisProject / cloudflowVersion).value
+          "com.lightbend.cloudflow" % s"cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}"      % (ThisProject / cloudflowVersion).value,
+          "com.lightbend.cloudflow" % s"cloudflow-localrunner_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value
         ),
     buildOptions in docker := BuildOptions(
           cache = true,
