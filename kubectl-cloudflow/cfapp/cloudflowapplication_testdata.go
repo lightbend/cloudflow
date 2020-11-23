@@ -563,7 +563,8 @@ func TestApplicationDescriptor() string {
 		      },
 		      "name": "rotorizer"
 		    }
-		  ],
-		  "version": "1"
+			],
+			"library_version": "2.0.18",
+		  "version": "5"
 		}`
 }

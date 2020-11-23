@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/lightbend/cloudflow/kubectl-cloudflow/fileutil"
 	. "github.com/lightbend/cloudflow/kubectl-cloudflow/version"
@@ -316,26 +317,23 @@ func (in *CloudflowApplication) GenerateOwnerReference() metav1.OwnerReference {
 
 //CheckApplicationDescriptorVersion checks the version, logs and exits if not supported
 func checkApplicationDescriptorVersion(spec CloudflowApplicationSpec) error {
-	if spec.Version != SupportedApplicationDescriptorVersion {
-		// If the version is an int, compare them, otherwise provide a more general message.
-		if version, err := strconv.Atoi(spec.Version); err == nil {
-			if supportedVersion, err := strconv.Atoi(SupportedApplicationDescriptorVersion); err == nil {
-				if version < supportedVersion {
-					if spec.LibraryVersion != "" {
-						return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'", spec.LibraryVersion)
-					}
-					return fmt.Errorf("Application is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'")
-				}
-				if version > supportedVersion {
-					if spec.LibraryVersion != "" {
-						return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again", spec.LibraryVersion)
-					}
-					return fmt.Errorf("Application is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again")
-				}
-			}
-		}
 
-		return fmt.Errorf("Application is incompatible and no longer supported. Please update sbt-cloudflow and rebuild the application with 'sbt buildApp'")
+	if len(strings.TrimSpace(spec.Version)) == 0 {
+		return fmt.Errorf("Application file parse error: spec.version is missing or empty")
+	}
+	if len(strings.TrimSpace(spec.LibraryVersion)) == 0 {
+		return fmt.Errorf("Application file parse error: spec.library_version is missing or empty")
+	}
+
+	version, convErr := strconv.Atoi(spec.Version)
+	if convErr != nil {
+		return fmt.Errorf("Application file parse error: spec.version is invalid")
+	}
+
+	if version < SupportedApplicationDescriptorVersion {
+		return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'", spec.LibraryVersion)
+	} else if version > SupportedApplicationDescriptorVersion {
+		return fmt.Errorf("Application built with sbt-cloudflow version '%s', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again", spec.LibraryVersion)
 	}
 	return nil
 }
