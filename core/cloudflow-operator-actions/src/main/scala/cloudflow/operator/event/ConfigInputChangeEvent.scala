@@ -80,7 +80,7 @@ object ConfigInputChangeEvent extends Event {
             cluster    <- topic.cluster.toVector
           } yield cluster) :+ TopicActions.DefaultConfigurationName
 
-        val providedAction = Action.providedByLabel[Secret, Secret](TopicActions.KafkaClusterNameLabel, clusterNames, app, podNamespace) {
+        val providedAction = Action.providedByLabel[Secret](TopicActions.KafkaClusterNameLabel, clusterNames, app, podNamespace) {
           clusterSecrets =>
             val allNamedClusters = namedClusters(app.name, clusterNames, clusterSecrets)
             val actions = app.spec.deployments.map { streamletDeployment =>

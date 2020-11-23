@@ -69,8 +69,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       }
 
       val createDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] =>
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
+        case p: ProvidedAction[_] =>
+          p.asInstanceOf[ProvidedAction[Secret]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {
@@ -121,8 +121,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       Then("update actions should be created")
       val updateActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
       val updateDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] =>
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
+        case p: ProvidedAction[_] =>
+          p.asInstanceOf[ProvidedAction[Secret]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
       }
 
       (updateActions.size + updateDeploymentActions.size) mustBe actions.size
@@ -192,8 +192,8 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val createActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
 
       val createDeploymentActions = actions.collect {
-        case p: ProvidedAction[_, _] =>
-          p.asInstanceOf[ProvidedAction[Secret, Deployment]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
+        case p: ProvidedAction[_] =>
+          p.asInstanceOf[ProvidedAction[Secret]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {

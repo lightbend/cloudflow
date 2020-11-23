@@ -107,7 +107,7 @@ trait Runner[T <: ObjectResource] {
       .flatMap { deployment =>
         Seq(
           Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor),
-          Action.providedRetry[Secret, ObjectResource](deployment.secretName, newApp) {
+          Action.providedRetry[Secret](deployment.secretName, newApp) {
             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), newApp, editor)
             case None =>
               val msg =
@@ -146,7 +146,7 @@ trait Runner[T <: ObjectResource] {
     implicit val rd = resourceDefinition
     Seq(
       Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor),
-      Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+      Action.provided[Secret](deployment.secretName, newApp) {
         case Some(secret) =>
           Action.createOrUpdate(resource(deployment, newApp, secret), newApp, editor)
         case None =>

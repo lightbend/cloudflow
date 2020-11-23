@@ -61,12 +61,12 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: ProvidedAction[_, _] =>
+          case p: ProvidedAction[_] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
-              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+              .asInstanceOf[ProvidedAction[Secret]]
               .getAction(None)
-              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+              .asInstanceOf[ProvidedAction[Secret]]
 
             // assert that we fallback to provide the 'default' cluster secret
             fallbackProvidedAction.resourceName mustBe TopicActions.KafkaClusterNameFormat.format(TopicActions.DefaultConfigurationName)
@@ -125,10 +125,10 @@ class TopicActionsSpec
       val Seq(foosAction, barsAction) = TopicActions(newApp, runners, ctx.podNamespace)
 
       val configMap0 = foosAction
-        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret]]
         // try to get Kafka connection info from empty application secret
         .getAction(None)
-        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
         .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
@@ -142,13 +142,13 @@ class TopicActionsSpec
         defaultBootstrapServers,
         CloudflowLabels(newApp)
       )
-      foosAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
+      foosAction mustBe a[ProvidedAction[_]]
 
       val configMap1 = barsAction
-        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret]]
         // try to get Kafka connection info from empty application secret
         .getAction(None)
-        .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+        .asInstanceOf[ProvidedAction[Secret]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
         .asInstanceOf[SingleResourceAction[TopicActions.TopicResource]]
@@ -162,7 +162,7 @@ class TopicActionsSpec
         defaultBootstrapServers,
         CloudflowLabels(newApp)
       )
-      barsAction mustBe a[ProvidedAction[_, TopicActions.TopicResource]]
+      barsAction mustBe a[ProvidedAction[_]]
       assertTopic(savepoint, configMap1, appId)
     }
 
@@ -189,12 +189,12 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: ProvidedAction[_, _] =>
+          case p: ProvidedAction[_] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
-              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+              .asInstanceOf[ProvidedAction[Secret]]
               .getAction(None)
-              .asInstanceOf[ProvidedAction[Secret, TopicActions.TopicResource]]
+              .asInstanceOf[ProvidedAction[Secret]]
 
             // assert that we fallback to provide the 'cluster-baz' cluster secret as specified in topic config
             fallbackProvidedAction.resourceName mustBe TopicActions.KafkaClusterNameFormat.format(clusterName)

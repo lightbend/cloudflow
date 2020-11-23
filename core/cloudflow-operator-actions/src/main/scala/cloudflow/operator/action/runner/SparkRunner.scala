@@ -96,7 +96,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   override def updateActions(newApp: CloudflowApplication.CR,
                              runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
-    val patchAction = Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+    val patchAction = Action.provided[Secret](deployment.secretName, newApp) {
       case Some(secret) =>
         val _resource = resource(deployment, newApp, secret)
         val _patch    = patch(deployment, newApp, secret)
