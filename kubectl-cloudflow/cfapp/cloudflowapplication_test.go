@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/lightbend/cloudflow/kubectl-cloudflow/version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,6 +67,29 @@ func Test_validateOwnerReferenceGeneration(t *testing.T) {
 	cr = UpdateCloudflowApplication(cr.Spec, cr, "v1.3.2", "35ac352")
 	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/created-by-cli-version"] == "v1.3.1 (34ab342)")
 	assert.True(t, cr.GetObjectMeta().GetAnnotations()["com.lightbend.cloudflow/last-modified-by-cli-version"] == "v1.3.2 (35ac352)")
+}
+
+func Test_checkApplicationDescriptor(t *testing.T) {
+	applicationConfiguration := TestApplicationDescriptor()
+	var app CloudflowApplicationSpec
+	jsonError := json.Unmarshal([]byte(applicationConfiguration), &app)
+	assert.Empty(t, jsonError)
+	assert.Nil(t, checkApplicationDescriptorVersion(app))
+	older := app
+	older.Version = fmt.Sprintf("%d", version.SupportedApplicationDescriptorVersion-1)
+	assert.Equal(t, checkApplicationDescriptorVersion(older).Error(), "Application built with sbt-cloudflow version '2.0.18', is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'")
+	newer := app
+	newer.Version = fmt.Sprintf("%d", version.SupportedApplicationDescriptorVersion+1)
+	assert.Equal(t, checkApplicationDescriptorVersion(newer).Error(), "Application built with sbt-cloudflow version '2.0.18', is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again")
+	missingVersion := app
+	missingVersion.Version = ""
+	assert.Equal(t, checkApplicationDescriptorVersion(missingVersion).Error(), "Application file parse error: spec.version is missing or empty")
+	invalidApp := app
+	invalidApp.Version = "5b"
+	assert.Equal(t, checkApplicationDescriptorVersion(invalidApp).Error(), "Application file parse error: spec.version is invalid")
+	missingLibraryVersion := app
+	missingLibraryVersion.LibraryVersion = ""
+	assert.Equal(t, checkApplicationDescriptorVersion(missingLibraryVersion).Error(), "Application file parse error: spec.library_version is missing or empty")
 }
 
 func findDescriptor(name string, app CloudflowApplicationSpec) (Streamlet, error) {
