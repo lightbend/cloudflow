@@ -43,7 +43,6 @@ final class SkuberActionExecutor(
   def execute(action: Action): Future[Action] =
     action match {
       case skAction: ResourceAction[_] =>
-        // An appropriate KubernetesClient is built up for the object resource namespace
         val namespace = skAction.namespace
         logger.debug(Action.executing(skAction))
         val kubernetesClient = namespace

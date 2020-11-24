@@ -65,6 +65,12 @@ object Operator {
 
   val MaxObjectBufSize = 8 * 1024 * 1024
 
+  val restartSettings = RestartSettings(
+    minBackoff = 3.seconds,
+    maxBackoff = 30.seconds,
+    randomFactor = 0.2
+  )
+
   val decider: Supervision.Decider = {
     case _ => Supervision.Stop
   }
@@ -84,7 +90,7 @@ object Operator {
       watch[CloudflowApplication.CR](client, DefaultWatchOptions)
         .via(AppEventFlow.fromWatchEvent(logAttributes))
         .via(AppEventFlow.toAction(runners, podName, podNamespace))
-        .via(executeActions(actionExecutor, runners, logAttributes))
+        .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right)
         .mapMaterializedValue {
           _.flatMap { value =>
@@ -101,7 +107,6 @@ object Operator {
 
   def handleConfigurationInput(
       client: KubernetesClient,
-      runners: Map[String, Runner[_]],
       podNamespace: String
   )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
     val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
@@ -124,7 +129,7 @@ object Operator {
         .log("config-input-change-event", ConfigInputChangeEvent.detected)
         .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
         .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
-        .via(executeActions(actionExecutor, runners, logAttributes))
+        .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The configuration input stream completed unexpectedly, terminating.",
       "The configuration input stream failed, terminating."
@@ -154,7 +159,7 @@ object Operator {
         .via(StreamletChangeEventFlow.fromWatchEvent())
         .via(mapToAppInSameNamespace(client))
         .via(StreamletChangeEventFlow.toConfigUpdateAction(runners, podName))
-        .via(executeActions(actionExecutor, runners, logAttributes))
+        .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",
       "The config updates stream failed, terminating."
@@ -173,16 +178,14 @@ object Operator {
         .log("status-change-event", StatusChangeEvent.detected)
         .via(mapToAppInSameNamespace(client))
         .via(StatusChangeEventFlow.toStatusUpdateAction(runners))
-        .via(executeActions(actionExecutor, runners, logAttributes))
+        .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
       "The status changes stream failed, terminating."
     )
   }
-
-  private def executeActions(actionExecutor: ActionExecutor, runners: Map[String, Runner[_]], logAttributes: Attributes)(
-      implicit ec: ExecutionContext
-  ): Flow[Action, Action, NotUsed] =
+  private def executeActions(actionExecutor: ActionExecutor,
+                             logAttributes: Attributes): Flow[Action, Action, NotUsed] =
     Flow[Action]
       .mapAsync(1)(action => actionExecutor.execute(action))
       .log("action", Action.executed)
@@ -233,13 +236,7 @@ object Operator {
      * Events that have already been processed are discarded in AppEvents.fromWatchEvent.
      * ==================================================*/
 
-    RestartSource.withBackoff(
-      RestartSettings(
-        minBackoff = 3.seconds,
-        maxBackoff = 30.seconds,
-        randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
-      )
-    ) { () =>
+    RestartSource.withBackoff(restartSettings) { () =>
       log.info(s"Starting watch for ${classTag[O].runtimeClass.getName}")
       Source
         .future(getCurrentEvents[O](client, options, 0, 3.seconds))
