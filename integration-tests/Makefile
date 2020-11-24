@@ -65,9 +65,9 @@ prepare-cluster:
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** Creating namspace and PVCs for Swiss-knife'
-	kubectl create namespace swiss-knife
-	kubectl create -f itest/resources/spark-pvc.yaml -n swiss-knife
-	kubectl create -f itest/resources/flink-pvc.yaml -n swiss-knife
+	kubectl create namespace swiss-knife | true
+	kubectl create -f itest/resources/spark-pvc.yaml -n swiss-knife | true
+	kubectl create -f itest/resources/flink-pvc.yaml -n swiss-knife | true
 	@echo '****** The cluster is ready for integration tests!'
 
 .PHONY: spawn-gke-cluster
@@ -88,4 +88,4 @@ delete-gke-cluster:
 run-it-tests:
 	@echo '****** Run Integration Tests'
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
-	(export PATH=$$PWD/itest:$$PATH && cd itest && ginkgo -v)
+	(export PATH=$$PWD/itest:$$PATH && export KUBECTL_CLOUDFLOW_OUTPUT_FORMAT=classic && cd itest && ginkgo -v)

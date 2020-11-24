@@ -108,11 +108,9 @@ var _ = Describe("Application deployment", func() {
 		})
 
 		It("should start a deployment", func() {
-			output, err := cli.Deploy(swissKnifeApp, "", "")
+			_, err := cli.Deploy(swissKnifeApp, "", "")
 			Expect(err).NotTo(HaveOccurred())
-			expected := "Deployment of application `" + swissKnifeApp.Name + "` has started."
 			time.Sleep(deploySleepTime) // this wait is to let the application go into deployment
-			Expect(output).To(ContainSubstring(expected))
 		})
 
 		It("should be in the list of applications in the cluster", func() {
