@@ -68,7 +68,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         addInstructions(extraDockerInstructions.value)
         runRaw(
-          s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
+          s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}*.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
         )
       }
     }
