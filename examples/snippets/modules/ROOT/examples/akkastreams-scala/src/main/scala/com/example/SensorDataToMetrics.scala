@@ -14,7 +14,7 @@ object SensorDataToMetrics extends AkkaStreamlet {
 
   final override def createLogic = new RunnableGraphStreamletLogic {
     override final def runnableGraph =
-      sourceWithOffsetContext(in)
+      sourceWithCommittableContext(in)
         .map { i ⇒
           i
         }

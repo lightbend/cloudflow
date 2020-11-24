@@ -61,8 +61,6 @@ class FlinkStreamletContextImpl(
       properties
     )
 
-    dataconverter.forInlet(inlet)
-
     // whether consumer should commit offsets back to Kafka on checkpoints
     // this is true by default: still making it explicit here. As such, Flink manages offsets
     // on its own - it just commits to Kafka for your information only
@@ -72,7 +70,7 @@ class FlinkStreamletContextImpl(
     env
       .addSource(consumer)
       .flatMap(new FlatMapFunction[Array[Byte], In]() {
-        override def flatMap(value: Array[Byte], out: Collector[In]): Unit = dataconverter.convertData(value) match {
+        override def flatMap(value: Array[Byte], out: Collector[In]): Unit = dataconverter.convertData(inlet, value) match {
           case Some(v) => out.collect(v)
           case _       =>
         }

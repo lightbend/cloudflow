@@ -19,27 +19,23 @@ package cloudflow.spark
 import cloudflow.streamlets.CodecInlet
 import org.slf4j.LoggerFactory
 
-// This data converter is used for both Akka Streams and Flink
-// Spark does not support optional, so we need a separate implementation for Spark
+// This data converter is used Spark
 
-abstract class SparkInletDataConverter[T] {
-  protected var inlet: CodecInlet[T] = _
-
-  def forInlet(in: CodecInlet[T]): Unit = inlet = in
-  def convertData(data: Array[Byte]): T
+trait SparkInletDataConverter[T] {
+  def convertData(in: CodecInlet[T], data: Array[Byte]): T
 }
 
 case class DefaultSparkInletDataConverter[T]() extends SparkInletDataConverter[T] {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def convertData(data: Array[Byte]): T =
+  override def convertData(inlet: CodecInlet[T], data: Array[Byte]): T =
     try {
       inlet.codec.decode(data)
     } catch {
       case t: Throwable =>
         logger.error(s"Input data $data can not be transformed and will be skipped")
-        logger.error(s"Data transformation error id ${t.getMessage}")
+        logger.error(s"Data transformation error ${t.getMessage}")
         null.asInstanceOf[T]
     }
 }

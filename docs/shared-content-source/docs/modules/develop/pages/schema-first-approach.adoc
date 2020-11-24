@@ -85,13 +85,13 @@ case class DefaultInletDataConverter[T]() extends InletDataConverter[T] {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def convertData(data: Array[Byte]): Option[T] =
+  override def convertData(inlet: CodecInlet[T], data: Array[Byte]): Option[T] =
     try {
       Some(inlet.codec.decode(data))
     } catch {
       case t: Throwable =>
         logger.error(s"Input data $data can not be transformed and will be skipped")
-        logger.error(s"Data transformation error id ${t.getMessage}")
+        logger.error(s"Data transformation error ${t.getMessage}")
         None
     }
 }
@@ -112,13 +112,13 @@ case class DefaultSparkInletDataConverter[T]() extends SparkInletDataConverter[T
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def convertData(data: Array[Byte]): T =
+  override def convertData(inlet: CodecInlet[T], data: Array[Byte]): T =
     try {
       inlet.codec.decode(data)
     } catch {
       case t: Throwable =>
         logger.error(s"Input data $data can not be transformed and will be skipped")
-        logger.error(s"Data transformation error id ${t.getMessage}")
+        logger.error(s"Data transformation error ${t.getMessage}")
         null.asInstanceOf[T]
     }
 }

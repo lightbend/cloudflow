@@ -134,15 +134,13 @@ final class AkkaStreamletContextImpl(
 
     system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
 
-    dataconverter.forInlet(inlet)
-
     Consumer
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
       .mapMaterializedValue { c =>
         KafkaControls.add(c)
         NotUsed
       }
-      .map(record => dataconverter.convertData(record.value))
+      .map(record => dataconverter.convertData(inlet, record.value))
       .collect { case Some(v) => v }
       .via(handleTermination)
   }
@@ -167,8 +165,6 @@ final class AkkaStreamletContextImpl(
       .withGroupId(gId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
       .withProperties(topic.kafkaConsumerProperties)
-
-    dataconverter.forInlet(inlet)
 
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
@@ -205,7 +201,7 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map(record => dataconverter.convertData(record.value))
+            .map(record => dataconverter.convertData(inlet, record.value))
             .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
@@ -307,8 +303,6 @@ final class AkkaStreamletContextImpl(
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
       .withProperties(topic.kafkaConsumerProperties)
 
-    dataconverter.forInlet(inlet)
-
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
       .mapMaterializedValue { c =>
@@ -317,7 +311,7 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .map { record =>
-        dataconverter.convertData(record.value())
+        dataconverter.convertData(inlet, record.value())
       }
       .collect { case Some(v) => v }
 
@@ -353,8 +347,6 @@ final class AkkaStreamletContextImpl(
         settings = consumerSettings
       )
 
-    dataconverter.forInlet(inlet)
-
     Source
       .futureSource {
         messageExtractor.map { m =>
@@ -375,7 +367,7 @@ final class AkkaStreamletContextImpl(
             }
             .via(handleTermination)
             .map { record =>
-              dataconverter.convertData(record.value())
+              dataconverter.convertData(inlet, record.value())
             }
             .collect { case Some(v) => v }
         }(system.dispatcher)

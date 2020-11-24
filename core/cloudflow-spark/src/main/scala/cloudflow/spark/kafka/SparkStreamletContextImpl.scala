@@ -42,8 +42,6 @@ class SparkStreamletContextImpl(
     val srcTopic = topic.name
     val brokers  = runtimeBootstrapServers(topic)
 
-    dataconverter.forInlet(inPort)
-
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -58,7 +56,7 @@ class SparkStreamletContextImpl(
 
     val rawDataset = src.select($"value").as[Array[Byte]]
 
-    rawDataset.map(dataconverter.convertData(_)).filter(validateNotNull[In](_))
+    rawDataset.map(dataconverter.convertData(inPort, _)).filter(validateNotNull[In](_))
   }
 
   private def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {

@@ -21,24 +21,21 @@ import org.slf4j.LoggerFactory
 // This data converter is used for both Akka Streams and Flink
 // Spark does not support optional, so we need a separate implementation for Spark
 
-abstract class InletDataConverter[T] {
-  protected var inlet: CodecInlet[T] = _
-
-  def forInlet(in: CodecInlet[T]): Unit = inlet = in
-  def convertData(data: Array[Byte]): Option[T]
+trait InletDataConverter[T] {
+  def convertData(inlet: CodecInlet[T], data: Array[Byte]): Option[T]
 }
 
 case class DefaultInletDataConverter[T]() extends InletDataConverter[T] {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def convertData(data: Array[Byte]): Option[T] =
+  override def convertData(inlet: CodecInlet[T], data: Array[Byte]): Option[T] =
     try {
       Some(inlet.codec.decode(data))
     } catch {
       case t: Throwable =>
         logger.error(s"Input data $data can not be transformed and will be skipped")
-        logger.error(s"Data transformation error id ${t.getMessage}")
+        logger.error(s"Data transformation error ${t.getMessage}")
         None
     }
 }
