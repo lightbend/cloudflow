@@ -9,7 +9,7 @@ Please see xref:administration:installing-cloudflow.adoc[Installing Cloudflow] f
 First, make sure that you have the following installed:
 
 * Java(JDK) >= 8
-* https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher (currently Cloudflow supports sbt up to version 1.3.X)
+* https://www.scala-sbt.org/[sbt,window=_blank], version 1.2.8 or higher
 * https://www.docker.com/community-edition[Docker,window=_blank], version 18.09 or higher
 * https://helm.sh/docs/intro/install/[Helm,window=_blank], version 2 or higher. We recommend version 3 to avoid dealing with tiller.
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
