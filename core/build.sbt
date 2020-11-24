@@ -454,7 +454,7 @@ lazy val operatorActions =
     )
     .dependsOn(blueprint % "compile->compile;test->test")
     .settings(
-      scalaVersion := Version.Scala213,
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             AkkaSlf4j,
@@ -493,7 +493,8 @@ lazy val operator =
           )
     )
     .settings(
-      scalaVersion := Version.Scala213,
+      skip in publish := scalaVersion.value == Version.Scala212,
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       organization := "com.lightbend.cloudflow",
       skip in publish := true,
       mainClass in Compile := Some("cloudflow.operator.Main"),
