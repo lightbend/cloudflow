@@ -71,8 +71,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   def appActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleFlink = flinkRole(app.namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleFlink, app, roleEditor),
-      Action.createOrUpdate(flinkRoleBinding(app.namespace, roleFlink, labels, ownerReferences), app, roleBindingEditor)
+      Action.createOrUpdate(roleFlink, roleEditor),
+      Action.createOrUpdate(flinkRoleBinding(app.namespace, roleFlink, labels, ownerReferences), roleBindingEditor)
     )
   }
 
@@ -86,7 +86,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       resource(streamletDeployment, app, secret, updateLabels)
     val labeledResource =
       _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-    Action.createOrUpdate(labeledResource, app, editor)
+    Action.createOrUpdate(labeledResource, editor)
   }
 
   def defaultReplicas = DefaultTaskManagerReplicas

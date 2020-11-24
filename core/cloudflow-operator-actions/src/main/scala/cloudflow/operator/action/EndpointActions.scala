@@ -45,7 +45,7 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint =>
       Seq(
-        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp)
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp.namespace)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint =>
@@ -87,16 +87,15 @@ object EndpointActions {
       OwnerReference(app.apiVersion, app.kind, app.metadata.name, app.metadata.uid, Some(true), Some(true))
     )
 
-    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, app.namespace, labels, ownerReferences), app)
+    CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, app.namespace, labels, ownerReferences))
   }
 
   /**
    * Creates an action for creating a service.
    */
   object CreateServiceAction {
-    def apply(service: Service, app: CloudflowApplication.CR)(implicit format: Format[Service],
-                                                              resourceDefinition: ResourceDefinition[Service]) =
-      new CreateServiceAction(service, app, format, resourceDefinition)
+    def apply(service: Service)(implicit format: Format[Service], resourceDefinition: ResourceDefinition[Service]) =
+      new CreateServiceAction(service, format, resourceDefinition)
   }
 
   private val serviceEditor: ObjectEditor[Service] = (obj: Service, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
@@ -107,10 +106,9 @@ object EndpointActions {
    */
   class CreateServiceAction(
       override val resource: Service,
-      override val app: CloudflowApplication.CR,
       format: Format[Service],
       resourceDefinition: ResourceDefinition[Service]
-  ) extends CreateOrUpdateAction[Service](resource, app, format, resourceDefinition, serviceEditor) {
+  ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
     override def execute(
         client: KubernetesClient
     )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[ResourceAction[Service]] =
@@ -121,9 +119,9 @@ object EndpointActions {
             val resourceVersionUpdated = resource
               .withResourceVersion(existingService.metadata.resourceVersion)
               .withClusterIP(existingService.spec.map(_.clusterIP).getOrElse(""))
-            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o => CreateServiceAction(o, app))
+            client.update(resourceVersionUpdated)(format, resourceDefinition, lc).map(o => CreateServiceAction(o))
           }
-          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o => CreateServiceAction(o, app)))
+          .getOrElse(client.create(resource)(format, resourceDefinition, lc).map(o => CreateServiceAction(o)))
       } yield res
   }
 }

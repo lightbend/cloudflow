@@ -133,7 +133,7 @@ object EventActions {
       source = Some(OperatorSource)
     )
 
-    Action.createOrUpdate(event, app, eventEditor)
+    Action.createOrUpdate(event, eventEditor)
   }
 
   private def newEventName(sourceResource: String, appId: String): String = {

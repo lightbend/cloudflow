@@ -184,16 +184,7 @@ object Operator {
       implicit ec: ExecutionContext
   ): Flow[Action, Action, NotUsed] =
     Flow[Action]
-      .mapAsync(1)(action =>
-        actionExecutor.execute(action).recoverWith {
-          case NonFatal(cause) =>
-            action match {
-              case resourceAction: ResourceAction[_] =>
-                actionExecutor.execute(CloudflowApplication.Status.errorAction(resourceAction.app, runners, cause.getMessage))
-              case _ => throw new ActionException(action, "Cannot set app status from this action.")
-            }
-        }
-      )
+      .mapAsync(1)(action => actionExecutor.execute(action))
       .log("action", Action.executed)
       .withAttributes(logAttributes)
 

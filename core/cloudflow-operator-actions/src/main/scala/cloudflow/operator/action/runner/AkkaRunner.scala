@@ -59,8 +59,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   def appActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
     Vector(
-      Action.createOrUpdate(roleAkka, app, roleEditor),
-      Action.createOrUpdate(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences), app, roleBindingEditor)
+      Action.createOrUpdate(roleAkka, roleEditor),
+      Action.createOrUpdate(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
     )
   }
   def streamletChangeAction(app: CloudflowApplication.CR,
@@ -72,7 +72,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       resource(streamletDeployment, app, secret, updateLabels)
     val labeledResource =
       _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
-    Action.createOrUpdate(labeledResource, app, editor)
+    Action.createOrUpdate(labeledResource, editor)
   }
 
   def defaultReplicas                                   = DefaultReplicas

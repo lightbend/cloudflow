@@ -22,8 +22,13 @@ import scala.util.Try
 
 import akka.actor.ActorSystem
 
+import org.slf4j.LoggerFactory
 import skuber._
 import skuber.api.Configuration
+
+object SkuberActionExecutor {
+  lazy val logger = LoggerFactory.getLogger("SkuberActionExecutor")
+}
 
 /**
  * Executes Kubernetes resource actions using skuber KubernetesClients.
@@ -32,15 +37,20 @@ final class SkuberActionExecutor(
     k8sConfig: Configuration = Configuration.defaultK8sConfig
 )(implicit system: ActorSystem, executionContext: ExecutionContext)
     extends ActionExecutor {
+  import SkuberActionExecutor._
+
   implicit val lc = skuber.api.client.RequestLoggingContext()
   def execute(action: Action): Future[Action] =
     action match {
       case skAction: ResourceAction[_] =>
         // An appropriate KubernetesClient is built up for the object resource namespace
         val namespace = skAction.namespace
-        system.log.debug(Action.executing(skAction))
-        val kubernetesClient =
-          k8sInit(k8sConfig.setCurrentNamespace(namespace))
+        logger.debug(Action.executing(skAction))
+        val kubernetesClient = namespace
+          .map { ns =>
+            k8sInit(k8sConfig.setCurrentNamespace(ns))
+          }
+          .getOrElse(k8sInit(k8sConfig))
         skAction
           .execute(kubernetesClient)
           .map { executedAction =>

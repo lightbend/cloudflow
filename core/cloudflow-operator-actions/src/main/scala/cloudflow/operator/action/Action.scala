@@ -33,7 +33,7 @@ sealed trait Action {
 
   /**
    * Executes the action using a KubernetesClient.
-   * Returns the created or modified resource, or None if the resource is deleted.
+   * Returns the action that was executed
    */
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action]
 
@@ -43,10 +43,16 @@ sealed trait Action {
   def name: String
 
   /*
-   * The namespace that the action takes place in.
+   * The namespace that the action must take place in, or none for using the namespace of the client.
    */
-  def namespace: String
+  def namespace: Option[String]
+  /*
+   * Message to log before the action executes
+   */
   def executing: String
+  /*
+   * Message to log after the action has executed
+   */
   def executed: String
 }
 
@@ -54,117 +60,91 @@ sealed trait Action {
  * Creates actions.
  */
 object Action {
-  val log                                = LoggerFactory.getLogger(Action.getClass)
-  def noop(app: CloudflowApplication.CR) = NoopAction(app)
+  val log  = LoggerFactory.getLogger(Action.getClass)
+  def noop = NoopAction
 
   /**
    * Creates a [[CreateOrUpdateAction]].
    */
-  def createOrUpdate[T <: ObjectResource](resource: T,
-                                          app: CloudflowApplication.CR,
-                                          editor: ObjectEditor[T])(implicit format: Format[T], resourceDefinition: ResourceDefinition[T]) =
-    new CreateOrUpdateAction(resource, app, format, resourceDefinition, editor)
+  def createOrUpdate[T <: ObjectResource](resource: T, editor: ObjectEditor[T])(implicit format: Format[T],
+                                                                                resourceDefinition: ResourceDefinition[T]) =
+    new CreateOrUpdateAction(resource, format, resourceDefinition, editor)
 
   /**
    * Creates a [[DeleteAction]].
    */
-  def delete[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR)(
+  def delete[T <: ObjectResource](resourceName: String, namespace: String)(
       implicit resourceDefinition: ResourceDefinition[T]
   ): DeleteAction[T] =
-    delete(resourceName, app, app.namespace)
-
-  def delete[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, namespace: String)(
-      implicit resourceDefinition: ResourceDefinition[T]
-  ): DeleteAction[T] =
-    DeleteAction(resourceName, app, namespace, resourceDefinition)
+    DeleteAction(resourceName, namespace, resourceDefinition)
 
   def createOrPatch[T <: ObjectResource, O <: Patch](
       resource: T,
-      app: CloudflowApplication.CR,
       patch: O
   )(implicit format: Format[T], patchWriter: Writes[O], resourceDefinition: ResourceDefinition[T]) =
-    new CreateOrPatchAction(resource, app, patch, format, patchWriter, resourceDefinition)
+    new CreateOrPatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
    * Creates an [[PatchAction]].
    */
   def patch[T <: ObjectResource, O <: Patch](
       resource: T,
-      app: CloudflowApplication.CR,
       patch: O
   )(implicit format: Format[T], patchWriter: Writes[O], resourceDefinition: ResourceDefinition[T]) =
-    new PatchAction(resource, app, patch, format, patchWriter, resourceDefinition)
+    new PatchAction(resource, patch, format, patchWriter, resourceDefinition)
 
   /**
    * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
-  def composite[T <: ObjectResource](actions: Vector[Action], app: CloudflowApplication.CR, namespace: String): CompositeAction[T] =
-    CompositeAction(actions, app, namespace)
-
-  def composite[T <: ObjectResource](actions: Vector[Action], app: CloudflowApplication.CR): CompositeAction[T] =
-    composite(actions, app, app.namespace)
+  def composite[T <: ObjectResource](actions: Vector[Action]): CompositeAction[T] =
+    CompositeAction(actions)
 
   /**
    * Creates an action provided that a resource with resourceName in namespace is found.
    */
-  def provided[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, namespace: String)(
+  def provided[T <: ObjectResource](resourceName: String, namespace: String)(
       fAction: Option[T] => Action
   )(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ): ProvidedAction[T] =
-    new ProvidedAction(resourceName, app, namespace, fAction, format, resourceDefinition)
+    new ProvidedAction(resourceName, namespace, fAction, format, resourceDefinition)
 
-  def provided[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR)(fAction: Option[T] => Action)(
-      implicit format: Format[T],
-      resourceDefinition: ResourceDefinition[T]
-  ): ProvidedAction[T] = provided(resourceName, app, app.namespace)(fAction)
-
-  def providedRetry[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, namespace: String, getRetries: Int)(
+  def providedRetry[T <: ObjectResource](resourceName: String, namespace: String, getRetries: Int)(
       fAction: Option[T] => Action
   )(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
   ): ProvidedAction[T] =
-    new ProvidedAction(resourceName, app, namespace, fAction, format, resourceDefinition, getRetries)
+    new ProvidedAction(resourceName, namespace, fAction, format, resourceDefinition, getRetries)
 
-  def providedRetry[T <: ObjectResource](resourceName: String, app: CloudflowApplication.CR, getRetries: Int = 60)(
+  def providedRetry[T <: ObjectResource](resourceName: String, namespace: String)(
       fAction: Option[T] => Action
   )(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[T]
-  ): ProvidedAction[T] = providedRetry(resourceName, app, app.namespace, getRetries)(fAction)
+  ): ProvidedAction[T] = providedRetry(resourceName, namespace, getRetries = 60)(fAction)
 
   /**
    * Creates an action provided that a list of resources with a label in a namespace are found.
    */
-  def providedByLabel[T <: ObjectResource](labelKey: String, labelValues: Vector[String], app: CloudflowApplication.CR, namespace: String)(
+  def providedByLabel[T <: ObjectResource](labelKey: String, labelValues: Vector[String], namespace: String)(
       fAction: ListResource[T] => Action
   )(
       implicit format: Format[T],
       resourceDefinition: ResourceDefinition[ListResource[T]]
   ): ProvidedByLabelAction[T] =
-    new ProvidedByLabelAction(labelKey, labelValues, app, namespace, fAction, format, resourceDefinition)
-
-  def providedByLabel[T <: ObjectResource](
-      labelKey: String,
-      labelValues: Vector[String],
-      app: CloudflowApplication.CR
-  )(fAction: ListResource[T] => Action)(
-      implicit format: Format[T],
-      resourceDefinition: ResourceDefinition[ListResource[T]]
-  ): ProvidedByLabelAction[T] = providedByLabel(labelKey, labelValues, app, app.namespace)(fAction)
+    new ProvidedByLabelAction(labelKey, labelValues, namespace, fAction, format, resourceDefinition)
 
   /**
    * Creates an [[UpdateStatusAction]].
    */
   def updateStatus[T <: ObjectResource](
       resource: T,
-      app: CloudflowApplication.CR,
       editor: ObjectEditor[T],
-      predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+      predicateForUpdate: ((Option[T], T) => Boolean) = (_: Option[T], _: T) => true
   )(implicit format: Format[T], resourceDefinition: ResourceDefinition[T], statusEv: HasStatusSubresource[T]) =
-    new UpdateStatusAction(resource, app, format, resourceDefinition, statusEv, editor, predicateForUpdate)
+    new UpdateStatusAction(resource, format, resourceDefinition, statusEv, editor, predicateForUpdate)
 
   /**
    * Log message for when an [[Action]] is about to get executed.
@@ -177,22 +157,17 @@ object Action {
   def executed(action: Action) = action.executed
 }
 
-case class NoopAction(val app: CloudflowApplication.CR) extends ResourceAction[Nothing] {
+case object NoopAction extends ResourceAction[Nothing] {
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     Future.successful(this)
-  def namespace = app.metadata.namespace
-
-  /**
-   * The action name.
-   */
-  def name: String = "noop"
-
-  def executing: String = "noop"
-  def executed: String  = "noop"
-
+  def name: String      = "noop"
+  def namespace         = None
+  def executing: String = "<noop>"
+  def executed: String  = "<noop>"
 }
 
 object ResourceAction {
+  val log          = LoggerFactory.getLogger("ResourceAction")
   val ConflictCode = 409
 }
 
@@ -200,29 +175,24 @@ abstract class ResourceAction[+T <: ObjectResource] extends Action {
   import ResourceAction._
 
   /**
-   * The app this action is executed for.
-   */
-  def app: CloudflowApplication.CR
-
-  /**
    * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
    */
   protected def recoverFromError[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
-      implicit sys: ActorSystem,
-      ec: ExecutionContext
+      implicit ec: ExecutionContext
   ): Future[O] = {
     def recover(e: Throwable) =
       if (retries > 0) {
-        sys.log.info(s"Recovering from error: ${e.getMessage}")
+        log.info(s"Recovering from error: ${e.getMessage}")
         f(client, retries)
       } else {
-        sys.log.error(s"Exhausted retries recovering from error, giving up.")
+        log.error(s"Exhausted retries recovering from error, giving up.")
         throw e
       }
 
     future.recoverWith {
       case e: K8SException if (e.status.code == Some(ConflictCode)) => recover(e)
       case e: akka.stream.StreamTcpException                        => recover(e)
+      case e: akka.stream.scaladsl.TcpIdleTimeoutException          => recover(e)
     }
   }
 }
@@ -238,7 +208,7 @@ abstract class SingleResourceAction[T <: ObjectResource] extends ResourceAction[
    * The name of the resource that this action is applied to
    */
   def resourceName = resource.metadata.name
-  def namespace    = resource.metadata.namespace
+  def namespace    = Some(resource.metadata.namespace)
 
   def executing =
     s"Executing $name action for ${resource.kind}/${resource.namespace}/${resource.metadata.name}"
@@ -252,7 +222,6 @@ abstract class SingleResourceAction[T <: ObjectResource] extends ResourceAction[
  */
 class CreateOrUpdateAction[T <: ObjectResource](
     val resource: T,
-    val app: CloudflowApplication.CR,
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val editor: ObjectEditor[T]
@@ -266,14 +235,14 @@ class CreateOrUpdateAction[T <: ObjectResource](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
       result <- executeCreate(client)
-    } yield new CreateOrUpdateAction(result, app, format, resourceDefinition, editor)
+    } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
   private def executeCreate(client: KubernetesClient,
                             retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
     val nextRetries = retries - 1
     for {
       existing <- client
-        .usingNamespace(namespace)
+        .usingNamespace(namespace.getOrElse(client.namespaceName))
         .getOption[T](resource.name)
       res <- existing
         .map { existingResource =>
@@ -296,7 +265,6 @@ class CreateOrUpdateAction[T <: ObjectResource](
  */
 class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
     val resource: T,
-    val app: CloudflowApplication.CR,
     val patch: O,
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
@@ -311,7 +279,7 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
       result <- executeCreateOrPatch(client)
-    } yield new CreateOrPatchAction(result, app, patch, format, patchWriter, resourceDefinition)
+    } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
 
   private def executeCreateOrPatch(
       client: KubernetesClient,
@@ -321,7 +289,7 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
 
     for {
       existing <- client
-        .usingNamespace(namespace)
+        .usingNamespace(namespace.getOrElse(client.namespaceName))
         .getOption[T](resource.name)
       res <- existing
         .map(_ => recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
@@ -332,7 +300,6 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
 
 class PatchAction[T <: ObjectResource, O <: Patch](
     val resource: T,
-    val app: CloudflowApplication.CR,
     val patch: O,
     implicit val format: Format[T],
     implicit val patchWriter: Writes[O],
@@ -347,7 +314,7 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     client
       .patch(resource.name, patch, Some(resource.ns))
-      .map(r => new PatchAction(r, app, patch, format, patchWriter, resourceDefinition))
+      .map(r => new PatchAction(r, patch, format, patchWriter, resourceDefinition))
 }
 
 /**
@@ -356,12 +323,11 @@ class PatchAction[T <: ObjectResource, O <: Patch](
  */
 class UpdateStatusAction[T <: ObjectResource](
     val resource: T,
-    val app: CloudflowApplication.CR,
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     implicit val statusEv: HasStatusSubresource[T],
     val editor: ObjectEditor[T],
-    predicateForUpdate: ((Option[T], T) => Boolean) = (oldT: Option[T], newT: T) => true
+    predicateForUpdate: ((Option[T], T) => Boolean) = (_: Option[T], _: T) => true
 ) extends SingleResourceAction[T] {
 
   val name = "updateStatus"
@@ -372,13 +338,13 @@ class UpdateStatusAction[T <: ObjectResource](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
       result <- executeUpdateStatus(client)
-    } yield new UpdateStatusAction(result, app, format, resourceDefinition, statusEv, editor)
+    } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 
   def executeUpdateStatus(client: KubernetesClient,
                           retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing <- client
-        .usingNamespace(namespace)
+        .usingNamespace(namespace.getOrElse(client.namespaceName))
         .getOption[T](resource.name)
       resourceVersionUpdated = existing
         .map(existingResource =>
@@ -398,8 +364,8 @@ class UpdateStatusAction[T <: ObjectResource](
 }
 
 object DeleteAction {
-  def apply[T <: ObjectResource](resource: T, app: CloudflowApplication.CR, resourceDefinition: ResourceDefinition[T]) =
-    new DeleteAction(resource.metadata.name, app, resource.metadata.namespace, resourceDefinition)
+  def apply[T <: ObjectResource](resource: T, resourceDefinition: ResourceDefinition[T]) =
+    new DeleteAction(resource.metadata.name, resource.metadata.namespace, resourceDefinition)
 }
 
 /**
@@ -407,12 +373,11 @@ object DeleteAction {
  */
 final case class DeleteAction[T <: ObjectResource](
     val resourceName: String,
-    val app: CloudflowApplication.CR,
-    val namespace: String,
+    _namespace: String,
     implicit val resourceDefinition: ResourceDefinition[T]
 ) extends ResourceAction[T] {
-  val name = "delete"
-
+  val name      = "delete"
+  val namespace = Some(_namespace)
   override def executing =
     s"Deleting $resourceName resource"
   override def executed =
@@ -424,24 +389,22 @@ final case class DeleteAction[T <: ObjectResource](
   def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] = {
     val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
     client
-      .usingNamespace(namespace)
+      .usingNamespace(namespace.getOrElse(client.namespaceName))
       .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
       .map(_ => this)
   }
 }
 
 final case class CompositeAction[T <: ObjectResource](
-    actions: Vector[Action],
-    val app: CloudflowApplication.CR,
-    namespace: String
+    actions: Vector[Action]
 ) extends ResourceAction[T] {
   require(actions.nonEmpty)
-  val name = "composite"
-
+  val name      = "composite"
+  val namespace = actions.head.namespace
   override def executing =
-    s"Composite action $name executing"
+    s"""Composite action executing in namespace $namespace:\n ${actions.map(_.name).mkString("\n")}"""
   override def executed =
-    s"Composite action $name executed"
+    s"""Composite action executed in namespace $namespace:\n ${actions.map(_.name).mkString("\n")}"""
 
   /**
    * Executes all actions
@@ -454,14 +417,14 @@ final case class CompositeAction[T <: ObjectResource](
 
 final class ProvidedAction[T <: ObjectResource](
     val resourceName: String,
-    val app: CloudflowApplication.CR,
-    val namespace: String,
+    val _namespace: String,
     val getAction: Option[T] => Action,
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[T],
     getRetries: Int = 0
 ) extends ResourceAction[T] {
-  val name = "provide"
+  val name      = "provide"
+  val namespace = Some(_namespace)
   override def executing =
     s"Providing $namespace/$resourceName to next action"
   override def executed =
@@ -483,7 +446,7 @@ final class ProvidedAction[T <: ObjectResource](
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] = {
     def getAndProvide(retriesGet: Int): Future[Action] =
       client
-        .usingNamespace(namespace)
+        .usingNamespace(namespace.getOrElse(client.namespaceName))
         .getOption[T](resourceName)
         .flatMap { maybe =>
           maybe match {
@@ -511,14 +474,13 @@ final class ProvidedAction[T <: ObjectResource](
 final class ProvidedByLabelAction[T <: ObjectResource](
     val labelKey: String,
     val labelValues: Vector[String],
-    val app: CloudflowApplication.CR,
-    val namespace: String,
+    val _namespace: String,
     val getAction: ListResource[T] => Action,
     implicit val format: Format[T],
     implicit val resourceDefinition: ResourceDefinition[ListResource[T]]
 ) extends ResourceAction[T] {
-  val name = "provideByLabel"
-
+  val name         = "provideByLabel"
+  val namespace    = Some(_namespace)
   val resourceName = "n/a"
 
   def executing =
@@ -541,7 +503,7 @@ final class ProvidedByLabelAction[T <: ObjectResource](
     val selector: LabelSelector = LabelSelector(LabelSelector.InRequirement(labelKey, labelValues.toList))
     def getAndProvide: Future[Action] =
       client
-        .usingNamespace(namespace)
+        .usingNamespace(namespace.getOrElse(client.namespaceName))
         .listSelected[ListResource[T]](selector)(skuber.json.format.ListResourceFormat[T], resourceDefinition, lc)
         .flatMap { list =>
           getAction(list).execute(client)
@@ -553,4 +515,13 @@ final class ProvidedByLabelAction[T <: ObjectResource](
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
     }
   }
+}
+
+final case class AppAction(action: Action, app: CloudflowApplication.CR) extends Action {
+  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+    action.execute(client)
+  def executed: String          = action.executed
+  def executing: String         = action.executing
+  def name: String              = action.name
+  def namespace: Option[String] = action.namespace
 }

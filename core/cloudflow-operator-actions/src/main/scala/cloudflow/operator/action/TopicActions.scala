@@ -98,7 +98,7 @@ object TopicActions {
     def useClusterConfiguration(providedTopic: TopicInfo): ResourceAction[ObjectResource] =
       providedTopic.cluster
         .map { cluster =>
-          Action.provided[Secret](String.format(KafkaClusterNameFormat, cluster), newApp, namedClustersNamespace) {
+          Action.provided[Secret](String.format(KafkaClusterNameFormat, cluster), namedClustersNamespace) {
             case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, runners, labels, providedTopic)
             case None =>
               val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
@@ -119,7 +119,7 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        Action.providedRetry[Secret](name, newApp, getRetries = 2) { secretOption =>
+        Action.providedRetry[Secret](name, newApp.namespace, getRetries = 2) { secretOption =>
           maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
             .getOrElse(useClusterConfiguration(topic))
         }
@@ -176,7 +176,7 @@ object TopicActions {
     val configMap    = resource(newApp.namespace, topic, partitions, replicas, bootstrapServers, labels)
     val adminClient  = KafkaAdmins.getOrCreate(bootstrapServers, brokerConfig)
 
-    new CreateOrUpdateAction[ConfigMap](configMap, newApp, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
+    new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
           client: KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action] =
