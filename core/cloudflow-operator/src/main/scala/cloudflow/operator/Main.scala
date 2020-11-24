@@ -19,7 +19,6 @@ package cloudflow.operator
 import java.lang.management.ManagementFactory
 
 import akka.actor._
-import com.typesafe.config.{ Config, ConfigRenderOptions }
 import skuber._
 import skuber.api.Configuration
 import scala.concurrent.Await
@@ -60,7 +59,7 @@ object Main extends {
       )
       Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
       Operator.handleConfigurationUpdates(client, runners, ctx.podName)
-      Operator.handleConfigurationInput(client, runners, ctx.podNamespace)
+      Operator.handleConfigurationInput(client, ctx.podNamespace)
       Operator.handleStatusUpdates(client, runners)
     } catch {
       case t: Throwable =>
@@ -70,12 +69,7 @@ object Main extends {
     }
   }
 
-  private def logStartOperatorMessage(settings: Settings)(implicit system: ActorSystem) = {
-
-    val blockingIODispatcherConfig = system.settings.config.getConfig("akka.actor.default-blocking-io-dispatcher")
-    val dispatcherConfig           = system.settings.config.getConfig("akka.actor.default-dispatcher")
-    val deploymentConfig           = system.settings.config.getConfig("akka.actor.deployment")
-
+  private def logStartOperatorMessage(settings: Settings)(implicit system: ActorSystem) =
     system.log.info(s"""
       |Started cloudflow operator ..
       |\n${box("Build Info")}
@@ -89,7 +83,6 @@ object Main extends {
       |\n${box("Deployment")}
       |${formatDeploymentInfo(settings)}
       """.stripMargin)
-  }
 
   private def getDeploymentOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext) =
     Await.result(client
@@ -170,15 +163,6 @@ object Main extends {
     s"""
     |Release version : ${settings.releaseVersion}
     """.stripMargin
-
-  private def prettyPrintConfig(c: Config): String =
-    c.root
-      .render(
-        ConfigRenderOptions
-          .concise()
-          .setFormatted(true)
-          .setJson(false)
-      )
 
   private def getJVMRuntimeParameters: String = {
     val runtime = Runtime.getRuntime

@@ -30,7 +30,6 @@ import skuber.Resource._
 import skuber.ResourceSpecification.Subresources
 
 import cloudflow.blueprint.deployment._
-import cloudflow.operator._
 import cloudflow.operator.action._
 
 trait PatchProvider[T <: Patch] {
@@ -74,8 +73,8 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val roleSpark = sparkRole(app.namespace, labels, ownerReferences)
 
     Vector(
-      Action.createOrUpdate(roleSpark, app, roleEditor),
-      Action.createOrUpdate(sparkRoleBinding(app.namespace, roleSpark, labels, ownerReferences), app, roleBindingEditor)
+      Action.createOrUpdate(roleSpark, roleEditor),
+      Action.createOrUpdate(sparkRoleBinding(app.namespace, roleSpark, labels, ownerReferences), roleBindingEditor)
     )
   }
 
@@ -90,24 +89,24 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val labeledResource =
       _resource.copy(metadata = _resource.metadata.copy(labels = _resource.metadata.labels ++ updateLabels))
     val patch = SpecPatch(labeledResource.spec)
-    Action.createOrPatch(_resource, app, patch)(format, patchFormat, resourceDefinition)
+    Action.createOrPatch(_resource, patch)(format, patchFormat, resourceDefinition)
   }
 
   override def updateActions(newApp: CloudflowApplication.CR,
                              runners: Map[String, Runner[_]],
                              deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
-    val patchAction = Action.provided[Secret, ObjectResource](deployment.secretName, newApp) {
+    val patchAction = Action.provided[Secret](deployment.secretName, newApp.namespace) {
       case Some(secret) =>
         val _resource = resource(deployment, newApp, secret)
         val _patch    = patch(deployment, newApp, secret)
-        Action.patch(_resource, newApp, _patch)(format, patchFormat, resourceDefinition)
+        Action.patch(_resource, _patch)(format, patchFormat, resourceDefinition)
       case None =>
         val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
         log.error(msg)
         CloudflowApplication.Status.errorAction(newApp, runners, msg)
     }
 
-    val configAction = Action.createOrUpdate(configResource(deployment, newApp), newApp, configEditor)
+    val configAction = Action.createOrUpdate(configResource(deployment, newApp), configEditor)
     Seq(configAction, patchAction)
   }
 
