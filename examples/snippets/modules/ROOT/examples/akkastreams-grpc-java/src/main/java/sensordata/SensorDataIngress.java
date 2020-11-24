@@ -1,23 +1,34 @@
 package sensordata;
 
+//tag::logic[]
 import akka.grpc.javadsl.ServerReflection;
+//end::logic[]
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.japi.Function;
 
 import cloudflow.akkastream.*;
+//tag::logic[]
 import cloudflow.akkastream.util.javadsl.GrpcServerLogic;
+//end::logic[]
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.proto.javadsl.ProtoOutlet;
 
 import sensordata.grpc.SensorData;
 import sensordata.grpc.SensorDataService;
+//tag::logic[]
 import sensordata.grpc.SensorDataServiceHandlerFactory;
+
+//end::logic[]
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
+//tag::logic[]
 public class SensorDataIngress extends AkkaServerStreamlet {
+    // ...
+
+//end::logic[]
     public final ProtoOutlet<SensorData> out =
             new ProtoOutlet<SensorData>("out", RoundRobinPartitioner.getInstance(), SensorData.class);
 
@@ -35,5 +46,5 @@ public class SensorDataIngress extends AkkaServerStreamlet {
             }
         };
     }
-    //end::logic[]
 }
+//end::logic[]

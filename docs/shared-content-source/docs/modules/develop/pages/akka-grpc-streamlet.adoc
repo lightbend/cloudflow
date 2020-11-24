@@ -46,6 +46,15 @@ Java::
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-grpc-java/src/main/java/sensordata/SensorDataIngress.java[tag=logic]
 ----
 
+In this example, `SensorDataServiceImpl` is your implementation that extends
+the generated `sensordata.grpc.SensorDataService`.
+`SensorDataServiceHandler`(`Factory`) are also generated classes.
+
+`ServerReflection` comes from the `akka-grpc-runtime` library and allows tools
+like https://github.com/fullstorydev/grpcurl[grpcurl] to use
+https://doc.akka.io/docs/akka-grpc/current/server/reflection.html[Server Reflection]
+to discover your API's dynamically.
+
 === External access
 
 gRPC services use HTTP/2 as a transport mechanism. Cloudflow supports
