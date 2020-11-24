@@ -15,24 +15,6 @@
  */
 package helloworld
 
-// import akka.stream.scaladsl._
-// import cloudflow.akkastream._
-// import cloudflow.akkastream.scaladsl._
-// import cloudflow.streamlets._
-
-// class HelloWorldShape extends AkkaStreamlet {
-//   val shape = StreamletShape.empty
-
-//   def createLogic = new RunnableGraphStreamletLogic() {
-//     def runnableGraph = 
-//       Source
-//         .single("Hello, world!")
-//         .map(println)
-//         .to(Sink.ignore)
-//   }
-// }
-
-
 import cloudflow.flink.FlinkStreamlet
 import org.apache.flink.streaming.api.scala._
 import cloudflow.streamlets.{StreamletShape, StringConfigParameter}
@@ -48,4 +30,3 @@ class HelloWorldShape extends FlinkStreamlet {
   }
 
 }
-
