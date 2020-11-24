@@ -48,5 +48,5 @@ object AppEventFlow {
    */
   def toAction(runners: Map[String, Runner[_]], podName: String, podNamespace: String): Flow[AppEvent, Action, _] =
     Flow[AppEvent]
-      .mapConcat(AppEvent.toActionList(runners, podName, podNamespace))
+      .mapConcat(_.toActionList(runners, podName, podNamespace))
 }

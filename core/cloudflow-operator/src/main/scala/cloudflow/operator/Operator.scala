@@ -184,8 +184,7 @@ object Operator {
       "The status changes stream failed, terminating."
     )
   }
-  private def executeActions(actionExecutor: ActionExecutor,
-                             logAttributes: Attributes): Flow[Action, Action, NotUsed] =
+  private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action, Action, NotUsed] =
     Flow[Action]
       .mapAsync(1)(action => actionExecutor.execute(action))
       .log("action", Action.executed)

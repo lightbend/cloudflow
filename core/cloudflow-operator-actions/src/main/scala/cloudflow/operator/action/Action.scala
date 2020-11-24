@@ -18,6 +18,7 @@ package cloudflow.operator.action
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.collection.immutable
 import akka.actor.ActorSystem
 import akka.pattern._
 import org.slf4j.LoggerFactory
@@ -96,7 +97,7 @@ object Action {
   /**
    * Creates a [[CompositeAction]]. A single action that encapsulates other actions.
    */
-  def composite[T <: ObjectResource](actions: Vector[Action]): CompositeAction[T] =
+  def composite[T <: ObjectResource](actions: immutable.Iterable[Action]): CompositeAction[T] =
     CompositeAction(actions)
 
   /**
@@ -396,7 +397,7 @@ final case class DeleteAction[T <: ObjectResource](
 }
 
 final case class CompositeAction[T <: ObjectResource](
-    actions: Vector[Action]
+    actions: immutable.Iterable[Action]
 ) extends ResourceAction[T] {
   require(actions.nonEmpty)
   val name      = "composite"

@@ -29,6 +29,7 @@ import cloudflow.operator.action._
  */
 sealed trait AppEvent {
   def app: CloudflowApplication.CR
+  def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String): Seq[Action]
 }
 
 case class DeployEvent(
@@ -37,6 +38,8 @@ case class DeployEvent(
     cause: ObjectResource
 ) extends AppEvent {
   override def toString() = s"DeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
+  def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String): Seq[Action] =
+    Actions.deploy(app, currentApp, runners, podName, podNamespace, cause)
 }
 
 case class UndeployEvent(
@@ -44,6 +47,8 @@ case class UndeployEvent(
     cause: ObjectResource
 ) extends AppEvent {
   override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
+  def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String): Seq[Action] =
+    Actions.undeploy(app, podName, cause)
 }
 
 /**
@@ -81,12 +86,7 @@ object AppEvent {
   }
 
   def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String)(appEvent: AppEvent): Seq[Action] =
-    appEvent match {
-      case DeployEvent(app, currentApp, cause) =>
-        Actions.deploy(app, currentApp, runners, podName, podNamespace, cause)
-      case UndeployEvent(app, cause) =>
-        Actions.undeploy(app, podName, cause)
-    }
+    appEvent.toActionList(runners, podName, podNamespace)
 
   def detected(appEvent: AppEvent) = s"Detected $appEvent"
 }
