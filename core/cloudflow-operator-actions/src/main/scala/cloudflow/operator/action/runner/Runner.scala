@@ -107,7 +107,7 @@ trait Runner[T <: ObjectResource] {
       .flatMap { deployment =>
         Seq(
           Action.createOrUpdate(configResource(deployment, newApp), configEditor),
-          Action.providedRetry[Secret](deployment.secretName, newApp.namespace) {
+          Action.provided[Secret](deployment.secretName, newApp.namespace) {
             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), editor)
             case None =>
               val msg =
