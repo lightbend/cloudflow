@@ -55,14 +55,9 @@ class SparkStreamletContextImpl(
     val rawDataset = src.select($"value").as[Array[Byte]]
     rawDataset
       .map { raw =>
-        val result = inPort.codec.decode(raw)
-        result match {
-          case Success(t) => t
-          case _ =>
-            inPort.handleErrors(raw, result) match {
-              case Some(value) => value
-              case _           => null.asInstanceOf[In]
-            }
+        inPort.handleErrors(raw, inPort.codec.decode(raw)) match {
+          case Some(value) => value
+          case _           => null.asInstanceOf[In]
         }
       }
       .filter(validateNotNull[In](_))

@@ -138,14 +138,9 @@ final class AkkaStreamletContextImpl(
         NotUsed
       }
       .map { record =>
-        val result = inlet.codec.decode(record.value())
-        result match {
-          case Success(t) => Some(t)
-          case _ =>
-            inlet.handleErrors(record.value, result) match {
-              case Some(value) => Some(value)
-              case _           => None
-            }
+        inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
+          case Some(value) => Some(value)
+          case _           => None
         }
       }
       .collect { case Some(v) => v }
@@ -205,14 +200,9 @@ final class AkkaStreamletContextImpl(
               NotUsed
             }
             .map { record =>
-              val result = inlet.codec.decode(record.value())
-              result match {
-                case Success(t) => Some(t)
-                case _ =>
-                  inlet.handleErrors(record.value, result) match {
-                    case Some(value) => Some(value)
-                    case _           => None
-                  }
+              inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
+                case Some(value) => Some(value)
+                case _           => None
               }
             }
             .collect { case Some(v) => v }
@@ -320,14 +310,9 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .map { record =>
-        val result = inlet.codec.decode(record.value())
-        result match {
-          case Success(t) => Some(t)
-          case _ =>
-            inlet.handleErrors(record.value, result) match {
-              case Some(value) => Some(value)
-              case _           => None
-            }
+        inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
+          case Some(value) => Some(value)
+          case _           => None
         }
       }
       .collect { case Some(v) => v }
@@ -382,14 +367,9 @@ final class AkkaStreamletContextImpl(
             }
             .via(handleTermination)
             .map { record =>
-              val result = inlet.codec.decode(record.value)
-              result match {
-                case Success(t) => Some(t)
-                case _ =>
-                  inlet.handleErrors(record.value, result) match {
-                    case Some(value) => Some(value)
-                    case _           => None
-                  }
+              inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
+                case Some(value) => Some(value)
+                case _           => None
               }
             }
             .collect { case Some(v) => v }
