@@ -138,10 +138,7 @@ final class AkkaStreamletContextImpl(
         NotUsed
       }
       .map { record =>
-        inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
-          case Some(value) => Some(value)
-          case _           => None
-        }
+        inlet.handleErrors(record.value, inlet.codec.decode(record.value))
       }
       .collect { case Some(v) => v }
       .via(handleTermination)
@@ -200,10 +197,7 @@ final class AkkaStreamletContextImpl(
               NotUsed
             }
             .map { record =>
-              inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
-                case Some(value) => Some(value)
-                case _           => None
-              }
+              inlet.handleErrors(record.value, inlet.codec.decode(record.value))
             }
             .collect { case Some(v) => v }
             .via(handleTermination)
@@ -310,10 +304,7 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .map { record =>
-        inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
-          case Some(value) => Some(value)
-          case _           => None
-        }
+        inlet.handleErrors(record.value, inlet.codec.decode(record.value))
       }
       .collect { case Some(v) => v }
   }
@@ -367,10 +358,7 @@ final class AkkaStreamletContextImpl(
             }
             .via(handleTermination)
             .map { record =>
-              inlet.handleErrors(record.value, inlet.codec.decode(record.value)) match {
-                case Some(value) => Some(value)
-                case _           => None
-              }
+              inlet.handleErrors(record.value, inlet.codec.decode(record.value))
             }
             .collect { case Some(v) => v }
         }(system.dispatcher)
