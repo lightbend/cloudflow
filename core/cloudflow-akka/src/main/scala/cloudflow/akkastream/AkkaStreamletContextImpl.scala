@@ -137,7 +137,18 @@ final class AkkaStreamletContextImpl(
         KafkaControls.add(c)
         NotUsed
       }
-      .map(record => inlet.codec.decode(record.value))
+      .map { record =>
+        val result = inlet.codec.decode(record.value())
+        result match {
+          case Success(t) => Some(t)
+          case _ =>
+            inlet.handleErrors(record.value, result) match {
+              case Some(value) => Some(value)
+              case _           => None
+            }
+        }
+      }
+      .collect { case Some(v) => v }
       .via(handleTermination)
   }
 
@@ -193,7 +204,18 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map(record => inlet.codec.decode(record.value))
+            .map { record =>
+              val result = inlet.codec.decode(record.value())
+              result match {
+                case Success(t) => Some(t)
+                case _ =>
+                  inlet.handleErrors(record.value, result) match {
+                    case Some(value) => Some(value)
+                    case _           => None
+                  }
+              }
+            }
+            .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
         }(system.dispatcher)
@@ -298,8 +320,17 @@ final class AkkaStreamletContextImpl(
       }
       .via(handleTermination)
       .map { record =>
-        inlet.codec.decode(record.value)
+        val result = inlet.codec.decode(record.value())
+        result match {
+          case Success(t) => Some(t)
+          case _ =>
+            inlet.handleErrors(record.value, result) match {
+              case Some(value) => Some(value)
+              case _           => None
+            }
+        }
       }
+      .collect { case Some(v) => v }
   }
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
@@ -351,8 +382,17 @@ final class AkkaStreamletContextImpl(
             }
             .via(handleTermination)
             .map { record =>
-              inlet.codec.decode(record.value)
+              val result = inlet.codec.decode(record.value)
+              result match {
+                case Success(t) => Some(t)
+                case _ =>
+                  inlet.handleErrors(record.value, result) match {
+                    case Some(value) => Some(value)
+                    case _           => None
+                  }
+              }
             }
+            .collect { case Some(v) => v }
         }(system.dispatcher)
       }
   }

@@ -26,6 +26,7 @@ import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.streamlets._
 
 import scala.reflect.runtime.universe._
+import scala.util.Success
 
 class SparkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
@@ -52,16 +53,29 @@ class SparkStreamletContextImpl(
       .load()
 
     val rawDataset = src.select($"value").as[Array[Byte]]
-
-    rawDataset.map(inPort.codec.decode(_))
+    rawDataset
+      .map { raw =>
+        val result = inPort.codec.decode(raw)
+        result match {
+          case Success(t) => t
+          case _ =>
+            inPort.handleErrors(raw, result) match {
+              case Some(value) => value
+              case _           => null.asInstanceOf[In]
+            }
+        }
+      }
+      .filter(validateNotNull[In](_))
   }
 
-  def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
+  private def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
-  def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
+  private def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
+
+  private def validateNotNull[T](message: T): Boolean = message != null
 
   def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],

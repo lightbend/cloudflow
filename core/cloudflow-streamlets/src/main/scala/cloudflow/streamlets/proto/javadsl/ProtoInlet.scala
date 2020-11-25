@@ -20,7 +20,13 @@ import cloudflow.streamlets._
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
 
-final case class ProtoInlet[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean = false)
+import scala.util.Try
+
+final case class ProtoInlet[T <: GeneratedMessageV3](name: String,
+                                                     clazz: Class[T],
+                                                     hasUniqueGroupId: Boolean = false,
+                                                     var errorHandler: (Array[Byte], Try[T]) => Option[T] =
+                                                       LoggingErrorHandler.processException(_: Array[Byte], _: Try[T]))
     extends CodecInlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
@@ -30,4 +36,9 @@ final case class ProtoInlet[T <: GeneratedMessageV3](name: String, clazz: Class[
   def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
   def withUniqueGroupId: ProtoInlet[T] = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T] = {
+    errorHandler = handler
+    this
+  }
+  override def handleErrors(message: Array[Byte], result: Try[T]): Option[T] = errorHandler(message, result)
 }

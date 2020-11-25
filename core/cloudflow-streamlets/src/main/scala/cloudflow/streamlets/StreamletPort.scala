@@ -16,6 +16,10 @@
 
 package cloudflow.streamlets
 
+import org.slf4j.LoggerFactory
+
+import scala.util.{ Failure, Success, Try }
+
 /**
  * A named port handle handle to read or write data according to a schema.
  */
@@ -76,6 +80,17 @@ trait CodecInlet[T] extends Inlet {
    * If no unique group Id is set (which is the default), streamlet instances will each receive part of the data (on this inlet).
    */
   def withUniqueGroupId: CodecInlet[T]
+
+  /**
+   * Sets a value for error handler for potential data unmarshalling errors
+   * If no error handler is specified, defaults to logging error and skipping record.
+   */
+  def withErrorHandler(f: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T]
+
+  /**
+   * handle marshalling errors
+   */
+  def handleErrors(message: Array[Byte], result: Try[T]): Option[T]
 }
 
 /**
@@ -120,4 +135,22 @@ object RoundRobinPartitioner extends (Any => String) with Serializable {
    * Java API
    */
   def getInstance[T <: Any]: T => String = this
+}
+
+/**
+ * A default error handler. This error handler just logs bad message and skips it.
+ *
+ * Elements written to a [[CodecOutlet]] that uses this partitioner will be distributed in round-robin fashion across the topic partitions.
+ */
+object LoggingErrorHandler {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  def processException[T](message: Array[Byte], result: Try[T]): Option[T] = result match {
+    case Success(value) => Some(value)
+    case Failure(e) =>
+      logger.error(s"Input data $message can not be transformed and will be skipped")
+      logger.error(s"Data transformation error id ${e.getMessage}")
+      None
+  }
 }
