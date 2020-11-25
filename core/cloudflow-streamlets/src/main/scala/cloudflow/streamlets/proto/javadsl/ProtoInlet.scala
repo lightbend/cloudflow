@@ -17,17 +17,18 @@
 package cloudflow.streamlets.proto.javadsl
 
 import cloudflow.streamlets._
+import cloudflow.streamlets.avro.AvroInlet
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
 
-import scala.util.Try
+import scala.reflect.ClassTag
 
-final case class ProtoInlet[T <: GeneratedMessageV3](name: String,
-                                                     clazz: Class[T],
-                                                     hasUniqueGroupId: Boolean = false,
-                                                     var errorHandler: (Array[Byte], Try[T]) => Option[T] =
-                                                       LoggingErrorHandler.processException(_: Array[Byte], _: Try[T]))
-    extends CodecInlet[T] {
+final case class ProtoInlet[T <: GeneratedMessageV3](
+    name: String,
+    clazz: Class[T],
+    hasUniqueGroupId: Boolean = false,
+    errorHandler: (Array[Byte], Throwable) => Option[T] = LoggingErrorHandler.logAndSkip[T](_: Array[Byte], _: Throwable)
+) extends CodecInlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
@@ -35,10 +36,16 @@ final case class ProtoInlet[T <: GeneratedMessageV3](name: String,
   def schemaAsString   = TextFormat.printToUnicodeString(descriptor.toProto)
   def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
-  def withUniqueGroupId: ProtoInlet[T] = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T] = {
-    errorHandler = handler
-    this
-  }
-  override def handleErrors(message: Array[Byte], result: Try[T]): Option[T] = errorHandler(message, result)
+  def withUniqueGroupId: ProtoInlet[T]                                                         = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
+  override def handleErrors(message: Array[Byte], result: Throwable): Option[T]                = errorHandler(message, result)
+}
+
+object ProtoInlet {
+  // Java API
+  def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoInlet[T] =
+    ProtoInlet[T](name, clazz)
+
+  def create[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): ProtoInlet[T] =
+    ProtoInlet[T](name, clazz, hasUniqueGroupId)
 }

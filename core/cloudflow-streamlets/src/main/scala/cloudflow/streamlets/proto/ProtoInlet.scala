@@ -19,18 +19,16 @@ package cloudflow.streamlets.proto
 import cloudflow.streamlets._
 import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
-import scala.util.Try
-
 final case class ProtoInlet[T <: GeneratedMessage: GeneratedMessageCompanion](
     name: String,
     hasUniqueGroupId: Boolean = false,
-    errorHandler: (Array[Byte], Try[T]) => Option[T] = LoggingErrorHandler.processException(_: Array[Byte], _: Try[T])
+    errorHandler: (Array[Byte], Throwable) => Option[T] = LoggingErrorHandler.logAndSkip[T](_: Array[Byte], _: Throwable)
 ) extends CodecInlet[T] {
-  val cmp                                                                                   = implicitly[GeneratedMessageCompanion[T]]
-  val codec                                                                                 = new ProtoCodec[T]
-  def schemaAsString                                                                        = cmp.scalaDescriptor.asProto.toProtoString
-  def schemaDefinition                                                                      = ProtoUtil.createSchemaDefinition(cmp.scalaDescriptor)
-  def withUniqueGroupId: ProtoInlet[T]                                                      = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
-  override def handleErrors(message: Array[Byte], result: Try[T]): Option[T]                = errorHandler(message, result)
+  val cmp                                                                                      = implicitly[GeneratedMessageCompanion[T]]
+  val codec                                                                                    = new ProtoCodec[T]
+  def schemaAsString                                                                           = cmp.scalaDescriptor.asProto.toProtoString
+  def schemaDefinition                                                                         = ProtoUtil.createSchemaDefinition(cmp.scalaDescriptor)
+  def withUniqueGroupId: ProtoInlet[T]                                                         = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
+  override def handleErrors(message: Array[Byte], result: Throwable): Option[T]                = errorHandler(message, result)
 }

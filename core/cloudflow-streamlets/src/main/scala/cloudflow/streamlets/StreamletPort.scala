@@ -18,8 +18,6 @@ package cloudflow.streamlets
 
 import org.slf4j.LoggerFactory
 
-import scala.util.{ Failure, Success, Try }
-
 /**
  * A named port handle handle to read or write data according to a schema.
  */
@@ -85,12 +83,12 @@ trait CodecInlet[T] extends Inlet {
    * Sets a value for error handler for potential data unmarshalling errors
    * If no error handler is specified, defaults to logging error and skipping record.
    */
-  def withErrorHandler(f: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T]
+  def withErrorHandler(f: (Array[Byte], Throwable) => Option[T]): CodecInlet[T]
 
   /**
    * handle marshalling errors
    */
-  def handleErrors(message: Array[Byte], result: Try[T]): Option[T]
+  def handleErrors(message: Array[Byte], result: Throwable): Option[T]
 }
 
 /**
@@ -138,19 +136,16 @@ object RoundRobinPartitioner extends (Any => String) with Serializable {
 }
 
 /**
- * A default error handler. This error handler just logs bad message and skips it.
+ * A default error handler. This error handler just logs bad message and skips them.
  *
- * Elements written to a [[CodecOutlet]] that uses this partitioner will be distributed in round-robin fashion across the topic partitions.
  */
 object LoggingErrorHandler {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def processException[T](message: Array[Byte], result: Try[T]): Option[T] = result match {
-    case Success(value) => Some(value)
-    case Failure(e) =>
-      logger.error(s"Input data $message can not be transformed and will be skipped")
-      logger.error(s"Data transformation error id ${e.getMessage}")
-      None
+  def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
+    logger.error(s"Input data $message can not be transformed and will be skipped")
+    logger.error(s"Data decoding error ${cause.getMessage}")
+    None
   }
 }

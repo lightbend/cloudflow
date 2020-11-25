@@ -72,9 +72,13 @@ class FlinkStreamletContextImpl(
       .addSource(consumer)
       .flatMap(new FlatMapFunction[Array[Byte], In]() {
         override def flatMap(value: Array[Byte], out: Collector[In]): Unit =
-          inlet.handleErrors(value, inlet.codec.decode(value)) match {
-            case Some(value) => out.collect(value)
-            case _           =>
+          inlet.codec.decode(value) match {
+            case Success(v) => out.collect(v)
+            case Failure(t) =>
+              inlet.handleErrors(value, t) match {
+                case Some(r) => out.collect(r)
+                case _       =>
+              }
           }
       })
   }

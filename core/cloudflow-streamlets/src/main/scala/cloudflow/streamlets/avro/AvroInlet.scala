@@ -22,19 +22,17 @@ import org.apache.avro.specific.SpecificRecordBase
 import scala.reflect.ClassTag
 import AvroUtil._
 
-import scala.util.Try
-
 case class AvroInlet[T <: SpecificRecordBase: ClassTag](
     name: String,
     hasUniqueGroupId: Boolean = false,
-    errorHandler: (Array[Byte], Try[T]) => Option[T] = LoggingErrorHandler.processException(_: Array[Byte], _: Try[T])
+    errorHandler: (Array[Byte], Throwable) => Option[T] = LoggingErrorHandler.logAndSkip[T](_: Array[Byte], _: Throwable)
 ) extends CodecInlet[T] {
-  def codec                                                                                 = new AvroCodec[T](makeSchema)
-  def schemaDefinition                                                                      = createSchemaDefinition(makeSchema)
-  def schemaAsString                                                                        = makeSchema.toString(false)
-  def withUniqueGroupId: AvroInlet[T]                                                       = copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Try[T]) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
-  override def handleErrors(message: Array[Byte], result: Try[T]): Option[T]                = errorHandler(message, result)
+  def codec                                                                                    = new AvroCodec[T](makeSchema)
+  def schemaDefinition                                                                         = createSchemaDefinition(makeSchema)
+  def schemaAsString                                                                           = makeSchema.toString(false)
+  def withUniqueGroupId: AvroInlet[T]                                                          = copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
+  override def handleErrors(message: Array[Byte], result: Throwable): Option[T]                = errorHandler(message, result)
 }
 
 object AvroInlet {

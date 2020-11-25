@@ -137,9 +137,12 @@ final class AkkaStreamletContextImpl(
         KafkaControls.add(c)
         NotUsed
       }
-      .map { record =>
-        inlet.handleErrors(record.value, inlet.codec.decode(record.value))
-      }
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.handleErrors(record.value, t)
+        }
+      )
       .collect { case Some(v) => v }
       .via(handleTermination)
   }
@@ -196,9 +199,12 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map { record =>
-              inlet.handleErrors(record.value, inlet.codec.decode(record.value))
-            }
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.handleErrors(record.value, t)
+              }
+            )
             .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
@@ -303,9 +309,12 @@ final class AkkaStreamletContextImpl(
         NotUsed
       }
       .via(handleTermination)
-      .map { record =>
-        inlet.handleErrors(record.value, inlet.codec.decode(record.value))
-      }
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.handleErrors(record.value, t)
+        }
+      )
       .collect { case Some(v) => v }
   }
 
@@ -357,9 +366,12 @@ final class AkkaStreamletContextImpl(
               NotUsed
             }
             .via(handleTermination)
-            .map { record =>
-              inlet.handleErrors(record.value, inlet.codec.decode(record.value))
-            }
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.handleErrors(record.value, t)
+              }
+            )
             .collect { case Some(v) => v }
         }(system.dispatcher)
       }

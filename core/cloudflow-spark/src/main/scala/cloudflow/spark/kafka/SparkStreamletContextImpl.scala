@@ -26,7 +26,7 @@ import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.streamlets._
 
 import scala.reflect.runtime.universe._
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 class SparkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
@@ -54,12 +54,16 @@ class SparkStreamletContextImpl(
 
     val rawDataset = src.select($"value").as[Array[Byte]]
     rawDataset
-      .map { raw =>
-        inPort.handleErrors(raw, inPort.codec.decode(raw)) match {
-          case Some(value) => value
-          case _           => null.asInstanceOf[In]
+      .map(raw =>
+        inPort.codec.decode(raw) match {
+          case Success(v) => v
+          case Failure(t) =>
+            inPort.handleErrors(raw, t) match {
+              case Some(r) => r
+              case _       => null.asInstanceOf[In]
+            }
         }
-      }
+      )
       .filter(validateNotNull[In](_))
   }
 
