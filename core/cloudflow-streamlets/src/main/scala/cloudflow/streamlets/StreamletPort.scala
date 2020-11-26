@@ -50,17 +50,15 @@ trait Inlet extends StreamletPort
  */
 trait Outlet extends StreamletPort
 
-/**
- * A default error handler. This error handler just logs bad message and skips them.
- *
- */
 object CodecInlet {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
+  /**
+   * A default error handler. This error handler just logs bad message and skips them.
+   */
   def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
-    logger.error(s"Input data $message can not be transformed and will be skipped")
-    logger.error(s"Data decoding error ${cause.getMessage}")
+    logger.error("Data decoding error, skipping message", cause)
     None
   }
 
