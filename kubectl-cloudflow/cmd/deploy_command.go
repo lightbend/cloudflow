@@ -194,7 +194,7 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	ownerReference := createOrUpdateCloudflowApplication(appClient, applicationSpec)
 
 	appInputSecret = config.UpdateSecretWithOwnerReference(ownerReference, appInputSecret)
-
+	createStreamletSecretsIfMissing(k8sClient, applicationSpec, ownerReference)
 	createOrUpdateAppInputSecret(k8sClient, namespace, appInputSecret)
 
 	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
@@ -320,6 +320,17 @@ func createOrUpdateAppInputSecret(k8sClient *kubernetes.Clientset, namespace str
 	} else {
 		if _, err := k8sClient.CoreV1().Secrets(namespace).Update(appInputSecret); err != nil {
 			printutil.LogAndExit("Failed to update secret: %s", err.Error())
+		}
+	}
+}
+
+func createStreamletSecretsIfMissing(k8sClient *kubernetes.Clientset, app cfapp.CloudflowApplicationSpec, ownerReference metav1.OwnerReference) {
+	for _, deployment := range app.Deployments {
+		secret := config.CreateEmptyStreamletSecret(app.AppID, deployment.StreamletName, ownerReference)
+		if _, err := k8sClient.CoreV1().Secrets(secret.Namespace).Get(secret.Name, metav1.GetOptions{}); err != nil {
+			if _, err := k8sClient.CoreV1().Secrets(app.AppID).Create(secret); err != nil {
+				printutil.LogAndExit("Failed to create empty streamlet secret: %s", err.Error())
+			}
 		}
 	}
 }

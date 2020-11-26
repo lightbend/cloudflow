@@ -63,6 +63,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       Action.createOrUpdate(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences), roleBindingEditor)
     )
   }
+
   def streamletChangeAction(app: CloudflowApplication.CR,
                             runners: Map[String, Runner[_]],
                             streamletDeployment: StreamletDeployment,

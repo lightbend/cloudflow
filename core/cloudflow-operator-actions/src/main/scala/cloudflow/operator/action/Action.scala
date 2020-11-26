@@ -453,18 +453,18 @@ final class ProvidedAction[T <: ObjectResource](
           maybe match {
             case Some(_) => getAction(maybe).execute(client)
             case None if retriesGet > 0 =>
-              sys.log.info(
+              Action.log.info(
                 s"Scheduling retry to get resource $namespace/$resourceName, retries left: ${retriesGet - 1}"
               )
               after(delay, sys.scheduler)(getAndProvide(retriesGet - 1))
             case None =>
-              sys.log.info(s"Did not find resource $namespace/$resourceName")
+              Action.log.info(s"Did not find resource $namespace/$resourceName")
               getAction(maybe).execute(client)
           }
         }
     getAndProvide(retriesGet).recoverWith {
       case e: K8SException if retries > 0 =>
-        sys.log.info(
+        Action.log.info(
           s"Scheduling retry to get resource $namespace/$resourceName, cause: ${e.getClass.getSimpleName} message: ${e.getMessage}"
         )
         after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1, retriesGet))
