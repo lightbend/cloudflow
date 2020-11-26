@@ -25,6 +25,7 @@ import scala.collection.immutable.Seq
  * Any non-fatal exception in execute should result in a failure containing an [[ActionException]]
  */
 trait ActionExecutor {
+  def executionContext: ExecutionContext
 
   /**
    * Executes the action. Returns the action as executed, containing the object as it was returned by the action.
@@ -36,8 +37,10 @@ trait ActionExecutor {
    * Executes the actions. Returns the actions as executed, containing the objects as they were returned by the actions.
    * In the case of deletion, the original resource is returned.
    */
-  def execute(actions: Seq[Action])(implicit ec: ExecutionContext): Future[Seq[Action]] =
+  def execute(actions: Seq[Action]): Future[Seq[Action]] = {
+    implicit val ec = executionContext
     Future.sequence(actions.map(execute))
+  }
 }
 
 /**

@@ -35,11 +35,11 @@ object SkuberActionExecutor {
  */
 final class SkuberActionExecutor(
     k8sConfig: Configuration = Configuration.defaultK8sConfig
-)(implicit system: ActorSystem, executionContext: ExecutionContext)
+)(implicit system: ActorSystem, ec: ExecutionContext)
     extends ActionExecutor {
   import SkuberActionExecutor._
-
-  implicit val lc = skuber.api.client.RequestLoggingContext()
+  val executionContext = ec
+  implicit val lc      = skuber.api.client.RequestLoggingContext()
   def execute(action: Action): Future[Action] =
     action match {
       case skAction: ResourceAction[_] =>
