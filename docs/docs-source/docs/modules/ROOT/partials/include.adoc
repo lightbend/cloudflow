@@ -1,16 +1,3 @@
-:page-partial:
-// global attributes
 
-:kubernetes-platform-name:     Kubernetes
-:kubernetes-platform-version:  1.12
-:kubectl-plugin-version:       KUBECTL_PLUGIN_VERSION
-
-:cli:                          kubectl
-:cli-plugin:                   kubectl
-
-:latest-openshift-platform-version:        3.11
-:minimum-kubernetes-on-openshift-version:  1.11
-:minimum-openshift-platform-version:       3.11
-:minimum-platform-version-major-dot-minor: 3.11
-:minimum-sbt-version:                      0.13.7
-:latest-sbt-version: 					   1.4.4	 
+// global attributes, if you update, make sure to update in shared-content-source ROOT:partials:include.adoc too
+// see the include file in shared-content:ROOT:partials:include.adoc

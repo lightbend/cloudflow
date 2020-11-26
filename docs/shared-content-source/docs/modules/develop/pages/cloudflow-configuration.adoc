@@ -83,7 +83,11 @@ cloudflow {
 You need to specify at least one of the sections shown above.
 
 ==== Environment variables
-Environment / shell variables can be specified in the config as `${variable_name}`, `$variable_name`, or `${?variable_name}`. 
+
+Environment / shell variables can be specified in the config as `$\{variable_name}`, `$variable_name`, or `${?variable_name}`. 
+
+ifdef::review[REVIEWERS: I needed to escape the {} in the first variable_name above to prevent antora from complaining about an undefined variable.]
+  
 In the example above, `${?MY_VAR}` is replaced by the value of the 
 `MY_VAR` environment / shell variable if it is set, otherwise "default-value" will be the value for `another-config-parameter`. 
 If it was specified as `$MY_VAR`, the `MY_VAR` shell variable must be set.

@@ -1,23 +1,22 @@
-= Administration tasks
+= Installing and configuring components
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
 
 include::ROOT:partial$include.adoc[]
 
-This chapter describes common Cloudflow and Kubernetes administration tasks.
+When you develop your Cloudflow application, you have the option to use Akka Streams, Spark, Flink and Kafka. This chapter contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools. It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow and how to expose your services to external access.
 
-It contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
-It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
 
-- Installation
-. xref:installation-prerequisites.adoc[]
-. xref:installing-cloudflow.adoc[]
-. xref:how-to-install-and-use-strimzi.adoc[]
-. xref:installing-spark-operator.adoc[]
-. xref:installing-flink-operator.adoc[]
-. xref:installing-enterprise.adoc[]
+* xref:installation-prerequisites.adoc[]
+* xref:versions.adoc[]
+* xref:installing-cloudflow.adoc[]
+* xref:how-to-install-and-use-strimzi.adoc[]
+* xref:installing-spark-operator.adoc[]
+* xref:installing-flink-operator.adoc[]
+* xref:providing-external-access-to-cloudflow-services.adoc[]
 
-- Other administration
-** xref:upgrading-cloudflow.adoc[]
-** xref:providing-external-access-to-cloudflow-services.adoc[]
+For information on upgrading Cloudflow and migrating applications, see:
+* xref:upgrading-cloudflow.adoc[]
+* xref:project-info:index.adoc[]
+
