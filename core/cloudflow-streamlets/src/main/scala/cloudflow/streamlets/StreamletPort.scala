@@ -16,6 +16,8 @@
 
 package cloudflow.streamlets
 
+import org.slf4j.LoggerFactory
+
 /**
  * A named port handle handle to read or write data according to a schema.
  */
@@ -48,6 +50,20 @@ trait Inlet extends StreamletPort
  */
 trait Outlet extends StreamletPort
 
+object CodecInlet {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  /**
+   * A default error handler. This error handler just logs bad message and skips them.
+   */
+  def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
+    logger.error("Data decoding error, skipping message", cause)
+    None
+  }
+
+}
+
 /**
  * A handle to read and deserialize data into elements of type `T`.
  */
@@ -76,6 +92,17 @@ trait CodecInlet[T] extends Inlet {
    * If no unique group Id is set (which is the default), streamlet instances will each receive part of the data (on this inlet).
    */
   def withUniqueGroupId: CodecInlet[T]
+
+  /**
+   * Sets a value for error handler for potential data unmarshalling errors
+   * If no error handler is specified, defaults to logging error and skipping record.
+   */
+  def withErrorHandler(f: (Array[Byte], Throwable) => Option[T]): CodecInlet[T]
+
+  /**
+   * handle marshalling errors
+   */
+  val errorHandler: (Array[Byte], Throwable) => Option[T]
 }
 
 /**

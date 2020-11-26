@@ -17,11 +17,12 @@
 package cloudflow.streamlets.proto
 
 import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
-
 import cloudflow.streamlets._
 
+import scala.util.Try
+
 class ProtoCodec[T <: GeneratedMessage: GeneratedMessageCompanion] extends Codec[T] {
-  val cmp                           = implicitly[GeneratedMessageCompanion[T]]
-  def encode(value: T): Array[Byte] = cmp.toByteArray(value)
-  def decode(bytes: Array[Byte]): T = cmp.parseFrom(bytes)
+  val cmp                                = implicitly[GeneratedMessageCompanion[T]]
+  def encode(value: T): Array[Byte]      = cmp.toByteArray(value)
+  def decode(bytes: Array[Byte]): Try[T] = Try { cmp.parseFrom(bytes) }
 }

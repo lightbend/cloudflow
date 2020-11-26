@@ -137,7 +137,13 @@ final class AkkaStreamletContextImpl(
         KafkaControls.add(c)
         NotUsed
       }
-      .map(record => inlet.codec.decode(record.value))
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
+        }
+      )
+      .collect { case Some(v) => v }
       .via(handleTermination)
   }
 
@@ -193,7 +199,13 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map(record => inlet.codec.decode(record.value))
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
+              }
+            )
+            .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
         }(system.dispatcher)
@@ -297,9 +309,13 @@ final class AkkaStreamletContextImpl(
         NotUsed
       }
       .via(handleTermination)
-      .map { record =>
-        inlet.codec.decode(record.value)
-      }
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
+        }
+      )
+      .collect { case Some(v) => v }
   }
 
   def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
@@ -350,9 +366,13 @@ final class AkkaStreamletContextImpl(
               NotUsed
             }
             .via(handleTermination)
-            .map { record =>
-              inlet.codec.decode(record.value)
-            }
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
+              }
+            )
+            .collect { case Some(v) => v }
         }(system.dispatcher)
       }
   }

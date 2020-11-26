@@ -20,10 +20,14 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka._
-
 import com.typesafe.config._
 import cloudflow.streamlets._
 import java.{ util => ju }
+
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.util.Collector
+
+import scala.util._
 
 /**
  * An implementation of `FlinkStreamletContext`
@@ -64,7 +68,19 @@ class FlinkStreamletContextImpl(
     // also this setting is honored only when checkpointing is on - otherwise the property in Kafka
     // "enable.auto.commit" is considered
     consumer.setCommitOffsetsOnCheckpoints(true)
-    env.addSource(consumer).map(inlet.codec.decode(_))
+    env
+      .addSource(consumer)
+      .flatMap(new FlatMapFunction[Array[Byte], In]() {
+        override def flatMap(value: Array[Byte], out: Collector[In]): Unit =
+          inlet.codec.decode(value) match {
+            case Success(v) => out.collect(v)
+            case Failure(t) =>
+              inlet.errorHandler(value, t) match {
+                case Some(r) => out.collect(r)
+                case _       =>
+              }
+          }
+      })
   }
 
   /**

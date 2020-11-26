@@ -17,13 +17,11 @@
 package cloudflow.streamlets
 
 import scala.annotation._
-import scala.util.control._
+import scala.util.Try
 
 @implicitNotFound(msg = "Cannot find Codec typeclass for ${T}")
 trait Codec[T] extends Serializable {
   def encode(value: T): Array[Byte]
   // TODO, docs that it throws DecodeException
-  def decode(value: Array[Byte]): T
+  def decode(value: Array[Byte]): Try[T]
 }
-
-case class DecodeException(msg: String, cause: Throwable) extends RuntimeException(msg, cause) with NoStackTrace

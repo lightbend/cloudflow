@@ -17,11 +17,18 @@
 package cloudflow.streamlets.proto.javadsl
 
 import cloudflow.streamlets._
+import cloudflow.streamlets.avro.AvroInlet
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
 
-final case class ProtoInlet[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean = false)
-    extends CodecInlet[T] {
+import scala.reflect.ClassTag
+
+final case class ProtoInlet[T <: GeneratedMessageV3](
+    name: String,
+    clazz: Class[T],
+    hasUniqueGroupId: Boolean = false,
+    errorHandler: (Array[Byte], Throwable) => Option[T] = CodecInlet.logAndSkip[T](_: Array[Byte], _: Throwable)
+) extends CodecInlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
@@ -29,5 +36,15 @@ final case class ProtoInlet[T <: GeneratedMessageV3](name: String, clazz: Class[
   def schemaAsString   = TextFormat.printToUnicodeString(descriptor.toProto)
   def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
-  def withUniqueGroupId: ProtoInlet[T] = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  def withUniqueGroupId: ProtoInlet[T]                                                         = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
+}
+
+object ProtoInlet {
+  // Java API
+  def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoInlet[T] =
+    ProtoInlet[T](name, clazz)
+
+  def create[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): ProtoInlet[T] =
+    ProtoInlet[T](name, clazz, hasUniqueGroupId)
 }
