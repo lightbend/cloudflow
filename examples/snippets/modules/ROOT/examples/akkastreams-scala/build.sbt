@@ -1,11 +1,11 @@
-//tag::docs-projectSetup-example[]
+// tag::docs-projectSetup-example[]
 import sbt._
 import sbt.Keys._
 
 lazy val sensorData =  (project in file("."))
-    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin) // <1>
     .settings(
-//end::docs-projectSetup-example[]
+// end::docs-projectSetup-example[]
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
@@ -13,10 +13,10 @@ lazy val sensorData =  (project in file("."))
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 
-//tag::docs-projectName-example[]
+// tag::docs-projectName-example[]
       ),
       name := "akkastreams-doc",
-//end::docs-projectName-example[]
+// end::docs-projectName-example[]
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 

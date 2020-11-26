@@ -1,4 +1,4 @@
-= Project Information
+= Release notes and migration
 
 This section contains project-related information, such as migration guides, contribution guidelines, and release notes.
 

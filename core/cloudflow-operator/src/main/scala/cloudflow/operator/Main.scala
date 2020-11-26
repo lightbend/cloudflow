@@ -22,11 +22,10 @@ import akka.actor._
 import skuber._
 import skuber.api.Configuration
 import scala.concurrent.Await
-import scala.concurrent.duration._
 import skuber.apiextensions._
 import skuber.json.format._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
 import skuber.apps.v1.Deployment
@@ -64,7 +63,7 @@ object Main extends {
     } catch {
       case t: Throwable =>
         system.log.error(t, "Unexpected error starting cloudflow operator, terminating.")
-        system.registerOnTermination(exitWithFailure)
+        system.registerOnTermination(exitWithFailure())
         system.terminate()
     }
   }

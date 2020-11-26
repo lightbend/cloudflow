@@ -32,7 +32,10 @@ drop_privs_cmd() {
 }
 
 # Add in extra configs set by the operator
-echo "taskmanager.memory.flink.size: 1024mb" >> "$FLINK_HOME/conf/flink-conf.yaml"
+# If not already present
+if  ! cat "$FLINK_HOME/conf/flink-conf.yaml" | grep -q "taskmanager.memory.flink.size" ; then
+    echo "taskmanager.memory.flink.size: 1024mb" >> "$FLINK_HOME/conf/flink-conf.yaml"
+fi
 
 if [ -n "$FLINK_PROPERTIES" ]; then
     echo "$FLINK_PROPERTIES" >> $FLINK_HOME/flink-conf-tmp.yaml

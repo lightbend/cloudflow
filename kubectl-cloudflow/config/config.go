@@ -694,11 +694,38 @@ func addCommandLineArguments(spec cfapp.CloudflowApplicationSpec, config *Config
 	return config
 }
 
+// CreateAppInputSecret creates input secret
 func CreateAppInputSecret(spec *cfapp.CloudflowApplicationSpec, config *Config) (*corev1.Secret, error) {
 	secretMap := make(map[string]string)
 	secretMap["secret.conf"] = config.String()
 	secret := CreateInputSecret(spec.AppID, secretMap)
 	return secret, nil
+}
+
+// CreateEmptyStreamletSecret creates empty streamlet secret
+func CreateEmptyStreamletSecret(appID string, name string, ownerReference metav1.OwnerReference) *corev1.Secret {
+	labels := cfapp.CreateLabels(appID)
+	labels["com.lightbend.cloudflow/app-id"] = appID
+	labels["com.lightbend.cloudflow/created-at"] = fmt.Sprintf("%d", time.Now().UnixNano())
+	labels["com.lightbend.cloudflow/streamlet-name"] = name
+	labels["com.lightbend.cloudflow/config-format"] = "config"
+	secret := &corev1.Secret{
+		Type: corev1.SecretTypeOpaque,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: appID,
+			Labels:    labels,
+		},
+	}
+	secretMap := make(map[string]string)
+	secretMap["secret.conf"] = "{}"
+	secretMap["runtime-config.conf"] = "{}"
+	secretMap["pods-config.conf"] = "{}"
+	secret.StringData = secretMap
+	secret.Namespace = appID
+	secret.OwnerReferences = []metav1.OwnerReference{ownerReference}
+
+	return secret
 }
 
 // UpdateSecretWithOwnerReference updates the secret with the ownerreference passed in
