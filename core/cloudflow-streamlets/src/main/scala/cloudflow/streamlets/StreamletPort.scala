@@ -59,7 +59,6 @@ object CodecInlet {
   val logger = LoggerFactory.getLogger(this.getClass)
 
   def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
-    logger.error(s"Input data $message can not be transformed and will be skipped")
     logger.error(s"Data decoding error ${cause.getMessage}")
     None
   }
