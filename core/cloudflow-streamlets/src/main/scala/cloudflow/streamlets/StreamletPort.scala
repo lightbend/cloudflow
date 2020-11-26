@@ -51,6 +51,22 @@ trait Inlet extends StreamletPort
 trait Outlet extends StreamletPort
 
 /**
+ * A default error handler. This error handler just logs bad message and skips them.
+ *
+ */
+object CodecInlet {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
+    logger.error(s"Input data $message can not be transformed and will be skipped")
+    logger.error(s"Data decoding error ${cause.getMessage}")
+    None
+  }
+
+}
+
+/**
  * A handle to read and deserialize data into elements of type `T`.
  */
 trait CodecInlet[T] extends Inlet {
@@ -88,7 +104,7 @@ trait CodecInlet[T] extends Inlet {
   /**
    * handle marshalling errors
    */
-  def handleErrors(message: Array[Byte], result: Throwable): Option[T]
+  val errorHandler: (Array[Byte], Throwable) => Option[T]
 }
 
 /**
@@ -133,19 +149,4 @@ object RoundRobinPartitioner extends (Any => String) with Serializable {
    * Java API
    */
   def getInstance[T <: Any]: T => String = this
-}
-
-/**
- * A default error handler. This error handler just logs bad message and skips them.
- *
- */
-object LoggingErrorHandler {
-
-  val logger = LoggerFactory.getLogger(this.getClass)
-
-  def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
-    logger.error(s"Input data $message can not be transformed and will be skipped")
-    logger.error(s"Data decoding error ${cause.getMessage}")
-    None
-  }
 }

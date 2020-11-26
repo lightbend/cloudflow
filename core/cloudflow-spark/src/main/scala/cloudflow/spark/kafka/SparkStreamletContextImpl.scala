@@ -58,7 +58,7 @@ class SparkStreamletContextImpl(
         inPort.codec.decode(raw) match {
           case Success(v) => v
           case Failure(t) =>
-            inPort.handleErrors(raw, t) match {
+            inPort.errorHandler(raw, t) match {
               case Some(r) => r
               case _       => null.asInstanceOf[In]
             }

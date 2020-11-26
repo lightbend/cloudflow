@@ -140,7 +140,7 @@ final class AkkaStreamletContextImpl(
       .map(record =>
         inlet.codec.decode(record.value) match {
           case Success(value) => Some(value)
-          case Failure(t)     => inlet.handleErrors(record.value, t)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
         }
       )
       .collect { case Some(v) => v }
@@ -202,7 +202,7 @@ final class AkkaStreamletContextImpl(
             .map(record =>
               inlet.codec.decode(record.value) match {
                 case Success(value) => Some(value)
-                case Failure(t)     => inlet.handleErrors(record.value, t)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
               }
             )
             .collect { case Some(v) => v }
@@ -312,7 +312,7 @@ final class AkkaStreamletContextImpl(
       .map(record =>
         inlet.codec.decode(record.value) match {
           case Success(value) => Some(value)
-          case Failure(t)     => inlet.handleErrors(record.value, t)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
         }
       )
       .collect { case Some(v) => v }
@@ -369,7 +369,7 @@ final class AkkaStreamletContextImpl(
             .map(record =>
               inlet.codec.decode(record.value) match {
                 case Success(value) => Some(value)
-                case Failure(t)     => inlet.handleErrors(record.value, t)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
               }
             )
             .collect { case Some(v) => v }

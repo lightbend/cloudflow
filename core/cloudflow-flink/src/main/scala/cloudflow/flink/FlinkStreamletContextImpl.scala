@@ -75,7 +75,7 @@ class FlinkStreamletContextImpl(
           inlet.codec.decode(value) match {
             case Success(v) => out.collect(v)
             case Failure(t) =>
-              inlet.handleErrors(value, t) match {
+              inlet.errorHandler(value, t) match {
                 case Some(r) => out.collect(r)
                 case _       =>
               }
