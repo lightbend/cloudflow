@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 The workflow to build and deploy your first Cloudflow application includes preparing a development environment, coding some streamlets, creating a blueprint to indicate data flow, and running the example. During development, you will likely want to run applications first in a local sandbox and then on a Kubernetes cluster.  This chapter describes how to build a simple "Wind Turbine" Cloudflow application, how to run it locally in the sandbox, and how to deploy and run it on a Google Kubernetes Engine (GKE) cluster. 
 
-NOTE: Before deploying on your cluster, check the xref:versions.adoc[versions of dependencies] that Cloudflow supports.
+NOTE: Before deploying on your cluster, check the xref:administration:versions.adoc[versions of dependencies] that Cloudflow supports.
 
 
 Follow the main topics in order:
