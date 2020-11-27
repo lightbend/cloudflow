@@ -133,15 +133,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               .distinct
               .sorted
             val kafkaHost = {
-              (ThisBuild / runLocalKafka).value match {
-                case Some(host) =>
-                  createTopics(host, topics)
-                  host
-                case _ =>
-                  val host = setupKafka()
-                  createTopics(host, topics)
-                  host
-              }
+              val host = (ThisBuild / runLocalKafka).value.getOrElse(setupKafka())
+              createTopics(host, topics)
+              host
             }
 
             printAppLayout(resolveConnections(appDescriptor))
