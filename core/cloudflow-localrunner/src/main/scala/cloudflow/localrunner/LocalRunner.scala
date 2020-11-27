@@ -63,13 +63,13 @@ object LocalRunner extends StreamletLoader {
    *
    * @param args: args(0) must be the JSON-encoded Application Descriptor
    *             args(1) must be the file to use for the output
-   *             args(2) must be the port where kafka is running on
+   *             args(2) must be the kafka instance to use
    */
   def main(args: Array[String]): Unit = {
-    val usage = "Usage: localRunner <applicationFileJson> <outputFile> <kafka-port> [localConfigFile]"
-    val (appDescriptorFilename, outputFilename, kafkaPort, localConfig) = args.toList match {
-      case app :: out :: kafkaPort :: conf :: Nil => (app, out, kafkaPort, ConfigFactory.parseFile(new File(conf)).resolve)
-      case app :: out :: kafkaPort :: Nil         => (app, out, kafkaPort, ConfigFactory.empty())
+    val usage = "Usage: localRunner <applicationFileJson> <outputFile> <kafka-host> [localConfigFile]"
+    val (appDescriptorFilename, outputFilename, kafkaHost, localConfig) = args.toList match {
+      case app :: out :: kafkaHost :: conf :: Nil => (app, out, kafkaHost, ConfigFactory.parseFile(new File(conf)).resolve)
+      case app :: out :: kafkaHost :: Nil         => (app, out, kafkaHost, ConfigFactory.empty())
       case Nil                                    => throw new RuntimeException(s"Missing application configuration file and output file for Local Runner\n$usage")
       case _ :: Nil                               => throw new RuntimeException(s"Missing output file for Local Runner\n$usage")
       case _ :: _ :: Nil                          => throw new RuntimeException(s"Missing kafka port\n$usage")
@@ -88,7 +88,7 @@ object LocalRunner extends StreamletLoader {
         System.setErr(new PrintStream(fos))
         readDescriptorFile(appDescriptorFilename) match {
           case Success(applicationDescriptor) =>
-            run(applicationDescriptor, localConfig, kafkaPort)
+            run(applicationDescriptor, localConfig, kafkaHost)
           case Failure(ex) =>
             log.error(s"Failed JSON unmarshalling of application descriptor file [${appDescriptorFilename}].", ex)
             System.exit(1)
@@ -97,9 +97,9 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
-  private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaPort: String): Unit = {
+  private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaHost: String): Unit = {
     val bootstrapServers =
-      if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else s"localhost:$kafkaPort"
+      if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else kafkaHost
     val topicConfig = ConfigFactory.parseString(s"""bootstrap.servers = "$bootstrapServers"""")
 
     val appId      = appDescriptor.appId

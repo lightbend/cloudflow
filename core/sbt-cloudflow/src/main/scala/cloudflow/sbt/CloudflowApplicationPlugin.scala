@@ -32,7 +32,8 @@ object CloudflowApplicationPlugin extends AutoPlugin {
 
   override def buildSettings = Seq(
     cloudflowDockerRegistry := None,
-    cloudflowDockerRepository := None
+    cloudflowDockerRepository := None,
+    runLocalKafka := None
   )
 
   val DefaultLocalLog4jConfigFile = "local-run-log4j.properties"

@@ -132,7 +132,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               }
               .distinct
               .sorted
-            val kafkaPort = setupKafka(topics)
+            val kafkaHost = {
+              val host = (ThisBuild / runLocalKafka).value.getOrElse(setupKafka())
+              createTopics(host, topics)
+              host
+            }
 
             printAppLayout(resolveConnections(appDescriptor))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
@@ -141,7 +145,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               case (pid, rd) =>
                 val classpath               = cpByProject(pid)
                 val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
-                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath, kafkaPort)
+                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath, kafkaHost)
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -200,7 +204,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   val kafka = new AtomicReference[KafkaContainer]()
 
-  def setupKafka(topics: Seq[String])(implicit log: Logger) = {
+  def setupKafka()(implicit log: Logger) = {
 
     val cl = Thread.currentThread().getContextClassLoader()
     val kafkaPort =
@@ -223,6 +227,10 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
     log.debug(s"Setting up Kafka broker in Docker on port: $kafkaPort")
 
+    s"localhost:${kafkaPort}"
+  }
+
+  def createTopics(kafkaHost: String, topics: Seq[String])(implicit log: Logger) = {
     import org.apache.kafka.clients.admin.{ AdminClient, AdminClientConfig, NewTopic }
     import scala.collection.JavaConverters._
 
@@ -231,7 +239,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     while (retry > 0) {
       val adminClient = AdminClient.create(
         Map[String, Object](
-          AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> s"localhost.:${kafkaPort}",
+          AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> kafkaHost,
           AdminClientConfig.CLIENT_ID_CONFIG         -> UUID.randomUUID().toString
         ).asJava
       )
@@ -255,8 +263,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
         adminClient.close()
       }
     }
-
-    kafkaPort
   }
 
   def stopKafka() = Try {
@@ -418,7 +424,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                      outputFile: File,
                      log4JConfigFile: Path,
                      localConfPath: Option[String],
-                     kafkaPort: Int)(
+                     kafkaHost: String)(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -438,7 +444,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val options: Seq[String] = Seq(
       Some(applicationDescriptorFile.toFile.getAbsolutePath),
       Some(outputFile.getAbsolutePath),
-      Some(kafkaPort.toString),
+      Some(kafkaHost),
       localConfPath
     ).flatten
 
