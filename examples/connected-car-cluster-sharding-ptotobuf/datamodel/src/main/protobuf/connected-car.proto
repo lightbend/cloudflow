@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package connectedcar.data;
+option java_multiple_files = true;
+
+message ConnectedCarAgg {
+  int32 carId = 1;
+  string driver = 2;
+  double speedAvg = 3;
+  int32 numberOfRecords = 4;
+}
+
+message ConnectedCarERecord {
+  int64 timestamp = 1;
+  int32 carId = 2;
+  string driver = 3;
+  int32 batteryLevel = 4;
+  int32 motorTemp = 5;
+  int32 powerConsumption = 6;
+  int32 speed = 7;
+  string status = 8;
+}

@@ -66,6 +66,4 @@ lazy val commonSettings = Seq(
 
 )
 
-ThisBuild / cloudflowDockerRepository := Some("sfali/akka-connected-car")
-
-//dynverSeparator in ThisBuild := "-"
+dynverSeparator in ThisBuild := "-"
