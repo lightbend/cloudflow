@@ -194,7 +194,8 @@ func (opts *deployOptions) deployImpl(cmd *cobra.Command, args []string) {
 	ownerReference := createOrUpdateCloudflowApplication(appClient, applicationSpec)
 
 	appInputSecret = config.UpdateSecretWithOwnerReference(ownerReference, appInputSecret)
-	createStreamletSecretsIfMissing(k8sClient, applicationSpec, ownerReference)
+	// TODO: re-enable once this solution is more stable
+	// createStreamletSecretsIfMissing(k8sClient, applicationSpec, ownerReference)
 	createOrUpdateAppInputSecret(k8sClient, namespace, appInputSecret)
 
 	serviceAccount := newCloudflowServiceAccountWithImagePullSecrets(namespace)
