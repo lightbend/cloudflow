@@ -85,7 +85,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
           .value
           .toMap,
     (Test / runLocal) := Def.taskDyn {
-          lazy val providedKafka = (ThisBuild / runLocalKafka).value
           Def.task {
             implicit val logger = streams.value.log
             val _               = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
@@ -134,7 +133,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               .distinct
               .sorted
             val kafkaHost = {
-              providedKafka match {
+              (ThisBuild / runLocalKafka).value match {
                 case Some(host) =>
                   createTopics(host, topics)
                   host
