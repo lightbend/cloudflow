@@ -13,7 +13,10 @@ object Version {
   val Spark         = "2.4.5"
   val Flink         = "1.10.0"
   val KafkaClients  = "2.5.0"
-  val TestcontainersKafka = "1.15.0" 
+  val TestcontainersKafka = "1.15.0"
+
+  val Fabric8 = "4.12.0"
+  val Jackson = "2.11.3" // same as used in fabric8
 }
 
 object Library {
@@ -55,6 +58,9 @@ object Library {
   val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
 
   val Skuber                = "io.skuber"                  %% "skuber"               % "2.6.0"
+
+  val Fabric8KubernetesClient = "io.fabric8" % "kubernetes-client" % Version.Fabric8
+  val JacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Version.Jackson
   
   val Spark                 = "org.apache.spark"           %% "spark-core"           % Version.Spark
   val SparkMllib            = "org.apache.spark"           %% "spark-mllib"          % Version.Spark

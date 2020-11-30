@@ -37,6 +37,8 @@ import skuber._
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
 
+import io.fabric8.kubernetes.client.{ KubernetesClient => Fabric8KubernetesClient }
+
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.event.ConfigInputChangeEvent
@@ -178,16 +180,17 @@ object TopicActions {
 
     new CreateOrUpdateAction[ConfigMap](configMap, implicitly[Format[ConfigMap]], implicitly[ResourceDefinition[ConfigMap]], editor) {
       override def execute(
-          client: KubernetesClient
+          client: KubernetesClient,
+          fabric8Client: Fabric8KubernetesClient
       )(implicit sys: ActorSystem, ec: ExecutionContext, lc: skuber.api.client.LoggingContext): Future[Action] =
         super
-          .execute(client)
+          .execute(client, fabric8Client)
           .flatMap { resourceCreatedAction =>
             createTopic()
               .recoverWith {
                 case t =>
                   log.error(s"Error creating topic: ${t.getMessage}", t)
-                  CloudflowApplication.Status.errorAction(newApp, runners, t.getMessage).execute(client)
+                  CloudflowApplication.Status.errorAction(newApp, runners, t.getMessage).execute(client, fabric8Client)
               }
               .map(_ => resourceCreatedAction)
           }

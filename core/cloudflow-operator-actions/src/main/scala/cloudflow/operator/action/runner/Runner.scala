@@ -96,8 +96,8 @@ trait Runner[T <: ObjectResource] {
       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
       .flatMap { deployment =>
         Seq(
-          Action.delete[T](resourceName(deployment), newApp.namespace),
-          Action.delete[T](configResourceName(deployment), newApp.namespace)
+          Action.delete[T, io.fabric8.kubernetes.api.model.apps.Deployment](resourceName(deployment), newApp.namespace),
+          Action.delete[T, io.fabric8.kubernetes.api.model.ConfigMap](configResourceName(deployment), newApp.namespace)
         )
       }
 
@@ -130,7 +130,7 @@ trait Runner[T <: ObjectResource] {
       }
       .toSeq
 
-    deleteActions ++ createActions ++ _updateActions
+    (deleteActions ++ createActions ++ _updateActions).toSeq
   }
 
   def prepareNamespaceActions(app: CloudflowApplication.CR, labels: CloudflowLabels, ownerReferences: List[OwnerReference]) =

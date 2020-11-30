@@ -210,7 +210,7 @@ lazy val akkastreamTests =
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
             TestcontainersKafka % Test,
-            Logback       % Test,
+            Logback             % Test,
             ScalaTest,
             Junit
           )
@@ -461,6 +461,8 @@ lazy val operatorActions =
             Ficus,
             Logback,
             Skuber,
+            Fabric8KubernetesClient,
+            JacksonScala,
             ScalaTest,
             "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
             ScalaCheck         % "test"

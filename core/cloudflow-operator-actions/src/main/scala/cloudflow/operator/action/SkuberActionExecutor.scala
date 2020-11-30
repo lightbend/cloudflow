@@ -19,9 +19,8 @@ package cloudflow.operator.action
 import scala.concurrent._
 import scala.util.control.NonFatal
 import scala.util.Try
-
 import akka.actor.ActorSystem
-
+import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.slf4j.LoggerFactory
 import skuber._
 import skuber.api.Configuration
@@ -40,6 +39,9 @@ final class SkuberActionExecutor(
   import SkuberActionExecutor._
   val executionContext = ec
   implicit val lc      = skuber.api.client.RequestLoggingContext()
+
+  val fabric8Client = new DefaultKubernetesClient()
+
   def execute(action: Action): Future[Action] =
     action match {
       case skAction: ResourceAction[_] =>
@@ -51,7 +53,7 @@ final class SkuberActionExecutor(
           }
           .getOrElse(k8sInit(k8sConfig))
         skAction
-          .execute(kubernetesClient)
+          .execute(kubernetesClient, fabric8Client)
           .map { executedAction =>
             Try(kubernetesClient.close)
             executedAction

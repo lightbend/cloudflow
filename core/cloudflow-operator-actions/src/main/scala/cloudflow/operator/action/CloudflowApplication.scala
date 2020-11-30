@@ -33,7 +33,6 @@ import skuber.ResourceSpecification.Subresources
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic => AppDescriptorTopic, _ }
 
-import cloudflow.operator.action.{ Action, ResourceAction }
 import cloudflow.operator.action.runner.Runner
 
 /**

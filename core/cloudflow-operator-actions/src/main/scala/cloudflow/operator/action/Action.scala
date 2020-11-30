@@ -26,6 +26,10 @@ import play.api.libs.json._
 import skuber._
 import skuber.api.client._
 import skuber.api.patch.Patch
+import io.fabric8.kubernetes.api.model.{ HasMetadata => Fabric8HasMetadata }
+import io.fabric8.kubernetes.client.{ KubernetesClient => Fabric8KubernetesClient }
+
+import scala.reflect.ClassTag
 
 /**
  * Captures an action to create, delete or update a Kubernetes resource.
@@ -36,7 +40,8 @@ sealed trait Action {
    * Executes the action using a KubernetesClient.
    * Returns the action that was executed
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action]
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action]
 
   /**
    * The action name.
@@ -74,10 +79,9 @@ object Action {
   /**
    * Creates a [[DeleteAction]].
    */
-  def delete[T <: ObjectResource](resourceName: String, namespace: String)(
-      implicit resourceDefinition: ResourceDefinition[T]
-  ): DeleteAction[T] =
-    DeleteAction(resourceName, namespace, resourceDefinition)
+  def delete[T <: ObjectResource, B <: Fabric8HasMetadata](resourceName: String,
+                                                           namespace: String)(implicit ct: ClassTag[B]): DeleteAction[T, B] =
+    DeleteAction[T, B](resourceName, namespace)
 
   def createOrPatch[T <: ObjectResource, O <: Patch](
       resource: T,
@@ -159,7 +163,8 @@ object Action {
 }
 
 case object NoopAction extends ResourceAction[Nothing] {
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     Future.successful(this)
   def name: String      = "noop"
   def namespace         = None
@@ -172,19 +177,23 @@ object ResourceAction {
   val ConflictCode = 409
 }
 
-abstract class ResourceAction[+T <: ObjectResource] extends Action {
+abstract class ResourceAction[+T] extends Action {
   import ResourceAction._
 
   /**
    * It is expected that f will always first get the resource in question to break out of the conflict, to avoid a fast recover loop.
    */
-  protected def recoverFromError[O](future: Future[O], client: KubernetesClient, retries: Int, f: (KubernetesClient, Int) => Future[O])(
+  protected def recoverFromError[O](future: Future[O],
+                                    client: KubernetesClient,
+                                    fabric8Client: Fabric8KubernetesClient,
+                                    retries: Int,
+                                    f: (KubernetesClient, Fabric8KubernetesClient, Int) => Future[O])(
       implicit ec: ExecutionContext
   ): Future[O] = {
     def recover(e: Throwable) =
       if (retries > 0) {
         log.info(s"Recovering from error: ${e.getMessage}")
-        f(client, retries)
+        f(client, fabric8Client, retries)
       } else {
         log.error(s"Exhausted retries recovering from error, giving up.")
         throw e
@@ -233,12 +242,14 @@ class CreateOrUpdateAction[T <: ObjectResource](
   /**
    * Creates the resources if it does not exist. If it does exist it updates the resource as required.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
-      result <- executeCreate(client)
+      result <- executeCreate(client, fabric8Client)
     } yield new CreateOrUpdateAction(result, format, resourceDefinition, editor)
 
   private def executeCreate(client: KubernetesClient,
+                            fabric8Client: Fabric8KubernetesClient,
                             retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
     val nextRetries = retries - 1
     for {
@@ -252,11 +263,12 @@ class CreateOrUpdateAction[T <: ObjectResource](
           recoverFromError(
             client.update(resourceVersionUpdated),
             client,
+            fabric8Client,
             nextRetries,
             executeCreate
           )
         }
-        .getOrElse(recoverFromError(client.create(resource), client, nextRetries, executeCreate))
+        .getOrElse(recoverFromError(client.create(resource), client, fabric8Client, nextRetries, executeCreate))
     } yield res
   }
 }
@@ -277,13 +289,15 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
   /**
    * Updates the resource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
-      result <- executeCreateOrPatch(client)
+      result <- executeCreateOrPatch(client, fabric8Client)
     } yield new CreateOrPatchAction(result, patch, format, patchWriter, resourceDefinition)
 
   private def executeCreateOrPatch(
       client: KubernetesClient,
+      fabric8Client: Fabric8KubernetesClient,
       retries: Int = 60
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] = {
     val nextRetries = retries - 1
@@ -293,8 +307,10 @@ class CreateOrPatchAction[T <: ObjectResource, O <: Patch](
         .usingNamespace(namespace.getOrElse(client.namespaceName))
         .getOption[T](resource.name)
       res <- existing
-        .map(_ => recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, nextRetries, executeCreateOrPatch))
-        .getOrElse(recoverFromError(client.create(resource), client, nextRetries, executeCreateOrPatch))
+        .map(_ =>
+          recoverFromError(client.patch(resource.name, patch, Some(resource.ns)), client, fabric8Client, nextRetries, executeCreateOrPatch)
+        )
+        .getOrElse(recoverFromError(client.create(resource), client, fabric8Client, nextRetries, executeCreateOrPatch))
     } yield res
   }
 }
@@ -312,7 +328,8 @@ class PatchAction[T <: ObjectResource, O <: Patch](
   /**
    * Updates the target resource using a patch
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     client
       .patch(resource.name, patch, Some(resource.ns))
       .map(r => new PatchAction(r, patch, format, patchWriter, resourceDefinition))
@@ -336,12 +353,14 @@ class UpdateStatusAction[T <: ObjectResource](
   /**
    * Updates the resource status subresource, without changing the `resourceVersion`.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     for {
-      result <- executeUpdateStatus(client)
+      result <- executeUpdateStatus(client, fabric8Client)
     } yield new UpdateStatusAction(result, format, resourceDefinition, statusEv, editor)
 
   def executeUpdateStatus(client: KubernetesClient,
+                          fabric8Client: Fabric8KubernetesClient,
                           retries: Int = 60)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[T] =
     for {
       existing <- client
@@ -354,7 +373,7 @@ class UpdateStatusAction[T <: ObjectResource](
       res <- resourceVersionUpdated
         .map { resourceToUpdate =>
           if (predicateForUpdate(existing, resourceToUpdate)) {
-            recoverFromError(client.updateStatus(resourceToUpdate), client, retries - 1, executeUpdateStatus)
+            recoverFromError(client.updateStatus(resourceToUpdate), client, fabric8Client, retries - 1, executeUpdateStatus)
           } else {
             Action.log.info(s"Ignoring status update for resource ${resource.metadata.name}")
             Future.successful(resource)
@@ -364,19 +383,14 @@ class UpdateStatusAction[T <: ObjectResource](
     } yield res
 }
 
-object DeleteAction {
-  def apply[T <: ObjectResource](resource: T, resourceDefinition: ResourceDefinition[T]) =
-    new DeleteAction(resource.metadata.name, resource.metadata.namespace, resourceDefinition)
-}
-
 /**
  * Captures deletion of the resource.
  */
-final case class DeleteAction[T <: ObjectResource](
-    val resourceName: String,
-    _namespace: String,
-    implicit val resourceDefinition: ResourceDefinition[T]
+final case class DeleteAction[T <: ObjectResource, B <: Fabric8HasMetadata](val resourceName: String, _namespace: String)(
+    implicit ct: ClassTag[B]
 ) extends ResourceAction[T] {
+  import io.fabric8.kubernetes.api.model.DeletionPropagation
+
   val name      = "delete"
   val namespace = Some(_namespace)
   override def executing =
@@ -384,16 +398,36 @@ final case class DeleteAction[T <: ObjectResource](
   override def executed =
     s"Deleted $resourceName resource"
 
+  //  do we have an easier way of doing it?
+  private val meta = {
+    val dummy = ct.runtimeClass
+      .getDeclaredConstructor(Seq(): _*)
+      .newInstance()
+      .asInstanceOf[B]
+
+    val om = dummy.getMetadata
+    om.setName(name)
+    om.setNamespace(_namespace)
+
+    dummy.setMetadata(om)
+
+    dummy
+  }
+
   /*
    * Deletes the resource.
    */
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] = {
-    val options = DeleteOptions(propagationPolicy = Some(DeletePropagation.Foreground))
-    client
-      .usingNamespace(namespace.getOrElse(client.namespaceName))
-      .deleteWithOptions(resourceName, options)(resourceDefinition, lc)
-      .map(_ => this)
-  }
+  def execute(client: KubernetesClient,
+              fabric8client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+    Future {
+      fabric8client
+        .resource[B](meta)
+        .inNamespace(_namespace)
+        .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+        .delete()
+
+      this
+    }
 }
 
 final case class CompositeAction[T <: ObjectResource](
@@ -411,9 +445,10 @@ final case class CompositeAction[T <: ObjectResource](
    * Executes all actions
    */
   override def execute(
-      client: RequestContext
+      client: RequestContext,
+      fabric8Client: Fabric8KubernetesClient
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
-    Future.sequence(actions.map(_.execute(client))).map(_ => this)
+    Future.sequence(actions.map(_.execute(client, fabric8Client))).map(_ => this)
 }
 
 final class ProvidedAction[T <: ObjectResource](
@@ -431,9 +466,11 @@ final class ProvidedAction[T <: ObjectResource](
   override def executed =
     s"Provided $namespace/$resourceName to next action"
 
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     executeWithRetry(
       client,
+      fabric8Client,
       delay = 1.second,
       retries = 60,
       retriesGet = getRetries
@@ -441,6 +478,7 @@ final class ProvidedAction[T <: ObjectResource](
 
   private def executeWithRetry(
       client: KubernetesClient,
+      fabric8Client: Fabric8KubernetesClient,
       delay: FiniteDuration,
       retries: Int,
       retriesGet: Int
@@ -451,7 +489,7 @@ final class ProvidedAction[T <: ObjectResource](
         .getOption[T](resourceName)
         .flatMap { maybe =>
           maybe match {
-            case Some(_) => getAction(maybe).execute(client)
+            case Some(_) => getAction(maybe).execute(client, fabric8Client)
             case None if retriesGet > 0 =>
               Action.log.info(
                 s"Scheduling retry to get resource $namespace/$resourceName, retries left: ${retriesGet - 1}"
@@ -459,7 +497,7 @@ final class ProvidedAction[T <: ObjectResource](
               after(delay, sys.scheduler)(getAndProvide(retriesGet - 1))
             case None =>
               Action.log.info(s"Did not find resource $namespace/$resourceName")
-              getAction(maybe).execute(client)
+              getAction(maybe).execute(client, fabric8Client)
           }
         }
     getAndProvide(retriesGet).recoverWith {
@@ -467,7 +505,7 @@ final class ProvidedAction[T <: ObjectResource](
         Action.log.info(
           s"Scheduling retry to get resource $namespace/$resourceName, cause: ${e.getClass.getSimpleName} message: ${e.getMessage}"
         )
-        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1, retriesGet))
+        after(delay, sys.scheduler)(executeWithRetry(client, fabric8Client, delay, retries - 1, retriesGet))
     }
   }
 }
@@ -489,15 +527,18 @@ final class ProvidedByLabelAction[T <: ObjectResource](
   def executed =
     s"Provided a list of resources in $namespace to next action"
 
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     executeWithRetry(
       client,
+      fabric8Client,
       delay = 1.second,
       retries = 60
     )
 
   private def executeWithRetry(
       client: KubernetesClient,
+      fabric8Client: Fabric8KubernetesClient,
       delay: FiniteDuration,
       retries: Int
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] = {
@@ -507,20 +548,21 @@ final class ProvidedByLabelAction[T <: ObjectResource](
         .usingNamespace(namespace.getOrElse(client.namespaceName))
         .listSelected[ListResource[T]](selector)(skuber.json.format.ListResourceFormat[T], resourceDefinition, lc)
         .flatMap { list =>
-          getAction(list).execute(client)
+          getAction(list).execute(client, fabric8Client)
         }
 
     getAndProvide.recoverWith {
       case t: Throwable if retries > 0 =>
         sys.log.info(s"Scheduling retry to getting resources by label spec in $namespace, reason: ${t.getClass.getSimpleName}")
-        after(delay, sys.scheduler)(executeWithRetry(client, delay, retries - 1))
+        after(delay, sys.scheduler)(executeWithRetry(client, fabric8Client, delay, retries - 1))
     }
   }
 }
 
 final case class AppAction(action: Action, app: CloudflowApplication.CR) extends Action {
-  def execute(client: KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
-    action.execute(client)
+  def execute(client: KubernetesClient,
+              fabric8Client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
+    action.execute(client, fabric8Client)
   def executed: String          = action.executed
   def executing: String         = action.executing
   def name: String              = action.name
