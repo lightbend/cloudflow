@@ -293,7 +293,6 @@ class CreateOrPatchAction[T <: HasMetadata](
         .map(_ =>
           recoverFromError(
             Future {
-              client.secrets().inNamespace().withName()
               client
                 .resource(resource)
                 .inNamespace(resource.getMetadata.getNamespace)
