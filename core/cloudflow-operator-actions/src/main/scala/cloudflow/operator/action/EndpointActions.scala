@@ -21,13 +21,10 @@ import scala.concurrent._
 import scala.collection.immutable._
 import akka.actor.ActorSystem
 import play.api.libs.json._
-import skuber._
-import skuber.api.client._
-import skuber.json.format._
 import cloudflow.blueprint.deployment._
 
-import io.fabric8.kubernetes.api.model.{ Service => Fabric8Service }
-import io.fabric8.kubernetes.client.{ KubernetesClient => Fabric8KubernetesClient }
+import io.fabric8.kubernetes.api.model._
+import io.fabric8.kubernetes.client.KubernetesClient
 
 /**
  * Creates a sequence of resource actions for the endpoint changes
@@ -46,8 +43,7 @@ object EndpointActions {
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint =>
       Seq(
-        Action.delete[Service, Fabric8Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)),
-                                               newApp.namespace)
+        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp.namespace)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint =>
@@ -107,10 +103,8 @@ object EndpointActions {
    * If the service already exists, it will be updated. A service has an immutable clusterIP field which is retained in the update.
    */
   class CreateServiceAction(
-      override val resource: Service,
-      format: Format[Service],
-      resourceDefinition: ResourceDefinition[Service]
-  ) extends CreateOrUpdateAction[Service](resource, format, resourceDefinition, serviceEditor) {
+      override val resource: io.fabric8.kubernetes.api.model.Service
+  ) extends CreateOrUpdateAction[Service, io.fabric8.kubernetes.api.model.Service](resource) {
     override def execute(
         client: KubernetesClient,
         fabric8Client: Fabric8KubernetesClient
