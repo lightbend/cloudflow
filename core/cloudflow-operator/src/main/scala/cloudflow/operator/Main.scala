@@ -45,7 +45,7 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
-      val client          = connectToKubernetes()
+      val client = connectToKubernetes()
       val ownerReferences = getDeploymentOwnerReferences(settings, client.usingNamespace(settings.podNamespace))
       installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
       installCRD(client)

@@ -142,7 +142,7 @@ class EndpointActionsSpec
 
       Then("delete actions should be created")
       actions.size mustBe 1
-      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
+      val deleteActions = actions.collect { case d: DeleteAction[_, _] => d }
 
       val serviceNames = deleteActions.map(_.resourceName)
 

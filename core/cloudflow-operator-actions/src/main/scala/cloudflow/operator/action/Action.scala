@@ -389,7 +389,8 @@ class UpdateStatusAction[T <: ObjectResource](
 final case class DeleteAction[T <: ObjectResource, B <: Fabric8HasMetadata](val resourceName: String, _namespace: String)(
     implicit ct: ClassTag[B]
 ) extends ResourceAction[T] {
-  import io.fabric8.kubernetes.api.model.DeletionPropagation
+  import io.fabric8.kubernetes.api.model.{ DeletionPropagation, ObjectMetaBuilder }
+  import io.fabric8.kubernetes.client.utils.Serialization
 
   val name      = "delete"
   val namespace = Some(_namespace)
@@ -398,20 +399,24 @@ final case class DeleteAction[T <: ObjectResource, B <: Fabric8HasMetadata](val 
   override def executed =
     s"Deleted $resourceName resource"
 
-  //  do we have an easier way of doing it?
+  private val log = LoggerFactory.getLogger(this.getClass.getName)
+
   private val meta = {
-    val dummy = ct.runtimeClass
-      .getDeclaredConstructor(Seq(): _*)
-      .newInstance()
-      .asInstanceOf[B]
+    val default = {
+      Serialization
+        .jsonMapper()
+        .readValue("{}", ct.runtimeClass)
+        .asInstanceOf[B]
+    }
 
-    val om = dummy.getMetadata
-    om.setName(name)
-    om.setNamespace(_namespace)
+    val metadata = new ObjectMetaBuilder()
+      .withName(resourceName)
+      .withNamespace(_namespace)
+      .build()
 
-    dummy.setMetadata(om)
+    default.setMetadata(metadata)
 
-    dummy
+    default
   }
 
   /*
@@ -420,6 +425,8 @@ final case class DeleteAction[T <: ObjectResource, B <: Fabric8HasMetadata](val 
   def execute(client: KubernetesClient,
               fabric8client: Fabric8KubernetesClient)(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
     Future {
+      log.debug(s"Going to delete resource $meta, name: ${meta.getMetadata.getName}, namespace: ${meta.getMetadata.getNamespace}")
+
       fabric8client
         .resource[B](meta)
         .inNamespace(_namespace)

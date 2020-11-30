@@ -157,7 +157,7 @@ class RunnerActionsSpec extends WordSpec with MustMatchers with GivenWhenThen wi
       val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
 
       Then("delete actions should be created")
-      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
+      val deleteActions = actions.collect { case d: DeleteAction[_, _] => d }
       deleteActions.size mustBe 2
     }
 
