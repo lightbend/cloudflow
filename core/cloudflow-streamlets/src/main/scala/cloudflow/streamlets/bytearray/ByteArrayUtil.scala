@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package cloudflow.streamlets.proto.javadsl
+package cloudflow.streamlets.bytearray
 
 import java.security.MessageDigest
 import java.util.Base64
 
 import cloudflow.streamlets.SchemaDefinition
-import com.google.protobuf.Descriptors.Descriptor
-import com.google.protobuf.TextFormat
 
-object ProtoUtil {
-  val Format = "proto"
+object ByteArrayUtil {
+  val Format = "bytearray"
+  val schemaName = "ByteArraySchema"
 
-  def createSchemaDefinition(descriptor: Descriptor) = SchemaDefinition(
-    name = descriptor.getFullName,
-    schema = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto),
-    fingerprint = fingerprintSha256(descriptor),
+
+  def createSchemaDefinition() = SchemaDefinition(
+    name = schemaName,
+    schema = schemaName,
+    fingerprint = fingerprintSha256(schemaName),
     format = Format
   )
 
-  private def fingerprintSha256(descriptor: Descriptor): String =
+  private def fingerprintSha256(descriptor: String): String =
     Base64
       .getEncoder()
-      .encodeToString(MessageDigest.getInstance("SHA-256").digest(
-        TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto).getBytes("UTF-8")))
+      .encodeToString(MessageDigest.getInstance("SHA-256").digest(descriptor.getBytes("UTF-8")))
 }

@@ -29,7 +29,7 @@ final case class ProtoOutlet[T <: GeneratedMessageV3](
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
   override def codec: Codec[T]  = new ProtoCodec(clazz)
-  override def schemaAsString   = TextFormat.printToUnicodeString(descriptor.toProto)
+  override def schemaAsString   = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
   override def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
   /**
