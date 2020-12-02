@@ -22,9 +22,8 @@ import java.util.Base64
 import cloudflow.streamlets.SchemaDefinition
 
 object ByteArrayUtil {
-  val Format = "bytearray"
+  val Format     = "bytearray"
   val schemaName = "ByteArraySchema"
-
 
   def createSchemaDefinition() = SchemaDefinition(
     name = schemaName,

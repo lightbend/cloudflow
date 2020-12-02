@@ -36,6 +36,9 @@ object ProtoUtil {
   private def fingerprintSha256(descriptor: Descriptor): String =
     Base64
       .getEncoder()
-      .encodeToString(MessageDigest.getInstance("SHA-256").digest(
-        TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto).getBytes("UTF-8")))
+      .encodeToString(
+        MessageDigest
+          .getInstance("SHA-256")
+          .digest(TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto).getBytes("UTF-8"))
+      )
 }

@@ -23,10 +23,10 @@ case class ByteArrayInlet(
     hasUniqueGroupId: Boolean = false,
     errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] = CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable)
 ) extends CodecInlet[Array[Byte]] {
-  def codec                                                                                    = new ByteArrayCodec
-  def schemaDefinition                                                                         = ByteArrayUtil.createSchemaDefinition()
-  def schemaAsString                                                                           = ByteArrayUtil.schemaName
-  def withUniqueGroupId: ByteArrayInlet                                                        = copy(hasUniqueGroupId = true)
+  def codec                                                                                               = new ByteArrayCodec
+  def schemaDefinition                                                                                    = ByteArrayUtil.createSchemaDefinition()
+  def schemaAsString                                                                                      = ByteArrayUtil.schemaName
+  def withUniqueGroupId: ByteArrayInlet                                                                   = copy(hasUniqueGroupId = true)
   override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ByteArrayInlet = copy(errorHandler = handler)
 }
 
@@ -36,4 +36,3 @@ object ByteArrayInlet {
 
   def create(name: String, hasUniqueGroupId: Boolean): ByteArrayInlet = ByteArrayInlet(name, hasUniqueGroupId)
 }
-

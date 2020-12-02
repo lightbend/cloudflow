@@ -17,13 +17,11 @@
 package cloudflow.streamlets.descriptors
 
 import scala.collection.immutable
-
 import org.apache.avro.SchemaBuilder
-
 import com.typesafe.config.Config
-
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro.AvroUtil
+import cloudflow.streamlets.bytearray.{ByteArrayInlet, ByteArrayOutlet}
 
 case class Coffee(espressos: Int)
 
@@ -57,4 +55,12 @@ class CoffeeIngress extends Streamlet[StreamletContext] with TestStreamlet {
   override val shape                                = StreamletShape(TestOutlet("out", AvroUtil.createSchemaDefinition(Schemas.coffeeSchema)))
   override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
   override val description: String                  = "Coffee Ingress Test"
+}
+
+class CoffeeByteArrayIngress extends Streamlet[StreamletContext] with TestStreamlet {
+  val outlet = ByteArrayOutlet("out")
+  val inlet = ByteArrayInlet("in")
+  override def shape                                = StreamletShape(inlet, outlet)
+  override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
+  override val description: String                  = "Coffee ByteArray Ingress Test"
 }

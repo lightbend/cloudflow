@@ -18,7 +18,7 @@ package cloudflow.streamlets.bytearray
 
 import cloudflow.streamlets._
 
-import scala.util.{Success, Try}
+import scala.util._
 
 class ByteArrayCodec extends Codec[Array[Byte]] {
   override def encode(value: Array[Byte]): Array[Byte] = value
