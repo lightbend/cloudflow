@@ -139,5 +139,6 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       |echo "Java opts: $java_opts"
       |echo "Classpath: $java_classpath"
       |
-      |exec java $java_opts -cp $java_classpath $java_main""".stripMargin
+      |exec java $java_opts -cp $java_classpath $java_main
+      |""".stripMargin
 }
