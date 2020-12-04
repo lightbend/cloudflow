@@ -83,7 +83,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
           val flinkEntrypoint = (ThisProject / target).value / "cloudflow" / "flink" / "flink-entrypoint.sh"
           IO.write(flinkEntrypoint, flinkEntrypointContent)
 
-          val scalaVersion = "2.12"
+          val scalaVersion = (ThisProject / scalaBinaryVersion).value
           val flinkVersion = "1.10.0"
           val flinkHome    = "/opt/flink"
 
