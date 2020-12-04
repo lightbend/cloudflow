@@ -152,6 +152,9 @@ object CloudflowSparkPlugin extends AutoPlugin {
     },
     dockerfile in docker := {
       val log = streams.value.log
+
+      IO.delete(((ThisProject / target).value / "docker"))
+
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
