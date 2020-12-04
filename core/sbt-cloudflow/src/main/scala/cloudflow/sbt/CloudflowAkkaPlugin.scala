@@ -20,6 +20,8 @@ import sbt._
 import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
+import sbtdocker.Instructions
+import sbtdocker.staging.CopyFile
 import com.typesafe.sbt.packager.Keys._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
@@ -52,18 +54,52 @@ object CloudflowAkkaPlugin extends AutoPlugin {
             }
           }
         }.value,
+    baseDockerInstructions := {
+      val appDir: File     = stage.value
+      val appJarsDir: File = new File(appDir, AppJarsDir)
+      val depJarsDir: File = new File(appDir, DepJarsDir)
+
+      val akkaEntrypointFile = (ThisProject / target).value / "cloudflow" / "akka" / "akka-entrypoint.sh"
+      IO.write(akkaEntrypointFile, akkaEntrypointContent)
+
+      Seq(
+        Instructions.User("root"),
+        Instructions.Run.exec(Seq("apk", "add", "bash", "curl")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/home/cloudflow")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/opt")),
+        Instructions.Run.exec(Seq("addgroup", "-g", "185", "-S", "cloudflow")),
+        Instructions.Run.exec(Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "cloudflow")),
+        Instructions.Run.exec(Seq("adduser", "cloudflow", "root")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/prometheus")),
+        Instructions.Run.exec(
+          Seq(
+            "curl",
+            "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
+            "-o",
+            "/prometheus/jmx_prometheus_javaagent.jar"
+          )
+        ),
+        Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
+        Instructions.Run.exec(Seq("chmod", "a+x", "/opt/akka-entrypoint.sh")),
+        Instructions.User(UserInImage),
+        Instructions.EntryPoint.exec(Seq("bash", "/opt/akka-entrypoint.sh")),
+        Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage)))
+      )
+    },
     dockerfile in docker := {
       val log = streams.value.log
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
-      val appDir: File     = stage.value
-      val appJarsDir: File = new File(appDir, AppJarsDir)
-      val depJarsDir: File = new File(appDir, DepJarsDir)
-
       cloudflowAkkaBaseImage.value match {
         case Some(baseImage) =>
           log.warn("'cloudflowAkkaBaseImage' is defined, 'cloudflowDockerBaseImage' setting is going to be ignored")
+
+          val appDir: File     = stage.value
+          val appJarsDir: File = new File(appDir, AppJarsDir)
+          val depJarsDir: File = new File(appDir, DepJarsDir)
+
           new Dockerfile {
             from(baseImage)
             user(UserInImage)
@@ -72,32 +108,10 @@ object CloudflowAkkaPlugin extends AutoPlugin {
             addInstructions(extraDockerInstructions.value)
           }
         case _ =>
-          val akkaEntrypointFile = (ThisProject / target).value / "cloudflow" / "akka" / "akka-entrypoint.sh"
-          IO.write(akkaEntrypointFile, akkaEntrypointContent)
-
           new Dockerfile {
             from(cloudflowDockerBaseImage.value)
-            user("root")
-            run("apk", "add", "bash", "curl")
-            run("mkdir", "-p", "/home/cloudflow")
-            run("mkdir", "-p", "/opt")
-            run("addgroup", "-g", "185", "-S", "cloudflow")
-            run("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "cloudflow")
-            run("adduser", "cloudflow", "root")
-            run("mkdir", "-p", "/prometheus")
-            run(
-              "curl",
-              "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
-              "-o",
-              "/prometheus/jmx_prometheus_javaagent.jar"
-            )
-            copy(akkaEntrypointFile, "/opt/akka-entrypoint.sh")
-            run("chmod", "a+x", "/opt/akka-entrypoint.sh")
-            user(UserInImage)
-            entryPoint("bash", "/opt/akka-entrypoint.sh")
-            copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-            copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-            addInstructions(extraDockerInstructions.value)
+            addInstructions((ThisProject / baseDockerInstructions).value)
+            addInstructions((ThisProject / extraDockerInstructions).value)
           }
       }
     }

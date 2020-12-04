@@ -65,13 +65,15 @@ trait CloudflowTaskKeys {
   val cloudflowDockerImageName  = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
-  val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
-  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
-  val printAppGraph             = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
-  val build                     = taskKey[Unit]("Build the image.")
-  val buildAndPublish           = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
-  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
-  val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
+  val baseDockerInstructions =
+    taskKey[Seq[sbtdocker.Instruction]]("The list of instructions to build the dockerfile. Change them at your own risk.")
+  val extraDockerInstructions = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
+  val verifyBlueprint         = taskKey[Unit]("Verify Blueprint.")
+  val printAppGraph           = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
+  val build                   = taskKey[Unit]("Build the image.")
+  val buildAndPublish         = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
+  val runLocal                = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
+  val buildApp                = taskKey[Unit]("Build the Cloudflow Application CR.")
 
   private[sbt] val buildAndPublishImage =
     taskKey[(ImageRef, Map[String, StreamletDescriptor])]("Build and publish a project image.")

@@ -20,6 +20,8 @@ import sbt._
 import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
+import sbtdocker.Instructions
+import sbtdocker.staging.CopyFile
 import com.typesafe.sbt.packager.Keys._
 
 import cloudflow.sbt.CloudflowKeys._
@@ -59,18 +61,108 @@ object CloudflowSparkPlugin extends AutoPlugin {
             }
           }
         }.value,
+    baseDockerInstructions := {
+      val appDir: File     = stage.value
+      val appJarsDir: File = new File(appDir, AppJarsDir)
+      val depJarsDir: File = new File(appDir, DepJarsDir)
+
+      val metricsProperties = (ThisProject / target).value / "cloudflow" / "spark" / "metrics.properties"
+      IO.write(metricsProperties, metricsPropertiesContent)
+
+      val prometheusYaml = (ThisProject / target).value / "cloudflow" / "spark" / "prometheus.yaml"
+      IO.write(prometheusYaml, prometheusYamlContent)
+
+      val log4jProperties = (ThisProject / target).value / "cloudflow" / "spark" / "log4j.properties"
+      IO.write(log4jProperties, log4jPropertiesContent)
+
+      val sparkEntrypointSh = (ThisProject / target).value / "cloudflow" / "spark" / "spark-entrypoint.sh"
+      IO.write(sparkEntrypointSh, sparkEntrypointShContent)
+
+      val scalaVersion = (ThisProject / scalaBinaryVersion).value
+      val sparkVersion = "2.4.5"
+      val sparkHome    = "/opt/spark"
+
+      val sparkTgz    = s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}.tgz"
+      val sparkTgzUrl = s"https://github.com/lightbend/spark/releases/download/${sparkVersion}-lightbend/${sparkTgz}"
+
+      val tiniVersion = "v0.18.0"
+
+      Seq(
+        Instructions.Run.exec(Seq("wget", sparkTgzUrl)),
+        Instructions.Run.exec(Seq("tar", "-xvzf", sparkTgz)),
+        Instructions.Run.exec(Seq("mkdir", "-p", sparkHome)),
+        Instructions.Run.exec(Seq("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/jars", s"${sparkHome}/jars")),
+        Instructions.Run.exec(Seq("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/bin", s"${sparkHome}/bin")),
+        Instructions.Run.exec(Seq("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/sbin", s"${sparkHome}/sbin")),
+        Instructions.Run.exec(Seq("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/examples", s"${sparkHome}/examples")),
+        Instructions.Run.exec(Seq("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/data", s"${sparkHome}/data")),
+        Instructions.Run
+          .exec(Seq("cp", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/kubernetes/dockerfiles/spark/entrypoint.sh", "/opt/")),
+        Instructions.Run.exec(Seq("rm", sparkTgz)),
+        Instructions.Run.exec(Seq("rm", "-rf", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}")),
+        Instructions.Copy(CopyFile(metricsProperties), "/etc/metrics/conf/metrics.properties"),
+        Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
+        Instructions.Copy(CopyFile(log4jProperties), s"${sparkHome}/conf/log4j.properties"),
+        Instructions.Copy(CopyFile(sparkEntrypointSh), "/opt/spark-entrypoint.sh"),
+        Instructions.Run.exec(Seq("chmod", "a+x", "/opt/spark-entrypoint.sh")),
+        Instructions.Run.exec(Seq("ln", "-s", "/lib", "/lib64")),
+        Instructions.Run.exec(Seq("apk", "add", "bash", "curl")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/opt/spark/work-dir")),
+        Instructions.Run.exec(Seq("touch", "/opt/spark/RELEASE")),
+        Instructions.Run.exec(Seq("chgrp", "root", "/etc/passwd")),
+        Instructions.Run.exec(Seq("chmod", "ug+rw", "/etc/passwd")),
+        Instructions.Run.exec(Seq("rm", "-rf", "/var/cache/apt/*")),
+        Instructions.Run
+          .exec(Seq("curl", "-L", s"https://github.com/krallin/tini/releases/download/${tiniVersion}/tini", "-o", "/sbin/tini")),
+        Instructions.Run.exec(Seq("chmod", "+x", "/sbin/tini")),
+        Instructions.Run.exec(Seq("addgroup", "-S", "-g", "185", "cloudflow")),
+        Instructions.Run.exec(Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "root")),
+        Instructions.Run.exec(Seq("adduser", "cloudflow", "cloudflow")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/prometheus")),
+        Instructions.Run.exec(
+          Seq(
+            "curl",
+            "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
+            "-o",
+            "/prometheus/jmx_prometheus_javaagent.jar"
+          )
+        ),
+        Instructions.Run.exec(Seq("chmod", "ug+rwX", "/home/cloudflow")),
+        Instructions.Run.exec(Seq("mkdir", "-p", "/opt/spark/conf")),
+        Instructions.Run.exec(Seq("chgrp", "-R", "0", "/opt/spark")),
+        Instructions.Run.exec(Seq("chmod", "-R", "g=u", "/opt/spark")),
+        Instructions.Run.exec(Seq("chmod", "-R", "u+x", "/opt/spark/bin")),
+        Instructions.Run.exec(Seq("chmod", "-R", "u+x", "/opt/spark/sbin")),
+        Instructions.Run.exec(Seq("chgrp", "-R", "0", "/prometheus")),
+        Instructions.Run.exec(Seq("chmod", "-R", "g=u", "/prometheus")),
+        Instructions.Run.exec(Seq("chgrp", "-R", "0", "/etc/metrics/conf")),
+        Instructions.Run.exec(Seq("chmod", "-R", "g=u", "/etc/metrics/conf")),
+        Instructions.Run.exec(Seq("chown", "cloudflow:root", "/opt")),
+        Instructions.Run.exec(Seq("chmod", "775", "/opt")),
+        Instructions.Env("SPARK_HOME", sparkHome),
+        Instructions.Env("SPARK_VERSION", sparkVersion),
+        Instructions.WorkDir("/opt/spark/work-dir"),
+        Instructions.Run.exec(Seq("chmod", "g+w", "/opt/spark/work-dir")),
+        Instructions.EntryPoint.exec(Seq("bash", "/opt/spark-entrypoint.sh")),
+        Instructions.User(UserInImage),
+        Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Expose(Seq(4040))
+      )
+    },
     dockerfile in docker := {
       val log = streams.value.log
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
-      val appDir: File     = stage.value
-      val appJarsDir: File = new File(appDir, AppJarsDir)
-      val depJarsDir: File = new File(appDir, DepJarsDir)
-
       cloudflowSparkBaseImage.value match {
         case Some(baseImage) =>
           log.warn("'cloudflowFlinkBaseImage' is defined, 'cloudflowDockerBaseImage' setting is going to be ignored")
+
+          val appDir: File     = stage.value
+          val appJarsDir: File = new File(appDir, AppJarsDir)
+          val depJarsDir: File = new File(appDir, DepJarsDir)
+
           new Dockerfile {
             from(baseImage)
             user(UserInImage)
@@ -80,88 +172,10 @@ object CloudflowSparkPlugin extends AutoPlugin {
             expose(4040)
           }
         case _ =>
-          val metricsProperties = (ThisProject / target).value / "cloudflow" / "spark" / "metrics.properties"
-          IO.write(metricsProperties, metricsPropertiesContent)
-
-          val prometheusYaml = (ThisProject / target).value / "cloudflow" / "spark" / "prometheus.yaml"
-          IO.write(prometheusYaml, prometheusYamlContent)
-
-          val log4jProperties = (ThisProject / target).value / "cloudflow" / "spark" / "log4j.properties"
-          IO.write(log4jProperties, log4jPropertiesContent)
-
-          val sparkEntrypointSh = (ThisProject / target).value / "cloudflow" / "spark" / "spark-entrypoint.sh"
-          IO.write(sparkEntrypointSh, sparkEntrypointShContent)
-
-          val scalaVersion = (ThisProject / scalaBinaryVersion).value
-          val sparkVersion = "2.4.5"
-          val sparkHome    = "/opt/spark"
-
-          val sparkTgz    = s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}.tgz"
-          val sparkTgzUrl = s"https://github.com/lightbend/spark/releases/download/${sparkVersion}-lightbend/${sparkTgz}"
-
-          val tiniVersion = "v0.18.0"
-
           new Dockerfile {
             from(cloudflowDockerBaseImage.value)
-            run("wget", sparkTgzUrl)
-            run("tar", "-xvzf", sparkTgz)
-            run("mkdir", "-p", sparkHome)
-            run("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/jars", s"${sparkHome}/jars")
-            run("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/bin", s"${sparkHome}/bin")
-            run("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/sbin", s"${sparkHome}/sbin")
-            run("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/examples", s"${sparkHome}/examples")
-            run("cp", "-r", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/data", s"${sparkHome}/data")
-            run("cp", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}/kubernetes/dockerfiles/spark/entrypoint.sh", "/opt/")
-            run("rm", sparkTgz)
-            run("rm", "-rf", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}")
-            copy(metricsProperties, "/etc/metrics/conf/metrics.properties")
-            copy(prometheusYaml, "/etc/metrics/conf/prometheus.yaml")
-            copy(log4jProperties, s"${sparkHome}/conf/log4j.properties")
-            copy(sparkEntrypointSh, "/opt/spark-entrypoint.sh")
-            run("chmod", "a+x", "/opt/spark-entrypoint.sh")
-
-            run("ln", "-s", "/lib", "/lib64")
-            run("apk", "add", "bash", "curl")
-            run("mkdir", "-p", "/opt/spark/work-dir")
-            run("touch", "/opt/spark/RELEASE")
-            run("chgrp", "root", "/etc/passwd")
-            run("chmod", "ug+rw", "/etc/passwd")
-            run("rm", "-rf", "/var/cache/apt/*")
-            run("curl", "-L", s"https://github.com/krallin/tini/releases/download/${tiniVersion}/tini", "-o", "/sbin/tini")
-            run("chmod", "+x", "/sbin/tini")
-            run("addgroup", "-S", "-g", "185", "cloudflow")
-            run("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "root")
-            run("adduser", "cloudflow", "cloudflow")
-            run("mkdir", "-p", "/prometheus")
-            run(
-              "curl",
-              "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
-              "-o",
-              "/prometheus/jmx_prometheus_javaagent.jar"
-            )
-            run("chmod", "ug+rwX", "/home/cloudflow")
-            run("mkdir", "-p", "/opt/spark/conf")
-            run("chgrp", "-R", "0", "/opt/spark")
-            run("chmod", "-R", "g=u", "/opt/spark")
-            run("chmod", "-R", "u+x", "/opt/spark/bin")
-            run("chmod", "-R", "u+x", "/opt/spark/sbin")
-            run("chgrp", "-R", "0", "/prometheus")
-            run("chmod", "-R", "g=u", "/prometheus")
-            run("chgrp", "-R", "0", "/etc/metrics/conf")
-            run("chmod", "-R", "g=u", "/etc/metrics/conf")
-            run("chown", "cloudflow:root", "/opt")
-            run("chmod", "775", "/opt")
-            env("SPARK_HOME", sparkHome)
-            env("SPARK_VERSION", sparkVersion)
-            workDir("/opt/spark/work-dir")
-            run("chmod", "g+w", "/opt/spark/work-dir")
-            entryPoint("bash", "/opt/spark-entrypoint.sh")
-
-            user(UserInImage)
-            copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-            copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-            addInstructions(extraDockerInstructions.value)
-            expose(4040)
+            addInstructions((ThisProject / baseDockerInstructions).value)
+            addInstructions((ThisProject / extraDockerInstructions).value)
           }
       }
     }

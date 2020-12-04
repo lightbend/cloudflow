@@ -52,7 +52,7 @@ object CloudflowBasePlugin extends AutoPlugin {
     StreamletDescriptorsPlugin && JavaAppPackaging && sbtdocker.DockerPlugin
 
   override def projectSettings = Seq(
-    cloudflowDockerBaseImage := "adoptopenjdk/openjdk8:alpine",
+    cloudflowDockerBaseImage := "adoptopenjdk/openjdk8:jdk8u265-b01-alpine",
     libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" % s"cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}"      % (ThisProject / cloudflowVersion).value,
           "com.lightbend.cloudflow" % s"cloudflow-localrunner_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value
