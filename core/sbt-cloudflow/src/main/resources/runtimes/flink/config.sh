@@ -416,7 +416,7 @@ FLINK_ENV_JAVA_OPTS_CONFIG=$(readFromConfig ${KEY_ENV_JAVA_OPTS} "${DEFAULT_ENV_
 if [ -z "${FLINK_ENV_JAVA_OPTS##*$FLINK_ENV_JAVA_OPTS_CONFIG*}" ];then
     echo "${FLINK_ENV_JAVA_OPTS_CONFIG} have already been added to JVM Options"
 else
-    FLINK_ENV_JAVA_OPTS=$(readFromConfig ${KEY_ENV_JAVA_OPTS} "${DEFAULT_ENV_JAVA_OPTS}" "${YAML_CONF}")
+    FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${FLINK_ENV_JAVA_OPTS_CONFIG}"
 
     # Remove leading and ending double quotes (if present) of value
     FLINK_ENV_JAVA_OPTS="$( echo "${FLINK_ENV_JAVA_OPTS}" | sed -e 's/^"//'  -e 's/"$//' )"
