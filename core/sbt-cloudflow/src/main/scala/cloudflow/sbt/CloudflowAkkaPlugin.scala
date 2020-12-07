@@ -46,6 +46,10 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
             val appJarDir = new File(stagingDir, AppJarsDir)
             val depJarDir = new File(stagingDir, DepJarsDir)
+
+            IO.delete(appJarDir)
+            IO.delete(depJarDir)
+
             projectJars.foreach { jar =>
               IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
@@ -90,8 +94,6 @@ object CloudflowAkkaPlugin extends AutoPlugin {
     dockerfile in docker := {
       val log = streams.value.log
 
-      IO.delete(((ThisProject / target).value / "docker"))
-
       // this triggers side-effects, e.g. files being created in the staging area
       cloudflowStageAppJars.value
 
@@ -120,28 +122,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
     }
   )
 
-  private val akkaEntrypointContent =
-    """#!/usr/bin/env bash
-      |
-      |# Base configuration
-      |app_home="/app"
-      |lib_dir="/opt/cloudflow"
-      |java_main="cloudflow.runner.Runner"
-      |
-      |# Java agent(s)
-      |agents="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
-      |
-      |# Java options
-      |java_opts="$agents $JAVA_OPTS"
-      |
-      |# Classpath Opts
-      |app_config="/etc/cloudflow-runner"
-      |java_classpath="$app_config:$lib_dir/*"
-      |
-      |echo "Cloudflow Runner"
-      |echo "Java opts: $java_opts"
-      |echo "Classpath: $java_classpath"
-      |
-      |exec java $java_opts -cp $java_classpath $java_main
-      |""".stripMargin
+  private lazy val akkaEntrypointContent: String =
+    scala.io.Source.fromResource("runtimes/akka/akka-entrypoint.sh", getClass().getClassLoader()).getLines.mkString("\n")
+
 }
