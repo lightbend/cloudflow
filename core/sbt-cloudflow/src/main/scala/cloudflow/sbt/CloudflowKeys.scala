@@ -40,16 +40,19 @@ trait CloudflowSettingKeys {
     case object Proto extends Format
   }
 
-  val cloudflowDockerParentImage = settingKey[String]("The parent Docker image to use for Cloudflow images.")
-  val cloudflowFlinkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Flink plugin")
-  val cloudflowSparkBaseImage    = settingKey[Option[String]]("The base image for Cloudflow Spark plugin")
-  val cloudflowAkkaBaseImage     = settingKey[Option[String]]("The base image for Cloudflow Akka plugin")
-  val cloudflowVersion           = settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
-  val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
-  val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
-  val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
-  val runLocalKafka              = settingKey[Option[String]]("the external Kafka to use with the local runner Sandbox.")
-  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val cloudflowDockerBaseImage = settingKey[String]("The base Docker image to use for Cloudflow images.")
+  @deprecated("Use 'cloudflowDockerBaseImage' instead")
+  val cloudflowFlinkBaseImage = settingKey[Option[String]]("The base image for Cloudflow Flink plugin")
+  @deprecated("Use 'cloudflowDockerBaseImage' instead")
+  val cloudflowSparkBaseImage = settingKey[Option[String]]("The base image for Cloudflow Spark plugin")
+  @deprecated("Use 'cloudflowDockerBaseImage' instead")
+  val cloudflowAkkaBaseImage = settingKey[Option[String]]("The base image for Cloudflow Akka plugin")
+  val cloudflowVersion       = settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
+  val blueprint              = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
+  val schemaCodeGenerator    = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
+  val schemaPaths            = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
+  val runLocalKafka          = settingKey[Option[String]]("the external Kafka to use with the local runner Sandbox.")
+  val runLocalConfigFile     = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
   val runLocalLog4jConfigFile = settingKey[Option[String]](
     s"The path to the log4j configuration file to use with the local runner Sandbox, if omitted, ${CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile} is read from plugin classpath."
   )
@@ -62,13 +65,15 @@ trait CloudflowTaskKeys {
   val cloudflowDockerImageName  = taskKey[Option[DockerImageName]]("The name of the Docker image to publish.")
   val cloudflowDockerRegistry   = taskKey[Option[String]]("The hostname and (optional) port of the Docker registry to use.")
   val cloudflowDockerRepository = taskKey[Option[String]]("The image repository name on the Docker registry.")
-  val extraDockerInstructions   = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
-  val verifyBlueprint           = taskKey[Unit]("Verify Blueprint.")
-  val printAppGraph             = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
-  val build                     = taskKey[Unit]("Build the image.")
-  val buildAndPublish           = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
-  val runLocal                  = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
-  val buildApp                  = taskKey[Unit]("Build the Cloudflow Application CR.")
+  val baseDockerInstructions =
+    taskKey[Seq[sbtdocker.Instruction]]("The list of instructions to build the dockerfile. Change them at your own risk.")
+  val extraDockerInstructions = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
+  val verifyBlueprint         = taskKey[Unit]("Verify Blueprint.")
+  val printAppGraph           = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
+  val build                   = taskKey[Unit]("Build the image.")
+  val buildAndPublish         = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
+  val runLocal                = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
+  val buildApp                = taskKey[Unit]("Build the Cloudflow Application CR.")
 
   private[sbt] val buildAndPublishImage =
     taskKey[(ImageRef, Map[String, StreamletDescriptor])]("Build and publish a project image.")

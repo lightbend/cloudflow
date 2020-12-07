@@ -4,7 +4,6 @@ lazy val helloWorld =  (project in file("."))
       scalaVersion := "2.12.11",
       name := "hello-world",
       version := "0.0.1",
-      cloudflowFlinkBaseImage := Some("lightbend/flink:2.0.10-cloudflow-flink-1.10.0-scala-2.12"),
 
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"

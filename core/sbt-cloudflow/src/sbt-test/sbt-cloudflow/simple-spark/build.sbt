@@ -1,5 +1,5 @@
 lazy val helloWorld =  (project in file("."))
-    .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
+    .enablePlugins(CloudflowApplicationPlugin, CloudflowSparkPlugin)
     .settings(
       scalaVersion := "2.12.11",
       name := "hello-world",

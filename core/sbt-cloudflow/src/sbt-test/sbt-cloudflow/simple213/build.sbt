@@ -4,7 +4,6 @@ lazy val helloWorld =  (project in file("."))
       scalaVersion := "2.13.3",
       name := "hello-world",
       version := "0.0.1",
-      cloudflowAkkaBaseImage := Some("lightbend/akka-base:2.0.10-cloudflow-akka-2.6.9-scala-2.12"),
 
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"

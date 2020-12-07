@@ -20,14 +20,13 @@ import sbt._
 import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
+import sbtdocker.Instructions
+import sbtdocker.staging.CopyFile
 import com.typesafe.sbt.packager.Keys._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
 object CloudflowFlinkPlugin extends AutoPlugin {
-  final val FlinkVersion = "1.10.0"
-  final def cloudflowFlinkDockerBaseImage(version: String) =
-    s"lightbend/flink:${version}-cloudflow-flink-$FlinkVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -45,6 +44,10 @@ object CloudflowFlinkPlugin extends AutoPlugin {
 
             val appJarDir = new File(stagingDir, AppJarsDir)
             val depJarDir = new File(stagingDir, DepJarsDir)
+
+            IO.delete(appJarDir)
+            IO.delete(depJarDir)
+
             projectJars.foreach { jar =>
               IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
@@ -53,24 +56,122 @@ object CloudflowFlinkPlugin extends AutoPlugin {
             }
           }
         }.value,
-    dockerfile in docker := {
-      // this triggers side-effects, e.g. files being created in the staging area
-      cloudflowStageAppJars.value
-
+    baseDockerInstructions := {
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
-      new Dockerfile {
-        from(cloudflowFlinkBaseImage.value.getOrElse(cloudflowFlinkDockerBaseImage((ThisProject / cloudflowVersion).value)))
-        user(UserInImage)
 
-        copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-        copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-        addInstructions(extraDockerInstructions.value)
-        runRaw(
+      val configSh = (ThisProject / target).value / "cloudflow" / "flink" / "config.sh"
+      IO.write(configSh, configShContent)
+
+      val flinkConsole = (ThisProject / target).value / "cloudflow" / "flink" / "flink-console.sh"
+      IO.write(flinkConsole, flinkConsoleContent)
+
+      val flinkEntrypoint = (ThisProject / target).value / "cloudflow" / "flink" / "flink-entrypoint.sh"
+      IO.write(flinkEntrypoint, flinkEntrypointContent)
+
+      val scalaVersion = (ThisProject / scalaBinaryVersion).value
+      val flinkVersion = "1.10.0"
+      val flinkHome    = "/opt/flink"
+
+      val flinkTgz    = s"lightbend-flink-${flinkVersion}.tgz"
+      val flinkTgzUrl = s"https://github.com/lightbend/flink/releases/download/v$flinkVersion-lightbend/$flinkTgz"
+
+      Seq(
+        Instructions.Env("FLINK_VERSION", flinkVersion),
+        Instructions.Env("SCALA_VERSION", scalaVersion),
+        Instructions.Env("FLINK_HOME", flinkHome),
+        Instructions.User("root"),
+        Instructions.Copy(CopyFile(flinkEntrypoint), "/opt/flink-entrypoint.sh"),
+        Instructions.Copy(CopyFile(configSh), "/tmp/config.sh"),
+        Instructions.Copy(CopyFile(flinkConsole), "/tmp/flink-console.sh"),
+        Instructions.Run.shell(
+          Seq(
+            Seq("apk", "add", "curl", "wget", "bash", "snappy-dev", "gettext-dev"),
+            Seq("wget", flinkTgzUrl),
+            Seq("tar", "-xvzf", flinkTgz),
+            Seq("mv", s"flink-${flinkVersion}", flinkHome),
+            Seq("rm", flinkTgz),
+            Seq("cp", "/tmp/config.sh", s"${flinkHome}/bin/config.sh"),
+            Seq("cp", "/tmp/flink-console.sh", s"${flinkHome}/bin/flink-console.sh"),
+            Seq("addgroup", "-S", "-g", "9999", "flink"),
+            Seq("adduser", "-S", "-h", flinkHome, "-u", "9999", "flink", "flink"),
+            Seq("addgroup", "-S", "-g", "185", "cloudflow"),
+            Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "root"),
+            Seq("adduser", "cloudflow", "cloudflow"),
+            Seq("rm", "-rf", "/var/lib/apt/lists/*"),
+            Seq("chown", "-R", "flink:flink", "/var"),
+            Seq("chown", "-R", "flink:root", "/usr/local"),
+            Seq("chmod", "775", "/usr/local"),
+            Seq("mkdir", s"${flinkHome}/flink-web-upload"),
+            Seq("mv", s"${flinkHome}/opt/flink-queryable-state-runtime_${scalaVersion}-${flinkVersion}.jar", s"${flinkHome}/lib"),
+            Seq("mkdir", "-p", "/prometheus"),
+            Seq(
+              "curl",
+              "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
+              "-o",
+              "/prometheus/jmx_prometheus_javaagent.jar"
+            ),
+            Seq("chmod", "-R", "777", flinkHome),
+            Seq("chmod", "a+x", s"${flinkHome}/bin/config.sh"),
+            Seq("chmod", "777", s"${flinkHome}/bin/flink-console.sh"),
+            Seq("chown", "501:dialout", s"${flinkHome}/bin/flink-console.sh"),
+            Seq("chmod", "a+x", "/opt/flink-entrypoint.sh")
+          ).reduce(_ ++ Seq("&&") ++ _)
+        ),
+        Instructions.EntryPoint.exec(Seq("bash", "/opt/flink-entrypoint.sh")),
+        Instructions.User(UserInImage),
+        Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Run(
           s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}*.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
         )
+      )
+    },
+    dockerfile in docker := {
+      val log = streams.value.log
+
+      IO.delete(((ThisProject / target).value / "docker"))
+
+      // this triggers side-effects, e.g. files being created in the staging area
+      cloudflowStageAppJars.value
+
+      cloudflowFlinkBaseImage.value match {
+        case Some(baseImage) =>
+          log.warn("'cloudflowFlinkBaseImage' is defined, 'cloudflowDockerBaseImage' setting is going to be ignored")
+
+          val appDir: File     = stage.value
+          val appJarsDir: File = new File(appDir, AppJarsDir)
+          val depJarsDir: File = new File(appDir, DepJarsDir)
+
+          new Dockerfile {
+            from(baseImage)
+            user(UserInImage)
+
+            copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+            copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+            addInstructions(extraDockerInstructions.value)
+            runRaw(
+              s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}*.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
+            )
+          }
+        case _ =>
+          new Dockerfile {
+            from(cloudflowDockerBaseImage.value)
+            addInstructions((ThisProject / baseDockerInstructions).value)
+            addInstructions((ThisProject / extraDockerInstructions).value)
+          }
       }
     }
   )
+
+  private lazy val configShContent =
+    scala.io.Source.fromResource("runtimes/flink/config.sh", getClass().getClassLoader()).getLines.mkString("\n")
+
+  private lazy val flinkConsoleContent =
+    scala.io.Source.fromResource("runtimes/flink/flink-console.sh", getClass().getClassLoader()).getLines.mkString("\n")
+
+  private lazy val flinkEntrypointContent =
+    scala.io.Source.fromResource("runtimes/flink/flink-entrypoint.sh", getClass().getClassLoader()).getLines.mkString("\n")
+
 }
