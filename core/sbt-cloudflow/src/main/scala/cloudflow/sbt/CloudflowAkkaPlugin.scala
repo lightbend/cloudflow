@@ -68,23 +68,25 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
       Seq(
         Instructions.User("root"),
-        Instructions.Run.exec(Seq("apk", "add", "bash", "curl")),
-        Instructions.Run.exec(Seq("mkdir", "-p", "/home/cloudflow")),
-        Instructions.Run.exec(Seq("mkdir", "-p", "/opt")),
-        Instructions.Run.exec(Seq("addgroup", "-g", "185", "-S", "cloudflow")),
-        Instructions.Run.exec(Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "cloudflow")),
-        Instructions.Run.exec(Seq("adduser", "cloudflow", "root")),
-        Instructions.Run.exec(Seq("mkdir", "-p", "/prometheus")),
-        Instructions.Run.exec(
-          Seq(
-            "curl",
-            "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
-            "-o",
-            "/prometheus/jmx_prometheus_javaagent.jar"
-          )
-        ),
         Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
-        Instructions.Run.exec(Seq("chmod", "a+x", "/opt/akka-entrypoint.sh")),
+        Instructions.Run.shell(
+          Seq(
+            Seq("apk", "add", "bash", "curl"),
+            Seq("mkdir", "-p", "/home/cloudflow"),
+            Seq("mkdir", "-p", "/opt"),
+            Seq("addgroup", "-g", "185", "-S", "cloudflow"),
+            Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "cloudflow"),
+            Seq("adduser", "cloudflow", "root"),
+            Seq("mkdir", "-p", "/prometheus"),
+            Seq(
+              "curl",
+              "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
+              "-o",
+              "/prometheus/jmx_prometheus_javaagent.jar"
+            ),
+            Seq("chmod", "a+x", "/opt/akka-entrypoint.sh")
+          ).reduce(_ ++ Seq("&&") ++ _)
+        ),
         Instructions.User(UserInImage),
         Instructions.EntryPoint.exec(Seq("bash", "/opt/akka-entrypoint.sh")),
         Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
