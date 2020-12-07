@@ -70,4 +70,4 @@ if [[ ${JAVA_VERSION} =~ ${IS_NUMBER} ]]; then
 fi
 
 echo "Starting $SERVICE as a console application on host $HOSTNAME."
-exec $JAVA_RUN $JVM_ARGS ${FLINK_ENV_JAVA_OPTS} "${log_setting[@]}" -classpath "`manglePathList "$FLINK_TM_CLASSPATH:$INTERNAL_HADOOP_CLASSPATHS"`" ${CLASS_TO_RUN} "${ARGS[@]}"
+exec $JAVA_RUN $JVM_ARGS "${log_setting[@]}" ${FLINK_ENV_JAVA_OPTS} -classpath "`manglePathList "$FLINK_TM_CLASSPATH:$INTERNAL_HADOOP_CLASSPATHS"`" ${CLASS_TO_RUN} "${ARGS[@]}"
