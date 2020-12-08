@@ -69,6 +69,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
         copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
         addInstructions(extraDockerInstructions.value)
+        expose(5005)
       }
     }
   )
