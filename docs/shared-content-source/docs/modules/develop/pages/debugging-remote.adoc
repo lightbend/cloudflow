@@ -3,23 +3,23 @@
 include::ROOT:partial$include.adoc[]
 
 
-Debugging a remote application is possible just by applying the Configuration model and the tipical configuration to debugging remote a JVM. We only need to add to the to JAVA_OPTS 
+Debugging a remote application is possible just by applying the https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html#Invocation[standard] configuration to debugging a remote JVM. That is, adding this conf to JAVA_OPTS through our xref:cloudflow-configuration.adoc[configuration model]. 
 	
 	-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n
 
 
-NOTE: the address can't be changed. It shall be 5005.
+NOTE: the address can NOT be changed. It shall remain 5005.
 
-As we've seen in the Configuration model adding these parameters to JAVA_OPTS can be done at streamlet level or runtime level. In this example we are adding it to all akka streamlets. That is akka runtime 
+As we've seen in the Configuration model, adding these parameters to JAVA_OPTS can be done at streamlet level or runtime level. In this example we are adding it to all akka streamlets. That is, the akka runtime 
 
- [source, hocon]
+[source, hocon]
 ----
 cloudflow.akka.runtime {
   kubernetes.pods.pod {
     containers.container {
       env = [ 
             { name = "JAVA_OPTS" 
-              value = "-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n"
+              value = "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
             }
           ]
     }
@@ -27,13 +27,19 @@ cloudflow.akka.runtime {
 }
 ----
 
-Once this is done and the application is deploy we'll need two things. Adding a remote configuration in the IDE of our choice and 'port-forward' with kubernetes from our local to the selected streamlet.
+Once this is added and the application is deployed we'll need to do two things. 
 
-When adding a remote Run/Debug configuration we shall make sure that it has as arguments for the remote JVM.
+
+1. Adding a remote configuration in the IDE of our choice. When adding a remote Run/Debug configuration we have to make sure that it has this arguments for the remote JVM.
 	
 	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 
-Also this remote configuration shall point to 'localhost' in the port of our choice. Let's say we pick 5004 and our application is called 'example-application'. Then we will need to port-forward like the following:
+ Also this remote configuration shall point to 'localhost' in the port of our choice. 
 
-	kubectl port-forward pod/[some-akka-streamlet-pod-name] 5004:5005 -n example-application	
+2. Kubernetes port forwarding from our local to the selected streamlet. Let's say we also picked port 5005 in the IDE and our application is called 'example-application'. Then we will need to port-forward like the following:
+
+	kubectl port-forward pod/[some-akka-streamlet-pod-name] 5005:5005 -n example-application	
+
+
+	Try with agentlib and no asterisk
 
