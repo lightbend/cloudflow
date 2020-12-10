@@ -69,7 +69,7 @@ func Undeploy(app App) error {
 
 // Scale changes the scale factor of a streamlet in an app
 func Scale(app App, streamlet string, scale int) error {
-	cmd := exec.Command("kubectl", "cloudflow", "scale", app.Name, streamlet, strconv.Itoa(scale))
+	cmd := exec.Command("kubectl", "cloudflow", "scale", app.Name, streamlet+"="+strconv.Itoa(scale))
 	out, err := cmd.CombinedOutput()
 	logOutputIfFailure("scale", out, err)
 	return err

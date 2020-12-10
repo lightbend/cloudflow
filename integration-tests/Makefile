@@ -24,8 +24,8 @@ prepare-swiss-knife:
 .PHONY: prepare-itest-osx
 prepare-itest-osx:
 	@echo '****** Download and unpack kubectl-cloudflow plugin'
-	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"${version}.\") )'"))
-	(wget https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-${bintray_version}-darwin-amd64.tar.gz -O kubectl_cloudflow.tar.gz && \
+	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow2 | jq -r '.versions[] | select( . | startswith(\"cloudflow_v${version}\") )'"))
+	(wget https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow2-${bintray_version}-darwin-amd64.tar.gz -O kubectl_cloudflow.tar.gz && \
 		tar -zxf kubectl_cloudflow.tar.gz --directory itest && \
 		xattr -d com.apple.quarantine itest/kubectl-cloudflow | true)
 
@@ -65,9 +65,9 @@ prepare-cluster:
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** Creating namspace and PVCs for Swiss-knife'
-	kubectl create namespace swiss-knife
-	kubectl create -f itest/resources/spark-pvc.yaml -n swiss-knife
-	kubectl create -f itest/resources/flink-pvc.yaml -n swiss-knife
+	kubectl create namespace swiss-knife | true
+	kubectl create -f itest/resources/spark-pvc.yaml -n swiss-knife | true
+	kubectl create -f itest/resources/flink-pvc.yaml -n swiss-knife | true
 	@echo '****** The cluster is ready for integration tests!'
 
 .PHONY: spawn-gke-cluster
@@ -88,4 +88,4 @@ delete-gke-cluster:
 run-it-tests:
 	@echo '****** Run Integration Tests'
 	PATH=$$PWD/itest:$$PATH kubectl cloudflow version
-	(export PATH=$$PWD/itest:$$PATH && cd itest && ginkgo -v)
+	(export PATH=$$PWD/itest:$$PATH && export KUBECTL_CLOUDFLOW_OUTPUT_FORMAT=classic && cd itest && ginkgo -v)
