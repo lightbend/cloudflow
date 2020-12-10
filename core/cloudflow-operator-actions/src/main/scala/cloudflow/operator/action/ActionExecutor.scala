@@ -39,7 +39,7 @@ trait ActionExecutor {
    */
   def execute(actions: Seq[Action]): Future[Seq[Action]] = {
     implicit val ec = executionContext
-    Future.sequence(actions.map(execute))
+    Future.foldLeft(actions.map(execute))(Seq[Action]())((prev, n) => prev :+ n)
   }
 }
 

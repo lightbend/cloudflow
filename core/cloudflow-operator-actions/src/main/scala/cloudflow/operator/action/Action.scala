@@ -413,7 +413,7 @@ final case class CompositeAction[T <: ObjectResource](
   override def execute(
       client: RequestContext
   )(implicit sys: ActorSystem, ec: ExecutionContext, lc: LoggingContext): Future[Action] =
-    Future.sequence(actions.map(_.execute(client))).map(_ => this)
+    Future.foldLeft(actions.map(_.execute(client)))(Seq[Action]())((prev, n) => prev :+ n).map(_ => this)
 }
 
 final class ProvidedAction[T <: ObjectResource](
