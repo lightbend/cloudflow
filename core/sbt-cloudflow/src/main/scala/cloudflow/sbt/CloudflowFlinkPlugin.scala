@@ -123,7 +123,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         Instructions.User(UserInImage),
         Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
         Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
-        Instructions.Expose(Seq(5005))
+        Instructions.Expose(Seq(5005)),
         Instructions.Run(
           s"cp ${OptAppDir}cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}*.jar  /opt/flink/flink-web-upload/cloudflow-runner.jar"
         )

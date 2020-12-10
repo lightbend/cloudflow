@@ -90,9 +90,8 @@ object CloudflowAkkaPlugin extends AutoPlugin {
         Instructions.User(UserInImage),
         Instructions.EntryPoint.exec(Seq("bash", "/opt/akka-entrypoint.sh")),
         Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
-        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage)))
+        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
         Instructions.Expose(Seq(5005))
-
       )
     },
     dockerfile in docker := {
