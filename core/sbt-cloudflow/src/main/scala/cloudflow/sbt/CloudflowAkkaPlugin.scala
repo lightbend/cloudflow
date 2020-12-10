@@ -20,15 +20,14 @@ import sbt._
 import sbt.Keys._
 import sbtdocker._
 import sbtdocker.DockerKeys._
+import sbtdocker.Instructions
+import sbtdocker.staging.CopyFile
 import com.typesafe.sbt.packager.Keys._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 import java.io.File
 
 object CloudflowAkkaPlugin extends AutoPlugin {
-  final val AkkaVersion = "2.6.9"
-  final def akkaDockerBaseImage(version: String) =
-    s"lightbend/akka-base:${version}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}"
 
   override def requires = CloudflowBasePlugin
 
@@ -47,6 +46,10 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
             val appJarDir = new File(stagingDir, AppJarsDir)
             val depJarDir = new File(stagingDir, DepJarsDir)
+
+            IO.delete(appJarDir)
+            IO.delete(depJarDir)
+
             projectJars.foreach { jar =>
               IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
@@ -55,22 +58,75 @@ object CloudflowAkkaPlugin extends AutoPlugin {
             }
           }
         }.value,
-    dockerfile in docker := {
-      // this triggers side-effects, e.g. files being created in the staging area
-      cloudflowStageAppJars.value
-
+    baseDockerInstructions := {
       val appDir: File     = stage.value
       val appJarsDir: File = new File(appDir, AppJarsDir)
       val depJarsDir: File = new File(appDir, DepJarsDir)
 
-      new Dockerfile {
-        from(cloudflowAkkaBaseImage.value.getOrElse(akkaDockerBaseImage((ThisProject / cloudflowVersion).value)))
-        user(UserInImage)
-        copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-        copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-        addInstructions(extraDockerInstructions.value)
-        expose(5005)
+      val akkaEntrypointFile = (ThisProject / target).value / "cloudflow" / "akka" / "akka-entrypoint.sh"
+      IO.write(akkaEntrypointFile, akkaEntrypointContent)
+
+      Seq(
+        Instructions.User("root"),
+        Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
+        Instructions.Run.shell(
+          Seq(
+            Seq("apk", "add", "bash", "curl"),
+            Seq("mkdir", "-p", "/home/cloudflow"),
+            Seq("mkdir", "-p", "/opt"),
+            Seq("addgroup", "-g", "185", "-S", "cloudflow"),
+            Seq("adduser", "-u", "185", "-S", "-h", "/home/cloudflow", "-s", "/sbin/nologin", "cloudflow", "cloudflow"),
+            Seq("adduser", "cloudflow", "root"),
+            Seq("mkdir", "-p", "/prometheus"),
+            Seq(
+              "curl",
+              "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
+              "-o",
+              "/prometheus/jmx_prometheus_javaagent.jar"
+            ),
+            Seq("chmod", "a+x", "/opt/akka-entrypoint.sh")
+          ).reduce(_ ++ Seq("&&") ++ _)
+        ),
+        Instructions.User(UserInImage),
+        Instructions.EntryPoint.exec(Seq("bash", "/opt/akka-entrypoint.sh")),
+        Instructions.Copy(sources = Seq(CopyFile(depJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))),
+        Instructions.Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage)))
+        Instructions.Expose(Seq(5005))
+
+      )
+    },
+    dockerfile in docker := {
+      val log = streams.value.log
+
+      // this triggers side-effects, e.g. files being created in the staging area
+      cloudflowStageAppJars.value
+
+      cloudflowAkkaBaseImage.value match {
+        case Some(baseImage) =>
+          log.warn("'cloudflowAkkaBaseImage' is defined, 'cloudflowDockerBaseImage' setting is going to be ignored")
+
+          val appDir: File     = stage.value
+          val appJarsDir: File = new File(appDir, AppJarsDir)
+          val depJarsDir: File = new File(appDir, DepJarsDir)
+
+          new Dockerfile {
+            from(baseImage)
+            user(UserInImage)
+            copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+            copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
+            addInstructions(extraDockerInstructions.value)
+          }
+        case _ =>
+          new Dockerfile {
+            from(cloudflowDockerBaseImage.value)
+            addInstructions((ThisProject / baseDockerInstructions).value)
+            addInstructions((ThisProject / extraDockerInstructions).value)
+          }
       }
     }
   )
+
+  private lazy val akkaEntrypointContent: String =
+    scala.io.Source.fromResource("runtimes/akka/akka-entrypoint.sh", getClass().getClassLoader()).getLines.mkString("\n")
+
 }
