@@ -36,6 +36,6 @@ Once this is added and the application is deployed we'll need to do two things.
 
  Also, this remote configuration shall point to 'localhost' in the port of our choice. 
 
-2. Kubernetes port forwarding from our local to the selected streamlet. Let's say the port of our choice in the IDE is 5005 and our application is called 'example-application'. Then we will need to port forwarding like the following:
+2. Port-forward from our local to the selected streamlet in the Kubernetes cluster. Let's say the port of our choice in the IDE is 5005 and our application is called 'example-application'. Then we will need to port-forward like in the following example:
 
 	kubectl port-forward pod/[some-akka-streamlet-pod-name] 5005:5005 -n example-application	
