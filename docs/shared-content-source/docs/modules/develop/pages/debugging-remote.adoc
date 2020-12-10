@@ -30,7 +30,7 @@ cloudflow.akka.runtime {
 Once this is added and the application is deployed we'll need to do two things. 
 
 
-1. Adding a remote configuration in the IDE of our choice. When adding this remote Run/Debug configuration we have to make sure that it has these arguments for the remote JVM.
+1. Add a remote configuration in the IDE of our choice. When adding this remote Run/Debug configuration we have to make sure that it has these arguments for the remote JVM.
 	
 	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
 
