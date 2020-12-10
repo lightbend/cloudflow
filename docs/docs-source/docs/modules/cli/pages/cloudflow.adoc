@@ -1,26 +1,124 @@
-= cloudflow
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
-
-Create, manage, deploy, and operate Cloudflow applications.
-
-== Synopsis
-
-This command line tool can be used to deploy and operate Cloudflow applications.
-
+= kubectl-cloudflow
+== Usage: 
 [source,bash]
 ----
--h, --help   help for cloudflow
+kubectl-cloudflow [ version | list | status | deploy | undeploy | update-docker-credentials | scale | configure ] [options] <args>...
 ----
 
-== SEE ALSO
+ * ``  -v, --log-level <value>  ``the logging level
+ * ``  --kube-config <value>    ``the kubernetes configuration file
+ * ``  --help                   ``prints this usage text
 
-* <<cloudflow_configure.adoc#,kubectl cloudflow configure>> - Configures a deployed Cloudflow application.
-* <<cloudflow_deploy.adoc#,kubectl cloudflow deploy>> - Deploys a Cloudflow application to the cluster.
-* <<cloudflow_list.adoc#,kubectl cloudflow list>> - Lists deployed Cloudflow application in the current cluster.
-* <<cloudflow_scale.adoc#,kubectl cloudflow scale>> - Scales a streamlet of a deployed Cloudflow application to the specified number of replicas.
-* <<cloudflow_status.adoc#,kubectl cloudflow status>> - Gets the status of a Cloudflow application.
-* <<cloudflow_undeploy.adoc#,kubectl cloudflow undeploy>> - Undeploys a Cloudflow application.
-* <<cloudflow_update-docker-credentials.adoc#,kubectl cloudflow update-docker-credentials>> - Updates docker registry credentials that are used to pull Cloudflow application images.
-* <<cloudflow_version.adoc#,kubectl cloudflow version>> - Prints the plugin version.
+
+
+== Command: version
+[source,bash]
+----
+version [options]
+----
+
+=== Synopsis
+show the current version
+
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: list
+[source,bash]
+----
+list [options]
+----
+
+=== Synopsis
+list available cloudflow applications
+
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: status
+[source,bash]
+----
+status [options] <cloudflowApp>
+----
+
+=== Synopsis
+show the status of a cloudflow application
+
+ * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: deploy
+[source,bash]
+----
+deploy [options] <crFile> [config-key]
+----
+
+=== Synopsis
+deploy a cloudflow applications from a cr file
+
+ * ``  --help                   ``detailed deploy command help
+ * ``  <crFile>                 ``the CR file of the cloudflow application
+ * ``  -u, --username <value>   ``the docker registry username
+ * ``  -p, --password <value>   ``the docker registry password
+ * ``  --password-stdin         ``Take the docker registry password from std-in
+ * ``  --no-registry-credentials
+                           ``No need for registry credentials (e.g. already in the cluster)
+ * ``  --volume-mount <value>   ``Key/value pairs of the volume mounts
+ * ``  --scale <value>          ``Key/value pairs of streamlets replicas
+ * ``  --conf <value>           ``the configuration file/s in HOCON format
+ * ``  config-key               ``the configuration keys for the overrides
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: undeploy
+[source,bash]
+----
+undeploy [options] <cloudflowApp>
+----
+
+=== Synopsis
+undeploy a cloudflow application
+
+ * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: update-docker-credentials
+[source,bash]
+----
+update-docker-credentials [options] <cloudflowApp> <dockerRegistry>
+----
+
+=== Synopsis
+updates docker registry credentials that are used to pull Cloudflow application images.
+
+ * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  <dockerRegistry>         ``the name of the docker registry
+ * ``  -u, --username <value>   ``the docker registry username
+ * ``  -p, --password <value>   ``the docker registry password
+ * ``  --password-stdin         ``Take the docker registry password from std-in
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: scale
+[source,bash]
+----
+scale [options] <cloudflowApp> [<streamlet>=<replicas>]
+----
+
+=== Synopsis
+scales a streamlet of a deployed Cloudflow application to the specified number of replicas
+
+ * ``  <cloudflowApp>           ``the cloudflow application
+ * ``  <streamlet>=<replicas>   ``Key/value pairs of streamlets replicas
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+
+== Command: configure
+[source,bash]
+----
+configure [options] <cloudflowApp> [config-key]
+----
+
+=== Synopsis
+configures a deployed cloudflow application
+
+ * ``  --help                   ``detailed configure command help
+ * ``  <cloudflowApp>           ``the cloudflow application
+ * ``  --conf <value>           ``the configuration file/s in HOCON format
+ * ``  config-key               ``the configuration keys for the overrides
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json

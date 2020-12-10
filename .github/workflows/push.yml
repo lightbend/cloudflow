@@ -43,42 +43,6 @@ jobs:
         cd scripts
         ./build-all.sh +test
 
-
-  build-and-test-cli:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-
-    - name: Set up Go
-      uses: actions/setup-go@v2.1.3
-      with:
-        go-version: 1.14.2
-      id: go
-
-    - uses: actions/cache@v1
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Check code format
-      run: |
-        cd kubectl-cloudflow
-        if [[ $(go fmt ./...) ]]; then
-          echo "go fmt check failed"
-          exit 1
-        else
-          echo "go fmt check success"
-        fi
-
-    - name: Build
-      run: |
-        set -e
-        cd kubectl-cloudflow
-        make test
-
   build-and-test-integration-tests:
     runs-on: ubuntu-latest
     steps:
