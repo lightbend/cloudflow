@@ -12,7 +12,7 @@ The missing part here is persistence. While Flink implementation provides automa
 requires implementation of an explicit persistence support, which is not currently supported
 by Cloudflow (but can be easily added manually).
 
-Main flow of Flink implementation is very elegant and rasy to read   
+Main flow of Flink implementation is very elegant and easy to read:
 ````
       val rides: DataStream[TaxiRide] =
         readStream(inTaxiRide)
