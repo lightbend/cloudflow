@@ -34,5 +34,6 @@ object ByteArrayInlet {
   // Java API
   def create(name: String): ByteArrayInlet = ByteArrayInlet(name)
 
+  // Java API
   def create(name: String, hasUniqueGroupId: Boolean): ByteArrayInlet = ByteArrayInlet(name, hasUniqueGroupId)
 }
