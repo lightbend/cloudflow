@@ -61,7 +61,7 @@ On the other hand, Flink uses a static topology for applications, which means th
 application restarts, while in the case of Akka, adding additional instance can be done without 
 any restarts.
 
-The interesting feature of this example, is that the keys `rideID` do not belong to a fix set,
+The interesting feature of this example, is that the keys `rideID` do not belong to a fixed set,
 but rather change all the time. As a result Akka implementation creates and deletes actors
 all the time. FLink alleviates this problem by using keys sharding - using a single implementation
 (actor, in Akka terms) for a set of keys.
