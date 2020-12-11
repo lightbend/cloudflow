@@ -1,9 +1,9 @@
-# Docker image containing Antora and the tools used to generate the doc
+Docker image containing Antora and the tools used to generate the doc
 
 ## Build the image
 
 ```
-docker build -t lighbend/antora-doc:<version> .
+docker build . -t lightbend/antora-cloudflow-doc:<version>
 ```
 
 ## Publish the image
@@ -11,7 +11,5 @@ docker build -t lighbend/antora-doc:<version> .
 Login as `lightbend` on docker. Credentials available in keybase.
 
 ```
-docker push lighbend/antora-doc:<version>
+docker push lightbend/antora-cloudflow-doc:<version>
 ```
-
-Note: Only contributors with access to the Lightbend credentials are able to publish this image.
