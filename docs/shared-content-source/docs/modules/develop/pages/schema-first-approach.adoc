@@ -123,7 +123,7 @@ NOTE: ByteArray inlets and outlets are not intended for intra streamlets communi
 be used for Kafka-based integration with existing applications supporting proprietary message formats,
 for example JSON
 
-ByteArray inlets and outlets use byte arrays for sending and recieving messages from Kafka and as a
+ByteArray inlets and outlets use byte arrays for sending and receiving messages from Kafka and as a
 result require streamlets implementation to implement marshalling/unmarshalling as part of the application code.
 
 == Outlets and the partitioning function
