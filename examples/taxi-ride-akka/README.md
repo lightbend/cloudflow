@@ -57,7 +57,7 @@ Here, `keyBy` is implemented through actor selection - we are using`rideId` is t
 So the implementation provides the same functionality (except for automatic persistence, 
 which can be easily added), but with less user friendly syntax. Flink's implementation hides
 all of the sharding details by usage of `keyBy`.
-On another hand, FLink uses static topology for applications, which means that scaling requires
+On the other hand, Flink uses a static topology for applications, which means that scaling requires
 application restarts, while in the case of Akka, adding additional instance can be done without 
 any restarts.
 
