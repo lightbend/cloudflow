@@ -6,7 +6,7 @@ The implementation combines two streams `TaxiRide` and `TaxiFare` and for each r
 a fare for a given ride. 
 
 In the case of Flink we used `RichCoFlatMapFunction` to combine the two streams, here
-we are using `RideShare` actor for the same purpose. If we compare implementation of the actor 
+we are using a `RideShare` actor for the same purpose. If we the compare implementation of the actor 
 with the implementation of Flink's `RichCoFlatMapFunction`, we will see that they are very similar.
 The missing part here is persistence. While Flink implementation provides automatic snapshotting, Akka
 requires implementation of an explicit persistence support, which is not currently supported
