@@ -63,7 +63,7 @@ any restarts.
 
 The interesting feature of this example, is that the keys `rideID` do not belong to a fixed set,
 but rather change all the time. As a result Akka implementation creates and deletes actors
-all the time. FLink alleviates this problem by using keys sharding - using a single implementation
+all the time. Flink alleviates this problem by using keys sharding - using a single implementation
 (actor, in Akka terms) for a set of keys.
 
 We can mimic the same functionality in Akka streams. To do this lets remember, that cloudflow
