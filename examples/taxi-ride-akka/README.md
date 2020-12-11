@@ -70,7 +70,7 @@ We can mimic the same functionality in Akka streams. To do this lets remember, t
 is leveraging [Kafka aware sharding](https://doc.akka.io/docs/alpakka-kafka/current/cluster-sharding.html),
 which means that each instance processes a set of partitions from the topic. In the case of scaling,
 the partition as a whole can be moved to a different instance, but can not be split.
-This means that we can use actors based on partitions to avoid constant acters creation and deletion.
+This means that we can use actors based on partitions to avoid constant actor creation and deletion.
 
 To achieve this we need to make several changes to our implementation.
 
