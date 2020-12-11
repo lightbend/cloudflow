@@ -3,7 +3,7 @@
 This example demonstrates how the `taxi-ride` application, initially implemented in Flink, can be implemented using Akka.
 
 The implementation combines two streams `TaxiRide` and `TaxiFare` and for each rideID calculates
-a fare for a given ride 
+a fare for a given ride. 
 
 In the case of Flink we used `RichCoFlatMapFunction` to combine the two streams, here
 we are using `RideShare` actor for the same purpose. If we compare implementation of the actor 
