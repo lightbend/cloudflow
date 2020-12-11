@@ -43,7 +43,7 @@ Akka implementation provides the same functionality, with the following code:
 ````
 Note that here there is no explicit `keyBy` (we will discuss it later). 
 Unlike Flink implementation, where streams are connected before invoking, in the case of
-Akka, we process each stream independantly and then merge results afterwards.
+Akka, we process each stream independently and then merge results afterwards.
 Finally individual flow looks like following:
 
 ````
