@@ -1,6 +1,6 @@
 ## Akka implementation of taxi ride application
 
-This example demonstrates how `taxi-ride` application initially implemented in flink can be implemented using Akka.
+This example demonstrates how the `taxi-ride` application, initially implemented in Flink, can be implemented using Akka.
 
 The implementation combines two streams `TaxiRide` and `TaxiFare` and for each rideID calculates
 a fare for a given ride 
