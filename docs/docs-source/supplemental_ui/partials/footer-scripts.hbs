@@ -1,0 +1,8 @@
+<script src="{{uiRootPath}}/js/site.js"></script>
+<script src="{{uiRootPath}}/js/vendor/highlight.js"></script>
+<script src="{{uiRootPath}}/js/vendor/groups.js"></script>
+<script>hljs.initHighlighting()</script>
+{{#if (eq env.DOCSEARCH_ENGINE 'lunr')}}
+	<script src="{{uiRootPath}}/js/dist/search.min.js" id="search-script" data-base-path="{{or siteRootPath (or site.url siteRootUrl)}}" data-page-path="{{@root.page.url}}"></script>
+	<script async src="{{uiRootPath}}/../search-index.js"></script>
+{{/if}}

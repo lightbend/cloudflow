@@ -16,6 +16,8 @@ ui:
   bundle:
     url: https://github.com/lightbend/antora-ui-lightbend-cloud-theme/raw/master/build/ui-bundle.zip
     snapshot: true
+  default_layout: default
+  supplemental_files: ./supplemental_ui
 runtime:
   fetch: true
 asciidoc:

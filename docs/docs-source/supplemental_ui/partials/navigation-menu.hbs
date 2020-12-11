@@ -1,0 +1,12 @@
+{{#if page.navigation}}
+<div class="navigation-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+	{{#if env.DOCSEARCH_ENABLED}}
+  <div class="nav-panel-search">
+	  <input id="search-input" type="text" placeholder="Search Cloudflow">
+	</div>
+{{/if}}
+{{> navigation-tree navigation=page.navigation}}
+  </nav>
+</div>
+{{/if}}
