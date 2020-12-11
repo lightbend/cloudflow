@@ -81,7 +81,7 @@ leverages protobuf's [`oneof`](https://scalapb.github.io/docs/generated-code/#on
 we can use a single topic for both messages.
 * Default Kafka [partitioner](https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/producer/internals/DefaultPartitioner.java)
 uses a 32-bit murmur2 hash to compute the partition id based on the key (bytes and the amount of partition).
-If we assume that the defalt partitioner is used, we can implement key calculation as following:
+If we assume that the default partitioner is used, we can implement key calculation as following:
 ````
   def convertRideToPartition(rideID : Long) : String = {
     // hash the keyBytes to choose a partition
