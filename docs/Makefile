@@ -32,7 +32,7 @@ get-version:
 	# get latest tag
 	$(eval version=$(shell sh -c "git for-each-ref refs/tags --sort=-taggerdate --format='%(refname)' --count=1 | sed 's|refs/tags/v||'"))
 	# query bintray for the corresponding artifact version
-	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . | startswith(\"cloudflow_v${version}\") )'"))
+	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . == \"cloudflow_v${version}\")'"))
 
 set-antora-versions: get-version
 	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
