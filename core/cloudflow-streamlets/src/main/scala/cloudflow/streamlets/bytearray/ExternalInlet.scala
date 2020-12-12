@@ -23,9 +23,9 @@ case class ExternalInlet(
     hasUniqueGroupId: Boolean = false,
     errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] = CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable)
 ) extends CodecInlet[Array[Byte]] {
-  def codec                                                                                               = new ByteArrayCodec
-  def schemaDefinition                                                                                    = ByteArrayUtil.createSchemaDefinition()
-  def schemaAsString                                                                                      = ByteArrayUtil.schemaName
+  def codec                                                                                              = new ByteArrayCodec
+  def schemaDefinition                                                                                   = ByteArrayUtil.createSchemaDefinition()
+  def schemaAsString                                                                                     = ByteArrayUtil.schemaName
   def withUniqueGroupId: ExternalInlet                                                                   = copy(hasUniqueGroupId = true)
   override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ExternalInlet = copy(errorHandler = handler)
 }
