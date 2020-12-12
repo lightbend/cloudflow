@@ -18,7 +18,7 @@ package cloudflow.streamlets.bytearray
 
 import cloudflow.streamlets._
 
-case class ByteArrayInlet(
+case class ExternalInlet(
     name: String,
     hasUniqueGroupId: Boolean = false,
     errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] = CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable)
@@ -26,14 +26,14 @@ case class ByteArrayInlet(
   def codec                                                                                               = new ByteArrayCodec
   def schemaDefinition                                                                                    = ByteArrayUtil.createSchemaDefinition()
   def schemaAsString                                                                                      = ByteArrayUtil.schemaName
-  def withUniqueGroupId: ByteArrayInlet                                                                   = copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ByteArrayInlet = copy(errorHandler = handler)
+  def withUniqueGroupId: ExternalInlet                                                                   = copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ExternalInlet = copy(errorHandler = handler)
 }
 
-object ByteArrayInlet {
+object ExternalInlet {
   // Java API
-  def create(name: String): ByteArrayInlet = ByteArrayInlet(name)
+  def create(name: String): ExternalInlet = ExternalInlet(name)
 
   // Java API
-  def create(name: String, hasUniqueGroupId: Boolean): ByteArrayInlet = ByteArrayInlet(name, hasUniqueGroupId)
+  def create(name: String, hasUniqueGroupId: Boolean): ExternalInlet = ExternalInlet(name, hasUniqueGroupId)
 }
