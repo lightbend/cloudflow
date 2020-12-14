@@ -34,7 +34,7 @@ If you want to test Cloudflow and need a Kafka cluster, we recommend using Strim
 
 See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a guide on how to configure and install a Kafka cluster using Strimzi.
 
-For production make sure to choose a suitable Kafka solution from an upstream provider.
+Please make sure to choose a suitable Kafka service that matches your experience with running Kafka in production.
 
 == Storage requirements (for use with Spark or Flink)
 
@@ -74,6 +74,5 @@ standard (default)   kubernetes.io/gce-pd   2m57s
 ----
 
 NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
-
 
 
