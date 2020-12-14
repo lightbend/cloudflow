@@ -28,7 +28,7 @@ cloudflow.akka.runtime {
 Once this is added, and the application is deployed or configured, we'll need to do two things:
 
 
-1. Add a remote configuration in the IDE of our choice. This remote Run/Debug configuration for the remote JVM shall have the same arguments, except for the address, than those we set when deploy/configure the application. The address can be different because it belongs to the environment where the IDE is running, tipically will be local. We could set it like the following.
+1. Add a remote configuration in the IDE of our choice. This remote Run/Debug configuration for the remote JVM must have the same arguments, except for the address set in `JAVA_OPTS`. The address can be different because it belongs to the environment where the IDE is running, typically will be local. See the following for an example configuration:
 
 	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:4004
 
