@@ -92,14 +92,6 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
                 |    "key1" : "value1",
                 |    "key2" : "value2"
                 | }
-                | containers.container {
-                |  env = [
-                |    {
-                |      name = "FOO"
-                |      value = "BAR"
-                |    }
-                |   ]
-                |}
                 |}
                 """.stripMargin.getBytes()
           )
@@ -108,7 +100,41 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
 
       crd.spec.get.template.metadata.labels.get("key1") mustBe Some("value1")
       crd.spec.get.template.metadata.labels.get("key2") mustBe Some("value2")
+    }
 
+    "read from config custom ports and add them to the pod spec" in {
+
+      val crd = akkaRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+              |kubernetes.pods.pod {
+              |   containers.container {
+              |     ports = [1234,5678]
+              |     volume-mounts {
+              |       foo {
+              |         mount-path = "/etc/my/file"
+              |         read-only = true
+              |       },
+              |       bar {
+              |         mount-path = "/etc/mc/fly"
+              |         read-only =  false
+              |       }
+              |     }
+              |   }
+              |}
+                """.stripMargin.getBytes()
+          )
+        )
+      )
+      crd.spec.get.template.spec.get.containers.map { each =>
+      }
+      crd.spec.get.template.spec.get.containers.head.ports must contain allElementsOf
+        List(Container.Port(1234), Container.Port(5678))
     }
 
     "read from config custom secrets and mount them" in {

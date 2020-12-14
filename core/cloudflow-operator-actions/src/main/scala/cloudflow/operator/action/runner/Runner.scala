@@ -293,6 +293,24 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
+  def getPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] = {
+    println(s"###podsConfig  $podsConfig ##")
+
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        println(s"###podConfig $podConfig ##")
+
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.ports.map { port =>
+            Container.Port(port)
+          }
+        }
+      }
+      .getOrElse(List())
+  }
+
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
       .get(podName)
@@ -367,7 +385,8 @@ object PodsConfig {
     val env          = containerConfig.as[Option[List[EnvVar]]]("env")
     val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
     val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
-    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
+    val ports        = containerConfig.as[Option[List[Int]]]("ports")
+    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()), ports.getOrElse(List()))
   }
 
   implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config =>
@@ -488,5 +507,6 @@ final case class PodConfig(
 final case class ContainerConfig(
     env: List[EnvVar] = List(),
     resources: Option[Resource.Requirements] = None,
-    volumeMounts: List[Volume.Mount] = List()
+    volumeMounts: List[Volume.Mount] = List(),
+    ports: List[Int] = List()
 )
