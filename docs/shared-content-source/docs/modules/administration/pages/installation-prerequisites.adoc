@@ -30,9 +30,11 @@ The configuration string should have the following format:
 
 `broker-1-address:broker-1-port, broker-2-address;broker-2-port`
 
-If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi, a third-party Kafka operator that can create and manage Kafka clusters.
+If you want to test Cloudflow and need a Kafka cluster, we recommend using Strimzi during development, a third-party Kafka operator that can create and manage Kafka clusters.
 
 See xref:how-to-install-and-use-strimzi.adoc[Installing Kafka with Strimzi] as a guide on how to configure and install a Kafka cluster using Strimzi.
+
+For production make sure to choose a suitable Kafka solution from an upstream provider.
 
 == Storage requirements (for use with Spark or Flink)
 
