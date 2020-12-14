@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-NOTE: This setup is meant only for development purposes! For production make sure to choose a suitable Kafka solution from an upstream provider.
+NOTE: The setup provided here is meant only for development purposes. Using a managed Kafka service is a sensible choice if you are not already running Kafka in production.
 
 This guide shows how to install Strimzi and create a Kafka cluster suitable for use with Cloudflow.
 
