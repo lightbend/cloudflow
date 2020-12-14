@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: The setup provided here is meant only for development purposes. Using a managed Kafka service is a sensible choice if you are not already running Kafka in production.
+
 This guide shows how to install Strimzi and create a Kafka cluster suitable for use with Cloudflow.
 
 Strimzi is a Kubernetes operator that simplifies the process of running Apache Kafka.
