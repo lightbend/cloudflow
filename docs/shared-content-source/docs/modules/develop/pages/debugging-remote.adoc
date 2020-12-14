@@ -8,7 +8,7 @@ Debugging a remote application is possible just by applying the https://docs.ora
 	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
 
 
-As we've seen in the Configuration model, adding these parameters to JAVA_OPTS can be done at the Streamlet level or runtime level. In this example, we are adding it to all Akka streamlets. Meaning the Akka runtime 
+As we've seen in the Configuration model, adding these parameters to JAVA_OPTS can be done at the Streamlet level or runtime level. In this example, we are adding it to all Akka streamlets. 
 
 [source, hocon]
 ----
