@@ -293,15 +293,11 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
-  def getPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] = {
-    println(s"###podsConfig  $podsConfig ##")
-
+  def getPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
-        println(s"###podConfig $podConfig ##")
-
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
           containerConfig.ports.map { port =>
             Container.Port(port)
@@ -309,7 +305,6 @@ trait Runner[T <: ObjectResource] {
         }
       }
       .getOrElse(List())
-  }
 
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
