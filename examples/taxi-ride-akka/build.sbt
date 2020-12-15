@@ -1,6 +1,9 @@
 import sbt._
 import sbt.Keys._
-import cloudflow.sbt.CommonSettingsAndTasksPlugin._
+
+val akkaVersion     = "2.6.10"
+val jdbcVersion     = "4.0.0"
+val postgreVersion  = "42.2.16"
 
 lazy val root =
   Project(id = "root", base = file("."))
@@ -36,9 +39,14 @@ lazy val akkastreams =  (project in file("akkastreams"))
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.12",
-      "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
-      "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
+      "com.typesafe.akka"         %% "akka-persistence-typed"       % akkaVersion,
+      "com.typesafe.akka"         %% "akka-serialization-jackson"   % akkaVersion,
+      "com.typesafe.akka"         %% "akka-persistence-query"       % akkaVersion,
+      "com.lightbend.akka"        %% "akka-persistence-jdbc"        % jdbcVersion,
+      "org.postgresql"            % "postgresql"                    % postgreVersion,
+      "com.typesafe.akka"         %% "akka-http-spray-json"         % "10.1.12",
+      "ch.qos.logback"            %  "logback-classic"              % "1.2.3",
+      "org.scalatest"             %% "scalatest"                    % "3.0.8"       % "test"
     )
   )
   .dependsOn(datamodel)

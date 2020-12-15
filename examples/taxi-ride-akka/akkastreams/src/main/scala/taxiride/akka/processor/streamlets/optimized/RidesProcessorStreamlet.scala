@@ -1,4 +1,4 @@
-package taxiride.akka.processor.streamlets.singlemessage
+package taxiride.akka.processor.streamlets.optimized
 
 import java.util.Properties
 
@@ -11,7 +11,7 @@ import cloudflow.streamlets.proto._
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.utils.Utils
-import taxiride.akka.processor.actors.singlemessage._
+import taxiride.akka.processor.actors.optimized._
 import taxiride.datamodel._
 
 import scala.concurrent.duration._
