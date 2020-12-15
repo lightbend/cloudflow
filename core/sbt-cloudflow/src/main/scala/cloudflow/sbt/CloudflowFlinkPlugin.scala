@@ -81,6 +81,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         Instructions.Env("FLINK_VERSION", flinkVersion),
         Instructions.Env("SCALA_VERSION", scalaVersion),
         Instructions.Env("FLINK_HOME", flinkHome),
+        Instructions.Env("LOGBACK_CONFIG", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
         Instructions.User("root"),
         Instructions.Copy(CopyFile(flinkEntrypoint), "/opt/flink-entrypoint.sh"),
         Instructions.Copy(CopyFile(configSh), "/tmp/config.sh"),
@@ -94,6 +95,10 @@ object CloudflowFlinkPlugin extends AutoPlugin {
             Seq("rm", flinkTgz),
             Seq("cp", "/tmp/config.sh", s"${flinkHome}/bin/config.sh"),
             Seq("cp", "/tmp/flink-console.sh", s"${flinkHome}/bin/flink-console.sh"),
+            // logback configuration:
+            // https://ci.apache.org/projects/flink/flink-docs-stable/deployment/advanced/logging.html#configuring-logback
+            // logback is provided by the streamlet itself
+            Seq("rm", "/opt/flink/lib/log4j-slf4j-impl-2.12.1.jar"),
             Seq("addgroup", "-S", "-g", "9999", "flink"),
             Seq("adduser", "-S", "-h", flinkHome, "-u", "9999", "flink", "flink"),
             Seq("addgroup", "-S", "-g", "185", "cloudflow"),

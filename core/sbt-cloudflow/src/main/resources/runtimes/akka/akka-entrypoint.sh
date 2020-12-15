@@ -9,7 +9,7 @@ java_main="cloudflow.runner.Runner"
 agents="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
 
 # Java options
-java_opts="$agents $JAVA_OPTS"
+java_opts="$agents $LOGBACK_CONFIG $JAVA_OPTS"
 
 # Classpath Opts
 app_config="/etc/cloudflow-runner"

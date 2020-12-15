@@ -37,7 +37,7 @@ if [ -n "$FLINK_PROPERTIES" ]; then
 fi
 
 export FLINK_PROMETHEUS_JMX_JAVA_OPTS="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
-export FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${FLINK_PROMETHEUS_JMX_JAVA_OPTS}"
+export FLINK_ENV_JAVA_OPTS="${FLINK_ENV_JAVA_OPTS} ${LOGBACK_CONFIG} ${FLINK_PROMETHEUS_JMX_JAVA_OPTS}"
 
 if [ -f "$FLINK_HOME/flink-conf-tmp.yaml" ]; then
     envsubst < $FLINK_HOME/flink-conf-tmp.yaml > $FLINK_HOME/conf/flink-conf.yaml

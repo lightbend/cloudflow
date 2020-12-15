@@ -68,6 +68,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
       Seq(
         Instructions.User("root"),
+        Instructions.Env("LOGBACK_CONFIG", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
         Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
         Instructions.Run.shell(
           Seq(
