@@ -186,8 +186,9 @@ However, when this is not an option, you can use snapshots to reduce recovery ti
 Thats what we are doing in this implementation
 * Deploy Postgre to store persistence. Note that Cloudflow does not provide any build in support
 for that, so that you need to do it yourself. For local testing on Mac, you can install it with
-Homebrew following this [post](https://flaviocopes.com/postgres-how-to-install/). For cluster,
-you can use Postgresql Helm chart, following this [post](https://thenewstack.io/tutorial-deploy-postgresql-on-kubernetes-running-the-openebs-storage-engine/) 
+Homebrew following this [post](https://flaviocopes.com/postgres-how-to-install/). Alternatively for 
+local cases you can use [H2](https://doc.akka.io/docs/akka-persistence-jdbc/3.5.2/)
+For cluster, you can use Postgresql Helm chart, following this [post](https://thenewstack.io/tutorial-deploy-postgresql-on-kubernetes-running-the-openebs-storage-engine/) 
 * Create tables for Akka persistence, following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/schema/postgres/postgres-schema.sql) 
 * Create application config for Postgress instance following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/postgres-application.conf)
 make sure that you merge it with default Cloudflow Akka configuration 
