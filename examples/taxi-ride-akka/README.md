@@ -177,13 +177,18 @@ val postgreVersion  = "42.2.16"
     * emptyState defines the State when the entity is first created e.g. a Counter would start with 0 as state.
     * commandHandler defines how to handle command by producing Effects e.g. persisting events, stopping the persistent actor.
     * eventHandler returns the new state given the current state when an event has been persisted.
+
 The full code is [here](akkastreams/src/main/scala/taxiride/akka/processor/actors/persistent/RidesBehavior.scala)
+
+**Note**: In the case of streaming, actors may be prone to accumulating extremely long event logs and experiencing 
+long recovery times. Sometimes, the right approach may be to split out into a set of shorter lived actors. 
+However, when this is not an option, you can use snapshots to reduce recovery times drastically.
+Thats what we are doing in this implementation
 * Deploy Postgre to store persistence. Note that Cloudflow does not provide any build in support
 for that, so that you need to do it yourself. For local testing on Mac, you can install it with
 Homebrew following this [post](https://flaviocopes.com/postgres-how-to-install/). For cluster,
 you can use Postgresql Helm chart, following this [post](https://thenewstack.io/tutorial-deploy-postgresql-on-kubernetes-running-the-openebs-storage-engine/) 
 * Create tables for Akka persistence, following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/schema/postgres/postgres-schema.sql) 
-**Note**: You should recreate tables before every run
 * Create application config for Postgress instance following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/postgres-application.conf)
 make sure that you merge it with default Cloudflow Akka configuration 
 [local](https://github.com/lightbend/cloudflow/blob/master/core/cloudflow-akka/src/main/resources/akka-cluster-local.conf)

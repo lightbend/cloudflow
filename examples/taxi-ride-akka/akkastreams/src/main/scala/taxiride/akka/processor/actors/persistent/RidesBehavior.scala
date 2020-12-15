@@ -72,6 +72,8 @@ object RideShare{
     Behaviors.setup { context =>
       context.log.info(s"Starting ride share $entityId, with persistenceID $persistenceId")
       EventSourcedBehavior(persistenceId, emptyState = TaxiState(None, None), commandHandler, eventHandler)
+        // Set up snapshotting
+        .withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = 50, keepNSnapshots = 3))
     }
   }
 }

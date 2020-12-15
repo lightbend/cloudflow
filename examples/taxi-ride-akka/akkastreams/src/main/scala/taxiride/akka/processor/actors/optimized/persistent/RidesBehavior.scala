@@ -64,14 +64,14 @@ object RideShare{
   }
 
   // eventHandler returns the new state given the current state when an event has been persisted.
-  private val eventHandler: (TaxiState, TaxiRideEvent) => TaxiState = {
-    println(s"IN event handler")
-    (state, evt) => state.reset(evt.state)
-  }
+  private val eventHandler: (TaxiState, TaxiRideEvent) => TaxiState =  (state, evt) => state.reset(evt.state)
+
 
   def apply(entityId: String, persistenceId: PersistenceId): Behavior[TaxiRideMessage] = {
     Behaviors.setup { context =>
       EventSourcedBehavior(persistenceId, emptyState = TaxiState(Map(), Map()), commandHandler, eventHandler)
+        // Set up snapshotting
+        .withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = 50, keepNSnapshots = 3))
     }
   }
 }
