@@ -183,6 +183,7 @@ for that, so that you need to do it yourself. For local testing on Mac, you can 
 Homebrew following this [post](https://flaviocopes.com/postgres-how-to-install/). For cluster,
 you can use Postgresql Helm chart, following this [post](https://thenewstack.io/tutorial-deploy-postgresql-on-kubernetes-running-the-openebs-storage-engine/) 
 * Create tables for Akka persistence, following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/schema/postgres/postgres-schema.sql) 
+**Note**: You should recreate tables before every run
 * Create application config for Postgress instance following [this](https://github.com/akka/akka-persistence-jdbc/blob/v3.5.2/src/test/resources/postgres-application.conf)
 make sure that you merge it with default Cloudflow Akka configuration 
 [local](https://github.com/lightbend/cloudflow/blob/master/core/cloudflow-akka/src/main/resources/akka-cluster-local.conf)
