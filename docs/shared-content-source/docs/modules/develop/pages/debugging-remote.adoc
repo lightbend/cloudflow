@@ -1,0 +1,38 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+
+Debugging a remote application is possible just by applying the https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html#Invocation[standard] configuration to debugging a remote JVM. That is, adding a conf like this to JAVA_OPTS through our xref:cloudflow-configuration.adoc[configuration model] before we deploy or configure our Cloudflow app. 
+
+	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
+
+
+As we've seen in the Configuration model, adding these parameters to JAVA_OPTS can be done at the Streamlet level or runtime level. In this example, we are adding it to all Akka streamlets. 
+
+[source, hocon]
+----
+cloudflow.akka.runtime {
+  kubernetes.pods.pod {
+    containers.container {
+      env = [ 
+            { name = "JAVA_OPTS" 
+              value = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+            }
+          ]
+    }
+  }
+}
+----
+
+Once this is added, and the application is deployed or configured, we'll need to do two things:
+
+
+1. Add a remote configuration in the IDE of our choice. This remote Run/Debug configuration for the remote JVM must have the same arguments, except for the address set in `JAVA_OPTS`. The address can be different because it belongs to the environment where the IDE is running, typically will be local. See the following for an example configuration:
+
+	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:4004
+
+
+2. Port-forward a local address to the selected streamlet/pod in the Kubernetes cluster. Let's say our application is called 'example-application' and we picked the above parameters for the IDE debug configuration. Then we will need to port-forward like the following:
+
+	kubectl port-forward pod/[some-streamlet-pod-name] 4004:5005 -n example-application
