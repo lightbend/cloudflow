@@ -101,6 +101,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
         Instructions.Env("SPARK_HOME", sparkHome),
         Instructions.Env("SPARK_VERSION", sparkVersion),
         Instructions.Env("JAVA_OPTS", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
+        Instructions.Env("SPARK_JAVA_OPT_LOGGING", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
         Instructions.Copy(CopyFile(metricsProperties), "/etc/metrics/conf/metrics.properties"),
         Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
         Instructions.Copy(CopyFile(sparkEntrypointSh), "/opt/spark-entrypoint.sh"),

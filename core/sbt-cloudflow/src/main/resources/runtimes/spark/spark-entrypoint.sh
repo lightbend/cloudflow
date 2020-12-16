@@ -54,7 +54,6 @@ if [ -z "$uidentry" ] ; then
     fi
 fi
 
-export JAVA_OPTS="${JAVA_OPTS} ${LOGBACK_CONFIG}"
 echo "JAVA_OPTS = $JAVA_OPTS"
 
 # Add jars in /opt/cloudflow to the Spark classpath

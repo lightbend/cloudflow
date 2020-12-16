@@ -72,7 +72,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
         // https://doc.akka.io/docs/akka/current/logging.html#slf4j
         Instructions.Env(
           "LOGBACK_CONFIG",
-          "-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers='akka.event.slf4j.Slf4jLogger' -Dakka.loglevel='DEBUG' -Dakka.logging-filter='akka.event.slf4j.Slf4jLoggingFilter'"
+          "-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers.0=akka.event.slf4j.Slf4jLogger -Dakka.loglevel=DEBUG -Dakka.logging-filter=akka.event.slf4j.Slf4jLoggingFilter"
         ),
         Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
         Instructions.Run.shell(
