@@ -133,6 +133,7 @@ lazy val akkastream =
       javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
+            AkkaSlf4j,
             AkkaStream,
             AkkaStreamKafka,
             AkkaStreamKafaSharding,
