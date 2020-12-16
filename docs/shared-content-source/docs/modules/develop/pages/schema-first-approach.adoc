@@ -125,7 +125,7 @@ When using `ExternalOutlet` each data record should be converted to an array of 
 writing it into an outlet.
 
 NOTE: `ExternalInlet` and `ExternalOutlet` are not intended for intra streamlets communications. They should only
-be used for Kafka-based integration with existing applications supporting proprietary message formats
+be used for Kafka-based integration with existing applications supporting proprietary message formats.
 
 == Outlets and the partitioning function
 
