@@ -54,6 +54,9 @@ if [ -z "$uidentry" ] ; then
     fi
 fi
 
+export JAVA_OPTS="${JAVA_OPTS} ${LOGBACK_CONFIG}"
+echo "JAVA_OPTS = $JAVA_OPTS"
+
 # Add jars in /opt/cloudflow to the Spark classpath
 while read -d '' -r jarfile ; do
     if [[ "$CLOUDFLOW_CLASSPATH" == "" ]]; then
@@ -122,8 +125,6 @@ fi
 echo "PYTHON_VERSION = $PYTHON_VERSION"
 echo "PYSPARK_PYTHON = $PYSPARK_PYTHON"
 echo "PYSPARK_DRIVER_PYTHON = $PYSPARK_DRIVER_PYTHON"
-
-export JAVA_OPTS="${JAVA_OPTS} ${LOGBACK_CONFIG}"
 
 case "$SPARK_K8S_CMD" in
   driver)

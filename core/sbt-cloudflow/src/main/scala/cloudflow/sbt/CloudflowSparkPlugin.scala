@@ -60,13 +60,13 @@ object CloudflowSparkPlugin extends AutoPlugin {
             projectJars.foreach { jar =>
               // Logback configuration
               // dependencies are filetered out here to preserve the behavior in runLocal
-              if (!jar.getName.startsWith("slf4j-log4j12-") && !jar.getName.startsWith("log4j-"))
+              if (!jar.getName.startsWith("slf4j-log4j12-1.7.16.jar") && !jar.getName.startsWith("log4j-1.2.17.jar"))
                 IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
             depJars.foreach { jar =>
               // Logback configuration
               // dependencies are filetered out here to preserve the behavior in runLocal
-              if (!jar.getName.startsWith("slf4j-log4j12-") && !jar.getName.startsWith("log4j-"))
+              if (!jar.getName.startsWith("slf4j-log4j12-1.7.16.jar") && !jar.getName.startsWith("log4j-1.2.17.jar"))
                 IO.copyFile(jar, new File(depJarDir, jar.getName))
             }
           }
@@ -100,7 +100,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
       Seq(
         Instructions.Env("SPARK_HOME", sparkHome),
         Instructions.Env("SPARK_VERSION", sparkVersion),
-        Instructions.Env("LOGBACK_CONFIG", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
+        Instructions.Env("JAVA_OPTS", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
         Instructions.Copy(CopyFile(metricsProperties), "/etc/metrics/conf/metrics.properties"),
         Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
         Instructions.Copy(CopyFile(sparkEntrypointSh), "/opt/spark-entrypoint.sh"),
