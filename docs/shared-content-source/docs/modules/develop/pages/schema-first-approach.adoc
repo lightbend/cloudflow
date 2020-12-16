@@ -118,7 +118,7 @@ This works great for intra streamlet communications, but often falls short for i
 with existing applications which might use proprietary encoding for messages.
 To accommodate these use cases Cloudflow introduces `ExternalInlet` and `ExternalOutlet`,
 which implement Kafka communications in `ByteArray` format, allowing user to explicitely
-marshal/unmarshall data as port of the application code.
+marshal/unmarshall data as part of the application code.
 
 When using `ExternalInlet` each data record is read by streamlet as an array of bytes.
 When using `ExternalOutlet` each data record should be converted to an array of bytes before
