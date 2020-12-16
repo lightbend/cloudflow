@@ -18,12 +18,12 @@ package cloudflow.streamlets.bytearray
 
 import cloudflow.streamlets._
 
-case class ExternalInlet(
+final case class ExternalInlet(
     name: String,
     hasUniqueGroupId: Boolean = false,
     errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] = CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable)
 ) extends CodecInlet[Array[Byte]] {
-  def codec                                                                                              = new ByteArrayCodec
+  val codec                                                                                              = ByteArrayCodec
   def schemaDefinition                                                                                   = ByteArrayUtil.createSchemaDefinition()
   def schemaAsString                                                                                     = ByteArrayUtil.schemaName
   def withUniqueGroupId: ExternalInlet                                                                   = copy(hasUniqueGroupId = true)

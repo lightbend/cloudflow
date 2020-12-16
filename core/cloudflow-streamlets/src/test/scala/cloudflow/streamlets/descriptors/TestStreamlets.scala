@@ -21,7 +21,7 @@ import org.apache.avro.SchemaBuilder
 import com.typesafe.config.Config
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro.AvroUtil
-import cloudflow.streamlets.bytearray.{ExternalInlet, ExternalOutlet}
+import cloudflow.streamlets.bytearray.{ ExternalInlet, ExternalOutlet }
 
 case class Coffee(espressos: Int)
 
@@ -58,8 +58,8 @@ class CoffeeIngress extends Streamlet[StreamletContext] with TestStreamlet {
 }
 
 class CoffeeByteArrayIngress extends Streamlet[StreamletContext] with TestStreamlet {
-  val outlet = ExternalOutlet("out")
-  val inlet = ExternalInlet("in")
+  val outlet                                        = ExternalOutlet("out")
+  val inlet                                         = ExternalInlet("in")
   override def shape                                = StreamletShape(inlet, outlet)
   override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
   override val description: String                  = "Coffee ByteArray Ingress Test"

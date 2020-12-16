@@ -18,8 +18,8 @@ package cloudflow.streamlets.bytearray
 
 import cloudflow.streamlets._
 
-case class ExternalOutlet(name: String, partitioner: Array[Byte] => String = RoundRobinPartitioner) extends CodecOutlet[Array[Byte]] {
-  def codec            = new ByteArrayCodec
+final case class ExternalOutlet(name: String, partitioner: Array[Byte] => String = RoundRobinPartitioner) extends CodecOutlet[Array[Byte]] {
+  val codec            = ByteArrayCodec
   def schemaDefinition = ByteArrayUtil.createSchemaDefinition()
   def schemaAsString   = ByteArrayUtil.schemaName
 
