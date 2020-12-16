@@ -115,7 +115,7 @@ errorHandler: (Array[Byte], Throwable) => Option[T]
 
 As mentioned earlier, Cloudflow uses a schema-first approach for building streaming data pipelines.
 This works great for intra streamlet communications, but often falls short for integration
-with existing applications which might use their proprietary encoding for messages.
+with existing applications which might use proprietary encoding for messages.
 To accomodate these use cases Cloudflow introduces `ExternalInlet` and `ExternalOutlet`,
 which implement Kafka communications in `ByteArray` format, allowing user to explicitely
 marshal/unmarshall data as port of the application code.
