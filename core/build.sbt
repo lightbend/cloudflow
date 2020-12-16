@@ -117,8 +117,6 @@ lazy val streamlets =
             Ficus,
             Avro,
             Bijection,
-            LogbackClassic,
-            LogbackCore,
             ScalaPbRuntime,
             ScalaTest
           )
@@ -145,6 +143,8 @@ lazy val akkastream =
             AkkaClusterBootstrap,
             AkkaDiscovery,
             AkkaDiscoveryK8,
+            LogbackClassic,
+            LogbackCore,
             SprayJson,
             JacksonScalaModule,
             Ficus
@@ -245,6 +245,8 @@ lazy val spark =
             SparkSqlKafka,
             SparkStreaming,
             SparkProto,
+            LogbackClassic,
+            LogbackCore,
             ScalaTest
           ),
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
@@ -305,6 +307,8 @@ lazy val flink =
             FlinkKafka,
             FlinkAvro,
             FlinkWeb,
+            LogbackClassic,
+            LogbackCore,
             ScalaTest
           ),
       libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) }
