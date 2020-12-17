@@ -188,7 +188,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   def findLogLibsInPluginClasspath(classpath: Keys.Classpath): Seq[(String, URL)] = {
     val localClasspath = classpath.files.map(_.toURI.toURL).toArray
-    val logLibs        = Seq(toURLSegment(Log4J), toURLSegment(Slf4jLog4jBridge))
+    val logLibs        = Seq(toURLSegment(Log4J))
     // forced `get` b/c these libraries are added to the classpath.
     logLibs.map(lib => lib -> localClasspath.find(_.toString.contains(lib)).get)
   }
