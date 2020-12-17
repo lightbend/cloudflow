@@ -18,6 +18,8 @@ jobs:
         cd docs
         make all
     - name: Whitesource
+      env:
+        WHITESOURCE_PASSWORD: ${{ secrets.WHITESOURCE_PASSWORD }}
       run: |
         cd core
         sbt "whitesourceCheckPolicies"

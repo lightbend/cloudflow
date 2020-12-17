@@ -23,6 +23,8 @@ jobs:
         cd docs
         make html-author-mode
     - name: Whitesource
+      env:
+        WHITESOURCE_PASSWORD: ${{ secrets.WHITESOURCE_PASSWORD }}
       run: |
         cd core
         sbt "whitesourceCheckPolicies"
