@@ -22,6 +22,10 @@ jobs:
         sudo snap install yq
         cd docs
         make html-author-mode
+    - name: Whitesource
+      run: |
+        cd core
+        sbt "whitesourceCheckPolicies"
     - name: Run integration tests of the sbt plugin
       run: |
         git config --global user.email "cloudflow@lightbend.com"

@@ -17,6 +17,10 @@ jobs:
         sudo snap install yq
         cd docs
         make all
+    - name: Whitesource
+      run: |
+        cd core
+        sbt "whitesourceCheckPolicies"
     - name: Publish to cloudflow.io  
       env:
          CFIO_USER: ${{ secrets.CLOUDFLOWIO_USER }}
