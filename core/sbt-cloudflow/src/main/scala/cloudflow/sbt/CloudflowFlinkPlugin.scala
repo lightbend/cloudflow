@@ -97,7 +97,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
             Seq("cp", "/tmp/flink-console.sh", s"${flinkHome}/bin/flink-console.sh"),
             // logback configuration:
             // https://ci.apache.org/projects/flink/flink-docs-stable/deployment/advanced/logging.html#configuring-logback
-            // logback is provided by the streamlet itself
+            // logback must be provided by the streamlet itself
             Seq("rm", s"${flinkHome}/lib/log4j-slf4j-impl-2.12.1.jar"),
             Seq("addgroup", "-S", "-g", "9999", "flink"),
             Seq("adduser", "-S", "-h", flinkHome, "-u", "9999", "flink", "flink"),
