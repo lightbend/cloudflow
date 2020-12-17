@@ -179,7 +179,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def prepareLoggingInClasspath(classpath: Array[URL], logDependencies: Seq[(String, URL)]): Array[URL] = {
-    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback")) // remove logback from the classpath
+    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback") && !cp.toString.contains("log4j-over-slf4j")) // remove logback from the classpath
     logDependencies.foldLeft(filteredClasspath) {
       case (agg, (libName, url)) =>
         if (agg.find(u => u.toString.contains(libName)).isEmpty) { // add slf/log4j if not there

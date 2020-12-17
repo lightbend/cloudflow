@@ -58,10 +58,16 @@ object CloudflowSparkPlugin extends AutoPlugin {
             IO.delete(depJarDir)
 
             projectJars.foreach { jar =>
-              IO.copyFile(jar, new File(appJarDir, jar.getName))
+              // Logback configuration
+              // dependencies are filtered out here to preserve the behavior in runLocal
+              if (!jar.getName.startsWith("slf4j-log4j12-1.7.16.jar") && !jar.getName.startsWith("log4j-1.2.17.jar"))
+                IO.copyFile(jar, new File(appJarDir, jar.getName))
             }
             depJars.foreach { jar =>
-              IO.copyFile(jar, new File(depJarDir, jar.getName))
+              // Logback configuration
+              // dependencies are filtered out here to preserve the behavior in runLocal
+              if (!jar.getName.startsWith("slf4j-log4j12-1.7.16.jar") && !jar.getName.startsWith("log4j-1.2.17.jar"))
+                IO.copyFile(jar, new File(depJarDir, jar.getName))
             }
           }
         }.value,
@@ -94,6 +100,8 @@ object CloudflowSparkPlugin extends AutoPlugin {
       Seq(
         Instructions.Env("SPARK_HOME", sparkHome),
         Instructions.Env("SPARK_VERSION", sparkVersion),
+        Instructions.Env("JAVA_OPTS", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
+        Instructions.Env("SPARK_JAVA_OPT_LOGGING", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
         Instructions.Copy(CopyFile(metricsProperties), "/etc/metrics/conf/metrics.properties"),
         Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
         Instructions.Copy(CopyFile(sparkEntrypointSh), "/opt/spark-entrypoint.sh"),
@@ -112,6 +120,11 @@ object CloudflowSparkPlugin extends AutoPlugin {
             Seq("mkdir", "-p", s"${sparkHome}/conf"),
             Seq("cp", "/tmp/log4j.properties", s"${sparkHome}/conf/log4j.properties"),
             Seq("rm", sparkTgz),
+            // logback configuration, based on:
+            // https://stackoverflow.com/a/45479379
+            // logback is provided by the streamlet
+            Seq("rm", s"${sparkHome}/jars/slf4j-log4j12-1.7.16.jar"),
+            Seq("rm", s"${sparkHome}/jars/log4j-1.2.17.jar"),
             Seq("rm", "-rf", s"spark-${sparkVersion}-bin-cloudflow-${scalaVersion}"),
             Seq("chmod", "a+x", "/opt/spark-entrypoint.sh"),
             Seq("ln", "-s", "/lib", "/lib64"),

@@ -46,8 +46,9 @@ object Library {
   val Ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
   val JodaTime              = "joda-time"              % "joda-time"                % "2.10.6"
   val Config                = "com.typesafe"           % "config"                   % "1.3.4"
-  val Logback               = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
-  val Slf4jLog4jBridge      = "org.slf4j"              % "slf4j-log4j12"            % "1.7.30"            
+  val LogbackClassic        = "ch.qos.logback"         % "logback-classic"          % "1.2.3"
+  val LogbackCore           = "ch.qos.logback"         % "logback-core"             % "1.2.3"
+  val Log4jOverSlf4j        = "org.slf4j"              % "log4j-over-slf4j"         % "1.7.30"
 
   val SprayJson             = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.7"

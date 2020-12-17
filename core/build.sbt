@@ -131,6 +131,7 @@ lazy val akkastream =
       javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
+            AkkaSlf4j,
             AkkaStream,
             AkkaStreamKafka,
             AkkaStreamKafaSharding,
@@ -142,6 +143,8 @@ lazy val akkastream =
             AkkaClusterBootstrap,
             AkkaDiscovery,
             AkkaDiscoveryK8,
+            LogbackClassic,
+            LogbackCore,
             SprayJson,
             JacksonScalaModule,
             Ficus
@@ -163,7 +166,6 @@ lazy val akkastreamUtil =
             AkkaStreamContrib,
             AkkaHttpTestkit,
             AkkaStreamTestkit,
-            Logback % Test,
             AkkaHttpSprayJsonTest,
             Junit,
             ScalaTest
@@ -186,7 +188,6 @@ lazy val akkastreamTestkit =
             AkkaStream,
             AkkaStreamContrib,
             Ficus,
-            Logback % Test,
             AkkaStreamKafkaTestkit,
             AkkaStreamTestkit,
             AkkaTestkit,
@@ -210,7 +211,6 @@ lazy val akkastreamTests =
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
             TestcontainersKafka % Test,
-            Logback             % Test,
             ScalaTest,
             Junit
           )
@@ -238,14 +238,18 @@ lazy val spark =
             AkkaProtobuf,
             AkkaStream,
             Ficus,
+            Log4jOverSlf4j,
             Spark,
             SparkMllib,
             SparkSql,
             SparkSqlKafka,
             SparkStreaming,
             SparkProto,
+            LogbackClassic,
+            LogbackCore,
             ScalaTest
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
@@ -265,6 +269,7 @@ lazy val sparkTestkit =
             ScalaTestUnscoped,
             Junit
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
@@ -281,6 +286,7 @@ lazy val sparkTests =
             ScalaTest,
             Junit
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
@@ -304,6 +310,8 @@ lazy val flink =
             FlinkKafka,
             FlinkAvro,
             FlinkWeb,
+            LogbackClassic,
+            LogbackCore,
             ScalaTest
           ),
       libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) }
@@ -320,7 +328,6 @@ lazy val flinkTestkit =
       scalafmtOnCompile := true,
       libraryDependencies ++= Vector(
             ScalaTestUnscoped,
-            Logback % Test,
             Junit
           )
     )
@@ -334,7 +341,6 @@ lazy val flinkTests =
       libraryDependencies ++= Vector(
             FlinkAvro,
             JodaTime % Test,
-            Logback  % Test,
             ScalaTest,
             Junit,
             JUnitInterface
@@ -356,7 +362,8 @@ lazy val blueprint =
             Avro,
             Config,
             SprayJson,
-            Logback % Test,
+            LogbackClassic % Test,
+            LogbackCore % Test,
             Avro4sTest,
             ScalaTest,
             ScalaPbRuntime,
@@ -393,7 +400,6 @@ lazy val plugin =
       libraryDependencies ++= Vector(
             FastClasspathScanner,
             ScalaPbCompilerPlugin,
-            Logback               % Test,
             "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
             ScalaTest,
             TestcontainersKafka,
@@ -459,7 +465,8 @@ lazy val operatorActions =
       libraryDependencies ++= Vector(
             AkkaSlf4j,
             Ficus,
-            Logback,
+            LogbackClassic,
+            LogbackCore,
             Skuber,
             ScalaTest,
             "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
@@ -483,7 +490,6 @@ lazy val operator =
             AkkaSlf4j,
             AkkaStream,
             Ficus,
-            Logback,
             Skuber,
             ScalaTest,
             "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,

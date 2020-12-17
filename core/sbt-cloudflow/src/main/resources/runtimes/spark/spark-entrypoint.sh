@@ -54,6 +54,8 @@ if [ -z "$uidentry" ] ; then
     fi
 fi
 
+echo "JAVA_OPTS = $JAVA_OPTS"
+
 # Add jars in /opt/cloudflow to the Spark classpath
 while read -d '' -r jarfile ; do
     if [[ "$CLOUDFLOW_CLASSPATH" == "" ]]; then
