@@ -65,7 +65,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
             }
             depJars.foreach { jar =>
               // Logback configuration
-              // dependencies are filetered out here to preserve the behavior in runLocal
+              // dependencies are filtered out here to preserve the behavior in runLocal
               if (!jar.getName.startsWith("slf4j-log4j12-1.7.16.jar") && !jar.getName.startsWith("log4j-1.2.17.jar"))
                 IO.copyFile(jar, new File(depJarDir, jar.getName))
             }
