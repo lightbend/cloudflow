@@ -15,24 +15,32 @@ object InternalReleaseCommand {
   val command: Command = Command.make("internalRelease") { state =>
     // tweak the keys used by sbt-release, for develop build
     val extracted = Project.extract(state)
-    val updatedState = extracted.appendWithSession(List(
-      releaseVersion := {ver => RVersion(ver).map(_.copy(qualifier = Some(gitQualifier())).string).getOrElse(versionFormatError(ver))},
-      releaseNextVersion := {ver => RVersion(ver).map(_.asSnapshot.string).getOrElse(versionFormatError(ver))},
-      /* The logical steps which are executed are:
-       * - checking that the project is in a valid state
-       *   - clean and synced git (checks from tagReleaseWithChecks)
-       *   - project compiles and tests passes (checkSnapshotDependencies, inquireVersions, runClean, runTest)
-       * - tag the existing commit (tagReleaseWithChecks)
-       * - publish using the build number (setReleaseVersion, publishArtifacts, setNextVersion)
-       * - push the tag to the remote repo (pushChanges)
-       */
-      releaseProcess := Seq[ReleaseStep](
-        checkSnapshotDependencies,
-        runClean,
-        runTest,
-        publishArtifacts,
-        pushChanges
-      )), state)
+    val updatedState = extracted.appendWithSession(
+      List(
+        releaseVersion := { ver =>
+          RVersion(ver).map(_.copy(qualifier = Some(gitQualifier())).string).getOrElse(versionFormatError(ver))
+        },
+        releaseNextVersion := { ver =>
+          RVersion(ver).map(_.asSnapshot.string).getOrElse(versionFormatError(ver))
+        },
+        /* The logical steps which are executed are:
+         * - checking that the project is in a valid state
+         *   - clean and synced git (checks from tagReleaseWithChecks)
+         *   - project compiles and tests passes (checkSnapshotDependencies, inquireVersions, runClean, runTest)
+         * - tag the existing commit (tagReleaseWithChecks)
+         * - publish using the build number (setReleaseVersion, publishArtifacts, setNextVersion)
+         * - push the tag to the remote repo (pushChanges)
+         */
+        releaseProcess := Seq[ReleaseStep](
+              checkSnapshotDependencies,
+              runClean,
+              runTest,
+              publishArtifacts,
+              pushChanges
+            )
+      ),
+      state
+    )
 
     releaseCommand.parser(updatedState)
   }

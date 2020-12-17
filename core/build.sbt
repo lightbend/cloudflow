@@ -210,7 +210,7 @@ lazy val akkastreamTests =
             AkkaHttpTestkit,
             AkkaHttpSprayJsonTest,
             TestcontainersKafka % Test,
-            Logback       % Test,
+            Logback             % Test,
             ScalaTest,
             Junit
           )
