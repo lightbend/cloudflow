@@ -19,7 +19,7 @@ object Whitesource extends AutoPlugin {
     // do not change the value of whitesourceProduct
     whitesourceProduct := "cloudflow",
     whitesourceAggregateProjectName := {
-      "cloudflow-2.0-" + (
+      "cloudflow-" + (
         if (isSnapshot.value)
           if (gitCurrentBranch.contains("master")) "master"
           else "adhoc"
@@ -27,7 +27,8 @@ object Whitesource extends AutoPlugin {
       )
     },
     whitesourceForceCheckAllDependencies := true,
-    whitesourceFailOnError := true)
+    whitesourceFailOnError := true
+  )
 
   private def majorMinor(version: String): Option[String] = """\d+\.\d+""".r.findFirstIn(version)
 }
