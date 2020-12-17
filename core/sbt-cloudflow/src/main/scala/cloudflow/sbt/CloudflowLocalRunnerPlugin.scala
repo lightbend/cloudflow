@@ -49,6 +49,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def trigger           = allRequirements
 
   val LocalRunnerClass = "cloudflow.localrunner.LocalRunner"
+  val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
   val Log4J            = "log4j" % "log4j" % "1.2.17"
 
   val KafkaPort = 9093
@@ -59,7 +60,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependencies ++= Vector(
-          Log4J % Test
+          Slf4jLog4jBridge % Test,
+          Log4J            % Test
         ),
     allApplicationClasspathByProject := (Def
           .taskDyn {
@@ -177,7 +179,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   def prepareLoggingInClasspath(classpath: Array[URL], logDependencies: Seq[(String, URL)]): Array[URL] = {
-    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback")) // remove logback from the classpath
+    val filteredClasspath = classpath.filter(cp => !cp.toString.contains("logback") && !cp.toString.contains("log4j-over-slf4j")) // remove logback from the classpath
     logDependencies.foldLeft(filteredClasspath) {
       case (agg, (libName, url)) =>
         if (agg.find(u => u.toString.contains(libName)).isEmpty) { // add slf/log4j if not there
@@ -188,7 +190,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   def findLogLibsInPluginClasspath(classpath: Keys.Classpath): Seq[(String, URL)] = {
     val localClasspath = classpath.files.map(_.toURI.toURL).toArray
-    val logLibs        = Seq(toURLSegment(Log4J))
+    val logLibs        = Seq(toURLSegment(Log4J), toURLSegment(Slf4jLog4jBridge))
     // forced `get` b/c these libraries are added to the classpath.
     logLibs.map(lib => lib -> localClasspath.find(_.toString.contains(lib)).get)
   }
