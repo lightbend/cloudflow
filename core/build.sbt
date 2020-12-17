@@ -249,6 +249,7 @@ lazy val spark =
             LogbackCore,
             ScalaTest
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
@@ -268,6 +269,7 @@ lazy val sparkTestkit =
             ScalaTestUnscoped,
             Junit
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
@@ -284,6 +286,7 @@ lazy val sparkTests =
             ScalaTest,
             Junit
           ),
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-core"              % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.core"   % "jackson-databind"          % "2.11.2",
       dependencyOverrides += "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.11.2"
