@@ -1,4 +1,4 @@
-= Building Akka streamlets
+= Building Akka Streamlets
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

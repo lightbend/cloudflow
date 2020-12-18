@@ -1,4 +1,4 @@
-= Using Flink streamlets
+= Using Flink Streamlets
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
