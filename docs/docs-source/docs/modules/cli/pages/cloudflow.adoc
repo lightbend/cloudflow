@@ -20,7 +20,7 @@ version [options]
 === Synopsis
 show the current version
 
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: list
 [source,bash]
@@ -31,7 +31,7 @@ list [options]
 === Synopsis
 list available cloudflow applications
 
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: status
 [source,bash]
@@ -43,7 +43,7 @@ status [options] <cloudflowApp>
 show the status of a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: deploy
 [source,bash]
@@ -65,7 +65,9 @@ deploy a cloudflow applications from a cr file
  * ``  --scale <value>          ``Key/value pairs of streamlets replicas
  * ``  --conf <value>           ``the configuration file/s in HOCON format
  * ``  config-key               ``the configuration keys for the overrides
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  --logback-config <value>
+                           ``the logback configuration to be applied
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: undeploy
 [source,bash]
@@ -77,7 +79,7 @@ undeploy [options] <cloudflowApp>
 undeploy a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: update-docker-credentials
 [source,bash]
@@ -93,7 +95,7 @@ updates docker registry credentials that are used to pull Cloudflow application 
  * ``  -u, --username <value>   ``the docker registry username
  * ``  -p, --password <value>   ``the docker registry password
  * ``  --password-stdin         ``Take the docker registry password from std-in
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: scale
 [source,bash]
@@ -106,7 +108,7 @@ scales a streamlet of a deployed Cloudflow application to the specified number o
 
  * ``  <cloudflowApp>           ``the cloudflow application
  * ``  <streamlet>=<replicas>   ``Key/value pairs of streamlets replicas
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: configure
 [source,bash]
@@ -121,4 +123,6 @@ configures a deployed cloudflow application
  * ``  <cloudflowApp>           ``the cloudflow application
  * ``  --conf <value>           ``the configuration file/s in HOCON format
  * ``  config-key               ``the configuration keys for the overrides
- * ``  -o, --output <value>     ``available options are: c or classic, t or table, json
+ * ``  --logback-config <value>
+                           ``the logback configuration to be applied
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
