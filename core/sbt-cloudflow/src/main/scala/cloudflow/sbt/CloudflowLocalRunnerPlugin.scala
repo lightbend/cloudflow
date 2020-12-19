@@ -53,7 +53,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   val Log4J            = "log4j" % "log4j" % "1.2.17"
 
   val KafkaPort     = 9093
-  var baseDebugPort = 5004
+  var baseDebugPort = -1 // will we set when runLocal
 
   // Banner decorators
   val infoBanner    = banner('-') _
@@ -106,6 +106,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
             // load local config
             val localConfig = LocalConfig.load(configFile)
+            baseDebugPort = initialDebugPort.value
 
             val (tempDir, configDir) = createDirs("cloudflow-local-run")
             val descriptorByProject = projects.map { pid =>

@@ -37,10 +37,12 @@ object CloudflowApplicationPlugin extends AutoPlugin {
   )
 
   val DefaultLocalLog4jConfigFile = "local-run-log4j.properties"
+  val InitialDebugPort            = 5004
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     blueprint := None,
+    initialDebugPort := InitialDebugPort,
     runLocalConfigFile := None,
     runLocalLog4jConfigFile := None,
     packageOptions in (Compile, packageBin) +=
