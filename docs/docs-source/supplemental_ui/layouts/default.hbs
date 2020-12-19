@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  	<title>{{{detag (or page.title 'Untitled')}}}{{#if site.title}} | {{site.title}}{{/if}}</title>
-{{> head}}
+{{> head defaultPageTitle='Untitled'}}
   </head>
-  <body class="article">
+  <body class="blue-theme oss-banner article{{#with (or page.attributes.role page.role)}} {{{this}}}{{/with}}">
+{{> oss-banner}}
 {{> header}}
-{{> main}}
+{{> body}}
 {{> footer}}
   </body>
 </html>

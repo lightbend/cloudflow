@@ -1,0 +1,10 @@
+	{{#if page.attributes.robots}}
+	<meta name="robots" content="{{page.attributes.robots}}">
+	{{/if}}
+
+	<meta property="og:site_name" content="Lightbend Documentation" />
+	<meta name="author" content="Lightbend Documentation">
+	<meta itemprop="image" content="{{or page.attributes.social-share-image "https://downloads.lightbend.com/website/social/lightbend-logo-orange-twitter.jpg"}}">
+	<meta name="twitter:image:src" content="{{or page.attributes.social-share-image "https://downloads.lightbend.com/website/social/lightbend-logo-orange-twitter.jpg"}}">
+	<meta property="og:image" content="{{or page.attributes.social-share-image "https://downloads.lightbend.com/website/social/lightbend-logo-orange-twitter.jpg"}}" />
+	<meta property="og:image:secure_url" content="{{or page.attributes.social-share-image "https://downloads.lightbend.com/website/social/lightbend-logo-orange-twitter.jpg"}}" />

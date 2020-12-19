@@ -1,0 +1,85 @@
+<fieldset class="supergroup-switch">
+	{{#if page.attributes.supergroup-scala-java}}
+		<span>
+			<label>{{page.attributes.supergroup-scala-java}}</label>
+			<select class="supergroup" name="supergroup-scala-java">
+				<option class="group" value="group-scala">Scala</option>
+				<option class="group" value="group-java">Java</option>
+			</select>
+		</span>
+	{{/if}}
+
+	{{#if page.attributes.supergroup-sbt-maven}}
+		<span>
+			<label>{{page.attributes.supergroup-sbt-maven}}</label>
+			<select class="supergroup" name="supergroup-sbt-maven">
+				<option class="group" value="group-sbt">sbt</option>
+				<option class="group" value="group-maven">Maven</option>
+			</select>
+		</span>
+	{{/if}}
+
+	{{#if page.attributes.supergroup-sbt-maven-gradle}}
+		<span>
+			<label>{{page.attributes.supergroup-sbt-maven-gradle}}</label>
+			<select class="supergroup" name="supergroup-sbt-maven-gradle">
+				<option class="group" value="group-sbt">sbt</option>
+				<option class="group" value="group-maven">Maven</option>
+				<option class="group" value="group-gradle">Gradle</option>
+			</select>
+		</span>
+	{{/if}}
+
+	{{#if page.attributes.supergroup-minishift-minikube}}
+		<span>
+			<label>{{page.attributes.supergroup-minishift-minikube}}</label>
+			<select class="supergroup" name="supergroup-minishift-minikube">
+				<option class="group" value="group-minishift">Minishift</option>
+				<option class="group" value="group-minikube">Minikube</option>
+			</select>
+		</span>
+	{{/if}}
+
+	{{#if page.attributes.supergroup-kubernetes-openshift}}
+		<span>
+			<label>{{page.attributes.supergroup-kubernetes-openshift}}</label>
+			<select class="supergroup" name="supergroup-kubernetes-openshift">
+				<option class="group" value="group-kubernetes">Kubernetes</option>
+				<option class="group" value="group-openshift">OpenShift</option>
+			</select>
+		</span>
+	{{/if}}
+	
+	{{#if page.attributes.supergroup-kubernetes-dists}}
+		<span>
+			<label>{{page.attributes.supergroup-kubernetes-dists}}</label>
+			<select class="supergroup" name="supergroup-kubernetes-dists">
+				<option class="group" value="group-kubernetes">Kubernetes</option>
+				<option class="group" value="group-openshift">OpenShift</option>
+				<option class="group" value="group-kubernetes">GKE</option>
+				<option class="group" value="group-openshift">AKS</option>
+				<option class="group" value="group-openshift">EKS</option>
+			</select>
+		</span>
+	{{/if}}
+
+	{{#if page.attributes.supergroup-mac-ubuntu}}
+		<span>
+			<label>{{page.attributes.supergroup-mac-ubuntu}}</label>
+			<select class="supergroup" name="supergroup-mac-ubuntu">
+				<option class="group" value="group-mac">Mac</option>
+				<option class="group" value="group-ubuntu">Ubuntu</option>
+			</select>
+		</span>
+	{{/if}}
+	
+	{{#if page.attributes.supergroup-browser-cli}}
+		<span>
+			<label>{{page.attributes.supergroup-browser-cli}}</label>
+			<select class="supergroup" name="supergroup-browser-cli">
+				<option class="group" value="group-browser">Browser</option>
+				<option class="group" value="group-cli">CLI</option>
+			</select>
+		</span>
+	{{/if}}
+</fieldset>
