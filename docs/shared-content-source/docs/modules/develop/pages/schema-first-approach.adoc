@@ -111,6 +111,22 @@ Here `CustomHandler` is any function adhering to the following interface
 errorHandler: (Array[Byte], Throwable) => Option[T]
 ----
 
+== External Inlets and outlets
+
+As mentioned earlier, Cloudflow uses a schema-first approach for building streaming data pipelines.
+This works great for intra streamlet communications, but often falls short for integration
+with existing applications which might use proprietary encoding for messages.
+To accommodate these use cases Cloudflow introduces `ExternalInlet` and `ExternalOutlet`,
+which implement Kafka communications in `ByteArray` format, allowing user to explicitly
+marshal/unmarshal data as part of the application code.
+
+When using `ExternalInlet` each data record is read by streamlet as an array of bytes.
+When using `ExternalOutlet` each data record should be converted to an array of bytes before
+writing it into an outlet.
+
+NOTE: `ExternalInlet` and `ExternalOutlet` are not intended for intra-streamlet communications. They should only
+be used for Kafka-based integration with existing applications supporting proprietary message formats.
+
 == Outlets and the partitioning function
 
 Similar to inlets, the user can define an outlet as: 

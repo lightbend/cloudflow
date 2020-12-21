@@ -17,11 +17,8 @@
 package cloudflow.streamlets.proto.javadsl
 
 import cloudflow.streamlets._
-import cloudflow.streamlets.avro.AvroInlet
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
-
-import scala.reflect.ClassTag
 
 final case class ProtoInlet[T <: GeneratedMessageV3](
     name: String,
@@ -33,7 +30,7 @@ final case class ProtoInlet[T <: GeneratedMessageV3](
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
   val codec            = new ProtoCodec[T](clazz)
-  def schemaAsString   = TextFormat.printToUnicodeString(descriptor.toProto)
+  def schemaAsString   = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
   def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
   def withUniqueGroupId: ProtoInlet[T]                                                         = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
