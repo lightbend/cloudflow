@@ -1,4 +1,4 @@
-= Akka streamlet utilities
+= Akka Streamlet utilities
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

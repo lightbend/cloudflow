@@ -58,6 +58,7 @@ trait CloudflowSettingKeys {
   )
   val ownerInDockerImage =
     settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
+  val initialDebugPort = settingKey[Int]("Initial port number for debugging. It will be increased by one for each Streamlet")
 }
 
 trait CloudflowTaskKeys {

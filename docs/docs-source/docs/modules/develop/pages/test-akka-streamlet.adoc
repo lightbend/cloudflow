@@ -1,4 +1,4 @@
-= Testing an Akka streamlet
+= Testing an Akka Streamlet
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2

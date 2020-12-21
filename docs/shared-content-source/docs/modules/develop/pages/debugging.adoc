@@ -3,6 +3,18 @@
 include::ROOT:partial$include.adoc[]
 
 
+## Debugging runLocal
+
+By default Cloudflow runs on debug mode when `runLocal`. In the output we can see the listening port for each Streamlet. 
+```
+[info] listening for debugging '[streamlet-name]' at 'localhost:[port]'
+``` 
+We can attach to this process by adding a remote configuration in the IDE of our choice. This Run/Debug configuration for the JVM must have the same port of the Streamlet we want to debug. See the following for an example configuration:
+
+  -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:[port]
+
+## Debugging Remote
+
 Debugging a remote application is possible just by applying the https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html#Invocation[standard] configuration to debugging a remote JVM. That is, adding a conf like this to JAVA_OPTS through our xref:cloudflow-configuration.adoc[configuration model] before we deploy or configure our Cloudflow app. 
 
 	-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005

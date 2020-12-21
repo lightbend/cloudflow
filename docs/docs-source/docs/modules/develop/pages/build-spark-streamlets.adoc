@@ -1,4 +1,4 @@
-= Building a Spark streamlet
+= Building a Spark Streamlet
 :toc:
 :toc-title: ON THIS PAGE
 :toclevels: 2
