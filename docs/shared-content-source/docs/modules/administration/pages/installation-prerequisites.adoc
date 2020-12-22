@@ -19,7 +19,7 @@ Before proceeding, make sure that `kubectl` for your Kubernetes distribution is 
 
 Check the version with the following command:
 
-    `kubectl version`
+    kubectl version
 
 == Kafka
 
