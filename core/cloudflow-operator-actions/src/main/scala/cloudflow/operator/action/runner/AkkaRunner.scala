@@ -156,7 +156,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
-    val userConfiguredPorts = getPorts(podsConfig, PodsConfig.CloudflowPodName)
+    val userConfiguredPorts = getContainerPorts(podsConfig, PodsConfig.CloudflowPodName)
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val pvcRefVolumes =
       streamletToDeploy.map(_.descriptor.volumeMounts.map(mount => Volume(mount.name, PersistentVolumeClaimRef(mount.pvcName))).toList)

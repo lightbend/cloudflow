@@ -293,15 +293,13 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
-  def getPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] =
+  def getContainerPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .flatMap { podConfig =>
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-          containerConfig.ports.map { port =>
-            Container.Port(port)
-          }
+          containerConfig.ports
         }
       }
       .getOrElse(List())
@@ -376,11 +374,20 @@ object PodsConfig {
     EnvVar(name, value)
   }
 
+  implicit val containerPortReader: ValueReader[Container.Port] = ValueReader.relative { portConfig =>
+    val containerPort = portConfig.getInt("containerPort")
+    val protocol      = portConfig.as[Option[String]]("protocol").flatMap(str => Try(Protocol.withName(str)).toOption).getOrElse(Protocol.TCP)
+    val name          = portConfig.as[Option[String]]("name").getOrElse("")
+    val hostIP        = portConfig.as[Option[String]]("hostIP").getOrElse("")
+    val hostPort      = portConfig.as[Option[Int]]("hostPort")
+    Container.Port(containerPort, protocol, name, hostIP, hostPort)
+  }
+
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
     val env          = containerConfig.as[Option[List[EnvVar]]]("env")
     val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
     val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
-    val ports        = containerConfig.as[Option[List[Int]]]("ports")
+    val ports        = containerConfig.as[Option[List[Container.Port]]]("ports")
     ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()), ports.getOrElse(List()))
   }
 
@@ -503,5 +510,5 @@ final case class ContainerConfig(
     env: List[EnvVar] = List(),
     resources: Option[Resource.Requirements] = None,
     volumeMounts: List[Volume.Mount] = List(),
-    ports: List[Int] = List()
+    ports: List[Container.Port] = List()
 )
