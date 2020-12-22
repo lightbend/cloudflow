@@ -233,7 +233,10 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         ObjectMeta(
           name = name,
           namespace = app.namespace,
-          annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString),
+          annotations = Map("prometheus.io/scrape" -> "true", "prometheus.io/port" -> PrometheusConfig.PrometheusJmxExporterPort.toString) ++ getAnnotations(
+                  podsConfig,
+                  PodsConfig.CloudflowPodName
+                ),
           labels = labels,
           ownerReferences = ownerReferences
         )

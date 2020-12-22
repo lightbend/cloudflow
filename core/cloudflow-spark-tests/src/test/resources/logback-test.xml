@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <logger name="org.apache.spark.repl.Main" level="WARN"/>
+  <logger name="org.spark_project.jetty" level="WARN"/>
+  <logger name="org.spark_project.jetty.util.component.AbstractLifeCycle" level="ERROR"/>
+  <logger name="org.apache.spark.repl.SparkIMain$exprTyper" level="ERROR"/>
+  <logger name="org.apache.spark.repl.SparkILoop$SparkILoopInterpreter" level="ERROR"/>
+  <logger name="com.github.dockerjava" level="INFO"/>
+  <logger name="org.testcontainers" level="INFO"/>
+
+  <root level="${LOGLEVEL_ROOT:-OFF}">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <target>System.out</target>
+      <encoder>
+        <pattern>%d{ISO8601} %-5level [%-20.20thread] [%-36.36logger{36}]  %msg%n%rEx</pattern>
+      </encoder>
+    </appender>
+  </root>
+</configuration>
