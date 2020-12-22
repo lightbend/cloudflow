@@ -22,8 +22,10 @@ lazy val root =
 
 lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
+  .enablePlugins (Cinnamon)
   .settings(commonSettings)
   .settings(
+    cinnamonSuppressRepoWarnings := true,
     name := "taxi-ride-fare",
     runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
     runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
@@ -37,12 +39,19 @@ lazy val datamodel = appModule("datamodel")
 
 lazy val ingestor = appModule("ingestor")
   .enablePlugins(CloudflowAkkaPlugin)
+  .enablePlugins (Cinnamon)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.akka"         %% "akka-http-spray-json"   % "10.1.12",
       "ch.qos.logback"            %  "logback-classic"        % "1.2.3",
-      "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test"
+      "org.scalatest"             %% "scalatest"              % "3.0.8"    % "test",
+      Cinnamon.library.cinnamonAgent,
+      Cinnamon.library.cinnamonAkka,
+      Cinnamon.library.cinnamonAkkaStream,
+      Cinnamon.library.cinnamonAkkaHttp,
+      Cinnamon.library.cinnamonPrometheus,
+      Cinnamon.library.cinnamonPrometheusHttpServer
     )
   )
   .dependsOn(datamodel)
@@ -64,11 +73,18 @@ lazy val processor = appModule("processor")
 
 lazy val ridelogger = appModule("logger")
   .enablePlugins(CloudflowAkkaPlugin)
+  .enablePlugins (Cinnamon)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
       "ch.qos.logback"         %  "logback-classic"        % "1.2.3",
-      "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test"
+      "org.scalatest"          %% "scalatest"              % "3.0.8"    % "test",
+      Cinnamon.library.cinnamonAgent,
+      Cinnamon.library.cinnamonAkka,
+      Cinnamon.library.cinnamonAkkaStream,
+      Cinnamon.library.cinnamonAkkaHttp,
+      Cinnamon.library.cinnamonPrometheus,
+      Cinnamon.library.cinnamonPrometheusHttpServer
     )
   )
   .dependsOn(datamodel)
@@ -98,7 +114,9 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
-
+  cinnamon in test := true, 
+  cinnamon in dist := true, 
+  cinnamon in run := true, 
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 )
