@@ -30,19 +30,21 @@ object CloudflowApplicationPlugin extends AutoPlugin {
   /** This plugin depends on these other plugins: */
   override def requires: Plugins = StreamletDescriptorsPlugin && BlueprintVerificationPlugin && BuildAppPlugin
 
+  val InitialDebugPort = 5004
+
   override def buildSettings = Seq(
     cloudflowDockerRegistry := None,
     cloudflowDockerRepository := None,
-    runLocalKafka := None
+    runLocalKafka := None,
+    initialDebugPort := InitialDebugPort,
+    remoteDebugRunLocal := true
   )
 
   val DefaultLocalLog4jConfigFile = "local-run-log4j.properties"
-  val InitialDebugPort            = 5004
 
   /** Set default values for keys. */
   override def projectSettings = Seq(
     blueprint := None,
-    initialDebugPort := InitialDebugPort,
     runLocalConfigFile := None,
     runLocalLog4jConfigFile := None,
     runLocalJavaOptions := None,
