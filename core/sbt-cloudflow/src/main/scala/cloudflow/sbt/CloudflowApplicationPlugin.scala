@@ -45,6 +45,7 @@ object CloudflowApplicationPlugin extends AutoPlugin {
     initialDebugPort := InitialDebugPort,
     runLocalConfigFile := None,
     runLocalLog4jConfigFile := None,
+    runLocalJavaOptions := None,
     packageOptions in (Compile, packageBin) +=
         Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
     verifyBlueprint := verifyBlueprint.value,

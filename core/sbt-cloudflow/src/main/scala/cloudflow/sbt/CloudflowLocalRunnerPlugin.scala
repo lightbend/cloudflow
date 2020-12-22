@@ -142,12 +142,19 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
             printAppLayout(resolveConnections(appDescriptor))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
-
+            val javaOptions = runLocalJavaOptions.value
             val processes = runtimeDescriptorByProject.map {
               case (pid, rd) =>
                 val classpath               = cpByProject(pid)
                 val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
-                runPipelineJVM(pid, rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath, kafkaHost)
+                runPipelineJVM(pid,
+                               rd.appDescriptorFile,
+                               loggingPatchedClasspath,
+                               rd.outputFile,
+                               rd.logConfig,
+                               rd.localConfPath,
+                               kafkaHost,
+                               javaOptions)
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -433,7 +440,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                      outputFile: File,
                      log4JConfigFile: Path,
                      localConfPath: Option[String],
-                     kafkaHost: String)(
+                     kafkaHost: String,
+                     javaOptions: Option[String])(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -451,7 +459,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       .withRunJVMOptions(
         Vector(
           s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,quiet=y,address=localhost:$debugPort -Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"
-        )
+        ) ++ javaOptions.toVector
       )
     val classpathStr = classpath.collect { case url if !url.toString.contains("logback") => new File(url.toURI) }.mkString(separator)
 
