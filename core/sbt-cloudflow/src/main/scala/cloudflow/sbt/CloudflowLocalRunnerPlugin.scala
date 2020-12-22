@@ -52,8 +52,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
   val Log4J            = "log4j" % "log4j" % "1.2.17"
 
-  val KafkaPort     = 9093
-  var baseDebugPort = -1 // will we set when runLocal
+  val KafkaPort = 9093
 
   // Banner decorators
   val infoBanner    = banner('-') _
@@ -105,8 +104,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val projects = streamletDescriptorsByProject.keys
 
             // load local config
-            val localConfig = LocalConfig.load(configFile)
-            baseDebugPort = initialDebugPort.value
+            val localConfig   = LocalConfig.load(configFile)
+            val baseDebugPort = initialDebugPort.value
 
             val (tempDir, configDir) = createDirs("cloudflow-local-run")
             val descriptorByProject = projects.map { pid =>
@@ -142,19 +141,23 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
             printAppLayout(resolveConnections(appDescriptor))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
-            val javaOptions = runLocalJavaOptions.value
-            val processes = runtimeDescriptorByProject.map {
-              case (pid, rd) =>
+
+            val processes = runtimeDescriptorByProject.zipWithIndex.map {
+              case ((pid, rd), debugPortOffset) =>
                 val classpath               = cpByProject(pid)
                 val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
-                runPipelineJVM(pid,
-                               rd.appDescriptorFile,
-                               loggingPatchedClasspath,
-                               rd.outputFile,
-                               rd.logConfig,
-                               rd.localConfPath,
-                               kafkaHost,
-                               javaOptions)
+                runPipelineJVM(
+                  pid,
+                  rd.appDescriptorFile,
+                  loggingPatchedClasspath,
+                  rd.outputFile,
+                  rd.logConfig,
+                  rd.localConfPath,
+                  kafkaHost,
+                  remoteDebugRunLocal.value,
+                  baseDebugPort + debugPortOffset,
+                  runLocalJavaOptions.value
+                )
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -429,11 +432,6 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
   }
 
   //side-effects
-  def nextDebugPort() = {
-    baseDebugPort += 1
-    baseDebugPort
-  }
-
   def runPipelineJVM(pid: String,
                      applicationDescriptorFile: Path,
                      classpath: Array[URL],
@@ -441,7 +439,9 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
                      log4JConfigFile: Path,
                      localConfPath: Option[String],
                      kafkaHost: String,
-                     javaOptions: Option[String])(
+                     remoteDebug: Boolean,
+                     debugPort: Int,
+                     userJavaOptions: Option[String])(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -449,18 +449,29 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       logger.warn("""No "path.separator" setting found. Using default value ":" """)
       ":"
     }
-    val debugPort = nextDebugPort()
-    logger.info(s"listening for debugging '$pid' at 'localhost:$debugPort'")
+
+    val jvmOptions = {
+      val baseOptions = Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}")
+
+      val extraOptions = {
+        if (remoteDebug) {
+          logger.info(s"listening for debugging '$pid' at 'localhost:$debugPort'")
+          Vector(s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,quiet=y,address=localhost:$debugPort")
+        } else {
+          Vector()
+        }
+      }
+
+      baseOptions ++ extraOptions ++ userJavaOptions.toVector
+    }
+
     // Using file://localhost/path instead of file:///path or even file://path (as it was originally)
     // appears to be necessary for runLocal to work on both Windows and real systems.
     val forkOptions = ForkOptions()
       .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
       .withConnectInput(false)
-      .withRunJVMOptions(
-        Vector(
-          s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,quiet=y,address=localhost:$debugPort -Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"
-        ) ++ javaOptions.toVector
-      )
+      .withRunJVMOptions(jvmOptions)
+
     val classpathStr = classpath.collect { case url if !url.toString.contains("logback") => new File(url.toURI) }.mkString(separator)
 
     val options: Seq[String] = Seq(
