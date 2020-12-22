@@ -139,7 +139,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
                 """
               |kubernetes.pods.pod {
               |   containers.container {
-              |     ports = [{containerPort = 1234},{containerPort = 5678}]
+              |     ports = [{container-port = 1234},{container-port = 5678}]
               |     volume-mounts {
               |       foo {
               |         mount-path = "/etc/my/file"

@@ -384,11 +384,11 @@ object PodsConfig {
   }
 
   implicit val containerPortReader: ValueReader[Container.Port] = ValueReader.relative { portConfig =>
-    val containerPort = portConfig.getInt("containerPort")
+    val containerPort = portConfig.getInt("container-port")
     val protocol      = portConfig.as[Option[String]]("protocol").flatMap(str => Try(Protocol.withName(str)).toOption).getOrElse(Protocol.TCP)
     val name          = portConfig.as[Option[String]]("name").getOrElse("")
-    val hostIP        = portConfig.as[Option[String]]("hostIP").getOrElse("")
-    val hostPort      = portConfig.as[Option[Int]]("hostPort")
+    val hostIP        = portConfig.as[Option[String]]("host-ip").getOrElse("")
+    val hostPort      = portConfig.as[Option[Int]]("host-port")
     Container.Port(containerPort, protocol, name, hostIP, hostPort)
   }
 
