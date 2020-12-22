@@ -323,6 +323,15 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(Map())
 
+  def getAnnotations(podsConfig: PodsConfig, podName: String): Map[String, String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.annotations
+      }
+      .getOrElse(Map())
+
   def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
     podsConfig.pods
       .get(podName)
@@ -449,13 +458,16 @@ object PodsConfig {
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
+    val annotations = config
+      .as[Option[Map[String, String]]]("annotations")
+      .getOrElse(Map.empty[String, String])
     val volumes = config
       .as[Option[List[Volume]]]("volumes")
       .getOrElse(List.empty[Volume])
     val containers = config
       .as[Option[Map[String, ContainerConfig]]]("containers")
       .getOrElse(Map.empty[String, ContainerConfig])
-    PodConfig(containers, labels, volumes)
+    PodConfig(containers, labels, annotations, volumes)
   }
 
   /*
@@ -503,6 +515,7 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 final case class PodConfig(
     containers: Map[String, ContainerConfig],
     labels: Map[String, String] = Map(),
+    annotations: Map[String, String] = Map(),
     volumes: List[Volume] = List()
 )
 

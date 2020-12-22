@@ -102,6 +102,31 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
       crd.spec.get.template.metadata.labels.get("key2") mustBe Some("value2")
     }
 
+    "read from config custom annotaions and add them to the pod spec" in {
+
+      val crd = akkaRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = Secret(
+          metadata = ObjectMeta(),
+          data = Map(
+            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+                """
+                |kubernetes.pods.pod {
+                | annotations {
+                |    "key1" : "value1",
+                |    "key2" : "value2"
+                | }
+                |}
+                """.stripMargin.getBytes()
+          )
+        )
+      )
+
+      crd.spec.get.template.metadata.annotations.get("key1") mustBe Some("value1")
+      crd.spec.get.template.metadata.annotations.get("key2") mustBe Some("value2")
+    }
+
     "read from config custom ports and add them to the pod spec" in {
 
       val crd = akkaRunner.resource(

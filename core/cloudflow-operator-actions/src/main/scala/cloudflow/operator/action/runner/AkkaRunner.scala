@@ -251,6 +251,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
               ).toMap.mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
         )
         .addAnnotation("prometheus.io/scrape" -> "true")
+        .addAnnotations(getAnnotations(podsConfig, PodsConfig.CloudflowPodName))
         .addLabels(updateLabels)
         .withPodSpec(podSpecSecretVolumesAdded)
 
