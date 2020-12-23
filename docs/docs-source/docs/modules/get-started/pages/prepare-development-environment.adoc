@@ -1,7 +1,5 @@
 = Preparing a development environment
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 include::{cloudflow-version}@shared-content:get-started:page$prepare-development-environment.adoc[]

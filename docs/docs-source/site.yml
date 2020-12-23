@@ -14,8 +14,10 @@ content:
       branches: [master] # should always remain as master
 ui:
   bundle:
-    url: https://github.com/lightbend/antora-ui-lightbend-cloud-theme/raw/master/build/ui-bundle.zip
+    url: https://lightbend.github.io/antora-supplemental-ui-lightbend-theme/default_ui/ui-bundle-756539289.zip
     snapshot: true
+  default_layout: default
+  supplemental_files: ./supplemental_ui
 runtime:
   fetch: true
 asciidoc:

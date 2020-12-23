@@ -1,7 +1,5 @@
 = The Cloudflow Configuration Model
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 :allow-uri-read:
 
 include::ROOT:partial$include.adoc[]
