@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+{{> head-dev defaultPageTitle='Untitled'}}
+  </head>
+  <body class="blue-theme oss-banner article{{#with (or page.attributes.role page.role)}} {{{this}}}{{/with}}">
+{{> oss-banner}}
+{{> header}}
+{{> body}}
+{{> footer}}
+  </body>
+</html>
