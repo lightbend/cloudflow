@@ -7,7 +7,6 @@ RUN yarn global add antora-site-generator-lunr
 ENV DOCSEARCH_ENABLED=true
 ENV DOCSEARCH_ENGINE=lunr
 ENV DOCSEARCH_LANGS=en
-ENV DOCSEARCH_INDEX_VERSION=latest
 
 LABEL description="antora/antora image with the additional 'asciidoc-link-check', 'antora-lunr' and 'antora-site-generator-lunr' tool"
 
