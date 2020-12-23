@@ -1,7 +1,5 @@
 = Running the Application in the _Sandbox_
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 

@@ -1,8 +1,6 @@
 = Developing applications with Cloudflow
 :site.url: https://cloudflow.io/docs/current
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 
 include::ROOT:partial$include.adoc[]
