@@ -21,7 +21,8 @@ jobs:
         sbt "whitesourceCheckPolicies; whitesourceUpdate"
     - name: Build documentation  
       run: |
-        sudo snap install yq
+        sudo wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq
+        sudo chmod a+x /usr/bin/yq
         cd docs
         make all
     - name: Publish to cloudflow.io  

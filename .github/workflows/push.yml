@@ -19,7 +19,8 @@ jobs:
     - name: Build documentation
       run: |
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-        sudo snap install yq
+        sudo wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq
+        sudo chmod a+x /usr/bin/yq
         cd docs
         make html-author-mode
         grep -r "page unresolved" target/staging/docs/ && exit 1 || echo 'ok'
