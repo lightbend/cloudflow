@@ -39,19 +39,19 @@ set-antora-versions: get-version
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" shared-content-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" shared-content-source/docs/antora.yml
 
 	yq e ".version = \"${version}\"" ../examples/snippets/base-antora.yml > ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" ../examples/snippets/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" ../examples/snippets/antora.yml
 
 	yq e ".version = \"${version}\"" docs-source/docs/base-antora.yml > docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" docs-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" docs-source/docs/antora.yml
 
 set-antora-versions-to-dev: get-version
 	yq e ".version = \"dev\"" shared-content-source/docs/base-antora.yml > shared-content-source/docs/antora.yml
