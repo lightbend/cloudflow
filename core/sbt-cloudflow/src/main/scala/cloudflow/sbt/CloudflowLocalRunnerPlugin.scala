@@ -104,7 +104,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val projects = streamletDescriptorsByProject.keys
 
             // load local config
-            val localConfig = LocalConfig.load(configFile)
+            val localConfig   = LocalConfig.load(configFile)
+            val baseDebugPort = initialDebugPort.value
 
             val (tempDir, configDir) = createDirs("cloudflow-local-run")
             val descriptorByProject = projects.map { pid =>
@@ -141,11 +142,22 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             printAppLayout(resolveConnections(appDescriptor))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
 
-            val processes = runtimeDescriptorByProject.map {
-              case (pid, rd) =>
+            val processes = runtimeDescriptorByProject.zipWithIndex.map {
+              case ((pid, rd), debugPortOffset) =>
                 val classpath               = cpByProject(pid)
                 val loggingPatchedClasspath = prepareLoggingInClasspath(classpath, logDependencies)
-                runPipelineJVM(rd.appDescriptorFile, loggingPatchedClasspath, rd.outputFile, rd.logConfig, rd.localConfPath, kafkaHost)
+                runPipelineJVM(
+                  pid,
+                  rd.appDescriptorFile,
+                  loggingPatchedClasspath,
+                  rd.outputFile,
+                  rd.logConfig,
+                  rd.localConfPath,
+                  kafkaHost,
+                  remoteDebugRunLocal.value,
+                  baseDebugPort + debugPortOffset,
+                  runLocalJavaOptions.value
+                )
             }
 
             println(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
@@ -419,12 +431,17 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     updatedStreamlets.map(streamlets => applicationDescriptor.copy(streamlets = streamlets))
   }
 
-  def runPipelineJVM(applicationDescriptorFile: Path,
+  //side-effects
+  def runPipelineJVM(pid: String,
+                     applicationDescriptorFile: Path,
                      classpath: Array[URL],
                      outputFile: File,
                      log4JConfigFile: Path,
                      localConfPath: Option[String],
-                     kafkaHost: String)(
+                     kafkaHost: String,
+                     remoteDebug: Boolean,
+                     debugPort: Int,
+                     userJavaOptions: Option[String])(
       implicit logger: Logger
   ): Process = {
     val cp = "-cp"
@@ -433,12 +450,28 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       ":"
     }
 
+    val jvmOptions = {
+      val baseOptions = Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}")
+
+      val extraOptions = {
+        if (remoteDebug) {
+          logger.info(s"listening for debugging '$pid' at 'localhost:$debugPort'")
+          Vector(s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,quiet=y,address=localhost:$debugPort")
+        } else {
+          Vector()
+        }
+      }
+
+      baseOptions ++ extraOptions ++ userJavaOptions.toVector
+    }
+
     // Using file://localhost/path instead of file:///path or even file://path (as it was originally)
     // appears to be necessary for runLocal to work on both Windows and real systems.
     val forkOptions = ForkOptions()
       .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
       .withConnectInput(false)
-      .withRunJVMOptions(Vector(s"-Dlog4j.configuration=file:///${log4JConfigFile.toFile.getAbsolutePath}"))
+      .withRunJVMOptions(jvmOptions)
+
     val classpathStr = classpath.collect { case url if !url.toString.contains("logback") => new File(url.toURI) }.mkString(separator)
 
     val options: Seq[String] = Seq(

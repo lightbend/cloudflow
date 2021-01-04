@@ -17,6 +17,10 @@ jobs:
         architecture: x64
     - name: Cache SBT and Coursier cache
       uses: coursier/cache-action@v3
+    - name: Scalafmt check
+      run: |
+        cd core
+        sbt "scalafmtCheckAll; scalafmtSbtCheck"
     - name: Build documentation
       run: |
         sudo snap install yq

@@ -293,6 +293,17 @@ trait Runner[T <: ObjectResource] {
       }
       .getOrElse(List())
 
+  def getContainerPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.ports
+        }
+      }
+      .getOrElse(List())
+
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods
       .get(podName)
@@ -309,6 +320,15 @@ trait Runner[T <: ObjectResource] {
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
       .map { podConfig =>
         podConfig.labels
+      }
+      .getOrElse(Map())
+
+  def getAnnotations(podsConfig: PodsConfig, podName: String): Map[String, String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.annotations
       }
       .getOrElse(Map())
 
@@ -363,11 +383,21 @@ object PodsConfig {
     EnvVar(name, value)
   }
 
+  implicit val containerPortReader: ValueReader[Container.Port] = ValueReader.relative { portConfig =>
+    val containerPort = portConfig.getInt("container-port")
+    val protocol      = portConfig.as[Option[String]]("protocol").flatMap(str => Try(Protocol.withName(str)).toOption).getOrElse(Protocol.TCP)
+    val name          = portConfig.as[Option[String]]("name").getOrElse("")
+    val hostIP        = portConfig.as[Option[String]]("host-ip").getOrElse("")
+    val hostPort      = portConfig.as[Option[Int]]("host-port")
+    Container.Port(containerPort, protocol, name, hostIP, hostPort)
+  }
+
   implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
     val env          = containerConfig.as[Option[List[EnvVar]]]("env")
     val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
     val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
-    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()))
+    val ports        = containerConfig.as[Option[List[Container.Port]]]("ports")
+    ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()), ports.getOrElse(List()))
   }
 
   implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config =>
@@ -428,13 +458,16 @@ object PodsConfig {
     val labels = config
       .as[Option[Map[String, String]]]("labels")
       .getOrElse(Map.empty[String, String])
+    val annotations = config
+      .as[Option[Map[String, String]]]("annotations")
+      .getOrElse(Map.empty[String, String])
     val volumes = config
       .as[Option[List[Volume]]]("volumes")
       .getOrElse(List.empty[Volume])
     val containers = config
       .as[Option[Map[String, ContainerConfig]]]("containers")
       .getOrElse(Map.empty[String, ContainerConfig])
-    PodConfig(containers, labels, volumes)
+    PodConfig(containers, labels, annotations, volumes)
   }
 
   /*
@@ -482,11 +515,13 @@ final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
 final case class PodConfig(
     containers: Map[String, ContainerConfig],
     labels: Map[String, String] = Map(),
+    annotations: Map[String, String] = Map(),
     volumes: List[Volume] = List()
 )
 
 final case class ContainerConfig(
     env: List[EnvVar] = List(),
     resources: Option[Resource.Requirements] = None,
-    volumeMounts: List[Volume.Mount] = List()
+    volumeMounts: List[Volume.Mount] = List(),
+    ports: List[Container.Port] = List()
 )

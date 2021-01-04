@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	{{> head defaultPageTitle='Untitled'}}
+	<link rel="stylesheet" href="{{uiRootPath}}/css/cloudflow.home.css">
+  </head>
+  <body class="blue-theme home oss-banner article{{#with (or page.attributes.role page.role)}} {{{this}}}{{/with}}">
+	{{> oss-banner}}
+	<article id="page-content" class="home-content">
+
+		<header>
+			<span>
+				<img class="homepage-logo" src="{{uiRootPath}}/img/cloudflow-reverse.svg" alt="Cloudflow Logo" title="Cloudflow Logo">
+				<h1>Streaming Data Pipelines on Kubernetes</h1>
+			</span>
+		</header>
+		<nav class="home-toc">
+			<ul>
+				<li><a href="docs/current/index.html">{{> cloudflow-icon-reverse-flush-svg}}Documentation</a></li>
+				<li><a href="https://github.com/lightbend/cloudflow">{{> github-white-svg}}Contribute</a></li>
+				<li><a href="https://discuss.lightbend.com/c/cloudflow">{{> discuss-white-svg}}Discuss</a></li>
+				<li><a href="https://cloudflow.zulipchat.com/">{{> zulip-white-svg}}Zulip</a></li>
+			</ul>
+		</nav>
+		<main class="content">
+			<section>
+				{{{page.contents}}}
+			</section>
+		</main>
+	</article>
+	<footer class="footer">
+		<img class="cloudflow-icon" src="{{uiRootPath}}/img/cloudflow-icon-full-color-flush.svg">
+		{{> footer-legal-lightbend}}
+	</footer>
+	{{> footer-scripts}}
+
+  </body>
+</html>

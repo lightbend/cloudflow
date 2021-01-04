@@ -16,7 +16,7 @@
 
 package cloudflow.streamlets.avro
 
-import scala.util.{ Failure, Try }
+import scala.util._
 
 import com.twitter.bijection.Injection
 import org.apache.avro.Schema

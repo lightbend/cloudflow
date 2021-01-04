@@ -1,7 +1,4 @@
 = The Cloudflow development process
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 4
 :imagesdir: assets/images
 
 include::ROOT:partial$include.adoc[]

@@ -51,13 +51,20 @@ trait CloudflowSettingKeys {
   val blueprint              = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
   val schemaCodeGenerator    = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
   val schemaPaths            = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
-  val runLocalKafka          = settingKey[Option[String]]("the external Kafka to use with the local runner Sandbox.")
-  val runLocalConfigFile     = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val runLocalKafka          = settingKey[Option[String]]("The external Kafka to use with the local runner Sandbox.")
+  val runLocalConfigFile     = settingKey[Option[String]]("The HOCON configuration file to use with the local runner Sandbox.")
   val runLocalLog4jConfigFile = settingKey[Option[String]](
     s"The path to the log4j configuration file to use with the local runner Sandbox, if omitted, ${CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile} is read from plugin classpath."
   )
+
+  val runLocalJavaOptions = settingKey[Option[String]](
+    s"Java options that will be added to JVMs that are forked by runLocal"
+  )
+
   val ownerInDockerImage =
     settingKey[String]("The user as owner in the resulting docker image, which can be used as chown in docker copy instructions.")
+  val initialDebugPort    = settingKey[Int]("Initial port number for debugging in runLocal. It will be increased by one for each Streamlet")
+  val remoteDebugRunLocal = settingKey[Boolean]("Enable/Disable remote debugging for streamlets in runLocal")
 }
 
 trait CloudflowTaskKeys {

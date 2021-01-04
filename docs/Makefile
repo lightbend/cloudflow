@@ -5,8 +5,8 @@ include definitions.mk
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}/..
 
-antora_docker_image     := antora/antora
-antora_docker_image_tag := 2.3.1
+antora_docker_image     := lightbend/antora-cloudflow-doc
+antora_docker_image_tag := 2.3.2
 
 work_dir := ${ROOT_DIR}/docs/target
 
@@ -35,42 +35,42 @@ get-version:
 	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . == \"cloudflow_v${version}\")'"))
 
 set-antora-versions: get-version
-	yq write shared-content-source/docs/base-antora.yml version "${version}" > shared-content-source/docs/antora.yml
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "${version}"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+	yq e ".version = \"${version}\"" shared-content-source/docs/base-antora.yml > shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" shared-content-source/docs/antora.yml
 
-	yq write ../examples/snippets/base-antora.yml version "${version}" > ../examples/snippets/antora.yml
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-version' "${version}"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+	yq e ".version = \"${version}\"" ../examples/snippets/base-antora.yml > ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" ../examples/snippets/antora.yml
 
-	yq write docs-source/docs/base-antora.yml version "${version}" > docs-source/docs/antora.yml
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "${version}"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "${version}"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "v${version}"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "${bintray_version}"
+	yq e ".version = \"${version}\"" docs-source/docs/base-antora.yml > docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" docs-source/docs/antora.yml
 
 set-antora-versions-to-dev: get-version
-	yq write shared-content-source/docs/base-antora.yml version "dev" > shared-content-source/docs/antora.yml
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
-	yq write -i shared-content-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
+	yq e ".version = \"dev\"" shared-content-source/docs/base-antora.yml > shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" shared-content-source/docs/antora.yml
 
-	yq write ../examples/snippets/base-antora.yml version "dev" > ../examples/snippets/antora.yml
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
-	yq write -i ../examples/snippets/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
+	yq e ".version = \"dev\"" ../examples/snippets/base-antora.yml > ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" ../examples/snippets/antora.yml
 
-	yq write docs-source/docs/base-antora.yml version "dev" > docs-source/docs/antora.yml
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-version' "dev"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-examples-version' "dev"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.cloudflow-branch-version' "dev"
-	yq write -i docs-source/docs/antora.yml 'asciidoc.attributes.kubectl-plugin-version' "not-available"
+	yq e ".version = \"dev\"" docs-source/docs/base-antora.yml > docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" docs-source/docs/antora.yml
 
 html: clean
 	docker run \
@@ -116,7 +116,7 @@ list-todos: html
 # Generate the ScalaDoc and the JavaDoc, for the old versions
 all_javascaladocs:
 	@echo "Building old java and scala docs"
-	(yq r docs-source/site.yml 'content.sources[0].branches.*' | xargs -n1 ./build-javascaladocs.sh)
+	(yq e '.content.sources[0].branches.*' docs-source/site.yml | xargs -n1 ./build-javascaladocs.sh)
 
 print-site:
 	# The result directory with the contents of this build:

@@ -1,7 +1,5 @@
-= Building a Spark streamlet
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+= Building a Spark Streamlet
+
 
 include::ROOT:partial$include.adoc[]
 include::{cloudflow-version}@shared-content:develop:page$build-spark-streamlets.adoc[]

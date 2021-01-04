@@ -1,7 +1,5 @@
-= Building a Flink streamlet
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+= Building a Flink Streamlet
+
 :page-supergroup-scala-java: Language
 
 include::ROOT:partial$include.adoc[]
