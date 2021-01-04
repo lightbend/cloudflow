@@ -58,19 +58,19 @@ set-antora-versions-to-dev: get-version
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" shared-content-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" shared-content-source/docs/antora.yml
 
 	yq e ".version = \"dev\"" ../examples/snippets/base-antora.yml > ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" ../examples/snippets/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" ../examples/snippets/antora.yml
 
 	yq e ".version = \"dev\"" docs-source/docs/base-antora.yml > docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"dev\"" docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"dev\"" docs-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"vdev\"" docs-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"dev\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"not-available\"" docs-source/docs/antora.yml
 
 html: clean
 	docker run \
