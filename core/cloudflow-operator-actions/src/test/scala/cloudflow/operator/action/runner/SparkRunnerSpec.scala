@@ -119,7 +119,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.driver {
                 | labels: {
@@ -154,7 +154,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.executor {
                 | labels: {
@@ -189,7 +189,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 | labels: {
@@ -224,7 +224,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 |   volumes {
@@ -282,7 +282,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods {
                 | pod {
@@ -348,7 +348,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods {
                 |  driver {
@@ -402,7 +402,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 |   volumes {
@@ -444,7 +444,7 @@ class SparkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods {
                 | pod {

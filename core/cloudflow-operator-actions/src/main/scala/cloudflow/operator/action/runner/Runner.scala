@@ -29,8 +29,8 @@ import skuber.rbac._
 import skuber._
 import cloudflow.blueprint.deployment._
 
-import cloudflow.operator.event.ConfigInputChangeEvent
 import cloudflow.operator.action._
+import cloudflow.operator.event.ConfigInput
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -240,7 +240,7 @@ trait Runner[T <: ObjectResource] {
   ): T
 
   def getPodsConfig(secret: Secret): PodsConfig = {
-    val str = getData(secret, ConfigInputChangeEvent.PodsConfigDataKey)
+    val str = getData(secret, ConfigInput.PodsConfigDataKey)
     PodsConfig
       .fromConfig(ConfigFactory.parseString(str))
       .recover {
@@ -255,7 +255,7 @@ trait Runner[T <: ObjectResource] {
   }
 
   def getRuntimeConfig(secret: Secret): Config = {
-    val str = getData(secret, ConfigInputChangeEvent.RuntimeConfigDataKey)
+    val str = getData(secret, ConfigInput.RuntimeConfigDataKey)
     Try(ConfigFactory.parseString(str))
       .recover {
         case e =>

@@ -105,37 +105,6 @@ object Operator {
     )
   }
 
-  def handleConfigurationInput(
-      client: KubernetesClient,
-      podNamespace: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = new SkuberActionExecutor()
-    // only watch secrets that contain input config
-    val watchOptions = ListOptions(
-      labelSelector = Some(
-        LabelSelector(
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.InputConfig)
-        )
-      ),
-      resourceVersion = None
-    )
-    // watch only Input secrets, transform the application input secret
-    // into Output secret create actions.
-    runStream(
-      watch[Secret](client, watchOptions)
-        .via(ConfigInputChangeEventFlow.fromWatchEvent())
-        .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
-        .via(executeActions(actionExecutor, logAttributes))
-        .toMat(Sink.ignore)(Keep.right),
-      "The configuration input stream completed unexpectedly, terminating.",
-      "The configuration input stream failed, terminating."
-    )
-  }
-
   def handleConfigurationUpdates(
       client: KubernetesClient,
       runners: Map[String, Runner[_]],
