@@ -17,6 +17,7 @@
 package cloudflow.streamlets
 
 import cloudflow.streamlets.descriptors._
+import com.typesafe.config.Config
 
 sealed trait ValidationType {
   def pattern: Option[String] = None
@@ -27,6 +28,7 @@ final case object IntegerValidationType    extends ValidationType { val `type` =
 final case object DoubleValidationType     extends ValidationType { val `type` = "double"     }
 final case object DurationValidationType   extends ValidationType { val `type` = "duration"   }
 final case object MemorySizeValidationType extends ValidationType { val `type` = "memorysize" }
+final case object ConfigValidationType     extends ValidationType { val `type` = "config"     }
 final case class RegexpValidationType(regExpPattern: String) extends ValidationType {
   override val pattern = Some(regExpPattern)
   override val `type`  = "string"
@@ -343,6 +345,34 @@ final case class MemorySizeConfigParameter(key: String, description: String = ""
     context.streamletConfig.getMemorySize(key)
   def value(implicit context: StreamletContext) =
     context.streamletConfig.getMemorySize(key)
+  def withDefaultValue(value: String) =
+    this.copy(defaultValue = Some(value))
+}
+
+/**
+ * Describes a config configuration parameter.
+ *
+ * @param key name of the parameter
+ * @param description description of the parameter
+ * @param defaultValue the default value used if the parameter is not specified at application deployment time.
+ */
+object ConfigConfigParameter {
+  // Java API
+  def create(key: String, description: String) =
+    ConfigConfigParameter(key, description)
+}
+final case class ConfigConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, ConfigValidationType, defaultValue)
+
+  /**
+   * Java API
+   * Gets the value for this configuration parameter.
+   */
+  def getValue(context: StreamletContext): Config =
+    context.streamletConfig.getConfig(key)
+  def value(implicit context: StreamletContext): Config =
+    context.streamletConfig.getConfig(key)
   def withDefaultValue(value: String) =
     this.copy(defaultValue = Some(value))
 }

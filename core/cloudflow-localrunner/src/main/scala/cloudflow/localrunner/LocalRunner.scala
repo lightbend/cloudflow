@@ -30,7 +30,14 @@ import spray.json._
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.blueprint.RunnerConfigUtils._
-import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
+import cloudflow.streamlets.{
+  BooleanValidationType,
+  ConfigValidationType,
+  DoubleValidationType,
+  IntegerValidationType,
+  StreamletExecution,
+  StreamletLoader
+}
 import com.typesafe.config._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -219,12 +226,8 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
-  private val isNonQuotedType = Set(BooleanValidationType.`type`, IntegerValidationType.`type`, DoubleValidationType.`type`)
-
-  private def quotePolicy(validationType: String): String => String = { x =>
-    if (isNonQuotedType(validationType)) x else s""""$x""""
-
-  }
+  private val isNonQuotedType =
+    Set(BooleanValidationType.`type`, IntegerValidationType.`type`, DoubleValidationType.`type`, ConfigValidationType.`type`)
 
   private def readDescriptorFile(appDescriptorFilename: String): Try[ApplicationDescriptor] =
     Try {

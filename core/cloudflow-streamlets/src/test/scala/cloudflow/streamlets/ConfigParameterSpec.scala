@@ -114,5 +114,17 @@ class ConfigParameterSpec extends WordSpec with MustMatchers with OptionValues {
       descriptor.defaultValue.value mustBe "some string"
     }
 
+    "validate that ConfigConfigParameter produce a correct descriptor" in {
+      val aConfig = ConfigConfigParameter("test", "description", Some("{ foo = bar }"))
+
+      val descriptor = aConfig.toDescriptor
+
+      descriptor.key mustBe "test"
+      descriptor.description mustBe "description"
+      descriptor.validationType mustBe "config"
+      descriptor.validationPattern mustBe empty
+      ConfigFactory.parseString(descriptor.defaultValue.value).getString("foo") mustBe "bar"
+    }
+
   }
 }
