@@ -241,7 +241,7 @@ object LocalRunner extends StreamletLoader {
   }
 
   private val isNonQuotedType =
-    Set(BooleanValidationType.`type`, IntegerValidationType.`type`, DoubleValidationType.`type`)
+    Set(BooleanValidationType.`type`, IntegerValidationType.`type`, DoubleValidationType.`type`, ConfigValidationType.`type`)
 
   private def quotePolicy(validationType: String): String => String = { x =>
     if (isNonQuotedType(validationType)) x else s""""$x""""
