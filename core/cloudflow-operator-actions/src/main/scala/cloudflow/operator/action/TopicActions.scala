@@ -16,6 +16,7 @@
 
 package cloudflow.operator.action
 
+import java.nio.charset.StandardCharsets
 import java.util.Collections
 import scala.collection.immutable._
 import scala.concurrent.duration.Duration
@@ -25,7 +26,7 @@ import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 
 import akka.actor.ActorSystem
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
 import org.apache.kafka.clients.admin.CreateTopicsOptions
@@ -39,7 +40,7 @@ import skuber.json.format._
 
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
-import cloudflow.operator.event.ConfigInputChangeEvent
+import cloudflow.operator.event.ConfigInput
 
 /**
  * Creates topic actions for managed topics.
@@ -128,12 +129,20 @@ object TopicActions {
       .getOrElse(useClusterConfiguration(topic))
   }
 
+  def getData(secret: Secret): String =
+    secret.data.get(ConfigInput.SecretDataKey).map(bytes => new String(bytes, StandardCharsets.UTF_8)).getOrElse("")
+
+  def getConfigFromSecret(secret: Secret): Config = {
+    val str = getData(secret)
+    ConfigFactory.parseString(str)
+  }
+
   def createActionFromKafkaConfigSecret(secret: Secret,
                                         newApp: CloudflowApplication.CR,
                                         runners: Map[String, runner.Runner[_]],
                                         labels: CloudflowLabels,
                                         topic: TopicInfo) = {
-    val config    = ConfigInputChangeEvent.getConfigFromSecret(secret)
+    val config    = getConfigFromSecret(secret)
     val topicInfo = TopicInfo(Topic(id = topic.id, cluster = topic.cluster, config = config))
     createTopicOrError(newApp, runners, labels, topicInfo)
   }
@@ -145,7 +154,7 @@ object TopicActions {
                                            topic: TopicInfo) =
     for {
       secret <- secretOption
-      config = ConfigInputChangeEvent.getConfigFromSecret(secret)
+      config = getConfigFromSecret(secret)
       kafkaConfig <- getKafkaConfig(config, topic)
       topicWithKafkaConfig = TopicInfo(Topic(id = topic.id, config = kafkaConfig))
       _ <- topicWithKafkaConfig.bootstrapServers

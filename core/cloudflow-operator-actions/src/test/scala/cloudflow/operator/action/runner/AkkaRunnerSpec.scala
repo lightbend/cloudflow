@@ -85,7 +85,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 | labels {
@@ -110,7 +110,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 | annotations {
@@ -135,7 +135,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
               |kubernetes.pods.pod {
               |   containers.container {
@@ -170,7 +170,7 @@ class AkkaRunnerSpec extends WordSpecLike with OptionValues with MustMatchers wi
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
               |kubernetes.pods.pod {
               |   volumes {
