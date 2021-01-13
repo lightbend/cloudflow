@@ -47,8 +47,11 @@ trait CloudflowSettingKeys {
   val cloudflowVersion           = settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
   val blueprint                  = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
   val schemaCodeGenerator        = settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
-  val schemaPaths                = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
-  val runLocalConfigFile         = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
+  val useShortK8sObjectNames = settingKey[Boolean](
+    "Define whether to generate short K8S object names in CRs consisting mainly of the streamlet-name, or remain with long names based on app-id and streamlet-name"
+  )
+  val schemaPaths        = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
+  val runLocalConfigFile = settingKey[Option[String]]("the HOCON configuration file to use with the local runner Sandbox.")
   val runLocalLog4jConfigFile = settingKey[Option[String]](
     s"The path to the log4j configuration file to use with the local runner Sandbox, if omitted, ${CloudflowApplicationPlugin.DefaultLocalLog4jConfigFile} is read from plugin classpath."
   )

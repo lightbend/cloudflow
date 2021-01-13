@@ -88,6 +88,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       }
     },
     applicationDescriptor := {
+      val shortK8sNames   = (ThisProject / useShortK8sObjectNames).value
       val appId           = (ThisProject / name).value
       val appVersion      = (ThisProject / version).value
       val agentPathsMap   = Map("prometheus" -> "/prometheus/jmx_prometheus_javaagent.jar")
@@ -97,7 +98,9 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       for {
         BlueprintVerified(bp, _) <- verificationResult.value.toOption
         verifiedBlueprint        <- bp.verified.toOption
-      } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap, libraryVersion)
+      } yield ApplicationDescriptor(appId, appVersion, dockerImageName.get.name, verifiedBlueprint, agentPathsMap, libraryVersion)(
+        shortK8sNames
+      )
     },
     fork in Compile := true
   )

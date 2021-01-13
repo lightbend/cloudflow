@@ -96,7 +96,7 @@ class RunnerConfigSpec extends WordSpec with MustMatchers with OptionValues with
     .connect(Topic(id = "bars"), processorRef.out)
 
   val verifiedBlueprint = blueprint.verified.right.value
-  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)
+  val descriptor        = ApplicationDescriptor(appId, appVersion, image, verifiedBlueprint, agentPaths, BuildInfo.version)(false)
 
   val allDeployments      = descriptor.deployments
   val ingressDeployment   = allDeployments.find(_.streamletName == ingressRef.name).value

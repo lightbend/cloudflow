@@ -53,7 +53,7 @@ object ApplicationDescriptor {
             image: String,
             blueprint: VerifiedBlueprint,
             agentPaths: Map[String, String],
-            libraryVersion: String): ApplicationDescriptor = {
+            libraryVersion: String)(useShortK8sObjectNames: Boolean): ApplicationDescriptor = {
 
     val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
@@ -61,7 +61,12 @@ object ApplicationDescriptor {
       namedStreamletDescriptors
         .map {
           case (streamlet, instance) =>
-            StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
+            val sd = StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
+            if (useShortK8sObjectNames) {
+              sd.withShortName()
+            } else {
+              sd
+            }
         }
 
     ApplicationDescriptor(sanitizedApplicationId,
@@ -119,7 +124,11 @@ object StreamletDeployment {
   val ServerAttributeName   = "server"
   val EndpointContainerPort = 3000
 
-  def name(appId: String, streamlet: String) = s"${appId}.${streamlet}"
+  implicit class StreamletDeploymentHelper(deployment: StreamletDeployment) {
+    def withShortName() = deployment.copy(name = deployment.streamletName)
+  }
+
+  def longName(appId: String, streamlet: String) = s"${appId}.${streamlet}"
 
   def apply(appId: String,
             streamlet: StreamletInstance,
@@ -129,7 +138,7 @@ object StreamletDeployment {
             replicas: Option[Int] = None): StreamletDeployment = {
     val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
     StreamletDeployment(
-      name(appId, streamlet.name),
+      longName(appId, streamlet.name),
       streamlet.descriptor.runtime.name,
       image,
       streamlet.name,
