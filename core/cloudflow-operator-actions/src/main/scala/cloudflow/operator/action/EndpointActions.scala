@@ -40,17 +40,25 @@ object EndpointActions {
     def distinctEndpoints(app: CloudflowApplication.Spec) =
       app.deployments.flatMap(deployment => deployment.endpoint).toSet
 
+    def deploymentsOfEndpoints(app: CloudflowApplication.Spec) =
+      app.deployments
+        .flatMap(deployment => deployment.endpoint.map(ep => ep -> deployment.name))
+        .toMap // use deployment name rather than re-constructing the name again (by duplicating code)
+
+    val currentDeploymentsOfEndpoints = currentApp.map(current => deploymentsOfEndpoints(current.spec)).getOrElse(Map.empty)
+    val newDeploymentsOfEndpoints     = deploymentsOfEndpoints(newApp.spec)
+
     val currentEndpoints = currentApp.map(cr => distinctEndpoints(cr.spec)).getOrElse(Set.empty[Endpoint])
     val newEndpoints     = distinctEndpoints(newApp.spec)
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint =>
       Seq(
-        Action.delete[Service](Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet)), newApp.namespace)
+        Action.delete[Service](Name.ofService(currentDeploymentsOfEndpoints(endpoint)), newApp.namespace)
       )
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint =>
       Seq(
-        createServiceAction(endpoint, newApp, StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet))
+        createServiceAction(endpoint, newApp, newDeploymentsOfEndpoints(endpoint))
       )
     }.toList
     deleteActions ++ createActions

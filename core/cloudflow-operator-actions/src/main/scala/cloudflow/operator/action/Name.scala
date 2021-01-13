@@ -125,7 +125,7 @@ object Name {
     makeDNS1039Compatible(fixDots(streamletDeploymentName))
 
   def ofConfigMap(streamletDeploymentName: String) =
-    makeDNS1123CompatibleSubDomainName(s"configmap-${fixDots(streamletDeploymentName)}")
+    makeDNS1123CompatibleSubDomainName(s"configmap-${fixDots(streamletDeploymentName)}") // TODO - why append '-service' (line 145) but prepend 'configmap-'? - suffixes seem the more k8s-idiomatic choice
 
   def ofLabelValue(name: String) =
     truncateTo63Characters(name)
@@ -142,7 +142,7 @@ object Name {
   val ofContainerPrometheusExporterPort = max15Chars("prom-metrics")
 
   def ofService(streamletDeploymentName: String) =
-    truncateTo63CharactersWithSuffix(makeDNS1039Compatible(ofPod(streamletDeploymentName)), "-service")
+    truncateTo63CharactersWithSuffix(ofPod(streamletDeploymentName), "-service")
 
   def ofAdminService(streamletDeploymentName: String) =
     s"${ofPod(streamletDeploymentName)}-admin-service"
