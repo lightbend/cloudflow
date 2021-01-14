@@ -1,0 +1,100 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+## Monitoring Akka Streamlets
+
+Cloudflow allows you to use https://developer.lightbend.com/docs/telemetry/current/home.html[telemery] just by adding the necessary configuration. Telemetry provides instrumentation to report metrics for Akka components through different plugins, such as Prometheus or Elasticsearch. These metrics can then be accessed through, for instance, a Graphana dashboard or a Kibana one. 
+
+
+In this case, we'll describe the use case where the reporter is Prometheus and the dashboard is Grafana. Which is the same as in the https://developer.lightbend.com/docs/cloudflow/current/install/install-console.html[Cloudflow Console]
+
+The required configuration is, as per https://developer.lightbend.com/docs/telemetry/current/setup/cinnamon-agent-sbt.html#lightbend-telemetry-sbt-plugin[documentation], the following:
+
+### Add sbt-cinnamon plugin 
+We must add sbt-cinnamon plugin into `plugins.sbt` file, in the `project` folder.  
+
+```
+addSbtPlugin("com.lightbend.cinnamon" % "sbt-cinnamon" % [version])
+```
+changing `version` to https://developer.lightbend.com/docs/telemetry/current/setup/cinnamon-agent-sbt.html#lightbend-telemetry-sbt-plugin[latest]
+
+### Add library dependencies
+
+The required libraries that will be in charge of adding the telemetry for each Akka component plus the reporter of choice. In our sample
+
+```Cinnamon.library.cinnamonAgent,
+Cinnamon.library.cinnamonAkka,
+Cinnamon.library.cinnamonAkkaStream,
+Cinnamon.library.cinnamonAkkaHttp,
+Cinnamon.library.cinnamonPrometheus,
+Cinnamon.library.cinnamonPrometheusHttpServer
+```
+
+The libraries `cinnamonAkka`, `cinnamonAkkaStream`, and `cinnamonAkkaHttp` would be in charge of adding the metrics, also called https://developer.lightbend.com/docs/telemetry/current/instrumentations/instrumentations.html#instrumentations[instrumentations].  
+`cinnamonPrometheus` and `cinnamonPrometheusServer` are the ones providing the reporter side. For more info about this have a look at https://developer.lightbend.com/docs/telemetry/current/plugins/prometheus/prometheus.html[backend plugins]. Finally, `cinnamonAgent` works under the hood to add the `cinnamon-agent-[version].jar` library that we have to point to when deploying the app. This last point is further explained at the end of this section, on "Add --conf"
+
+### Add setting
+Some settings are required per streamlet configuration. This typically would be set in some common settings and reused in each Akka Streamlet.  
+[source, hocon]
+----
+  cinnamonSuppressRepoWarnings := true,
+  cinnamon in test := true, 
+  cinnamon in run := true, 
+  cinnamonLogLevel := "INFO", 
+----
+
+### Add "--conf ..."
+
+Is required creating a config file (dev.conf, for instance) to be used when deploying as `kubectl cloudflow deploy target/[project-name].json --conf dev.conf`. This config file needs two things:
+
+#### 1. The https://developer.lightbend.com/docs/telemetry/current/getting-started/start.html#configure-cinnamon-for-telemetry[Cinnamon configuration for telemetry]. 
+
+This configuration is directly in line with the Cinnamon libraries we added as dependencies in the `build.sbt`. In the following case we are setting values for `streams`, and we can do so because we previously added in `build.sbt` its library dependency `Cinnamon.library.cinnamonAkkaStream`
+
+[source, hocon]
+----
+cloudflow.runtimes.akka {
+  config {
+    cinnamon.prometheus {
+      exporters += http-server
+    }
+    cinnamon.akka {
+      streams {
+        "*" {
+          report-by = instance
+        }
+      }
+    }
+  }
+}
+----
+#### 2. Opening port and adding `cinnamon-agent.jar`
+As we chosen `Cinnamon.library.cinnamonPrometheusHttpServer` we'll need to allow access to that server. Also adding cinnamon-agent.jar is necessary.
+
+[source, hocon]
+----
+cloudflow.runtimes.akka {
+  kubernetes.pods.pod {
+     containers.container {
+       ports = [
+         {
+           container-port = 9001
+           name = "c-metrics"
+         }
+       ]
+       env = [
+         { name = "JAVA_OPTS"
+           value = " -javaagent:/opt/cloudflow/cinnamon-agent-[version].jar"
+         }
+       ]
+     }
+  	}
+}
+----
+The name of the port is irrelevant, but the port is not. This configuration is allowing port `9001` to be scraped by Prometheus itself. In https://developer.lightbend.com/docs/cloudflow/current/install/install-console.html[Console] this is the default. 
+If you're using a Prometheus of your own you can change this default like (https://developer.lightbend.com/docs/telemetry/current/plugins/prometheus/prometheus.html#http-server[this] and then ask Prometheus itself to scrape whichever port you have chosen. 
+
+The `cinnamon-agent-[version].jar` indicates to every Akka streamlet where to look for that jar. This is the place where the library `Cinnamon.library.cinnamonAgent`, mentioned before, puts it.
+
+You may have a look at this working sample in https://github.com/lightbend/cloudflow/tree/master/examples/taxi-ride

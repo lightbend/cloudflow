@@ -39,6 +39,7 @@ include::partial$include.adoc[]
 *** xref:develop:streamlet-volume-mounts.adoc[Streamlet Volume Mounts]
 ** xref:develop:cloudflow-local-sandbox.adoc[Running in the Local Sandbox]
 ** xref:develop:debugging.adoc[Debugging Streamlets]
+** xref:develop:monitoring.adoc[Monitoring Akka Streamlets]
 
 
 * xref:cli:cloudflow.adoc[kubectl cloudflow - cli commands]

@@ -22,10 +22,8 @@ lazy val root =
 
 lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
-  .enablePlugins (Cinnamon)
   .settings(commonSettings)
   .settings(
-    cinnamonSuppressRepoWarnings := true,
     name := "taxi-ride-fare",
     runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local.conf"),
     runLocalLog4jConfigFile := Some("taxi-ride-pipeline/src/main/resources/log4j.properties"),
@@ -39,7 +37,6 @@ lazy val datamodel = appModule("datamodel")
 
 lazy val ingestor = appModule("ingestor")
   .enablePlugins(CloudflowAkkaPlugin)
-  .enablePlugins (Cinnamon)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
@@ -52,7 +49,7 @@ lazy val ingestor = appModule("ingestor")
       Cinnamon.library.cinnamonAkkaHttp,
       Cinnamon.library.cinnamonPrometheus,
       Cinnamon.library.cinnamonPrometheusHttpServer
-    )
+    ),
   )
   .dependsOn(datamodel)
 
@@ -73,7 +70,6 @@ lazy val processor = appModule("processor")
 
 lazy val ridelogger = appModule("logger")
   .enablePlugins(CloudflowAkkaPlugin)
-  .enablePlugins (Cinnamon)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
@@ -85,7 +81,7 @@ lazy val ridelogger = appModule("logger")
       Cinnamon.library.cinnamonAkkaHttp,
       Cinnamon.library.cinnamonPrometheus,
       Cinnamon.library.cinnamonPrometheusHttpServer
-    )
+    ),
   )
   .dependsOn(datamodel)
 
@@ -114,9 +110,10 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
+  cinnamonSuppressRepoWarnings := true,
   cinnamon in test := true, 
-  cinnamon in dist := true, 
   cinnamon in run := true, 
+  cinnamonLogLevel := "INFO",
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 )
