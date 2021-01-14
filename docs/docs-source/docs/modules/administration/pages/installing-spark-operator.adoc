@@ -1,7 +1,5 @@
 = Adding Spark Support
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 include::{cloudflow-version}@shared-content:administration:page$installing-spark-operator.adoc[]

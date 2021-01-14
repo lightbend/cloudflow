@@ -41,7 +41,7 @@ import cloudflow.operator.flow._
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")
 
-  val ProtocolVersion              = "4"
+  val ProtocolVersion              = "5"
   val ProtocolVersionKey           = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
   def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = ConfigMap(
@@ -102,37 +102,6 @@ object Operator {
         },
       "The actions stream completed unexpectedly, terminating.",
       "The actions stream failed, terminating."
-    )
-  }
-
-  def handleConfigurationInput(
-      client: KubernetesClient,
-      podNamespace: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = new SkuberActionExecutor()
-    // only watch secrets that contain input config
-    val watchOptions = ListOptions(
-      labelSelector = Some(
-        LabelSelector(
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.InputConfig)
-        )
-      ),
-      resourceVersion = None
-    )
-    // watch only Input secrets, transform the application input secret
-    // into Output secret create actions.
-    runStream(
-      watch[Secret](client, watchOptions)
-        .via(ConfigInputChangeEventFlow.fromWatchEvent())
-        .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
-        .via(executeActions(actionExecutor, logAttributes))
-        .toMat(Sink.ignore)(Keep.right),
-      "The configuration input stream completed unexpectedly, terminating.",
-      "The configuration input stream failed, terminating."
     )
   }
 

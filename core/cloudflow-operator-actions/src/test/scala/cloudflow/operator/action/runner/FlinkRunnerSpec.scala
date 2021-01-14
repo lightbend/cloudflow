@@ -87,7 +87,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
@@ -151,7 +151,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                   |kubernetes.pods.pod {
                   | labels: {
@@ -187,7 +187,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
                 |kubernetes.pods.pod {
                 |   volumes {
@@ -240,7 +240,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
@@ -265,7 +265,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
         configSecret = Secret(
           metadata = ObjectMeta(),
           data = Map(
-            cloudflow.operator.event.ConfigInputChangeEvent.PodsConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
                 """
               |kubernetes.pods.pod.containers.container {
               |  env = [
@@ -275,7 +275,7 @@ class FlinkRunnerSpec extends WordSpecLike with OptionValues with MustMatchers w
               |   ]
               |}
               |        """.stripMargin.getBytes(),
-            cloudflow.operator.event.ConfigInputChangeEvent.RuntimeConfigDataKey ->
+            cloudflow.operator.event.ConfigInput.RuntimeConfigDataKey ->
                 """flink.env.java.opts = "-XX:-DisableExplicitGC"""".getBytes()
           )
         )

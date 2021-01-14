@@ -11,7 +11,7 @@ See https://github.com/apache/spark/pull/24748[Backported Fix for Spark 2.4.5] f
 
 Add the Spark Helm chart repository and update the local index.
 
-  helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+  helm repo add incubator https://charts.helm.sh/incubator
   helm repo update
 
 Before installing the Helm chart, we will need to prepare a `value.yaml` file, it overrides the default values in the Spark Helm chart.

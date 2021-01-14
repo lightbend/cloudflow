@@ -363,7 +363,7 @@ lazy val blueprint =
             Config,
             SprayJson,
             LogbackClassic % Test,
-            LogbackCore % Test,
+            LogbackCore    % Test,
             Avro4sTest,
             ScalaTest,
             ScalaPbRuntime,

@@ -1,7 +1,5 @@
 = Deploy the Example to a Kubernetes Cluster
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 
@@ -26,7 +24,7 @@ Replace `<docker hub username>` with your Docker Hub username.
 Publish the docker image of your project to the above registry. 
 Make sure you are logged in with `
 
-  docker login --username <your docker hub username>`
+  docker login --username <your docker hub username>
 
 and then build and publish the application with
 

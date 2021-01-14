@@ -1,7 +1,5 @@
 = Installing Kafka with Strimzi
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 include::{cloudflow-version}@shared-content:administration:page$how-to-install-and-use-strimzi.adoc[]
