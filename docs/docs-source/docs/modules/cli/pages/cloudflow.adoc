@@ -2,7 +2,7 @@
 == Usage: 
 [source,bash]
 ----
-kubectl-cloudflow [ version | list | status | deploy | undeploy | update-docker-credentials | scale | configure ] [options] <args>...
+kubectl-cloudflow [ version | list | status | deploy | undeploy | update-docker-credentials | scale | configure | configuration ] [options] <args>...
 ----
 
  * ``  -v, --log-level <value>  ``the logging level
@@ -125,4 +125,16 @@ configures a deployed cloudflow application
  * ``  config-key               ``the configuration keys for the overrides
  * ``  --logback-config <value>
                            ``the logback configuration to be applied
+ * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
+
+== Command: configuration
+[source,bash]
+----
+configuration [options] <cloudflowApp>
+----
+
+=== Synopsis
+show the current configuration of a cloudflow application
+
+ * ``  <cloudflowApp>           ``the name of the cloudflow application
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
