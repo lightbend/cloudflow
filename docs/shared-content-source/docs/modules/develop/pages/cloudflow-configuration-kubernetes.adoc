@@ -119,8 +119,8 @@ For more info on kubernetes API https://kubernetes.io/docs/reference/generated/k
 Note:
 Only Akka Streamlets can open ports 
 
-===  Volumes and Volume-Mounts
-==== Mounting Secrets
+=== Volumes and Volume-Mounts
+==== **Mounting Secrets**
 
 It possible to add `volumes`, that contain a secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
 
@@ -171,7 +171,7 @@ As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` ma
 |===
 
 
-==== Mounting Persistent Volume Claims
+==== **Mounting Persistent Volume Claims**
 
 You can also mount `volumes` on Persistent Volume Claims (PVC) that already exist in the Kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster, an error is shown and the deployment or configuration is stopped.
 

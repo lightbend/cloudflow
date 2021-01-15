@@ -82,7 +82,7 @@ cloudflow {
 
 You need to specify at least one of the sections shown above.
 
-==== Environment variables
+=== Environment variables
 
 Environment / shell variables can be specified in the config as `$\{variable_name}`, `$variable_name`, or `${?variable_name}`. 
 
@@ -92,10 +92,12 @@ In the example above, `${?MY_VAR}` is replaced by the value of the
 `MY_VAR` environment / shell variable if it is set, otherwise "default-value" will be the value for `another-config-parameter`. 
 If it was specified as `$MY_VAR`, the `MY_VAR` shell variable must be set.
 
-==== Configuration Parameters Settings
+=== Configuration Parameters Settings
+
 You can learn more about configuration parameters in xref:develop:streamlet-configuration.adoc[]
 
-==== Runtime Specific Settings
+=== Runtime Specific Settings
+
 For configuration settings specific to the runtime you are using, please refer to the configuration options of the specific runtime. 
 All settings provided under the `config` section are passed verbatim to the underlying runtime.
 
