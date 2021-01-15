@@ -1,4 +1,4 @@
-= Kubernetes Configuration
+= Kubernetes Container Settings
 
 :allow-uri-read:
 
