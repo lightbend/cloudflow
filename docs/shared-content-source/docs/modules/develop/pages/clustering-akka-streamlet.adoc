@@ -3,9 +3,22 @@
 
 include::ROOT:partial$include.adoc[]
 
-https://doc.akka.io/docs/akka/current/typed/cluster.html[Akka Cluster] is a feature of Akka that
-allows Akka nodes to form a cluster and communicate.  This feature can be used within Cloudflow to
-build stateful Akka Streamlets.
+Any application that processes a stream of events and does not just perform trivial record-at-a-time
+transformations needs to be stateful, with the ability to store and access intermediate data.
+
+Although Akka Streams by itself is stateless, there are many ways to implement stateful streaming
+in Akka Streams by leveraging existing constructs like
+https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/statefulMapConcat.html[statefulMapConcat] or a
+https://doc.akka.io/docs/akka/current/stream/stream-customize.html[custom graph stage].
+However, the most straightforward and natural way of doing this is integration with
+https://doc.akka.io/docs/akka/current/typed/index.html[Akka actors].
+In this case, Akka Streams manage the overall execution flow, while individual actors both maintain
+state and implement stateful operations. Coupled with
+https://doc.akka.io/docs/akka/current/typed/index-persistence.html[Akka Persistence], this approach
+provides a great foundation of stateful, fault-tolerant stream processing using Akka streams.
+In order to allow scaling of the Akka streams implementations, leveraging actors we also
+need to implement https://doc.akka.io/docs/akka/current/typed/cluster.html[Akka Cluster]
+- a feature of Akka that allows Akka nodes to form a cluster.
 
 == Akka Cluster
 
@@ -61,3 +74,53 @@ val entity = Entity(typeKey)(createBehavior = entityContext => ConnectedCarActor
 
 val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity)
 ----
+== Akka Persistence
+
+https://doc.akka.io/docs/akka/2.6.11/typed/index-persistence.html[Akka persistence]
+allows to persist the state of actors, which enables both restore actors in the case of
+failures and move actors from one instance to another (used for scaling).
+Akka persistence supports multiple options for the database backend, including Cassandra
+and several relational databases - Postgres, MySQL, H2, Oracle, SQL Server.
+
+A typical implementation of Akka persistence requires:
+
+* Installation of the desired database server.
+* Creation and initialization (including creation of the required tables) of the database.
+* Creating of Akka configuration for using this database.
+* Adding required jar file for Akka persistence support
+
+By default Cloudflow automates some of these steps, including adding required jars, creation of
+Akka configuration, creation of the database tables. In the most simplistic case, a user
+can just provide a database server with a dedicated database and a configurate, for example:
+
+----
+cloudflow.streamlets.processor.config.akka{
+  persistence{
+    jdbc{
+      profile = "slick.jdbc.H2Profile$"
+      url = "jdbc:h2:mem:test-database;DATABASE_TO_UPPER=false;"
+      driver = "org.h2.Driver"
+      user = "root"
+      password = "root"
+    }
+  }
+}
+----
+for https://www.h2database.com/html/main.html[H2 database] or
+
+----
+cloudflow.runtimes.akka.config.akka{
+  persistence{
+    cassandra{
+      contactpoint = "127.0.0.1:9042"
+      user = "cassandra"
+      password = "cassandra"
+    }
+  }
+}
+----
+for https://cassandra.apache.org/[Apache Cassandra]
+
+If you  do not like defaults, you can, of course, create a custom Akka configuration
+directly in your project, that will overwrite default implementation
+
