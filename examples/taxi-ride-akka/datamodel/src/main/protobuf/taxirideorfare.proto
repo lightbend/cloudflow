@@ -1,0 +1,13 @@
+syntax = "proto3";
+option java_package = "taxiride.datamodel";
+
+import "taxifare.proto";
+import "taxiride.proto";
+
+message TaxiRideOrFare {
+    int64 rideId = 1;
+    oneof message_type {
+        TaxiFare fare = 2;
+        TaxiRide ride = 3;
+    }
+}

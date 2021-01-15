@@ -6,6 +6,8 @@ object Version {
   val Akka          = "2.6.10"
   val AkkaHttp      = "10.2.0"
   val AkkaMgmt      = "1.0.8"
+  val AkkaJDBC      = "3.5.3"
+  val AkkaCassandra = "1.0.4"
   val AkkaGrpc      = "1.0.1"
   val AlpakkaKafka  = "2.0.5"
   val Scala212      = "2.12.12"
@@ -38,6 +40,19 @@ object Library {
   val AkkaClusterBootstrap  = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Version.AkkaMgmt
   val AkkaDiscovery         = "com.typesafe.akka"     %% "akka-discovery"            % Version.Akka
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
+
+  // Persistence
+  val AkkaPersitenceTyped   = "com.typesafe.akka"    %% "akka-persistence-typed"       % Version.Akka
+  val AkkaSerialization     = "com.typesafe.akka"    %% "akka-serialization-jackson"   % Version.Akka
+  val AkkaPersistenceQuery  = "com.typesafe.akka"    %% "akka-persistence-query"       % Version.Akka
+  val AkkaPersistenceJDBC   = "com.github.dnvriend"  %% "akka-persistence-jdbc"        % Version.AkkaJDBC
+  val AkkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra"   % Version.AkkaCassandra
+
+  // DB drivers - mignt consider moving it to user code
+  val PostgreDriver         = "org.postgresql"        % "postgresql"                    % "42.2.16"
+  val H2Driver              = "com.h2database"        % "h2"                            % "1.4.200"
+  val MySQLDriver           = "mysql"                 % "mysql-connector-java"          % "8.0.22"
+  val SqlServerDriver       = "com.microsoft.sqlserver" % "mssql-jdbc"                  % "8.4.1.jre8"
 
   val AkkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Version.AkkaGrpc
 

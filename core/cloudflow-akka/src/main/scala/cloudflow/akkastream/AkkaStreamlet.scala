@@ -24,6 +24,7 @@ import akka.management.scaladsl.AkkaManagement
 import cloudflow.streamlets._
 import BootstrapInfo._
 import cloudflow.streamlets.StreamletRuntime
+import cloudflow.akkastream.persistence._
 import com.typesafe.config._
 
 import scala.util.Failure
@@ -55,9 +56,24 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
 
       if (activateCluster && localMode) {
         val clusterConfig = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
-        val fullConfig    = clusterConfig.withFallback(updatedStreamletDefinition.config)
-
-        val system  = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
+        // Add persistence configuration
+        println(s"!!!!! Streamlet configuration ${updatedStreamletDefinition.config}")
+        val persistenceParameters =
+          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef)
+        println(s"!!!!! Streamlet ${streamletDefinition.streamletRef} persistent parameters $persistenceParameters")
+        val clusterConfigDB = persistenceParameters match {
+          case Some(dBConfiguration) =>
+            AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
+          case _ => clusterConfig
+        }
+        println(s"!!!!! Configuration is $clusterConfigDB")
+        // Add user defined
+        val fullConfig = clusterConfigDB.withFallback(updatedStreamletDefinition.config)
+        // Create Akka system
+        val system = ActorSystem(streamletDefinition.streamletRef, fullConfig)
+        // Populate db tables
+        TableCreator.createTables(system)
+        // Create cluster
         val cluster = Cluster(system)
         cluster.join(cluster.selfAddress)
 
@@ -69,9 +85,24 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
           )
           .withFallback(ConfigFactory.parseResourcesAnySyntax("akka-cluster-k8.conf"))
 
-        val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
-
-        val system = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
+        // Add persistence configuration
+        println(s"!!!!! Streamlet configuration ${updatedStreamletDefinition.config}")
+        val persistenceParameters =
+          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef)
+        println(s"!!!!! Streamlet ${streamletDefinition.streamletRef} persistent parameters $persistenceParameters")
+        val clusterConfigDB = persistenceParameters match {
+          case Some(dBConfiguration) =>
+            AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
+          case _ => clusterConfig
+        }
+        println(s"!!!!! Configuration is $clusterConfigDB")
+        // Add user defined
+        val fullConfig = clusterConfigDB.withFallback(updatedStreamletDefinition.config)
+        // Create Akka system
+        val system = ActorSystem(streamletDefinition.streamletRef, fullConfig)
+        // Populate db tables
+        TableCreator.createTables(system)
+        // Create cluster
         AkkaManagement(system).start()
         ClusterBootstrap(system).start()
         Discovery(system).loadServiceDiscovery("kubernetes-api")

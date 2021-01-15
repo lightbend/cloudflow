@@ -138,6 +138,18 @@ lazy val akkastream =
             AkkaShardingTyped,
             AkkaCluster,
             AkkaManagement,
+            // Persistence
+            AkkaPersitenceTyped,
+            AkkaSerialization,
+            AkkaPersistenceQuery,
+            AkkaPersistenceJDBC,
+            AkkaPersistenceCassandra,
+            // DB drivers
+            PostgreDriver,
+            H2Driver,
+            MySQLDriver,
+            SqlServerDriver,
+
             AkkaHttp,
             AkkaHttpSprayJson,
             AkkaClusterBootstrap,
