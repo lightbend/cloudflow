@@ -79,8 +79,11 @@ val source:Source[ConnectedCarERecord, _] = shardedPlainSource(in, entity)
 https://doc.akka.io/docs/akka/2.6.11/typed/index-persistence.html[Akka persistence]
 allows to persist the state of actors, which enables both restore actors in the case of
 failures and move actors from one instance to another (used for scaling).
-Akka persistence supports multiple options for the database backend, including Cassandra
-and several relational databases - Postgres, MySQL, H2, Oracle, SQL Server.
+Akka persistence supports multiple options for the database backend, including
+https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html[Cassandra]
+and several
+https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html[relational databases]
+- Postgres, MySQL, H2, Oracle, SQL Server.
 
 A typical implementation of Akka persistence requires:
 
@@ -91,36 +94,43 @@ A typical implementation of Akka persistence requires:
 
 By default Cloudflow automates some of these steps, including adding required jars, creation of
 Akka configuration, creation of the database tables. In the most simplistic case, a user
-can just provide a database server with a dedicated database and a configurate, for example:
+can just provide a database server with a dedicated database and a configurate.
+Configuration allows to specify the following parameters:
+
+* Database type - `dbtype`. Required parameter, that specified a type of database used. Allowed
+parameters are: `cassandra`, `postgres`, `mysql`, `h2`, `oracle` and `sqlserver`. All other values
+will be ignored
+* Database host - `host`. Optional parameter specifying database host location - defaulted to `localhost`,
+ignored for H2
+* Database port - `port`. Optional parameter specifying port, that database engine is listening on. Defaulted to
+default port for a given database type, for example 3306 for Oracle, ignored for H2
+* Database name - `database` - optional parameter, specifying database name (keyspace name for Cassandra).
+defaulted to `akkapersistence`, ignored for H2
+* Database user name - `user`  Optional parameter specifying user for database access. Defaulted to
+default user for a given database type, for example root for H2
+* Database user password - `password`. Optional parameter specifying password for database access. Defaulted to
+default user for a given database type, for example root for H2
+
+As a result H2 database can be configured (for akka runtime) as:
+
 
 ----
 cloudflow.streamlets.processor.config.akka{
   persistence{
-    jdbc{
-      profile = "slick.jdbc.H2Profile$"
-      url = "jdbc:h2:mem:test-database;DATABASE_TO_UPPER=false;"
-      driver = "org.h2.Driver"
-      user = "root"
-      password = "root"
-    }
+    dbtype = h2
   }
 }
 ----
-for https://www.h2database.com/html/main.html[H2 database] or
+
+And for local Cassandra, with default user name/password (for akka runtime) as:
 
 ----
 cloudflow.runtimes.akka.config.akka{
   persistence{
-    cassandra{
-      contactpoint = "127.0.0.1:9042"
-      user = "cassandra"
-      password = "cassandra"
-    }
+    dbtype = cassandra
   }
 }
 ----
-for https://cassandra.apache.org/[Apache Cassandra]
 
 If you  do not like defaults, you can, of course, create a custom Akka configuration
-directly in your project, that will overwrite default implementation
-
+directly in your project, that will be used in place of default implementation

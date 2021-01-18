@@ -32,6 +32,8 @@ import net.ceedubs.ficus.Ficus._
 
 import scala.util.control.NonFatal
 
+import scala.collection.JavaConverters._
+
 /**
  * Extend from this class to build Akka-based Streamlets.
  */
@@ -57,16 +59,12 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       if (activateCluster && localMode) {
         val clusterConfig = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
         // Add persistence configuration
-        println(s"!!!!! Streamlet configuration ${updatedStreamletDefinition.config}")
-        val persistenceParameters =
-          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef)
-        println(s"!!!!! Streamlet ${streamletDefinition.streamletRef} persistent parameters $persistenceParameters")
-        val clusterConfigDB = persistenceParameters match {
-          case Some(dBConfiguration) =>
-            AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
-          case _ => clusterConfig
-        }
-        println(s"!!!!! Configuration is $clusterConfigDB")
+        val clusterConfigDB =
+          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef) match {
+            case Some(dBConfiguration) =>
+              AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
+            case _ => clusterConfig
+          }
         // Add user defined
         val fullConfig = clusterConfigDB.withFallback(updatedStreamletDefinition.config)
         // Create Akka system
@@ -85,17 +83,24 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
           )
           .withFallback(ConfigFactory.parseResourcesAnySyntax("akka-cluster-k8.conf"))
 
+        // Currently, in the case of cluster, custom config is located at
+        // cloudflow.runner.streamlet.context.port_mappings.[portname].config
+        // this seems to be wrong, but in order to test my implementation, I cheat
+        val customConfig =
+          updatedStreamletDefinition.config.as[Option[Config]]("cloudflow.runner.streamlet.context.port_mappings.out.config")
+        println(s"!!! Custom configuration is $customConfig")
         // Add persistence configuration
-        println(s"!!!!! Streamlet configuration ${updatedStreamletDefinition.config}")
-        val persistenceParameters =
-          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef)
-        println(s"!!!!! Streamlet ${streamletDefinition.streamletRef} persistent parameters $persistenceParameters")
-        val clusterConfigDB = persistenceParameters match {
-          case Some(dBConfiguration) =>
-            AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
-          case _ => clusterConfig
+        val clusterConfigDB = {
+          customConfig match {
+            case Some(cfg) =>
+              AkkaPersistenceConfigurator.getPersistenceParams(cfg, streamletDefinition.streamletRef) match {
+                case Some(dBConfiguration) =>
+                  AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
+                case _ => clusterConfig
+              }
+            case _ => clusterConfig
+          }
         }
-        println(s"!!!!! Configuration is $clusterConfigDB")
         // Add user defined
         val fullConfig = clusterConfigDB.withFallback(updatedStreamletDefinition.config)
         // Create Akka system

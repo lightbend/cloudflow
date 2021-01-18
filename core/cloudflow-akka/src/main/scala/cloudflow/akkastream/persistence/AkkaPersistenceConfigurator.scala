@@ -17,16 +17,18 @@
 package cloudflow.akkastream.persistence
 
 import com.typesafe.config.{ Config, ConfigFactory }
-
 import net.ceedubs.ficus.Ficus._
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 
 object AkkaPersistenceConfigurator {
 
-  private val CASSANDRACONTACTPOINT = "datastax-java-driver.basic.contact-points"
-  private val CASSANDRAUSER         = "datastax-java-driver.basic.authentication.username"
-  private val CASSANDRAPASSWORD     = "datastax-java-driver.basic.authentication.password"
+  private val CASSANDRACONTACTPOINT     = "datastax-java-driver.basic.contact-points"
+  private val CASSANDRAKEYSPACEJOURNAL  = "akka.persistence.cassandra.journal.keyspace"
+  private val CASSANDRAKEYSPACESNAPSHOT = "akka.persistence.cassandra.snapshot.keyspace"
+  private val CASSANDRAUSER             = "datastax-java-driver.basic.authentication.username"
+  private val CASSANDRAPASSWORD         = "datastax-java-driver.basic.authentication.password"
 
   private val JDBCPROFILE  = "akka-persistence-jdbc.shared-databases.slick.profile"
   private val JDBCURL      = "akka-persistence-jdbc.shared-databases.slick.db.url"
@@ -36,17 +38,14 @@ object AkkaPersistenceConfigurator {
 
   private val RUNTIMEPERSISTENCE = "cloudflow.runtimes.akka.config.akka.persistence"
 
-  private val CASSANDRAPERSISTENCE = "cassandra"
-  private val CASSANDRAPCONTACT    = "contactpoint"
-  private val CASSANDRAPUSER       = "user"
-  private val CASSANDRAPPASS       = "password"
+  private val DBTYPE   = "dbtype"
+  private val HOST     = "dbhost"
+  private val PORT     = "dbport"
+  private val DATABASE = "database"
+  private val USER     = "user"
+  private val PASSWORD = "password"
 
-  private val JDBCPERSISTENCE = "jdbc"
-  private val JDBCPPROFILE    = "profile"
-  private val JDBCPURL        = "url"
-  private val JDBCPDRIVER     = "driver"
-  private val JDBCPUSER       = "user"
-  private val JDBCPPASS       = "password"
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   def addPersistenceConfiguration(baseConfig: Config,
                                   persistence: DBConfiguration,
@@ -54,17 +53,22 @@ object AkkaPersistenceConfigurator {
                                   baseCassandraConfig: String = "cassandrapersistence.conf"): Config =
     persistence match {
       case cassandraConfiguration: CassandraConfiguration => // It is cassandra config
+        log.info(s"Building Cassandra configuration from $cassandraConfiguration")
         val cMap = Map(
-          CASSANDRACONTACTPOINT -> List(cassandraConfiguration.contactpoint).asJava,
-          CASSANDRAUSER         -> cassandraConfiguration.user,
-          CASSANDRAPASSWORD     -> cassandraConfiguration.passwrd
+          CASSANDRACONTACTPOINT     -> List(cassandraConfiguration.contactpoint).asJava,
+          CASSANDRAKEYSPACEJOURNAL  -> cassandraConfiguration.keyspace,
+          CASSANDRAKEYSPACESNAPSHOT -> cassandraConfiguration.keyspace,
+          CASSANDRAUSER             -> cassandraConfiguration.user,
+          CASSANDRAPASSWORD         -> cassandraConfiguration.passwrd
         )
+
         ConfigFactory
           .parseMap(cMap.asJava)
           .withFallback(ConfigFactory.parseResourcesAnySyntax(baseCassandraConfig))
           .withFallback(baseConfig)
 
       case jdbcConfiguration: JDBCConfiguration => // It is JDBC config
+        log.info(s"Building JDBC configuration from $jdbcConfiguration")
         val jdbcMap = Map(
           JDBCPROFILE  -> jdbcConfiguration.profile,
           JDBCURL      -> jdbcConfiguration.url,
@@ -85,46 +89,101 @@ object AkkaPersistenceConfigurator {
     // Try streamlet context first
     config.as[Option[Config]](STREAMLETPERSISTENCE) match {
       case Some(persistence) => // we have definition
-        internalGetPersistence(persistence)
+        internalPopulatePersistence(persistence)
       case _ => // try runtime
         config.as[Option[Config]](RUNTIMEPERSISTENCE) match {
           case Some(persistence) => // we have definition
-            internalGetPersistence(persistence)
+            internalPopulatePersistence(persistence)
           case _ => None
         }
     }
   }
 
-  private def internalGetPersistence(config: Config): Option[DBConfiguration] =
-    // Try cassandra
-    config.as[Option[Config]](CASSANDRAPERSISTENCE) match {
-      case Some(cpers) => // populate Cassandra
-        Some(
-          CassandraConfiguration(
-            cpers.as[Option[String]](CASSANDRAPCONTACT).getOrElse(""),
-            cpers.as[Option[String]](CASSANDRAPUSER).getOrElse(""),
-            cpers.as[Option[String]](CASSANDRAPPASS).getOrElse("")
-          )
+  private def internalPopulatePersistence(config: Config): Option[DBConfiguration] = {
+    val dbType = config.as[Option[String]](DBTYPE).getOrElse("unknown")
+    dbType match {
+      case db if (db.toLowerCase == "cassandra") => // Cassandra
+        val host = config.as[Option[String]](HOST).getOrElse("127.0.0.1")
+        val port = config.as[Option[String]](PORT).getOrElse("9042")
+        val configuration = CassandraConfiguration(
+          s"$host:$port",
+          config.as[Option[String]](DATABASE).getOrElse("akkapersistence"),
+          config.as[Option[String]](USER).getOrElse("cassandra"),
+          config.as[Option[String]](PASSWORD).getOrElse("cassandra")
         )
-      case _ => // Try JDBC
-        config.as[Option[Config]](JDBCPERSISTENCE) match {
-          case Some(jpers) => // Populate JDBC
-            Some(
-              JDBCConfiguration(
-                jpers.as[Option[String]](JDBCPPROFILE).getOrElse(""),
-                jpers.as[Option[String]](JDBCPURL).getOrElse(""),
-                jpers.as[Option[String]](JDBCPDRIVER).getOrElse(""),
-                jpers.as[Option[String]](JDBCPUSER).getOrElse(""),
-                jpers.as[Option[String]](JDBCPPASS).getOrElse("")
-              )
-            )
-          case _ => None
-        }
+        log.info(s"Created Cassandra parameters $configuration")
+        Some(configuration)
+      case db if (db.toLowerCase == "h2") => // h2
+        val configuration = JDBCConfiguration(
+          "slick.jdbc.H2Profile$",
+          "jdbc:h2:mem:test-database;DATABASE_TO_UPPER=false;",
+          "org.h2.Driver",
+          config.as[Option[String]](USER).getOrElse("root"),
+          config.as[Option[String]](PASSWORD).getOrElse("root")
+        )
+        log.info(s"Created H2 parameters $configuration")
+        Some(configuration)
+      case db if (db.toLowerCase == "postgres") => // Postgre
+        val host     = config.as[Option[String]](HOST).getOrElse("localhost")
+        val port     = config.as[Option[String]](PORT).getOrElse("5432")
+        val database = config.as[Option[String]](DATABASE).getOrElse("akkapersistence")
+        val configuration = JDBCConfiguration(
+          "slick.jdbc.PostgresProfile$",
+          s"jdbc:postgresql://$host:$port/$database",
+          "org.postgresql.Driver",
+          config.as[Option[String]](USER).getOrElse("postgres"),
+          config.as[Option[String]](PASSWORD).getOrElse("postgres")
+        )
+        log.info(s"Created Postgres parameters $configuration")
+        Some(configuration)
+      case db if (db.toLowerCase == "mysql") => // MySQL
+        val host     = config.as[Option[String]](HOST).getOrElse("localhost")
+        val port     = config.as[Option[String]](PORT).getOrElse("3306")
+        val database = config.as[Option[String]](DATABASE).getOrElse("akkapersistence")
+        val configuration = JDBCConfiguration(
+          "slick.jdbc.MySQLProfile$",
+          s"jdbc:mysql://$host:$port/$database?cachePrepStmts=true&cacheCallableStmts=true&cacheServerConfiguration=true&useLocalSessionState=true&elideSetAutoCommits=true&alwaysSendSetIsolation=false&enableQueryTimeouts=false&connectionAttributes=none&verifyServerCertificate=false&useSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&useLegacyDatetimeCode=false&serverTimezone=UTC&rewriteBatchedStatements=true",
+          "com.mysql.cj.jdbc.Driver",
+          config.as[Option[String]](USER).getOrElse("root"),
+          config.as[Option[String]](PASSWORD).getOrElse("root")
+        )
+        log.info(s"Created mySQL parameters $configuration")
+        Some(configuration)
+      case db if (db.toLowerCase == "oracle") => // ORACLE
+        val host     = config.as[Option[String]](HOST).getOrElse("localhost")
+        val port     = config.as[Option[String]](PORT).getOrElse("3306")
+        val database = config.as[Option[String]](DATABASE).getOrElse("akkapersistence")
+        val configuration = JDBCConfiguration(
+          "slick.jdbc.OracleProfile$",
+          s"jdbc:oracle:thin:@//$host:$port/$database",
+          "oracle.jdbc.OracleDriver",
+          config.as[Option[String]](USER).getOrElse("system"),
+          config.as[Option[String]](PASSWORD).getOrElse("oracle")
+        )
+        log.info(s"Created Oracle parameters $configuration")
+        Some(configuration)
+      case db if (db.toLowerCase == "sqlserver") => // SQL server
+        val host     = config.as[Option[String]](HOST).getOrElse("localhost")
+        val port     = config.as[Option[String]](PORT).getOrElse("1433")
+        val database = config.as[Option[String]](DATABASE).getOrElse("akkapersistence")
+        val configuration = JDBCConfiguration(
+          "slick.jdbc.SQLServerProfile$",
+          s"jdbc:sqlserver://$host:$port;databaseName=$database;integratedSecurity=false;",
+          "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+          config.as[Option[String]](USER).getOrElse("docker"),
+          config.as[Option[String]](PASSWORD).getOrElse("docker")
+        )
+        log.info(s"Created SQL Server parameters $configuration")
+        Some(configuration)
+      case _ => // Unknown DB type
+        log.info(s"Unknown DB type $dbType - skipping")
+        None
     }
+  }
 }
 
 sealed trait DBConfiguration {}
 
-case class CassandraConfiguration(contactpoint: String, user: String, passwrd: String) extends DBConfiguration
+case class CassandraConfiguration(contactpoint: String, keyspace: String, user: String, passwrd: String) extends DBConfiguration
 
 case class JDBCConfiguration(profile: String, url: String, driver: String, user: String, passwrd: String) extends DBConfiguration

@@ -21,7 +21,7 @@ lazy val taxiRidePipeline = appModule("taxi-ride-pipeline")
   .enablePlugins(CloudflowApplicationPlugin)
   .settings(commonSettings)
   .settings(
-    runLocalConfigFile := Some("src/main/resources/local-system-h2.conf"),
+    runLocalConfigFile := Some("taxi-ride-pipeline/src/main/resources/local-streamlet-cassandra.conf"),
     name := "taxi-ride-akka",
   )
 

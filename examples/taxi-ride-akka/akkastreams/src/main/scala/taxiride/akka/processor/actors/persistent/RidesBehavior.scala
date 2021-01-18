@@ -4,17 +4,18 @@ import akka.actor.typed._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.persistence.typed._
 import akka.persistence.typed.scaladsl._
+import cloudflow.akkastream.persistence.JacksonCborSerializable
 import taxiride.datamodel.TaxiRideOrFare._
 import taxiride.datamodel._
 
 // Command
-final case class TaxiRideMessage(reply: ActorRef[Option[TaxiRideFare]], record : TaxiRideOrFare) extends CborSerializable
+final case class TaxiRideMessage(reply: ActorRef[Option[TaxiRideFare]], record : TaxiRideOrFare) extends JacksonCborSerializable
 
 // Event
-final case class TaxiRideEvent(state : TaxiState) extends CborSerializable
+final case class TaxiRideEvent(state : TaxiState) extends JacksonCborSerializable
 
 // State
-final case class TaxiState(rideState: Option[TaxiRide], fareState: Option[TaxiFare]) extends CborSerializable{
+final case class TaxiState(rideState: Option[TaxiRide], fareState: Option[TaxiFare]) extends JacksonCborSerializable{
   def reset(updated: TaxiState): TaxiState = copy(updated.rideState, updated.fareState)
 }
 
