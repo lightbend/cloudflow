@@ -559,6 +559,40 @@ $ {cli-plugin} cloudflow deploy target/swiss-knife.json \
 
 The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the `--conf` flags.
 
+=== Configuring a Streamlet logging configuration
+
+The streamlet logging configuration can be tweaked for all of the pods with a simple command.
+
+You need first to craft a proper `logback.xml` logging configuration file e.g.:
+[source, xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%msg\n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>
+----
+
+And you can pass it to the relevant option in the `deploy` and `configure` sub-commands:
+[source, bash]
+----
+$ {cli-plugin} cloudflow deploy cr.json --logback-config logback.xml
+----
+
+[source, bash]
+----
+$ {cli-plugin} cloudflow configure app-name --logback-config logback.xml
+----
+
 == What's Next
 
 Now that we have mastered the configuration options in Cloudflow, we should learn about xref:develop:blueprints.adoc[] and how they help us to assemble streamlets into end-to-end applications.
