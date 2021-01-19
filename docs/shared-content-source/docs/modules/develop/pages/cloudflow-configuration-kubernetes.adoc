@@ -66,7 +66,7 @@ The example above shows how to add the labels `key1 = value1` and `key2 = value2
 
 ===  Annotations
 
-Similar to labels we can add annotations to any container. This snippet shows how
+Similar to labels we can add annotations to any streamlet pod. The snippet below shows how:
 
 [source, hocon]
 ----
@@ -356,4 +356,3 @@ cloudflow.streamlets.my-streamlet {
 
 The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
 `key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
-
