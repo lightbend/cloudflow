@@ -48,7 +48,7 @@ The pod is limited to use `4Gi` of memory. It also shows how to set the environm
 
 ===  Labels
 
-To set label into a container we need to add the `label` setting as the example below.
+To set pod labels, add the `labels` section shown in the example below:
 
 [source, hocon]
 ----
