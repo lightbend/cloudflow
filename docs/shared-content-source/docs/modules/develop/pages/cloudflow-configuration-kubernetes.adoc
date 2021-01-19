@@ -114,7 +114,7 @@ cloudflow {
 It is possible, as we showed above, to also set host-ip, protocol, host-port and a name. 
 This configuration adds two container ports to every container where `my-akka-streamlet` is deployed. One in 9001 as TCP and the other in 9002 as UDP with `Host Ports:9999/UDP`, `name: user-datagram` and `hostIp: 10.132.0.123`
 
-For more info on kubernetes API https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#containerport-v1-core[container port]
+For more info see container ports in the Kubernetes API https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#containerport-v1-core[container port]
 
 Note:
 Only Akka Streamlets can open ports 
