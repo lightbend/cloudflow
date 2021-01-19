@@ -87,7 +87,7 @@ cloudflow {
 
 This configuration adds the anotation `key: annotation1` to the container where `my-akka-streamlet` is deployed.
 
-Annotations, same as labels, are defined by a key/value and also can be defined specifically for a streamlet or generically to a runtime, like cloudflow.runtime.akka. 
+Annotations, same as labels, are defined by a key/value and also can be defined specifically for a streamlet or for all streamlets of a runtime, under `cloudflow.runtimes.akka.kubernetes.pods.pod.annotations`. 
 
 ===  Ports
 
