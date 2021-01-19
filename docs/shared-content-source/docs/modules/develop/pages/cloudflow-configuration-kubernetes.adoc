@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 
 In this section we are covering the different Kubernetes parameters that are configurable. 
 
-To set the configuration on a container related to Kubernetes is necessary, first of all, to add that configuration under `cloudflow.streamlets.[streamlet-name].kubernetes`.
+Several Kubernetes settings for a streamlet can be set under `cloudflow.streamlets.[streamlet-name].kubernetes`.
 On the following samples we show configurations under a specific streamlet, `my-streamlet`, that in its complete path is `cloudflow.streamlets.my-streamlet`. It is also possible, as explained in xref:develop:cloudflow-configuration.adoc#_configuring_a_runtime_using_the_runtime_scope[Configuring a Runtime using the runtime Scope], to apply any configuration shown in here to any `runtimes`. The complete path for a runtime is, for instance, `cloudflow.runtimes.akka`.
 
 === Resources and Environment Variables
@@ -356,7 +356,6 @@ cloudflow.streamlets.my-streamlet {
 
 The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
 `key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
-
 
 
 
