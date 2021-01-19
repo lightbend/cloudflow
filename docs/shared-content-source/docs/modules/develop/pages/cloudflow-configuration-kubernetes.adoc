@@ -308,7 +308,7 @@ This configuration will mount `mysecret1` into any `driver` pod on path `/mnt/fo
 
 ## Exceptions
 
-Is important to bear in mind that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. It has the same limitation when defining `volumes` and `volume-mounts`. Is only allowed `cloudflow.runtimes.flink.kubernetes.pods.pod.volumes` and `cloudflow.runtimes.flink.kubernetes.pods.pod.containers.container.volume-mounts`.
+Is important to bear in mind that Flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. It has the same limitation when defining `volumes` and `volume-mounts`. Only `cloudflow.runtimes.flink.kubernetes.pods.pod.volumes` and `cloudflow.runtimes.flink.kubernetes.pods.pod.containers.container.volume-mounts` are allowed.
  
 In the example below we show how a Spark driver and executor can be configured individually.
 
