@@ -239,7 +239,7 @@ In the case of Spark we can be more specific by using the following paths:
 
 Using the path to the `pod` (driver or executor) settings will only applied to that specific type of pod. 
 
-Flink configuration works similarly to Spark's as we can set the following paths:
+Flink configuration works similarly as we can set the following paths:
   
 - For the JobManager pods: `kubernetes.pods.job-manager` and `kubernetes.pods.job-manager.containers.container`       
 - For the TaskManager pods: `kubernetes.pods.task-manager` and `kubernetes.pods.task-manager.containers.container`  
