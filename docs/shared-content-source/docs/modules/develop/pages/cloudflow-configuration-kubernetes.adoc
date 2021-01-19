@@ -228,7 +228,7 @@ This configuration will mount an existing Persistent Volume Claim `myclaim1` int
 
 === Pod differences among Akka, Flink and Spark Streamlets.
 
-Akka runtimes only deploy one pod per streamlet while Flink and Sparks deploy two. Spark creates a Driver pod and a Executor pod, while Flink creates a JobManager and a TaskManager.
+Akka runtimes only deploy one type of pod per streamlet. Spark creates Driver and Executor pods, while Flink creates JobManager and TaskManager pods.
 
 When we are setting Kubernetes configuration via `kubernetes.pods.pod` or `kubernetes.pods.pod.containers.container`, it applies the same settings to all types of pod for the runtime used.
 
