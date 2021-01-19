@@ -10,9 +10,35 @@ In this section we are covering the different Kubernetes parameters that are con
 Several Kubernetes settings for a streamlet can be set under `cloudflow.streamlets.[streamlet-name].kubernetes`.
 On the following samples we show configurations under a specific streamlet, `my-streamlet`, that in its complete path is `cloudflow.streamlets.my-streamlet`. It is also possible, as explained in xref:develop:cloudflow-configuration.adoc#_configuring_a_runtime_using_the_runtime_scope[Configuring a Runtime using the runtime Scope], to apply any configuration shown in here to any `runtimes`. The complete path for a runtime is, for instance, `cloudflow.runtimes.akka`.
 
-=== Resources and Environment Variables
+=== Resources
 
-Container resource requirements and environment variables can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
+Container resource requirements can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
+The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    containers.container {
+      resources {
+        requests {
+          cpu = "500m"
+          memory = "512Mi"
+        }
+        limits {
+          memory = "4Gi"
+        }
+      }
+    }
+  }
+}
+----
+
+The above example shows that `500mcpu` is requested, as well as `512Mi` of memory while being limited to use `4Gi` of memory.   
+
+=== Environment Variables
+
+Container environment variables can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
 The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
 
 [source, hocon]
@@ -28,23 +54,12 @@ cloudflow.streamlets.my-streamlet {
               value = "BAR"
             }
           ]
-      resources {
-        requests {
-          cpu = "500m"
-          memory = "512Mi"
-        }
-        limits {
-          memory = "4Gi"
-        }
-      }
     }
   }
 }
 ----
 
-The above example shows that `500mcpu` is requested, as well as `512Mi` of memory. 
-The pod is limited to use `4Gi` of memory. It also shows how to set the environment variable `JAVA_OPTS=XX:MaxRAMPercentage=40.0` and `FOO=BAR`  
-
+The above example shows how to set the environment variable `JAVA_OPTS=XX:MaxRAMPercentage=40.0` and `FOO=BAR` 
 
 ===  Labels
 

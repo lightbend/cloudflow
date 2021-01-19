@@ -4,21 +4,12 @@ include::ROOT:partial$include.adoc[]
 
 Cloudflow offers a flexible configuration model that lets you configure every aspect of the application deployment.
 
-In this section, we are going to first provide a description of this configuration model, explore how a configuration can be applied, and see several illustrative examples.
+In this section, we provide a brief description of the configuration model, its scopes and available settings. Explain the configuration precedence, show the interchangebility of paths and keys and finally cover how to use the configuration.
 
-== Configuration Scopes: The Cloudflow Configuration Model
+== Configuration Scopes
 
 The Cloudflow configuration model is based on hierarchical scopes.
 These scopes range from broad settings for a runtime to specific settings for a streamlet instance. 
-
-Using this model, you can configure the following settings:
-
-    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
-    - Kubernetes container resource requirements 
-    - Streamlet Configuration Parameters for a particular instance
-
-Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
-Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
 We have two main top-level scopes, one for streamlets and one for runtimes, as we can see here:
 
@@ -28,69 +19,18 @@ We have two main top-level scopes, one for streamlets and one for runtimes, as w
 | runtime   | `cloudflow.runtimes.[runtime]`
 |===
 
-=== Configuring Streamlets Using the `streamlet` Scope
+You can learn more about configuration scopes in xref:develop:cloudflow-configuration-scopes.adoc[]
 
-The configuration for a specific streamlet instance must be specified in a `cloudflow.streamlets.[streamlet-name]` scope.
-This scope can optionally contain three sections to configure the following aspects of a streamlet instance: 
+== Configurations Available 
 
-.Sub-scopes for the streamlet configuration 
-|===
-| scope     | key
-| configuration parameters | `config-parameters.[config-parameter-name]`
-| runtime-specific configuration | `config.[runtime].[runtime-specific-setting]`
-| kubernetes resources | `kubernetes.[kubernetes-object]`
-|===
+Using this model, you can configure the following settings:
 
+    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
+    - Kubernetes container resource requirements 
+    - Streamlet Configuration Parameters for a particular instance
 
-The example below shows this structure in action:
-
-[source, hocon]
-----
-cloudflow {
-  streamlets {
-    my-streamlet {
-      config-parameters {                   //<1>
-        // config parameter values go here  
-        my-config-parameter = "some-value"
-        another-config-parameter = "default-value"
-        another-config-parameter = ${?MY_VAR}
-      }  
-      config {                              //<2>
-        // runtime settings go here
-        akka.loglevel = "DEBUG"
-      }
-      kubernetes {                          //<3>
-        pods.pod.containers.container {
-          // kubernetes container settings go here  
-          resources {
-            requests {
-              memory = "512M"
-            }
-            limits {
-              memory = "1024M"
-            }
-          }
-        }
-      }
-    }    
-  } 
-}
-----
-<1> `config-parameters` section
-<2> `config` section
-<3> `kubernetes` section
-
-You need to specify at least one of the sections shown above.
-
-=== Environment variables
-
-Environment / shell variables can be specified in the config as `$\{variable_name}`, `$variable_name`, or `${?variable_name}`. 
-
-ifdef::review[REVIEWERS: I needed to escape the {} in the first variable_name above to prevent antora from complaining about an undefined variable.]
-  
-In the example above, `${?MY_VAR}` is replaced by the value of the 
-`MY_VAR` environment / shell variable if it is set, otherwise "default-value" will be the value for `another-config-parameter`. 
-If it was specified as `$MY_VAR`, the `MY_VAR` shell variable must be set.
+Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
+Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
 === Configuration Parameters Settings
 
@@ -126,62 +66,9 @@ Consult the documentation of your runtime of choice for more information.
 
 Explained in detail xref:develop:cloudflow-configuration-kubernetes.adoc[here]
 
-=== Configuring a Runtime using the `runtime` Scope
 
-Configuration for all streamlets of a runtime can be specified in a `cloudflow.runtimes.[runtime].config` section.
-The configuration specified in `cloudflow.runtimes.[runtime].config` is merged as fallback, streamlet specific configuration takes precedence.
-An example is shown below:
 
-[source, hocon]
-----
-cloudflow {
-  runtimes {
-    akka {
-      config {
-        akka.loglevel = "DEBUG"
-      }
-      kubernetes {
-        pods.pod.containers.container {
-          // kubernetes container settings go here  
-          env = [ 
-            {
-              name = "JAVA_OPTS"
-              value = "-XX:MaxRAMPercentage=40.0 -Djdk.nio.maxCachedBufferSize=1048576"
-            }
-          ]
-
-          resources {
-            requests {
-              cpu = 2
-              memory = "512M"
-            }
-            limits {
-              memory = "1024M"
-            }
-          }
-        }
-      }
-    }    
-  } 
-}
-----
-
-Another example shows that you can provide configuration for all the runtimes your application uses. In this case, will cover Akka and Spark:
-[source, hocon]
-----
-cloudflow.runtimes {
-  spark.config {
-    spark.driver.memoryOverhead=384
-  }
-  akka.config {
-    akka { 
-      log-level = "INFO"  
-    }
-  }
-} 
-----
-
-=== Configuration Precedence
+== Configuration Precedence
 
 As a general rule, a specific scope always has precedence over a more general one.
 
@@ -205,7 +92,7 @@ cloudflow.runtimes.akka.config {
 }
 ----
 
-=== Configuration Paths as Keys
+== Configuration Paths as Keys
 Paths can be used as keys in HOCON, which is shown in the example below:
 
 [source, hocon]
@@ -271,7 +158,7 @@ the configuration value in `file2.conf` takes precedence, overriding the value p
 $ kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
 ----
 
-=== Configuring a Streamlet using Command Line Arguments
+=== Configuring using Command Line Arguments
 
 It is also possible to pass configuration values directly as command-line arguments, as `[config-path]=value` pairs separated by
 a space. The `[config-path]` must be an absolute path to the value, exactly how it would be defined in a config file, using configuration paths. 

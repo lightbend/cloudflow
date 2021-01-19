@@ -1,0 +1,116 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+The Cloudflow configuration model allows to set the scope of the settings for a runtime or for a streamlet instance.  
+
+== Configuring Streamlets Using the `streamlet` Scope
+
+The configuration for a specific streamlet instance must be specified in a `cloudflow.streamlets.[streamlet-name]` scope.
+This scope can optionally contain three sections to configure the following aspects of a streamlet instance: 
+
+.Sub-scopes for the streamlet configuration 
+|===
+| scope     | key
+| configuration parameters | `config-parameters.[config-parameter-name]`
+| runtime-specific configuration | `config.[runtime].[runtime-specific-setting]`
+| kubernetes resources | `kubernetes.[kubernetes-object]`
+|===
+
+You can learn more about configuration scopes in xref:develop:cloudflow-configuration.adoc#configurations_available[]
+
+The example below shows this structure in action:
+
+[source, hocon]
+----
+cloudflow {
+  streamlets {
+    my-streamlet {
+      config-parameters {                   //<1>
+        // config parameter values go here  
+        my-config-parameter = "some-value"
+        another-config-parameter = "default-value"
+        another-config-parameter = ${?MY_VAR}
+      }  
+      config {                              //<2>
+        // runtime settings go here
+        akka.loglevel = "DEBUG"
+      }
+      kubernetes {                          //<3>
+        pods.pod.containers.container {
+          // kubernetes container settings go here  
+          resources {
+            requests {
+              memory = "512M"
+            }
+            limits {
+              memory = "1024M"
+            }
+          }
+        }
+      }
+    }    
+  } 
+}
+----
+<1> `config-parameters` section
+<2> `config` section
+<3> `kubernetes` section
+
+You need to specify at least one of the sections shown above.
+
+
+== Configuring a Runtime using the `runtime` Scope
+
+Configuration for all streamlets of a runtime can be specified in a `cloudflow.runtimes.[runtime].config` section.
+The configuration specified in `cloudflow.runtimes.[runtime].config` is merged as fallback, streamlet specific configuration takes precedence.
+An example is shown below:
+
+[source, hocon]
+----
+cloudflow {
+  runtimes {
+    akka {
+      config {
+        akka.loglevel = "DEBUG"
+      }
+      kubernetes {
+        pods.pod.containers.container {
+          // kubernetes container settings go here  
+          env = [ 
+            {
+              name = "JAVA_OPTS"
+              value = "-XX:MaxRAMPercentage=40.0 -Djdk.nio.maxCachedBufferSize=1048576"
+            }
+          ]
+
+          resources {
+            requests {
+              cpu = 2
+              memory = "512M"
+            }
+            limits {
+              memory = "1024M"
+            }
+          }
+        }
+      }
+    }    
+  } 
+}
+----
+
+Another example shows that you can provide configuration for all the runtimes your application uses. In this case, will cover Akka and Spark:
+[source, hocon]
+----
+cloudflow.runtimes {
+  spark.config {
+    spark.driver.memoryOverhead=384
+  }
+  akka.config {
+    akka { 
+      log-level = "INFO"  
+    }
+  }
+} 
+----
