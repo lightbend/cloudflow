@@ -133,4 +133,33 @@ cloudflow.runtimes.akka.config.akka{
 ----
 
 If you  do not like defaults, you can, of course, create a custom Akka configuration
-directly in your project, that will be used in place of default implementation
+directly in your project, that will be used in place of default implementation.
+
+[NOTE]
+====
+In order to accomodate automatic tables creation, a new parameter `auto-create-tables` is
+added to the `akka-persistence-jdbc.shared-databases.slick` Default value for this parameter is
+`false`. If you are writing your custom persistence configuration, use this parameter to control
+table creation, following snipet below:
+----
+akka-persistence-jdbc {
+    shared-databases.slick {
+        auto-create-tables = true
+        profile = "slick.jdbc.PostgresProfile$"
+        db {
+            driver = "org.postgresql.Driver"
+            url = "jdbc:postgresql://"${example.proxy.postgres.service}":"${example.proxy.postgres.port}"/"${example.proxy.postgres.database}
+            user = ${example.proxy.postgres.user}
+            password = ${example.proxy.postgres.password}
+            ssl = ${example.proxy.postgres.useSSL}
+            sslmode = ${example.proxy.postgres.sslMode}
+            sslrootcert = ${example.proxy.postgres.cert}
+            numThreads = 5
+            maxConnections = 5
+            minConnections = 1
+            connectionTimeout = 5000
+        }
+    }
+}
+----
+====
