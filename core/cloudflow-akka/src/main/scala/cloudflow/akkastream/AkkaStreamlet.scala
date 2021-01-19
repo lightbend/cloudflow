@@ -60,7 +60,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val clusterConfig = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
         // Add persistence configuration
         val clusterConfigDB =
-          AkkaPersistenceConfigurator.getPersistenceParams(updatedStreamletDefinition.config, streamletDefinition.streamletRef) match {
+          AkkaPersistenceConfigurator.getPersistenceParamsLocal(updatedStreamletDefinition.config, streamletDefinition.streamletRef) match {
             case Some(dBConfiguration) =>
               AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
             case _ => clusterConfig
@@ -83,24 +83,13 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
           )
           .withFallback(ConfigFactory.parseResourcesAnySyntax("akka-cluster-k8.conf"))
 
-        // Currently, in the case of cluster, custom config is located at
-        // cloudflow.runner.streamlet.context.port_mappings.[portname].config
-        // this seems to be wrong, but in order to test my implementation, I cheat
-        val customConfig =
-          updatedStreamletDefinition.config.as[Option[Config]]("cloudflow.runner.streamlet.context.port_mappings.out.config")
-        println(s"!!! Custom configuration is $customConfig")
-        // Add persistence configuration
-        val clusterConfigDB = {
-          customConfig match {
-            case Some(cfg) =>
-              AkkaPersistenceConfigurator.getPersistenceParams(cfg, streamletDefinition.streamletRef) match {
-                case Some(dBConfiguration) =>
-                  AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
-                case _ => clusterConfig
-              }
-            case _ => clusterConfig
-          }
+        // When running on cluster, we are getting persistence information from a secret
+        val clusterConfigDB = AkkaPersistenceConfigurator.getPersistenceParamsCluster() match {
+          case Some(dBConfiguration) =>
+            AkkaPersistenceConfigurator.addPersistenceConfiguration(clusterConfig, dBConfiguration)
+          case _ => clusterConfig
         }
+
         // Add user defined
         val fullConfig = clusterConfigDB.withFallback(updatedStreamletDefinition.config)
         // Create Akka system
