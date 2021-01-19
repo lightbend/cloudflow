@@ -237,7 +237,7 @@ In the case of Spark we can be more specific by using the following paths:
 - For the Driver pods: `kubernetes.pods.driver` and `kubernetes.pods.driver.containers.container`     
 - For the Executor pods: `kubernetes.pods.executor` and `kubernetes.pods.executor.containers.container`   
 
-Using the path to the `pod` (driver or executor) or the container it will solely depend on the parameter we are setting. 
+Using the path to the `pod` (driver or executor) settings will only applied to that specific type of pod. 
 
 Flink configuration works similarly to Spark's as we can set the following paths:
   
