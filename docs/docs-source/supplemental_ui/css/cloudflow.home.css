@@ -240,6 +240,7 @@ body.oss-banner .lightbend-banner {
 .home-content main ul li p {
 	margin: 0;
 }
+.home-content main a,
 .home-content main a:link {
 	color: var(--color-cloudflow-blue);
 	text-decoration: none;
@@ -267,6 +268,20 @@ body.oss-banner .lightbend-banner {
 }
 .home-content main blockquote footer {
 	font-size: 1rem;
+}
+.home-content main a.btn,
+.home-content main a:link.btn {
+	background: var(--color-cloudflow-blue);
+	color: white;
+	display: inline-block;
+	cursor: pointer;
+	padding: .5rem 1rem;
+	font-size: 1rem;
+
+}
+.home-content main a:hover.btn {
+	background: var(--color-cloudflow-blue-dkr);
+	text-decoration: none;
 }
 
 
