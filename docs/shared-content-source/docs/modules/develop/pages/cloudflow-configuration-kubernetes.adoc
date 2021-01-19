@@ -122,7 +122,7 @@ Only Akka Streamlets can open ports
 === Volumes and Volume-Mounts
 ==== **Mounting Secrets**
 
-It possible to add `volumes`, that contain a secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
+It possible to add a `volume` that contains a secret, and mount it into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
 
 Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
 
