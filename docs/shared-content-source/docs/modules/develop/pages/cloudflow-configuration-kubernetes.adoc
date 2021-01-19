@@ -91,7 +91,7 @@ Annotations, same as labels, are defined by a key/value and also can be defined 
 
 ===  Container Ports
 
-To open ports in container we need to add at least the port number. This snippet shows how
+To add container ports we need to at least provide a `container-port` number. The snippet below shows how:
 
 [source, hocon]
 ----
