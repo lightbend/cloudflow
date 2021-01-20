@@ -6,7 +6,7 @@ lazy val swissKnife = (project in file("."))
     .settings(
       scalafmtOnCompile := true,
       organization := "com.lightbend.cloudflow",
-      headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>"))
+      headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2021", "Lightbend Inc. <https://www.lightbend.com>"))
     )
     .settings(commonSettings)
     .aggregate(

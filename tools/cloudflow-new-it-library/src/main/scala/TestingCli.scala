@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 import akka.cli.cloudflow._
 import akka.cli.cloudflow.commands.{ format, Command }
 import akka.cli.cloudflow.kubeclient.KubeClientFabric8

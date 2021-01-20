@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2020-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 import org.scalatest.time.SpanSugar._
