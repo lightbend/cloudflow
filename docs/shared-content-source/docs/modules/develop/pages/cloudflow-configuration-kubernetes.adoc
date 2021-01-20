@@ -10,7 +10,7 @@ In this section we are covering the Kubernetes settings that you can configure i
 Several Kubernetes settings for a streamlet can be set under `cloudflow.streamlets.[streamlet-name].kubernetes`.
 In the following examples we show configurations under a specific streamlet, `my-streamlet`, its complete path is `cloudflow.streamlets.my-streamlet`. It is also possible, as explained in xref:develop:cloudflow-configuration.adoc#_configuring_a_runtime_using_the_runtime_scope[Configuring a Runtime using the runtime Scope], to apply any configuration shown here to any `runtimes`. The complete path for a runtime is, for instance, `cloudflow.runtimes.akka`.
 
-=== Resources
+=== Resource Requirements
 
 Container resource requirements can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
 The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
