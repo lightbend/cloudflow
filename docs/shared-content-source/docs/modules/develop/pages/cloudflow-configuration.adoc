@@ -19,7 +19,7 @@ We have two main top-level scopes, one for streamlets and one for runtimes, as w
 | runtime   | `cloudflow.runtimes.[runtime]`
 |===
 
-You can learn more about configuration scopes in xref:develop:cloudflow-configuration-scopes.adoc[]
+You can learn more about it in xref:develop:cloudflow-configuration-scopes.adoc[]
 
 == Configurations Available 
 
@@ -32,9 +32,9 @@ Using this model, you can configure the following settings:
 Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
 Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
-=== Configuration Parameters Settings
+=== Streamlet Config Params
 
-You can learn more about configuration parameters in xref:develop:streamlet-configuration.adoc[]
+You can learn more about it in xref:develop:streamlet-configuration.adoc[]
 
 === Runtime Specific Settings
 
@@ -64,7 +64,7 @@ Consult the documentation of your runtime of choice for more information.
 
 === Kubernetes Container Settings
 
-Explained in detail xref:develop:cloudflow-configuration-kubernetes.adoc[here]
+You can learn more about it in xref:develop:cloudflow-configuration-kubernetes.adoc[]
 
 
 

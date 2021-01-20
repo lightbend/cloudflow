@@ -9,15 +9,15 @@ The Cloudflow configuration model allows to set the scope of the settings for a 
 The configuration for a specific streamlet instance must be specified in a `cloudflow.streamlets.[streamlet-name]` scope.
 This scope can optionally contain three sections to configure the following aspects of a streamlet instance: 
 
-.Sub-scopes for the streamlet configuration 
+.Configurations available for the streamlet 
 |===
-| scope     | key
-| configuration parameters | `config-parameters.[config-parameter-name]`
-| runtime-specific configuration | `config.[runtime].[runtime-specific-setting]`
-| kubernetes resources | `kubernetes.[kubernetes-object]`
+| category     | key
+| steamlet config params | `config-parameters.[config-parameter-name]`
+| runtime-specific settings| `config.[runtime].[runtime-specific-setting]`
+| kubernetes settings | `kubernetes.[kubernetes-object]`
 |===
 
-You can learn more about configuration scopes in xref:develop:cloudflow-configuration.adoc#configurations_available[]
+You can learn more about it in xref:develop:cloudflow-configuration.adoc#_configurations_available[Configurations Available]
 
 The example below shows this structure in action:
 
@@ -53,8 +53,8 @@ cloudflow {
   } 
 }
 ----
-<1> `config-parameters` section
-<2> `config` section
+<1> `streamlet-parameters` section
+<2> `runtime-specific` section
 <3> `kubernetes` section
 
 You need to specify at least one of the sections shown above.
