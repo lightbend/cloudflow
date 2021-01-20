@@ -151,6 +151,8 @@ lazy val cloudflowNewIt =
       scriptedParallelInstances := 1)
     .enablePlugins(ScriptedPlugin)
 
+lazy val setVersionFromTag = taskKey[Unit]("Set a stable version from env variable")
+
 setVersionFromTag := {
   IO.write(file("version.sbt"), s"""ThisBuild / version := "${sys.env
     .get("VERSION")
