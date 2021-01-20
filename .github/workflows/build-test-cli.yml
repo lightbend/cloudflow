@@ -1,0 +1,52 @@
+name: Build and Test the Cli
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'cloudflow-cli/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'kubectl-cloudflow/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Fetch tags
+        run: git fetch --depth=100 origin +refs/tags/*:refs/tags/*
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up GraalVM JDK 11
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: graalvm-ce-java11@20.1.0
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v5
+
+      - name: Check Cli fmt
+        run: |
+          cd kubectl-cloudflow
+          sbt "scalafmtCheckAll; scalafmtSbtCheck"
+
+      - name: Test the Cli
+        run: |
+          cd kubectl-cloudflow
+          sbt test
+
+      - name: Build and run the binary
+        run: |
+          cd kubectl-cloudflow
+          gu install native-image
+          sbt cloudflow-cli/graalvm-native-image:packageBin
+          # Check that the binary runs at least
+          cloudflow-cli/target/graalvm-native-image/kubectl-cloudflow version --log-level=trace
