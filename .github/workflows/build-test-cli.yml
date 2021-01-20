@@ -2,8 +2,6 @@ name: Build and Test the Cli
 on:
   push:
     branches: [master]
-    paths:
-      - 'cloudflow-cli/**'
   pull_request:
     branches: [master]
     paths:
