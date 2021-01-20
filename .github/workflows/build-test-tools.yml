@@ -1,11 +1,11 @@
-name: Build and Test the Cli
+name: Build and Test the Tools
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
     paths:
-      - 'kubectl-cloudflow/**'
+      - 'tools/**'
 
 jobs:
   build:
@@ -33,17 +33,17 @@ jobs:
 
       - name: Check Cli fmt
         run: |
-          cd kubectl-cloudflow
+          cd tools
           sbt "scalafmtCheckAll; scalafmtSbtCheck"
 
       - name: Test the Cli
         run: |
-          cd kubectl-cloudflow
+          cd tools
           sbt test
 
       - name: Build and run the binary
         run: |
-          cd kubectl-cloudflow
+          cd tools
           gu install native-image
           sbt cloudflow-cli/graalvm-native-image:packageBin
           # Check that the binary runs at least
