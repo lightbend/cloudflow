@@ -34,7 +34,7 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-The above example shows that `500mcpu` is requested, as well as `512Mi` of memory while being limited to use `4Gi` of memory.   
+The above example shows that `500mcpu` and `512Mi` of memory is requested, while the memory limit is set to `4Gi`.   
 
 === Environment Variables
 
