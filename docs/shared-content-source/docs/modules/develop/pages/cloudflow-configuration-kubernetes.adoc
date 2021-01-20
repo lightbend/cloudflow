@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 == Available Kubernetes Settings 
 
-In this section we are covering the different Kubernetes settings that are configurable. 
+In this section we are covering the Kubernetes settings that you can configure in Cloudflow. 
 
 Several Kubernetes settings for a streamlet can be set under `cloudflow.streamlets.[streamlet-name].kubernetes`.
 On the following samples we show configurations under a specific streamlet, `my-streamlet`, its complete path is `cloudflow.streamlets.my-streamlet`. It is also possible, as explained in xref:develop:cloudflow-configuration.adoc#_configuring_a_runtime_using_the_runtime_scope[Configuring a Runtime using the runtime Scope], to apply any configuration shown in here to any `runtimes`. The complete path for a runtime is, for instance, `cloudflow.runtimes.akka`.
