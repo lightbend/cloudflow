@@ -1,4 +1,4 @@
-= Streamlet Config Params 
+= Streamlet Configuration Parameters 
 
 
 include::ROOT:partial$include.adoc[]
