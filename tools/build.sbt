@@ -151,6 +151,12 @@ lazy val cloudflowNewIt =
       scriptedParallelInstances := 1)
     .enablePlugins(ScriptedPlugin)
 
+setVersionFromTag := {
+  IO.write(file("version.sbt"), s"""ThisBuild / version := "${sys.env
+    .get("VERSION")
+    .getOrElse("0.0.0-SNAPSHOT")}"""")
+}
+
 // makePom fails, often with: java.lang.StringIndexOutOfBoundsException: String index out of range: 0
 addCommandAlias(
   "winGraalBuild",
