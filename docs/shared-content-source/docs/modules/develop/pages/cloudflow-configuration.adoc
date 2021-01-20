@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Cloudflow offers a flexible configuration model that lets you configure every aspect of the application deployment.
+Cloudflow offers a flexible configuration model that lets you configure every aspect of application deployment.
 
 In this section, we provide a brief description of the configuration model, its scopes and available settings. Explain the configuration precedence, show the interchangebility of paths and keys and finally cover how to use the configuration.
 
