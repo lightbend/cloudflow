@@ -1,7 +1,9 @@
-= Streamlet Configuration Parameters 
+= Kubernetes Container Settings
 
+:allow-uri-read:
 
 include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:develop:page$streamlet-configuration.adoc[]
+include::{cloudflow-version}@shared-content:develop:page$cloudflow-configuration-kubernetes.adoc[]
 
 // Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.
+
