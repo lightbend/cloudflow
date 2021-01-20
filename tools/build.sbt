@@ -101,6 +101,56 @@ lazy val cloudflowCli =
     .enablePlugins(BuildInfoPlugin, GraalVMNativeImagePlugin)
     .dependsOn(cloudflowCrd)
 
+lazy val cloudflowIt =
+  Project(id = "cloudflow-it", base = file("cloudflow-it"))
+    .configs(IntegrationTest.extend(Test))
+    .settings(Defaults.itSettings, Dependencies.cloudflowIt)
+    .settings(
+      inConfig(IntegrationTest)(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings),
+      IntegrationTest / fork := true)
+    .dependsOn(cloudflowCli)
+
+lazy val cloudflowNewItLibrary =
+  Project(id = "cloudflow-new-it-library", base = file("cloudflow-new-it-library"))
+    .settings(Dependencies.cloudflowNewItLibrary)
+    .dependsOn(cloudflowCli)
+
+lazy val cloudflowNewIt =
+  Project(id = "cloudflow-new-it", base = file("cloudflow-new-it"))
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      scriptedLaunchOpts := {
+        scriptedLaunchOpts.value ++
+        Seq(
+          "-Xmx1024M",
+          "-Dscripted=true",
+          "-Dcloudflow.version=" + sys.env.get("CLOUDFLOW_VERSION").getOrElse("not-defined-cloudflow-version"),
+          "-Dlibrary.version=" + version.value)
+      },
+      scriptedBufferLog := false,
+      scriptedDependencies := {
+        // This cleanup the directories for local development
+        import scala.sys.process._
+        val ignoredFiles = "git status --ignored --porcelain".!!
+        if (!ignoredFiles.isEmpty) {
+          IO.delete(
+            ignoredFiles
+              .split("\n")
+              .filter(_.startsWith("!! cloudflow-new-it/src/sbt-test"))
+              .map { f => file(f.replaceFirst("!! ", "")) })
+        }
+
+        (ThisProject / scriptedDependencies).value
+        (cloudflowCrd / publishLocal).value
+        (cloudflowCli / publishLocal).value
+        (cloudflowNewItLibrary / publishLocal).value
+      },
+      // the following settings are to run the tests in parallel
+      // tuned to run against a real cluster (for now)
+      scriptedBatchExecution := true,
+      scriptedParallelInstances := 1)
+    .enablePlugins(ScriptedPlugin)
+
 // makePom fails, often with: java.lang.StringIndexOutOfBoundsException: String index out of range: 0
 addCommandAlias(
   "winGraalBuild",

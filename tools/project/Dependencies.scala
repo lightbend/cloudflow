@@ -3,6 +3,7 @@ import sbt._
 
 object Dependencies {
 
+  val Scala212 = "2.12.13"
   val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
@@ -55,5 +56,11 @@ object Dependencies {
 
   val cloudflowCrd =
     libraryDependencies ++= Seq(Compile.fabric8KubernetesClient, Compile.jacksonScala, Compile.scalatest % Test)
+
+  val cloudflowIt =
+    libraryDependencies ++= Seq(Compile.commonsCodec % Test, Compile.commonsCompress % Test, Compile.scalatest % Test)
+
+  val cloudflowNewItLibrary =
+    libraryDependencies ++= Seq(Compile.commonsCodec, Compile.commonsCompress, Compile.scalatest)
 
 }
