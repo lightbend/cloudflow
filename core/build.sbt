@@ -139,7 +139,7 @@ lazy val akkastream =
             AkkaCluster,
             AkkaManagement,
             // Persistence
-            AkkaPersitenceTyped,
+            AkkaPersistenceTyped,
             AkkaSerialization,
             AkkaPersistenceQuery,
             AkkaPersistenceJDBC,

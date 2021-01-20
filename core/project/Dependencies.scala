@@ -42,7 +42,7 @@ object Library {
   val AkkaDiscoveryK8       = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Version.AkkaMgmt
 
   // Persistence
-  val AkkaPersitenceTyped   = "com.typesafe.akka"    %% "akka-persistence-typed"       % Version.Akka
+  val AkkaPersistenceTyped  = "com.typesafe.akka"    %% "akka-persistence-typed"       % Version.Akka
   val AkkaSerialization     = "com.typesafe.akka"    %% "akka-serialization-jackson"   % Version.Akka
   val AkkaPersistenceQuery  = "com.typesafe.akka"    %% "akka-persistence-query"       % Version.Akka
   val AkkaPersistenceJDBC   = "com.github.dnvriend"  %% "akka-persistence-jdbc"        % Version.AkkaJDBC

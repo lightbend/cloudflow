@@ -32,8 +32,6 @@ import net.ceedubs.ficus.Ficus._
 
 import scala.util.control.NonFatal
 
-import scala.collection.JavaConverters._
-
 /**
  * Extend from this class to build Akka-based Streamlets.
  */
