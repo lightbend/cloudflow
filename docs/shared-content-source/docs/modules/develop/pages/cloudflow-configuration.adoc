@@ -26,7 +26,7 @@ You can learn more about configuration scopes in xref:develop:cloudflow-configur
 Using this model, you can configure the following settings:
 
     - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
-    - Kubernetes container resource requirements 
+    - Kubernetes pod and container configuration
     - Streamlet Configuration Parameters for a particular instance
 
 Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
