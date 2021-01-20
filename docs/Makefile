@@ -31,27 +31,25 @@ build: clean html all_javascaladocs print-site
 get-version:
 	# get latest tag
 	$(eval version=$(shell sh -c "git for-each-ref refs/tags --sort=-taggerdate --format='%(refname)' --count=1 | sed 's|refs/tags/v||'"))
-	# query bintray for the corresponding artifact version
-	$(eval bintray_version=$(shell sh -c "wget -qO - https://api.bintray.com/packages/lightbend/cloudflow-cli/kubectl-cloudflow | jq -r '.versions[] | select( . == \"cloudflow_v${version}\")'"))
 
 set-antora-versions: get-version
 	yq e ".version = \"${version}\"" shared-content-source/docs/base-antora.yml > shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" shared-content-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" shared-content-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" shared-content-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${version}\"" shared-content-source/docs/antora.yml
 
 	yq e ".version = \"${version}\"" ../examples/snippets/base-antora.yml > ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" ../examples/snippets/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" ../examples/snippets/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" ../examples/snippets/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${version}\"" ../examples/snippets/antora.yml
 
 	yq e ".version = \"${version}\"" docs-source/docs/base-antora.yml > docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-version = \"${version}\"" docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-examples-version = \"${version}\"" docs-source/docs/antora.yml
 	yq e -i ".asciidoc.attributes.cloudflow-branch-version = \"v${version}\"" docs-source/docs/antora.yml
-	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${bintray_version}\"" docs-source/docs/antora.yml
+	yq e -i ".asciidoc.attributes.kubectl-plugin-version = \"${version}\"" docs-source/docs/antora.yml
 
 set-antora-versions-to-dev: get-version
 	yq e ".version = \"dev\"" shared-content-source/docs/base-antora.yml > shared-content-source/docs/antora.yml
