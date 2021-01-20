@@ -65,7 +65,7 @@ prepare-cluster:
 .PHONY: spawn-gke-cluster
 spawn-gke-cluster:
 	@echo '****** Spawn a GKE cluster to run the IT tests on'
-	(bash -c "source ../cluster-scripts/create-cluster-gke.sh it-${MACHINE_ID}")
+	(bash -c "source ../../cluster_scripts/create-cluster-gke.sh it-${MACHINE_ID}")
 
 .PHONY: delete-gke-cluster
 delete-gke-cluster:
