@@ -2,23 +2,14 @@
 
 include::ROOT:partial$include.adoc[]
 
-Cloudflow offers a flexible configuration model that lets you configure every aspect of the application deployment.
+Cloudflow offers a flexible configuration model that lets you configure every aspect of application deployment.
 
-In this section, we are going to first provide a description of this configuration model, explore how a configuration can be applied, and see several illustrative examples.
+In this section, we provide a brief description of the configuration model, its scopes and available settings. Explain the configuration precedence, show the interchangebility of paths and keys and finally cover how to use the configuration.
 
-== Configuration Scopes: The Cloudflow Configuration Model
+== Configuration Scopes
 
 The Cloudflow configuration model is based on hierarchical scopes.
 These scopes range from broad settings for a runtime to specific settings for a streamlet instance. 
-
-Using this model, you can configure the following settings:
-
-    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
-    - Kubernetes container resource requirements
-    - Streamlet Configuration Parameters for a particular instance
-
-Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
-Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
 We have two main top-level scopes, one for streamlets and one for runtimes, as we can see here:
 
@@ -28,74 +19,25 @@ We have two main top-level scopes, one for streamlets and one for runtimes, as w
 | runtime   | `cloudflow.runtimes.[runtime]`
 |===
 
-=== Configuring Streamlets Using the `streamlet` Scope
+You can learn more about it in xref:develop:cloudflow-configuration-scopes.adoc[]
 
-The configuration for a specific streamlet instance must be specified in a `cloudflow.streamlets.[streamlet-name]` scope.
-This scope can optionally contain three sections to configure the following aspects of a streamlet instance: 
+== Configurations Available 
 
-.Sub-scopes for the streamlet configuration 
-|===
-| scope     | key
-| configuration parameters | `config-parameters.[config-parameter-name]`
-| runtime-specific configuration | `config.[runtime].[runtime-specific-setting]`
-| kubernetes resources | `kubernetes.[kubernetes-object]`
-|===
+Using this model, you can configure the following settings:
 
+    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
+    - Kubernetes pod and container configuration
+    - Streamlet Configuration Parameters for a particular instance
 
-The example below shows this structure in action:
+Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
+Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
-[source, hocon]
-----
-cloudflow {
-  streamlets {
-    my-streamlet {
-      config-parameters {                   //<1>
-        // config parameter values go here  
-        my-config-parameter = "some-value"
-        another-config-parameter = "default-value"
-        another-config-parameter = ${?MY_VAR}
-      }  
-      config {                              //<2>
-        // runtime settings go here
-        akka.loglevel = "DEBUG"
-      }
-      kubernetes {                          //<3>
-        pods.pod.containers.container {
-          // kubernetes container settings go here  
-          resources {
-            requests {
-              memory = "512M"
-            }
-            limits {
-              memory = "1024M"
-            }
-          }
-        }
-      }
-    }    
-  } 
-}
-----
-<1> `config-parameters` section
-<2> `config` section
-<3> `kubernetes` section
+=== Streamlet Config Params
 
-You need to specify at least one of the sections shown above.
+You can learn more about it in xref:develop:streamlet-configuration.adoc[]
 
-==== Environment variables
+=== Runtime Specific Settings
 
-Environment / shell variables can be specified in the config as `$\{variable_name}`, `$variable_name`, or `${?variable_name}`. 
-
-ifdef::review[REVIEWERS: I needed to escape the {} in the first variable_name above to prevent antora from complaining about an undefined variable.]
-  
-In the example above, `${?MY_VAR}` is replaced by the value of the 
-`MY_VAR` environment / shell variable if it is set, otherwise "default-value" will be the value for `another-config-parameter`. 
-If it was specified as `$MY_VAR`, the `MY_VAR` shell variable must be set.
-
-==== Configuration Parameters Settings
-You can learn more about configuration parameters in xref:develop:streamlet-configuration.adoc[]
-
-==== Runtime Specific Settings
 For configuration settings specific to the runtime you are using, please refer to the configuration options of the specific runtime. 
 All settings provided under the `config` section are passed verbatim to the underlying runtime.
 
@@ -120,325 +62,13 @@ With this configuration, the setting `spark.broadcast.compress = "true"` is pass
 It follows, that the configuration options that you can use in this section are dependent on the runtime used. 
 Consult the documentation of your runtime of choice for more information.
 
-==== Kubernetes Container Settings
+=== Kubernetes Container Settings
 
-Container resource requirements and environment variables can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes` section.
-The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
-
-[source, hocon]
-----
-cloudflow.streamlets.my-streamlet {
-  kubernetes.pods.pod {
-    labels {
-      key1 = value1
-      key2 = value2
-    }
-    containers.container {
-      env = [ 
-            { name = "JAVA_OPTS" 
-              value = "-XX:MaxRAMPercentage=40.0"
-            },{
-              name = "FOO"
-              value = "BAR"
-            }
-          ]
-      resources {
-        requests {
-          cpu = "500m"
-          memory = "512Mi"
-        }
-        limits {
-          memory = "4Gi"
-        }
-      }
-    }
-  }
-}
-----
-
-The above example shows that `500mcpu` is requested, as well as `512Mi` of memory. 
-The pod is limited to use `4Gi` of memory.
-It also shows how to set options to the JVM through an environment variable and how to add labels to a pod. 
-
-It is also possible to add `volumes`, that contain a secret, and mount them into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
-
-Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
-
-[source, hocon]
-----
-cloudflow.streamlets.my-streamlet {
-  kubernetes.pods.pod {
-   volumes {
-      foo {
-        secret {
-          name = mysecret1
-        }
-      }
-      bar {
-        secret {
-          name = mysecret2
-        }
-      }
-    }
-    containers.container {
-      volume-mounts {
-        foo {
-          mount-path = "/mnt/folderA"
-          read-only = true
-        }
-        bar {
-          mount-path = "/mnt/folderB"
-          read-only = true
-        }
-      }
-    }
-  } 
-}
-----
-
-This configuration will mount `mysecret1` into each `my-streamlet` container on to the path `/mnt/folderA/mysecret1` as read-only, while `mysecret2` will be mounted on path `/mnt/folderB/mysecret2`. Inside these folders, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted.
-As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
-
-You can also mount `volumes` on Persistent Volume Claims (PVC) that already exist in the Kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster, an error is shown and the deployment or configuration is stopped.
-
-Here's a sample, and further explanation, of how to configure two PVC's to be mounted on all the deployed containers of `my-streamlet`. 
-
-[source, hocon]
-----
-cloudflow.streamlets.my-streamlet {
-  kubernetes.pods.pod {
-   volumes {
-      foo {
-        pvc {
-          name = myclaim1
-          read-only = true
-        }
-      }
-      bar {
-        pvc {
-          name = myclaim2
-          read-only = false
-        }
-      }
-    }
-    containers.container {
-      volume-mounts {
-        foo {
-          mount-path = "/mnt/folderA"
-          read-only = true
-        }
-        bar {
-          mount-path = "/mnt/folderB"
-          read-only = false
-        }
-      }
-    }
-  } 
-}
-----
-
-This configuration will mount an existing Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
-
-.Configuration available to set volumes and mount their secrets
-[%autowidth]
-|===
-| resource  | key
-| `volumes` | `kubernetes.pods.pod.volumes.[name].secret.name = [secret-name]`
-| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.name = [pvc-name]`
-| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.read-only = [true or false]`
-| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
-| `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
-|===
+You can learn more about it in xref:develop:cloudflow-configuration-kubernetes.adoc[]
 
 
-For runtimes that only deploy one pod per streamlet, the config path for the container settings is `kubernetes.pods.pod.containers.container`.
 
-Spark and Flink create two types of pods:
-
-- Spark creates Driver and Executor pods
-- Flink creates JobManager and TaskManager pods
-
-If you specify Kubernetes container settings via `kubernetes.pods.pod.containers.container`, the same settings will apply for all types of pods.
-
-For Spark you can use the following paths:
-  
-- For the Driver pods: `kubernetes.pods.driver.containers.container` and `kubernetes.pods.driver.labels`     
-- For the Executor pods: `kubernetes.pods.executor.containers.container` and `kubernetes.pods.executor.labels`     
-
-For Flink you can use the following paths:
-  
-- For the JobManager pods: `kubernetes.pods.job-manager.containers.container`      
-- For the TaskManager pods: `kubernetes.pods.task-manager.containers.container`      
-- For both pods: 
-`kubernetes.pods.pod.labels`
-
-You can also specify the Kubernetes container settings for all streamlets using a particular runtime. 
-
-Is important to clarify that flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. It has the same limitation when defining `volumes` and `volume-mounts`. Is only allowed `cloudflow.runtimes.flink.kubernetes.pods.pod.volumes` and `cloudflow.runtimes.flink.kubernetes.pods.pod.containers.container.volume-mounts`.
- 
-This is shown in the example below:
-
-[source, hocon]
-----
-cloudflow.runtimes.spark {
-  kubernetes.pods {
-    driver {
-      labels {
-        key1 = value1
-        key2 = value2
-      }
-      containers.container {
-        resources {
-          requests {
-            cpu = "1"
-            memory = "1Gi"
-          }
-          limits {
-            memory = "2Gi"
-          }
-        }
-      }
-    }
-
-    executor {
-      labels {
-        key3 = value3
-      }
-      containers.container {
-        resources {
-          requests {
-            cpu = "2"
-            memory = "2Gi"
-          }
-          limits {
-            memory = "6Gi"
-          }
-        }
-      }
-    }
-  }
-}
-----
-
-The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
-`key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.
-
-You can set different `volume-mounts` for the driver and executor pods in Spark, or specify volume mounts once for both types of pods. More concretely, while the `volumes` have to be set as `cloudflow.runtime.spark.kubernetes.pods.pod.volumes` the `volume-mounts` can be set specifically as `cloudflow.runtime.spark.kubernetes.pods.driver.containers.container.volume-mounts` and/or the `cloudflow.runtime.spark.kubernetes.pods.executor.containers.container.volume-mounts`. This applies to both types of `volumes`, Secrets as well as Persistent Volume Claims.
-
-The sample below shows how to.
-
-[source, hocon]
-----
-cloudflow.runtime.spark {
-  kubernetes.pods {
-    pod {
-     volumes {
-        foo {
-          secret {
-            name = mysecret1
-          }
-        }
-        bar {
-          secret {
-            name = mysecret2
-          }
-        }
-        baz {
-          pvc {
-            name = myclaim1
-            read-only = false
-          }
-        }
-      }
-    }
-    driver {
-      containers.container {
-        volume-mounts {
-          foo {
-            mount-path = "/mnt/folderA/mysecret1"
-            read-only = true
-          }
-          baz {
-            mount-path = "/mnt/folderB"
-            read-only = false
-          }
-        }
-      }
-    } 
-    executor {
-      containers.container {
-        volume-mounts {
-          bar {
-            mount-path = "/mnt/folderC/mysecret2"
-            read-only = true
-          }
-        }
-      }
-    } 
-  }
-}
----- 
-
-This configuration will mount `mysecret1` into any `driver` pod on path `/mnt/folderA/mysecret1` as read-only and `myclaim` into any `driver` pod on path `/mnt/folderB` as writable. While `mysecret2` will be mounted into any `executor` pod on path `/mnt/folderC/mysecret2`. Inside folders `A` and `C`, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted. While the mounted `myclaim1` into the `driver` pods will allow to share the contents of folder `/mnt/folderB` among all of them. 
-
-We explore the runtime configuration in more detail in the next section.
-
-=== Configuring a Runtime using the `runtime` Scope
-
-Configuration for all streamlets of a runtime can be specified in a `cloudflow.runtimes.[runtime].config` section.
-The configuration specified in `cloudflow.runtimes.[runtime].config` is merged as fallback, streamlet specific configuration takes precedence.
-An example is shown below:
-
-[source, hocon]
-----
-cloudflow {
-  runtimes {
-    akka {
-      config {
-        akka.loglevel = "DEBUG"
-      }
-      kubernetes {
-        pods.pod.containers.container {
-          // kubernetes container settings go here  
-          env = [ 
-            {
-              name = "JAVA_OPTS"
-              value = "-XX:MaxRAMPercentage=40.0 -Djdk.nio.maxCachedBufferSize=1048576"
-            }
-          ]
-
-          resources {
-            requests {
-              cpu = 2
-              memory = "512M"
-            }
-            limits {
-              memory = "1024M"
-            }
-          }
-        }
-      }
-    }    
-  } 
-}
-----
-
-Another example shows that you can provide configuration for all the runtimes your application uses. In this case, will cover Akka and Spark:
-[source, hocon]
-----
-cloudflow.runtimes {
-  spark.config {
-    spark.driver.memoryOverhead=384
-  }
-  akka.config {
-    akka { 
-      log-level = "INFO"  
-    }
-  }
-} 
-----
-
-=== Configuration Precedence
+== Configuration Precedence
 
 As a general rule, a specific scope always has precedence over a more general one.
 
@@ -462,7 +92,7 @@ cloudflow.runtimes.akka.config {
 }
 ----
 
-=== Configuration Paths as Keys
+== Configuration Paths as Keys
 Paths can be used as keys in HOCON, which is shown in the example below:
 
 [source, hocon]
@@ -528,7 +158,7 @@ the configuration value in `file2.conf` takes precedence, overriding the value p
 $ kubectl cloudflow deploy swiss-knife.json --conf file1.conf --conf file2.conf
 ----
 
-=== Configuring a Streamlet using Command Line Arguments
+=== Configuring using Command Line Arguments
 
 It is also possible to pass configuration values directly as command-line arguments, as `[config-path]=value` pairs separated by
 a space. The `[config-path]` must be an absolute path to the value, exactly how it would be defined in a config file, using configuration paths. 

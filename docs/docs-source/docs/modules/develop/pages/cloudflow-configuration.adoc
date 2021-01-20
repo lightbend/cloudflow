@@ -1,4 +1,4 @@
-= The Cloudflow Configuration Model
+= Configuring Streamlets
 
 :allow-uri-read:
 
