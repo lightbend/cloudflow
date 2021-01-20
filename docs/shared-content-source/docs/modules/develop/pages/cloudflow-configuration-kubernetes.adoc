@@ -59,7 +59,7 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-The above example shows how to set the environment variable `JAVA_OPTS=XX:MaxRAMPercentage=40.0` and `FOO=BAR` 
+The above example shows how to set the environment variables `JAVA_OPTS=XX:MaxRAMPercentage=40.0` and `FOO=BAR` 
 
 ===  Labels
 
