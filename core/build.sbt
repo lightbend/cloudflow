@@ -594,7 +594,7 @@ lazy val bintraySettings =
 
 lazy val commonSettings = bintraySettings ++ Seq(
         organization := "com.lightbend.cloudflow",
-        headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
+        headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2021", "Lightbend Inc. <https://www.lightbend.com>")),
         scalaVersion := Version.Scala212,
         autoAPIMappings := true,
         useGpgAgent := false,
