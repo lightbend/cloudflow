@@ -32,7 +32,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
       .once
 
     server.expect.get
-      .withPath("/apis/cloudflow.lightbend.com/v1alpha1/namespaces/test/cloudflowapplications")
+      .withPath("/apis/cloudflow.lightbend.com/v1alpha1/cloudflowapplications")
       .andReturn(
         HttpURLConnection.HTTP_OK,
         Source
