@@ -101,6 +101,7 @@ class KubeClientFabric8(
       .apiextensions()
       .v1beta1()
       .customResourceDefinitions()
+      .inAnyNamespace()
       .list()
       .getItems()
       .asScala
@@ -159,6 +160,7 @@ class KubeClientFabric8(
     logger.trace("Running the Fabric8 list command")
     Try {
       val res = cloudflowApps
+        .inAnyNamespace()
         .list()
         .getItems
         .asScala
@@ -172,6 +174,7 @@ class KubeClientFabric8(
   def getCloudflowAppStatus(appName: String): Try[models.ApplicationStatus] = withApplicationClient { cloudflowApps =>
     Try {
       val app = cloudflowApps
+        .inAnyNamespace()
         .list()
         .getItems()
         .asScala
@@ -199,7 +202,12 @@ class KubeClientFabric8(
   def getOperatorProtocolVersion(): Try[String] = withClient { client =>
     for {
       protocolVersionCM <- Try {
-        client.configMaps().withLabel(KubeClient.CloudflowProtocolVersionConfigMap).list().getItems()
+        client
+          .configMaps()
+          .inAnyNamespace()
+          .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
+          .list()
+          .getItems()
       }
       protocolVersion <- {
         protocolVersionCM.size() match {
@@ -278,7 +286,8 @@ class KubeClientFabric8(
           .addToData(dockerConfigSecret, Base64Helper.encode(config))
           .build()
 
-      val prevImagePullSecret = client.secrets
+      val prevImagePullSecret = client
+        .secrets()
         .inNamespace(namespace)
         .list()
         .getItems
@@ -289,7 +298,10 @@ class KubeClientFabric8(
         case None =>
           val config = DockerConfig(auths = Map(dockerRegistryURL -> configEntry))
 
-          client.secrets.inNamespace(namespace).create(secret(Serialization.jsonMapper().writeValueAsString(config)))
+          client
+            .secrets()
+            .inNamespace(namespace)
+            .create(secret(Serialization.jsonMapper().writeValueAsString(config)))
         case Some(prev) =>
           val data = prev
             .getData()
@@ -301,7 +313,8 @@ class KubeClientFabric8(
 
           val newConfig = prevConfig.copy(auths = prevConfig.auths.updated(dockerRegistryURL, configEntry))
 
-          client.secrets
+          client
+            .secrets()
             .inNamespace(namespace)
             .createOrReplace(secret(Serialization.jsonMapper().writeValueAsString(newConfig)))
       }
@@ -417,13 +430,15 @@ class KubeClientFabric8(
       Try {
         content match {
           case None =>
-            val current = client.secrets
+            val current = client
+              .secrets()
               .inNamespace(name)
               .withName(loggingSecretName)
               .get()
 
             if (current != null) {
-              client.secrets
+              client
+                .secrets()
                 .inNamespace(name)
                 .withName(loggingSecretName)
                 .delete()
@@ -442,7 +457,8 @@ class KubeClientFabric8(
                 .addToStringData(loggingSecretConfKey, v)
                 .build()
 
-            client.secrets
+            client
+              .secrets()
               .inNamespace(name)
               .withName(loggingSecretName)
               .createOrReplace(secret)
@@ -474,6 +490,7 @@ class KubeClientFabric8(
 
       client
         .serviceAccounts()
+        .inNamespace(appId)
         .createOrReplace(serviceAccount)
     }
   }
@@ -568,13 +585,16 @@ class KubeClientFabric8(
   def deleteCloudflowApp(appName: String): Try[Unit] = withApplicationClient { cloudflowApps =>
     Try {
       val app = cloudflowApps
+        .inAnyNamespace()
         .list()
         .getItems()
         .asScala
         .find(_.getMetadata.getName == appName)
         .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
 
-      cloudflowApps.delete(app)
+      cloudflowApps
+        .inAnyNamespace()
+        .delete(app)
     }
   }
 
@@ -600,7 +620,7 @@ class KubeClientFabric8(
           case Some(ns) =>
             client.secrets().inNamespace(ns)
           case _ =>
-            client.secrets()
+            client.secrets().inAnyNamespace()
         }
       }
 
