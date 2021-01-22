@@ -169,7 +169,7 @@ addCommandAlias(
 
 addCommandAlias(
   "linuxStaticBuild",
-  """project cloudflow-cli; set containerBuildImage := GraalVMNativeImagePlugin.generateContainerBuildImage("andreatp/graalvm-ce:20.1.0-java11").value; set graalVMNativeImageOptions ++= Seq("--static", "-H:UseMuslC=/opt/graalvm/stage/resources/bundle/"); graalvm-native-image:packageBin""")
+  """project cloudflow-cli; set graalVMNativeImageGraalVersion := Some("20.1.0-java11"); set graalVMNativeImageOptions ++= Seq("--static", "-H:UseMuslC=/opt/graalvm/stage/resources/bundle/"); graalvm-native-image:packageBin""")
 
 addCommandAlias(
   "regenerateGraalVMConfig",
