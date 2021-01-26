@@ -211,6 +211,27 @@ object LocalRunner extends StreamletLoader {
         (targetKey, validationType, value)
     }
 
+    val streamletConfig = {
+      val streamletSourceKey = s"cloudflow.streamlets.${streamletDescriptor.name}.config"
+      val runtimeSourceKey   = s"cloudflow.runtimes.${streamletDescriptor.descriptor.runtime.name}.config"
+
+      val streamletConf =
+        if (localConf.hasPath(streamletSourceKey)) {
+          localConf.getConfig(streamletSourceKey)
+        } else {
+          ConfigFactory.empty()
+        }
+
+      val runtimeConf =
+        if (localConf.hasPath(runtimeSourceKey)) {
+          localConf.getConfig(runtimeSourceKey)
+        } else {
+          ConfigFactory.empty()
+        }
+
+      streamletConf.withFallback(runtimeConf)
+    }
+
     val missingValues = streamletParamConfig.collect { case (k, _, None) => k }
     if (missingValues.nonEmpty) {
       Failure(MissingConfigurationException(missingValues))
@@ -218,14 +239,16 @@ object LocalRunner extends StreamletLoader {
       Success {
         // I'll let the consumer of this configuration to parse the values as they want.
         // This quoting policy is here to preserve the type of the value in the resulting config obj
-        ConfigFactory.parseString {
-          streamletParamConfig
-            .collect {
-              case (key, validationType, Some(value)) =>
-                s"$key : ${quotePolicy(validationType)(value)}"
-            }
-            .mkString("\n")
-        }
+        ConfigFactory
+          .parseString {
+            streamletParamConfig
+              .collect {
+                case (key, validationType, Some(value)) =>
+                  s"$key : ${quotePolicy(validationType)(value)}"
+              }
+              .mkString("\n")
+          }
+          .withFallback(streamletConfig)
       }
     }
   }
