@@ -13,7 +13,7 @@ which is required by other (easier) options for pushing images to Minikube.
 
  * Enable insecure registries in Minikube.
  * Enable the `registry` Minikube addon.
- * Configure Docker ot use the insecure registry.
+ * Configure Docker to use the insecure registry.
  * Configure the target environment.
  * xref:administration:installing-cloudflow.adoc[Install Cloudflow] on Minikube (if you haven't done so already)
 
@@ -25,14 +25,14 @@ Start Minikube with insecure registries and enable the `registry` addon:
    minikube start --kubernetes-version=latest --insecure-registry "10.0.0.0/24,192.168.39.0/24"
    minikube addons enable registry
 
-Configure Docker to use the Minikube registry as insecure registry by adding it to
-the `daemon.json` file, whose default location is `/etc/docker/daemon.json` on Linux.
-If the `daemon.json` file does not exist, create it.
+For configuring Docker to use the Minikube registry as insecure registry, please consult the https://docs.docker.com/registry/insecure/#deploy-a-plain-http-registry[Deploy a plain HTTP registry]
+docs for instructions.
 
-Replace `MINIKUBE_IP` with the actual Minikube VM ip obtained via `Minikube ip`.
+In the case of Linux, add the config to `/etc/docker/daemon.json` as shown below.
+Replace `MINIKUBE_IP` with the actual Minikube VM ip obtained via `minikube ip`.
 
 [source,json]
-.Configure Docker to use the insecure Minikube registry
+.Linux: Configure Docker to use the insecure Minikube registry
 ----
 {
   "insecure-registries": [ "MINIKUBE_IP:5000" ]
@@ -87,7 +87,7 @@ For this we need to create a tag for the Minikube registry which refers to the o
    docker push $(minikube ip):5000/sensor-data-scala:0.1
 
 At this point, the Docker image containing the streamlets has been published to the Minikube Docker registry.
-The `sensor-data-scala.json` file that the build produces contains the application descriptor.
+The `sensor-data-scala.json` file that the build produces, contains the application descriptor.
 We use the Cloudflow CLI to deploy that application description to a cluster.
 
 == Deploy Application to Minikube
