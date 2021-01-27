@@ -1,0 +1,67 @@
+/*
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package cloudflow.flink
+
+import cloudflow.streamlets.StreamletShape
+import cloudflow.streamlets.avro.AvroOutlet
+import cloudflow.flink.avro.Data
+
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+
+import com.typesafe.config.{ Config, ConfigFactory }
+
+import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpecLike }
+
+class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
+
+  "FlinkStreamlet" should {
+
+    object FlinkIngress extends FlinkStreamlet {
+      val out   = AvroOutlet[Data]("out", _.id.toString())
+      val shape = StreamletShape(out)
+
+      override def createLogic() = new FlinkStreamletLogic {
+        override def buildExecutionGraph = ???
+
+      }
+
+      def accessStreamExecutionEnvironment(config: Config, streamlet: String): StreamExecutionEnvironment =
+        FlinkIngress.createStreamExecutionEnvironment(config, streamlet)
+
+    }
+
+    "find if config has disable checkpointing" in {
+      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.flink.execution.checkpointing.interval = -1")
+
+      val env = FlinkIngress.accessStreamExecutionEnvironment(config, "fake")
+      env.getCheckpointConfig.isCheckpointingEnabled() shouldBe false
+
+    }
+    "find checkpointing is disabled by runtime" in {
+      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.flink.execution.checkpointing.interval = -1")
+      FlinkIngress.isCheckpointingDisabled(config, "fake") shouldBe true
+    }
+    "find checkpointing is disabled by streamlet" in {
+      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.flink.execution.checkpointing.interval = -1")
+      FlinkIngress.isCheckpointingDisabled(config, "my-streamlet") shouldBe true
+    }
+    "find checkpointing is enable when nor runtime nor stream has that param" in {
+      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.kuberneter.bla.bla = yadayada")
+      FlinkIngress.isCheckpointingDisabled(config, "my-streamlet") shouldBe false
+    }
+  }
+}
