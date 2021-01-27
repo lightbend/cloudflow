@@ -5,6 +5,8 @@ include::ROOT:partial$include.adoc[]
 
 If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:administration:installing-cloudflow.adoc[install Cloudflow] first.
 
+If you want to deploy the application to https://minikube.sigs.k8s.io/docs/[minikube], please follow xref:deploy-to-k8s-minikube.adoc[this guide].
+
 Once the application is built you need to publish the docker images to a container registry that stores, manages and secures your application images. 
 In this example we will use a Docker Hub registry.
 

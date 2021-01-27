@@ -13,6 +13,7 @@ include::partial$include.adoc[]
 *** xref:get-started:create-example-blueprint.adoc[Create the example blueprint]
 *** xref:get-started:run-in-sandbox.adoc[Run in a local sandbox]
 *** xref:get-started:deploy-to-k8s-cluster.adoc[Deploy to a Kubernetes cluster]
+**** xref:get-started:deploy-to-k8s-minikube.adoc[Deploy to Minikube]
 *** xref:get-started:exercise-example.adoc[Exercise the example]
 
 * xref:develop:index.adoc[Developing Applications with Cloudflow]
