@@ -5,6 +5,8 @@ include::ROOT:partial$include.adoc[]
 
 If you have not already installed Cloudflow on a Kubernetes Cluster, please xref:administration:installing-cloudflow.adoc[install Cloudflow] first.
 
+If you want to deploy the application to https://minikube.sigs.k8s.io/docs/[minikube], please follow xref:deploy-to-k8s-minikube.adoc[this guide].
+
 Once the application is built you need to publish the docker images to a container registry that stores, manages and secures your application images. 
 In this example we will use a Docker Hub registry.
 
@@ -42,7 +44,7 @@ Once the images are successfully published, you will see something like the foll
 ```
 
 At this point, the Docker image containing the streamlets has been published to the Docker repository.
-The `sensor-data-scala.json` file that the build produces contains the application descriptor.
+The `sensor-data-scala.json` file that the build produces, contains the application descriptor.
 We use the Cloudflow CLI to deploy that application description to a cluster.
 
 == Deploy Application to the Cluster
