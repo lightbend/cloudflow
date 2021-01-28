@@ -1,0 +1,136 @@
+= Deploy the Example to Minikube
+
+
+include::ROOT:partial$include.adoc[]
+
+This guide shows how to deploy the Cloudflow application using the Minikube `registry` addon.
+For more detailed instructions please refer to the official https://minikube.sigs.k8s.io/docs/handbook/pushing/#4-pushing-to-an-in-cluster-using-registry-addon[Pushing images] documentation of Minikube.
+
+Unfortunately Cloudflow does not support changing the `imagePullPolicy` of application images yet (currently fixed to `imagePullPolicy: Always`),
+which is required by other (easier) options for pushing images to Minikube.
+
+== Setup
+
+ * Enable insecure registries in Minikube.
+ * Enable the `registry` Minikube addon.
+ * Configure Docker to use the insecure registry.
+ * Configure the target environment.
+ * xref:administration:installing-cloudflow.adoc[Install Cloudflow] on Minikube (if you haven't done so already)
+
+We will assume that the Minikube VM has an ip from the `192.168.39.0/24` subnet.
+You can verify this once Minikube is started by using `minikube ip`.
+
+Start Minikube with insecure registries and enable the `registry` addon:
+
+   minikube start --kubernetes-version=latest --insecure-registry "10.0.0.0/24,192.168.39.0/24"
+   minikube addons enable registry
+
+For configuring Docker to use the Minikube registry as insecure registry, please consult the https://docs.docker.com/registry/insecure/#deploy-a-plain-http-registry[Deploy a plain HTTP registry]
+docs for instructions.
+
+In the case of Linux, add the config to `/etc/docker/daemon.json` as shown below.
+Replace `MINIKUBE_IP` with the actual Minikube VM ip obtained via `minikube ip`.
+
+[source,json]
+.Linux: Configure Docker to use the insecure Minikube registry
+----
+{
+  "insecure-registries": [ "MINIKUBE_IP:5000" ]
+}
+----
+
+The last step is to configure the Minikube registry as the target environment in your local build process.
+
+Follow these steps:
+
+ * Create a file named `target-env.sbt` in the root of your project folder (the same level where you have `build.sbt`).
+ * Set the registry to `None`.
+ * Set the repository to `localhost:5000`. (This allows Minikube to pull the image from its local registry).
+
+The content of the `target-env.sbt` file should like like this:
+
+[source,sbt]
+.Configure Docker registry and repository
+----
+ThisBuild / cloudflowDockerRegistry := None
+ThisBuild / cloudflowDockerRepository := Some("localhost:5000")
+----
+
+== Building the Application
+
+Now we are ready to build the application with
+
+   sbt buildApp
+
+You should see something like the following as output of `buildApp` in your console:
+
+```
+[info] Successfully built and published the following image:
+[info] localhost:5000/sensor-data-scala:0.1
+[warn] *** WARNING ***
+[warn] You haven't specified the "cloudflowDockerRegistry" in your build.sbt
+[warn] To have a working deployment you should make the produced docker image available
+[warn] in a docker registry accessible from your cluster nodes
+[warn] The Cloudflow application CR points to localhost:5000/sensor-data-scala:0.1
+[success] Cloudflow application CR generated in /.../sensor-data-scala/target/sensor-data-scala.json
+[success] Use the following command to deploy the Cloudflow application:
+[success] kubectl cloudflow deploy /.../sensor-data-scala/target/sensor-data-scala.json
+[success] Total time: 3 s, completed Jan 27, 2021, 11:52:23 AM
+```
+
+You can safely ignore the warnings, those are expected when setting the Docker registry to `None`.
+
+Because we skipped the pushing of the image in the build process we now need to manually push our image to the Minikube registry.
+For this we need to create a tag for the Minikube registry which refers to the original image.
+
+   docker tag localhost:5000/sensor-data-scala:0.1 $(minikube ip):5000/sensor-data-scala:0.1
+   docker push $(minikube ip):5000/sensor-data-scala:0.1
+
+At this point, the Docker image containing the streamlets has been published to the Minikube Docker registry.
+The `sensor-data-scala.json` file that the build produces, contains the application descriptor.
+We use the Cloudflow CLI to deploy that application description to a cluster.
+
+== Deploy Application to Minikube
+
+If you have not already installed Cloudflow on Minikube, please xref:administration:installing-cloudflow.adoc[install Cloudflow] first.
+
+IMPORTANT: Make sure that `kubectl` is configured to use the `minikube` context. Verify this by running `kubectl config current-context`.
+
+Because we are using an insecure Docker registry, we need to omit credentials with the `--no-registry-credentials` flag, which is shown in the following example:
+
+```
+$ kubectl cloudflow deploy /path/to/sensor-data-scala/target/sensor-data-scala.json --no-registry-credentials
+```
+
+If the command goes through you will see the following output:
+
+```
+[Done] Deployment of application `sensor-data-scala` has started.
+```
+
+Once all streamlets are up in their pods, you can see them running using the following command:
+
+```
+$ kubectl cloudflow status sensor-data-scala 
+Name:             sensor-data-scala
+Namespace:        sensor-data-scala
+Version:          484-199a3c1-dirty
+Created:          2020-06-10 22:28:32 +0200 CEST
+Status:           Running
+
+STREAMLET         POD                                              READY             STATUS            RESTARTS          
+http-ingress      sensor-data-scala-http-ingress-6f4b677c84-8gtk7  1/1               Running           0
+invalid-logger    sensor-data-scala-invalid-logger-f76667866-lffmk 1/1               Running           0
+metrics           sensor-data-scala-metrics-859d9cf974-vrpzs       1/1               Running           0
+valid-logger      sensor-data-scala-valid-logger-6946746b4b-bpqdc  1/1               Running           0
+validation        sensor-data-scala-validation-b7f85669d-kkpx9     1/1               Running           0
+
+```
+
+Note that all streamlets run in a namespace that matches the name of the application.
+
+**Congratulations!** You have deployed and started your Cloudflow application inside Minikbe.
+
+== What's next
+
+Now, we are ready to xref:exercise-example.adoc[Exercise the example].

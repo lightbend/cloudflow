@@ -21,6 +21,7 @@ Follow the main topics in order:
 .. xref:exercise-example.adoc[Exercise the example]
 .. xref:administration:index.adoc[Installing Cloudflow]
 .. xref:deploy-to-k8s-cluster.adoc[Deploy to a Kubernetes cluster]
+... xref:deploy-to-k8s-minikube.adoc[Deploy to Minikube]
 
 ifdef::review[REVIEWERS: the following are fine-grained tasks, not top-level tasks and since they are covered in the pages above and don't have their own page, I think it's best to leave them off this list.]
 //.. Use CLI helpers such as `status` and `list`
