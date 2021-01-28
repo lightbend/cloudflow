@@ -44,24 +44,56 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
 
     }
 
-    "find if config has disable checkpointing" in {
-      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.flink.execution.checkpointing.interval = -1")
+    "find config has enable checkpointing by default" in {
+      val config = ConfigFactory.parseString("")
 
       val env = FlinkIngress.accessStreamExecutionEnvironment(config, "fake")
-      env.getCheckpointConfig.isCheckpointingEnabled() shouldBe false
+      env.getCheckpointConfig.isCheckpointingEnabled() shouldBe true
+    }
 
-    }
     "find checkpointing is disabled by runtime" in {
-      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.flink.execution.checkpointing.interval = -1")
-      FlinkIngress.isCheckpointingDisabled(config, "fake") shouldBe true
+      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.cloudflow.checkpointing.default = false")
+      FlinkIngress.isDefaultCheckpointingEnabled(config, "fake") shouldBe false
     }
+
     "find checkpointing is disabled by streamlet" in {
-      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.flink.execution.checkpointing.interval = -1")
-      FlinkIngress.isCheckpointingDisabled(config, "my-streamlet") shouldBe true
+      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = false")
+      FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe false
     }
+
     "find checkpointing is enable when nor runtime nor stream has that param" in {
       val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.kuberneter.bla.bla = yadayada")
-      FlinkIngress.isCheckpointingDisabled(config, "my-streamlet") shouldBe false
+      FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe true
+    }
+
+    "find checkpointing is config" in {
+
+      val config = """{
+                        "akka": {
+                           "actor": {
+                             "additional-serialization-bindings": {
+                               "akka.actor.ActorInitializationException": "akka-misc"
+                             }
+                           }
+                        },
+                        "cloudflow": {
+                          "runtimes": {
+                            "flink": {
+                              "config": {
+                                "cloudflow": {
+                                  "checkpointing": {
+                                    "default": false
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "file": {
+                          "separator": "/"
+                        }
+                      }""".stripMargin
+      FlinkIngress.isDefaultCheckpointingEnabled(ConfigFactory.parseString(config), "fake") shouldBe false
     }
   }
 }
