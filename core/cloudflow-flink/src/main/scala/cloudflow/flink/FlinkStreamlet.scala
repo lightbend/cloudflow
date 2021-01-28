@@ -167,10 +167,27 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       StreamExecutionEnvironment.getExecutionEnvironment
     }
 
-    if (!env.getCheckpointConfig.isCheckpointingEnabled()) {
+    if (!env.getCheckpointConfig.isCheckpointingEnabled() && isDefaultCheckpointingEnabled(config, streamlet)) {
       setDefaultCheckpointing(env)
     }
     env
+  }
+
+  /**
+   * This checks whether the user, through configuration, has disabled checkpointing
+   * by setting flink.execution.checkpointing.interval value to less then 0
+  **/
+  def isDefaultCheckpointingEnabled(config: Config, streamlet: String): Boolean = {
+    val runtimePath   = "cloudflow.runtimes.flink.config.cloudflow.checkpointing.default"
+    val streamletPath = s"cloudflow.streamlet.${streamlet}.config.cloudflow.checkpointing.default"
+    val enabled = if (config.hasPath(streamletPath)) {
+      config.getBoolean(streamletPath)
+    } else if (config.hasPath(runtimePath)) {
+      config.getBoolean(runtimePath)
+    } else {
+      true
+    }
+    return enabled
   }
 
   def setDefaultCheckpointing(env: StreamExecutionEnvironment): CheckpointConfig = {
