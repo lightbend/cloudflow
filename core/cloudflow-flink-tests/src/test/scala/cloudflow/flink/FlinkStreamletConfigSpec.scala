@@ -66,7 +66,7 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe true
     }
 
-    "find checkpointing is config" in {
+    "find checkpointing is configured according to config" in {
 
       val config = """{
                         "akka": {
