@@ -6,7 +6,6 @@ To develop and deploy Cloudflow applications, you will need a Java SDK (JDK), Do
 
 ifdef::oss[This page describes the required environment to prepare for development. Please see xref:administration:installing-cloudflow.adoc[Installing Cloudflow] for instructions on how to install Cloudflow on a Kubernetes cluster.]
 
-ifdef::adp[This page describes the required environment to prepare for development. Please see xref:install:installing-cloudflow.adoc[Installing Cloudflow] for instructions on how to install Cloudflow on a Kubernetes cluster.]
 
 == Prerequisites
 
