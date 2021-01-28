@@ -32,6 +32,9 @@ object Dependencies {
     // https://github.com/fabric8io/kubernetes-client/blob/0c4513ff30ac9229426f1481a46fde2eb54933d9/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/internal/core/v1/PodOperationsImpl.java#L451
     val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
     val commonsCompress = "org.apache.commons" % "commons-compress" % "1.20"
+
+    val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
+    val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
   }
 
   object TestDeps {
@@ -51,6 +54,8 @@ object Dependencies {
         Compile.pureConfigMagnolia,
         Compile.airframeLog,
         Compile.asciiTable,
+        Compile.bouncyCastleCore,
+        Compile.bouncyCastleExt,
         TestDeps.fabric8KubernetesServerMock,
         Compile.scalatest % Test)
 
