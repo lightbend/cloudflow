@@ -180,8 +180,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
   def isDefaultCheckpointingEnabled(config: Config, streamlet: String): Boolean = {
     val runtimePath   = "cloudflow.runtimes.flink.config.cloudflow.checkpointing.default"
     val streamletPath = s"cloudflow.streamlet.${streamlet}.config.cloudflow.checkpointing.default"
-    if (config.hasPath(runtimePath) && config.getBoolean(runtimePath) == false) return false
-    if (config.hasPath(streamletPath) && config.getBoolean(streamletPath) == false) return false
+    if (config.hasPath(streamletPath)) return config.getBoolean(streamletPath)
+    if (config.hasPath(runtimePath)) return config.getBoolean(runtimePath)
     return true
   }
 

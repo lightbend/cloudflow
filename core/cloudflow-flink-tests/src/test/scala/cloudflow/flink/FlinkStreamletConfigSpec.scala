@@ -52,18 +52,26 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
     }
 
     "find checkpointing is disabled by runtime" in {
-      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.cloudflow.checkpointing.default = false")
+      val config = ConfigFactory.parseString("cloudflow.runtimes.flink.config.cloudflow.checkpointing.default = off")
       FlinkIngress.isDefaultCheckpointingEnabled(config, "fake") shouldBe false
     }
 
     "find checkpointing is disabled by streamlet" in {
-      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = false")
+      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = off")
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe false
     }
 
     "find checkpointing is enabled when nor runtime nor stream has that param" in {
       val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.kuberneter.bla.bla = yadayada")
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe true
+    }
+
+    "find checkpointing is disabled for streamlet overriding runtimes being enabled" in {
+      val config = ConfigFactory.parseString("""
+        cloudflow.runtimes.flink.config.cloudflow.checkpointing.default = on
+        cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = off
+        """)
+      FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe false
     }
 
     "find checkpointing is configured according to config" in {
