@@ -44,7 +44,7 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
 
     }
 
-    "find config has enable checkpointing by default" in {
+    "find config has enabled checkpointing by default" in {
       val config = ConfigFactory.parseString("")
 
       val env = FlinkIngress.accessStreamExecutionEnvironment(config, "fake")
