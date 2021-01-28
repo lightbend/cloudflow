@@ -61,7 +61,7 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe false
     }
 
-    "find checkpointing is enable when nor runtime nor stream has that param" in {
+    "find checkpointing is enabled when nor runtime nor stream has that param" in {
       val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.kuberneter.bla.bla = yadayada")
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe true
     }
