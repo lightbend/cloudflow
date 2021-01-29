@@ -87,5 +87,5 @@ not optimal.
 ==== GCE Ingress
 
 `gce` (as used in the internal and external HTTP(S) load balancers on Google Kubernetes Engine)
-requires the target service to be of type `NodePort`. Because cloudflow creates nodes of type
+requires the target service to be of type `NodePort`. Because Cloudflow creates services of type
 `ClusterIP`, this ingress type cannot be used.
