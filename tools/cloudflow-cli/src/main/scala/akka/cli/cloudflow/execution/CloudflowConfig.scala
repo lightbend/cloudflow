@@ -213,6 +213,10 @@ object CloudflowConfig {
     }
   }
 
+  implicit val labelValueWriter = ConfigWriter.fromFunction[LabelValue] { label: LabelValue =>
+    ConfigValueFactory.fromAnyRef(label.value)
+  }
+
   // LabelKey
 
   final case class LabelKey(key: String)

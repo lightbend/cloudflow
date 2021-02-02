@@ -718,6 +718,29 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     res.failure.exception.getMessage.contains(LabelsNotAllowedOnPod) shouldBe true
   }
 
+  it should "write label values as plain strings" in {
+    // Arrange
+    val config = s"""cloudflow {
+                    |  streamlets {
+                    |    flink {
+                    |      kubernetes.pods {
+                    |        pod {
+                    |          labels: {
+                    |            mykey = myvalue
+                    |          }
+                    |        }
+                    |      }
+                    |    }
+                    |  }
+                    |}""".stripMargin
+
+    // Act
+    val res = ConfigFactory.empty().withFallback(writeConfig(loadAndValidate(ConfigSource.string(config)).get))
+
+    // Assert
+    res.getString("cloudflow.streamlets.flink.kubernetes.pods.pod.labels.mykey") shouldBe "myvalue"
+  }
+
   it should "generate proper default mounts" in {
     // Arrange
     val crFile = new File("./cloudflow-cli/src/test/resources/swiss-knife.json")
