@@ -68,7 +68,7 @@ val latestVersion = {
 }
 
 
-addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % {cloudflow-version})
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "{cloudflow-version}")
 ----
 
 == Local configuration
