@@ -1,6 +1,5 @@
 = Set Up Example Project and Configure Build
 
-
 include::ROOT:partial$include.adoc[]
 
 NOTE: The sources for the example described below can be found in the application called
@@ -58,9 +57,18 @@ The script is a standard Scala sbt build file--with the addition of the Cloudflo
 +
 . Create the file `project/cloudflow-plugins.sbt` add logic to get the correct version, and add the Cloudflow plugin dependency:
 +
-[source,scala]
+[source,scala,subs=attributes+]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[]
+val latestVersion = {
+  sys.env.get("CLOUDFLOW_VERSION").fold(
+    sbtdynver.DynVer(None, "-", "v")
+      .getGitDescribeOutput(new java.util.Date())
+      .fold(throw new Exception("Failed to retrieve version"))(_.version("-"))
+  )(identity)
+}
+
+
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % {cloudflow-version})
 ----
 
 == Local configuration
