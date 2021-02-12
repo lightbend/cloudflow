@@ -101,7 +101,6 @@ resolve_cloudflow_version() {
 #   - win (Git Bash)
 #   - darwin
 #   - linux
-# TODO test on Linux
 detect_platform() {
   local platform="$(uname -s | tr '[:upper:]' '[:lower:]')"
 
