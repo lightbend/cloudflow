@@ -6,11 +6,6 @@
 #
 # TODO review instructions when is live
 #   $ curl -sL http://cloudflow.io/docs/get.sh | sh
-
-# Install a specific version (ex: 2.0.22):
-#
-#   $ curl -sL http://cloudflow.io/docs/get.sh/2.0.22 | sh
-#
 #
 # Options may be passed to the shell script with `-s --`:
 #
@@ -220,7 +215,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-# Resolve the requested version tag into an existing Node.js version
+# Resolve the requested version tag into an existing Cloudflow CLI version
 RESOLVED="$(resolve_cloudflow_version "$VERSION")"
 if [ -z "${RESOLVED}" ]; then
   error "Could not resolve Cloudflow version ${MAGENTA}${VERSION}${NO_COLOR}"
