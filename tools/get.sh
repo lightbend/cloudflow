@@ -5,17 +5,17 @@
 # Install the official Cloudflow kubectl plugin
 #
 # TODO review instructions when is live
-#   $ curl -sL http://cloudflow.io/get.sh | sh
+#   $ curl -sL http://cloudflow.io/docs/get.sh | sh
 
 # Install a specific version (ex: 2.0.22):
 #
-#   $ curl -sL http://cloudflow.io/get.sh/2.0.22 | sh
+#   $ curl -sL http://cloudflow.io/docs/get.sh/2.0.22 | sh
 #
 #
 # Options may be passed to the shell script with `-s --`:
 #
-#   $ curl -sL http://cloudflow.io/get.sh | sh -s -- --prefix=$HOME --version=2.0.22 --verbose
-#   $ curl -sL http://cloudflow.io/get.sh | sh -s -- -P $HOME -v 2.0.22 -V
+#   $ curl -sL http://cloudflow.io/docs/get.sh | sh -s -- --prefix=$HOME --version=2.0.22 --verbose
+#   $ curl -sL http://cloudflow.io/docs/get.sh | sh -s -- -P $HOME -v 2.0.22 -V
 #
 set -euo pipefail
 
