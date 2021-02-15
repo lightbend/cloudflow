@@ -1,11 +1,11 @@
 name: docs
-version: dev
+version: current
 title: Cloudflow
 nav:
   - modules/ROOT/nav.adoc
 asciidoc:
   attributes:
-    cloudflow-version: dev
-    cloudflow-examples-version: dev
-    cloudflow-branch-version: dev
-    kubectl-plugin-version: not-available
+    cloudflow-version: 2.0.24
+    cloudflow-examples-version: 2.0.24
+    cloudflow-branch-version: v2.0.24
+    kubectl-plugin-version: 2.0.24
