@@ -71,11 +71,11 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       IO.write(flinkEntrypoint, flinkEntrypointContent)
 
       val scalaVersion = (ThisProject / scalaBinaryVersion).value
-      val flinkVersion = "1.10.0"
+      val flinkVersion = "1.10.3"
       val flinkHome    = "/opt/flink"
 
-      val flinkTgz    = s"lightbend-flink-${flinkVersion}.tgz"
-      val flinkTgzUrl = s"https://github.com/lightbend/flink/releases/download/v$flinkVersion-lightbend/$flinkTgz"
+      val flinkTgz    = s"flink-${flinkVersion}-bin-scala_2.12.tgz"
+      val flinkTgzUrl = s"https://downloads.apache.org/flink/flink-1.10.3/$flinkTgz"
 
       Seq(
         Instructions.Env("FLINK_VERSION", flinkVersion),
@@ -95,10 +95,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
             Seq("rm", flinkTgz),
             Seq("cp", "/tmp/config.sh", s"${flinkHome}/bin/config.sh"),
             Seq("cp", "/tmp/flink-console.sh", s"${flinkHome}/bin/flink-console.sh"),
-            // logback configuration:
-            // https://ci.apache.org/projects/flink/flink-docs-stable/deployment/advanced/logging.html#configuring-logback
-            // logback must be provided by the streamlet itself
-            Seq("rm", s"${flinkHome}/lib/log4j-slf4j-impl-2.12.1.jar"),
             Seq("addgroup", "-S", "-g", "9999", "flink"),
             Seq("adduser", "-S", "-h", flinkHome, "-u", "9999", "flink", "flink"),
             Seq("addgroup", "-S", "-g", "185", "cloudflow"),
