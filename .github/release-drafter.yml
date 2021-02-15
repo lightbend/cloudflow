@@ -39,18 +39,12 @@ template: |
 
   We are pleased to announce another release of Cloudflow.
 
-  Please find the release notes at https://github.com/lightbend/cloudflow/blob/master/release-notes/
+  
 
   ## :green_book: What’s Changed
   $CHANGES
   ## :bow: Credits
   Special thanks to the following contributors who helped with this release: $CONTRIBUTORS
-
-  Kubectl plugin download links:
-
-  * [Linux](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-linux-amd64.tar.gz)
-  * [MacOS](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-darwin-amd64.tar.gz)
-  * [Windows](https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-TODO-windows-amd64.tar.gz)
 
 
 change-template: '- $TITLE #$NUMBER by [@$AUTHOR](https://github.com/$AUTHOR)'
