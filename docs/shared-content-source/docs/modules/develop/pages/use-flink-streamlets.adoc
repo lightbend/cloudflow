@@ -98,7 +98,7 @@ The next section about message delivery semantics explains the options that are 
 
 The message processing semantics provided by Flink streamlets are determined by the guarantees provided by the underlying sources, sinks and connectors. Flink offers _at-least-once_ or _exactly_once_ semantics depending on whether checkpointing is enabled. 
 
-If checkpointing is enabled, Flink guarantees end to end exactly-once processing with supported sources, sinks and connectors.
+If checkpointing is enabled, Flink guarantees end to end exactly-once processing with sources, sinks and connectors.
 Checkpointing is enabled by default in Cloudflow, using `exactly_once` checkpointing mode. You can override this using the Configuration system by specific `execution.checkpointing` settings, as shown https://ci.apache.org/projects/flink/flink-docs-release-1.10/ops/config.html#checkpointing[here]. 
 
 When we say “exactly-once semantics”, what we mean is that each incoming event affects the final results exactly once. Even in case of a machine or software failure, there’s no duplicate data and no data that goes unprocessed. This  https://flink.apache.org/features/2018/03/01/end-to-end-exactly-once-apache-flink.html[post] explains in detail how `TwoPhaseCommitSinkFunction` implements the two-phase commit protocol and makes it possible to build end-to-end exactly-once applications with Flink and a selection of data sources and sinks, including Apache Kafka versions 0.11 and beyond.
@@ -109,7 +109,7 @@ In Cloudflow, streamlets communicate with each other through Kafka - hence the s
 
 == Reliable restart of stateful processes
 
-A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators are fully supported within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
+A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators can be used within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
 
 To deploy a Flink application it is necessary that a PVC already exists in the namespace for the application. Cloudflow will automatically mount this PVC in the streamlets themselves to allow state storage, as long as it has a `/mnt/flink/storage` mount path. Cloudflow will look for a PVC named `cloudflow-flink` by default that mounts this path. It is also possible to create a differently named PVC, that mounts `/mnt/flink/storage` and mount it using a configuration file, as described in xref:develop:cloudflow-configuration.adoc[The Configuration Model]. The access mode for the PVC has to be `ReadWriteMany`.
 

@@ -29,7 +29,7 @@ In the current version, Cloudflow includes backend `Streamlet` implementations f
 Using these implementations you can write business logic in the native API of the backend.
 Additionally, Cloudflow can be extended with new streaming backends.
 
-The following table shows the current support for Java and Scala implementations for each supported runtime.
+The following table shows the current support for Java and Scala implementations for each runtime.
 
 .Scala|Java Support for Streamlet implementations
 |===
