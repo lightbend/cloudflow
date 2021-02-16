@@ -6,6 +6,6 @@ val latestVersion = {
   )(identity)
 }
 
-//tag::get-started[]
+
 addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % latestVersion)
-//end::get-started[]
+
