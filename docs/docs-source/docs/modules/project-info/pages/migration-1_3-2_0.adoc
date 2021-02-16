@@ -12,7 +12,7 @@ WARNING: Be aware that the server-side components need to be updated to the Clou
 [[project-structure]]
 == Project Structure
 
-Cloudflow 2.0 introduces a strict separation of the classpath of the different supported runtimes (Akka, Spark, Flink, or any user-provided one). 
+Cloudflow 2.0 introduces a strict separation of the classpath of the different runtimes (Akka, Spark, Flink, or any user-provided one). 
 This separation prevents conflicts between different versions of dependencies used by the runtimes.
 
 To achieve this isolation, an application that wants to use two or more runtimes should separate the streamlets for each runtime in their own sub-project, making use of the multi-project support in sbt.
