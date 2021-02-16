@@ -49,7 +49,6 @@ prepare-cluster:
 	@echo '****** Installing Flink Operator'
 	(helm upgrade -i flink-operator \
 		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
-		--set operatorImageName="lightbend/flinkk8soperator" \
 		--set operatorVersion="v0.5.0" \
 		--namespace cloudflow)
 	@echo '****** Installing Cloudflow Operator'
