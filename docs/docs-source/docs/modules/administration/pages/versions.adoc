@@ -1,4 +1,4 @@
-= Supported versions of dependencies
+= Versions of dependencies
 
 include::ROOT:partial$include.adoc[]
 include::{cloudflow-version}@shared-content:administration:page$versions.adoc[]
