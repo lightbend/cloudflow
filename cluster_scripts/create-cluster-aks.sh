@@ -25,7 +25,7 @@ function usage {
   -r | --resource-group group           The resource group to use
   --location eastus                     AKS location to launch the cluster in. "eastus" by default
                                         For available locations, refer to https://azure.microsoft.com/en-us/global-infrastructure/services/?products=kubernetes-service.
-  --k8s-version 1.16.9                  Kubernetes version to use. "1.16.9" by default
+  --k8s-version 1.19.6                  Kubernetes version to use. "1.19.6" by default
                                         To view all supported versions, run " az aks get-versions --location <LOCATION>"
   --node-vm-size Standard_A4_v2         Size of node VMs in the cluster. "Standard_A4_v2" by default.
                                         For a list of supported sizes, refer to https://docs.microsoft.com/en-us/azure/virtual-machines/linux/sizes.
@@ -100,7 +100,7 @@ if [ -z "$RESOURCE_GROUP_NAME" ]
 fi
 
 [ -z "$LOCATION" ] && LOCATION=eastus
-[ -z "$K8S_VERSION" ] && K8S_VERSION=1.16.9
+[ -z "$K8S_VERSION" ] && K8S_VERSION=1.19.6
 [ -z "$NODE_VM_SIZE" ] && NODE_VM_SIZE=Standard_A4_v2
 
 # Create resource group

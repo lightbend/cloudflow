@@ -30,23 +30,17 @@ prepare-cluster:
 	@echo '****** Cluster setup, kubectl needs to be configured'
 	@echo '****** Creating namespace'
 	kubectl create ns cloudflow | true
-	@echo '****** Installing Kafka'
-	helm repo add strimzi https://strimzi.io/charts/ | true
-	helm repo update
-	helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
-	(for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
+	helm uninstall spark-operator --namespace cloudflow | true
+	kubectl delete job cloudflow-patch-spark-mutatingwebhookconfig -n cloudflow | true
+	# @echo '****** Installing Kafka'
+	# helm repo add strimzi https://strimzi.io/charts/ | true
+	# helm repo update
+	# helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
+	# (for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
 	@echo '****** Installing NFS provisioner'
 	helm repo add stable https://charts.helm.sh/stable --force-update | true
 	helm repo update
 	helm upgrade -i nfs-server-provisioner stable/nfs-server-provisioner --set storageClass.provisionerName=cloudflow-nfs --namespace cloudflow
-	@echo '****** Installing Spark Operator'
-	helm repo add incubator https://charts.helm.sh/incubator | true
-	helm repo update
-	yq e ".operatorVersion = \"${version}-cloudflow-spark-2.4.5-1.1.2-scala-2.12\"" spark-values.yaml > generated-spark-values.yaml
-	helm uninstall spark-operator --namespace cloudflow | true
-	helm upgrade -i spark-operator incubator/sparkoperator --values="generated-spark-values.yaml" --version "0.6.7" --namespace cloudflow
-	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
-	@echo '****** Installing Flink Operator'
 	(helm upgrade -i flink-operator \
 		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
 		--set operatorVersion="v0.5.0" \
@@ -57,9 +51,47 @@ prepare-cluster:
 	(helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
 		--atomic \
 		--version "${version}" \
-		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
+		--set kafkaClusters.default.bootstrapServers=cloudflow-event-hub.servicebus.windows.net:9093 \
+		--set kafkaClusters.default.partitions=1 \
+		--set cloudflow_operator.logLevelRoot=DEBUG \
 		--namespace cloudflow)
+	@echo '****** Installing Spark Operator'
+	helm repo add incubator https://charts.helm.sh/incubator | true
+	helm repo update
+	# yq e ".operatorVersion = \"${version}-cloudflow-spark-2.4.5-1.1.2-scala-2.12\"" spark-values.yaml > generated-spark-values.yaml
+	helm upgrade -i spark-operator incubator/sparkoperator --values="generated-spark-values.yaml"  --version "0.6.7" --namespace cloudflow
+	@echo '****** Installing Flink Operator'
+	@echo '****** Patch Mutating webhooks'
+	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 	@echo '****** The cluster is ready for integration tests!'
+
+
+# helm upgrade -i --atomic --timeout 300 spark-operator incubator/sparkoperator --values="generated-spark-values.yaml" --version "0.6.7" --namespace cloudflow
+
+helm upgrade -i spark-operator incubator/sparkoperator --values="generated-spark-values.yaml"  --set image.tag=latest --namespace cloudflow
+
+helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
+		--version "2.0.24" \
+		--set kafkaClusters.default.bootstrapServers=cloudflow-event-hub.servicebus.windows.net:9093 \
+		--set kafkaClusters.default.partitions=1 \
+		--set cloudflow_operator.logLevelRoot=DEBUG \
+		--namespace cloudflow
+
+# yq e ".operatorVersion = \"2.0.24-cloudflow-spark-2.4.5-1.1.2-scala-2.12\"" spark-values.yaml > generated-spark-values.yaml
+
+#  -Dsasl.jaas.config='org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$$ConnectionString\" password=\"Endpoint=sb://cloudflow-event-hub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=PReGiJDKWTpDW1gF3PbbRCinD9xVI7+0QaHZFvXyb/A=\";'
+
+# helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
+# 		--version "2.0.24" \
+# 		--set kafkaClusters.default.bootstrapServers=cloudflow-event-hub.servicebus.windows.net:9093 \
+# 		--set cloudflow_operator.jvm.opts="-Dsecurity.protocol=SASL_SSL -Dsasl.mechanism=PLAIN -Dsasl.jaas.config='org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$$ConnectionString\" password=\"Endpoint=sb://cloudflow-event-hub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=PReGiJDKWTpDW1gF3PbbRCinD9xVI7+0QaHZFvXyb/A=\";'" \
+# 		--namespace cloudflow
+
+# https://github.com/apache/kafka/pull/1979#issuecomment-333102222
+
+# security.protocol=SASL_SSL
+# sasl.mechanism=PLAIN
+# sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="$ConnectionString" password="Endpoint=sb://cloudflow-event-hub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=PReGiJDKWTpDW1gF3PbbRCinD9xVI7+0QaHZFvXyb/A=";
 
 .PHONY: spawn-gke-cluster
 spawn-gke-cluster:
