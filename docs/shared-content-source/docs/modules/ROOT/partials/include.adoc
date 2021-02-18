@@ -31,5 +31,5 @@
 :supported-flink-8-v: 0.5.0
 :supported-helm-flink-8-v: 0.8.2
 
-:supported-apache-kafka-v: 2.4.0
+:supported-apache-kafka-v: 2.5.1
 :supported-strimzi-kafka-v: 0.16.2
