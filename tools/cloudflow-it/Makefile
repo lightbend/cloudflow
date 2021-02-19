@@ -41,6 +41,7 @@ prepare-cluster:
 	helm repo add stable https://charts.helm.sh/stable --force-update | true
 	helm repo update
 	helm upgrade -i nfs-server-provisioner stable/nfs-server-provisioner --set storageClass.provisionerName=cloudflow-nfs --namespace cloudflow
+	@echo '****** Installing Flink Operator'
 	(helm upgrade -i flink-operator \
 		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
 		--set operatorVersion="v0.5.0" \
@@ -57,7 +58,6 @@ prepare-cluster:
 	helm repo add incubator https://charts.helm.sh/incubator | true
 	helm repo update
 	helm upgrade -i spark-operator incubator/sparkoperator --values="spark-values.yaml"  --version "0.6.7" --namespace cloudflow
-	@echo '****** Installing Flink Operator'
 	@echo '****** Patch Mutating webhooks'
 	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 	@echo '****** The cluster is ready for integration tests!'
