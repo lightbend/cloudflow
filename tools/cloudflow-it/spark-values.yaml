@@ -19,7 +19,7 @@ metricsPrefix: ""
 resyncInterval: 30
 webhookPort: 8080
 sparkJobNamespace: ""
-operatorImageName: "lightbend/sparkoperator"
+operatorVersion: latest
 ---
 kind: Service
 apiVersion: v1

@@ -45,9 +45,7 @@ CLUSTER_VERSION=$2
 if [ -z "$CLUSTER_VERSION" ]
   then
     # https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#versions_available_for_new_cluster_masters
-    # WORKAROUND FIX-ME
-    CLUSTER_VERSION="1.16.15-gke.10600"
-    # CLUSTER_VERSION=$(gcloud container get-server-config --format json | jq -r .defaultClusterVersion)
+    CLUSTER_VERSION=$(gcloud container get-server-config --format json | jq -r .defaultClusterVersion)
     echo "No cluster version specified. Using the default: $CLUSTER_VERSION"
   else
     echo "Cluster version: $CLUSTER_VERSION"

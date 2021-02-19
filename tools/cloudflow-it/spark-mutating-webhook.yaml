@@ -15,7 +15,7 @@ spec:
             - "-c"
             - |
               apk update && apk add wget
-              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
+              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.19.6/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
               NAME="spark-operator-sparkoperator"
               API_VERSION=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.apiVersion}')
               UUID=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.metadata.uid}')
