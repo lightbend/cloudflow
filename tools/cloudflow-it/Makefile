@@ -57,7 +57,7 @@ prepare-cluster:
 	@echo '****** Installing Spark Operator'
 	helm repo add incubator https://charts.helm.sh/incubator | true
 	helm repo update
-	helm upgrade -i spark-operator incubator/sparkoperator --values="spark-values.yaml"  --version "0.6.7" --namespace cloudflow
+	helm upgrade -i spark-operator incubator/sparkoperator --values="spark-values.yaml" --namespace cloudflow
 	@echo '****** Patch Mutating webhooks'
 	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 	@echo '****** The cluster is ready for integration tests!'
