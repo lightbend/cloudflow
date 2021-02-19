@@ -256,7 +256,7 @@ confirm "Install Cloudflow CLI ${GREEN}${RESOLVED}${NO_COLOR} to ${BOLD}${GREEN}
 
 info "Installing Cloudflow CLI, please wait…"
 
-rm -f "${PREFIX}/kubectl-cloudflow"
+rm -f "${PREFIX}/kubectl-cloudflow" || true
 
 fetch "${URL}" \
   | tar xzf${VERBOSE} - \
