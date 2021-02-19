@@ -17,10 +17,7 @@ metricsPrefix: ""
 resyncInterval: 30
 webhookPort: 443
 sparkJobNamespace: ""
-# operatorImageName: "andreatp/sparkoperator"
 operatorVersion: latest
-image:
-  tag: latest
 ---
 kind: Service
 apiVersion: v1
@@ -31,4 +28,3 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: sparkoperator
-operatorVersion: latest

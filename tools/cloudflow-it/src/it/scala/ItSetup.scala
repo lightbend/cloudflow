@@ -94,7 +94,7 @@ trait ItSetup {
         loadResource(k8s, resource.pvcResourceFlink)
       }
     }
-    val res = cli.run(commands.Deploy(crFile = resource.cr))
+    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = List(resource.kafkaConfig)))
     assertSuccess(res).withClue("Deploy command failed")
     assumeAppListed()
     assumeAppRunning()

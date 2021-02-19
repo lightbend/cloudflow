@@ -32,12 +32,13 @@ trait ItResources {
   val pvcResourceLocalContent = Using(Source.fromFile(pvcResourceLocal)) { _.mkString }.get
   val pvcResourceSpark = new File(s"$prefix/spark-pvc.yaml")
   val pvcResourceFlink = new File(s"$prefix/flink-pvc.yaml")
+  val kafkaConfig = new File(s"$prefix/kafka-config.conf")
   val secretFileMountPath = "/tmp/some/password"
   val secretFilePassword = "1f2d1e2e67df"
-  val deploySleep = 10.seconds
-  val postConfigurationTimeout = 2.minutes
-  val patience = 5.minutes
-  val interval = 2.seconds
+  val deploySleep = 20.seconds
+  val postConfigurationTimeout = 4.minutes
+  val patience = 10.minutes
+  val interval = 4.seconds
   val appName = "swiss-knife"
   val namespace = new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(appName).build()).build()
 }

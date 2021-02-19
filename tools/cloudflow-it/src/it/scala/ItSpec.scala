@@ -49,7 +49,7 @@ class ItGlobalSpec
 trait ItDeploySpec extends ItSpec {
 
   "Deploy without PVCs should fail" in {
-    val res = cli.run(commands.Deploy(crFile = resource.cr))
+    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = List(resource.kafkaConfig)))
     res.failure.exception.getMessage() should {
       include("contains pvcs") and include("cloudflow-spark") and include("cloudflow-flink") and include(
         "that are not present in the namespace")
@@ -78,7 +78,7 @@ trait ItDeploySpec extends ItSpec {
 
   "The application" - {
     "should deploy" in {
-      val res = cli.run(commands.Deploy(crFile = resource.cr))
+      val res = cli.run(commands.Deploy(crFile = resource.cr, confs = List(resource.kafkaConfig)))
       assertSuccess(res)
     }
 
@@ -115,7 +115,7 @@ trait ItDeploySpec extends ItSpec {
     }
 
     "should re-deploy to continue testing" in {
-      val deploy = cli.run(commands.Deploy(crFile = resource.cr))
+      val deploy = cli.run(commands.Deploy(crFile = resource.cr, confs = List(resource.kafkaConfig)))
       assertSuccess(deploy)
       eventually {
         val res = cli.run(commands.Status(appName))
@@ -148,7 +148,7 @@ trait ItBaseSpec extends ItSpec {
   "is configurable" - {
     "reconfiguration should succeed" in {
       configureApp() { _ =>
-        cli.run(commands.Configure(appName, Seq(resource.updateConfig)))
+        cli.run(commands.Configure(appName, Seq(resource.updateConfig, resource.kafkaConfig)))
       }
     }
     "reconfiguration should affect these streamlets:" - {
@@ -176,7 +176,7 @@ trait ItSecretsSpec extends ItSpec {
 
   "should reconfigure akka streamlets to add a secret as mounting file" in {
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateMountingSecret)))
+      cli.run(commands.Configure(appName, Seq(resource.updateMountingSecret, resource.kafkaConfig)))
     }
   }
 
@@ -198,7 +198,7 @@ trait ItSecretsSpec extends ItSpec {
 trait ItPvcSpec extends ItSpec {
   "should try to reconfigure spark streamlets to add a pvc, but find there is no pvc in the cluster" in {
     configureAppExpectFail() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateMountingPvc)))
+      cli.run(commands.Configure(appName, Seq(resource.updateMountingPvc, resource.kafkaConfig)))
     }
   }
 
@@ -265,7 +265,7 @@ trait ItCliConfigSpec extends ItSpec {
 
     note("reconfigure a single akka streamlet")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaProcessResources)))
+      cli.run(commands.Configure(appName, Seq(resource.updateAkkaProcessResources, resource.kafkaConfig)))
     }
 
     note("get new resource configuration")
@@ -289,7 +289,7 @@ trait ItCliConfigSpec extends ItSpec {
 
     note("reconfigure akka kubernetes runtime")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaRuntimeResources)))
+      cli.run(commands.Configure(appName, Seq(resource.updateAkkaRuntimeResources, resource.kafkaConfig)))
     }
 
     note("get new resource configuration")
@@ -312,7 +312,7 @@ trait ItFrameworkConfigSpec extends ItSpec {
   "should reconfigure a spark application" in {
     note("reconfigure spark-specific configuration")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateSparkConfiguration)))
+      cli.run(commands.Configure(appName, Seq(resource.updateSparkConfiguration, resource.kafkaConfig)))
     }
 
     note("verifying configuration update")
@@ -326,7 +326,7 @@ trait ItFrameworkConfigSpec extends ItSpec {
   "should reconfigure an akka application" in {
     note("reconfigure akka-specific configuration")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaConfiguration)))
+      cli.run(commands.Configure(appName, Seq(resource.updateAkkaConfiguration, resource.kafkaConfig)))
     }
 
     note("verifying configuration update")
