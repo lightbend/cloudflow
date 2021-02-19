@@ -25,6 +25,7 @@ trait ItResources {
   val updateAkkaRuntimeResources = new File(s"$prefix/update_akka_runtime.conf")
   val updateSparkConfiguration = new File(s"$prefix/update_spark_config.conf")
   val updateAkkaConfiguration = new File(s"$prefix/update_akka_config.conf")
+  val defaultConfiguration = new File(s"$prefix/default_config.conf")
   val pvcResourceAkkaFileMountPath = "/tmp/some-akka/file.txt"
   val pvcResourceSparkFileMountPath = "/tmp/some-spark/file.txt"
   val pvcResourceFlinkFileMountPath = "/tmp/some-flink/file.txt"
@@ -34,10 +35,11 @@ trait ItResources {
   val pvcResourceFlink = new File(s"$prefix/flink-pvc.yaml")
   val secretFileMountPath = "/tmp/some/password"
   val secretFilePassword = "1f2d1e2e67df"
-  val deploySleep = 10.seconds
-  val postConfigurationTimeout = 2.minutes
-  val patience = 5.minutes
-  val interval = 2.seconds
+  private val mult = 1
+  val deploySleep = (10 * mult).seconds
+  val postConfigurationTimeout = (2 * mult).minutes
+  val patience = (5 * mult).minutes
+  val interval = (2 * mult).seconds
   val appName = "swiss-knife"
   val namespace = new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(appName).build()).build()
 }

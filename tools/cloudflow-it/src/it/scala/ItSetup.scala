@@ -57,9 +57,9 @@ trait ItSetup {
 
   def precond(test: Boolean, message: String) = if (!test) new AssertionError(message)
 
-  def assumeSuccess[A](tryA: Try[A]): A = tryA.fold(ex => cancel(s"Failure: ${ex.getMessage()}"), identity)
+  def assumeSuccess[A](tryA: Try[A]): A = tryA.fold(ex => cancel(s"Failure: ${ex.getCause.getMessage()}"), identity)
 
-  def assertSuccess[A](tryA: Try[A]): A = tryA.fold(ex => fail(s"Failure: ${ex.getMessage()}"), identity)
+  def assertSuccess[A](tryA: Try[A]): A = tryA.fold(ex => fail(s"Failure: ${ex.getCause.getMessage()}"), identity)
 
   def assertFailure[A](tryA: Try[A]): Throwable = tryA.fold(identity, a => fail(s"Success: ${a}"))
 
@@ -94,7 +94,7 @@ trait ItSetup {
         loadResource(k8s, resource.pvcResourceFlink)
       }
     }
-    val res = cli.run(commands.Deploy(crFile = resource.cr))
+    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
     assertSuccess(res).withClue("Deploy command failed")
     assumeAppListed()
     assumeAppRunning()
