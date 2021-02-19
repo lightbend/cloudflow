@@ -22,18 +22,23 @@ First, make sure that you have the following installed:
 Install the Cloudflow CLI using the official installer:
 
 ....
-curl -sL http://cloudflow.io/docs/get.sh | sh
+curl -sL http://cloudflow.io/docs/get.sh | bash
 ....
 
 You can pass options to the installer script with `-s --` e.g.:
 
 ....
-curl -sL http://cloudflow.io/docs/get.sh | sh -s -- --prefix=$HOME --version=2.0.22 --verbose
-curl -sL http://cloudflow.io/docs/get.sh | sh -s -- -P $HOME -v 2.0.22 -V
+curl -sL http://cloudflow.io/docs/get.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+curl -sL http://cloudflow.io/docs/get.sh | bash -s -- -P $HOME -v 2.0.22 -V
 ....
 
-If the installer script fails (e.g. there is no `curl` nor `wget` installed) downaload the binaries at the specific version from:
+If the installer script fails, please, report the failure and download the binaries at the specific version at the url:
 
-* https://bintray.com/lightbend/cloudflow-cli/kubectl-cloudflow
+* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-<version>-<platform>-amd64.tar.gz
+
+where you have to substitute:
+
+  - <version> with the specific version (e.g. `2.0.23`)
+  - <platform> with one of `darwin`, `linux`, `windows` depending on the target OS
 
 ifdef::review[Reviewers:still need recommendations for Windows.]

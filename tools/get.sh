@@ -4,12 +4,12 @@
 # `get.sh` is a simple one-liner shell script to
 # Install the official Cloudflow kubectl plugin
 #
-#   $ curl -sL http://cloudflow.io/docs/get.sh | sh
+#   $ curl -sL http://cloudflow.io/docs/get.sh | bash
 #
 # Options may be passed to the shell script with `-s --`:
 #
-#   $ curl -sL http://cloudflow.io/docs/get.sh | sh -s -- --prefix=$HOME --version=2.0.22 --verbose
-#   $ curl -sL http://cloudflow.io/docs/get.sh | sh -s -- -P $HOME -v 2.0.22 -V
+#   $ curl -sL http://cloudflow.io/docs/get.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+#   $ curl -sL http://cloudflow.io/docs/get.sh | bash -s -- -P $HOME -v 2.0.22 -V
 #
 set -euo pipefail
 
@@ -256,7 +256,7 @@ confirm "Install Cloudflow CLI ${GREEN}${RESOLVED}${NO_COLOR} to ${BOLD}${GREEN}
 
 info "Installing Cloudflow CLI, please wait…"
 
-rm -f "${PREFIX}/kubectl-cloudflow"
+rm -f "${PREFIX}/kubectl-cloudflow" || true
 
 fetch "${URL}" \
   | tar xzf${VERBOSE} - \
