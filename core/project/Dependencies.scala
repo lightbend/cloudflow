@@ -13,7 +13,7 @@ object Version {
   val Spark         = "2.4.5"
   val Flink         = "1.10.3"
   val KafkaClients  = "2.5.1"
-  val TestcontainersKafka = "1.15.1" 
+  val TestcontainersKafka = "1.15.2"
 }
 
 object Library {
