@@ -182,3 +182,10 @@ lazy val cloudflowBlueprint =
       scalafmtOnCompile := true,
       buildInfoKeys := Seq[BuildInfoKey](name, version),
       buildInfoPackage := "cloudflow.blueprint")
+
+lazy val cloudflowOperatorActions =
+  Project(id = "cloudflow-operator-actions", base = file("cloudflow-operator-actions"))
+    .enablePlugins(ScalafmtPlugin)
+    .dependsOn(cloudflowCrd, cloudflowBlueprint)
+    .settings(Dependencies.cloudflowOperatorActions)
+    .settings(scalafmtOnCompile := true)

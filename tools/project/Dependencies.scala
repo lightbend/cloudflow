@@ -39,6 +39,10 @@ object Dependencies {
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val avro = "org.apache.avro" % "avro" % "1.8.2"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
+
+    val ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
+    val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.0"
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
   }
 
   object TestDeps {
@@ -46,7 +50,6 @@ object Dependencies {
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
     val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
-    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1" % Test
 
   }
 
@@ -84,15 +87,17 @@ object Dependencies {
         Compile.scalaPbRuntime,
         Compile.logback % Test,
         Compile.scalatest % Test,
-        TestDeps.avro4s,
-        TestDeps.kafkaClient)
+        Compile.kafkaClient % Test,
+        TestDeps.avro4s)
 
-  //   LogbackClassic % Test,
-  //   LogbackCore    % Test,
-  //   Avro4sTest,
-  //   ScalaTest,
-  //   ScalaPbRuntime,
-  //   "org.apache.kafka" % "kafka-clients" % Version.KafkaClients % Test
-  // ),
+
+  val cloudflowOperatorActions =
+    libraryDependencies ++= Seq(
+            Compile.ficus,
+            Compile.logback,
+            Compile.kubeActions,
+            Compile.kafkaClient,
+            Compile.scalatest % Test
+          )
 
 }
