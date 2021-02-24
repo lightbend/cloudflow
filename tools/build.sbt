@@ -1,7 +1,5 @@
 Global / cancelable := true
 
-ThisBuild / resolvers += Resolver.mavenLocal
-
 lazy val tooling =
   Project(id = "tooling", base = file("tooling"))
     .dependsOn(cloudflowCli)
@@ -175,3 +173,12 @@ addCommandAlias(
   "regenerateGraalVMConfig",
   s""";project tooling ; set run / fork := true; set run / javaOptions += "-agentlib:native-image-agent=config-output-dir=${file(
     ".").getAbsolutePath}/cloudflow-cli/src/main/resources/META-INF/native-image"; runMain cli.CodepathCoverageMain""")
+
+lazy val cloudflowBlueprint =
+  Project(id = "cloudflow-blueprint", base = file("cloudflow-blueprint"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowBlueprint)
+    .settings(
+      scalafmtOnCompile := true,
+      buildInfoKeys := Seq[BuildInfoKey](name, version),
+      buildInfoPackage := "cloudflow.blueprint")

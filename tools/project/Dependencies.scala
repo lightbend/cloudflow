@@ -17,7 +17,7 @@ object Dependencies {
     val fabric8KubernetesClient = "io.fabric8" % "kubernetes-client" % Versions.fabric8
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
-    val typesafeConfig = "com.typesafe" % "config" % "1.4.0"
+    val typesafeConfig = "com.typesafe" % "config" % "1.4.1"
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.14.0"
     val pureConfigMagnolia = "com.github.pureconfig" %% "pureconfig-magnolia" % "0.14.0"
     val scopt = "com.github.scopt" %% "scopt" % "4.0.0-RC2"
@@ -35,11 +35,18 @@ object Dependencies {
 
     val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
+
+    val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
+    val avro = "org.apache.avro" % "avro" % "1.8.2"
+    val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
   }
 
   object TestDeps {
 
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
+
+    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1" % Test
 
   }
 
@@ -67,5 +74,25 @@ object Dependencies {
 
   val cloudflowNewItLibrary =
     libraryDependencies ++= Seq(Compile.commonsCodec, Compile.commonsCompress, Compile.scalatest)
+
+  val cloudflowBlueprint =
+    libraryDependencies ++= Seq(
+        Compile.typesafeConfig,
+        Compile.sprayJson,
+        // TODO: check if Avro and ScalaPB can stay in a separate module
+        Compile.avro,
+        Compile.scalaPbRuntime,
+        Compile.logback % Test,
+        Compile.scalatest % Test,
+        TestDeps.avro4s,
+        TestDeps.kafkaClient)
+
+  //   LogbackClassic % Test,
+  //   LogbackCore    % Test,
+  //   Avro4sTest,
+  //   ScalaTest,
+  //   ScalaPbRuntime,
+  //   "org.apache.kafka" % "kafka-clients" % Version.KafkaClients % Test
+  // ),
 
 }
