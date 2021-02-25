@@ -17,25 +17,17 @@
 package cloudflow.operator.action.runner
 
 import java.nio.charset.StandardCharsets
-
 import scala.jdk.CollectionConverters._
 import scala.util._
 import com.typesafe.config._
 import org.slf4j._
 import cloudflow.blueprint.deployment._
-
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
-
-import io.fabric8.kubernetes.api.model.HasMetadata
-import io.fabric8.kubernetes.api.model.OwnerReference
-import io.fabric8.kubernetes.api.model.ContainerPort
-import io.fabric8.kubernetes.api.model.Volume
-import io.fabric8.kubernetes.api.model.VolumeMount
-import io.fabric8.kubernetes.api.model.EnvVar
-import io.fabric8.kubernetes.api.model.ResourceRequirements
+import io.fabric8.kubernetes.api.model.rbac.{RoleBinding, RoleBindingBuilder, RoleRefBuilder, RoleRefFluent, SubjectBuilder}
+import io.fabric8.kubernetes.api.model.{ContainerPort, ContainerPortBuilder, EnvVar, EnvVarBuilder, EnvVarSourceBuilder, HasMetadata, OwnerReference, PersistentVolumeClaim, PersistentVolumeClaimVolumeSource, PersistentVolumeClaimVolumeSourceBuilder, Quantity, QuantityBuilder, ResourceRequirements, SecretVolumeSource, SecretVolumeSourceBuilder, Volume, VolumeMount, VolumeMountBuilder}
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -80,7 +72,7 @@ trait Runner[T <: HasMetadata] {
   // // The resource definition for the runner resource T
   // def resourceDefinition: ResourceDefinition[T]
 
-  // def runtime: String
+  def runtime: String
 
   // def actions(
   //     newApp: CloudflowApplication.CR,
@@ -167,34 +159,39 @@ trait Runner[T <: HasMetadata] {
   //                           secret: skuber.Secret): ResourceAction[ObjectResource]
 
   def serviceAccountAction(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
-    Seq()
-  // TODO: FIX ME
-  // Seq(Action.createOrUpdate(roleBinding(app.namespace, labels, ownerReferences), roleBindingEditor))
+   Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
 
-  // def defaultReplicas: Int
-  // def expectedPodCount(deployment: StreamletDeployment): Int
-  // def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
-  // def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
+   def defaultReplicas: Int
+   def expectedPodCount(deployment: StreamletDeployment): Int
+//  just editing the Metadata
+//   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
+//   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
-  // def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding =
-  //   RoleBinding(
-  //     metadata = ObjectMeta(
-  //       name = Name.ofRoleBinding,
-  //       namespace = namespace,
-  //       labels = labels(Name.ofRoleBinding),
-  //       ownerReferences = ownerReferences
-  //     ),
-  //     kind = "RoleBinding",
-  //     roleRef = RoleRef("rbac.authorization.k8s.io", "Role", BasicUserRole),
-  //     subjects = List(
-  //       Subject(
-  //         None,
-  //         "ServiceAccount",
-  //         Name.ofServiceAccount,
-  //         Some(namespace)
-  //       )
-  //     )
-  //   )
+  val BasicUserRole = "system:basic-user"
+
+   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding = {
+    new RoleBindingBuilder()
+      .withNewMetadata()
+      .withName(Name.ofRoleBinding)
+      .withLabels(labels(Name.ofRoleBinding).asJava)
+      .withOwnerReferences(ownerReferences: _*)
+      .endMetadata()
+      .withKind("RoleBinding")
+      .withRoleRef(
+        new RoleRefBuilder()
+          .withApiGroup("rbac.authorization.k8s.io")
+          .withKind("Role")
+          .withName(BasicUserRole)
+          .build()
+      )
+      .withSubjects(
+        new SubjectBuilder()
+          .withKind("ServiceAccount")
+          .withName(Name.ofServiceAccount)
+          .withNamespace(namespace)
+          .build()
+      )
+   }
 
   // val createEventPolicyRule = PolicyRule(
   //   apiGroups = List(""),
@@ -204,7 +201,6 @@ trait Runner[T <: HasMetadata] {
   //   resources = List("events"),
   //   verbs = List("get", "create", "update")
   // )
-  // val BasicUserRole = "system:basic-user"
 
   // final val RuntimeMainClass   = "cloudflow.runner.Runner"
   // final val RunnerJarName      = "cloudflow-runner.jar"
@@ -349,130 +345,13 @@ trait Runner[T <: HasMetadata] {
 
 }
 
-// import net.ceedubs.ficus.Ficus._
-// import net.ceedubs.ficus.readers._
-// import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
+// TODO port this to CloudflowConfig defined in the CLI
 object PodsConfig {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
   val CloudflowPodName = "pod"
   val CloudflowContainerName = "container"
-
-  // implicit val quantityReader: ValueReader[Quantity] = new ValueReader[Quantity] {
-  //   def read(config: Config, path: String) = {
-  //     // skuber quantity does not break construction
-  //     val q = Quantity(config.getString(path))
-  //     Try {
-  //       q.amount
-  //       q
-  //     }.recoverWith {
-  //         case e => Failure(new Exception(s"invalid quantity at key '$path'", e))
-  //       }
-  //       // users might use hocon MB, GB, gb, values, so fallback to that.
-  //       .orElse(Try(Quantity(config.getMemorySize(path).toBytes.toString)))
-  //       .get
-  //   }
-  // }
-
-  // implicit val envVarValueReader: ValueReader[EnvVar.Value] = new ValueReader[EnvVar.Value] {
-  //   def read(config: Config, path: String) =
-  //     config.as[Option[String]](path).map(EnvVar.StringValue).getOrElse(EnvVar.StringValue(""))
-  // }
-
-  // implicit val envVarReader: ValueReader[EnvVar] = ValueReader.relative { envConfig =>
-  //   val name  = envConfig.getString("name")
-  //   val value = envConfig.as[EnvVar.Value]("value")
-  //   EnvVar(name, value)
-  // }
-
-  // implicit val containerPortReader: ValueReader[Container.Port] = ValueReader.relative { portConfig =>
-  //   val containerPort = portConfig.getInt("container-port")
-  //   val protocol      = portConfig.as[Option[String]]("protocol").flatMap(str => Try(Protocol.withName(str)).toOption).getOrElse(Protocol.TCP)
-  //   val name          = portConfig.as[Option[String]]("name").getOrElse("")
-  //   val hostIP        = portConfig.as[Option[String]]("host-ip").getOrElse("")
-  //   val hostPort      = portConfig.as[Option[Int]]("host-port")
-  //   Container.Port(containerPort, protocol, name, hostIP, hostPort)
-  // }
-
-  // implicit val ContainerConfigReader: ValueReader[ContainerConfig] = ValueReader.relative { containerConfig =>
-  //   val env          = containerConfig.as[Option[List[EnvVar]]]("env")
-  //   val resources    = containerConfig.as[Option[Resource.Requirements]]("resources")
-  //   val volumeMounts = containerConfig.as[Option[List[Volume.Mount]]]("volume-mounts")
-  //   val ports        = containerConfig.as[Option[List[Container.Port]]]("ports")
-  //   ContainerConfig(env.getOrElse(List()), resources, volumeMounts.getOrElse(List()), ports.getOrElse(List()))
-  // }
-
-  // implicit val containerConfMapReader: ValueReader[Map[String, PodConfig]] = ValueReader.relative { config =>
-  //   asConfigObjectToMap[PodConfig](config)
-  // }
-
-  // implicit val volumeMountsListConfReader: ValueReader[List[Volume.Mount]] = ValueReader.relative { config =>
-  //   asConfigObjectToMap[Volume.Mount](config).map {
-  //     case (volumeName, valuesMount) =>
-  //       valuesMount.copy(name = volumeName)
-  //   }.toList
-  // }
-
-  // /**
-  //  * Currently not providing MountPropagation
-  //  */
-  // implicit val volumeMountsConfReader: ValueReader[Volume.Mount] = ValueReader.relative { config =>
-  //   Volume.Mount(
-  //     name = config.getOrElse[String]("name", ""),
-  //     mountPath = config.getOrElse[String]("mount-path", ""),
-  //     readOnly = config.getOrElse[Boolean]("read-only", false),
-  //     subPath = config.getOrElse[String]("subPath", "")
-  //   )
-  // }
-
-  // implicit val volumesConfReader: ValueReader[List[Volume]] = ValueReader.relative { config =>
-  //   asConfigObjectToMap[Volume.Source](config).map {
-  //     case (volumeName, source) => Volume(volumeName, source)
-  //   }.toList
-  // }
-
-  // implicit val sourceConfReader: ValueReader[Volume.Source] = ValueReader.relative { config =>
-  //   val res: Option[Volume.Source] = config.root().keySet().toArray().headOption.map {
-  //     case "secret" =>
-  //       config.as[Volume.Secret]("secret")
-  //     case "pvc" =>
-  //       config.as[Volume.PersistentVolumeClaimRef]("pvc")
-  //     case x =>
-  //       throw new IllegalArgumentException(
-  //         s"volume definition '$x' in config: '$config' is not 'secret' nor 'pvc'. These are the only options"
-  //       )
-  //   }
-  //   res.getOrElse(Volume.GenericVolumeSource(config.toString))
-  // }
-
-  // implicit val secretsConfReader: ValueReader[Volume.Secret] = ValueReader.relative { config =>
-  //   Volume.Secret(secretName = config.as[String]("name"))
-  // }
-
-  // implicit val persistentVolumeClaimRefConfReader: ValueReader[Volume.PersistentVolumeClaimRef] = ValueReader.relative { config =>
-  //   Volume.PersistentVolumeClaimRef(
-  //     claimName = config.as[String]("name"),
-  //     readOnly = config.as[Boolean]("read-only")
-  //   )
-  // }
-
-  // implicit val podConfMapReader: ValueReader[PodConfig] = ValueReader.relative { config =>
-  //   val labels = config
-  //     .as[Option[Map[String, String]]]("labels")
-  //     .getOrElse(Map.empty[String, String])
-  //   val annotations = config
-  //     .as[Option[Map[String, String]]]("annotations")
-  //     .getOrElse(Map.empty[String, String])
-  //   val volumes = config
-  //     .as[Option[List[Volume]]]("volumes")
-  //     .getOrElse(List.empty[Volume])
-  //   val containers = config
-  //     .as[Option[Map[String, ContainerConfig]]]("containers")
-  //     .getOrElse(Map.empty[String, ContainerConfig])
-  //   PodConfig(containers, labels, annotations, volumes)
-  // }
 
   /*
    *  The expected format is:
@@ -502,12 +381,14 @@ object PodsConfig {
    *  }
    *  }}}
    */
-  // def fromConfig(config: Config): Try[PodsConfig] =
-  //   if (config.isEmpty) Try(PodsConfig())
-  //   else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
+  // TODO implement this, with PureConfig as a base should be trivial
+  def fromConfig(config: Config): Try[PodsConfig] =
+    Try(PodsConfig())
+//    if (config.isEmpty) Try(PodsConfig())
+//    else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
-  // def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
-  //   config.root.keySet.asScala.map(key => key -> config.as[T](key)).toMap
+//  def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
+//    config.root.keySet.asScala.map(key => key -> config.as[T](key)).toMap
 }
 
 final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {

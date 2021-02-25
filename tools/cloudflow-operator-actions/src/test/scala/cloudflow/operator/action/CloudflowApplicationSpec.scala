@@ -303,18 +303,20 @@ class CloudflowApplicationSpec
       streamletName: String,
       phase: Option[Pod.Phase.Phase] = None,
       containerStatuses: List[Container.Status] = List(),
-      deletionTimestamp: Option[skuber.Timestamp] = None) = Pod(
-    metadata =
-      ObjectMeta(name = s"$streamletName-${java.util.UUID.randomUUID()}", deletionTimestamp = deletionTimestamp),
-    status = Some(Pod.Status(phase = phase, conditions = List(), containerStatuses = containerStatuses)))
+      deletionTimestamp: Option[skuber.Timestamp] = None) =
+    Pod(
+      metadata =
+        ObjectMeta(name = s"$streamletName-${java.util.UUID.randomUUID()}", deletionTimestamp = deletionTimestamp),
+      status = Some(Pod.Status(phase = phase, conditions = List(), containerStatuses = containerStatuses)))
   def mkContainerStatus(
       state: Option[Container.State] = Some(Container.Running(None)),
       ready: Boolean = false,
-      restartCount: Int = 0) = Container.Status(
-    name = "container-status",
-    ready = ready,
-    restartCount = restartCount,
-    image = "some-image",
-    imageID = "some-image-id",
-    state = state)
+      restartCount: Int = 0) =
+    Container.Status(
+      name = "container-status",
+      ready = ready,
+      restartCount = restartCount,
+      image = "some-image",
+      imageID = "some-image-id",
+      state = state)
 }
