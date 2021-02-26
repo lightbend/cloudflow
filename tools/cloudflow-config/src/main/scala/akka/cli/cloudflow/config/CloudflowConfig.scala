@@ -657,4 +657,12 @@ object UnsafeCloudflowConfigLoader {
     }
   }
 
+  def loadPodConfig(config: Config): Try[CloudflowConfig.Kubernetes] = {
+    (ConfigSource.fromConfig(config).load[CloudflowConfig.Streamlet]) match {
+      case Right(value) => Success(value.kubernetes)
+      case Left(err) =>
+        Failure(CliException(s"Error in pod configuration:\n${err.prettyPrint()}"))
+    }
+  }
+
 }
