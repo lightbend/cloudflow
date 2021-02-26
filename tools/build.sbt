@@ -13,6 +13,15 @@ lazy val cloudflowCrd =
       ThisBuild / dynverSeparator := "-",
       Defaults.itSettings)
 
+lazy val cloudflowConfig =
+  Project(id = "cloudflow-config", base = file("cloudflow-config"))
+    .settings(Dependencies.cloudflowConfig)
+    .settings(
+      name := "cloudflow-config",
+      // make version compatible with docker for publishing
+      ThisBuild / dynverSeparator := "-")
+    .dependsOn(cloudflowCrd)
+
 val getMuslBundle = taskKey[Unit]("Fetch Musl bundle")
 val winPackageBin = taskKey[Unit]("PackageBin Graal on Windows")
 
@@ -97,7 +106,7 @@ lazy val cloudflowCli =
         }
       })
     .enablePlugins(BuildInfoPlugin, GraalVMNativeImagePlugin)
-    .dependsOn(cloudflowCrd)
+    .dependsOn(cloudflowConfig)
 
 lazy val cloudflowIt =
   Project(id = "cloudflow-it", base = file("cloudflow-it"))

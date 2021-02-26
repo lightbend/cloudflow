@@ -40,7 +40,6 @@ object Dependencies {
     val avro = "org.apache.avro" % "avro" % "1.8.2"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
-    val ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.0"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
   }
@@ -53,15 +52,19 @@ object Dependencies {
 
   }
 
-  val cloudflowCli =
+  val cloudflowConfig =
     libraryDependencies ++= Seq(
         Compile.fabric8KubernetesClient,
         Compile.jacksonScala,
-        Compile.logback,
-        Compile.scopt,
         Compile.typesafeConfig,
         Compile.pureConfig,
         Compile.pureConfigMagnolia,
+        Compile.scalatest % Test)
+
+  val cloudflowCli =
+    libraryDependencies ++= Seq(
+        Compile.logback,
+        Compile.scopt,
         Compile.airframeLog,
         Compile.asciiTable,
         Compile.bouncyCastleCore,
@@ -90,14 +93,7 @@ object Dependencies {
         Compile.kafkaClient % Test,
         TestDeps.avro4s)
 
-
   val cloudflowOperatorActions =
-    libraryDependencies ++= Seq(
-            Compile.ficus,
-            Compile.logback,
-            Compile.kubeActions,
-            Compile.kafkaClient,
-            Compile.scalatest % Test
-          )
+    libraryDependencies ++= Seq(Compile.logback, Compile.kubeActions, Compile.kafkaClient, Compile.scalatest % Test)
 
 }

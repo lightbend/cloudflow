@@ -2,7 +2,8 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.cli.cloudflow.execution
+// TODO: regenerate GraalVM config!
+package akka.cli.cloudflow.config
 
 import scala.jdk.CollectionConverters._
 import scala.util.{ Failure, Success, Try }

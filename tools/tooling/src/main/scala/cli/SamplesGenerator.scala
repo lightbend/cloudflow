@@ -5,7 +5,7 @@
 package cli
 
 import java.io._
-import akka.cli.cloudflow.execution.CloudflowConfig._
+import akka.cli.cloudflow.config.CloudflowConfig._
 import com.typesafe.config.ConfigFactory
 import pureconfig._
 import pureconfig.module.magnolia.auto.writer.exportWriter

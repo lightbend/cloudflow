@@ -26,8 +26,33 @@ import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
-import io.fabric8.kubernetes.api.model.rbac.{RoleBinding, RoleBindingBuilder, RoleRefBuilder, RoleRefFluent, SubjectBuilder}
-import io.fabric8.kubernetes.api.model.{ContainerPort, ContainerPortBuilder, EnvVar, EnvVarBuilder, EnvVarSourceBuilder, HasMetadata, OwnerReference, PersistentVolumeClaim, PersistentVolumeClaimVolumeSource, PersistentVolumeClaimVolumeSourceBuilder, Quantity, QuantityBuilder, ResourceRequirements, SecretVolumeSource, SecretVolumeSourceBuilder, Volume, VolumeMount, VolumeMountBuilder}
+import io.fabric8.kubernetes.api.model.rbac.{
+  RoleBinding,
+  RoleBindingBuilder,
+  RoleRefBuilder,
+  RoleRefFluent,
+  SubjectBuilder
+}
+import io.fabric8.kubernetes.api.model.{
+  ContainerPort,
+  ContainerPortBuilder,
+  EnvVar,
+  EnvVarBuilder,
+  EnvVarSourceBuilder,
+  HasMetadata,
+  OwnerReference,
+  PersistentVolumeClaim,
+  PersistentVolumeClaimVolumeSource,
+  PersistentVolumeClaimVolumeSourceBuilder,
+  Quantity,
+  QuantityBuilder,
+  ResourceRequirements,
+  SecretVolumeSource,
+  SecretVolumeSourceBuilder,
+  Volume,
+  VolumeMount,
+  VolumeMountBuilder
+}
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -159,17 +184,17 @@ trait Runner[T <: HasMetadata] {
   //                           secret: skuber.Secret): ResourceAction[ObjectResource]
 
   def serviceAccountAction(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
-   Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
+    Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
 
-   def defaultReplicas: Int
-   def expectedPodCount(deployment: StreamletDeployment): Int
+  def defaultReplicas: Int
+  def expectedPodCount(deployment: StreamletDeployment): Int
 //  just editing the Metadata
 //   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 //   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
   val BasicUserRole = "system:basic-user"
 
-   def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding = {
+  def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding = {
     new RoleBindingBuilder()
       .withNewMetadata()
       .withName(Name.ofRoleBinding)
@@ -182,16 +207,14 @@ trait Runner[T <: HasMetadata] {
           .withApiGroup("rbac.authorization.k8s.io")
           .withKind("Role")
           .withName(BasicUserRole)
-          .build()
-      )
+          .build())
       .withSubjects(
         new SubjectBuilder()
           .withKind("ServiceAccount")
           .withName(Name.ofServiceAccount)
           .withNamespace(namespace)
-          .build()
-      )
-   }
+          .build())
+  }
 
   // val createEventPolicyRule = PolicyRule(
   //   apiGroups = List(""),

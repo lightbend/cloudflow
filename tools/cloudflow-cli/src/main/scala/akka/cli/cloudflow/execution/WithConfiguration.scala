@@ -10,6 +10,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.{ Failure, Success, Try }
 import scala.util.hashing.MurmurHash3
 import akka.cli.cloudflow.{ CliException, CliLogger }
+import akka.cli.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization

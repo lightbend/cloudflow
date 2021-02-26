@@ -2,11 +2,12 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.cli.cloudflow.execution
+package akka.cli.cloudflow.config
 
 import java.io.File
 import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
+import akka.cli.cloudflow.Json
 import akka.datap.crd.App
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{ OptionValues, TryValues }
