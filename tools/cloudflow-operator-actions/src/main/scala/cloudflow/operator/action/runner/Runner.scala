@@ -214,6 +214,7 @@ trait Runner[T <: HasMetadata] {
           .withName(Name.ofServiceAccount)
           .withNamespace(namespace)
           .build())
+      .build()
   }
 
   // val createEventPolicyRule = PolicyRule(
@@ -405,8 +406,8 @@ object PodsConfig {
    *  }}}
    */
   // TODO implement this, with PureConfig as a base should be trivial
-  def fromConfig(config: Config): Try[PodsConfig] =
-    Try(PodsConfig())
+  // def fromConfig(config: Config): Try[PodsConfig] =
+  //   Try(PodsConfig())
 //    if (config.isEmpty) Try(PodsConfig())
 //    else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
 
