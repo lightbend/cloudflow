@@ -16,24 +16,23 @@
 
 package cloudflow.operator.action.runner
 
-import akka.cli.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
+import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 
-import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters._
 import scala.util._
 import com.typesafe.config._
 import org.slf4j._
 import cloudflow.blueprint.deployment._
 import akka.datap.crd.App
-import akka.kube.actions.Action
+import akka.kube.actions.{ Action, ResourceAction }
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
+import io.fabric8.kubernetes.api.model.apps.Deployment
 import io.fabric8.kubernetes.api.model.rbac.{
   PolicyRuleBuilder,
   RoleBinding,
   RoleBindingBuilder,
   RoleRefBuilder,
-  RoleRefFluent,
   SubjectBuilder
 }
 import io.fabric8.kubernetes.api.model.{
@@ -43,54 +42,59 @@ import io.fabric8.kubernetes.api.model.{
   ContainerPortBuilder,
   EnvVar,
   EnvVarBuilder,
-  EnvVarSourceBuilder,
   HasMetadata,
   KubernetesResource,
   OwnerReference,
   OwnerReferenceBuilder,
-  PersistentVolumeClaim,
-  PersistentVolumeClaimBuilder,
-  PersistentVolumeClaimSpecBuilder,
-  PersistentVolumeClaimVolumeSource,
   PersistentVolumeClaimVolumeSourceBuilder,
   Quantity,
-  QuantityBuilder,
   ResourceRequirements,
   ResourceRequirementsBuilder,
   Secret,
-  SecretBuilder,
-  SecretVolumeSource,
+  SecretList,
   SecretVolumeSourceBuilder,
-  Volume,
+  VolumeBuilder,
   VolumeMount,
   VolumeMountBuilder
 }
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
   val SecretMountPath = "/etc/cloudflow-runner-secret"
-  // val DownwardApiVolume = Volume(
-  //   name = "downward-api-volume",
-  //   source = Volume.DownwardApiVolumeSource(items = List(
-  //     Volume.DownwardApiVolumeFile(
-  //       fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.uid"),
-  //       path = "metadata.uid",
-  //       resourceFieldRef = None
-  //     ),
-  //     Volume.DownwardApiVolumeFile(
-  //       fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.name"),
-  //       path = "metadata.name",
-  //       resourceFieldRef = None
-  //     ),
-  //     Volume.DownwardApiVolumeFile(
-  //       fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.namespace"),
-  //       path = "metadata.namespace",
-  //       resourceFieldRef = None
-  //     )
-  //   )
-  //   )
-  // )
-  // val DownwardApiVolumeMount = Volume.Mount(DownwardApiVolume.name, "/mnt/downward-api-volume/")
+  // TODO: FIXME
+  val DownwardApiVolume =
+    new VolumeBuilder()
+      .withName("downward-api-volume")
+      .build()
+
+//     Volume(
+//     name = "downward-api-volume",
+//     source = Volume.DownwardApiVolumeSource(items = List(
+//       Volume.DownwardApiVolumeFile(
+//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.uid"),
+//         path = "metadata.uid",
+//         resourceFieldRef = None
+//       ),
+//       Volume.DownwardApiVolumeFile(
+//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.name"),
+//         path = "metadata.name",
+//         resourceFieldRef = None
+//       ),
+//       Volume.DownwardApiVolumeFile(
+//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.namespace"),
+//         path = "metadata.namespace",
+//         resourceFieldRef = None
+//       )
+//     )
+//     )
+//   )
+  val DownwardApiVolumeMount = {
+    new VolumeMountBuilder()
+      .withName(DownwardApiVolume.getName)
+      .withMountPath("/mnt/downward-api-volume/")
+      .build()
+  }
 
   val DockerContainerGroupId = 185
 }
@@ -172,28 +176,34 @@ trait Runner[T <: HasMetadata] {
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action]
 
-//   def updateActions(newApp: CloudflowApplication.CR,
-//                     runners: Map[String, Runner[_]],
-//                     deployment: StreamletDeployment): Seq[ResourceAction[ObjectResource]] = {
-//     implicit val f  = format
-//     implicit val rd = resourceDefinition
-//     Seq(
-//       Action.createOrUpdate(configResource(deployment, newApp), configEditor),
-//       Action.provided[Secret](deployment.secretName, newApp.namespace) {
-//         case Some(secret) =>
-//           Action.createOrUpdate(resource(deployment, newApp, secret), editor)
-//         case None =>
-//           val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-//           log.error(msg)
-//           CloudflowApplication.Status.errorAction(newApp, runners, msg)
-//       }
-//     )
-//   }
+  def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: StreamletDeployment): Seq[Action] = {
+    Seq(
+      Action.createOrReplace[ConfigMap](configResource(deployment, newApp)),
+      Action.operation(
+        { client => client.secrets() }, { secrets: MixedOperation[Secret, SecretList, Resource[Secret]] =>
+          Try {
+            val res = secrets.inNamespace(newApp.namespace).withName(deployment.secretName).get()
+            assert { res != null }
+            res
+          }.toOption
+        }, { secret: Option[Secret] =>
+          secret match {
+            case Some(sec) =>
+              Action.createOrReplace(resource(deployment, newApp, sec))
+            case None =>
+              val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              log.error(msg)
+              // CloudflowApplication.Status.errorAction(newApp, runners, msg)
+              throw new Exception("TODO")
+          }
+        }))
+  }
 
-  // def streamletChangeAction(app: CloudflowApplication.CR,
-  //                           runners: Map[String, Runner[_]],
-  //                           streamletDeployment: StreamletDeployment,
-  //                           secret: skuber.Secret): ResourceAction[ObjectResource]
+  def streamletChangeAction(
+      app: App.Cr,
+      runners: Map[String, Runner[_]],
+      streamletDeployment: StreamletDeployment,
+      secret: Secret): ResourceAction[HasMetadata]
 
   def serviceAccountAction(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
@@ -270,21 +280,18 @@ trait Runner[T <: HasMetadata] {
   def configResourceName(deployment: StreamletDeployment) = Name.ofConfigMap(deployment.name)
   def resourceName(deployment: StreamletDeployment): String
 
-  // /**
-  //  * Creates the runner resource.
-  //  */
-  // def resource(
-  //     deployment: StreamletDeployment,
-  //     app: CloudflowApplication.CR,
-  //     configSecret: Secret,
-  //     updateLabels: Map[String, String] = Map()
-  // ): T
+  /**
+   * Creates the runner resource.
+   */
+  // TODO: CR or Deployment ...
+  def resource(
+      deployment: StreamletDeployment,
+      app: App.Cr,
+      configSecret: Secret,
+      updateLabels: Map[String, String] = Map()): Deployment
 
   def getPodsConfig(secret: Secret): PodsConfig = {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)
-
-    val podConfig =
-      UnsafeCloudflowConfigLoader.loadPodConfig(ConfigFactory.parseString(str))
 
     (for {
       config <- UnsafeCloudflowConfigLoader.loadPodConfig(ConfigFactory.parseString(str))
@@ -294,101 +301,100 @@ trait Runner[T <: HasMetadata] {
     }).recover {
         case e =>
           log.error(
-            s"Detected pod configs in secret '${secret.getMetadata.getName}' that contains invalid configuration data, IGNORING configuration.",
+            s"Detected pod configs in secret '${secret.getMetadata().getName()}' that contains invalid configuration data, IGNORING configuration.",
             e)
           PodsConfig()
       }
       .getOrElse(PodsConfig())
   }
 
-  // def getRuntimeConfig(secret: Secret): Config = {
-  //   val str = getData(secret, ConfigInput.RuntimeConfigDataKey)
-  //   Try(ConfigFactory.parseString(str))
-  //     .recover {
-  //       case e =>
-  //         log.error(
-  //           s"Detected runtime config in secret '${secret.metadata.name}' that contains invalid configuration data, IGNORING configuration.",
-  //           e
-  //         )
-  //         ConfigFactory.empty
-  //     }
-  //     .getOrElse(ConfigFactory.empty)
-  // }
+  def getRuntimeConfig(secret: Secret): Config = {
+    val str = getData(secret, ConfigInput.RuntimeConfigDataKey)
+    Try(ConfigFactory.parseString(str))
+      .recover {
+        case e =>
+          log.error(
+            s"Detected runtime config in secret '${secret.getMetadata().getName()}' that contains invalid configuration data, IGNORING configuration.",
+            e)
+          ConfigFactory.empty
+      }
+      .getOrElse(ConfigFactory.empty)
+  }
 
   private def getData(secret: Secret, key: String): String = {
     // TODO: Check if I should decode explicitly base64 or getStringData
     secret.getData().getOrDefault(key, "")
   }
 
-  // def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .flatMap { podConfig =>
-  //       podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-  //         // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
-  //         containerConfig.env.filterNot(_.name == JavaOptsEnvVarName)
-  //       }
-  //     }
+  def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
+          containerConfig.env.filterNot(_.getName == JavaOptsEnvVarName)
+        }
+      }
 
-  // def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[Volume.Mount] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .flatMap { podConfig =>
-  //       podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-  //         containerConfig.volumeMounts
-  //       }
-  //     }
-  //     .getOrElse(List())
+  def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[VolumeMount] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.volumeMounts
+        }
+      }
+      .getOrElse(List())
 
-  // def getContainerPorts(podsConfig: PodsConfig, podName: String): List[Container.Port] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .flatMap { podConfig =>
-  //       podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-  //         containerConfig.ports
-  //       }
-  //     }
-  //     .getOrElse(List())
+  def getContainerPorts(podsConfig: PodsConfig, podName: String): List[ContainerPort] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
+          containerConfig.ports
+        }
+      }
+      .getOrElse(List())
 
-  // def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .flatMap { podConfig =>
-  //       podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
-  //         containerConfig.env.find(_.name == JavaOptsEnvVarName).map(_.value).collect { case EnvVar.StringValue(str) => str }
-  //       }
-  //     }
+  def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .flatMap { podConfig =>
+        podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
+          containerConfig.env.find(_.getName == JavaOptsEnvVarName).map(_.getValue)
+        }
+      }
 
-  // def getLabels(podsConfig: PodsConfig, podName: String): Map[String, String] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .map { podConfig =>
-  //       podConfig.labels
-  //     }
-  //     .getOrElse(Map())
+  def getLabels(podsConfig: PodsConfig, podName: String): Map[String, String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.labels
+      }
+      .getOrElse(Map())
 
-  // def getAnnotations(podsConfig: PodsConfig, podName: String): Map[String, String] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .map { podConfig =>
-  //       podConfig.annotations
-  //     }
-  //     .getOrElse(Map())
+  def getAnnotations(podsConfig: PodsConfig, podName: String): Map[String, String] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.annotations
+      }
+      .getOrElse(Map())
 
-  // def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
-  //   podsConfig.pods
-  //     .get(podName)
-  //     .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
-  //     .map { podConfig =>
-  //       podConfig.volumes
-  //     }
-  //     .getOrElse(List())
+  def getVolumes(podsConfig: PodsConfig, podName: String): List[KubernetesResource] =
+    podsConfig.pods
+      .get(podName)
+      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+      .map { podConfig =>
+        podConfig.volumes
+      }
+      .getOrElse(List())
 
 }
 
@@ -428,14 +434,6 @@ object PodsConfig {
    *  }
    *  }}}
    */
-  // TODO implement this, with PureConfig as a base should be trivial
-  // def fromConfig(config: Config): Try[PodsConfig] =
-  //   Try(PodsConfig())
-//    if (config.isEmpty) Try(PodsConfig())
-//    else Try(PodsConfig(asConfigObjectToMap[PodConfig](config.getConfig("kubernetes.pods"))))
-
-//  def asConfigObjectToMap[T: ValueReader](config: Config): Map[String, T] =
-//    config.root.keySet.asScala.map(key => key -> config.as[T](key)).toMap
 
   private def getContainerConfig(container: CloudflowConfig.Container): ContainerConfig = {
     val env = container.env.map { env =>

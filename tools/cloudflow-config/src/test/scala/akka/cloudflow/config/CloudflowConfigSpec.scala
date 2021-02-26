@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.cli.cloudflow.config
+package akka.cloudflow.config
 
 import java.io.File
 import scala.jdk.CollectionConverters._

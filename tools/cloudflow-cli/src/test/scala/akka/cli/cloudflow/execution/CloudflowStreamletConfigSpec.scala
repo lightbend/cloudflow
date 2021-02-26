@@ -5,7 +5,7 @@
 package akka.cli.cloudflow.execution
 
 import akka.cli.cloudflow.{ CliLogger, Setup }
-import akka.cli.cloudflow.config.CloudflowConfig
+import akka.cloudflow.config.CloudflowConfig
 import akka.datap.crd.App
 import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization

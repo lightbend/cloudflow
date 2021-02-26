@@ -3,7 +3,7 @@
  */
 
 // TODO: regenerate GraalVM config!
-package akka.cli.cloudflow.config
+package akka.cloudflow.config
 
 import scala.jdk.CollectionConverters._
 import scala.util.{ Failure, Success, Try }

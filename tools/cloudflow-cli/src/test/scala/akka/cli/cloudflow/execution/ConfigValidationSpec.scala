@@ -5,7 +5,7 @@
 package akka.cli.cloudflow.execution
 
 import akka.cli.cloudflow.CliLogger
-import akka.cli.cloudflow.config.CloudflowConfig
+import akka.cloudflow.config.CloudflowConfig
 import akka.datap.crd.App
 import com.typesafe.config.ConfigFactory
 import org.scalatest.TryValues
