@@ -115,8 +115,7 @@ object CloudflowApplication {
     }
 
     def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
-      spec.deployments.map { specDeployment =>
-        val deployment = fromCrDeploymentToBlueprint(specDeployment)
+      spec.deployments.map { deployment =>
         val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
         StreamletStatus(deployment.streamletName, expectedPodCount)
       }.toVector

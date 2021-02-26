@@ -59,6 +59,8 @@ import io.fabric8.kubernetes.api.model.{
 }
 import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
+import scala.reflect.ClassTag
+
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
   val SecretMountPath = "/etc/cloudflow-runner-secret"
@@ -115,68 +117,78 @@ trait Runner[T <: HasMetadata] {
 
   def runtime: String
 
-//   def actions(
-//       newApp: App.Cr,
-//       currentApp: Option[App.Cr],
-//       runners: Map[String, Runner[_]]
-//   ): Seq[Action] = {
-//     implicit val ft = format
-//     implicit val rd = resourceDefinition
-//
-//     val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
-//
-//     val currentDeployments     = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
-//     val currentDeploymentNames = currentDeployments.map(_.name)
-//     val newDeploymentNames     = newDeployments.map(_.name)
-//
-//     // delete streamlet deployments by name that are in the current app but are not listed in the new app
-//     val deleteActions = currentDeployments
-//       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
-//       .flatMap { deployment =>
-//         Seq(
-//           Action.delete[T](resourceName(deployment), newApp.namespace),
-//           Action.delete[T](configResourceName(deployment), newApp.namespace)
-//         )
-//       }
-//
-//     // create streamlet deployments by name that are not in the current app but are listed in the new app
-//     val createActions = newDeployments
-//       .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
-//       .flatMap { deployment =>
-//         Seq(
-//           Action.createOrUpdate(configResource(deployment, newApp), configEditor),
-//           Action.providedRetry[Secret](deployment.secretName, newApp.namespace) {
-//             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), editor)
-//             case None =>
-//               val msg =
-//                 s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-//               log.info(msg)
-//               CloudflowApplication.Status.pendingAction(
-//                 newApp,
-//                 runners,
-//                 s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
-//               )
-//           }
-//         )
-//       }
-//
-//     // update streamlet deployments by name that are in both the current app and the new app
-//     val _updateActions = newDeployments
-//       .filter(deployment => currentDeploymentNames.contains(deployment.name))
-//       .flatMap { deployment =>
-//         updateActions(newApp, runners, deployment)
-//       }
-//       .toSeq
-//
-//     deleteActions ++ createActions ++ _updateActions
-//   }
+  // TODO: move this to a more appropriate place
+  def actionProvidedRetry[T <: HasMetadata: ClassTag](name: String, namespace: String)(fAction: Option[T] => Action)(
+      retry: Int = 60): Action = { // TODO: 60 looks quite a lot!
+    if (retry <= 0) {
+      Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
+      fAction(None)
+    } else {
+      Action.get[T](name, namespace) { res =>
+        res match {
+          case None    => actionProvidedRetry[T](name, namespace)(fAction)(retry - 1)
+          case Some(_) => fAction(res)
+        }
+      }
+    }
+  }
+
+  def actions(newApp: App.Cr, currentApp: Option[App.Cr], runners: Map[String, Runner[_]]): Seq[Action] = {
+
+    val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
+
+    val currentDeployments = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
+    val currentDeploymentNames = currentDeployments.map(_.name)
+    val newDeploymentNames = newDeployments.map(_.name)
+
+    // delete streamlet deployments by name that are in the current app but are not listed in the new app
+    val deleteActions = currentDeployments
+      .filterNot(deployment => newDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
+        Seq(
+          Action
+            .delete[Deployment](resourceName(deployment), newApp.namespace),
+          Action
+            .delete[ConfigMap](configResourceName(deployment), newApp.namespace))
+      }
+
+    // create streamlet deployments by name that are not in the current app but are listed in the new app
+    val createActions = newDeployments
+      .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
+        Seq(
+          Action.createOrReplace(configResource(deployment, newApp)),
+          actionProvidedRetry[Secret](deployment.secretName, newApp.namespace)({
+            case Some(secret) =>
+              Action.createOrReplace(resource(deployment, newApp, secret))
+            case None =>
+              val msg =
+                s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              log.info(msg)
+              CloudflowApplication.Status.pendingAction(
+                newApp,
+                runners,
+                s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
+          })())
+      }
+
+    // update streamlet deployments by name that are in both the current app and the new app
+    val _updateActions = newDeployments
+      .filter(deployment => currentDeploymentNames.contains(deployment.name))
+      .flatMap { deployment =>
+        updateActions(newApp, runners, deployment)
+      }
+      .toSeq
+
+    deleteActions ++ createActions ++ _updateActions
+  }
 
   def prepareNamespaceActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]) =
     appActions(app, labels, ownerReferences) ++ serviceAccountAction(app, labels, ownerReferences)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action]
 
-  def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: StreamletDeployment): Seq[Action] = {
+  def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment): Seq[Action] = {
     Seq(
       Action.createOrReplace[ConfigMap](configResource(deployment, newApp)),
       Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
@@ -201,7 +213,7 @@ trait Runner[T <: HasMetadata] {
     Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
 
   def defaultReplicas: Int
-  def expectedPodCount(deployment: StreamletDeployment): Int
+  def expectedPodCount(deployment: App.Deployment): Int
 //  just editing the Metadata
 //   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 //   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
@@ -245,7 +257,7 @@ trait Runner[T <: HasMetadata] {
   /**
    * Creates the configmap for the runner.
    */
-  def configResource(deployment: StreamletDeployment, app: App.Cr): ConfigMap = {
+  def configResource(deployment: App.Deployment, app: App.Cr): ConfigMap = {
     val labels = CloudflowLabels(app)
     val ownerReference = new OwnerReferenceBuilder()
       .withApiVersion(app.getApiVersion)
@@ -256,7 +268,9 @@ trait Runner[T <: HasMetadata] {
       .withBlockOwnerDeletion(true)
       .build()
 
-    val configData = Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, deployment), prometheusConfig)
+    val configData = Vector(
+      RunnerConfig(app.spec.appId, app.spec.appVersion, CloudflowApplication.fromCrDeploymentToBlueprint(deployment)),
+      prometheusConfig)
     val name = Name.ofConfigMap(deployment.name)
 
     new ConfigMapBuilder()
@@ -269,15 +283,15 @@ trait Runner[T <: HasMetadata] {
       .withData(configData.map(cd => cd.filename -> cd.data).toMap.asJava)
       .build()
   }
-  def configResourceName(deployment: StreamletDeployment) = Name.ofConfigMap(deployment.name)
-  def resourceName(deployment: StreamletDeployment): String
+  def configResourceName(deployment: App.Deployment) = Name.ofConfigMap(deployment.name)
+  def resourceName(deployment: App.Deployment): String
 
   /**
    * Creates the runner resource.
    */
   // TODO: CR or Deployment ...
   def resource(
-      deployment: StreamletDeployment,
+      deployment: App.Deployment,
       app: App.Cr,
       configSecret: Secret,
       updateLabels: Map[String, String] = Map()): Deployment
