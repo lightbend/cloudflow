@@ -115,61 +115,61 @@ trait Runner[T <: HasMetadata] {
 
   def runtime: String
 
-  // def actions(
-  //     newApp: CloudflowApplication.CR,
-  //     currentApp: Option[CloudflowApplication.CR],
-  //     runners: Map[String, Runner[_]]
-  // ): Seq[ResourceAction[ObjectResource]] = {
-  //   implicit val ft = format
-  //   implicit val rd = resourceDefinition
-
-  //   val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
-
-  //   val currentDeployments     = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
-  //   val currentDeploymentNames = currentDeployments.map(_.name)
-  //   val newDeploymentNames     = newDeployments.map(_.name)
-
-  //   // delete streamlet deployments by name that are in the current app but are not listed in the new app
-  //   val deleteActions = currentDeployments
-  //     .filterNot(deployment => newDeploymentNames.contains(deployment.name))
-  //     .flatMap { deployment =>
-  //       Seq(
-  //         Action.delete[T](resourceName(deployment), newApp.namespace),
-  //         Action.delete[T](configResourceName(deployment), newApp.namespace)
-  //       )
-  //     }
-
-  //   // create streamlet deployments by name that are not in the current app but are listed in the new app
-  //   val createActions = newDeployments
-  //     .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
-  //     .flatMap { deployment =>
-  //       Seq(
-  //         Action.createOrUpdate(configResource(deployment, newApp), configEditor),
-  //         Action.providedRetry[Secret](deployment.secretName, newApp.namespace) {
-  //           case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), editor)
-  //           case None =>
-  //             val msg =
-  //               s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-  //             log.info(msg)
-  //             CloudflowApplication.Status.pendingAction(
-  //               newApp,
-  //               runners,
-  //               s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
-  //             )
-  //         }
-  //       )
-  //     }
-
-  //   // update streamlet deployments by name that are in both the current app and the new app
-  //   val _updateActions = newDeployments
-  //     .filter(deployment => currentDeploymentNames.contains(deployment.name))
-  //     .flatMap { deployment =>
-  //       updateActions(newApp, runners, deployment)
-  //     }
-  //     .toSeq
-
-  //   deleteActions ++ createActions ++ _updateActions
-  // }
+//   def actions(
+//       newApp: App.Cr,
+//       currentApp: Option[App.Cr],
+//       runners: Map[String, Runner[_]]
+//   ): Seq[Action] = {
+//     implicit val ft = format
+//     implicit val rd = resourceDefinition
+//
+//     val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
+//
+//     val currentDeployments     = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
+//     val currentDeploymentNames = currentDeployments.map(_.name)
+//     val newDeploymentNames     = newDeployments.map(_.name)
+//
+//     // delete streamlet deployments by name that are in the current app but are not listed in the new app
+//     val deleteActions = currentDeployments
+//       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
+//       .flatMap { deployment =>
+//         Seq(
+//           Action.delete[T](resourceName(deployment), newApp.namespace),
+//           Action.delete[T](configResourceName(deployment), newApp.namespace)
+//         )
+//       }
+//
+//     // create streamlet deployments by name that are not in the current app but are listed in the new app
+//     val createActions = newDeployments
+//       .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
+//       .flatMap { deployment =>
+//         Seq(
+//           Action.createOrUpdate(configResource(deployment, newApp), configEditor),
+//           Action.providedRetry[Secret](deployment.secretName, newApp.namespace) {
+//             case Some(secret) => Action.createOrUpdate(resource(deployment, newApp, secret), editor)
+//             case None =>
+//               val msg =
+//                 s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+//               log.info(msg)
+//               CloudflowApplication.Status.pendingAction(
+//                 newApp,
+//                 runners,
+//                 s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'."
+//               )
+//           }
+//         )
+//       }
+//
+//     // update streamlet deployments by name that are in both the current app and the new app
+//     val _updateActions = newDeployments
+//       .filter(deployment => currentDeploymentNames.contains(deployment.name))
+//       .flatMap { deployment =>
+//         updateActions(newApp, runners, deployment)
+//       }
+//       .toSeq
+//
+//     deleteActions ++ createActions ++ _updateActions
+//   }
 
   def prepareNamespaceActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]) =
     appActions(app, labels, ownerReferences) ++ serviceAccountAction(app, labels, ownerReferences)
@@ -179,24 +179,16 @@ trait Runner[T <: HasMetadata] {
   def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: StreamletDeployment): Seq[Action] = {
     Seq(
       Action.createOrReplace[ConfigMap](configResource(deployment, newApp)),
-      Action.operation(
-        { client => client.secrets() }, { secrets: MixedOperation[Secret, SecretList, Resource[Secret]] =>
-          Try {
-            val res = secrets.inNamespace(newApp.namespace).withName(deployment.secretName).get()
-            assert { res != null }
-            res
-          }.toOption
-        }, { secret: Option[Secret] =>
-          secret match {
-            case Some(sec) =>
-              Action.createOrReplace(resource(deployment, newApp, sec))
-            case None =>
-              val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-              log.error(msg)
-              // CloudflowApplication.Status.errorAction(newApp, runners, msg)
-              throw new Exception("TODO")
-          }
-        }))
+      Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
+        secret match {
+          case Some(sec) =>
+            Action.createOrReplace(resource(deployment, newApp, sec))
+          case None =>
+            val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+            log.error(msg)
+            CloudflowApplication.Status.errorAction(newApp, runners, msg)
+        }
+      })
   }
 
   def streamletChangeAction(
