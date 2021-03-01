@@ -21,71 +21,114 @@ import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
-import io.fabric8.kubernetes.api.model.apps.{Deployment, DeploymentBuilder}
-import io.fabric8.kubernetes.api.model.rbac.{PolicyRuleBuilder, Role, RoleBinding, RoleBindingBuilder, RoleBuilder, RoleRefBuilder, SubjectBuilder}
-import io.fabric8.kubernetes.api.model.{ConfigMapVolumeSource, ConfigMapVolumeSourceBuilder, Container, ContainerBuilder, ExecActionBuilder, OwnerReference, OwnerReferenceBuilder, PersistentVolumeClaimVolumeSource, PersistentVolumeClaimVolumeSourceBuilder, ProbeBuilder, Secret, SecretVolumeSourceBuilder, VolumeBuilder, VolumeMountBuilder}
+import io.fabric8.kubernetes.api.model.apps.{
+  Deployment,
+  DeploymentBuilder,
+  DeploymentSpecBuilder,
+  DeploymentStrategy,
+  DeploymentStrategyBuilder
+}
+import io.fabric8.kubernetes.api.model.rbac.{
+  PolicyRuleBuilder,
+  Role,
+  RoleBinding,
+  RoleBindingBuilder,
+  RoleBuilder,
+  RoleRefBuilder,
+  SubjectBuilder
+}
+import io.fabric8.kubernetes.api.model.{
+  ConfigMapVolumeSource,
+  ConfigMapVolumeSourceBuilder,
+  Container,
+  ContainerBuilder,
+  ContainerPortBuilder,
+  EnvVarBuilder,
+  ExecActionBuilder,
+  LabelSelectorBuilder,
+  LabelSelectorRequirementBuilder,
+  OwnerReference,
+  OwnerReferenceBuilder,
+  PersistentVolumeClaimVolumeSource,
+  PersistentVolumeClaimVolumeSourceBuilder,
+  PodSecurityContextBuilder,
+  PodSpecBuilder,
+  PodTemplateSpecBuilder,
+  ProbeBuilder,
+  Quantity,
+  ResourceRequirementsBuilder,
+  Secret,
+  SecretVolumeSourceBuilder,
+  Volume,
+  VolumeBuilder,
+  VolumeMountBuilder
+}
 
 import java.text.Format
 import scala.jdk.CollectionConverters._
 
 object AkkaRunner {
-  final val Runtime                     = "akka"
-  val JavaOptsEnvVar                    = "JAVA_OPTS"
+  final val Runtime = "akka"
+  val JavaOptsEnvVar = "JAVA_OPTS"
   val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
-  val PrometheusExporterPortEnvVar      = "PROMETHEUS_JMX_AGENT_PORT"
-  val DefaultReplicas                   = 1
-  val ImagePullPolicy                   = "Always"
+  val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"
+  val DefaultReplicas = 1
+  val ImagePullPolicy = "Always"
 
   val HealthCheckPath = "/checks/healthy"
-  val ReadyCheckPath  = "/checks/ready"
+  val ReadyCheckPath = "/checks/ready"
 
   val ProbeInitialDelaySeconds = 10
-  val ProbeTimeoutSeconds      = 1
-  val ProbePeriodSeconds       = 10
+  val ProbeTimeoutSeconds = 1
+  val ProbePeriodSeconds = 10
 }
 
 /**
  * Creates the Resources that define an Akka [[Runner]].
  */
-final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[App.Deployment] {
+final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Deployment] {
   import AkkaRunner._
   import akkaRunnerDefaults._
 
-  val runtime            = Runtime
+  val runtime = Runtime
 
-  def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Action = {
+  def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
-    Vector(
+    Seq(
       Action.createOrReplace(roleAkka),
-      Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences))
-    )
+      Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
   }
 
-  def streamletChangeAction(app: App.Cr,
-                            runners: Map[String, Runner[_]],
-                            streamletDeployment: App.Deployment,
-                            secret: Secret) = {
+  def streamletChangeAction(
+      app: App.Cr,
+      runners: Map[String, Runner[_]],
+      streamletDeployment: App.Deployment,
+      secret: Secret) = {
     Action.get[Deployment](streamletDeployment.name, app.namespace) { currentDeployment =>
       currentDeployment match {
         case Some(dep) =>
           val meta = dep.getMetadata
-          meta.setLabels(
-            meta.getLabels.put(CloudflowLabels.ConfigUpdateLabel, System.currentTimeMillis.toString)
-          )
+          val labels = meta.getLabels
+          labels.put(CloudflowLabels.ConfigUpdateLabel, System.currentTimeMillis.toString)
+          meta.setLabels(labels)
 
           Action.createOrReplace(
-          new DeploymentBuilder(dep)
-            .withMetadata(meta)
-            .build())
+            new DeploymentBuilder(dep)
+              .withMetadata(meta)
+              .build())
         case _ =>
           val templateDeployment =
-            resource(streamletDeployment, app, secret, Map((CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)))
+            resource(
+              streamletDeployment,
+              app,
+              secret,
+              Map((CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)))
           Action.createOrReplace(templateDeployment)
       }
     }
   }
 
-  def defaultReplicas                                   = DefaultReplicas
+  def defaultReplicas = DefaultReplicas
   def expectedPodCount(deployment: App.Deployment) = deployment.replicas.getOrElse(AkkaRunner.DefaultReplicas)
 
   private def akkaRole(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Role = {
@@ -101,7 +144,11 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
       .build()
   }
 
-  private def akkaRoleBinding(namespace: String, role: Role, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding = {
+  private def akkaRoleBinding(
+      namespace: String,
+      role: Role,
+      labels: CloudflowLabels,
+      ownerReferences: List[OwnerReference]): RoleBinding = {
     new RoleBindingBuilder()
       .withNewMetadata()
       .withName(Name.ofAkkaRoleBinding)
@@ -115,15 +162,13 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
           .withApiGroup("rbac.authorization.k8s.io")
           .withKind("Role")
           .withName(role.getMetadata.getName)
-          .build()
-      )
+          .build())
       .withSubjects(
         new SubjectBuilder()
           .withKind("ServiceAccount")
           .withName(Name.ofServiceAccount)
           .withNamespace(namespace)
-          .build()
-      )
+          .build())
       .build()
   }
 
@@ -140,11 +185,10 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
       deployment: App.Deployment,
       app: App.Cr,
       configSecret: Secret,
-      updateLabels: Map[String, String] = Map()
-  ): Deployment = {
+      updateLabels: Map[String, String] = Map()): Deployment = {
     // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
 
-    val labels          = CloudflowLabels(app)
+    val labels = CloudflowLabels(app)
     val ownerReferences = List(
       // TODO: this is repeated in othe places ...
       new OwnerReferenceBuilder()
@@ -154,15 +198,30 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
         .withUid(app.getMetadata.getUid)
         .withController(true)
         .withBlockOwnerDeletion(true)
-        .build()
-    )
-    val appId           = app.spec.appId
-    val podName         = Name.ofPod(deployment.name)
+        .build())
+    val appId = app.spec.appId
+    val podName = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint
-        .map(endpoint => Container.Port(endpoint.containerPort, name = Name.ofContainerPort(endpoint.containerPort)))
+        .map { endpoint =>
+          endpoint.containerPort match {
+            case Some(cp) =>
+              Some(
+                new ContainerPortBuilder()
+                  .withContainerPort(cp)
+                  .withName(Name.ofContainerPort(cp))
+                  .build())
+            case _ => None
+          }
+        }
+        .flatten
         .toList
-    val k8sPrometheusMetricsPort = Container.Port(PrometheusConfig.PrometheusJmxExporterPort, name = Name.ofContainerPrometheusExporterPort)
+
+    val k8sPrometheusMetricsPort =
+      new ContainerPortBuilder()
+        .withContainerPort(PrometheusConfig.PrometheusJmxExporterPort)
+        .withName(Name.ofContainerPrometheusExporterPort)
+        .build()
 
     val podsConfig = getPodsConfig(configSecret)
 
@@ -180,8 +239,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
         .withConfigMap(
           new ConfigMapVolumeSourceBuilder()
             .withName(configMapName)
-            .build()
-        )
+            .build())
         .build()
     }
 
@@ -190,63 +248,58 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
     val userConfiguredPorts = getContainerPorts(podsConfig, PodsConfig.CloudflowPodName)
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val pvcRefVolumes =
-      streamletToDeploy.map(_.descriptor.volumeMounts.flatMap{mount =>
+      streamletToDeploy.map(_.descriptor.volumeMounts.flatMap { mount =>
         mount.pvcName match {
           case Some(name) =>
             Some(
-            new VolumeBuilder()
-              .withName(name)
-              .withPersistentVolumeClaim(
-                new PersistentVolumeClaimVolumeSourceBuilder()
+              new VolumeBuilder()
+                .withName(name)
+                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
                   .withClaimName(name)
-                  .build()
-              )
-              .build()
-            )
+                  .build())
+                .build())
           case _ => None
         }
       }.toList)
     val pvcVolumeMounts = streamletToDeploy
       .map(_.descriptor.volumeMounts.flatMap { mount =>
 
-      mount.pvcName match {
-        case Some(name) =>
-          val readOnly = mount.accessMode match {
-            case "ReadWriteMany" => false
-            case "ReadOnlyMany"  => true
-          }
-          Some(
-          new VolumeMountBuilder()
-            .withName(name)
-            .withMountPath(mount.path)
-            .withReadOnly(readOnly)
-            .build()
-          )
-        case _ => None
-      }
+        mount.pvcName match {
+          case Some(name) =>
+            val readOnly = mount.accessMode match {
+              case "ReadWriteMany" => false
+              case "ReadOnlyMany"  => true
+            }
+            Some(
+              new VolumeMountBuilder()
+                .withName(name)
+                .withMountPath(mount.path)
+                .withReadOnly(readOnly)
+                .build())
+          case _ => None
+        }
 
       }.toList)
       .getOrElse(List.empty)
 
-    val secretName   = deployment.secretName
+    val secretName = deployment.secretName
     val secretVolume = {
       new VolumeBuilder()
         .withName(Name.ofVolume(secretName))
         .withSecret(
           new SecretVolumeSourceBuilder()
             .withSecretName(secretName)
-            .build()
-        )
+            .build())
         .build()
     }
-    val volumeMount  = {
+    val volumeMount = {
       new VolumeMountBuilder()
         .withName(configMapName)
         .withMountPath(Runner.ConfigMapMountPath)
         .withReadOnly(true)
         .build()
     }
-    val secretMount  = {
+    val secretMount = {
       new VolumeMountBuilder()
         .withName(Name.ofVolume(secretName))
         .withMountPath(Runner.SecretMountPath)
@@ -267,44 +320,39 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
         .withEnv(environmentVariables: _*)
         .withArgs(args: _*)
         .withPorts((k8sStreamletPorts ++ userConfiguredPorts :+ k8sPrometheusMetricsPort): _*)
-        .withVolumeMounts(
-          (List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(podsConfig, PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount): _*
-        )
+        .withVolumeMounts((List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(
+          podsConfig,
+          PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount): _*)
     }
 
     // See cloudflow.akkastream.internal.HealthCheckFiles
-    val fileNameToCheckLiveness  = s"${deployment.streamletName}-live.txt"
+    val fileNameToCheckLiveness = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
-    val tempDir              = System.getProperty("java.io.tmpdir")
-    val pathToLivenessCheck  = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
+    val tempDir = System.getProperty("java.io.tmpdir")
+    val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
     val container = c
       .withImagePullPolicy(ImagePullPolicy)
       .withLivenessProbe(
         new ProbeBuilder()
-          .withExec(
-            new ExecActionBuilder()
-              .withCommand("/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")
-              .build()
-          )
+          .withExec(new ExecActionBuilder()
+            .withCommand("/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")
+            .build())
           .withInitialDelaySeconds(ProbeInitialDelaySeconds)
           .withTimeoutSeconds(ProbeTimeoutSeconds)
           .withPeriodSeconds(ProbePeriodSeconds)
-          .build()
-      )
+          .build())
       .withReadinessProbe(
         new ProbeBuilder()
-          .withExec(
-            new ExecActionBuilder()
-              .withCommand("/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")
-              .build()
-          )
+          .withExec(new ExecActionBuilder()
+            .withCommand("/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")
+            .build())
           .withInitialDelaySeconds(ProbeInitialDelaySeconds)
           .withTimeoutSeconds(ProbeTimeoutSeconds)
           .withPeriodSeconds(ProbePeriodSeconds)
-          .build()
-      )
+          .build())
+      .build()
 
     // This is the group id of the user in the streamlet container,
     // it needs to make volumes managed by certain volume plugins writable.
@@ -313,101 +361,133 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
     val dockerContainerGroupId = Runner.DockerContainerGroupId
     // We only need to set this when we want to write to a volume in a pod
     val securityContext = pvcVolumeMounts
-      .find(volume => volume.readOnly == false)
-      .flatMap(_ => Some(PodSecurityContext(fsGroup = Some(dockerContainerGroupId))))
+      .find(volume => volume.getReadOnly == false)
+      .flatMap(_ => Some(new PodSecurityContextBuilder().withFsGroup(dockerContainerGroupId).build()))
 
-    val podSpec =
-      Pod
-        .Spec(serviceAccountName = Name.ofServiceAccount,
-              volumes = pvcRefVolumes.getOrElse(List.empty[Volume]),
-              securityContext = securityContext)
-        .addContainer(container)
-        .addVolume(volume)
-        .addVolume(secretVolume)
-        .addVolume(Runner.DownwardApiVolume)
+    val podSpec = {
+      val allVolumes: List[Volume] =
+        List(volume, secretVolume, Runner.DownwardApiVolume) ++
+        pvcRefVolumes.getOrElse(List.empty) ++
+        configSecretVolumes
 
-    val podSpecSecretVolumesAdded = configSecretVolumes.foldLeft[Pod.Spec](podSpec) {
-      case (acc, curr) =>
-        acc.addVolume(curr)
+      val podSpecBuilder = new PodSpecBuilder()
+        .withServiceAccount(Name.ofServiceAccount)
+        .withVolumes(allVolumes.asJava)
+        .withContainers(container)
+
+      (securityContext match {
+        case Some(sc) =>
+          podSpecBuilder.withSecurityContext(sc)
+        case _ =>
+          podSpecBuilder
+      }).build()
     }
 
-    val template =
-      Pod.Template.Spec
-        .named(podName)
-        .addLabels(
-          labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
-                CloudflowLabels.StreamletNameLabel -> deployment.streamletName,
-                CloudflowLabels.AppIdLabel         -> appId
-              ).toMap.mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName)
-        )
-        .addAnnotation("prometheus.io/scrape" -> "true")
-        .addAnnotations(getAnnotations(podsConfig, PodsConfig.CloudflowPodName))
-        .addLabels(updateLabels)
-        .withPodSpec(podSpecSecretVolumesAdded)
+    val template = {
 
-    val deploymentResource = Deployment(
-      metadata = ObjectMeta(name = podName,
-                            namespace = app.namespace,
-                            labels = labels.withComponent(podName, CloudflowLabels.StreamletComponent),
-                            ownerReferences = ownerReferences)
-    ).withReplicas(deployment.replicas.getOrElse(DefaultReplicas))
-      .withTemplate(template)
-      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.Name, podName)))
+      new PodTemplateSpecBuilder()
+        .withNewMetadata()
+        .withName(podName)
+        .withLabels(
+          (labels.withComponent(podName, CloudflowLabels.StreamletComponent) ++ Map(
+            CloudflowLabels.StreamletNameLabel -> deployment.streamletName,
+            CloudflowLabels.AppIdLabel -> appId).view
+            .mapValues(Name.ofLabelValue) ++ getLabels(podsConfig, PodsConfig.CloudflowPodName) ++ updateLabels).asJava)
+        .withAnnotations((Map("prometheus.io/scrape" -> "true") ++
+        getAnnotations(podsConfig, PodsConfig.CloudflowPodName)).asJava)
+        .endMetadata()
+        .withSpec(podSpec)
+        .build()
+    }
 
-    deploymentResource.copy(
-      spec = deploymentResource.spec.map(s =>
-        s.copy(strategy = deployment.endpoint
-          .map(_ => Deployment.Strategy(Deployment.StrategyType.RollingUpdate))
-          .orElse(Some(Deployment.Strategy(Deployment.StrategyType.Recreate)))
-        )
-      )
-    )
+    val deploymentStrategy: DeploymentStrategy = {
+      if (deployment.endpoint.isDefined) {
+        // TODO: not sure how this works
+        new DeploymentStrategyBuilder()
+          .withNewRollingUpdate()
+          .endRollingUpdate()
+          .build()
+      } else {
+        new DeploymentStrategyBuilder()
+          .withType("Recreate")
+          .build()
+      }
+    }
+
+    val deploymentResource = {
+      new DeploymentBuilder()
+        .withNewMetadata()
+        .withName(podName)
+        .withNamespace(app.namespace)
+        .withLabels(labels.withComponent(podName, CloudflowLabels.StreamletComponent).asJava)
+        .withOwnerReferences(ownerReferences: _*)
+        .endMetadata()
+        .withSpec(
+          new DeploymentSpecBuilder()
+            .withSelector(
+              new LabelSelectorBuilder()
+                .withMatchExpressions(new LabelSelectorRequirementBuilder()
+                  .withKey(CloudflowLabels.Name)
+                  .withValues(podName)
+                  .build())
+                .build())
+            .withReplicas(Integer.valueOf(deployment.replicas.getOrElse(DefaultReplicas)))
+            .withTemplate(template)
+            .withStrategy(deploymentStrategy)
+            .build())
+        .build()
+    }
+
+    deploymentResource
   }
 
-  def resourceName(deployment: StreamletDeployment): String = Name.ofPod(deployment.name)
+  def resourceName(deployment: App.Deployment): String = Name.ofPod(deployment.name)
 
   private def createResourceRequirements(podsConfig: PodsConfig) = {
-    var resourceRequirements = Resource.Requirements(
-      requests = Map(
-        Resource.cpu    -> resourceConstraints.cpuRequests,
-        Resource.memory -> resourceConstraints.memoryRequests
-      )
-    )
+    val limits = {
+      resourceConstraints.cpuLimits.map(v => "cpu" -> v).toMap ++
+      resourceConstraints.memoryLimits.map(v => "memory" -> v).toMap
+    }
 
-    resourceRequirements = resourceConstraints.cpuLimits
-      .map { cpuLimit =>
-        resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.cpu -> cpuLimit))
-      }
-      .getOrElse(resourceRequirements)
+    val requests = {
+      Map("cpu" -> resourceConstraints.cpuRequests, "memory" -> resourceConstraints.memoryRequests)
+    }
 
-    resourceRequirements = resourceConstraints.memoryLimits
-      .map { memoryLimit =>
-        resourceRequirements.copy(limits = resourceRequirements.limits + (Resource.memory -> memoryLimit))
-      }
-      .getOrElse(resourceRequirements)
-    podsConfig.pods
-      .get(PodsConfig.CloudflowPodName)
-      .flatMap { podConfig =>
-        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-          resourceRequirements.copy(
-            limits = resourceRequirements.limits ++ containerConfig.resources.map(_.limits).getOrElse(Map()),
-            requests = resourceRequirements.requests ++ containerConfig.resources.map(_.requests).getOrElse(Map())
-          )
-        }
-      }
-      .getOrElse(resourceRequirements)
+    lazy val resourceRequirements =
+      new ResourceRequirementsBuilder()
+        .withLimits(limits.asJava)
+        .withRequests(requests.asJava)
+        .build()
+
+    // TODO slightly changed the logic / doublecheck the correctness
+    // e.g. now we go with "less defaults" probably
+    (for {
+      pod <- podsConfig.pods.get(PodsConfig.CloudflowPodName)
+      containerConfig <- pod.containers.get(PodsConfig.CloudflowContainerName)
+      resources <- containerConfig.resources
+    } yield {
+      resources
+    }).getOrElse(resourceRequirements)
   }
 
-  private def createEnvironmentVariables(app: CloudflowApplication.CR, podsConfig: PodsConfig) = {
+  private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {
     val agentPaths = app.spec.agentPaths
     val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
       List(
-        EnvVar(PrometheusExporterPortEnvVar, PrometheusConfig.PrometheusJmxExporterPort.toString),
-        EnvVar(PrometheusExporterRulesPathEnvVar, PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
-      )
+        new EnvVarBuilder()
+          .withName(PrometheusExporterPortEnvVar)
+          .withValue(PrometheusConfig.PrometheusJmxExporterPort.toString)
+          .build(),
+        new EnvVarBuilder()
+          .withName(PrometheusExporterRulesPathEnvVar)
+          .withValue(PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
+          .build())
     } else Nil
 
-    val defaultEnvironmentVariables = EnvVar(JavaOptsEnvVar, javaOptions) :: prometheusEnvVars
+    val defaultEnvironmentVariables = new EnvVarBuilder()
+        .withName(JavaOptsEnvVar)
+        .withValue(javaOptions)
+        .build() :: prometheusEnvVars
     val envVarsFomPodConfigMap = podsConfig.pods
       .get(PodsConfig.CloudflowPodName)
       .flatMap { podConfig =>
@@ -418,12 +498,12 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[Ap
       .toList
       .flatten
       .map { envVar =>
-        envVar.name -> envVar
+        envVar.getName -> envVar
       }
       .toMap
 
     val defaultEnvironmentVariablesMap = defaultEnvironmentVariables.map { envVar =>
-      envVar.name -> envVar
+      envVar.getName -> envVar
     }.toMap
 
     (defaultEnvironmentVariablesMap ++ envVarsFomPodConfigMap).values.toList

@@ -53,6 +53,7 @@ import io.fabric8.kubernetes.api.model.{
   Secret,
   SecretList,
   SecretVolumeSourceBuilder,
+  Volume,
   VolumeBuilder,
   VolumeMount,
   VolumeMountBuilder
@@ -190,8 +191,8 @@ trait Runner[T <: HasMetadata] {
   def streamletChangeAction(
       app: App.Cr,
       runners: Map[String, Runner[_]],
-      streamletDeployment: StreamletDeployment,
-      secret: Secret): ResourceAction[HasMetadata]
+      streamletDeployment: App.Deployment,
+      secret: Secret): Action
 
   def serviceAccountAction(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
     Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
@@ -231,6 +232,7 @@ trait Runner[T <: HasMetadata] {
     new PolicyRuleBuilder()
       .withResources("events")
       .withVerbs("get", "create", "update")
+      .build()
 
   final val RuntimeMainClass = "cloudflow.runner.Runner"
   final val RunnerJarName = "cloudflow-runner.jar"
@@ -377,7 +379,7 @@ trait Runner[T <: HasMetadata] {
       }
       .getOrElse(Map())
 
-  def getVolumes(podsConfig: PodsConfig, podName: String): List[KubernetesResource] =
+  def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
@@ -436,7 +438,7 @@ object PodsConfig {
     val resources = {
       val limits = {
         container.resources.limits.cpu.map(v => "cpu" -> Quantity.parse(v.value)).toMap ++
-        container.resources.limits.memory.map(v => "mem" -> Quantity.parse(v.value)).toMap
+        container.resources.limits.memory.map(v => "memory" -> Quantity.parse(v.value)).toMap
       }
 
       val requests = {
@@ -485,17 +487,25 @@ object PodsConfig {
     val containers = pod.containers.map { case (k, v)   => k -> getContainerConfig(v) }
     val labels = pod.labels.map { case (k, v)           => k.key -> v.value }
     val annotations = pod.annotations.map { case (k, v) => k.key -> v.value }
-    val volumes: List[KubernetesResource] = pod.volumes.map {
-      case (name, volume) => //TODO doublecheck the volumes ...
+    val volumes: List[Volume] = pod.volumes.map {
+      case (name, volume) =>
         volume match {
           case secret: CloudflowConfig.SecretVolume =>
-            new SecretVolumeSourceBuilder()
-              .withNewSecretName(secret.name)
+            new VolumeBuilder()
+              .withName(name)
+              .withSecret(
+                new SecretVolumeSourceBuilder()
+                  .withNewSecretName(secret.name)
+                  .build())
               .build()
           case pvc: CloudflowConfig.PvcVolume =>
-            new PersistentVolumeClaimVolumeSourceBuilder()
-              .withClaimName(pvc.name)
-              .withReadOnly(pvc.readOnly)
+            new VolumeBuilder()
+              .withName(name)
+              .withPersistentVolumeClaim(
+                new PersistentVolumeClaimVolumeSourceBuilder()
+                  .withClaimName(pvc.name)
+                  .withReadOnly(pvc.readOnly)
+                  .build())
               .build()
           case unknown =>
             logger.error(s"Found unknown $unknown volume type skipping")
@@ -523,7 +533,7 @@ final case class PodConfig(
     containers: Map[String, ContainerConfig],
     labels: Map[String, String] = Map(),
     annotations: Map[String, String] = Map(),
-    volumes: List[KubernetesResource] = List())
+    volumes: List[Volume] = List())
 
 final case class ContainerConfig(
     env: List[EnvVar] = List(),
