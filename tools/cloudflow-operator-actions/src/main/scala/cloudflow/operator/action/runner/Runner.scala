@@ -117,22 +117,6 @@ trait Runner[T <: HasMetadata] {
 
   def runtime: String
 
-  // TODO: move this to a more appropriate place
-  def actionProvidedRetry[T <: HasMetadata: ClassTag](name: String, namespace: String)(fAction: Option[T] => Action)(
-      retry: Int = 60): Action = { // TODO: 60 looks quite a lot!
-    if (retry <= 0) {
-      Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
-      fAction(None)
-    } else {
-      Action.get[T](name, namespace) { res =>
-        res match {
-          case None    => actionProvidedRetry[T](name, namespace)(fAction)(retry - 1)
-          case Some(_) => fAction(res)
-        }
-      }
-    }
-  }
-
   def actions(newApp: App.Cr, currentApp: Option[App.Cr], runners: Map[String, Runner[_]]): Seq[Action] = {
 
     val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
@@ -158,7 +142,7 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         Seq(
           Action.createOrReplace(configResource(deployment, newApp)),
-          actionProvidedRetry[Secret](deployment.secretName, newApp.namespace)({
+          ActionExtension.providedRetry[Secret](deployment.secretName, newApp.namespace)({
             case Some(secret) =>
               Action.createOrReplace(resource(deployment, newApp, secret))
             case None =>

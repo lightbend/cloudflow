@@ -26,6 +26,7 @@ import com.typesafe.config._
 import org.slf4j.LoggerFactory
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic, _ }
+import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{
   ContainerState,
@@ -131,10 +132,6 @@ object CloudflowApplication {
       } else {
         Status.Pending
       }
-  }
-
-  def jsonToConfig(json: JsonNode): Config = {
-    ConfigFactory.parseString(Serialization.jsonMapper().writeValueAsString(json))
   }
 
   // TODO: this is code repetition (it was done through ser/deser) should we use the CR in the blueprint?

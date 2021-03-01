@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
 
+import scala.util.Try
+
 object App {
 
   // GroupName for our CR
