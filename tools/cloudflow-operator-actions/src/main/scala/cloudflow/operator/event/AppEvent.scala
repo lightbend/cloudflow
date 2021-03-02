@@ -23,8 +23,8 @@ import akka.kube.actions.Action
 import scala.collection.immutable.Seq
 import cloudflow.operator.action._
 import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference, WatchEvent }
-import io.fabric8.kubernetes.client.CustomResource
 import io.fabric8.kubernetes.client.informers.EventType
+import org.slf4j.LoggerFactory
 
 /**
  * Indicates that a cloudflow application was deployed or undeployed.
@@ -57,6 +57,7 @@ trait AppChangeEvent[T <: HasMetadata] {
 }
 
 object AppEvent {
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   // TODO: move this somewhere else?
   def toObjectReference(hm: HasMetadata): ObjectReference = {
@@ -97,7 +98,8 @@ object AppEvent {
           (currentApps + (appId -> _watchEvent), List(DeployEvent(cr, currentApp, toObjectReference(watchEventObject))))
         } else (currentApps, List())
       case EventType.ERROR =>
-        throw new Exception("Received Error event!")
+        log.error("Received an error event!")
+        (Map.empty[String, WatchEvent], List.empty[AppEvent])
     }
   }
 

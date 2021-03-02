@@ -91,11 +91,7 @@ object EventActions {
       message = s"Undeployed Cloudflow Application ${app.spec.appId} from namespace ${app.namespace}",
       objectReference = cause)
 
-  def streamletChangeEvent(
-      app: App.Cr,
-      streamlet: StreamletDeployment,
-      podName: String,
-      cause: ObjectReference): Action =
+  def streamletChangeEvent(app: App.Cr, streamlet: App.Deployment, podName: String, cause: ObjectReference): Action =
     createEvent(
       app = app,
       podName = podName,
