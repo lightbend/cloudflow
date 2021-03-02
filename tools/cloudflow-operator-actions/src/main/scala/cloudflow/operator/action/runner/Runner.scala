@@ -24,7 +24,7 @@ import com.typesafe.config._
 import org.slf4j._
 import cloudflow.blueprint.deployment._
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, ResourceAction }
+import akka.kube.actions.Action
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
 import io.fabric8.kubernetes.api.model.apps.Deployment
@@ -40,10 +40,12 @@ import io.fabric8.kubernetes.api.model.{
   ConfigMapBuilder,
   ContainerPort,
   ContainerPortBuilder,
+  DownwardAPIVolumeFileBuilder,
   EnvVar,
   EnvVarBuilder,
   HasMetadata,
   KubernetesResource,
+  ObjectFieldSelectorBuilder,
   OwnerReference,
   OwnerReferenceBuilder,
   PersistentVolumeClaimVolumeSourceBuilder,
@@ -58,40 +60,30 @@ import io.fabric8.kubernetes.api.model.{
   VolumeMount,
   VolumeMountBuilder
 }
-import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
-
-import scala.reflect.ClassTag
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
   val SecretMountPath = "/etc/cloudflow-runner-secret"
-  // TODO: FIXME
   val DownwardApiVolume =
     new VolumeBuilder()
       .withName("downward-api-volume")
+      .withNewDownwardAPI()
+      .withItems(
+        new DownwardAPIVolumeFileBuilder()
+          .withFieldRef(new ObjectFieldSelectorBuilder().withFieldPath("metadata.uid").build())
+          .withPath("metadata.uid")
+          .build(),
+        new DownwardAPIVolumeFileBuilder()
+          .withFieldRef(new ObjectFieldSelectorBuilder().withFieldPath("metadata.name").build())
+          .withPath("metadata.name")
+          .build(),
+        new DownwardAPIVolumeFileBuilder()
+          .withFieldRef(new ObjectFieldSelectorBuilder().withFieldPath("metadata.namespace").build())
+          .withPath("metadata.namespace")
+          .build())
+      .endDownwardAPI()
       .build()
 
-//     Volume(
-//     name = "downward-api-volume",
-//     source = Volume.DownwardApiVolumeSource(items = List(
-//       Volume.DownwardApiVolumeFile(
-//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.uid"),
-//         path = "metadata.uid",
-//         resourceFieldRef = None
-//       ),
-//       Volume.DownwardApiVolumeFile(
-//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.name"),
-//         path = "metadata.name",
-//         resourceFieldRef = None
-//       ),
-//       Volume.DownwardApiVolumeFile(
-//         fieldRef = Volume.ObjectFieldSelector(fieldPath = "metadata.namespace"),
-//         path = "metadata.namespace",
-//         resourceFieldRef = None
-//       )
-//     )
-//     )
-//   )
   val DownwardApiVolumeMount = {
     new VolumeMountBuilder()
       .withName(DownwardApiVolume.getName)
