@@ -7,6 +7,8 @@ object Dependencies {
   val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
+    val akka = "2.6.13"
+    val akkaHttp = "10.2.4"
     val fabric8 = "5.0.0"
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
@@ -35,6 +37,10 @@ object Dependencies {
 
     val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
+
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
+    val akkaStream = "com.typesafe.akka" %% "akka-stream" % Versions.akka
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val avro = "org.apache.avro" % "avro" % "1.8.2"
@@ -95,5 +101,8 @@ object Dependencies {
 
   val cloudflowOperatorActions =
     libraryDependencies ++= Seq(Compile.logback, Compile.kubeActions, Compile.kafkaClient, Compile.scalatest % Test)
+
+  val cloudflowOperator =
+    libraryDependencies ++= Seq(Compile.akkaActor, Compile.akkaStream, Compile.akkaHttp)
 
 }

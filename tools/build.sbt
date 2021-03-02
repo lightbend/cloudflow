@@ -198,3 +198,10 @@ lazy val cloudflowOperatorActions =
     .dependsOn(cloudflowConfig, cloudflowBlueprint)
     .settings(Dependencies.cloudflowOperatorActions)
     .settings(scalafmtOnCompile := true)
+
+lazy val cloudflowOperator =
+  Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
+    .enablePlugins(ScalafmtPlugin)
+    .dependsOn(cloudflowOperatorActions)
+    .settings(Dependencies.cloudflowOperator)
+    .settings(scalafmtOnCompile := true)

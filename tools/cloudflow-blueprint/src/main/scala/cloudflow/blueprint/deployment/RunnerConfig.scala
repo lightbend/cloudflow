@@ -42,16 +42,17 @@ object RunnerConfig extends DefaultJsonProtocol with ConfigJsonFormat {
     RunnerConfig(JsObject("cloudflow" -> JsObject(map)).compactPrint)
   }
 
-  private def toRunnerJson(appId: String, appVersion: String, deployment: StreamletDeployment) = JsObject(
-    "streamlet" -> JsObject(
-      "class_name" -> JsString(deployment.className),
-      "streamlet_ref" -> JsString(deployment.streamletName),
-      "context" -> JsObject(
-        "app_id" -> appId.toJson,
-        "app_version" -> appVersion.toJson,
-        "config" -> toJson(deployment.config),
-        "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
-        "port_mappings" -> toPortMappingsJson(deployment.portMappings))))
+  private def toRunnerJson(appId: String, appVersion: String, deployment: StreamletDeployment) =
+    JsObject(
+      "streamlet" -> JsObject(
+        "class_name" -> JsString(deployment.className),
+        "streamlet_ref" -> JsString(deployment.streamletName),
+        "context" -> JsObject(
+          "app_id" -> appId.toJson,
+          "app_version" -> appVersion.toJson,
+          "config" -> toJson(deployment.config),
+          "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
+          "port_mappings" -> toPortMappingsJson(deployment.portMappings))))
 
   private def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
 
