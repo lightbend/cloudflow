@@ -50,15 +50,16 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  // TODO: should we keep the conversion explicit?
   // TOOD: again Blueprint and CR overlapping
-  implicit def portMappingToTopic(pm: App.PortMapping): Topic = {
+  def portMappingToTopic(pm: App.PortMapping): Topic = {
     Topic(id = pm.id, cluster = pm.cluster, config = jsonToConfig(pm.config))
   }
 
   def apply(newApp: App.Cr, runners: Map[String, runner.Runner[_]], namedClustersNamespace: String): Seq[Action] = {
     def distinctTopics(app: App.Spec): Set[TopicInfo] =
-      app.deployments.flatMap(_.portMappings.values.filter(_.managed).map(topic => TopicInfo(topic))).toSet
+      app.deployments
+        .flatMap(_.portMappings.values.map(portMappingToTopic).filter(_.managed).map(topic => TopicInfo(topic)))
+        .toSet
 
     def deploymentOf(topicId: String)(deployment: App.Deployment) =
       deployment.portMappings.values.exists(_.id == topicId)
