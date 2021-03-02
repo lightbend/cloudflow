@@ -201,7 +201,7 @@ lazy val cloudflowOperatorActions =
 
 lazy val cloudflowOperator =
   Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
-    .enablePlugins(ScalafmtPlugin)
+    .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
     .dependsOn(cloudflowOperatorActions)
     .settings(Dependencies.cloudflowOperator)
-    .settings(scalafmtOnCompile := true)
+     .settings(scalafmtOnCompile := true)
