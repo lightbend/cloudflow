@@ -17,14 +17,23 @@
 package cloudflow.operator
 
 import java.lang.management.ManagementFactory
-
 import akka.actor._
-import scala.concurrent.Await
+import akka.datap.crd.App
 
+import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
 import scala.concurrent._
 import scala.concurrent.duration._
 import cloudflow.operator.action._
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import io.fabric8.kubernetes.api.model.{ ConfigMapBuilder, OwnerReference }
+import io.fabric8.kubernetes.api.model.apiextensions.v1.{
+  CustomResourceDefinitionBuilder,
+  CustomResourceDefinitionSpecBuilder
+}
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionSpec
+import io.fabric8.kubernetes.client.utils.Serialization
+import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
 
 object Main extends {
 
@@ -40,16 +49,20 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
+      // This should run before any fabric8 command
+      Serialization.jsonMapper().registerModule(DefaultScalaModule)
+
       val client = connectToKubernetes()
-      val ownerReferences = getDeploymentOwnerReferences(settings, client.usingNamespace(settings.podNamespace))
-      installProtocolVersion(client.usingNamespace(settings.podNamespace), ownerReferences)
-      installCRD(client)
+      checkCRD(client)
+
+      val ownerReferences = getDeploymentOwnerReferences(settings, client)
+      installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
-      val runners = Map(
-        AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
-        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
-        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
+      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults))
+      // TODO: re-enable this
+      //        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
+      //        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
       Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
       Operator.handleConfigurationUpdates(client, runners, ctx.podName)
       Operator.handleStatusUpdates(client, runners)
@@ -76,54 +89,54 @@ object Main extends {
       |${formatDeploymentInfo(settings)}
       """.stripMargin)
 
-  private def getDeploymentOwnerReferences(settings: Settings, client: skuber.api.client.KubernetesClient)(
-      implicit ec: ExecutionContext) =
-    Await.result(
-      client
-        .getInNamespace[Deployment](Name.ofCloudflowOperatorDeployment, settings.podNamespace)
-        .map(_.metadata.ownerReferences),
-      10 seconds)
+  private def getDeploymentOwnerReferences(settings: Settings, client: KubernetesClient): List[OwnerReference] = {
+    client
+      .apps()
+      .deployments()
+      .inNamespace(settings.podNamespace)
+      .withName(Name.ofCloudflowOperatorDeployment)
+      .get()
+      .getMetadata()
+      .getOwnerReferences()
+      .asScala
+      .toList
+  }
 
-  private def connectToKubernetes()(implicit system: ActorSystem) = {
-    val conf = Configuration.defaultK8sConfig
-    val client = k8sInit(conf).usingNamespace("")
-    system.log.info(s"Connected to Kubernetes cluster: ${conf.currentContext.cluster.server}")
+  private def connectToKubernetes()(implicit system: ActorSystem): KubernetesClient = {
+    val conf = Config.autoConfigure(null)
+    val client = new DefaultKubernetesClient(conf).inAnyNamespace()
+    system.log.info(s"Connected to Kubernetes cluster: ${conf.getCurrentContext.getContext.getCluster}")
     client
   }
 
   private def exitWithFailure() = System.exit(-1)
 
-  //TODO move to helm charts and add schema.
-  private def installCRD(client: skuber.api.client.KubernetesClient)(implicit ec: ExecutionContext): Unit = {
-    val crdTimeout = 20.seconds
-    // TODO check if version is the same, if not, also create.
-    Await.result(
-      client.getOption[CustomResourceDefinition](CloudflowApplication.CRD.name).flatMap { result =>
-        result.fold(client.create(CloudflowApplication.CRD)) { crd =>
-          if (crd.spec.version != CloudflowApplication.CRD.spec.version) {
-            client.create(CloudflowApplication.CRD)
-          } else {
-            Future.successful(crd)
-          }
-        }
-      },
-      crdTimeout)
+  private def checkCRD(client: KubernetesClient)(implicit ec: ExecutionContext): Unit = {
+    Option(
+      client
+        .apiextensions()
+        .v1beta1()
+        .customResourceDefinitions()
+        .withName(App.ResourceName)
+        .get()) match {
+      case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
+        println(s"CRD found at version ${App.GroupVersion}")
+      case Some(crd) =>
+        throw new Exception(s"Incorrect CRD version, found: ${crd.getSpec.getVersion}, expected: ${App.GroupVersion}")
+      case _ =>
+        throw new Exception(s"CRD not installed!")
+    }
   }
 
-  private def installProtocolVersion(client: skuber.api.client.KubernetesClient, ownerReferences: List[OwnerReference])(
-      implicit ec: ExecutionContext): Unit = {
-    val protocolVersionTimeout = 20.seconds
-    Await.result(
-      client.getOption[ConfigMap](Operator.ProtocolVersionConfigMapName).flatMap {
-        _.fold(client.create(Operator.ProtocolVersionConfigMap(ownerReferences))) { configMap =>
-          if (configMap.data.getOrElse(Operator.ProtocolVersionKey, "") != Operator.ProtocolVersion) {
-            client.update(configMap.copy(data = Map(Operator.ProtocolVersionKey -> Operator.ProtocolVersion)))
-          } else {
-            Future.successful(configMap)
-          }
-        }
-      },
-      protocolVersionTimeout)
+  private def installProtocolVersion(
+      settings: Settings,
+      client: KubernetesClient,
+      ownerReferences: List[OwnerReference]): Unit = {
+    client
+      .configMaps()
+      .inNamespace(settings.podNamespace)
+      .withName(Operator.ProtocolVersionConfigMapName)
+      .createOrReplace(Operator.ProtocolVersionConfigMap(ownerReferences))
   }
 
   private def getGCInfo: List[(String, javax.management.ObjectName)] = {

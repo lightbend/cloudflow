@@ -47,6 +47,8 @@ import scala.jdk.CollectionConverters._
  */
 object CloudflowApplication {
 
+  // TODO remove this class, rely on App.Cr, and keep just the methods for handling the status
+
   implicit val adapter =
     CustomResourceAdapter[App.Cr, App.List](App.customResourceDefinitionContext)
 

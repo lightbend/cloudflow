@@ -204,4 +204,19 @@ lazy val cloudflowOperator =
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
     .dependsOn(cloudflowOperatorActions)
     .settings(Dependencies.cloudflowOperator)
-     .settings(scalafmtOnCompile := true)
+    .settings(scalafmtOnCompile := true)
+    .settings(
+      buildInfoKeys := Seq[BuildInfoKey](
+            name,
+            version,
+            scalaVersion,
+            sbtVersion,
+            BuildInfoKey.action("buildTime") {
+              java.time.Instant.now().toString
+            },
+            BuildInfoKey.action("buildUser") {
+              sys.props.getOrElse("user.name", "unknown")
+            }
+          ),
+      buildInfoPackage := "cloudflow.operator"
+    )
