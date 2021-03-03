@@ -20,18 +20,10 @@ import java.lang.management.ManagementFactory
 import akka.actor._
 import akka.datap.crd.App
 
-import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
-import scala.concurrent._
-import scala.concurrent.duration._
 import cloudflow.operator.action._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import io.fabric8.kubernetes.api.model.{ ConfigMapBuilder, OwnerReference }
-import io.fabric8.kubernetes.api.model.apiextensions.v1.{
-  CustomResourceDefinitionBuilder,
-  CustomResourceDefinitionSpecBuilder
-}
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionSpec
+import io.fabric8.kubernetes.api.model.OwnerReference
 import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
 
@@ -54,6 +46,10 @@ object Main extends {
       Serialization.jsonMapper().registerModule(DefaultScalaModule)
 
       val client = connectToKubernetes()
+
+      // this registers deserializer
+      client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
+
       checkCRD(settings, client)
 
       val ownerReferences = getDeploymentOwnerReferences(settings, client)
@@ -64,9 +60,7 @@ object Main extends {
       // TODO: re-enable this
       //        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
       //        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
-      Operator.handleAppEvents(client, runners, ctx.podName, ctx.podNamespace)
-      Operator.handleConfigurationUpdates(client, runners, ctx.podName)
-      Operator.handleStatusUpdates(client, runners)
+      Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {
       case t: Throwable =>
         system.log.error(t, "Unexpected error starting cloudflow operator, terminating.")
@@ -91,16 +85,20 @@ object Main extends {
       """.stripMargin)
 
   private def getDeploymentOwnerReferences(settings: Settings, client: KubernetesClient): List[OwnerReference] = {
-    client
-      .apps()
-      .deployments()
-      .inNamespace(settings.podNamespace)
-      .withName(Name.ofCloudflowOperatorDeployment)
-      .get()
-      .getMetadata()
-      .getOwnerReferences()
-      .asScala
-      .toList
+    Option(
+      client
+        .apps()
+        .deployments()
+        .inNamespace(settings.podNamespace)
+        .withName(Name.ofCloudflowOperatorDeployment)
+        .get())
+      .map {
+        _.getMetadata()
+          .getOwnerReferences()
+          .asScala
+          .toList
+      }
+      .getOrElse(List())
   }
 
   private def connectToKubernetes()(implicit system: ActorSystem): KubernetesClient = {

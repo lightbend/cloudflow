@@ -38,7 +38,8 @@ import io.fabric8.kubernetes.api.model.{
 }
 import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.api.{ model => fabric8 }
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.{ JsonNode, PropertyNamingStrategy }
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 import scala.jdk.CollectionConverters._
 
@@ -47,7 +48,7 @@ import scala.jdk.CollectionConverters._
  */
 object CloudflowApplication {
 
-  // TODO remove this class, rely on App.Cr, and keep just the methods for handling the status
+  // TODO remove this class, rely on App.Cr, and keep just the methods for handling and transforming  the status
 
   implicit val adapter =
     CustomResourceAdapter[App.Cr, App.List](App.customResourceDefinitionContext)
@@ -61,6 +62,11 @@ object CloudflowApplication {
       .build()
 
     App.Cr(spec = applicationSpec, metadata = metadata)
+  }
+
+  // TODO: remove the need for this conversion
+  def toCrStatus(status: Status): App.AppStatus = {
+    Serialization.jsonMapper().readValue(Serialization.jsonMapper().writeValueAsString(status), classOf[App.AppStatus])
   }
 
   // TODO: copy-pasted from CLI refactor?
@@ -160,7 +166,7 @@ object CloudflowApplication {
           k -> Topic(id = v.id, cluster = v.cluster, config = jsonToConfig(v.config))
       },
       volumeMounts = {
-        if (deployment.volumeMounts.isEmpty) None
+        if (deployment.volumeMounts == null || deployment.volumeMounts.isEmpty) None
         else
           Some(deployment.volumeMounts.map { vmd =>
             VolumeMountDescriptor(
@@ -174,6 +180,7 @@ object CloudflowApplication {
   }
 
   // the status is created with the expected number of streamlet statuses, derived from the CloudflowApplication.Spec, see companion
+  @JsonNaming(classOf[PropertyNamingStrategy.SnakeCaseStrategy])
   case class Status(
       appId: String,
       appVersion: String,
@@ -229,7 +236,21 @@ object CloudflowApplication {
     }
 
     def toAction(app: App.Cr): Action = {
-      Action.Cr.updateStatus(app)
+      Action.Cr.get[App.Cr](app.name, app.namespace) { current: Option[App.Cr] =>
+        val res =
+          current match {
+            case Some(curr) =>
+              val metadata = app.getMetadata
+              metadata.setResourceVersion(curr.getMetadata.getResourceVersion)
+              app.setMetadata(metadata)
+              app.copy(status = toCrStatus(this))
+            case _ =>
+              app.copy(status = toCrStatus(this))
+          }
+
+        Action.Cr.updateStatus(res)
+      }
+
     }
   }
 
@@ -242,6 +263,7 @@ object CloudflowApplication {
       StreamletStatus(streamletName, Some(expectedPodCount), podStatuses)
   }
 
+  @JsonNaming(classOf[PropertyNamingStrategy.SnakeCaseStrategy])
   case class StreamletStatus(
       streamletName: String,
       // Added as Option for backwards compatibility
@@ -285,7 +307,7 @@ object CloudflowApplication {
       val containerStates = Try { status.getContainerStatuses.asScala.map(_.getState).toList }.getOrElse(List())
 
       // https://github.com/kubernetes/kubectl/blob/27fa797464ff6684ec591c46c69d5e013998a0d1/pkg/describe/describe.go#L698
-      val st = if (pod.getMetadata.getDeletionTimestamp.nonEmpty) {
+      val st = if (pod.getMetadata.getDeletionTimestamp != null && pod.getMetadata.getDeletionTimestamp.nonEmpty) {
         Terminating
       } else {
         Try(status.getPhase).toOption match {
@@ -322,6 +344,7 @@ object CloudflowApplication {
    * Status of the pod.
    * ready can be "True", "False" or "Unknown"
    */
+  @JsonNaming(classOf[PropertyNamingStrategy.SnakeCaseStrategy])
   case class PodStatus(
       name: String,
       status: String,

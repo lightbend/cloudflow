@@ -201,6 +201,7 @@ trait Runner[T <: HasMetadata] {
     new RoleBindingBuilder()
       .withNewMetadata()
       .withName(Name.ofRoleBinding)
+      .withNamespace(namespace)
       .withLabels(labels(Name.ofRoleBinding).asJava)
       .withOwnerReferences(ownerReferences: _*)
       .endMetadata()
@@ -222,6 +223,7 @@ trait Runner[T <: HasMetadata] {
 
   val createEventPolicyRule =
     new PolicyRuleBuilder()
+      .withApiGroups("")
       .withResources("events")
       .withVerbs("get", "create", "update")
       .build()
@@ -306,8 +308,7 @@ trait Runner[T <: HasMetadata] {
   }
 
   private def getData(secret: Secret, key: String): String = {
-    // TODO: Check if I should decode explicitly base64 or getStringData
-    secret.getData().getOrDefault(key, "")
+    Base64Helper.decode(secret.getData.getOrDefault(key, ""))
   }
 
   def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =

@@ -33,6 +33,7 @@ import cloudflow.operator.flow._
 import io.fabric8.kubernetes.api.model.{
   ConfigMapBuilder,
   HasMetadata,
+  KubernetesResource,
   OwnerReference,
   Pod,
   PodList,
@@ -43,7 +44,7 @@ import io.fabric8.kubernetes.api.model.{
 }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.base.OperationContext
-import io.fabric8.kubernetes.client.informers.{ EventType, ResourceEventHandler }
+import io.fabric8.kubernetes.client.informers.{ EventType, ResourceEventHandler, SharedInformerFactory }
 import io.fabric8.kubernetes.client.informers.cache.Cache
 
 import java.util.concurrent.atomic.AtomicReference
@@ -84,23 +85,21 @@ object Operator {
 
   val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
 
-  // TODO: doublecheck
   private lazy val fabric8ExecutionContext = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
-  private val actionExecutorRef = new AtomicReference[Fabric8ActionExecutor]()
-  private def getOrSetActionExecutor(client: KubernetesClient) = {
-    actionExecutorRef.compareAndSet(null, new Fabric8ActionExecutor(client, fabric8ExecutionContext))
-    actionExecutorRef.get()
-  }
 
-  def handleAppEvents(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String, podNamespace: String)(
+  def handleEvents(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String, podNamespace: String)(
       implicit system: ActorSystem,
       mat: Materializer,
       ec: ExecutionContext) = {
+
+    // handleAppEvents
     val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = getOrSetActionExecutor(client)
+    val actionExecutor = new Fabric8ActionExecutor(client, fabric8ExecutionContext)
+
+    val sharedInformerFactory = client.informers()
 
     runStream(
-      watchCr(client, DefaultWatchOptions)
+      watchCr(sharedInformerFactory, DefaultWatchOptions)
         .via(AppEventFlow.fromWatchEvent(logAttributes))
         .via(AppEventFlow.toAction(runners, podName, podNamespace))
         .via(executeActions(actionExecutor, logAttributes))
@@ -115,21 +114,15 @@ object Operator {
         },
       "The actions stream completed unexpectedly, terminating.",
       "The actions stream failed, terminating.")
-  }
 
-  def handleConfigurationUpdates(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String)(
-      implicit system: ActorSystem,
-      mat: Materializer,
-      ec: ExecutionContext) = {
-    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = getOrSetActionExecutor(client)
+    // handleConfigurationUpdates
     // only watch secrets that contain output config
     val watchOptions = Map(
       CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow,
       CloudflowLabels.ConfigFormat -> CloudflowLabels.StreamletDeploymentConfigFormat)
 
     runStream(
-      watchSecret(client, watchOptions)
+      watchSecret(sharedInformerFactory, watchOptions)
         .via(StreamletChangeEventFlow.fromWatchEvent())
         .via(mapToAppInSameNamespace(client))
         .via(StreamletChangeEventFlow.toConfigUpdateAction(runners, podName))
@@ -137,15 +130,10 @@ object Operator {
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",
       "The config updates stream failed, terminating.")
-  }
 
-  def handleStatusUpdates(
-      client: KubernetesClient,
-      runners: Map[String, Runner[_]])(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Debug)
-    val actionExecutor = getOrSetActionExecutor(client)
+    // handleStatusUpdates
     runStream(
-      watchPod(client, DefaultWatchOptions)
+      watchPod(sharedInformerFactory, DefaultWatchOptions)
         .via(StatusChangeEventFlow.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
         .via(mapToAppInSameNamespace(client))
@@ -154,12 +142,13 @@ object Operator {
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
       "The status changes stream failed, terminating.")
+
+    sharedInformerFactory.startAllRegisteredInformers()
   }
+
   private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action, Action, NotUsed] =
     Flow[Action]
       .mapAsync(1)(action => actionExecutor.execute(action))
-      // TODO: check the following line!!!
-      // .log("action", Action.log)
       .withAttributes(logAttributes)
 
   /**
@@ -182,52 +171,56 @@ object Operator {
       }.map { cr => cr -> changeEvent }
     }
 
-  private def getEventHandler[T <: HasMetadata](fn: WatchEvent => Unit) = {
+  private def getEventHandler[T <: KubernetesResource](fn: WatchEvent => Unit) = {
 
     new ResourceEventHandler[T]() {
       override def onAdd(elem: T): Unit = {
-        fn(
-          // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-          new WatchEventBuilder()
-            .withObject(elem)
-            .withType(EventType.ADDITION.toString)
-            .build())
+        val we = new WatchEventBuilder()
+          .withType(EventType.ADDITION.toString)
+          .build()
+
+        // withObject in the builder doesn't work
+        we.setObject(elem)
+        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
+        fn(we)
       }
 
       override def onUpdate(oldElem: T, newElem: T): Unit = {
-        fn(
-          // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-          new WatchEventBuilder()
-            .withObject(newElem)
-            .withType(EventType.UPDATION.toString)
-            .build())
+        val we = new WatchEventBuilder()
+          .withType(EventType.UPDATION.toString)
+          .build()
+
+        // withObject in the builder doesn't work
+        we.setObject(newElem)
+        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
+        fn(we)
       }
 
       override def onDelete(elem: T, deletedFinalStateUnknown: Boolean): Unit = {
-        fn(
-          // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-          new WatchEventBuilder()
-            .withObject(elem)
-            .withType(EventType.DELETION.toString)
-            .build())
+        val we = new WatchEventBuilder()
+          .withType(EventType.DELETION.toString)
+          .build()
+
+        // withObject in the builder doesn't work
+        we.setObject(elem)
+        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
+        fn(we)
       }
     }
   }
 
-  private def watchCr(client: KubernetesClient, options: Map[String, String])(
+  private def watchCr(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
       implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
 
     // TODO probably should be an atomic ref as well
     val informer =
-      client
-        .informers()
+      sharedInformerFactory
         .sharedIndexInformerForCustomResource(
           App.customResourceDefinitionContext,
           classOf[App.Cr],
           classOf[App.List],
           new OperationContext().withLabels(options.asJava),
-          // TODO: 1 minute? -> akka operator is set to 10 minutes ... doublecheck
-          1000L * 60L * 1L)
+          1000L * 60L * 10L)
 
     // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
@@ -249,18 +242,17 @@ object Operator {
     source
   }
 
-  private def watchSecret(client: KubernetesClient, options: Map[String, String])(
+  private def watchSecret(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
       implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
 
     // TODO probably should be an atomic ref as well
     val informer =
-      client
-        .informers()
+      sharedInformerFactory
         .sharedIndexInformerFor(
           classOf[Secret],
           classOf[SecretList],
           new OperationContext().withLabels(options.asJava),
-          1000L * 60L * 1L)
+          1000L * 60L * 10L)
 
     // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
@@ -282,18 +274,17 @@ object Operator {
     source
   }
 
-  private def watchPod(client: KubernetesClient, options: Map[String, String])(
+  private def watchPod(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
       implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
 
     // TODO probably should be an atomic ref as well
     val informer =
-      client
-        .informers()
+      sharedInformerFactory
         .sharedIndexInformerFor(
           classOf[Pod],
           classOf[PodList],
           new OperationContext().withLabels(options.asJava),
-          1000L * 60L * 1L)
+          1000L * 60L * 10L)
 
     // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
@@ -305,7 +296,7 @@ object Operator {
     def enqueueTask(event: WatchEvent): Unit = {
       val key = Cache.metaNamespaceKeyFunc(event.getObject)
 
-      log.info("Enqueue SecretChanged with key [{}]", key)
+      log.info("Enqueue PodChanged with key [{}]", key)
 
       sourceMat.offer(event)
     }

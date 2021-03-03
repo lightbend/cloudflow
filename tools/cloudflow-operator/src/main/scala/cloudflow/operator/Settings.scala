@@ -132,6 +132,7 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 //        "prometheus-rules/base.yaml",
 //        "prometheus-rules/flink.yaml",
 //        "prometheus-rules/kafka-client.yaml")
+    case _ => ""
   }
 
   private def appendResourcesToString(paths: String*): String =

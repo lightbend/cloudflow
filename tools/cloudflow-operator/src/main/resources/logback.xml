@@ -12,24 +12,18 @@
     <appender-ref ref="STDOUT"/>
   </appender>
 
+<!--  <root level="${LOGLEVEL_ROOT:-info}">-->
+<!--    <appender-ref ref="ASYNCSTDOUT"/>-->
+<!--  </root>-->
+
+<!--  <logger name="akka"                                     level="${LOGLEVEL_AKKA:-info}" />-->
+<!--  <logger name="org.apache.kafka"                         level="${LOGLEVEL_KAFKA_ADMIN:-warn}" />-->
+
+
   <root level="${LOGLEVEL_ROOT:-info}">
     <appender-ref ref="ASYNCSTDOUT"/>
   </root>
 
   <logger name="akka"                                     level="${LOGLEVEL_AKKA:-info}" />
-  <logger name="skuber.api"                               level="${LOGLEVEL_SKUBER:-warn}" />
   <logger name="org.apache.kafka"                         level="${LOGLEVEL_KAFKA_ADMIN:-warn}" />
-  <logger name="com.zaxxer.hikari"                        level="${log.hikari:-info}" />
-  <logger name="com.zaxxer.hikari.pool"                   level="${log.hikari:-info}" />
-
-  <logger name="slick"                                    level="${log.slick:-info}" />
-  <logger name="slick.basic.BasicBackend.action"          level="${log.action:-info}" />
-  <logger name="slick.basic.BasicBackend.stream"          level="${log.stream:-info}" />
-  <logger name="slick.compiler"                           level="${log.qcomp:-info}" />
-  <logger name="slick.jdbc.DriverDataSource"              level="${log.jdbc.driver:-info}" />
-  <logger name="slick.jdbc.JdbcBackend.statement"         level="${log.jdbc.statement:-info}" />
-  <logger name="slick.jdbc.JdbcBackend.parameter"         level="${log.jdbc.parameter:-info}" />
-  <logger name="slick.jdbc.JdbcBackend.benchmark"         level="${log.jdbc.bench:-info}" />
-  <logger name="slick.jdbc.StatementInvoker.result"       level="${log.jdbc.result:-info}" />
-  <logger name="slick.jdbc.JdbcModelBuilder"              level="${log.createModel:-info}" />
 </configuration>

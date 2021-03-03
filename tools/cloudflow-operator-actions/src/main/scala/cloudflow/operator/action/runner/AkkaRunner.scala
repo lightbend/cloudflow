@@ -16,7 +16,6 @@
 
 package cloudflow.operator.action.runner
 
-// import cloudflow.blueprint.deployment._
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.deployment.PrometheusConfig
@@ -38,24 +37,18 @@ import io.fabric8.kubernetes.api.model.rbac.{
   SubjectBuilder
 }
 import io.fabric8.kubernetes.api.model.{
-  ConfigMapVolumeSource,
   ConfigMapVolumeSourceBuilder,
-  Container,
   ContainerBuilder,
   ContainerPortBuilder,
   EnvVarBuilder,
   ExecActionBuilder,
-  LabelSelectorBuilder,
-  LabelSelectorRequirementBuilder,
   OwnerReference,
   OwnerReferenceBuilder,
-  PersistentVolumeClaimVolumeSource,
   PersistentVolumeClaimVolumeSourceBuilder,
   PodSecurityContextBuilder,
   PodSpecBuilder,
   PodTemplateSpecBuilder,
   ProbeBuilder,
-  Quantity,
   ResourceRequirementsBuilder,
   Secret,
   SecretVolumeSourceBuilder,
@@ -63,8 +56,6 @@ import io.fabric8.kubernetes.api.model.{
   VolumeBuilder,
   VolumeMountBuilder
 }
-
-import java.text.Format
 import scala.jdk.CollectionConverters._
 
 object AkkaRunner {
@@ -74,9 +65,6 @@ object AkkaRunner {
   val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"
   val DefaultReplicas = 1
   val ImagePullPolicy = "Always"
-
-  val HealthCheckPath = "/checks/healthy"
-  val ReadyCheckPath = "/checks/ready"
 
   val ProbeInitialDelaySeconds = 10
   val ProbeTimeoutSeconds = 1
@@ -174,6 +162,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
   private val createAkkaClusterPolicyRule = {
     new PolicyRuleBuilder()
+      .withApiGroups("")
       .withResources("pods")
       .withVerbs("get", "list", "watch")
       .build()
@@ -329,7 +318,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val fileNameToCheckLiveness = s"${deployment.streamletName}-live.txt"
     val fileNameToCheckReadiness = s"${deployment.streamletName}-ready.txt"
 
-    val tempDir = System.getProperty("java.io.tmpdir")
+    val tempDir = "/tmp"
     val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
     val container = c
@@ -424,13 +413,9 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         .endMetadata()
         .withSpec(
           new DeploymentSpecBuilder()
-            .withSelector(
-              new LabelSelectorBuilder()
-                .withMatchExpressions(new LabelSelectorRequirementBuilder()
-                  .withKey(CloudflowLabels.Name)
-                  .withValues(podName)
-                  .build())
-                .build())
+            .withNewSelector()
+            .withMatchLabels(Map(CloudflowLabels.Name -> podName).asJava)
+            .endSelector()
             .withReplicas(Integer.valueOf(deployment.replicas.getOrElse(DefaultReplicas)))
             .withTemplate(template)
             .withStrategy(deploymentStrategy)

@@ -204,8 +204,10 @@ lazy val cloudflowOperator =
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
     .dependsOn(cloudflowOperatorActions)
     .settings(Dependencies.cloudflowOperator)
-    .settings(scalafmtOnCompile := true)
     .settings(
+      scalafmtOnCompile := true,
+      run / fork := true,
+      Global / cancelable := true,
       buildInfoKeys := Seq[BuildInfoKey](
             name,
             version,

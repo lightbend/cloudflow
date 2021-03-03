@@ -24,19 +24,24 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) =
-    Http()
+  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) = {
+    val bind = Http()
       .bindAndHandle(route, settings.api.bindInterface, settings.api.bindPort)
-      .onComplete {
-        case Success(serverBinding) =>
-          system.log.info(s"Bound to ${serverBinding.localAddress}.")
-        case Failure(e) =>
-          system.log.error(e, s"Failed to bind.")
-          system.terminate().foreach { _ =>
-            println("Exiting, could not bind http.")
-            sys.exit(-1)
-          }
-      }
+
+    bind.onComplete {
+      case Success(serverBinding) =>
+        system.log.info(s"Bound to ${serverBinding.localAddress}.")
+      case Failure(e) =>
+        system.log.error(e, s"Failed to bind.")
+        system.terminate().foreach { _ =>
+          println("Exiting, could not bind http.")
+          sys.exit(-1)
+        }
+    }
+
+    bind
+  }
+
   def route =
     // format: OFF
     path("robots.txt") {

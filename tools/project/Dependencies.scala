@@ -40,6 +40,7 @@ object Dependencies {
 
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % Versions.akka
+    val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % Versions.akka
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
@@ -103,6 +104,6 @@ object Dependencies {
     libraryDependencies ++= Seq(Compile.logback, Compile.kubeActions, Compile.kafkaClient, Compile.scalatest % Test)
 
   val cloudflowOperator =
-    libraryDependencies ++= Seq(Compile.akkaActor, Compile.akkaStream, Compile.akkaHttp)
+    libraryDependencies ++= Seq(Compile.akkaActor, Compile.akkaStream, Compile.akkaHttp, Compile.akkaSlf4j)
 
 }

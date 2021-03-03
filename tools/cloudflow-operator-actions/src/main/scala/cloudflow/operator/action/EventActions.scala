@@ -23,7 +23,9 @@ import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{ EventBuilder, EventSourceBuilder, ObjectReference }
+import io.fabric8.kubernetes.client.VersionInfo.VersionKeys
 
+import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters._
 
 object EventActions {
@@ -127,9 +129,8 @@ object EventActions {
       .withReason(reason)
       .withMessage(message)
       .withType(`type`.toString)
-      // TODO check the date formats
-      .withFirstTimestamp(eventTime.toString)
-      .withLastTimestamp(eventTime.toString)
+      .withFirstTimestamp(eventTime.format(DateTimeFormatter.ISO_INSTANT))
+      .withLastTimestamp(eventTime.format(DateTimeFormatter.ISO_INSTANT))
       .withCount(1)
       .withSource(OperatorSource)
       .build()
