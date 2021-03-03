@@ -49,11 +49,12 @@ object Main extends {
 
       HealthChecks.serve(settings)
 
+      // TODO: share with the CLI!
       // This should run before any fabric8 command
       Serialization.jsonMapper().registerModule(DefaultScalaModule)
 
       val client = connectToKubernetes()
-      checkCRD(client)
+      checkCRD(settings, client)
 
       val ownerReferences = getDeploymentOwnerReferences(settings, client)
       installProtocolVersion(settings, client, ownerReferences)
@@ -111,7 +112,8 @@ object Main extends {
 
   private def exitWithFailure() = System.exit(-1)
 
-  private def checkCRD(client: KubernetesClient)(implicit ec: ExecutionContext): Unit = {
+  private def checkCRD(settings: Settings, client: KubernetesClient)(implicit system: ActorSystem): Unit = {
+    // TODO: should this go to helm charts or not
     Option(
       client
         .apiextensions()
@@ -120,11 +122,15 @@ object Main extends {
         .withName(App.ResourceName)
         .get()) match {
       case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
-        println(s"CRD found at version ${App.GroupVersion}")
-      case Some(crd) =>
-        throw new Exception(s"Incorrect CRD version, found: ${crd.getSpec.getVersion}, expected: ${App.GroupVersion}")
+        system.log.info(s"CRD found at version ${App.GroupVersion}")
       case _ =>
-        throw new Exception(s"CRD not installed!")
+        client
+          .apiextensions()
+          .v1beta1()
+          .customResourceDefinitions()
+          .inNamespace(settings.podNamespace)
+          .withName(App.ResourceName)
+          .create(App.Crd)
     }
   }
 

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder
 import io.fabric8.kubernetes.api.model.{ KubernetesResource, Namespaced, ObjectMeta }
 import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
@@ -31,9 +32,13 @@ object App {
   // Kind for our CR
   final val Kind = "CloudflowApplication"
 
+  final val KindList = s"${Kind}List"
+
   final val Singular = "cloudflowapplication"
 
   final val Plural = "cloudflowapplications"
+
+  final val Short = "cloudflowapp"
 
   final val ApiVersion = GroupName + "/" + GroupVersion
 
@@ -48,6 +53,77 @@ object App {
       .withGroup(GroupName)
       .withPlural(Plural)
       .withScope(Scope)
+      .build()
+//  reference CRD:
+//
+//  apiVersion: apiextensions.k8s.io/v1
+//  kind: CustomResourceDefinition
+//  metadata:
+//    creationTimestamp: "2021-03-03T11:21:14Z"
+//  generation: 1
+//  name: cloudflowapplications.cloudflow.lightbend.com
+//  resourceVersion: "15091"
+//  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/cloudflowapplications.cloudflow.lightbend.com
+//  uid: 799060f2-c4ae-4420-84bc-a75638df7879
+//  spec:
+//    conversion:
+//  strategy: None
+//  group: cloudflow.lightbend.com
+//  names:
+//    kind: CloudflowApplication
+//  listKind: CloudflowApplicationList
+//  plural: cloudflowapplications
+//  shortNames:
+//    - cloudflowapp
+//      singular: cloudflowapplication
+//  preserveUnknownFields: true
+//  scope: Namespaced
+//  versions:
+//    - name: v1alpha1
+//  served: true
+//  storage: true
+//  subresources:
+//    status: {}
+//  status:
+//    acceptedNames:
+//  kind: CloudflowApplication
+//  listKind: CloudflowApplicationList
+//  plural: cloudflowapplications
+//  shortNames:
+//    - cloudflowapp
+//      singular: cloudflowapplication
+//  conditions:
+//    - lastTransitionTime: "2021-03-03T11:21:14Z"
+//  message: no conflicts found
+//  reason: NoConflicts
+//  status: "True"
+//  type: NamesAccepted
+//  - lastTransitionTime: "2021-03-03T11:21:14Z"
+//  message: the initial names have been accepted
+//    reason: InitialNamesAccepted
+//  status: "True"
+//  type: Established
+//  storedVersions:
+//    - v1alpha1
+  val Crd =
+    new CustomResourceDefinitionBuilder()
+      .withNewMetadata()
+      .withName(ResourceName)
+      .endMetadata()
+      .withNewSpec()
+      .withGroup(GroupName)
+      .withNewNames()
+      .withNewKind(Kind)
+      .withListKind(KindList)
+      .withSingular(Singular)
+      .withPlural(Plural)
+      .withShortNames(Short)
+      .endNames()
+      .withPreserveUnknownFields(true)
+      .endSpec()
+      .withNewStatus()
+      .withStoredVersions(GroupVersion)
+      .endStatus()
       .build()
 
   @JsonCreator
