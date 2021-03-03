@@ -34,7 +34,7 @@ object HealthCheckFiles {
     s"${streamletRef}-live.txt"
 
   private def createTempFile(relativePath: String, streamletRef: String): Unit = {
-    val tempDir = System.getProperty("java.io.tmpdir")
+    val tempDir = "/tmp"
     val path    = java.nio.file.Paths.get(tempDir, relativePath)
 
     Files.write(path, s"an akka streamlet $streamletRef".getBytes(StandardCharsets.UTF_8))

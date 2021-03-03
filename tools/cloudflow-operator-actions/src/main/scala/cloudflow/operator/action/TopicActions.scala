@@ -20,7 +20,7 @@ import akka.datap.crd.App
 import akka.kube.actions.{ Action, ResourceAction }
 
 import java.nio.charset.StandardCharsets
-import java.util.Collections
+import java.util.{ Base64, Collections }
 import scala.collection.immutable._
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.action.Common.jsonToConfig
+import cloudflow.operator.action.runner.Base64Helper
 import cloudflow.operator.event.ConfigInput
 import io.fabric8.kubernetes.api.model.{ ConfigMap, ConfigMapBuilder, Secret }
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -139,8 +140,7 @@ object TopicActions {
   }
 
   def getData(secret: Secret): String =
-    // TODO: check base64 encoding / deconding
-    Option(secret.getData.get(ConfigInput.SecretDataKey)).getOrElse("")
+    Option(secret.getData.get(ConfigInput.SecretDataKey)).map(Base64Helper.decode).getOrElse("")
 
   def getConfigFromSecret(secret: Secret): Config = {
     val str = getData(secret)
@@ -326,8 +326,9 @@ object TopicActions {
     private var admins = Map.empty[String, Admin]
 
     def getOrCreate(bootstrapServers: String, brokerConfig: Map[String, AnyRef]): Admin =
-      if (admins.contains(bootstrapServers)) admins(bootstrapServers)
-      else {
+      if (admins.contains(bootstrapServers)) {
+        admins(bootstrapServers)
+      } else {
         val conf = brokerConfig + (AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> bootstrapServers)
         val a = Admin.create(conf.asJava)
         admins = admins + (bootstrapServers -> a)
