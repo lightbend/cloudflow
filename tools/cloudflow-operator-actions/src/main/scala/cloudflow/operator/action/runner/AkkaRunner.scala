@@ -237,37 +237,27 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val userConfiguredPorts = getContainerPorts(podsConfig, PodsConfig.CloudflowPodName)
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val pvcRefVolumes =
-      streamletToDeploy.map(_.descriptor.volumeMounts.flatMap { mount =>
-        mount.pvcName match {
-          case Some(name) =>
-            Some(
-              new VolumeBuilder()
-                .withName(name)
-                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                  .withClaimName(name)
-                  .build())
-                .build())
-          case _ => None
-        }
+      streamletToDeploy.map(_.descriptor.volumeMounts.map { mount =>
+        new VolumeBuilder()
+          .withName(mount.appId)
+          .withPersistentVolumeClaim(
+            new PersistentVolumeClaimVolumeSourceBuilder()
+              .withClaimName(mount.pvcName.getOrElse(""))
+              .build())
+          .build()
       }.toList)
     val pvcVolumeMounts = streamletToDeploy
-      .map(_.descriptor.volumeMounts.flatMap { mount =>
-
-        mount.pvcName match {
-          case Some(name) =>
-            val readOnly = mount.accessMode match {
-              case "ReadWriteMany" => false
-              case "ReadOnlyMany"  => true
-            }
-            Some(
-              new VolumeMountBuilder()
-                .withName(name)
-                .withMountPath(mount.path)
-                .withReadOnly(readOnly)
-                .build())
-          case _ => None
+      .map(_.descriptor.volumeMounts.map { mount =>
+        val readOnly = mount.accessMode match {
+          case "ReadWriteMany" => false
+          case "ReadOnlyMany"  => true
         }
 
+        new VolumeMountBuilder()
+          .withName(mount.appId)
+          .withMountPath(mount.path)
+          .withReadOnly(readOnly)
+          .build()
       }.toList)
       .getOrElse(List.empty)
 

@@ -17,21 +17,20 @@
 package cloudflow.operator.action
 
 import akka.kube.actions.Action
-import io.fabric8.kubernetes.api.model.HasMetadata
+import io.fabric8.kubernetes.api.model.{ HasMetadata, Secret }
 
 import scala.reflect.ClassTag
 
 object ActionExtension {
 
-  def providedRetry[T <: HasMetadata: ClassTag](name: String, namespace: String)(fAction: Option[T] => Action)(
-      retry: Int = 60): Action = { // TODO: 60 looks quite a lot!
+  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int = 60): Action = { // TODO: 60 looks quite a lot!
     if (retry <= 0) {
       Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
       fAction(None)
     } else {
-      Action.get[T](name, namespace) { res =>
+      Action.get[Secret](name, namespace) { res =>
         res match {
-          case None    => providedRetry[T](name, namespace)(fAction)(retry - 1)
+          case None    => providedRetry(name, namespace)(fAction)(retry - 1)
           case Some(_) => fAction(res)
         }
       }

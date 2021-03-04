@@ -54,57 +54,7 @@ object App {
       .withPlural(Plural)
       .withScope(Scope)
       .build()
-//  reference CRD:
-//
-//  apiVersion: apiextensions.k8s.io/v1
-//  kind: CustomResourceDefinition
-//  metadata:
-//    creationTimestamp: "2021-03-03T11:21:14Z"
-//  generation: 1
-//  name: cloudflowapplications.cloudflow.lightbend.com
-//  resourceVersion: "15091"
-//  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/cloudflowapplications.cloudflow.lightbend.com
-//  uid: 799060f2-c4ae-4420-84bc-a75638df7879
-//  spec:
-//    conversion:
-//  strategy: None
-//  group: cloudflow.lightbend.com
-//  names:
-//    kind: CloudflowApplication
-//  listKind: CloudflowApplicationList
-//  plural: cloudflowapplications
-//  shortNames:
-//    - cloudflowapp
-//      singular: cloudflowapplication
-//  preserveUnknownFields: true
-//  scope: Namespaced
-//  versions:
-//    - name: v1alpha1
-//  served: true
-//  storage: true
-//  subresources:
-//    status: {}
-//  status:
-//    acceptedNames:
-//  kind: CloudflowApplication
-//  listKind: CloudflowApplicationList
-//  plural: cloudflowapplications
-//  shortNames:
-//    - cloudflowapp
-//      singular: cloudflowapplication
-//  conditions:
-//    - lastTransitionTime: "2021-03-03T11:21:14Z"
-//  message: no conflicts found
-//  reason: NoConflicts
-//  status: "True"
-//  type: NamesAccepted
-//  - lastTransitionTime: "2021-03-03T11:21:14Z"
-//  message: the initial names have been accepted
-//    reason: InitialNamesAccepted
-//  status: "True"
-//  type: Established
-//  storedVersions:
-//    - v1alpha1
+
   val Crd =
     new CustomResourceDefinitionBuilder()
       .withNewMetadata()

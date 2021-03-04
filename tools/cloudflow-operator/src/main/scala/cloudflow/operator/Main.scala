@@ -22,8 +22,11 @@ import akka.datap.crd.App
 
 import scala.jdk.CollectionConverters._
 import cloudflow.operator.action._
+import cloudflow.operator.action.runner.SparkApp
+import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import io.fabric8.kubernetes.api.model.OwnerReference
+import io.fabric8.kubernetes.api.model.{ ObjectMetaBuilder, OwnerReference }
 import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
 
@@ -45,10 +48,41 @@ object Main extends {
       // This should run before any fabric8 command
       Serialization.jsonMapper().registerModule(DefaultScalaModule)
 
+      // TODO: Needed for Spark?
+      Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
+
       val client = connectToKubernetes()
 
       // this registers deserializer
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
+      client.customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
+
+      // DEBUG
+//      client
+//        .customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
+//        .create(SparkApp.Cr(
+//          spec = SparkApp.Spec(
+//            `type` = "Scala",
+//            mode = "cluster",
+//            sparkVersion = "2.4.5",
+//            image = "", // required parameter
+//            imagePullPolicy = "Always",
+//            mainClass = "", // required parameter
+//            sparkConf = None,
+//            mainApplicationFile = Some("spark-internal"),
+//            volumes = Nil,
+//            driver = SparkApp.Driver(),
+//            executor = SparkApp.Executor(instances = 1),
+//            restartPolicy = SparkApp.NeverRestartPolicy(),
+//            monitoring = SparkApp.Monitoring(SparkApp.Prometheus("1", "2"))),
+//          metadata = new ObjectMetaBuilder().withName("test").withNamespace("call-record-aggregator").build()))
+
+//      println(
+//        client
+//          .customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
+//          .inNamespace("call-record-aggregator")
+//          .withName("test")
+//          .get())
 
       checkCRD(settings, client)
 
@@ -56,9 +90,10 @@ object Main extends {
       installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
-      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults))
+      val runners = Map(
+        AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
+        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults))
       // TODO: re-enable this
-      //        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
       //        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {

@@ -44,7 +44,6 @@ import io.fabric8.kubernetes.api.model.{
   EnvVar,
   EnvVarBuilder,
   HasMetadata,
-  KubernetesResource,
   ObjectFieldSelectorBuilder,
   OwnerReference,
   OwnerReferenceBuilder,
@@ -53,13 +52,14 @@ import io.fabric8.kubernetes.api.model.{
   ResourceRequirements,
   ResourceRequirementsBuilder,
   Secret,
-  SecretList,
   SecretVolumeSourceBuilder,
   Volume,
   VolumeBuilder,
   VolumeMount,
   VolumeMountBuilder
 }
+
+import scala.reflect.ClassTag
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"
@@ -94,6 +94,7 @@ object Runner {
   val DockerContainerGroupId = 185
 }
 
+//TODO: the abstraction generic runner for Cr and Deployments leaks everywhere
 /**
  * A Runner translates into a Runner Kubernetes resource, and a ConfigMap that configures the runner.
  */
@@ -110,7 +111,8 @@ trait Runner[T <: HasMetadata] {
 
   def runtime: String
 
-  def actions(newApp: App.Cr, currentApp: Option[App.Cr], runners: Map[String, Runner[_]]): Seq[Action] = {
+  def actions(newApp: App.Cr, currentApp: Option[App.Cr], runners: Map[String, Runner[_]])(
+      implicit ct: ClassTag[T]): Seq[Action] = {
 
     val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
 
@@ -124,7 +126,7 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         Seq(
           Action
-            .delete[Deployment](resourceName(deployment), newApp.namespace),
+            .delete[T](resourceName(deployment), newApp.namespace),
           Action
             .delete[ConfigMap](configResourceName(deployment), newApp.namespace))
       }
@@ -135,9 +137,9 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         Seq(
           Action.createOrReplace(configResource(deployment, newApp)),
-          ActionExtension.providedRetry[Secret](deployment.secretName, newApp.namespace)({
+          ActionExtension.providedRetry(deployment.secretName, newApp.namespace)({
             case Some(secret) =>
-              Action.createOrReplace(resource(deployment, newApp, secret))
+              createOrReplaceResource(resource(deployment, newApp, secret))
             case None =>
               val msg =
                 s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
@@ -165,7 +167,8 @@ trait Runner[T <: HasMetadata] {
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action]
 
-  def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment): Seq[Action] = {
+  def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
+      implicit ct: ClassTag[T]): Seq[Action] = {
     Seq(
       Action.createOrReplace[ConfigMap](configResource(deployment, newApp)),
       Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
@@ -274,7 +277,9 @@ trait Runner[T <: HasMetadata] {
       deployment: App.Deployment,
       app: App.Cr,
       configSecret: Secret,
-      updateLabels: Map[String, String] = Map()): Deployment
+      updateLabels: Map[String, String] = Map()): T
+
+  def createOrReplaceResource(res: T)(implicit ct: ClassTag[T]): Action = Action.createOrReplace(res)
 
   def getPodsConfig(secret: Secret): PodsConfig = {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)

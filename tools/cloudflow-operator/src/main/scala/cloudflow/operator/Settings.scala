@@ -121,12 +121,12 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
     case AkkaRunner.Runtime =>
       appendResourcesToString("prometheus-rules/base.yaml", "prometheus-rules/kafka-client.yaml")
-//      TODO: re-enable me
-//    case SparkRunner.Runtime =>
-//      appendResourcesToString(
-//        "prometheus-rules/base.yaml",
-//        "prometheus-rules/spark.yaml",
-//        "prometheus-rules/kafka-client.yaml")
+    case SparkRunner.Runtime =>
+      appendResourcesToString(
+        "prometheus-rules/base.yaml",
+        "prometheus-rules/spark.yaml",
+        "prometheus-rules/kafka-client.yaml")
+    //      TODO: re-enable me
 //    case FlinkRunner.Runtime =>
 //      appendResourcesToString(
 //        "prometheus-rules/base.yaml",
@@ -158,9 +158,8 @@ final case class Settings(config: Config) extends Extension {
   val podNamespace = getNonEmptyString(config, s"$root.pod-namespace")
 
   val akkaRunnerSettings = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
-//  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
+  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
 //  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
-  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, "spark")
   val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, "flink")
 
   val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
