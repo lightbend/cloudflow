@@ -100,14 +100,6 @@ object Runner {
  */
 trait Runner[T <: HasMetadata] {
   val log = LoggerFactory.getLogger(this.getClass)
-  // The format for the runner resource T
-  // def format: Format[T]
-  // // The editor for the runner resource T to modify the metadata for update
-  // def editor: ObjectEditor[T]
-  // // The editor for the configmap to modify the metadata for update
-  // def configEditor: ObjectEditor[ConfigMap]
-  // // The resource definition for the runner resource T
-  // def resourceDefinition: ResourceDefinition[T]
 
   def runtime: String
 
@@ -157,7 +149,6 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         updateActions(newApp, runners, deployment)
       }
-      .toSeq
 
     deleteActions ++ createActions ++ _updateActions
   }
@@ -194,9 +185,6 @@ trait Runner[T <: HasMetadata] {
 
   def defaultReplicas: Int
   def expectedPodCount(deployment: App.Deployment): Int
-//  just editing the Metadata
-//   def roleEditor: ObjectEditor[Role]               = (obj: Role, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
-//   def roleBindingEditor: ObjectEditor[RoleBinding] = (obj: RoleBinding, newMetadata: ObjectMeta) => obj.copy(metadata = newMetadata)
 
   val BasicUserRole = "system:basic-user"
 
@@ -272,7 +260,6 @@ trait Runner[T <: HasMetadata] {
   /**
    * Creates the runner resource.
    */
-  // TODO: CR or Deployment ...
   def resource(
       deployment: App.Deployment,
       app: App.Cr,
@@ -388,7 +375,6 @@ trait Runner[T <: HasMetadata] {
 
 }
 
-// TODO port this to CloudflowConfig defined in the CLI
 object PodsConfig {
 
   val logger = LoggerFactory.getLogger(this.getClass)

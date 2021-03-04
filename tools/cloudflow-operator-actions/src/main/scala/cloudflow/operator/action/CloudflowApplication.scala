@@ -248,6 +248,7 @@ object CloudflowApplication {
               app.copy(status = toCrStatus(this))
           }
 
+        // TODO: handle the failure!
         Action.Cr.updateStatus(res)
       }
 
