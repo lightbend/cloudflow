@@ -193,7 +193,7 @@ object TopicActions {
       adminClient: Admin,
       topic: TopicInfo,
       partitions: Int,
-      replicas: Int)
+      replicas: Int)(implicit val file: sourcecode.File, val lineNumber: sourcecode.Line)
       extends Action {
     private def topicExists(name: String)(implicit executionContext: ExecutionContext) =
       adminClient.listTopics().namesToListings().asScala.map(_.asScala.toMap).map(_.contains(name))

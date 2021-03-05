@@ -465,7 +465,6 @@ object SparkApp {
   final case class NamePathSecretType(name: String, path: String, secretType: String = "Generic")
       extends KubernetesResource {}
 
-  // TODO: restart policies doesn't get deserialized correctly almost for sure ...
   @JsonIgnoreProperties(ignoreUnknown = true)
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonCreator
@@ -580,7 +579,7 @@ object SparkApp {
   final val GroupName = "sparkoperator.k8s.io"
   final val GroupVersion = "v1beta2"
   final val Kind = "SparkApplication"
-  final val Singular = "sparkapplications"
+  final val Singular = "sparkapplication"
   final val Plural = "sparkapplications"
   final val Scope = "Namespaced"
   final val ApiVersion = GroupName + "/" + GroupVersion
@@ -606,8 +605,7 @@ object SparkApp {
       @JsonProperty("metadata")
       metadata: ObjectMeta,
       @JsonProperty("status")
-      status: Status = null //,
-      // subresources = ) -> TODO: fixme?
+      status: Status = null
   ) extends CustomResource
       with Namespaced {
     this.setMetadata(metadata)
