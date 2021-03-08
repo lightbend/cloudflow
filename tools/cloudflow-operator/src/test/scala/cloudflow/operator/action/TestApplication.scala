@@ -18,6 +18,7 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import cloudflow.blueprint._
+import cloudflow.blueprint.deployment.Dns1123Formatter
 
 object CloudflowApplicationSpecBuilder {
 

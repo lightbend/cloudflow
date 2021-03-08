@@ -28,9 +28,11 @@ import io.fabric8.kubernetes.api.model.{
   OwnerReferenceBuilder,
   Service,
   ServiceBuilder,
+  ServiceList,
   ServicePortBuilder,
   ServiceSpecBuilder
 }
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource, ServiceResource }
 
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -117,32 +119,40 @@ object EndpointActions {
    */
   object CreateServiceAction {
     def apply(service: Service) = {
+      // TODO: clean up this Action is pretty hacked right now
+      Action.operation(
+        // TODO: Services returns ServiceResource that plays badly with Action.operation signature
+        { client => (client.services().asInstanceOf[MixedOperation[Service, ServiceList, Resource[Service]]]) }, {
+          services: MixedOperation[Service, ServiceList, Resource[Service]] =>
+            val thisService =
+              services.inNamespace(service.getMetadata.getNamespace).withName(service.getMetadata.getName)
+            val ser = thisService.get()
+            Option(ser) match {
+              case Some(s) =>
+                val resourceVersion = s.getMetadata.getResourceVersion
+                val clusterIp = Try {
+                  val res = s.getSpec.getClusterIP
+                  assert {
+                    res != null
+                  }
+                  res
+                }.getOrElse("")
+                val serviceMetadata = s.getMetadata
+                serviceMetadata.setResourceVersion(resourceVersion)
+                val serviceSpec = s.getSpec
+                serviceSpec.setClusterIP(clusterIp)
 
-      Action.get[Service](service.getMetadata.getName, service.getMetadata.getNamespace) { serviceOpt =>
-        val ser =
-          serviceOpt match {
-            case Some(serviceResult) =>
-              val resourceVersion = serviceResult.getMetadata.getResourceVersion
-              val clusterIp = Try {
-                val res = serviceResult.getSpec.getClusterIP
-                assert {
-                  res != null
-                }
-                res
-              }.getOrElse("")
-              val serviceMetadata = serviceResult.getMetadata
-              serviceMetadata.setResourceVersion(resourceVersion)
-              val serviceSpec = serviceResult.getSpec
-              serviceSpec.setClusterIP(clusterIp)
-
-              new ServiceBuilder(service)
-                .withMetadata(serviceMetadata)
-                .withSpec(serviceSpec)
-                .build()
-            case _ => service
-          }
-        Action.createOrReplace(ser)
-      }
+                // TODO: This needs to be a patch to prevent re-assignements of cluster-ip
+                thisService.patch(
+                  new ServiceBuilder(service)
+                    .withMetadata(serviceMetadata)
+                    .withSpec(serviceSpec)
+                    .build())
+              case _ =>
+                thisService.create(service)
+            }
+            ()
+        }, { _: Unit => Action.noop })
     }
   }
 

@@ -192,33 +192,24 @@ lazy val cloudflowBlueprint =
       buildInfoKeys := Seq[BuildInfoKey](name, version),
       buildInfoPackage := "cloudflow.blueprint")
 
-lazy val cloudflowOperatorActions =
-  Project(id = "cloudflow-operator-actions", base = file("cloudflow-operator-actions"))
-    .enablePlugins(ScalafmtPlugin)
-    .dependsOn(cloudflowConfig, cloudflowBlueprint)
-    .settings(Dependencies.cloudflowOperatorActions)
-    .settings(scalafmtOnCompile := true)
-
 lazy val cloudflowOperator =
   Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
-    .dependsOn(cloudflowOperatorActions)
+    .dependsOn(cloudflowConfig, cloudflowBlueprint)
     .settings(Dependencies.cloudflowOperator)
     .settings(
       scalafmtOnCompile := true,
       run / fork := true,
       Global / cancelable := true,
       buildInfoKeys := Seq[BuildInfoKey](
-            name,
-            version,
-            scalaVersion,
-            sbtVersion,
-            BuildInfoKey.action("buildTime") {
-              java.time.Instant.now().toString
-            },
-            BuildInfoKey.action("buildUser") {
-              sys.props.getOrElse("user.name", "unknown")
-            }
-          ),
-      buildInfoPackage := "cloudflow.operator"
-    )
+          name,
+          version,
+          scalaVersion,
+          sbtVersion,
+          BuildInfoKey.action("buildTime") {
+            java.time.Instant.now().toString
+          },
+          BuildInfoKey.action("buildUser") {
+            sys.props.getOrElse("user.name", "unknown")
+          }),
+      buildInfoPackage := "cloudflow.operator")
