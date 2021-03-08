@@ -97,25 +97,17 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   }
 
   private def getFlinkRunnerDefaults(config: Config, root: String, runnerStr: String): FlinkRunnerDefaults = {
-    //  TODO: re-enable me
-//    val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
-//
-//    val jobManagerConfig = flinkRunnerConfig.getConfig("jobmanager")
-//    val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
-//    val parallelism = flinkRunnerConfig.as[Int]("parallelism")
+    val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
 
-//    FlinkRunnerDefaults(
-//      parallelism,
-//      FlinkJobManagerDefaults(jobManagerConfig.as[Int]("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
-//      FlinkTaskManagerDefaults(taskManagerConfig.as[Int]("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)),
-//      getPrometheusRules(runnerStr))
+    val jobManagerConfig = flinkRunnerConfig.getConfig("jobmanager")
+    val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
+    val parallelism = flinkRunnerConfig.getInt("parallelism")
 
-    // TODO remove me
     FlinkRunnerDefaults(
-      parallelism = 1,
-      jobManagerDefaults = FlinkJobManagerDefaults(1, getFlinkPodResourceDefaults(ConfigFactory.empty())),
-      taskManagerDefaults = FlinkTaskManagerDefaults(1, getFlinkPodResourceDefaults(ConfigFactory.empty())),
-      prometheusRules = "")
+      parallelism,
+      FlinkJobManagerDefaults(jobManagerConfig.getInt("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
+      FlinkTaskManagerDefaults(taskManagerConfig.getInt("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)),
+      getPrometheusRules(runnerStr))
   }
 
   def getPrometheusRules(runnerStr: String): String = runnerStr match {
@@ -126,13 +118,11 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
         "prometheus-rules/base.yaml",
         "prometheus-rules/spark.yaml",
         "prometheus-rules/kafka-client.yaml")
-    //      TODO: re-enable me
-//    case FlinkRunner.Runtime =>
-//      appendResourcesToString(
-//        "prometheus-rules/base.yaml",
-//        "prometheus-rules/flink.yaml",
-//        "prometheus-rules/kafka-client.yaml")
-    case _ => ""
+    case FlinkRunner.Runtime =>
+      appendResourcesToString(
+        "prometheus-rules/base.yaml",
+        "prometheus-rules/flink.yaml",
+        "prometheus-rules/kafka-client.yaml")
   }
 
   private def appendResourcesToString(paths: String*): String =
@@ -159,8 +149,7 @@ final case class Settings(config: Config) extends Extension {
 
   val akkaRunnerSettings = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
   val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
-//  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
-  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, "flink")
+  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
   val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
 

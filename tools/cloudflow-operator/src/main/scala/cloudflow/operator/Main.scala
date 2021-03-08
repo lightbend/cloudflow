@@ -22,7 +22,7 @@ import akka.datap.crd.App
 
 import scala.jdk.CollectionConverters._
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.SparkApp
+import cloudflow.operator.action.runner.{ FlinkApp, SparkApp }
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -56,6 +56,7 @@ object Main extends {
       // this registers deserializer
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
       client.customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
+      client.customResources(FlinkApp.customResourceDefinitionContext, classOf[FlinkApp.Cr], classOf[FlinkApp.List])
 
       // DEBUG
 //      client
@@ -92,9 +93,8 @@ object Main extends {
       import cloudflow.operator.action.runner._
       val runners = Map(
         AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
-        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults))
-      // TODO: re-enable this
-      //        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
+        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
+        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {
       case t: Throwable =>

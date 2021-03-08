@@ -605,8 +605,8 @@ object SparkApp {
       @JsonProperty("metadata")
       metadata: ObjectMeta,
       @JsonProperty("status")
-      status: Status = null
-  ) extends CustomResource
+      status: Status = null)
+      extends CustomResource
       with Namespaced {
     this.setMetadata(metadata)
 

@@ -23,7 +23,9 @@ import scala.reflect.ClassTag
 
 object ActionExtension {
 
-  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int = 60): Action = { // TODO: 60 looks quite a lot!
+  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int = 60)(
+      implicit lineNumber: sourcecode.Line,
+      file: sourcecode.File): Action = { // TODO: 60 looks quite a lot!
     if (retry <= 0) {
       Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
       fAction(None)

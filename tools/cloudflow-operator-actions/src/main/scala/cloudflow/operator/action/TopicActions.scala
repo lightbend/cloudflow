@@ -134,7 +134,6 @@ object TopicActions {
           maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
             .getOrElse(useClusterConfiguration(topic))
         }(retry = 2)
-
       }
       .getOrElse(useClusterConfiguration(topic))
   }
