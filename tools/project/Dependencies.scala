@@ -47,7 +47,7 @@ object Dependencies {
     val avro = "org.apache.avro" % "avro" % "1.8.2"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
-    val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.0-6-6e3ad349-20210308-1850" //"0.1.0"
+    val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.0-6-6e3ad349" //"0.1.0"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
   }
 
@@ -101,14 +101,6 @@ object Dependencies {
         TestDeps.avro4s)
 
   val cloudflowOperator =
-    libraryDependencies ++= Seq(
-        Compile.akkaActor,
-        Compile.akkaStream,
-        Compile.akkaHttp,
-        Compile.akkaSlf4j,
-        Compile.logback,
-        Compile.kubeActions,
-        Compile.kafkaClient,
-        Compile.scalatest % Test)
+    libraryDependencies ++= Seq(Compile.akkaActor, Compile.akkaStream, Compile.akkaHttp, Compile.akkaSlf4j, Compile.logback, Compile.kubeActions, Compile.kafkaClient, Compile.scalatest % Test)
 
 }

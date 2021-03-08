@@ -17,33 +17,26 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, CustomResourceAdapter }
+import akka.kube.actions.{Action, CustomResourceAdapter}
 
 import java.security.MessageDigest
 import scala.collection.immutable._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 import com.typesafe.config._
 import org.slf4j.LoggerFactory
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ Topic, _ }
+import cloudflow.blueprint.deployment.{Topic, _}
+import cloudflow.operator.action.CloudflowApplication.PodStatus
 import cloudflow.operator.action.CloudflowApplication.Status.log
 import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Runner
-import io.fabric8.kubernetes.api.model.{
-  ContainerState,
-  HasMetadata,
-  KubernetesResourceList,
-  ObjectMetaBuilder,
-  OwnerReference,
-  OwnerReferenceBuilder,
-  Pod
-}
+import io.fabric8.kubernetes.api.model.{ContainerState, HasMetadata, KubernetesResourceList, ObjectMetaBuilder, OwnerReference, OwnerReferenceBuilder, Pod}
 import io.fabric8.kubernetes.client.utils.Serialization
-import io.fabric8.kubernetes.api.{ model => fabric8 }
-import com.fasterxml.jackson.databind.{ JsonNode, PropertyNamingStrategy }
+import io.fabric8.kubernetes.api.{model => fabric8}
+import com.fasterxml.jackson.databind.{JsonNode, PropertyNamingStrategy}
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 import io.fabric8.kubernetes.client.KubernetesClient
-import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
+import io.fabric8.kubernetes.client.dsl.{MixedOperation, Resource}
 
 import scala.jdk.CollectionConverters._
 
@@ -73,20 +66,9 @@ object CloudflowApplication {
     Serialization.jsonMapper().readValue(Serialization.jsonMapper().writeValueAsString(status), classOf[App.AppStatus])
   }
 
-  // TODO: copy-pasted from CLI refactor?
-  private def getOwnerReference(name: String, uid: String): OwnerReference = {
-    new OwnerReferenceBuilder()
-      .withController(true)
-      .withBlockOwnerDeletion(true)
-      .withApiVersion(App.ApiVersion)
-      .withKind(App.Kind)
-      .withName(name)
-      .withUid(uid)
-      .build()
-  }
 
   def getOwnerReference(app: App.Cr): OwnerReference =
-    getOwnerReference(app.getMetadata().getName(), app.getMetadata().getUid())
+    Util.getOwnerReference(app.getMetadata().getName(), app.getMetadata().getUid())
 
   def hash(applicationSpec: App.Spec): String = {
     // TODO: initialize the jsonMapper
@@ -377,3 +359,148 @@ object CloudflowApplication {
     def isReady = status == PodStatus.Running && containersReady == containers && containers > 0
   }
 }
+
+object StatusUpdate {
+  private val log = LoggerFactory.getLogger(Status.getClass)
+
+  object PodStatus {
+    val Pending = "Pending"
+    val Running = "Running"
+    val Terminating = "Terminating"
+    val Terminated = "Terminated"
+    val Succeeded = "Succeeded"
+    val Failed = "Failed"
+    val Unknown = "Unknown"
+    val CrashLoopBackOff = "CrashLoopBackOff"
+
+    val ReadyTrue = "True"
+    val ReadyFalse = "False"
+  }
+
+  private def podStatus(name: String, status: String, restarts: Int, nrOfContainersReady: Int, nrOfContainers: Int): App.PodStatus = {
+    val ready = if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) PodStatus.ReadyTrue else PodStatus.ReadyFalse
+    App.PodStatus(
+      name = name,
+      status = status,
+      restarts = restarts,
+      nrOfContainersReady = nrOfContainersReady,
+      nrOfContainers = nrOfContainers,
+      ready = ready)
+  }
+
+  def fromPod(pod: Pod): App.PodStatus = {
+    // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    val name: String = pod.getMetadata().getName()
+    val status: fabric8.PodStatus = Option(pod.getStatus()).getOrElse(new fabric8.PodStatus())
+    val nrOfContainers: Int = Option(pod.getSpec())
+      .map(_.getContainers().size())
+      .getOrElse(status.getContainerStatuses.size())
+    val nrOfContainersReady: Int = Try { status.getContainerStatuses.asScala.filter(_.getReady).size }.getOrElse(0)
+    val restarts: Int = Try { status.getContainerStatuses.asScala.map(_.getRestartCount.intValue()).sum }.getOrElse(0)
+    val containerStates = Try { status.getContainerStatuses.asScala.map(_.getState).toList }.getOrElse(List())
+
+    // https://github.com/kubernetes/kubectl/blob/27fa797464ff6684ec591c46c69d5e013998a0d1/pkg/describe/describe.go#L698
+    val st = if (pod.getMetadata.getDeletionTimestamp != null && pod.getMetadata.getDeletionTimestamp.nonEmpty) {
+      PodStatus.Terminating
+    } else {
+      Try(status.getPhase).toOption match {
+        case Some(PodStatus.Pending)   => getStatusFromContainerStates(containerStates, nrOfContainers)
+        case Some(PodStatus.Running)   => getStatusFromContainerStates(containerStates, nrOfContainers)
+        case Some(PodStatus.Succeeded) => PodStatus.Succeeded
+        case Some(PodStatus.Failed)    => PodStatus.Failed
+        case Some(PodStatus.Unknown)   => PodStatus.Unknown
+        case _                         => getStatusFromContainerStates(containerStates, nrOfContainers)
+      }
+    }
+
+    podStatus(
+      name = name,
+      status = st,
+      restarts = restarts,
+      nrOfContainersReady = nrOfContainersReady,
+      nrOfContainers = nrOfContainers)
+  }
+
+  private def getStatusFromContainerStates(containerStates: List[ContainerState], nrOfContainers: Int): String =
+    if (containerStates.nonEmpty) {
+      // - Running if all containers running;
+      // - Terminated if all containers terminated;
+      // - first Waiting reason found (ContainerCreating, CrashLoopBackOff, ErrImagePull, ...);
+      // - otherwise Pending.
+      if (containerStates.filter(_.getRunning != null).size == nrOfContainers) PodStatus.Running
+      else if (containerStates.filter(_.getTerminated != null).size == nrOfContainers) PodStatus.Terminated
+      else {
+        containerStates
+          .filter(_.getWaiting != null)
+          .headOption
+          .map(_.getWaiting.getReason)
+          .getOrElse(PodStatus.Pending)
+      }
+    } else PodStatus.Pending
+
+  def hasExpectedPods(streamlet: App.StreamletStatus)(nrOfPodsDetected: Int) = streamlet.expectedPodCount.getOrElse(0) == nrOfPodsDetected
+
+  def updatePod(streamlet: App.StreamletStatus)(pod: Pod) = {
+    val podStatus = fromPod(pod)
+
+    streamlet.copy(podStatuses = streamlet.podStatuses.filterNot(_.name == podStatus.name) :+ podStatus)
+  }
+  def deletePod(streamlet: App.StreamletStatus)(pod: Pod) = {
+    streamlet.copy(podStatuses = streamlet.podStatuses.filterNot(_.name == pod.getMetadata().getName()))
+  }
+
+  object Status {
+    val Running = "Running"
+    val Pending = "Pending"
+    val CrashLoopBackOff = "CrashLoopBackOff"
+    val Error = "Error"
+  }
+
+
+
+    def apply(spec: App.Spec, runners: Map[String, Runner[_]]): App.AppStatus = {
+      val streamletStatuses = createStreamletStatuses(spec, runners)
+      App.AppStatus(
+        appId =
+      )
+      Status(spec.appId, spec.appVersion, streamletStatuses, Some(Status.Pending))
+    }
+
+    def pendingAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
+      log.info(s"Setting pending status for app ${app.spec.appId}")
+      Status(app.spec, runners)
+        .copy(appStatus = Some(CloudflowApplication.Status.Pending), appMessage = Some(msg))
+        .toAction(app)()
+    }
+
+    def errorAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
+      log.info(s"Setting error status for app ${app.spec.appId}")
+      Status(app.spec, runners)
+        .copy(
+          appStatus = Some(CloudflowApplication.Status.Error),
+          appMessage = Some(s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}"))
+        .toAction(app)()
+    }
+
+    def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
+      spec.deployments.map { deployment =>
+        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
+        StreamletStatus(deployment.streamletName, expectedPodCount)
+      }.toVector
+
+    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
+      if (streamletStatuses.forall { streamletStatus =>
+        streamletStatus.hasExpectedPods(streamletStatus.podStatuses.size) &&
+          streamletStatus.podStatuses.forall(_.isReady)
+      }) {
+        Status.Running
+      } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
+        Status.CrashLoopBackOff
+      } else {
+        Status.Pending
+      }
+  }
+
+}
+
+
