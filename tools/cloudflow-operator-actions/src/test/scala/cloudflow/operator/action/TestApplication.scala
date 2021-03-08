@@ -16,8 +16,8 @@
 
 package cloudflow.operator.action
 
+import akka.datap.crd.App
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment._
 
 object CloudflowApplicationSpecBuilder {
 
@@ -29,7 +29,7 @@ object CloudflowApplicationSpecBuilder {
       appVersion: String,
       image: String,
       blueprint: VerifiedBlueprint,
-      agentPaths: Map[String, String]): CloudflowApplication.Spec = {
+      agentPaths: Map[String, String]): App.Cr = {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val streamlets = blueprint.streamlets.map(toStreamlet)
