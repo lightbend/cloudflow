@@ -55,7 +55,7 @@ object Actions {
       val st = CloudflowApplication.Status(newApp.spec, runners)
 
       val newStatus = st.updateApp(newApp, runners)
-      if (newStatus != st) Some(newStatus.toAction(newApp))
+      if (newStatus != st) Some(newStatus.toAction(newApp)())
       else None
     }.toList ++
     EventActions.deployEvents(newApp, currentApp, runners, podName, cause)

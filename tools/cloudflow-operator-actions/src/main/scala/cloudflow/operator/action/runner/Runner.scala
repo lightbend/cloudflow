@@ -117,8 +117,7 @@ trait Runner[T <: HasMetadata] {
       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
       .flatMap { deployment =>
         Seq(
-          Action
-            .delete[T](resourceName(deployment), newApp.namespace),
+          deleteResource(resourceName(deployment), newApp.namespace),
           Action
             .delete[ConfigMap](configResourceName(deployment), newApp.namespace))
       }
@@ -165,7 +164,7 @@ trait Runner[T <: HasMetadata] {
       Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
         secret match {
           case Some(sec) =>
-            Action.createOrReplace(resource(deployment, newApp, sec))
+            createOrReplaceResource(resource(deployment, newApp, sec))
           case None =>
             val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
             log.error(msg)
@@ -266,7 +265,11 @@ trait Runner[T <: HasMetadata] {
       configSecret: Secret,
       updateLabels: Map[String, String] = Map()): T
 
+  // TODO: here the abstraction is leaking, make those methods abstract maybe?
   def createOrReplaceResource(res: T)(implicit ct: ClassTag[T]): Action = Action.createOrReplace(res)
+
+  def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[T]): Action =
+    Action.delete(name, namespace)
 
   def getPodsConfig(secret: Secret): PodsConfig = {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)

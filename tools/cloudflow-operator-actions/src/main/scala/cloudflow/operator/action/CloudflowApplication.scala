@@ -21,16 +21,18 @@ import akka.kube.actions.{ Action, CustomResourceAdapter }
 
 import java.security.MessageDigest
 import scala.collection.immutable._
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.config._
 import org.slf4j.LoggerFactory
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.{ Topic, _ }
+import cloudflow.operator.action.CloudflowApplication.Status.log
 import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{
   ContainerState,
   HasMetadata,
+  KubernetesResourceList,
   ObjectMetaBuilder,
   OwnerReference,
   OwnerReferenceBuilder,
@@ -40,6 +42,8 @@ import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.api.{ model => fabric8 }
 import com.fasterxml.jackson.databind.{ JsonNode, PropertyNamingStrategy }
 import com.fasterxml.jackson.databind.annotation.JsonNaming
+import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
 import scala.jdk.CollectionConverters._
 
@@ -111,7 +115,7 @@ object CloudflowApplication {
       log.info(s"Setting pending status for app ${app.spec.appId}")
       Status(app.spec, runners)
         .copy(appStatus = Some(CloudflowApplication.Status.Pending), appMessage = Some(msg))
-        .toAction(app)
+        .toAction(app)()
     }
 
     def errorAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
@@ -120,7 +124,7 @@ object CloudflowApplication {
         .copy(
           appStatus = Some(CloudflowApplication.Status.Error),
           appMessage = Some(s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}"))
-        .toAction(app)
+        .toAction(app)()
     }
 
     def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
@@ -235,23 +239,35 @@ object CloudflowApplication {
       }
     }
 
-    def toAction(app: App.Cr): Action = {
-      Action.Cr.get[App.Cr](app.name, app.namespace) { current: Option[App.Cr] =>
-        val res =
-          current match {
-            case Some(curr) =>
-              val metadata = app.getMetadata
-              metadata.setResourceVersion(curr.getMetadata.getResourceVersion)
-              app.setMetadata(metadata)
-              app.copy(status = toCrStatus(this))
-            case _ =>
-              app.copy(status = toCrStatus(this))
+    // TODO 60 looks a pretty high number! check why this is failing!
+    def toAction(app: App.Cr)(retry: Int = 60): Action = {
+      Action.operation[App.Cr, App.List, Try[App.Cr]](
+        { client: KubernetesClient =>
+          client
+            .customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
+        }, { cr: MixedOperation[App.Cr, App.List, Resource[App.Cr]] =>
+          Try {
+            val current = cr.inNamespace(app.namespace).withName(app.name)
+            val res =
+              Option(current.get()) match {
+                case Some(curr) =>
+                  curr.copy(status = toCrStatus(this))
+                case _ =>
+                  app.copy(status = toCrStatus(this))
+              }
+            current.updateStatus(res)
           }
-
-        // TODO: handle the failure!
-        Action.Cr.updateStatus(res)
-      }
-
+        }, { res =>
+          res match {
+            case Success(_) => Action.noop
+            case Failure(err) if retry > 0 =>
+              log.error(s"Failure updating the CR status retries: $retry", err)
+              toAction(app)(retry - 1)
+            case Failure(err) =>
+              log.error("Failure updating the CR status retries exhausted, giving up", err)
+              throw err
+          }
+        })
     }
   }
 

@@ -97,7 +97,12 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val metadata = res.getMetadata
     val labels = metadata.getLabels
 
-    metadata.setLabels((labels.asScala ++ updateLabels).asJava)
+    val newLabels = {
+      if (labels != null) (labels.asScala ++ updateLabels)
+      else updateLabels
+    }
+
+    metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
     Action.Cr.createOrReplace(res)
@@ -200,6 +205,9 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   }
 
   def resourceName(deployment: App.Deployment): String = Name.ofSparkApplication(deployment.name)
+
+  override def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[SparkApp.Cr]): Action =
+    Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: SparkApp.Cr)(implicit ct: ClassTag[SparkApp.Cr]): Action =
     Action.Cr.createOrReplace(res)

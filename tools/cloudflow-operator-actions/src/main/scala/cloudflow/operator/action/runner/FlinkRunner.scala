@@ -271,6 +271,9 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
 
   def resourceName(deployment: App.Deployment): String = Name.ofFlinkApplication(deployment.name)
 
+  override def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[FlinkApp.Cr]): Action =
+    Action.Cr.delete(name, namespace)
+
   override def createOrReplaceResource(res: FlinkApp.Cr)(implicit ct: ClassTag[FlinkApp.Cr]): Action =
     Action.Cr.createOrReplace(res)
 

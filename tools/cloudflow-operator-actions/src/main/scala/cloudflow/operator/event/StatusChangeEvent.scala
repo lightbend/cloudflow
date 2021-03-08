@@ -113,7 +113,7 @@ object StatusChangeEvent extends Event {
             }
         }
 
-        (updatedStatuses, updatedStatuses.get(appId).map(_.toAction(app)).toList)
+        (updatedStatuses, updatedStatuses.get(appId).map(_.toAction(app)()).toList)
       case (Some(app), _)
           if Option(app.status).flatMap(s => Option(s.appStatus)) == Some(CloudflowApplication.Status.Error) =>
         (currentStatuses, List())
