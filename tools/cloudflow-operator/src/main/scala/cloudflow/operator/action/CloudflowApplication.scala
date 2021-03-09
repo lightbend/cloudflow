@@ -17,26 +17,34 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.kube.actions.{Action, CustomResourceAdapter}
+import akka.kube.actions.{ Action, CustomResourceAdapter }
 
 import java.security.MessageDigest
 import scala.collection.immutable._
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.config._
 import org.slf4j.LoggerFactory
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{Topic, _}
+import cloudflow.blueprint.deployment.{ Topic, _ }
 import cloudflow.operator.action.CloudflowApplication.PodStatus
 import cloudflow.operator.action.CloudflowApplication.Status.log
 import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Runner
-import io.fabric8.kubernetes.api.model.{ContainerState, HasMetadata, KubernetesResourceList, ObjectMetaBuilder, OwnerReference, OwnerReferenceBuilder, Pod}
+import io.fabric8.kubernetes.api.model.{
+  ContainerState,
+  HasMetadata,
+  KubernetesResourceList,
+  ObjectMetaBuilder,
+  OwnerReference,
+  OwnerReferenceBuilder,
+  Pod
+}
 import io.fabric8.kubernetes.client.utils.Serialization
-import io.fabric8.kubernetes.api.{model => fabric8}
-import com.fasterxml.jackson.databind.{JsonNode, PropertyNamingStrategy}
+import io.fabric8.kubernetes.api.{ model => fabric8 }
+import com.fasterxml.jackson.databind.{ JsonNode, PropertyNamingStrategy }
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 import io.fabric8.kubernetes.client.KubernetesClient
-import io.fabric8.kubernetes.client.dsl.{MixedOperation, Resource}
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
 import scala.jdk.CollectionConverters._
 
@@ -65,7 +73,6 @@ object CloudflowApplication {
   def toCrStatus(status: Status): App.AppStatus = {
     Serialization.jsonMapper().readValue(Serialization.jsonMapper().writeValueAsString(status), classOf[App.AppStatus])
   }
-
 
   def getOwnerReference(app: App.Cr): OwnerReference =
     Util.getOwnerReference(app.getMetadata().getName(), app.getMetadata().getUid())
@@ -377,8 +384,17 @@ object StatusUpdate {
     val ReadyFalse = "False"
   }
 
-  private def podStatus(name: String, status: String, restarts: Int, nrOfContainersReady: Int, nrOfContainers: Int): App.PodStatus = {
-    val ready = if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) PodStatus.ReadyTrue else PodStatus.ReadyFalse
+  private def podReady(ps: App.PodStatus) =
+    ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0
+
+  private def podStatus(
+      name: String,
+      status: String,
+      restarts: Int,
+      nrOfContainersReady: Int,
+      nrOfContainers: Int): App.PodStatus = {
+    val ready =
+      if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) PodStatus.ReadyTrue else PodStatus.ReadyFalse
     App.PodStatus(
       name = name,
       status = status,
@@ -388,13 +404,15 @@ object StatusUpdate {
       ready = ready)
   }
 
-  def fromPod(pod: Pod): App.PodStatus = {
+  private def fromPod(pod: Pod): App.PodStatus = {
     // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
     val name: String = pod.getMetadata().getName()
     val status: fabric8.PodStatus = Option(pod.getStatus()).getOrElse(new fabric8.PodStatus())
-    val nrOfContainers: Int = Option(pod.getSpec())
-      .map(_.getContainers().size())
-      .getOrElse(status.getContainerStatuses.size())
+    val nrOfContainers: Int = Try { // protect from null pointers
+      Option(pod.getSpec())
+        .map(_.getContainers().size())
+        .getOrElse(status.getContainerStatuses.size())
+    }.getOrElse(0)
     val nrOfContainersReady: Int = Try { status.getContainerStatuses.asScala.filter(_.getReady).size }.getOrElse(0)
     val restarts: Int = Try { status.getContainerStatuses.asScala.map(_.getRestartCount.intValue()).sum }.getOrElse(0)
     val containerStates = Try { status.getContainerStatuses.asScala.map(_.getState).toList }.getOrElse(List())
@@ -438,14 +456,15 @@ object StatusUpdate {
       }
     } else PodStatus.Pending
 
-  def hasExpectedPods(streamlet: App.StreamletStatus)(nrOfPodsDetected: Int) = streamlet.expectedPodCount.getOrElse(0) == nrOfPodsDetected
+  private def hasExpectedPods(streamlet: App.StreamletStatus)(nrOfPodsDetected: Int) =
+    streamlet.expectedPodCount.getOrElse(0) == nrOfPodsDetected
 
-  def updatePod(streamlet: App.StreamletStatus)(pod: Pod) = {
+  private def updatePod(streamlet: App.StreamletStatus)(pod: Pod) = {
     val podStatus = fromPod(pod)
 
     streamlet.copy(podStatuses = streamlet.podStatuses.filterNot(_.name == podStatus.name) :+ podStatus)
   }
-  def deletePod(streamlet: App.StreamletStatus)(pod: Pod) = {
+  private def deletePod(streamlet: App.StreamletStatus)(pod: Pod): App.StreamletStatus = {
     streamlet.copy(podStatuses = streamlet.podStatuses.filterNot(_.name == pod.getMetadata().getName()))
   }
 
@@ -456,51 +475,140 @@ object StatusUpdate {
     val Error = "Error"
   }
 
-
-
-    def apply(spec: App.Spec, runners: Map[String, Runner[_]]): App.AppStatus = {
-      val streamletStatuses = createStreamletStatuses(spec, runners)
-      App.AppStatus(
-        appId =
-      )
-      Status(spec.appId, spec.appVersion, streamletStatuses, Some(Status.Pending))
-    }
-
-    def pendingAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
-      log.info(s"Setting pending status for app ${app.spec.appId}")
-      Status(app.spec, runners)
-        .copy(appStatus = Some(CloudflowApplication.Status.Pending), appMessage = Some(msg))
-        .toAction(app)()
-    }
-
-    def errorAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
-      log.info(s"Setting error status for app ${app.spec.appId}")
-      Status(app.spec, runners)
-        .copy(
-          appStatus = Some(CloudflowApplication.Status.Error),
-          appMessage = Some(s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}"))
-        .toAction(app)()
-    }
-
-    def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
-      spec.deployments.map { deployment =>
-        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
-        StreamletStatus(deployment.streamletName, expectedPodCount)
-      }.toVector
-
-    def calcAppStatus(streamletStatuses: Vector[StreamletStatus]): String =
-      if (streamletStatuses.forall { streamletStatus =>
-        streamletStatus.hasExpectedPods(streamletStatus.podStatuses.size) &&
-          streamletStatus.podStatuses.forall(_.isReady)
-      }) {
-        Status.Running
-      } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
-        Status.CrashLoopBackOff
-      } else {
-        Status.Pending
-      }
+  private def freshStatus(spec: App.Spec, runners: Map[String, Runner[_]]): App.AppStatus = {
+    val streamletStatuses = createStreamletStatuses(spec, runners)
+    App.AppStatus(
+      appId = spec.appId,
+      appVersion = spec.appVersion,
+      appStatus = Status.Pending,
+      appMessage = "",
+      endpointStatuses = Nil,
+      streamletStatuses = streamletStatuses)
   }
 
+  def pendingAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
+    log.info(s"Setting pending status for app ${app.spec.appId}")
+    val newStatus =
+      freshStatus(app.spec, runners).copy(appStatus = CloudflowApplication.Status.Pending, appMessage = msg)
+    val newApp = app.copy(status = newStatus)
+
+    statusUpdateAction(newApp)()
+  }
+
+  def errorAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
+    log.info(s"Setting error status for app ${app.spec.appId}")
+    val newStatus = freshStatus(app.spec, runners)
+      .copy(
+        appStatus = CloudflowApplication.Status.Error,
+        appMessage = s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}")
+    val newApp = app.copy(status = newStatus)
+
+    statusUpdateAction(newApp)()
+  }
+
+  private def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
+    spec.deployments.map { deployment =>
+      val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
+      App.StreamletStatus(
+        streamletName = deployment.streamletName,
+        expectedPodCount = Some(expectedPodCount),
+        podStatuses = Nil)
+    }.toVector
+
+  private def calcAppStatus(streamletStatuses: Seq[App.StreamletStatus]): String =
+    if (streamletStatuses.forall { streamletStatus =>
+          hasExpectedPods(streamletStatus)(streamletStatus.podStatuses.size) &&
+          streamletStatus.podStatuses.forall(podReady)
+        }) {
+      Status.Running
+    } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
+      Status.CrashLoopBackOff
+    } else {
+      Status.Pending
+    }
+
+  private def aggregatedStatus(status: App.AppStatus) = {
+    if (status.appStatus == null || status.appStatus.isEmpty) {
+      Status.Pending
+    } else {
+      status.appStatus
+    }
+  }
+
+  def updateApp(status: App.AppStatus)(newApp: App.Cr, runners: Map[String, Runner[_]]): App.AppStatus = {
+    val newStreamletStatuses = createStreamletStatuses(newApp.spec, runners).map { newStreamletStatus =>
+      status.streamletStatuses
+        .find(_.streamletName == newStreamletStatus.streamletName)
+        .map { streamletStatus =>
+          newStreamletStatus.copy(podStatuses = streamletStatus.podStatuses)
+        }
+        .getOrElse(newStreamletStatus)
+    }
+    status.copy(
+      appId = newApp.spec.appId,
+      appVersion = newApp.spec.appVersion,
+      streamletStatuses = newStreamletStatuses,
+      appStatus = calcAppStatus(newStreamletStatuses))
+  }
+
+  private def updatePod(status: App.AppStatus)(streamletName: String, pod: Pod): App.AppStatus = {
+    val streamletStatus =
+      status.streamletStatuses
+        .find(_.streamletName == streamletName)
+        .map { streamletStatus => deletePod(streamletStatus)(pod) }
+        .toList
+    val streamletStatusesUpdated =
+      status.streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
+    status.copy(streamletStatuses = streamletStatusesUpdated, appStatus = calcAppStatus(streamletStatusesUpdated))
+  }
+
+  private def deletePod(status: App.AppStatus)(streamletName: String, pod: Pod): App.AppStatus = {
+    val streamletStatus =
+      status.streamletStatuses
+        .find(_.streamletName == streamletName)
+        .map { streamletStatus => deletePod(streamletStatus)(pod) }
+        .toList
+    val streamletStatusesUpdated =
+      status.streamletStatuses.filterNot(_.streamletName == streamletName) ++ streamletStatus
+    status.copy(streamletStatuses = streamletStatusesUpdated, appStatus = calcAppStatus(streamletStatusesUpdated))
+  }
+
+  private def ignoreOnErrorStatus(oldApp: Option[App.Cr], newApp: App.Cr) = {
+    val _ = newApp
+    oldApp.map(_.status) match {
+      case Some(status) if status.appStatus == Some(Status.Error) => false
+      case _                                                      => true
+    }
+  }
+
+  // TODO 60 retries looks a pretty high number, got it since with 5 it happened to fail ...
+  def statusUpdateAction(app: App.Cr)(retry: Int = 60): Action = {
+    Action.operation[App.Cr, App.List, Try[App.Cr]](
+      { client: KubernetesClient =>
+        client
+          .customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
+      }, { cr: MixedOperation[App.Cr, App.List, Resource[App.Cr]] =>
+        Try {
+          val current = cr.inNamespace(app.namespace).withName(app.name)
+          val res =
+            Option(current.get()) match {
+              case Some(curr) =>
+                curr.copy(status = app.status)
+              case _ =>
+                app.copy(status = app.status)
+            }
+          current.updateStatus(res)
+        }
+      }, { res =>
+        res match {
+          case Success(_) => Action.noop
+          case Failure(err) if retry > 0 =>
+            log.error(s"Failure updating the CR status retries: $retry", err)
+            statusUpdateAction(app)(retry - 1)
+          case Failure(err) =>
+            log.error("Failure updating the CR status retries exhausted, giving up", err)
+            throw err
+        }
+      })
+  }
 }
-
-
