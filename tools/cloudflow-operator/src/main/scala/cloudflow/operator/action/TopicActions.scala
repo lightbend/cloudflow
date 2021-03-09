@@ -112,7 +112,7 @@ object TopicActions {
               case None =>
                 val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
                 log.error(msg)
-                CloudflowApplication.Status.errorAction(newApp, runners, msg)
+                CloudflowStatus.errorAction(newApp, runners, msg)
             }
           }
         }
@@ -121,7 +121,7 @@ object TopicActions {
             val msg =
               "A default Kafka configuration was not defined during installation of cloudflow-operator. Cannot create managed topics."
             log.error(msg)
-            CloudflowApplication.Status.errorAction(newApp, runners, msg)
+            CloudflowStatus.errorAction(newApp, runners, msg)
           } else {
             useClusterConfiguration(topic.copy(cluster = Some(DefaultConfigurationName)))
           }
@@ -183,7 +183,7 @@ object TopicActions {
         val msg = s"Default Kafka connection configuration was invalid for topic [${topic.name}]" +
           topic.cluster.map(c => s", cluster [$c]").getOrElse("") +
           ". Update installation of Cloudflow with Helm charts to include a default Kafka cluster configuration that contains defaults for 'bootstrapServers', 'partitions', and 'replicas'."
-        CloudflowApplication.Status.errorAction(newApp, runners, msg)
+        CloudflowStatus.errorAction(newApp, runners, msg)
     }
 
   private class CreateTopicAction(
@@ -216,7 +216,7 @@ object TopicActions {
         .recoverWith {
           case t =>
             log.error(s"Error creating topic: ${t.getMessage}", t)
-            CloudflowApplication.Status.errorAction(newApp, runners, t.getMessage).execute(client)
+            CloudflowStatus.errorAction(newApp, runners, t.getMessage).execute(client)
         }
     }
   }

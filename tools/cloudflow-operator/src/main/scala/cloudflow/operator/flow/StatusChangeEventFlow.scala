@@ -22,7 +22,6 @@ import akka.NotUsed
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import akka.stream.scaladsl._
-import cloudflow.operator.action.CloudflowApplication
 import org.slf4j._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
@@ -34,7 +33,7 @@ object StatusChangeEventFlow extends {
   lazy val log = LoggerFactory.getLogger(this.getClass)
 
   val podsRef = new AtomicReference(Map[String, WatchEvent]())
-  val statusRef = new AtomicReference(Map[String, CloudflowApplication.Status]())
+  val statusRef = new AtomicReference(Map[String, App.Cr]())
 
   def fromWatchEvent(): Flow[WatchEvent, StatusChangeEvent, NotUsed] =
     Flow[WatchEvent]

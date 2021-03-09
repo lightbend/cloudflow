@@ -45,17 +45,15 @@ object Actions {
       cause: ObjectReference): Seq[Action] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(CloudflowApplication.getOwnerReference(newApp))
+    val ownerReferences = List(Util.getOwnerReference(newApp.name, newApp.getMetadata.getUid))
     prepareNamespace(newApp, runners, labels, ownerReferences) ++
     deployTopics(newApp, runners, podNamespace) ++
     deployRunners(newApp, currentApp, runners) ++
     // If an existing status is there, update status based on app (expected pod counts)
     // in case pod events do not occur, for instance when a operator delegated to is not responding
-    Option(newApp.status).flatMap { crStatus =>
-      val st = CloudflowApplication.Status(newApp.spec, runners)
-
-      val newStatus = st.updateApp(newApp, runners)
-      if (newStatus != st) Some(newStatus.toAction(newApp)())
+    Option(newApp.getStatus).flatMap { st =>
+      val newStatus = CloudflowStatus.updateApp(newApp, runners).status
+      if (newStatus != st) Some(CloudflowStatus.statusUpdateAction(newApp)())
       else None
     }.toList ++
     EventActions.deployEvents(newApp, currentApp, runners, podName, cause)

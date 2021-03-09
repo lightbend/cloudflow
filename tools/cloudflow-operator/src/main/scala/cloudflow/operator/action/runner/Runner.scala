@@ -135,7 +135,7 @@ trait Runner[T <: HasMetadata] {
               val msg =
                 s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
               log.info(msg)
-              CloudflowApplication.Status.pendingAction(
+              CloudflowStatus.pendingAction(
                 newApp,
                 runners,
                 s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
@@ -168,7 +168,7 @@ trait Runner[T <: HasMetadata] {
           case None =>
             val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
             log.error(msg)
-            CloudflowApplication.Status.errorAction(newApp, runners, msg)
+            CloudflowStatus.errorAction(newApp, runners, msg)
         }
       })
   }
@@ -232,15 +232,14 @@ trait Runner[T <: HasMetadata] {
     val ownerReference = new OwnerReferenceBuilder()
       .withApiVersion(app.getApiVersion)
       .withKind(app.getKind)
-      .withName(app.metadata.getName)
-      .withUid(app.metadata.getUid)
+      .withName(app.getMetadata.getName)
+      .withUid(app.getMetadata.getUid)
       .withController(true)
       .withBlockOwnerDeletion(true)
       .build()
 
-    val configData = Vector(
-      RunnerConfig(app.spec.appId, app.spec.appVersion, CloudflowApplication.fromCrDeploymentToBlueprint(deployment)),
-      prometheusConfig)
+    val configData =
+      Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, Util.toBlueprint(deployment)), prometheusConfig)
     val name = Name.ofConfigMap(deployment.name)
 
     new ConfigMapBuilder()

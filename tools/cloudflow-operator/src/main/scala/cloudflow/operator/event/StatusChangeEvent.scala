@@ -78,44 +78,62 @@ object StatusChangeEvent extends Event {
   }
 
   def toActionList(
-      currentStatuses: Map[String, CloudflowApplication.Status],
+      currentStatuses: Map[String, App.Cr],
       mappedApp: Option[App.Cr],
       runners: Map[String, Runner[_]],
-      event: StatusChangeEvent): (Map[String, CloudflowApplication.Status], Seq[Action]) = {
+      event: StatusChangeEvent): (Map[String, App.Cr], Seq[Action]) = {
     (mappedApp, event) match {
       case (Some(app), statusChangeEvent)
-          if Option(app.status).flatMap(s => Option(s.appStatus)) != Some(CloudflowApplication.Status.Error) =>
+          if Option(app.getStatus).flatMap(s => Option(s.appStatus)) != Some(CloudflowStatus.Status.Error) =>
         log.debug(
           s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")
 
         val appId = app.spec.appId
 
-        val appStatus = currentStatuses
+        val appCr: App.Cr = currentStatuses
           .get(appId)
-          .map(_.updateApp(app, runners))
-          .getOrElse(CloudflowApplication.Status(app.spec, runners))
+          .map { curr =>
+            if (curr.getStatus != null) {
+              app.setStatus(curr.getStatus)
+              CloudflowStatus.updateApp(app, runners)
+            } else {
+              app.setStatus(CloudflowStatus.freshStatus(app.spec, runners))
+              app
+            }
+          }
+          .getOrElse {
+            app.setStatus(CloudflowStatus.freshStatus(app.spec, runners))
+            app
+          }
 
-        val updatedStatuses: Map[String, CloudflowApplication.Status] = statusChangeEvent match {
+        statusChangeEvent match {
           case StatusChangeEvent(appId, streamletName, watchEvent) =>
             EventType.getByType(watchEvent.getType) match {
               case EventType.ADDITION | EventType.UPDATION =>
                 log.debug(
                   s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
-                currentStatuses + (appId -> appStatus.updatePod(streamletName, watchEvent.getObject.asInstanceOf[Pod]))
+                val newStatus =
+                  CloudflowStatus.updatePod(appCr.getStatus)(streamletName, watchEvent.getObject.asInstanceOf[Pod])
+                appCr.setStatus(newStatus)
               case EventType.DELETION =>
                 log.debug(
                   s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
-                currentStatuses + (appId -> appStatus.deletePod(streamletName, watchEvent.getObject.asInstanceOf[Pod]))
+                val newStatus =
+                  CloudflowStatus.deletePod(appCr.getStatus)(streamletName, watchEvent.getObject.asInstanceOf[Pod])
+                appCr.setStatus(newStatus)
               case _ =>
                 log.warn(
                   s"[Status changes] Detected an unexpected change in $appId ${changeInfo(watchEvent)} in streamlet ${streamletName} (only expecting Pod changes): \n ${watchEvent}")
-                currentStatuses + (appId -> appStatus)
             }
+          case se =>
+            log.warn(s"[Status changes] Unhandled status change event in $appId : $se")
         }
 
-        (updatedStatuses, updatedStatuses.get(appId).map(_.toAction(app)()).toList)
+        val updatedStatuses: Map[String, App.Cr] = currentStatuses + (appId -> appCr)
+
+        (updatedStatuses, updatedStatuses.get(appId).map { a => CloudflowStatus.statusUpdateAction(a)() }.toList)
       case (Some(app), _)
-          if Option(app.status).flatMap(s => Option(s.appStatus)) == Some(CloudflowApplication.Status.Error) =>
+          if Option(app.getStatus).flatMap(s => Option(s.appStatus)) == Some(CloudflowStatus.Status.Error) =>
         (currentStatuses, List())
       case (None, statusChangeEvent) => // app could not be found, remove status
         if (currentStatuses.contains(statusChangeEvent.appId)) {

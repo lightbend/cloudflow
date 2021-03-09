@@ -120,7 +120,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       case None =>
         val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
         log.error(msg)
-        CloudflowApplication.Status.errorAction(newApp, runners, msg)
+        CloudflowStatus.errorAction(newApp, runners, msg)
     }
 
     val configAction =
@@ -303,14 +303,14 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       deployment)
 
     val monitoring = {
-      if (!agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
+      if (!agentPaths.contains(Util.PrometheusAgentKey)) {
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
           jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
           configFile = "/etc/cloudflow-runner/prometheus.yaml",
           port = 2050))
       } else {
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
-          jmxExporterJar = agentPaths(CloudflowApplication.PrometheusAgentKey),
+          jmxExporterJar = agentPaths(Util.PrometheusAgentKey),
           configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)))
       }
     }

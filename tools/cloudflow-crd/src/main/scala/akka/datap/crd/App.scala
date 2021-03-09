@@ -87,8 +87,8 @@ object App {
       @JsonProperty("metadata")
       metadata: ObjectMeta,
       @JsonProperty("status")
-      status: AppStatus = null)
-      extends CustomResource
+      var status: AppStatus = null)
+      extends CustomResource[Spec, AppStatus]
       with Namespaced {
     this.setMetadata(metadata)
 
@@ -293,7 +293,7 @@ object App {
       streamletName: String,
       @JsonProperty("expected_pod_count")
       expectedPodCount: Option[Int],
-      @JsonProperty("pod_statuses")
+      @JsonProperty(value = "pod_statuses")
       podStatuses: immutable.Seq[PodStatus])
       extends KubernetesResource {}
 

@@ -447,7 +447,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
   private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {
     val agentPaths = app.spec.agentPaths
-    val prometheusEnvVars = if (agentPaths.contains(CloudflowApplication.PrometheusAgentKey)) {
+    val prometheusEnvVars = if (agentPaths.contains(Util.PrometheusAgentKey)) {
       List(
         new EnvVarBuilder()
           .withName(PrometheusExporterPortEnvVar)
