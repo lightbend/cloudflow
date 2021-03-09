@@ -25,18 +25,18 @@ import akka.stream.scaladsl._
 import org.slf4j._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
-import io.fabric8.kubernetes.api.model.WatchEvent
+import io.fabric8.kubernetes.api.model.Pod
 
 object StatusChangeEventFlow extends {
   import StatusChangeEvent._
 
   lazy val log = LoggerFactory.getLogger(this.getClass)
 
-  val podsRef = new AtomicReference(Map[String, WatchEvent]())
+  val podsRef = new AtomicReference(Map[String, WatchEvent[Pod]]())
   val statusRef = new AtomicReference(Map[String, App.Cr]())
 
-  def fromWatchEvent(): Flow[WatchEvent, StatusChangeEvent, NotUsed] =
-    Flow[WatchEvent]
+  def fromWatchEvent(): Flow[WatchEvent[Pod], StatusChangeEvent, NotUsed] =
+    Flow[WatchEvent[Pod]]
       .mapConcat { watchEvent =>
         val currentObjects = podsRef.get
         val (updatedObjects, events) = toStatusChangeEvent(currentObjects, watchEvent)

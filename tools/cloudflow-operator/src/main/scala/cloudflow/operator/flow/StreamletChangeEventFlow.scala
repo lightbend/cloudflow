@@ -22,18 +22,17 @@ import akka.NotUsed
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import akka.stream.scaladsl._
-import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
-import io.fabric8.kubernetes.api.model.{ Secret, WatchEvent }
+import io.fabric8.kubernetes.api.model.Secret
 
 object StreamletChangeEventFlow {
 
   import StreamletChangeEvent._
 
-  val secretsRef = new AtomicReference(Map[String, WatchEvent]())
+  val secretsRef = new AtomicReference(Map[String, WatchEvent[Secret]]())
 
-  def fromWatchEvent(): Flow[WatchEvent, StreamletChangeEvent[Secret], NotUsed] =
-    Flow[WatchEvent]
+  def fromWatchEvent(): Flow[WatchEvent[Secret], StreamletChangeEvent[Secret], NotUsed] =
+    Flow[WatchEvent[Secret]]
       .mapConcat { watchEvent =>
         val currentObjects = secretsRef.get
         val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)

@@ -24,14 +24,15 @@ import scala.collection.immutable.Seq
 import org.slf4j._
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
-import io.fabric8.kubernetes.api.model.{ HasMetadata, Pod, WatchEvent }
+import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.informers.EventType
 
 /**
  * Indicates that the status of the application has changed.
  */
-case class StatusChangeEvent(appId: String, streamletName: String, watchEvent: WatchEvent) extends AppChangeEvent[Pod] {
-  def namespace = watchEvent.getObject.asInstanceOf[HasMetadata].getMetadata.getNamespace
+case class StatusChangeEvent(appId: String, streamletName: String, watchEvent: WatchEvent[Pod])
+    extends AppChangeEvent[Pod] {
+  def namespace = watchEvent.obj.getMetadata.getNamespace
 }
 
 object StatusChangeEvent extends Event {
@@ -42,17 +43,15 @@ object StatusChangeEvent extends Event {
     s"Status change for streamlet ${event.streamletName} detected in application ${event.appId}."
 
   def toStatusChangeEvent(
-      currentObjects: Map[String, WatchEvent],
-      watchEvent: WatchEvent): (Map[String, WatchEvent], List[StatusChangeEvent]) = {
-    def getObject(we: WatchEvent) = we.getObject.asInstanceOf[Pod]
-
-    val obj = getObject(watchEvent)
+      currentObjects: Map[String, WatchEvent[Pod]],
+      watchEvent: WatchEvent[Pod]): (Map[String, WatchEvent[Pod]], List[StatusChangeEvent]) = {
+    val obj = watchEvent.obj
     val metadata = obj.getMetadata
     val objName = obj.getMetadata.getName
     val namespace = obj.getMetadata.getNamespace
     val absoluteName = s"$namespace.$objName"
 
-    EventType.getByType(watchEvent.getType) match {
+    watchEvent.eventType match {
       case EventType.DELETION =>
         val events = (for {
           appId <- Option(metadata.getLabels.get(CloudflowLabels.AppIdLabel))
@@ -108,18 +107,18 @@ object StatusChangeEvent extends Event {
 
         statusChangeEvent match {
           case StatusChangeEvent(appId, streamletName, watchEvent) =>
-            EventType.getByType(watchEvent.getType) match {
+            watchEvent.eventType match {
               case EventType.ADDITION | EventType.UPDATION =>
                 log.debug(
                   s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                 val newStatus =
-                  CloudflowStatus.updatePod(appCr.getStatus)(streamletName, watchEvent.getObject.asInstanceOf[Pod])
+                  CloudflowStatus.updatePod(appCr.getStatus)(streamletName, watchEvent.obj)
                 appCr.setStatus(newStatus)
               case EventType.DELETION =>
                 log.debug(
                   s"[Status changes] app: $appId status of streamlet $streamletName changed: ${changeInfo(watchEvent)}")
                 val newStatus =
-                  CloudflowStatus.deletePod(appCr.getStatus)(streamletName, watchEvent.getObject.asInstanceOf[Pod])
+                  CloudflowStatus.deletePod(appCr.getStatus)(streamletName, watchEvent.obj)
                 appCr.setStatus(newStatus)
               case _ =>
                 log.warn(

@@ -17,18 +17,18 @@
 package cloudflow.operator
 package event
 
-import io.fabric8.kubernetes.api.model.{ HasMetadata, WatchEvent }
+import io.fabric8.kubernetes.api.model.HasMetadata
+import io.fabric8.kubernetes.client.informers.EventType
 
 object Event extends Event
 trait Event {
 
-  def changeInfo[T <: HasMetadata](watchEvent: WatchEvent) = {
-    def getObject(we: WatchEvent) = we.getObject.asInstanceOf[T]
-
-    val obj = getObject(watchEvent)
-    val metadata = obj.getMetadata
-    s"(${getKind(obj)} ${metadata.getName} ${watchEvent.getType})"
+  def changeInfo[T <: HasMetadata](watchEvent: WatchEvent[T]) = {
+    val metadata = watchEvent.obj.getMetadata
+    s"(${getKind(watchEvent.obj)} ${metadata.getName} ${watchEvent.eventType})"
   }
   def getKind(obj: HasMetadata) =
     if (Option(obj.getKind).isEmpty) obj.getClass.getSimpleName else obj.getKind // sometimes kind is empty.
 }
+
+case class WatchEvent[T <: HasMetadata](obj: T, eventType: EventType)

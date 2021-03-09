@@ -24,15 +24,15 @@ import scala.collection.immutable.Seq
 import org.slf4j.LoggerFactory
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
-import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference, Secret, WatchEvent }
+import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference, Secret }
 import io.fabric8.kubernetes.client.informers.EventType
 
 /**
  * Indicates that a streamlet has changed.
  */
-case class StreamletChangeEvent[T <: HasMetadata](appId: String, streamletName: String, watchEvent: WatchEvent)
+case class StreamletChangeEvent[T <: HasMetadata](appId: String, streamletName: String, watchEvent: WatchEvent[T])
     extends AppChangeEvent[T] {
-  def namespace = watchEvent.getObject.asInstanceOf[HasMetadata].getMetadata.getNamespace
+  def namespace = watchEvent.obj.getMetadata.getNamespace
   def absoluteStreamletKey = s"$appId.$streamletName"
 }
 
@@ -40,21 +40,21 @@ object StreamletChangeEvent extends Event {
   private val log = LoggerFactory.getLogger(this.getClass)
 
   def toStreamletChangeEvent(
-      currentObjects: Map[String, WatchEvent],
-      watchEvent: WatchEvent): (Map[String, WatchEvent], List[StreamletChangeEvent[Secret]]) = {
-    val secret = watchEvent.getObject.asInstanceOf[Secret]
+      currentObjects: Map[String, WatchEvent[Secret]],
+      watchEvent: WatchEvent[Secret]): (Map[String, WatchEvent[Secret]], List[StreamletChangeEvent[Secret]]) = {
+    val secret = watchEvent.obj
     val metadata = secret.getMetadata
     val secretName = metadata.getName
     val namespace = metadata.getNamespace
     val absoluteName = s"$namespace.$secretName"
 
-    def hasChanged(existingEvent: WatchEvent) =
-      secret.getMetadata.getResourceVersion != existingEvent.getObject
+    def hasChanged(existingEvent: WatchEvent[Secret]) =
+      secret.getMetadata.getResourceVersion != existingEvent.obj
           .asInstanceOf[Secret]
           .getMetadata
           .getResourceVersion
 
-    EventType.getByType(watchEvent.getType) match {
+    watchEvent.eventType match {
       case EventType.DELETION =>
         val events = (for {
           appId <- Option(metadata.getLabels.get(CloudflowLabels.AppIdLabel))
@@ -76,7 +76,7 @@ object StreamletChangeEvent extends Event {
         } else (currentObjects, List())
       case EventType.ERROR =>
         log.error("Received an error event!")
-        (Map.empty[String, WatchEvent], List.empty[StreamletChangeEvent[Secret]])
+        (Map.empty[String, WatchEvent[Secret]], List.empty[StreamletChangeEvent[Secret]])
     }
   }
 
@@ -86,10 +86,9 @@ object StreamletChangeEvent extends Event {
       runners: Map[String, Runner[_]],
       podName: String): Seq[Action] =
     (mappedApp, event) match {
-      case (Some(app), streamletChangeEvent)
-          if EventType.getByType(streamletChangeEvent.watchEvent.getType) == EventType.UPDATION =>
+      case (Some(app), streamletChangeEvent) if streamletChangeEvent.watchEvent.eventType == EventType.UPDATION =>
         import streamletChangeEvent._
-        val secret = watchEvent.getObject.asInstanceOf[Secret]
+        val secret = watchEvent.obj
         val metadata = secret.getMetadata
         Option(
           metadata.getLabels
@@ -122,7 +121,7 @@ object StreamletChangeEvent extends Event {
       podName: String,
       runners: Map[String, Runner[_]]) = {
     import streamletChangeEvent._
-    val secret = watchEvent.getObject.asInstanceOf[Secret]
+    val secret = watchEvent.obj
     app.spec.deployments
       .find(_.streamletName == streamletName)
       .map { streamletDeployment =>

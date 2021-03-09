@@ -265,12 +265,11 @@ object CloudflowStatus {
       }, { cr: MixedOperation[App.Cr, App.List, Resource[App.Cr]] =>
         Try {
           val current =
-            cr
-              .inNamespace(app.namespace)
+            cr.inNamespace(app.namespace)
               .withName(app.name)
-              .fromServer()
+
           val res =
-            Option(current.get()) match {
+            Option(current.fromServer().get()) match {
               case Some(curr) =>
                 curr.setStatus(app.getStatus)
                 curr

@@ -22,7 +22,7 @@ import akka.kube.actions.Action
 
 import scala.collection.immutable.Seq
 import cloudflow.operator.action._
-import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference, WatchEvent }
+import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference }
 import io.fabric8.kubernetes.client.informers.EventType
 import org.slf4j.LoggerFactory
 
@@ -50,8 +50,7 @@ case class UndeployEvent(app: App.Cr, cause: ObjectReference) extends AppEvent {
  * Indicates that something changed in the cloudflow application.
  */
 trait AppChangeEvent[T <: HasMetadata] {
-  // TODO: move to the informer?
-  def watchEvent: WatchEvent
+  def watchEvent: WatchEvent[T]
   def namespace: String
   def appId: String
 }
@@ -59,7 +58,6 @@ trait AppChangeEvent[T <: HasMetadata] {
 object AppEvent {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  // TODO: move this somewhere else?
   def toObjectReference(hm: HasMetadata): ObjectReference = {
     new ObjectReference(
       hm.getApiVersion,
@@ -72,34 +70,30 @@ object AppEvent {
   }
 
   def toDeployEvent(
-      currentApps: Map[String, WatchEvent],
-      _watchEvent: WatchEvent): (Map[String, WatchEvent], List[AppEvent]) = {
-    def getObject(we: WatchEvent) = we.getObject.asInstanceOf[App.Cr]
-
-    val watchEventObject = getObject(_watchEvent)
-
-    val cr = watchEventObject
+      currentApps: Map[String, WatchEvent[App.Cr]],
+      watchEvent: WatchEvent[App.Cr]): (Map[String, WatchEvent[App.Cr]], List[AppEvent]) = {
+    val cr = watchEvent.obj
     val appId = cr.spec.appId
-    val currentApp = currentApps.get(appId).map(getObject)
+    val currentApp = currentApps.get(appId).map(_.obj)
 
     def hasChanged = currentApps.get(appId).forall { _existingEvent =>
-      val existingEventObject = getObject(_existingEvent)
+      val existingEventObject = _existingEvent.obj
 
-      existingEventObject.getMetadata.getResourceVersion != watchEventObject.getMetadata.getResourceVersion &&
+      existingEventObject.getMetadata.getResourceVersion != watchEvent.obj.getMetadata.getResourceVersion &&
       // the spec must change, otherwise it is not a deploy event (but likely a status update).
-      existingEventObject.spec != watchEventObject.spec
+      existingEventObject.spec != watchEvent.obj.spec
     }
 
-    EventType.getByType(_watchEvent.getType) match {
+    watchEvent.eventType match {
       case EventType.DELETION =>
-        (currentApps - appId, List(UndeployEvent(cr, toObjectReference(watchEventObject))))
+        (currentApps - appId, List(UndeployEvent(cr, toObjectReference(watchEvent.obj))))
       case EventType.ADDITION | EventType.UPDATION =>
         if (hasChanged) {
-          (currentApps + (appId -> _watchEvent), List(DeployEvent(cr, currentApp, toObjectReference(watchEventObject))))
+          (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, toObjectReference(watchEvent.obj))))
         } else (currentApps, List())
       case EventType.ERROR =>
         log.error("Received an error event!")
-        (Map.empty[String, WatchEvent], List.empty[AppEvent])
+        (Map.empty[String, WatchEvent[App.Cr]], List.empty[AppEvent])
     }
   }
 

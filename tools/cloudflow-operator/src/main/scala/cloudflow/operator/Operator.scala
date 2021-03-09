@@ -38,13 +38,16 @@ import io.fabric8.kubernetes.api.model.{
   Pod,
   PodList,
   Secret,
-  SecretList,
-  WatchEvent,
-  WatchEventBuilder
+  SecretList
 }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.base.OperationContext
-import io.fabric8.kubernetes.client.informers.{ EventType, ResourceEventHandler, SharedInformerFactory }
+import io.fabric8.kubernetes.client.informers.{
+  EventType,
+  ResourceEventHandler,
+  SharedIndexInformer,
+  SharedInformerFactory
+}
 import io.fabric8.kubernetes.client.informers.cache.Cache
 
 import java.util.concurrent.atomic.AtomicReference
@@ -171,137 +174,117 @@ object Operator {
       }.map { cr => cr -> changeEvent }
     }
 
-  private def getEventHandler[T <: KubernetesResource](fn: WatchEvent => Unit) = {
+  private def getEventHandler[T <: HasMetadata](fn: WatchEvent[T] => Unit) = {
 
     new ResourceEventHandler[T]() {
       override def onAdd(elem: T): Unit = {
-        val we = new WatchEventBuilder()
-          .withType(EventType.ADDITION.toString)
-          .build()
-
-        // withObject in the builder doesn't work
-        we.setObject(elem)
-        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-        fn(we)
+        fn(WatchEvent[T](elem, EventType.ADDITION))
       }
 
       override def onUpdate(oldElem: T, newElem: T): Unit = {
-        val we = new WatchEventBuilder()
-          .withType(EventType.UPDATION.toString)
-          .build()
-
-        // withObject in the builder doesn't work
-        we.setObject(newElem)
-        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-        fn(we)
+        fn(WatchEvent[T](newElem, EventType.UPDATION))
       }
 
       override def onDelete(elem: T, deletedFinalStateUnknown: Boolean): Unit = {
-        val we = new WatchEventBuilder()
-          .withType(EventType.DELETION.toString)
-          .build()
-
-        // withObject in the builder doesn't work
-        we.setObject(elem)
-        // TODO: remove all the WatchEvent logic ... it's not needed possibly ... at least not like this
-        fn(we)
+        fn(WatchEvent[T](elem, EventType.DELETION))
       }
     }
   }
 
+  private val crInformer = new AtomicReference[SharedIndexInformer[App.Cr]]()
+
+  private def setOnceAndGet[T](ar: AtomicReference[T], elem: () => T): T = {
+    lazy val newValue = elem()
+    if (ar.compareAndSet(null.asInstanceOf[T], newValue)) {
+      newValue
+    } else {
+      ar.get()
+    }
+  }
+
+  private def enqueueTask[T <: HasMetadata](msgType: String, sourceMat: SourceQueueWithComplete[WatchEvent[T]])(
+      event: WatchEvent[T]): Unit = {
+    val key = Cache.metaNamespaceKeyFunc(event.obj)
+
+    log.info("Enqueue {} with key [{}]", msgType, key)
+
+    sourceMat.offer(event)
+  }
+
   private def watchCr(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
-      implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
+      implicit system: ActorSystem): Source[WatchEvent[App.Cr], NotUsed] = {
 
-    // TODO probably should be an atomic ref as well
-    val informer =
-      sharedInformerFactory
-        .sharedIndexInformerForCustomResource(
-          App.customResourceDefinitionContext,
-          classOf[App.Cr],
-          classOf[App.List],
-          new OperationContext().withLabels(options.asJava),
-          1000L * 60L * 10L)
+    val informer = setOnceAndGet(
+      crInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerForCustomResource(
+            App.customResourceDefinitionContext,
+            classOf[App.Cr],
+            classOf[App.List],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
 
-    // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
       Source
-        .queue[WatchEvent](10000)
+        .queue[WatchEvent[App.Cr]](1000, overflowStrategy = OverflowStrategy.dropHead)
         .preMaterialize()
     }
 
-    def enqueueTask(event: WatchEvent): Unit = {
-      val key = Cache.metaNamespaceKeyFunc(event.getObject)
-
-      log.info("Enqueue CrChanged with key [{}]", key)
-
-      sourceMat.offer(event)
-    }
-
-    informer.addEventHandler(getEventHandler[App.Cr](enqueueTask))
+    informer.addEventHandler(getEventHandler[App.Cr](enqueueTask("App.Cr Watch Event", sourceMat)))
 
     source
   }
+
+  private val secretInformer = new AtomicReference[SharedIndexInformer[Secret]]()
 
   private def watchSecret(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
-      implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
+      implicit system: ActorSystem): Source[WatchEvent[Secret], NotUsed] = {
 
-    // TODO probably should be an atomic ref as well
-    val informer =
-      sharedInformerFactory
-        .sharedIndexInformerFor(
-          classOf[Secret],
-          classOf[SecretList],
-          new OperationContext().withLabels(options.asJava),
-          1000L * 60L * 10L)
+    val informer = setOnceAndGet(
+      secretInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerFor(
+            classOf[Secret],
+            classOf[SecretList],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
 
-    // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
       Source
-        .queue[WatchEvent](10000)
+        .queue[WatchEvent[Secret]](1000, overflowStrategy = OverflowStrategy.dropHead)
         .preMaterialize()
     }
 
-    def enqueueTask(event: WatchEvent): Unit = {
-      val key = Cache.metaNamespaceKeyFunc(event.getObject)
-
-      log.info("Enqueue SecretChanged with key [{}]", key)
-
-      sourceMat.offer(event)
-    }
-
-    informer.addEventHandler(getEventHandler[Secret](enqueueTask))
+    informer.addEventHandler(getEventHandler[Secret](enqueueTask[Secret]("Secret Watch Event", sourceMat)))
 
     source
   }
 
+  private val podInformer = new AtomicReference[SharedIndexInformer[Pod]]()
+
   private def watchPod(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
-      implicit system: ActorSystem): Source[WatchEvent, NotUsed] = {
+      implicit system: ActorSystem): Source[WatchEvent[Pod], NotUsed] = {
 
     // TODO probably should be an atomic ref as well
-    val informer =
-      sharedInformerFactory
-        .sharedIndexInformerFor(
-          classOf[Pod],
-          classOf[PodList],
-          new OperationContext().withLabels(options.asJava),
-          1000L * 60L * 10L)
+    val informer = setOnceAndGet(
+      podInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerFor(
+            classOf[Pod],
+            classOf[PodList],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
 
-    // TODO: IMPORTANT we can remove all of the watchEvent reference, no need for them with fabric8
     val (sourceMat, source) = {
       Source
-        .queue[WatchEvent](10000)
+        .queue[WatchEvent[Pod]](1000, overflowStrategy = OverflowStrategy.dropHead)
         .preMaterialize()
     }
 
-    def enqueueTask(event: WatchEvent): Unit = {
-      val key = Cache.metaNamespaceKeyFunc(event.getObject)
-
-      log.info("Enqueue PodChanged with key [{}]", key)
-
-      sourceMat.offer(event)
-    }
-
-    informer.addEventHandler(getEventHandler[Pod](enqueueTask))
+    informer.addEventHandler(getEventHandler[Pod](enqueueTask("Pod Watch Event", sourceMat)))
 
     source
   }
