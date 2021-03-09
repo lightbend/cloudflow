@@ -7,7 +7,8 @@ package akka.cli.cloudflow.execution
 import java.io.File
 
 import scala.util.{ Failure, Success, Try }
-import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution, Json }
+import akka.cloudflow.Json
+import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution }
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.datap.crd.App
 import akka.cli.cloudflow.commands.Deploy

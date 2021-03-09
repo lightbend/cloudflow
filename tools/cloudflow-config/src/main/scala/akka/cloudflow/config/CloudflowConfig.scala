@@ -7,7 +7,6 @@ package akka.cloudflow.config
 
 import scala.jdk.CollectionConverters._
 import scala.util.{ Failure, Success, Try }
-import akka.cli.cloudflow.CliException
 import akka.datap.crd.App
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import pureconfig.configurable.{ genericMapReader, genericMapWriter }
@@ -83,11 +82,11 @@ object CloudflowConfig {
         case i if i > 1 =>
           Left(
             ConfigReaderFailures(
-              cur.failureFor(ExceptionThrown(CliException("volume has multiple definitions, only one is allowed")))))
+              cur.failureFor(ExceptionThrown(ConfigException("volume has multiple definitions, only one is allowed")))))
         case i if i == 0 =>
           Left(
             ConfigReaderFailures(
-              cur.failureFor(ExceptionThrown(CliException("volume doesn't have a parseable definition")))))
+              cur.failureFor(ExceptionThrown(ConfigException("volume doesn't have a parseable definition")))))
         case _ => Right(())
       }
       (k, v) = volume.head
@@ -352,7 +351,7 @@ object CloudflowConfig {
         if (failures.size > 0) cur.failed(PodConfigFailure(s"$LabelsNotAllowedOnPod ${failures.mkString(", ")}"))
         else Right(kubernetes)
       case Left(err) =>
-        cur.failed(ExceptionThrown(CliException(err.prettyPrint())))
+        cur.failed(ExceptionThrown(ConfigException(err.prettyPrint())))
     }
   }
 
@@ -380,7 +379,7 @@ object CloudflowConfig {
         cur.failed(StreamletConfigFailure(MandatorySectionsText))
       case Right(s) => Right(s)
       case Left(err) =>
-        cur.failed(ExceptionThrown(CliException(err.prettyPrint())))
+        cur.failed(ExceptionThrown(ConfigException(err.prettyPrint())))
     }
   }
 
@@ -427,7 +426,7 @@ object CloudflowConfig {
         }
         Right(v)
       case Left(err) =>
-        cur.failed(ExceptionThrown(CliException(err.prettyPrint())))
+        cur.failed(ExceptionThrown(ConfigException(err.prettyPrint())))
     }
   }
 
@@ -462,7 +461,7 @@ object CloudflowConfig {
         }
         Right(v)
       case Left(err) =>
-        cur.failed(ExceptionThrown(CliException(err.prettyPrint())))
+        cur.failed(ExceptionThrown(ConfigException(err.prettyPrint())))
     }
   }
 
@@ -489,31 +488,31 @@ object CloudflowConfig {
   // Custom errors
   val MandatorySectionsText = "a streamlet should have at least one of the mandatory sections"
 
-  private case class StreamletConfigFailure(msg: String) extends CliException(msg) with FailureReason {
+  private case class StreamletConfigFailure(msg: String) extends ConfigException(msg) with FailureReason {
     def description = msg
   }
 
   val LabelsNotAllowedOnPod = "Labels can NOT be applied specifically to"
 
-  private case class PodConfigFailure(msg: String) extends CliException(msg) with FailureReason {
+  private case class PodConfigFailure(msg: String) extends ConfigException(msg) with FailureReason {
     def description = msg
   }
 
   val InvalidLabel = "Invalid label"
 
-  private case class InvalidLabelFailure(msg: String) extends CliException(msg) with FailureReason {
+  private case class InvalidLabelFailure(msg: String) extends ConfigException(msg) with FailureReason {
     def description = msg
   }
 
   val InvalidAnnotation = "Invalid annotation"
 
-  private case class InvalidAnnotationFailure(msg: String) extends CliException(msg) with FailureReason {
+  private case class InvalidAnnotationFailure(msg: String) extends ConfigException(msg) with FailureReason {
     def description = msg
   }
 
   val InvalidMounts = "Volume mounts without a corresponding declared volume"
 
-  private case class InvalidMountsFailure(msg: String) extends CliException(msg) with FailureReason {
+  private case class InvalidMountsFailure(msg: String) extends ConfigException(msg) with FailureReason {
     def description = msg
   }
 
@@ -525,7 +524,7 @@ object CloudflowConfig {
     (config.load[CloudflowConfig.CloudflowRoot]) match {
       case Right(value) => Success(value)
       case Left(err) =>
-        Failure(CliException(s"Configuration errors:\n${err.prettyPrint()}"))
+        Failure(ConfigException(s"Configuration errors:\n${err.prettyPrint()}"))
     }
   }
 
@@ -653,7 +652,7 @@ object UnsafeCloudflowConfigLoader {
     (ConfigSource.fromConfig(config).load[CloudflowConfig.CloudflowRoot]) match {
       case Right(value) => Success(value)
       case Left(err) =>
-        Failure(CliException(s"Configuration errors:\n${err.prettyPrint()}"))
+        Failure(ConfigException(s"Configuration errors:\n${err.prettyPrint()}"))
     }
   }
 
@@ -661,7 +660,7 @@ object UnsafeCloudflowConfigLoader {
     (ConfigSource.fromConfig(config).load[CloudflowConfig.Streamlet]) match {
       case Right(value) => Success(value.kubernetes)
       case Left(err) =>
-        Failure(CliException(s"Error in pod configuration:\n${err.prettyPrint()}"))
+        Failure(ConfigException(s"Error in pod configuration:\n${err.prettyPrint()}"))
     }
   }
 
