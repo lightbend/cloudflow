@@ -451,6 +451,8 @@ lazy val localRunner =
       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true
     )
+
+// TODO: remove me for real!
 // lazy val operatorActions =
 //   cloudflowModule("cloudflow-operator-actions")
 //     .enablePlugins(
