@@ -19,10 +19,9 @@ package cloudflow.operator.action
 import cloudflow.blueprint._
 import _root_.cloudflow.blueprint.BlueprintBuilder._
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, CreateOrReplaceAction, OperatorAction }
 import cloudflow.operator.action.EndpointActions.CreateServiceAction
 import cloudflow.operator.action.runner._
-import io.fabric8.kubernetes.api.model.{ SecretBuilder, Service }
+import io.fabric8.kubernetes.api.model.SecretBuilder
 import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
