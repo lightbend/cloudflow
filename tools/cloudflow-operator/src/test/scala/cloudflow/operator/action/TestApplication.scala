@@ -21,9 +21,15 @@ import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import com.fasterxml.jackson.databind.JsonNode
 import com.typesafe.config.{ Config, ConfigRenderOptions }
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder
 import io.fabric8.kubernetes.client.utils.Serialization
 
 object CloudflowApplicationSpecBuilder {
+
+  val demoMetadata = new ObjectMetaBuilder()
+    .withName("test")
+    .withUid("123")
+    .build()
 
   /**
    * Creates a App.Spec from a [[VerifiedBlueprint]].

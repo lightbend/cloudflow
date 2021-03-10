@@ -302,7 +302,7 @@ trait Runner[T <: HasMetadata] {
   }
 
   private def getData(secret: Secret, key: String): String = {
-    Base64Helper.decode(secret.getData.getOrDefault(key, ""))
+    Base64Helper.decode(Option(secret.getData).map(_.getOrDefault(key, "")).getOrElse(""))
   }
 
   def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =

@@ -447,7 +447,8 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
           .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
           .toMap)
       log.debug(
-        s"Setting SparkConf from secret ${configSecret.getMetadata.getNamespace}/${configSecret.getMetadata.getName}: $sparkConfMap")
+        s"Setting SparkConf from secret ${Option(configSecret.getMetadata).map(_.getNamespace).getOrElse("unknown")}/${Option(
+          configSecret.getMetadata).map(_.getName).getOrElse("unknown")}: $sparkConfMap")
       sparkConfMap
     }
   }

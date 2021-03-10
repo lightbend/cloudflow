@@ -195,7 +195,7 @@ lazy val cloudflowBlueprint =
 lazy val cloudflowOperator =
   Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin, JavaServerAppPackaging, DockerPlugin, AshScriptPlugin)
-    .dependsOn(cloudflowConfig, cloudflowBlueprint)
+    .dependsOn(cloudflowConfig, cloudflowBlueprint % "compile->compile;test->test")
     .settings(Dependencies.cloudflowOperator)
     .settings(
       scalafmtOnCompile := true,

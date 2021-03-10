@@ -18,7 +18,7 @@ package cloudflow.operator
 package action
 
 import akka.datap.crd.App
-import akka.kube.actions.Action
+import akka.kube.actions.{ Action, OperatorAction }
 import cloudflow.blueprint.deployment.StreamletDeployment
 
 import scala.collection.immutable._
@@ -32,8 +32,10 @@ import io.fabric8.kubernetes.api.model.{
   ServicePortBuilder,
   ServiceSpecBuilder
 }
+import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource, ServiceResource }
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
@@ -117,43 +119,50 @@ object EndpointActions {
   /**
    * Creates an action for creating a service.
    */
-  object CreateServiceAction {
-    def apply(service: Service) = {
-      // TODO: clean up this Action is pretty hacked right now
-      Action.operation(
-        // TODO: Services returns ServiceResource that plays badly with Action.operation signature
-        { client => (client.services().asInstanceOf[MixedOperation[Service, ServiceList, Resource[Service]]]) }, {
-          services: MixedOperation[Service, ServiceList, Resource[Service]] =>
-            val thisService =
-              services.inNamespace(service.getMetadata.getNamespace).withName(service.getMetadata.getName)
-            val ser = thisService.get()
-            Option(ser) match {
-              case Some(s) =>
-                val resourceVersion = s.getMetadata.getResourceVersion
-                val clusterIp = Try {
-                  val res = s.getSpec.getClusterIP
-                  assert {
-                    res != null
-                  }
-                  res
-                }.getOrElse("")
-                val serviceMetadata = s.getMetadata
-                serviceMetadata.setResourceVersion(resourceVersion)
-                val serviceSpec = s.getSpec
-                serviceSpec.setClusterIP(clusterIp)
+  case class CreateServiceAction(service: Service)(implicit val lineNumber: sourcecode.Line, val file: sourcecode.File)
+      extends Action {
 
-                // TODO: This needs to be a patch to prevent re-assignements of cluster-ip
-                thisService.patch(
-                  new ServiceBuilder(service)
-                    .withMetadata(serviceMetadata)
-                    .withSpec(serviceSpec)
-                    .build())
-              case _ =>
-                thisService.create(service)
-            }
-            ()
-        }, { _: Unit => Action.noop })
+    val getOperation = { client: KubernetesClient =>
+      (client.services().asInstanceOf[MixedOperation[Service, ServiceList, Resource[Service]]])
     }
+
+    val executeOperation = { services: MixedOperation[Service, ServiceList, Resource[Service]] =>
+      val thisService =
+        services.inNamespace(service.getMetadata.getNamespace).withName(service.getMetadata.getName)
+      val ser = thisService.get()
+      Option(ser) match {
+        case Some(s) =>
+          val resourceVersion = s.getMetadata.getResourceVersion
+          val clusterIp = Try {
+            val res = s.getSpec.getClusterIP
+            assert {
+              res != null
+            }
+            res
+          }.getOrElse("")
+          val serviceMetadata = s.getMetadata
+          serviceMetadata.setResourceVersion(resourceVersion)
+          val serviceSpec = s.getSpec
+          serviceSpec.setClusterIP(clusterIp)
+
+          // TODO: This needs to be a patch to prevent re-assignements of cluster-ip
+          thisService.patch(
+            new ServiceBuilder(service)
+              .withMetadata(serviceMetadata)
+              .withSpec(serviceSpec)
+              .build())
+        case _ =>
+          thisService.create(service)
+      }
+      Action.noop
+    }
+
+    def execute(client: KubernetesClient)(implicit ec: ExecutionContext): Future[Action] = {
+      Future {
+        executeOperation(getOperation(client))
+      }.flatMap(_.execute(client))
+    }
+
   }
 
 }
