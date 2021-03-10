@@ -30,6 +30,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import io.fabric8.kubernetes.api.model.{ ObjectMetaBuilder, OwnerReference }
 import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
+import io.fabric8.kubernetes.internal.KubernetesDeserializer
 
 object Main extends {
 
@@ -50,7 +51,7 @@ object Main extends {
       Serialization.jsonMapper().registerModule(DefaultScalaModule)
 
       // TODO: Needed for Spark?
-      // Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
+      Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
 
       val client = connectToKubernetes()
 
