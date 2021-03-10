@@ -17,7 +17,7 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, ResourceAction }
+import akka.kube.actions.{ Action, GetAction, ResourceAction }
 
 import java.nio.charset.StandardCharsets
 import java.util.{ Base64, Collections }
