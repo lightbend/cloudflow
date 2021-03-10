@@ -101,6 +101,14 @@ object Dependencies {
         TestDeps.avro4s)
 
   val cloudflowOperator =
-    libraryDependencies ++= Seq(Compile.akkaActor, Compile.akkaStream, Compile.akkaHttp, Compile.akkaSlf4j, Compile.logback, Compile.kubeActions, Compile.kafkaClient, Compile.scalatest % Test)
+    libraryDependencies ++= Seq(
+        Compile.akkaActor,
+        Compile.akkaStream,
+        Compile.akkaHttp,
+        Compile.akkaSlf4j,
+        Compile.logback,
+        Compile.kubeActions,
+        Compile.kafkaClient,
+        Compile.scalatest % Test)
 
 }
