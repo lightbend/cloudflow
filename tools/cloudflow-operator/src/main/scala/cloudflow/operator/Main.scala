@@ -50,7 +50,7 @@ object Main extends {
       Serialization.jsonMapper().registerModule(DefaultScalaModule)
 
       // TODO: Needed for Spark?
-      Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
+      // Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
 
       val client = connectToKubernetes()
 

@@ -22,6 +22,8 @@ import cloudflow.blueprint.deployment._
 
 object CloudflowApplicationSpecBuilder {
 
+  def toCr()
+
   /**
    * Creates a CloudflowApplication.Spec from a [[VerifiedBlueprint]].
    */
@@ -37,6 +39,14 @@ object CloudflowApplicationSpecBuilder {
     val deployments =
       ApplicationDescriptor(appId, appVersion, image, blueprint, agentPaths, BuildInfo.version).deployments
 
+    App.Spec(
+      appId = appId,
+      appVersion = appVersion,
+      deployments = ???,
+      streamlets = streamlets,
+      agentPaths = agentPaths,
+      version = BuildInfo.version,
+      libraryVersion = BuildInfo.version)
 //    App.Spec(
 //                           appId = appId,
 //                           appVersion = appVersion,
@@ -53,5 +63,12 @@ object CloudflowApplicationSpecBuilder {
     ???
   }
 
-  private def toStreamlet(streamlet: VerifiedStreamlet) = StreamletInstance(streamlet.name, streamlet.descriptor)
+  private def toDescriptor(sd: StreamletDescriptor) = {
+    App.Descriptor
+  }
+
+  private def toStreamlet(streamlet: VerifiedStreamlet) = {
+    App.Streamlet(name = streamlet.name, descriptor = streamlet.descriptor)
+    StreamletInstance(streamlet.name, streamlet.descriptor)
+  }
 }
