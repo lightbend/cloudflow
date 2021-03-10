@@ -21,6 +21,7 @@ import akka.actor._
 import akka.datap.crd.App
 
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.{ FlinkApp, SparkApp }
 import com.fasterxml.jackson.annotation.JsonInclude.Include
@@ -57,33 +58,6 @@ object Main extends {
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
       client.customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
       client.customResources(FlinkApp.customResourceDefinitionContext, classOf[FlinkApp.Cr], classOf[FlinkApp.List])
-
-      // DEBUG
-//      client
-//        .customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
-//        .create(SparkApp.Cr(
-//          spec = SparkApp.Spec(
-//            `type` = "Scala",
-//            mode = "cluster",
-//            sparkVersion = "2.4.5",
-//            image = "", // required parameter
-//            imagePullPolicy = "Always",
-//            mainClass = "", // required parameter
-//            sparkConf = None,
-//            mainApplicationFile = Some("spark-internal"),
-//            volumes = Nil,
-//            driver = SparkApp.Driver(),
-//            executor = SparkApp.Executor(instances = 1),
-//            restartPolicy = SparkApp.NeverRestartPolicy(),
-//            monitoring = SparkApp.Monitoring(SparkApp.Prometheus("1", "2"))),
-//          metadata = new ObjectMetaBuilder().withName("test").withNamespace("call-record-aggregator").build()))
-
-//      println(
-//        client
-//          .customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
-//          .inNamespace("call-record-aggregator")
-//          .withName("test")
-//          .get())
 
       checkCRD(settings, client)
 
@@ -139,7 +113,8 @@ object Main extends {
   private def connectToKubernetes()(implicit system: ActorSystem): KubernetesClient = {
     val conf = Config.autoConfigure(null)
     val client = new DefaultKubernetesClient(conf).inAnyNamespace()
-    system.log.info(s"Connected to Kubernetes cluster: ${conf.getCurrentContext.getContext.getCluster}")
+    val cluster = Try { s": ${conf.getCurrentContext.getContext.getCluster}" }.getOrElse("")
+    system.log.info(s"Connected to Kubernetes cluster $cluster")
     client
   }
 

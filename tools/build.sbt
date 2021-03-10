@@ -194,7 +194,7 @@ lazy val cloudflowBlueprint =
 
 lazy val cloudflowOperator =
   Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
-    .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
+    .enablePlugins(ScalafmtPlugin, BuildInfoPlugin, JavaServerAppPackaging, DockerPlugin, AshScriptPlugin)
     .dependsOn(cloudflowConfig, cloudflowBlueprint)
     .settings(Dependencies.cloudflowOperator)
     .settings(
@@ -213,3 +213,10 @@ lazy val cloudflowOperator =
             sys.props.getOrElse("user.name", "unknown")
           }),
       buildInfoPackage := "cloudflow.operator")
+    .settings(
+      Docker / packageName := "cloudflow-operator",
+      dockerUpdateLatest := false,
+      dockerUsername := sys.props.get("docker.username"),
+      dockerRepository := sys.props.get("docker.registry"),
+      dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre",
+    )
