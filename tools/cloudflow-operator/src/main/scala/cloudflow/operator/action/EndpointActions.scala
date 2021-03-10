@@ -93,10 +93,12 @@ object EndpointActions {
       .withLabels(labels(Name.ofService(streamletDeploymentName)).asJava)
       .withOwnerReferences(ownerReferences: _*)
       .endMetadata()
-      .withSpec(new ServiceSpecBuilder()
-        .withPorts(servicePort)
-        .withSelector(Map(CloudflowLabels.Name -> Name.ofPod(streamletDeploymentName)).asJava)
-        .build())
+      .withSpec(
+        new ServiceSpecBuilder()
+          .withType("ClusterIP")
+          .withPorts(servicePort)
+          .withSelector(Map(CloudflowLabels.Name -> Name.ofPod(streamletDeploymentName)).asJava)
+          .build())
       .build()
   }
 
