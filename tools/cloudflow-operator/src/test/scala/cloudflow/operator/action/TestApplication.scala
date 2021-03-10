@@ -19,13 +19,14 @@ package cloudflow.operator.action
 import akka.datap.crd.App
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
+import com.fasterxml.jackson.databind.JsonNode
+import com.typesafe.config.{ Config, ConfigRenderOptions }
+import io.fabric8.kubernetes.client.utils.Serialization
 
 object CloudflowApplicationSpecBuilder {
 
-  def toCr()
-
   /**
-   * Creates a CloudflowApplication.Spec from a [[VerifiedBlueprint]].
+   * Creates a App.Spec from a [[VerifiedBlueprint]].
    */
   def create(
       appId: String,
@@ -36,39 +37,108 @@ object CloudflowApplicationSpecBuilder {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val streamlets = blueprint.streamlets.map(toStreamlet)
-    val deployments =
+    val deployments = {
       ApplicationDescriptor(appId, appVersion, image, blueprint, agentPaths, BuildInfo.version).deployments
+        .map(toDeployment)
+    }
 
     App.Spec(
-      appId = appId,
+      appId = sanitizedApplicationId,
       appVersion = appVersion,
-      deployments = ???,
+      deployments = deployments,
       streamlets = streamlets,
       agentPaths = agentPaths,
-      version = BuildInfo.version,
-      libraryVersion = BuildInfo.version)
-//    App.Spec(
-//                           appId = appId,
-//                           appVersion = appVersion,
-//                           deployments: immutable.Seq[Deployment],
-//                           @JsonProperty("streamlets")
-//                           streamlets: immutable.Seq[Streamlet],
-//                           @JsonProperty("agent_paths")
-//                           agentPaths: Map[String, String],
-//                           @JsonProperty("version")
-//                           version: Option[String],
-//                           @JsonProperty("library_version")
-//                           libraryVersion: Option[String])
-//    CloudflowApplication.Spec(sanitizedApplicationId, appVersion, streamlets, deployments, agentPaths)
-    ???
+      version = Some(BuildInfo.version),
+      libraryVersion = Some(BuildInfo.version))
+  }
+
+  private def toInOutletSchema(schema: SchemaDescriptor) = {
+    App.InOutletSchema(
+      fingerprint = schema.fingerprint,
+      schema = schema.schema,
+      name = schema.name,
+      format = schema.format)
+  }
+
+  private def toInOutlet(in: InletDescriptor) = {
+    App.InOutlet(name = in.name, schema = toInOutletSchema(in.schema))
+  }
+  private def toInOutlet(in: OutletDescriptor) = {
+    App.InOutlet(name = in.name, schema = toInOutletSchema(in.schema))
+  }
+
+  private def toVolumeMount(vmd: VolumeMountDescriptor) = {
+    App.VolumeMountDescriptor(appId = vmd.name, path = vmd.path, accessMode = vmd.accessMode, pvcName = {
+      if (vmd.pvcName == null || vmd.pvcName.isEmpty) {
+        Some(vmd.pvcName)
+      } else None
+    })
+  }
+
+  private def toConfigParam(cp: ConfigParameterDescriptor) = {
+    App.ConfigParameterDescriptor(
+      key = cp.key,
+      description = cp.description,
+      validationType = cp.validationType,
+      validationPattern = cp.validationPattern.getOrElse(""),
+      defaultValue = cp.defaultValue.getOrElse(""))
+  }
+
+  private def toAttribute(a: StreamletAttributeDescriptor) = {
+    App.Attribute(attributeName = a.attributeName, configPath = a.configPath)
+  }
+
+  private def toRuntime(runtime: StreamletRuntimeDescriptor) = {
+    runtime.name
   }
 
   private def toDescriptor(sd: StreamletDescriptor) = {
-    App.Descriptor
+    App.Descriptor(
+      className = sd.className,
+      description = sd.description,
+      runtime = toRuntime(sd.runtime),
+      labels = sd.labels,
+      inlets = sd.inlets.map(toInOutlet),
+      outlets = sd.outlets.map(toInOutlet),
+      volumeMounts = sd.volumeMounts.map(toVolumeMount),
+      configParameters = sd.configParameters.map(toConfigParam),
+      attributes = sd.attributes.map(toAttribute))
   }
 
   private def toStreamlet(streamlet: VerifiedStreamlet) = {
-    App.Streamlet(name = streamlet.name, descriptor = streamlet.descriptor)
-    StreamletInstance(streamlet.name, streamlet.descriptor)
+    val descriptor = toDescriptor(streamlet.descriptor)
+    App.Streamlet(name = streamlet.name, descriptor = descriptor)
+  }
+
+  private def configToJson(config: Config): JsonNode = {
+    Serialization
+      .jsonMapper()
+      .readTree(config.root().render(ConfigRenderOptions.concise().setJson(true)))
+  }
+
+  private def toPortMapping(t: cloudflow.blueprint.deployment.Topic) = {
+    App.PortMapping(id = t.id, config = configToJson(t.config), cluster = t.cluster)
+  }
+
+  private def toEndpoint(endpoint: Endpoint) = {
+    App.Endpoint(
+      appId = Some(endpoint.appId),
+      streamlet = Some(endpoint.streamlet),
+      containerPort = Some(endpoint.containerPort))
+  }
+
+  private def toDeployment(deployment: StreamletDeployment) = {
+    App.Deployment(
+      className = deployment.className,
+      config = configToJson(deployment.config),
+      image = deployment.image,
+      name = deployment.name,
+      portMappings = deployment.portMappings.map { case (k, v) => k -> toPortMapping(v) },
+      volumeMounts = deployment.volumeMounts.getOrElse(List()).map(toVolumeMount),
+      runtime = deployment.runtime,
+      streamletName = deployment.streamletName,
+      secretName = deployment.secretName,
+      endpoint = deployment.endpoint.map(toEndpoint),
+      replicas = deployment.replicas)
   }
 }
