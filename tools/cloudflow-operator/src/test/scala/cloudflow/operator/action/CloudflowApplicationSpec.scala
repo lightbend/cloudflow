@@ -17,7 +17,6 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.pattern.BackoffSupervisor.RestartCount
 import cloudflow.blueprint._
 import cloudflow.blueprint.BlueprintBuilder._
 import cloudflow.operator.action.runner._
@@ -25,7 +24,6 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import io.fabric8.kubernetes.api.model.{
   ContainerState,
   ContainerStateBuilder,
-  ContainerStateRunningBuilder,
   ContainerStatus,
   ContainerStatusBuilder,
   ObjectMetaBuilder,
@@ -37,7 +35,7 @@ import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters._
 
 class CloudflowApplicationSpec
     extends AnyWordSpec

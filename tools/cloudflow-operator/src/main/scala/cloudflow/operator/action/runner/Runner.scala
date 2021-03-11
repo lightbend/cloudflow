@@ -274,7 +274,8 @@ trait Runner[T <: HasMetadata] {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)
 
     (for {
-      config <- UnsafeCloudflowConfigLoader.loadPodConfig(ConfigFactory.parseString(str))
+      configStr <- Try { ConfigFactory.parseString(str) }
+      config <- UnsafeCloudflowConfigLoader.loadPodConfig(configStr)
       podConfig <- PodsConfig.fromKubernetes(config)
     } yield {
       podConfig
@@ -316,7 +317,7 @@ trait Runner[T <: HasMetadata] {
         }
       }
 
-  def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[VolumeMount] =
+  def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[VolumeMount] = {
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
@@ -326,8 +327,9 @@ trait Runner[T <: HasMetadata] {
         }
       }
       .getOrElse(List())
+  }
 
-  def getContainerPorts(podsConfig: PodsConfig, podName: String): List[ContainerPort] =
+  def getContainerPorts(podsConfig: PodsConfig, podName: String): List[ContainerPort] = {
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
@@ -337,6 +339,7 @@ trait Runner[T <: HasMetadata] {
         }
       }
       .getOrElse(List())
+  }
 
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
     podsConfig.pods

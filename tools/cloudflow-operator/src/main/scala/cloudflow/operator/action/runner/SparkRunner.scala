@@ -226,10 +226,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val configMapName = Name.ofConfigMap(deployment.name)
     val configMaps = Seq(SparkApp.NamePath(configMapName, Runner.ConfigMapMountPath))
 
-    println("DEBUG")
-    println(configMapName)
-    println(configMaps.mkString)
-
     val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)

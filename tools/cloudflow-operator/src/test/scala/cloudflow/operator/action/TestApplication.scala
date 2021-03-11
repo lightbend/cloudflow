@@ -133,7 +133,7 @@ object CloudflowApplicationSpecBuilder {
       containerPort = Some(endpoint.containerPort))
   }
 
-  private def toDeployment(deployment: StreamletDeployment) = {
+  def toDeployment(deployment: StreamletDeployment) = {
     App.Deployment(
       className = deployment.className,
       config = configToJson(deployment.config),

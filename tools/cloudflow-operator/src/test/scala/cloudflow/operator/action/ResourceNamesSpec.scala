@@ -180,7 +180,6 @@ class ResourceNamesSpec
     "have long names truncate to 63 characters when coming from EndpointActions" in {
       val endpointActions = EndpointActions(testApp01, None)
 
-      println(endpointActions.mkString)
       endpointActions
         .collect {
           case action: CreateServiceAction =>

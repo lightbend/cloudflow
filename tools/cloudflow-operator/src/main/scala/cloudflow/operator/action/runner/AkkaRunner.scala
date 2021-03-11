@@ -179,7 +179,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val labels = CloudflowLabels(app)
     val ownerReferences = List(
-      // TODO: this is repeated in othe places ...
+      // TODO: this is repeated in other places ...
       new OwnerReferenceBuilder()
         .withApiVersion(app.getApiVersion)
         .withKind(app.getKind)
