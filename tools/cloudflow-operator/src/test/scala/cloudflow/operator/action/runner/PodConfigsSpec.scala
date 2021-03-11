@@ -18,8 +18,7 @@ package cloudflow.operator.action.runner
 
 import akka.cloudflow.config.UnsafeCloudflowConfigLoader
 import com.typesafe.config._
-import org.scalatest._
-import org.scalatest.OptionValues
+import org.scalatest.{ OptionValues, TryValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import io.fabric8.kubernetes.api.model.{ EnvVarBuilder, Quantity }

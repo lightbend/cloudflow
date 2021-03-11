@@ -383,6 +383,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       if (deployment.endpoint.isDefined) {
         // TODO: not sure how this works
         new DeploymentStrategyBuilder()
+          .withType("RollingUpdate")
           .withNewRollingUpdate()
           .endRollingUpdate()
           .build()
