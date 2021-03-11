@@ -30,11 +30,17 @@ object CloudflowConfig {
   // Quantity
   final case class Quantity(value: String)
 
+  // from: https://github.com/kubernetes/apimachinery/blob/ae8b5f5092d37b75a20fef7531de129d21b9e0b5/pkg/api/resource/quantity.go#L45-L47
+  // and: https://github.com/fabric8io/kubernetes-client/blob/1b4a4561542a98d75bf7f45cd203aae8a1db4e38/kubernetes-model-generator/kubernetes-model-core/src/main/java/io/fabric8/kubernetes/api/model/Quantity.java#L127-L173
+  private val validQuantityFormats =
+    Seq("Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "n", "u", "m", "k", "M", "G", "T", "P", "E", "", null)
+
   implicit val quantityReader = ConfigReader.fromCursor[Quantity] { cur =>
     cur.asString.flatMap { str =>
       Try {
-        io.fabric8.kubernetes.api.model.Quantity
-          .getAmountInBytes(io.fabric8.kubernetes.api.model.Quantity.parse(str))
+        val q = io.fabric8.kubernetes.api.model.Quantity.parse(str)
+        assert { validQuantityFormats.contains(q.getFormat) }
+        io.fabric8.kubernetes.api.model.Quantity.getAmountInBytes(q)
       } match {
         case Success(v) if v != null => Right(Quantity(str))
         case _ =>

@@ -7,9 +7,10 @@ package akka.cloudflow.config
 import java.io.File
 import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
-import akka.cli.cloudflow.Json
 import akka.datap.crd.App
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.ConfigFactory
+import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.{ OptionValues, TryValues }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -437,6 +438,57 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     res.failure.exception.getMessage.contains("not a valid Kubernetes quantity") shouldBe true
   }
 
+  it should "fail parsing non-valid bytes quantities" in {
+    // Arrange
+    val config = """cloudflow {
+                   |  streamlets {
+                   |    my-streamlet {
+                   |      kubernetes {
+                   |        pods.pod.containers.container {
+                   |          resources {
+                   |            requests {
+                   |              memory = 1MiBu
+                   |            }
+                   |          }
+                   |        }
+                   |      }
+                   |    }
+                   |  }
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isFailure shouldBe true
+    res.failure.exception.getMessage.contains("not a valid Kubernetes quantity") shouldBe true
+  }
+
+  it should "parse quantities without format" in {
+    // Arrange
+    val config = """cloudflow {
+                   |  streamlets {
+                   |    my-streamlet {
+                   |      kubernetes {
+                   |        pods.pod.containers.container {
+                   |          resources {
+                   |            requests {
+                   |              cpu = 0.1
+                   |            }
+                   |          }
+                   |        }
+                   |      }
+                   |    }
+                   |  }
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isSuccess shouldBe true
+  }
+
   it should "parse ports" in {
     // Arrange
     val config = """cloudflow {
@@ -745,7 +797,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "generate proper default mounts" in {
     // Arrange
     val crFile = new File("./cloudflow-cli/src/test/resources/swiss-knife.json")
-    val appCr = Json.mapper.readValue(crFile, classOf[App.Cr])
+    Serialization.jsonMapper().registerModule(DefaultScalaModule)
+    val appCr = Serialization.jsonMapper().readValue(crFile, classOf[App.Cr])
 
     // Act
     val res = ConfigFactory.empty().withFallback(writeConfig(defaultMountsConfig(appCr.spec, List("flink", "spark"))))
