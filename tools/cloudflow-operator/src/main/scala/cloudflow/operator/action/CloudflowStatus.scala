@@ -49,8 +49,9 @@ object CloudflowStatus {
     val ReadyFalse = "False"
   }
 
-  private def podReady(ps: App.PodStatus) =
+  private def podReady(ps: App.PodStatus) = {
     ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0
+  }
 
   private def podStatus(
       name: String,
@@ -69,7 +70,7 @@ object CloudflowStatus {
       ready = ready)
   }
 
-  private def fromPod(pod: Pod): App.PodStatus = {
+  def fromPod(pod: Pod): App.PodStatus = {
     // See https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
     val name: String = pod.getMetadata().getName()
     val status: fabric8.PodStatus = Option(pod.getStatus()).getOrElse(new fabric8.PodStatus())
@@ -179,7 +180,7 @@ object CloudflowStatus {
         podStatuses = Nil)
     }.toVector
 
-  private def calcAppStatus(streamletStatuses: Seq[App.StreamletStatus]): String =
+  private def calcAppStatus(streamletStatuses: Seq[App.StreamletStatus]): String = {
     if (streamletStatuses.forall { streamletStatus =>
           hasExpectedPods(streamletStatus)(streamletStatus.podStatuses.size) &&
           streamletStatus.podStatuses.forall(podReady)
@@ -190,8 +191,9 @@ object CloudflowStatus {
     } else {
       Status.Pending
     }
+  }
 
-  private def aggregatedStatus(status: App.AppStatus) = {
+  def aggregatedStatus(status: App.AppStatus) = {
     if (status.appStatus == null || status.appStatus.isEmpty) {
       Status.Pending
     } else {

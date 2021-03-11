@@ -37,6 +37,7 @@ object ActionExtension {
               .inNamespace(namespace)
               .withName(name)
               .fromServer()
+              // TODO assumption! this returns null if the resource doesn't exists VERIFY!
               .get()
           }
       }, { res =>

@@ -17,14 +17,27 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
+import akka.pattern.BackoffSupervisor.RestartCount
 import cloudflow.blueprint._
 import cloudflow.blueprint.BlueprintBuilder._
 import cloudflow.operator.action.runner._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import io.fabric8.kubernetes.api.model.{
+  ContainerState,
+  ContainerStateBuilder,
+  ContainerStateRunningBuilder,
+  ContainerStatus,
+  ContainerStatusBuilder,
+  ObjectMetaBuilder,
+  PodBuilder,
+  PodStatusBuilder
+}
 import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 class CloudflowApplicationSpec
     extends AnyWordSpec
@@ -69,162 +82,156 @@ class CloudflowApplicationSpec
       customResource.spec mustBe cr.spec
     }
 
-//    "report its status as Pending when there are no pod statuses yet" in {
-//      val status = mkTestStatus()
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Pending when one pod is not ready" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningNotReadyPod("s1"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Pending when all pods not ready" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningNotReadyPod("s1"))
-//      status = status.updatePod("s2", mkRunningNotReadyPod("s2"))
-//      status = status.updatePod("s3", mkRunningNotReadyPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Pending when one pod is waiting" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkWaitingPod("s1", "ContainerCreating"))
-//      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-//      status = status.updatePod("s3", mkRunningReadyPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Pending when all pods are waiting" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkWaitingPod("s1", "ContainerCreating"))
-//      status = status.updatePod("s2", mkWaitingPod("s2", "ContainerCreating"))
-//      status = status.updatePod("s3", mkWaitingPod("s3", "ContainerCreating"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as CrashLoopBackOff when one pod is in CrashLoopBackOff" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkCrashLoopBackOffPod("s1"))
-//      status = status.updatePod("s2", mkWaitingPod("s2", "ContainerCreating"))
-//      status = status.updatePod("s3", mkWaitingPod("s3", "ContainerCreating"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.CrashLoopBackOff
-//    }
-//
-//    "report its status as CrashLoopBackOff when other podstatuses are terminated" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkCrashLoopBackOffPod("s1"))
-//      status = status.updatePod("s2", mkTerminatedPod("s2"))
-//      status = status.updatePod("s3", mkTerminatedPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.CrashLoopBackOff
-//    }
-//
-//    "report its status as Pending when all podstatuses are terminated" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkTerminatedPod("s1"))
-//      status = status.updatePod("s2", mkTerminatedPod("s2"))
-//      status = status.updatePod("s3", mkTerminatedPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Pending when not all streamlet pods are running and ready" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-//      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-//      status = status.updatePod("s3", mkRunningNotReadyPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Running when all streamlet pods are running and ready" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-//      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-//      status = status.updatePod("s3", mkRunningReadyPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-//    }
-//
-//    "report its status as Pending when all streamlet pods are running and then one pod is deleted" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-//      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-//      val pod = mkRunningReadyPod("s3")
-//      status = status.updatePod("s3", pod)
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-//      status = status.deletePod("s3", pod)
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//    }
-//
-//    "report its status as Running when all streamlet pods are running, after delete and new running pod" in {
-//      var status = mkTestStatus()
-//      status = status.updatePod("s1", mkRunningReadyPod("s1"))
-//      status = status.updatePod("s2", mkRunningReadyPod("s2"))
-//      val pod = mkRunningReadyPod("s3")
-//      status = status.updatePod("s3", pod)
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-//      status = status.deletePod("s3", pod)
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//      status = status.updatePod("s3", mkRunningReadyPod("s3"))
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-//    }
-//
-//    "report its status as Running when all streamlet pods are running and ready in a mixed app" in {
-//      var status = mkTestStatusMixedApp()
-//      status = status.updatePod(
-//        "ingress",
-//        mkRunningReadyPod("ingress")
-//      )
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//      (1 to SparkRunner.DefaultNrOfExecutorInstances + 1).foreach { _ =>
-//        status = status.updatePod(
-//          "spark-egress",
-//          mkRunningReadyPod("spark-egress")
-//        )
-//        status.aggregatedStatus mustBe CloudflowApplication.Status.Pending
-//      }
-//
-//      (1 to FlinkRunner.DefaultTaskManagerReplicas + 1).foreach { _ =>
-//        status = status.updatePod(
-//          "flink-egress",
-//          mkRunningReadyPod("flink-egress")
-//        )
-//      }
-//      status.aggregatedStatus mustBe CloudflowApplication.Status.Running
-//    }
-//
-//    "report pod status as Running" in {
-//      val podStatus = CloudflowApplication.PodStatus(mkRunningReadyPod("s1"))
-//      podStatus.status mustBe CloudflowApplication.PodStatus.Running
-//      podStatus.containers mustBe 1
-//      podStatus.containersReady mustBe 1
-//      podStatus.isReady mustBe true
-//    }
-//
-//    "report pod status as Running, not ready" in {
-//      val podStatus = CloudflowApplication.PodStatus(mkRunningNotReadyPod("s1"))
-//      podStatus.status mustBe CloudflowApplication.PodStatus.Running
-//      podStatus.containers mustBe 1
-//      podStatus.containersReady mustBe 0
-//      podStatus.isReady mustBe false
-//    }
-//
-//    "report pod status as Terminated" in {
-//      CloudflowApplication.PodStatus(mkTerminatedPod("s1")).status mustBe CloudflowApplication.PodStatus.Terminated
-//    }
-//    "report pod status as Terminating" in {
-//      CloudflowApplication.PodStatus(mkTerminatingPod("s1")).status mustBe CloudflowApplication.PodStatus.Terminating
-//    }
-//    "report pod status as Succeeded" in {
-//      CloudflowApplication.PodStatus(mkSucceededPod("s1")).status mustBe CloudflowApplication.PodStatus.Succeeded
-//    }
-//    "report pod status as Failed" in {
-//      CloudflowApplication.PodStatus(mkFailedPod("s1")).status mustBe CloudflowApplication.PodStatus.Failed
-//    }
-//    "report pod status as CrashLoopBackOff" in {
-//      val podStatus = CloudflowApplication.PodStatus(mkCrashLoopBackOffPod("s1"))
-//      podStatus.status mustBe CloudflowApplication.PodStatus.CrashLoopBackOff
-//      podStatus.restarts mustBe 3
-//    }
+    "report its status as Pending when there are no pod statuses yet" in {
+      val status = mkTestStatus()
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Pending when one pod is not ready" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningNotReadyPod("s1"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Pending when all pods not ready" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningNotReadyPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningNotReadyPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkRunningNotReadyPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Pending when one pod is waiting" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkWaitingPod("s1", "ContainerCreating"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningNotReadyPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkRunningNotReadyPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Pending when all pods are waiting" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkWaitingPod("s1", "ContainerCreating"))
+      status = CloudflowStatus.updatePod(status)("s2", mkWaitingPod("s2", "ContainerCreating"))
+      status = CloudflowStatus.updatePod(status)("s3", mkWaitingPod("s3", "ContainerCreating"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as CrashLoopBackOff when one pod is in CrashLoopBackOff" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkCrashLoopBackOffPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkWaitingPod("s2", "ContainerCreating"))
+      status = CloudflowStatus.updatePod(status)("s3", mkWaitingPod("s3", "ContainerCreating"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.CrashLoopBackOff
+    }
+
+    "report its status as CrashLoopBackOff when other podstatuses are terminated" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkCrashLoopBackOffPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkTerminatedPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkTerminatedPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.CrashLoopBackOff
+    }
+
+    "report its status as Pending when all podstatuses are terminated" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkTerminatedPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkTerminatedPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkTerminatedPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Pending when not all streamlet pods are running and ready" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningReadyPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningReadyPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkTerminatedPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Running when all streamlet pods are running and ready" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningReadyPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningReadyPod("s2"))
+      status = CloudflowStatus.updatePod(status)("s3", mkRunningReadyPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+    }
+
+    "report its status as Pending when all streamlet pods are running and then one pod is deleted" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningReadyPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningReadyPod("s2"))
+      val pod = mkRunningReadyPod("s3")
+      status = CloudflowStatus.updatePod(status)("s3", pod)
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+      status = CloudflowStatus.deletePod(status)("s3", pod)
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+    }
+
+    "report its status as Running when all streamlet pods are running, after delete and new running pod" in {
+      var status = mkTestStatus()
+      status = CloudflowStatus.updatePod(status)("s1", mkRunningReadyPod("s1"))
+      status = CloudflowStatus.updatePod(status)("s2", mkRunningReadyPod("s2"))
+      val pod = mkRunningReadyPod("s3")
+      status = CloudflowStatus.updatePod(status)("s3", pod)
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+      status = CloudflowStatus.deletePod(status)("s3", pod)
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      status = CloudflowStatus.updatePod(status)("s3", mkRunningReadyPod("s3"))
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+    }
+
+    "report its status as Running when all streamlet pods are running and ready in a mixed app" in {
+      var status = mkTestStatusMixedApp()
+      status = CloudflowStatus.updatePod(status)("ingress", mkRunningReadyPod("ingress"))
+
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      (1 to SparkRunner.DefaultNrOfExecutorInstances + 1).foreach { _ =>
+        status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
+        CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      }
+
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      (1 to FlinkRunner.DefaultTaskManagerReplicas + 1).foreach { _ =>
+        status = CloudflowStatus.updatePod(status)("flink-egress", mkRunningReadyPod("flink-egress"))
+      }
+
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+    }
+
+    "report pod status as Running" in {
+      val podStatus = CloudflowStatus.fromPod(mkRunningReadyPod("s1"))
+      podStatus.status mustBe CloudflowStatus.PodStatus.Running
+      podStatus.nrOfContainers mustBe 1
+      podStatus.nrOfContainersReady mustBe 1
+      podStatus.ready.toLowerCase mustBe "true"
+    }
+
+    "report pod status as Running, not ready" in {
+      val podStatus = CloudflowStatus.fromPod(mkRunningNotReadyPod("s1"))
+      podStatus.status mustBe CloudflowStatus.PodStatus.Running
+      podStatus.nrOfContainers mustBe 1
+      podStatus.nrOfContainersReady mustBe 0
+      podStatus.ready.toLowerCase mustBe "false"
+    }
+
+    "report pod status as Terminated" in {
+      CloudflowStatus.fromPod(mkTerminatedPod("s1")).status mustBe CloudflowStatus.PodStatus.Terminated
+    }
+    "report pod status as Terminating" in {
+      CloudflowStatus.fromPod(mkTerminatingPod("s1")).status mustBe CloudflowStatus.PodStatus.Terminating
+    }
+    "report pod status as Succeeded" in {
+      CloudflowStatus.fromPod(mkSucceededPod("s1")).status mustBe CloudflowStatus.PodStatus.Succeeded
+    }
+    "report pod status as Failed" in {
+      CloudflowStatus.fromPod(mkFailedPod("s1")).status mustBe CloudflowStatus.PodStatus.Failed
+    }
+    "report pod status as CrashLoopBackOff" in {
+      val podStatus = CloudflowStatus.fromPod(mkCrashLoopBackOffPod("s1"))
+      podStatus.status mustBe CloudflowStatus.PodStatus.CrashLoopBackOff
+      podStatus.restarts mustBe 3
+    }
   }
 
   def mkTestStatus() = {
@@ -278,102 +285,102 @@ class CloudflowApplicationSpec
   def mkApp(verifiedBlueprint: VerifiedBlueprint) =
     CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
-//  def mkRunningReadyPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Running),
-//      containerStatuses = List(
-//        mkContainerStatus(ready = true)
-//      )
-//    )
-//
-//  def mkRunningNotReadyPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Running),
-//      containerStatuses = List(
-//        mkContainerStatus(ready = false)
-//      )
-//    )
-//  def mkFailedPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Failed),
-//      containerStatuses = List(
-//        mkContainerStatus(ready = false)
-//      )
-//    )
-//  def mkSucceededPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Succeeded),
-//      containerStatuses = List(
-//        mkContainerStatus(ready = false)
-//      )
-//    )
-//
-//  def mkWaitingPod(streamletName: String, reason: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Pending),
-//      containerStatuses = List(
-//        mkContainerStatus(state = Some(Container.Waiting(Some(reason))), ready = false)
-//      )
-//    )
-//
-//  def mkTerminatingPod(streamletName: String) =
-//    mkPod(
-//      streamletName = streamletName,
-//      deletionTimestamp = Some(java.time.ZonedDateTime.now())
-//    )
-//
-//  def mkTerminatedPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Pending),
-//      containerStatuses = List(
-//        mkContainerStatus(state = Some(Container.Terminated(0)), ready = false)
-//      )
-//    )
-//
-//  def mkCrashLoopBackOffPod(streamletName: String) =
-//    mkPod(
-//      streamletName,
-//      Some(CloudflowStatus.PodStatus.Pending),
-//      containerStatuses = List(
-//        mkContainerStatus(
-//          state = Some(Container.Waiting(Some(CloudflowApplication.PodStatus.CrashLoopBackOff))),
-//          ready = false,
-//          restartCount = 3
-//        )
-//      )
-//    )
-//
-//  def mkPod(
-//      streamletName: String,
-//      phase: Option[String] = None,
-//      containerStatuses: List[String] = List(),
-//      deletionTimestamp: Option[String] = None
-//  ) = Pod(
-//    metadata = ObjectMeta(name = s"$streamletName-${java.util.UUID.randomUUID()}", deletionTimestamp = deletionTimestamp),
-//    status = Some(
-//      Pod.Status(
-//        phase = phase,
-//        conditions = List(),
-//        containerStatuses = containerStatuses
-//      )
-//    )
-//  )
-//  def mkContainerStatus(
-//      state: Option[Container.State] = Some(Container.Running(None)),
-//      ready: Boolean = false,
-//      restartCount: Int = 0
-//  ) = Container.Status(
-//    name = "container-status",
-//    ready = ready,
-//    restartCount = restartCount,
-//    image = "some-image",
-//    imageID = "some-image-id",
-//    state = state
-//  )
+  def mkRunningReadyPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Running),
+      containerStatuses = List(mkContainerStatus(ready = true)))
+
+  def mkRunningNotReadyPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Running),
+      containerStatuses = List(mkContainerStatus(ready = false)))
+
+  def mkFailedPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Failed),
+      containerStatuses = List(mkContainerStatus(ready = false)))
+  def mkSucceededPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Succeeded),
+      containerStatuses = List(mkContainerStatus(ready = false)))
+  def mkWaitingPod(streamletName: String, reason: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Pending),
+      containerStatuses = List(
+        mkContainerStatus(
+          state = new ContainerStateBuilder().withNewWaiting().withReason(reason).endWaiting().build(),
+          ready = false)))
+
+  def mkTerminatingPod(streamletName: String) =
+    mkPod(streamletName = streamletName, deletionTimestamp = Some(java.time.ZonedDateTime.now().toString))
+
+  def mkTerminatedPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Pending),
+      containerStatuses = List(
+        mkContainerStatus(
+          state = new ContainerStateBuilder().withNewTerminated().withExitCode(0).endTerminated().build(),
+          ready = false)))
+
+  def mkCrashLoopBackOffPod(streamletName: String) =
+    mkPod(
+      streamletName,
+      Some(CloudflowStatus.PodStatus.Pending),
+      containerStatuses = List(
+        mkContainerStatus(
+          state = new ContainerStateBuilder()
+            .withNewWaiting()
+            .withNewReason(CloudflowStatus.PodStatus.CrashLoopBackOff)
+            .endWaiting()
+            .build(),
+          ready = false,
+          restartCount = 3)))
+
+  def mkPod(
+      streamletName: String,
+      phase: Option[String] = None,
+      containerStatuses: List[ContainerStatus] = List(),
+      deletionTimestamp: Option[String] = None) = {
+    val metadataB = new ObjectMetaBuilder()
+      .withName(s"$streamletName-${java.util.UUID.randomUUID()}")
+
+    val metadata = (deletionTimestamp match {
+      case Some(timestamp) => metadataB.withDeletionTimestamp(timestamp)
+      case _               => metadataB
+    }).build()
+
+    val podStatusB = new PodStatusBuilder()
+
+    val status = (phase match {
+      case Some(p) => podStatusB.withPhase(p)
+      case _       => podStatusB
+    }).withContainerStatuses(containerStatuses.asJava)
+      .build()
+
+    new PodBuilder()
+      .withMetadata(metadata)
+      .withStatus(status)
+      .build()
+  }
+
+  def mkContainerStatus(state: ContainerState = {
+    new ContainerStateBuilder()
+      .withNewRunning(java.time.ZonedDateTime.now().toString)
+      .build()
+  }, ready: Boolean = true, restartCount: Int = 0) =
+    new ContainerStatusBuilder()
+      .withName("container-status")
+      .withReady(ready)
+      .withState(state)
+      .withRestartCount(restartCount)
+      .withImage("some-image")
+      .withImageID("some-image-id")
+      .build()
+
 }
