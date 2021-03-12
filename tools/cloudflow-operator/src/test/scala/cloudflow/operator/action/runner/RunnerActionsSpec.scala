@@ -84,8 +84,8 @@ class RunnerActionsSpec
       }
 
       val createDeploymentActions = actions.collect {
-        case p: GetAction[Secret] =>
-          p.getAction(Some(secret)).asInstanceOf[CreateOrReplaceAction[Deployment]]
+        case p: OperatorAction[_, _, _, Try[Secret]] =>
+          p.createAction(Success(secret)).asInstanceOf[CreateOrReplaceAction[Deployment]]
       }
 
       val configMaps = createActions.map(_.resource).collect {

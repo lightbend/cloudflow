@@ -98,7 +98,7 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         Seq(
           Action.createOrReplace(configResource(deployment, newApp)),
-          Action.get[Secret](deployment.secretName, newApp.namespace)({
+          ActionExtension.providedRetry(deployment.secretName, newApp.namespace)({
             case Some(secret) =>
               createOrReplaceResource(resource(deployment, newApp, secret))
             case None =>
@@ -110,7 +110,7 @@ trait Runner[T <: HasMetadata] {
                 newApp,
                 runners,
                 s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
-          }))
+          })(60))
       }
 
     // update streamlet deployments by name that are in both the current app and the new app
