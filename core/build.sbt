@@ -358,6 +358,7 @@ lazy val blueprint =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := false,
+      Compile / scalafmtCheck := true,
       libraryDependencies ++= Vector(
             Avro,
             Config,
