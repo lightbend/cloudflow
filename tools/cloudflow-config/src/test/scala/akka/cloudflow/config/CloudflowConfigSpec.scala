@@ -22,34 +22,34 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   "The CloudflowConfig" should "parse accordingly a demo configuration" in {
     // Arrange
     @nowarn val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      config-parameters {
-                   |        // config parameter values go here
-                   |        my-config-parameter = "some-value"
-                   |        another-config-parameter = "default-value"
-                   |        another-config-parameter = ${?MY_VAR}
-                   |      }
-                   |      config {
-                   |        // runtime settings go here
-                   |        akka.loglevel = "DEBUG"
-                   |      }
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          // kubernetes container settings go here
-                   |          resources {
-                   |            requests {
-                   |              memory = "512M"
-                   |            }
-                   |            limits {
-                   |              memory = "1024M"
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      config-parameters {
+                  |        // config parameter values go here
+                  |        my-config-parameter = "some-value"
+                  |        another-config-parameter = "default-value"
+                  |        another-config-parameter = ${?MY_VAR}
+                  |      }
+                  |      config {
+                  |        // runtime settings go here
+                  |        akka.loglevel = "DEBUG"
+                  |      }
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          // kubernetes container settings go here
+                  |          resources {
+                  |            requests {
+                  |              memory = "512M"
+                  |            }
+                  |            limits {
+                  |              memory = "1024M"
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -64,11 +64,11 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail with a clear error on empty streamlets" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -81,22 +81,22 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on extra keys" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      extra = spurious
-                   |      kubernetes.pods.pod {
-                   |        volumes {
-                   |          foo {
-                   |            secret {
-                   |              name = mysecret
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}
-                   |""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      extra = spurious
+                  |      kubernetes.pods.pod {
+                  |        volumes {
+                  |          foo {
+                  |            secret {
+                  |              name = mysecret
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}
+                  |""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -109,22 +109,22 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on extra keys in custom readers" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes.pods.pod {
-                   |        volumes {
-                   |          foo {
-                   |            secret {
-                   |              name = mysecret
-                   |              extra = spurious
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}
-                   |""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes.pods.pod {
+                  |        volumes {
+                  |          foo {
+                  |            secret {
+                  |              name = mysecret
+                  |              extra = spurious
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}
+                  |""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -137,21 +137,21 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on unknown volumes" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes.pods.pod {
-                   |        volumes {
-                   |          foo {
-                   |            bar {
-                   |              name = mysecret
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}
-                   |""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes.pods.pod {
+                  |        volumes {
+                  |          foo {
+                  |            bar {
+                  |              name = mysecret
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}
+                  |""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -164,27 +164,27 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse properly the volumes in the kubernetes section" in {
     // Arrange
     val config = """cloudflow {
-                    |  streamlets {
-                    |    my-streamlet {
-                    |      kubernetes.pods.pod {
-                    |        volumes {
-                    |          foo {
-                    |            secret {
-                    |              name = mysecret
-                    |            }
-                    |          },
-                    |          bar {
-                    |            pvc {
-                    |              name = "/etc/my/file"
-                    |              read-only = true
-                    |            }
-                    |          }
-                    |        }
-                    |      }
-                    |    }
-                    |  }
-                    |}
-                    |""".stripMargin
+                   |  streamlets {
+                   |    my-streamlet {
+                   |      kubernetes.pods.pod {
+                   |        volumes {
+                   |          foo {
+                   |            secret {
+                   |              name = mysecret
+                   |            }
+                   |          },
+                   |          bar {
+                   |            pvc {
+                   |              name = "/etc/my/file"
+                   |              read-only = true
+                   |            }
+                   |          }
+                   |        }
+                   |      }
+                   |    }
+                   |  }
+                   |}
+                   |""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -202,48 +202,48 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse properly the volume-mounts" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes.pods {
-                   |        driver {
-                   |          volumes {
-                   |            foo {
-                   |              secret {
-                   |                name = mysecret
-                   |              }
-                   |            }
-                   |          }
-                   |          containers.container {
-                   |            volume-mounts {
-                   |              foo {
-                   |                mount-path = "/etc/my/file"
-                   |                read-only = true
-                   |              }
-                   |            }
-                   |          }
-                   |        }
-                   |        executor {
-                   |          volumes {
-                   |            bar {
-                   |              secret {
-                   |                name = anothersecret
-                   |              }
-                   |            }
-                   |          }
-                   |          containers.container {
-                   |            volume-mounts {
-                   |              bar {
-                   |                mount-path = "/etc/mc/fly"
-                   |                read-only =  false
-                   |              }
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}
-                   |""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes.pods {
+                  |        driver {
+                  |          volumes {
+                  |            foo {
+                  |              secret {
+                  |                name = mysecret
+                  |              }
+                  |            }
+                  |          }
+                  |          containers.container {
+                  |            volume-mounts {
+                  |              foo {
+                  |                mount-path = "/etc/my/file"
+                  |                read-only = true
+                  |              }
+                  |            }
+                  |          }
+                  |        }
+                  |        executor {
+                  |          volumes {
+                  |            bar {
+                  |              secret {
+                  |                name = anothersecret
+                  |              }
+                  |            }
+                  |          }
+                  |          containers.container {
+                  |            volume-mounts {
+                  |              bar {
+                  |                mount-path = "/etc/mc/fly"
+                  |                read-only =  false
+                  |              }
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}
+                  |""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -263,10 +263,47 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail if a volume-mount is not declared as volume" in {
     // Arrange
     val config = """cloudflow {
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes.pods {
+                  |        driver {
+                  |          volumes {
+                  |            foo {
+                  |              secret {
+                  |                name = mysecret
+                  |              }
+                  |            }
+                  |          }
+                  |          containers.container {
+                  |            volume-mounts {
+                  |              bar {
+                  |                mount-path = "/etc/my/file"
+                  |                read-only = true
+                  |              }
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}
+                  |""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isFailure shouldBe true
+    res.failure.exception.getMessage.contains(InvalidMounts) shouldBe true
+  }
+
+  it should "not fail if a volume-mount is declared as volume in a generic section" in {
+    // Arrange
+    val config = """cloudflow {
                    |  streamlets {
                    |    my-streamlet {
                    |      kubernetes.pods {
-                   |        driver {
+                   |        pod {
                    |          volumes {
                    |            foo {
                    |              secret {
@@ -274,9 +311,11 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |              }
                    |            }
                    |          }
+                   |        }
+                   |        driver {
                    |          containers.container {
                    |            volume-mounts {
-                   |              bar {
+                   |              foo {
                    |                mount-path = "/etc/my/file"
                    |                read-only = true
                    |              }
@@ -293,56 +332,115 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
-    res.failure.exception.getMessage.contains(InvalidMounts) shouldBe true
+    res.isSuccess shouldBe true
+    val driver = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
+    val foo = driver.containers("container").volumeMounts("foo")
+    foo.mountPath shouldBe "/etc/my/file"
+    foo.readOnly shouldBe true
   }
 
-  it should "validate labels and env variables" in {
+  it should "fail if a volume-mount is declared as volume in another section" in {
     // Arrange
     val config = """cloudflow {
                    |  streamlets {
                    |    my-streamlet {
                    |      kubernetes.pods {
-                   |        driver {
-                   |          labels: {
-                   |            key1 = value1
-                   |            key2 = value2
-                   |          }
-                   |          annotations: {
-                   |            akey1 = avalue1
-                   |            akey2 = avalue2
-                   |          }
-                   |          containers.container {
-                   |            env = [
-                   |              {
-                   |                name = "FOO"
-                   |                value = "BAR"
+                   |        pod {
+                   |          volumes {
+                   |            foo {
+                   |              secret {
+                   |                name = mysecret1
                    |              }
-                   |            ]
+                   |            }
                    |          }
                    |        }
-                   |        executor {
-                   |          labels: {
-                   |            key3 = value3
-                   |            key4 = value4
-                   |          }
-                   |          annotations: {
-                   |            akey3 = avalue3
-                   |            akey4 = avalue4
+                   |        driver {
+                   |          volumes {
+                   |            bar {
+                   |              secret {
+                   |                name = mysecret2
+                   |              }
+                   |            }
                    |          }
                    |          containers.container {
-                   |            env = [
-                   |              {
-                   |                name = "FFF"
-                   |                value = "BBB"
+                   |            volume-mounts {
+                   |              foo {
+                   |                mount-path = "/etc/my/file1"
+                   |                read-only = true
                    |              }
-                   |            ]
+                   |              bar {
+                   |                mount-path = "/etc/my/file2"
+                   |                read-only = false
+                   |              }
+                   |            }
                    |          }
                    |        }
                    |      }
                    |    }
                    |  }
-                   |}""".stripMargin
+                   |}
+                   |""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isSuccess shouldBe true
+    val driver = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
+    val foo = driver.containers("container").volumeMounts("foo")
+    val bar = driver.containers("container").volumeMounts("bar")
+    foo.mountPath shouldBe "/etc/my/file1"
+    foo.readOnly shouldBe true
+    bar.mountPath shouldBe "/etc/my/file2"
+    bar.readOnly shouldBe false
+  }
+
+  it should "validate labels and env variables" in {
+    // Arrange
+    val config = """cloudflow {
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes.pods {
+                  |        driver {
+                  |          labels: {
+                  |            key1 = value1
+                  |            key2 = value2
+                  |          }
+                  |          annotations: {
+                  |            akey1 = avalue1
+                  |            akey2 = avalue2
+                  |          }
+                  |          containers.container {
+                  |            env = [
+                  |              {
+                  |                name = "FOO"
+                  |                value = "BAR"
+                  |              }
+                  |            ]
+                  |          }
+                  |        }
+                  |        executor {
+                  |          labels: {
+                  |            key3 = value3
+                  |            key4 = value4
+                  |          }
+                  |          annotations: {
+                  |            akey3 = avalue3
+                  |            akey4 = avalue4
+                  |          }
+                  |          containers.container {
+                  |            env = [
+                  |              {
+                  |                name = "FFF"
+                  |                value = "BBB"
+                  |              }
+                  |            ]
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -374,25 +472,25 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse requests and limits quantities" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          resources {
-                   |            requests {
-                   |              cpu = 1
-                   |              memory = "512M"
-                   |            }
-                   |            limits {
-                   |              cpu = 2
-                   |              memory = 1024M
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          resources {
+                  |            requests {
+                  |              cpu = 1
+                  |              memory = "512M"
+                  |            }
+                  |            limits {
+                  |              cpu = 2
+                  |              memory = 1024M
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -415,20 +513,20 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail parsing non-valid quantities" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          resources {
-                   |            requests {
-                   |              cpu = 0.1Li
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          resources {
+                  |            requests {
+                  |              cpu = 0.1Li
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -441,20 +539,20 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail parsing non-valid bytes quantities" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          resources {
-                   |            requests {
-                   |              memory = 1MiBu
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          resources {
+                  |            requests {
+                  |              memory = 1MiBu
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -467,20 +565,20 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse quantities without format" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          resources {
-                   |            requests {
-                   |              cpu = 0.1
-                   |            }
-                   |          }
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          resources {
+                  |            requests {
+                  |              cpu = 0.1
+                  |            }
+                  |          }
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -492,19 +590,19 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse ports" in {
     // Arrange
     val config = """cloudflow {
-                   |  streamlets {
-                   |    my-streamlet {
-                   |      kubernetes {
-                   |        pods.pod.containers.container {
-                   |          ports = [
-                   |            { container-port=9001},
-                   |            { container-port=9002, host-ip="my-ip", protocol = "SCTP", host-port=9999, name="sctp2"}
-                   |          ]
-                   |        }
-                   |      }
-                   |    }
-                   |  }
-                   |}""".stripMargin
+                  |  streamlets {
+                  |    my-streamlet {
+                  |      kubernetes {
+                  |        pods.pod.containers.container {
+                  |          ports = [
+                  |            { container-port=9001},
+                  |            { container-port=9002, host-ip="my-ip", protocol = "SCTP", host-port=9999, name="sctp2"}
+                  |          ]
+                  |        }
+                  |      }
+                  |    }
+                  |  }
+                  |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -530,8 +628,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on invalid port names" in {
     // Arrange
     val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.container.ports = [
-                   |  { container-port=9001, name="-hello" }
-                   |]""".stripMargin
+                  |  { container-port=9001, name="-hello" }
+                  |]""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -544,8 +642,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on too long port names" in {
     // Arrange
     val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.container.ports = [
-                   |  { container-port=9001, name="hello-i-am-someone" }
-                   |]""".stripMargin
+                  |  { container-port=9001, name="hello-i-am-someone" }
+                  |]""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -558,8 +656,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on port names with double --" in {
     // Arrange
     val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.container.ports = [
-                   |  { container-port=9001, name="hello--1" }
-                   |]""".stripMargin
+                  |  { container-port=9001, name="hello--1" }
+                  |]""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -572,8 +670,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail on port names with invalid chars" in {
     // Arrange
     val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod.containers.container.ports = [
-                   |  { container-port=9001, name="hello_" }
-                   |]""".stripMargin
+                  |  { container-port=9001, name="hello_" }
+                  |]""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -585,34 +683,34 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
   def getConfigWithLabel(str: String) = {
     s"""cloudflow {
-      |  streamlets {
-      |    my-streamlet {
-      |      kubernetes.pods {
-      |        pod {
-      |          labels: {
-      |            ${str}
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}""".stripMargin
+     |  streamlets {
+     |    my-streamlet {
+     |      kubernetes.pods {
+     |        pod {
+     |          labels: {
+     |            ${str}
+     |          }
+     |        }
+     |      }
+     |    }
+     |  }
+     |}""".stripMargin
   }
 
   def getConfigWithAnnotation(str: String) = {
     s"""cloudflow {
-      |  streamlets {
-      |    my-streamlet {
-      |      kubernetes.pods {
-      |        pod {
-      |          annotations: {
-      |            ${str}
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}""".stripMargin
+     |  streamlets {
+     |    my-streamlet {
+     |      kubernetes.pods {
+     |        pod {
+     |          annotations: {
+     |            ${str}
+     |          }
+     |        }
+     |      }
+     |    }
+     |  }
+     |}""".stripMargin
   }
 
   it should "validate subdomain labels" in {
@@ -750,18 +848,18 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail to parse job-manager pods with labels" in {
     // Arrange
     val config = s"""cloudflow {
-                    |  streamlets {
-                    |    flink {
-                    |      kubernetes.pods {
-                    |        job-manager {
-                    |          labels: {
-                    |            key = value
-                    |          }
-                    |        }
-                    |      }
-                    |    }
-                    |  }
-                    |}""".stripMargin
+                   |  streamlets {
+                   |    flink {
+                   |      kubernetes.pods {
+                   |        job-manager {
+                   |          labels: {
+                   |            key = value
+                   |          }
+                   |        }
+                   |      }
+                   |    }
+                   |  }
+                   |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -774,18 +872,18 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "write label values as plain strings" in {
     // Arrange
     val config = s"""cloudflow {
-                    |  streamlets {
-                    |    flink {
-                    |      kubernetes.pods {
-                    |        pod {
-                    |          labels: {
-                    |            mykey = myvalue
-                    |          }
-                    |        }
-                    |      }
-                    |    }
-                    |  }
-                    |}""".stripMargin
+                   |  streamlets {
+                   |    flink {
+                   |      kubernetes.pods {
+                   |        pod {
+                   |          labels: {
+                   |            mykey = myvalue
+                   |          }
+                   |        }
+                   |      }
+                   |    }
+                   |  }
+                   |}""".stripMargin
 
     // Act
     val res = ConfigFactory.empty().withFallback(writeConfig(loadAndValidate(ConfigSource.string(config)).get))
@@ -818,35 +916,35 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "parse valid topic configuration and preserve the structure" in {
     // Arrange
     val config = s"""cloudflow {
-                    |  topics {
-                    |    my-topic {
-                    |      producers = [streamlet-a1.out, streamlet-a2.out]
-                    |      consumers = [streamlet-b.in]
-                    |      cluster = test-server
-                    |      connection-config = {
-                    |        bootstrap.servers="my-server:9092"
-                    |      }
-                    |      producer-config = {
-                    |        foo = bar
-                    |      }
-                    |      consumer-config = {
-                    |        bar = baz
-                    |      }
-                    |      topic = {
-                    |        partitions = 3
-                    |        replicas = 5
-                    |        extra-prop1 = 10
-                    |        extra-prop2 = {
-                    |          extra = bar
-                    |        }
-                    |      }
-                    |      extra-key1 = foo
-                    |      extra-key2 = {
-                    |        extra-key3 = bar
-                    |      }
-                    |    }
-                    |  }
-                    |}""".stripMargin
+                   |  topics {
+                   |    my-topic {
+                   |      producers = [streamlet-a1.out, streamlet-a2.out]
+                   |      consumers = [streamlet-b.in]
+                   |      cluster = test-server
+                   |      connection-config = {
+                   |        bootstrap.servers="my-server:9092"
+                   |      }
+                   |      producer-config = {
+                   |        foo = bar
+                   |      }
+                   |      consumer-config = {
+                   |        bar = baz
+                   |      }
+                   |      topic = {
+                   |        partitions = 3
+                   |        replicas = 5
+                   |        extra-prop1 = 10
+                   |        extra-prop2 = {
+                   |          extra = bar
+                   |        }
+                   |      }
+                   |      extra-key1 = foo
+                   |      extra-key2 = {
+                   |        extra-key3 = bar
+                   |      }
+                   |    }
+                   |  }
+                   |}""".stripMargin
 
     // Act
     val typesafeConfig = ConfigFactory.parseString(config)
@@ -877,12 +975,12 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail to parse invalid topic configurations" in {
     // Arrange
     val config = s"""cloudflow {
-                    |  topics {
-                    |    my-topic {
-                    |      producers = test
-                    |    }
-                    |  }
-                    |}""".stripMargin
+                   |  topics {
+                   |    my-topic {
+                   |      producers = test
+                   |    }
+                   |  }
+                   |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
@@ -895,12 +993,12 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   it should "fail to parse invalid topicconfig configurations" in {
     // Arrange
     val config = s"""cloudflow {
-                    |  topics {
-                    |    my-topic {
-                    |      topic { replicas = test }
-                    |    }
-                    |  }
-                    |}""".stripMargin
+                   |  topics {
+                   |    my-topic {
+                   |      topic { replicas = test }
+                   |    }
+                   |  }
+                   |}""".stripMargin
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))

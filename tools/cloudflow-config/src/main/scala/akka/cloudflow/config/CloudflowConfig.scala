@@ -317,29 +317,20 @@ object CloudflowConfig {
 
   val defaultPodReader = exportReader[Pod].instance
 
-  private def getInvalidVolumeMounts(pod: Pod) = {
-    val declaredVolumes = pod.volumes.keys
-
-    val vmNames = pod.containers.values.map(_.volumeMounts.keys).flatten
-
-    vmNames.collect {
-      case vmName if !declaredVolumes.exists(_ == vmName) => vmName
-    }
-  }
-
-  implicit val podReader = ConfigReader.fromCursor[Pod] { cur: ConfigCursor =>
-    defaultPodReader.from(cur) match {
-      case Right(pod) =>
-        val invalidMounts = getInvalidVolumeMounts(pod)
-
-        if (invalidMounts.size > 0) {
-          cur.failed(InvalidMountsFailure(s"$InvalidMounts ${invalidMounts.mkString(", ")}"))
-        } else {
-          Right(pod)
-        }
-      case fail => fail
-    }
-  }
+  implicit val podReader = defaultPodReader
+//  ConfigReader.fromCursor[Pod] { cur: ConfigCursor =>
+//    defaultPodReader.from(cur) match {
+//      case Right(pod) =>
+//        val invalidMounts = getInvalidVolumeMounts(pod)
+//
+//        if (invalidMounts.size > 0) {
+//          cur.failed(InvalidMountsFailure(s"$InvalidMounts ${invalidMounts.mkString(", ")}"))
+//        } else {
+//          Right(pod)
+//        }
+//      case fail => fail
+//    }
+//  }
 
   // Kubernetes
   final case class Kubernetes(pods: Map[String, Pod] = Map())
@@ -348,15 +339,32 @@ object CloudflowConfig {
 
   private val defaultKubernetesReader = exportReader[Kubernetes].instance
 
+  private def getInvalidVolumeMounts(pod: Pod, declaredVolumes: Seq[String]) = {
+    val vmNames = pod.containers.values.map(_.volumeMounts.keys).flatten
+
+    vmNames.collect {
+      case vmName if !declaredVolumes.exists(_ == vmName) => vmName
+    }
+  }
+
   implicit val kubernetesReader = ConfigReader.fromCursor[Kubernetes] { cur: ConfigCursor =>
     defaultKubernetesReader.from(cur) match {
       case Right(kubernetes) =>
-        val failures = kubernetes.pods.collect {
-          case pod if (pod._1 == "job-manager" || pod._1 == "task-manager") && pod._2.labels.nonEmpty =>
-            pod._1
+        val genericVolumes = kubernetes.pods.get("pod").map(_.volumes.keys.toSeq).getOrElse(Seq())
+        val invalidMounts = kubernetes.pods.values.flatMap { pod =>
+          getInvalidVolumeMounts(pod, genericVolumes ++ pod.volumes.keys)
         }
-        if (failures.size > 0) cur.failed(PodConfigFailure(s"$LabelsNotAllowedOnPod ${failures.mkString(", ")}"))
-        else Right(kubernetes)
+
+        if (invalidMounts.size > 0) {
+          cur.failed(InvalidMountsFailure(s"$InvalidMounts ${invalidMounts.mkString(", ")}"))
+        } else {
+          val failures = kubernetes.pods.collect {
+            case pod if (pod._1 == "job-manager" || pod._1 == "task-manager") && pod._2.labels.nonEmpty =>
+              pod._1
+          }
+          if (failures.size > 0) cur.failed(PodConfigFailure(s"$LabelsNotAllowedOnPod ${failures.mkString(", ")}"))
+          else Right(kubernetes)
+        }
       case Left(err) =>
         cur.failed(ExceptionThrown(ConfigException(err.prettyPrint())))
     }

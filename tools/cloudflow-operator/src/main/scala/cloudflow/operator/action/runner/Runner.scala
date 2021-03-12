@@ -281,6 +281,7 @@ trait Runner[T <: HasMetadata] {
       podConfig
     }).recover {
         case e =>
+          println(e)
           log.error(
             s"Detected pod configs in secret '${secret.getMetadata().getName()}' that contains invalid configuration data, IGNORING configuration.",
             e)
