@@ -46,6 +46,7 @@ import io.fabric8.kubernetes.api.model.{
   OwnerReferenceBuilder,
   PodSecurityContext,
   PodSecurityContextBuilder,
+  Quantity,
   ResourceRequirements,
   ResourceRequirementsBuilder,
   Secret,
@@ -282,25 +283,31 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       podsConfig: PodsConfig,
       podName: String): Option[ResourceRequirements] = {
 
-    val resReqJobManagerBuilder = new ResourceRequirementsBuilder()
+    var resReqJobManagerBuilder = new ResourceRequirementsBuilder()
 
-    jobManagerDefaults.resources.cpuRequest match {
-      case Some(req) => resReqJobManagerBuilder.withRequests(Map("cpu" -> req).asJava)
-      case _         =>
-    }
-    jobManagerDefaults.resources.memoryRequest match {
-      case Some(req) => resReqJobManagerBuilder.withRequests(Map("memory" -> req).asJava)
-      case _         =>
-    }
+    val defaultRequests =
+      ((jobManagerDefaults.resources.cpuRequest match {
+        case Some(req) => Map("cpu" -> req)
+        case _         => Map.empty[String, Quantity]
+      }) ++
+      (jobManagerDefaults.resources.memoryRequest match {
+        case Some(req) => Map("memory" -> req)
+        case _         => Map.empty[String, Quantity]
+      }))
 
-    jobManagerDefaults.resources.cpuLimit match {
-      case Some(lim) => resReqJobManagerBuilder.withLimits(Map("cpu" -> lim).asJava)
-      case _         =>
-    }
-    jobManagerDefaults.resources.memoryLimit match {
-      case Some(lim) => resReqJobManagerBuilder.withRequests(Map("memory" -> lim).asJava)
-      case _         =>
-    }
+    resReqJobManagerBuilder = resReqJobManagerBuilder.withRequests(defaultRequests.asJava)
+
+    val defaultLimits =
+      ((jobManagerDefaults.resources.cpuLimit match {
+        case Some(lim) => Map("cpu" -> lim)
+        case _         => Map.empty[String, Quantity]
+      }) ++
+      (jobManagerDefaults.resources.memoryLimit match {
+        case Some(lim) => Map("memory" -> lim)
+        case _         => Map.empty[String, Quantity]
+      }))
+
+    resReqJobManagerBuilder = resReqJobManagerBuilder.withLimits(defaultLimits.asJava)
 
     val _resourceRequirements = resReqJobManagerBuilder.build()
 
@@ -337,25 +344,31 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       podsConfig: PodsConfig,
       podName: String): Option[ResourceRequirements] = {
 
-    val resReqTaskManagerBuilder = new ResourceRequirementsBuilder()
+    var resReqTaskManagerBuilder = new ResourceRequirementsBuilder()
 
-    taskManagerDefaults.resources.cpuRequest match {
-      case Some(req) => resReqTaskManagerBuilder.withRequests(Map("cpu" -> req).asJava)
-      case _         =>
-    }
-    taskManagerDefaults.resources.memoryRequest match {
-      case Some(req) => resReqTaskManagerBuilder.withRequests(Map("memory" -> req).asJava)
-      case _         =>
-    }
+    val defaultRequests =
+      ((taskManagerDefaults.resources.cpuRequest match {
+        case Some(req) => Map("cpu" -> req)
+        case _         => Map.empty[String, Quantity]
+      }) ++
+      (taskManagerDefaults.resources.memoryRequest match {
+        case Some(req) => Map("memory" -> req)
+        case _         => Map.empty[String, Quantity]
+      }))
 
-    taskManagerDefaults.resources.cpuLimit match {
-      case Some(lim) => resReqTaskManagerBuilder.withLimits(Map("cpu" -> lim).asJava)
-      case _         =>
-    }
-    taskManagerDefaults.resources.memoryLimit match {
-      case Some(lim) => resReqTaskManagerBuilder.withRequests(Map("memory" -> lim).asJava)
-      case _         =>
-    }
+    resReqTaskManagerBuilder = resReqTaskManagerBuilder.withRequests(defaultRequests.asJava)
+
+    val defaultLimits =
+      ((taskManagerDefaults.resources.cpuLimit match {
+        case Some(lim) => Map("cpu" -> lim)
+        case _         => Map.empty[String, Quantity]
+      }) ++
+      (taskManagerDefaults.resources.memoryLimit match {
+        case Some(lim) => Map("memory" -> lim)
+        case _         => Map.empty[String, Quantity]
+      }))
+
+    resReqTaskManagerBuilder = resReqTaskManagerBuilder.withLimits(defaultLimits.asJava)
 
     val _resourceRequirements = resReqTaskManagerBuilder.build()
 

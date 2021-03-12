@@ -88,13 +88,6 @@ class AkkaRunnerSpec
       volumeMounts = Seq.empty,
       replicas = None)
 
-    def getSecret(content: String) = {
-      new SecretBuilder()
-        .withData(Map(cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
-        Base64Helper.encode(content)).asJava)
-        .build()
-    }
-
     "read from config custom labels and add them to the pod spec" in {
 
       val crd =

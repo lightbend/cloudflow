@@ -16,8 +16,10 @@
 
 package cloudflow.operator.action
 
-import io.fabric8.kubernetes.api.model.Quantity
+import io.fabric8.kubernetes.api.model.{ Quantity, SecretBuilder }
 import cloudflow.operator.action.runner._
+
+import scala.jdk.CollectionConverters._
 
 trait TestDeploymentContext {
   implicit val ctx: DeploymentContext =
@@ -67,4 +69,21 @@ trait TestDeploymentContext {
     AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
     SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
     FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
+
+  def getSecret(content: String) = {
+    new SecretBuilder()
+      .withData(Map(cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
+      Base64Helper.encode(content)).asJava)
+      .build()
+  }
+
+  def getSecret(content: String, runtime: String) = {
+    new SecretBuilder()
+      .withData(Map(
+        cloudflow.operator.event.ConfigInput.PodsConfigDataKey ->
+        Base64Helper.encode(content),
+        cloudflow.operator.event.ConfigInput.RuntimeConfigDataKey ->
+        Base64Helper.encode(runtime)).asJava)
+      .build()
+  }
 }
