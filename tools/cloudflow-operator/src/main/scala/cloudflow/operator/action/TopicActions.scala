@@ -122,10 +122,10 @@ object TopicActions {
 
     appConfigSecretName
       .map { name =>
-        ActionExtension.providedRetry(name, newApp.namespace) { secretOption =>
+        Action.get[Secret](name, newApp.namespace) { secretOption =>
           maybeCreateActionFromAppConfigSecret(secretOption, newApp, runners, labels, topic)
             .getOrElse(useClusterConfiguration(topic))
-        }(retry = 2)
+        }
       }
       .getOrElse(useClusterConfiguration(topic))
   }

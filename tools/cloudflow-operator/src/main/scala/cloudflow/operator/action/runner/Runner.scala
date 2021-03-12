@@ -109,7 +109,7 @@ trait Runner[T <: HasMetadata] {
                 newApp,
                 runners,
                 s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
-          })())
+          })(60))
       }
 
     // update streamlet deployments by name that are in both the current app and the new app

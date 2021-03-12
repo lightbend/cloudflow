@@ -67,10 +67,10 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: OperatorAction[_, _, _, Try[Secret]] =>
+          case p: GetAction[Secret] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
-              .createAction(Success(null))
+              .getAction(None)
               .asInstanceOf[GetAction[Secret]]
 
             // assert that we fallback to provide the 'default' cluster secret
@@ -140,9 +140,9 @@ class TopicActionsSpec
       val Seq(foosAction, barsAction) = TopicActions(newApp, runners, ctx.podNamespace)
 
       val configMap0 = foosAction
-        .asInstanceOf[OperatorAction[_, _, _, Try[Secret]]]
+        .asInstanceOf[GetAction[Secret]]
         // try to get Kafka connection info from empty application secret
-        .createAction(Success(null))
+        .getAction(None)
         .asInstanceOf[GetAction[Secret]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
@@ -159,12 +159,12 @@ class TopicActionsSpec
         defaultReplicas,
         defaultBootstrapServers,
         CloudflowLabels(newApp))
-      foosAction mustBe a[OperatorAction[_, _, _, Try[Secret]]]
+      foosAction mustBe a[GetAction[Secret]]
 
       val configMap1 = barsAction
-        .asInstanceOf[OperatorAction[_, _, _, Try[Secret]]]
+        .asInstanceOf[GetAction[Secret]]
         // try to get Kafka connection info from empty application secret
-        .createAction(Success(null))
+        .getAction(None)
         .asInstanceOf[GetAction[Secret]]
         // fallback to get Kafka connection info from 'default' cluster secret
         .getAction(Option(defaultClusterSecret))
@@ -181,7 +181,7 @@ class TopicActionsSpec
         defaultReplicas,
         defaultBootstrapServers,
         CloudflowLabels(newApp))
-      barsAction mustBe a[OperatorAction[_, _, _, Try[Secret]]]
+      barsAction mustBe a[GetAction[Secret]]
       assertTopic(savepoint, configMap1, appId)
     }
 
@@ -207,10 +207,10 @@ class TopicActionsSpec
       Then("only create topic actions must be created between the streamlets")
       val createActions =
         actions.collect {
-          case p: OperatorAction[_, _, _, Try[Secret]] =>
+          case p: GetAction[Secret] =>
             // try to get Kafka connection info from empty application secret
             val fallbackProvidedAction = p
-              .createAction(Success(null))
+              .getAction(None)
               .asInstanceOf[GetAction[Secret]]
 
             // assert that we fallback to provide the 'cluster-baz' cluster secret as specified in topic config

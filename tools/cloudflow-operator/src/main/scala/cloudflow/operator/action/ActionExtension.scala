@@ -21,12 +21,13 @@ import io.fabric8.kubernetes.api.model.{ Secret, SecretList }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
+import java.util.concurrent.TimeUnit
 import scala.util.{ Failure, Success, Try }
 
 object ActionExtension {
 
   // TODO: re-test with IT tests
-  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int = 60)(
+  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int)(
       implicit lineNumber: sourcecode.Line,
       file: sourcecode.File): Action = { // TODO: 60 looks quite a lot!
     Action.operation[Secret, SecretList, Try[Secret]](
@@ -41,15 +42,16 @@ object ActionExtension {
       }, { res =>
         res match {
           case Success(s) if s != null => fAction(Option(s))
-          case Success(null) =>
+          case _ if retry <= 0 =>
+            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
+            throw new Exception(s"Retry exhausted while trying to get $name in $namespace, giving up")
+          case Success(null) if retry > 0 =>
             Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
+            Thread.sleep(100)
             providedRetry(name, namespace)(fAction)(retry - 1)
           case Failure(_) if retry > 0 =>
             Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")
             providedRetry(name, namespace)(fAction)(retry - 1)
-          case Failure(err) =>
-            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
-            throw err
         }
       })
 
