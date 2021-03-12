@@ -23,8 +23,12 @@ import cloudflow.operator.action._
 import io.fabric8.kubernetes.api.model.apps._
 import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.api.model._
+import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 object AkkaRunner {
   final val Runtime = "akka"
@@ -55,31 +59,40 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
   }
 
+  case class PatchDeploymentAction(deployment: Deployment)(
+      implicit val lineNumber: sourcecode.Line,
+      val file: sourcecode.File)
+      extends Action {
+
+    def execute(client: KubernetesClient)(implicit ec: ExecutionContext): Future[Action] = {
+      Future {
+        client
+          .apps()
+          .deployments()
+          .inNamespace(deployment.getMetadata.getNamespace)
+          .withName(deployment.getMetadata.getName)
+          .patch(deployment)
+        Action.noop
+      }.flatMap(_.execute(client))
+    }
+
+  }
+
   def streamletChangeAction(
       app: App.Cr,
       runners: Map[String, Runner[_]],
       streamletDeployment: App.Deployment,
       secret: Secret) = {
     Action.get[Deployment](streamletDeployment.name, app.namespace) { currentDeployment =>
+      val updateLabels = Map((CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString))
+
       currentDeployment match {
         case Some(dep) =>
-          val meta = dep.getMetadata
-          val labels = meta.getLabels
-          labels.put(CloudflowLabels.ConfigUpdateLabel, System.currentTimeMillis.toString)
-          meta.setLabels(labels)
+          val labels = Option(dep.getMetadata.getLabels).map(_.asScala).getOrElse(Map[String, String]())
 
-          Action.createOrReplace(
-            new DeploymentBuilder(dep)
-              .withMetadata(meta)
-              .build())
+          PatchDeploymentAction(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
         case _ =>
-          val templateDeployment =
-            resource(
-              streamletDeployment,
-              app,
-              secret,
-              Map((CloudflowLabels.ConfigUpdateLabel -> System.currentTimeMillis.toString)))
-          Action.createOrReplace(templateDeployment)
+          Action.createOrReplace(resource(streamletDeployment, app, secret, updateLabels))
       }
     }
   }

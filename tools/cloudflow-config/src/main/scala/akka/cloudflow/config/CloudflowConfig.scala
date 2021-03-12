@@ -318,26 +318,13 @@ object CloudflowConfig {
   val defaultPodReader = exportReader[Pod].instance
 
   implicit val podReader = defaultPodReader
-//  ConfigReader.fromCursor[Pod] { cur: ConfigCursor =>
-//    defaultPodReader.from(cur) match {
-//      case Right(pod) =>
-//        val invalidMounts = getInvalidVolumeMounts(pod)
-//
-//        if (invalidMounts.size > 0) {
-//          cur.failed(InvalidMountsFailure(s"$InvalidMounts ${invalidMounts.mkString(", ")}"))
-//        } else {
-//          Right(pod)
-//        }
-//      case fail => fail
-//    }
-//  }
 
   // Kubernetes
   final case class Kubernetes(pods: Map[String, Pod] = Map())
 
   implicit val kubernetesHint = ProductHint[Kubernetes](allowUnknownKeys = false)
 
-  private val defaultKubernetesReader = exportReader[Kubernetes].instance
+  val defaultKubernetesReader = exportReader[Kubernetes].instance
 
   private def getInvalidVolumeMounts(pod: Pod, declaredVolumes: Seq[String]) = {
     val vmNames = pod.containers.values.map(_.volumeMounts.keys).flatten
@@ -661,6 +648,7 @@ object CloudflowConfig {
 object UnsafeCloudflowConfigLoader {
 
   implicit val podReader = CloudflowConfig.defaultPodReader
+  implicit val kubernetesReader = CloudflowConfig.defaultKubernetesReader
   implicit val streamletReader = CloudflowConfig.defaultStreamletReader
 
   def load(config: Config): Try[CloudflowConfig.CloudflowRoot] = {

@@ -32,17 +32,26 @@ object ActionExtension {
     Action.operation[Secret, SecretList, Try[Secret]](
       { client: KubernetesClient => client.secrets() }, {
         secrets: MixedOperation[Secret, SecretList, Resource[Secret]] =>
-          Try {
-            secrets
-              .inNamespace(namespace)
-              .withName(name)
-              .fromServer()
-              // TODO assumption! this returns null if the resource doesn't exists VERIFY!
-              .get()
+          try {
+            Success(
+              secrets
+                .inNamespace(namespace)
+                .withName(name)
+                .fromServer()
+                .get())
+          } catch {
+            case ex: Exception =>
+              ex.printStackTrace()
+              println("FOUND!!!")
+              Thread.sleep(30000)
+              System.exit(1)
+              Failure(ex)
           }
       }, { res =>
         res match {
-          case Success(s) => fAction(Option(s))
+          case Success(s) =>
+            println("RETURN -> " + s)
+            fAction(Option(s))
           case Failure(_) if retry > 0 =>
             Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")
             providedRetry(name, namespace)(fAction)(retry - 1)
