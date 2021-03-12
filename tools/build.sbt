@@ -219,33 +219,3 @@ lazy val cloudflowOperator =
       dockerUsername := sys.props.get("docker.username"),
       dockerRepository := sys.props.get("docker.registry"),
       dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")
-
-// TODO: remove or engineer the following
-// TODO: port the settings to the Helm chart
-val helmInstall = taskKey[Unit]("publishe the docker image and install it using helm")
-
-helmInstall := {
-  (cloudflowOperator / Docker / publish).value
-
-  import scala.sys.process._
-
-  val res = Process(
-    Seq(
-      "helm",
-      "upgrade",
-      "-i",
-      "cloudflow",
-      "cloudflow-helm-charts/cloudflow",
-      "--version",
-      "2.0.24",
-      "--namespace",
-      "cloudflow",
-      "--set",
-      Seq(
-        "kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092",
-        "cloudflow_operator.image.name=andreatp/cloudflow-operator",
-        s"cloudflow_operator.image.tag=${(ThisBuild / version).value}",
-        "cloudflow_operator.jvm.opts='-XX:MaxRAMPercentage=90.0 -XX:+UseContainerSupport'").mkString(","))).!
-
-  assert { res == 0 }
-}
