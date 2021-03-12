@@ -1,4 +1,0 @@
-# This is useful for when you want to see all non-filtered, non-formatted JMX metrics.
-# Must be defined for the appropriate runner (in place of any other rules files) in `Settings.scala`
-lowercaseOutputName: true
-attrNameSnakeCase: true
