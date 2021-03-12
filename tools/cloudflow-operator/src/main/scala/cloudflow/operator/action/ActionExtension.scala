@@ -26,7 +26,7 @@ import scala.util.{ Failure, Success, Try }
 
 object ActionExtension {
 
-  // TODO: re-test with IT tests
+  // This is needed since, sometimes, the secrets created by the CLI are taking time to be materialized
   def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(
       retry: Int)(implicit lineNumber: sourcecode.Line, file: sourcecode.File): Action = {
     Action.operation[Secret, SecretList, Try[Secret]](
