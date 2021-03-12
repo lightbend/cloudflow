@@ -18,13 +18,12 @@ package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action.Util.PrometheusAgentKey
-import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import cloudflow.operator.action._
-import io.fabric8.kubernetes.api.model.{ ContainerPortBuilder, SecretBuilder }
+import io.fabric8.kubernetes.api.model.SecretBuilder
 import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.{ GivenWhenThen, OptionValues }
 

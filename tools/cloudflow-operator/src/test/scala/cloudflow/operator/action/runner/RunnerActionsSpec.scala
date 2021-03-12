@@ -17,7 +17,7 @@
 package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
-import akka.kube.actions.{ CreateOrReplaceAction, GetAction, OperatorAction }
+import akka.kube.actions.{ CreateOrReplaceAction, DeleteAction, GetAction, OperatorAction }
 import org.scalatest.{ ConfigMap => _, _ }
 import com.typesafe.config._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
@@ -114,126 +114,141 @@ class RunnerActionsSpec
       }
     }
 
-//    "update when the new applications requires the same runners as the current one" in {
-//      Given("a current app")
-//      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-//      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
-//
-//      val ingressRef = ingress.ref("ingress")
-//      val egressRef  = egress.ref("egress")
-//
-//      val verifiedBlueprint = Blueprint()
-//        .define(Vector(ingress, egress))
-//        .use(ingressRef)
-//        .use(egressRef)
-//        .connect(BTopic("foos"), ingressRef.out, egressRef.in)
-//        .verified
-//        .right
-//        .value
-//
-//      val appId      = "def-jux-12345"
-//      val appVersion = "42-abcdef0"
-//      val image      = "image-1"
-//
-//      val newApp     = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
-//      val currentApp = Some(newApp)
-//
-//      When("nothing changes in the new app")
-//      val actions = akkaRunner.actions(newApp, currentApp, runners)
-//
-//      Then("update actions should be created")
-//      val updateActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
-//      val updateDeploymentActions = actions.collect {
-//        case p: ProvidedAction[_] =>
-//          p.asInstanceOf[ProvidedAction[Secret]].getAction(Some(secret)).asInstanceOf[ResourceAction[Deployment]]
-//      }
-//
-//      (updateActions.size + updateDeploymentActions.size) mustBe actions.size
-//    }
-//
-//    "delete runner resources when new app removes a runner" in {
-//      Given("a current app, ingress -> egress")
-//      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-//      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
-//
-//      val ingressRef = ingress.ref("ingress")
-//      val egressRef  = egress.ref("egress")
-//      val bp = Blueprint()
-//        .define(Vector(ingress, egress))
-//        .use(ingressRef)
-//        .use(egressRef)
-//        .connect(BTopic("foos"), ingressRef.out, egressRef.in)
-//
-//      val verifiedBlueprint = bp.verified.right.value
-//
-//      val appId         = "thundercat-12345"
-//      val appVersion    = "42-abcdef0"
-//      val image         = "image-1"
-//      val newAppVersion = appVersion // to compare configmap contents easier.
-//      val currentApp    = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
-//
-//      When("the new app removes the egress")
-//      val newBp =
-//        bp.disconnect(egressRef.in).remove(egressRef.name)
-//      val newApp =
-//        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-//      val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
-//
-//      Then("delete actions should be created")
-//      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
-//      deleteActions.size mustBe 2
-//    }
-//
-//    "create new runner resources when a runner is added" in {
-//      Given("a current app with just an ingress")
-//      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
-//      val egress  = randomStreamlet().asEgress[Foo].withServerAttribute
-//
-//      val ingressRef = ingress.ref("ingress")
-//      val bp = Blueprint()
-//        .define(Vector(ingress, egress))
-//        .use(ingressRef)
-//        .connect(BTopic("foos"), ingressRef.out)
-//      val verifiedBlueprint = bp.verified.right.value
-//
-//      val appId      = "lord-quas-12345"
-//      val appVersion = "42-abcdef0"
-//      val image      = "image-1"
-//      val currentApp = CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths))
-//
-//      When("the new app adds a runner, ingress -> egress")
-//      val egressRef = egress.ref("egress")
-//      val newBp = bp
-//        .use(egressRef)
-//        .connect(BTopic("foos"), egressRef.in)
-//      val newAppVersion = appVersion // to compare configmap contents easier.
-//      val newApp =
-//        CloudflowApplication(CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths))
-//
-//      Then("create actions for runner resources should be created for the new endpoint")
-//      val actions       = akkaRunner.actions(newApp, Some(currentApp), runners)
-//      val createActions = actions.collect { case a: CreateOrUpdateAction[_] => a }
-//
-//      val createDeploymentActions = actions.collect {
-//        case p: ProvidedAction[_] =>
-//          p.asInstanceOf[ProvidedAction[Secret]].getAction(Some(secret)).asInstanceOf[SingleResourceAction[Deployment]]
-//      }
-//
-//      val configMaps = createActions.map(_.resource).collect {
-//        case configMap: ConfigMap => configMap
-//      }
-//      val akkaDeployments = createDeploymentActions.map(_.resource)
-//      // create and update
-//      configMaps.size mustBe 2
-//      akkaDeployments.size mustBe 2
-//
-//      configMaps.foreach { configMap =>
-//        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
-//      }
-//      akkaDeployments.foreach { deployment =>
-//        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
-//      }
-//    }
+    "update when the new applications requires the same runners as the current one" in {
+      Given("a current app")
+      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
+      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+
+      val ingressRef = ingress.ref("ingress")
+      val egressRef = egress.ref("egress")
+
+      val verifiedBlueprint = Blueprint()
+        .define(Vector(ingress, egress))
+        .use(ingressRef)
+        .use(egressRef)
+        .connect(BTopic("foos"), ingressRef.out, egressRef.in)
+        .verified
+        .right
+        .value
+
+      val appId = "def-jux-12345"
+      val appVersion = "42-abcdef0"
+      val image = "image-1"
+
+      val newApp = App.Cr(
+        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val currentApp = Some(newApp)
+
+      When("nothing changes in the new app")
+      val actions = akkaRunner.actions(newApp, currentApp, runners)
+
+      Then("update actions should be created")
+      val updateActions = actions.collect {
+        case c: CreateOrReplaceAction[_] => c
+      }
+      val updateDeploymentActions = actions.collect {
+        case p: GetAction[Secret] =>
+          p.getAction(Some(secret)).asInstanceOf[CreateOrReplaceAction[Deployment]]
+      }
+
+      (updateActions.size + updateDeploymentActions.size) mustBe actions.size
+    }
+
+    "delete runner resources when new app removes a runner" in {
+      Given("a current app, ingress -> egress")
+      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
+      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+
+      val ingressRef = ingress.ref("ingress")
+      val egressRef = egress.ref("egress")
+      val bp = Blueprint()
+        .define(Vector(ingress, egress))
+        .use(ingressRef)
+        .use(egressRef)
+        .connect(BTopic("foos"), ingressRef.out, egressRef.in)
+
+      val verifiedBlueprint = bp.verified.right.value
+
+      val appId = "thundercat-12345"
+      val appVersion = "42-abcdef0"
+      val image = "image-1"
+      val newAppVersion = appVersion // to compare configmap contents easier.
+      val currentApp = App.Cr(
+        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+
+      When("the new app removes the egress")
+      val newBp =
+        bp.disconnect(egressRef.in).remove(egressRef.name)
+      val newApp = App.Cr(
+        spec =
+          CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths),
+        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
+
+      Then("delete actions should be created")
+      val deleteActions = actions.collect { case d: DeleteAction[_] => d }
+      deleteActions.size mustBe 2
+    }
+
+    "create new runner resources when a runner is added" in {
+      Given("a current app with just an ingress")
+      val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
+      val egress = randomStreamlet().asEgress[Foo].withServerAttribute
+
+      val ingressRef = ingress.ref("ingress")
+      val bp = Blueprint()
+        .define(Vector(ingress, egress))
+        .use(ingressRef)
+        .connect(BTopic("foos"), ingressRef.out)
+      val verifiedBlueprint = bp.verified.right.value
+
+      val appId = "lord-quas-12345"
+      val appVersion = "42-abcdef0"
+      val image = "image-1"
+      val currentApp = App.Cr(
+        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+
+      When("the new app adds a runner, ingress -> egress")
+      val egressRef = egress.ref("egress")
+      val newBp = bp
+        .use(egressRef)
+        .connect(BTopic("foos"), egressRef.in)
+      val newAppVersion = appVersion // to compare configmap contents easier.
+      val newApp = App.Cr(
+        spec =
+          CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths),
+        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+
+      Then("create actions for runner resources should be created for the new endpoint")
+      val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
+
+      val createActions = actions.collect { case a: CreateOrReplaceAction[_] => a }
+
+      val createDeploymentActions = actions.collect {
+        case p: OperatorAction[_, _, _, Try[Secret]] =>
+          p.createAction(Success(secret)).asInstanceOf[CreateOrReplaceAction[Deployment]]
+        case p: GetAction[Secret] =>
+          p.getAction(Some(secret)).asInstanceOf[CreateOrReplaceAction[Deployment]]
+      }
+
+      val configMaps = createActions.map(_.resource).collect {
+        case configMap: ConfigMap => configMap
+      }
+      val akkaDeployments = createDeploymentActions.map(_.resource)
+      // create and update
+      configMaps.size mustBe 2
+      akkaDeployments.size mustBe 2
+
+      configMaps.foreach { configMap =>
+        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
+      }
+      akkaDeployments.foreach { deployment =>
+        assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
+      }
+    }
   }
 
   def assertConfigMap(
