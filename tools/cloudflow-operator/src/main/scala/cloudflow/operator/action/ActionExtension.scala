@@ -27,34 +27,36 @@ import scala.util.{ Failure, Success, Try }
 object ActionExtension {
 
   // TODO: re-test with IT tests
-  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int)(
-      implicit lineNumber: sourcecode.Line,
-      file: sourcecode.File): Action = { // TODO: 60 looks quite a lot!
-    Action.operation[Secret, SecretList, Try[Secret]](
-      { client: KubernetesClient => client.secrets() }, {
-        secrets: MixedOperation[Secret, SecretList, Resource[Secret]] =>
-          Try(
-            secrets
-              .inNamespace(namespace)
-              .withName(name)
-              .fromServer()
-              .get())
-      }, { res =>
-        res match {
-          case Success(s) if s != null => fAction(Option(s))
-          case _ if retry <= 0 =>
-            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
-            throw new Exception(s"Retry exhausted while trying to get $name in $namespace, giving up")
-          case Success(null) if retry > 0 =>
-            Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
-            Thread.sleep(100)
-            providedRetry(name, namespace)(fAction)(retry - 1)
-          case Failure(_) if retry > 0 =>
-            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")
-            providedRetry(name, namespace)(fAction)(retry - 1)
-        }
-      })
-
-  }
+  // The secrets are already created by the CLI
+  // this is not going to be needed
+//  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(retry: Int)(
+//      implicit lineNumber: sourcecode.Line,
+//      file: sourcecode.File): Action = { // TODO: 60 looks quite a lot!
+//    Action.operation[Secret, SecretList, Try[Secret]](
+//      { client: KubernetesClient => client.secrets() }, {
+//        secrets: MixedOperation[Secret, SecretList, Resource[Secret]] =>
+//          Try(
+//            secrets
+//              .inNamespace(namespace)
+//              .withName(name)
+//              .fromServer()
+//              .get())
+//      }, { res =>
+//        res match {
+//          case Success(s) if s != null => fAction(Option(s))
+//          case _ if retry <= 0 =>
+//            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
+//            throw new Exception(s"Retry exhausted while trying to get $name in $namespace, giving up")
+//          case Success(null) =>
+//            Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
+//            Thread.sleep(100)
+//            providedRetry(name, namespace)(fAction)(retry - 1)
+//          case Failure(_) =>
+//            Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")
+//            providedRetry(name, namespace)(fAction)(retry - 1)
+//        }
+//      })
+//
+//  }
 
 }
