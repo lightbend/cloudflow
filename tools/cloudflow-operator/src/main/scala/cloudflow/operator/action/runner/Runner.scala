@@ -83,10 +83,6 @@ trait Runner[T <: HasMetadata] {
     val newDeploymentNames = newDeployments.map(_.name)
 
     // delete streamlet deployments by name that are in the current app but are not listed in the new app
-    println("DELETES:")
-    println(
-      currentDeployments.filterNot(deployment => newDeploymentNames.contains(deployment.name)).mkString("\n")
-    )
     val deleteActions = currentDeployments
       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
       .flatMap { deployment =>
@@ -242,7 +238,6 @@ trait Runner[T <: HasMetadata] {
   def createOrReplaceResource(res: T)(implicit ct: ClassTag[T]): Action = Action.createOrReplace(res)
 
   def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[T]): Action = {
-    println("DELETEACTION -> "+name)
     Action.delete(name, namespace)
   }
 
@@ -257,7 +252,6 @@ trait Runner[T <: HasMetadata] {
       podConfig
     }).recover {
         case e =>
-          println(e)
           log.error(
             s"Detected pod configs in secret '${secret.getMetadata().getName()}' that contains invalid configuration data, IGNORING configuration.",
             e)

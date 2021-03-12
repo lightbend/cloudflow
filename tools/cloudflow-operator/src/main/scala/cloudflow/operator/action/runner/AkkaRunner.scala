@@ -90,7 +90,14 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         case Some(dep) =>
           val labels = Option(dep.getMetadata.getLabels).map(_.asScala).getOrElse(Map[String, String]())
 
-          PatchDeploymentAction(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
+          val templateDeployment =
+            resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap)
+
+          if (templateDeployment.getSpec == dep.getSpec) {
+            PatchDeploymentAction(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
+          } else {
+            Action.createOrReplace(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
+          }
         case _ =>
           Action.createOrReplace(resource(streamletDeployment, app, secret, updateLabels))
       }

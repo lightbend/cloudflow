@@ -29,7 +29,6 @@ import cloudflow.operator.flow._
 import io.fabric8.kubernetes.api.model.{ WatchEvent => _, _ }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.base.OperationContext
-import io.fabric8.kubernetes.client.informers.cache.Cache
 import io.fabric8.kubernetes.client.informers.{
   EventType,
   ResourceEventHandler,
@@ -195,9 +194,7 @@ object Operator {
 
   private def enqueueTask[T <: HasMetadata](msgType: String, sourceMat: SourceQueueWithComplete[WatchEvent[T]])(
       event: WatchEvent[T]): Unit = {
-    val key = Cache.metaNamespaceKeyFunc(event.obj)
-
-    log.info("Enqueue {} with key [{}]", msgType, key)
+    log.info("Enqueue {} with type [{}]", msgType, event.eventType)
 
     sourceMat.offer(event)
   }
