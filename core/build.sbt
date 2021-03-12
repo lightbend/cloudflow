@@ -101,9 +101,7 @@ lazy val root =
       localRunner,
       runner,
       blueprint,
-      plugin,
-      // operator,
-      // operatorActions
+      plugin
     )
 
 lazy val streamlets =
