@@ -18,14 +18,14 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import akka.kube.actions.CreateOrReplaceAction
-import cloudflow.blueprint._
 import cloudflow.blueprint.BlueprintBuilder._
+import cloudflow.blueprint._
 import cloudflow.operator.action.runner.AkkaRunner
 import cloudflow.operator.event.AppEvent
 import io.fabric8.kubernetes.api.model.Event
-import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors }
 
 class EventActionsSpec
     extends AnyWordSpec

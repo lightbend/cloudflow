@@ -18,10 +18,10 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import scala.collection.immutable._
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{ ObjectReference, OwnerReference }
+
+import scala.collection.immutable._
 
 /**
  * Creates sequences of resource [[Action]]s deployment and undeployment of applications.

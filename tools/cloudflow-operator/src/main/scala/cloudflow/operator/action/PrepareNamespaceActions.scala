@@ -16,12 +16,12 @@
 
 package cloudflow.operator.action
 
-import scala.collection.immutable._
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.operator.action.runner.Runner
-
 import io.fabric8.kubernetes.api.model.OwnerReference
+
+import scala.collection.immutable._
 
 /**
  * Creates a sequence of resource actions for preparing the namespace where the application is

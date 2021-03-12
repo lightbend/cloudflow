@@ -17,23 +17,15 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import cloudflow.blueprint._
 import cloudflow.blueprint.BlueprintBuilder._
+import cloudflow.blueprint._
 import cloudflow.operator.action.runner._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import io.fabric8.kubernetes.api.model.{
-  ContainerState,
-  ContainerStateBuilder,
-  ContainerStatus,
-  ContainerStatusBuilder,
-  ObjectMetaBuilder,
-  PodBuilder,
-  PodStatusBuilder
-}
+import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.client.utils.Serialization
-import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
 
 import scala.jdk.CollectionConverters._
 

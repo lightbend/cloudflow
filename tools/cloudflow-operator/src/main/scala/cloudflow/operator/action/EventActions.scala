@@ -17,14 +17,11 @@
 package cloudflow.operator.action
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import java.time.ZonedDateTime
-import cloudflow.blueprint.deployment.StreamletDeployment
 import cloudflow.operator.action.EventActions.EventType.EventType
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{ EventBuilder, EventSourceBuilder, ObjectReference }
-import io.fabric8.kubernetes.client.VersionInfo.VersionKeys
 
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters._
 

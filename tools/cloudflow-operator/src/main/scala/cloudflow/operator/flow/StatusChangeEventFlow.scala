@@ -17,15 +17,16 @@
 package cloudflow.operator
 package flow
 
-import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import akka.stream.scaladsl._
-import org.slf4j._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 import io.fabric8.kubernetes.api.model.Pod
+import org.slf4j._
+
+import java.util.concurrent.atomic.AtomicReference
 
 object StatusChangeEventFlow extends {
   import StatusChangeEvent._

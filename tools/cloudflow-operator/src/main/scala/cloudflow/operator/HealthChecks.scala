@@ -16,12 +16,13 @@
 
 package cloudflow.operator
 
-import scala.concurrent._
-import scala.util._
 import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
+
+import scala.concurrent._
+import scala.util._
 
 object HealthChecks {
   def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) = {

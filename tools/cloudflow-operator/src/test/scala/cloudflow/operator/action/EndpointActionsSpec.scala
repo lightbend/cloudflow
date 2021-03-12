@@ -17,14 +17,14 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.kube.actions.{ CreateOrReplaceAction, DeleteAction }
-import cloudflow.blueprint._
+import akka.kube.actions.DeleteAction
 import cloudflow.blueprint.BlueprintBuilder._
+import cloudflow.blueprint._
 import cloudflow.operator.action.EndpointActions.CreateServiceAction
-import io.fabric8.kubernetes.api.model.{ IntOrString, Service }
-import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors }
+import io.fabric8.kubernetes.api.model.Service
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors }
 
 import scala.jdk.CollectionConverters._
 

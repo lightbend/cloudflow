@@ -19,12 +19,12 @@ package flow
 
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import java.util.concurrent.atomic.AtomicReference
 import akka.stream._
 import akka.stream.scaladsl._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
+
+import java.util.concurrent.atomic.AtomicReference
 
 object AppEventFlow {
   // keeps state of apps across stream restarts

@@ -20,42 +20,10 @@ import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
-import io.fabric8.kubernetes.api.model.apps.{
-  Deployment,
-  DeploymentBuilder,
-  DeploymentSpecBuilder,
-  DeploymentStrategy,
-  DeploymentStrategyBuilder
-}
-import io.fabric8.kubernetes.api.model.rbac.{
-  PolicyRuleBuilder,
-  Role,
-  RoleBinding,
-  RoleBindingBuilder,
-  RoleBuilder,
-  RoleRefBuilder,
-  SubjectBuilder
-}
-import io.fabric8.kubernetes.api.model.{
-  ConfigMapVolumeSourceBuilder,
-  ContainerBuilder,
-  ContainerPortBuilder,
-  EnvVarBuilder,
-  ExecActionBuilder,
-  OwnerReference,
-  OwnerReferenceBuilder,
-  PersistentVolumeClaimVolumeSourceBuilder,
-  PodSecurityContextBuilder,
-  PodSpecBuilder,
-  PodTemplateSpecBuilder,
-  ProbeBuilder,
-  ResourceRequirementsBuilder,
-  Secret,
-  SecretVolumeSourceBuilder,
-  Volume,
-  VolumeBuilder,
-  VolumeMountBuilder
-}
+import io.fabric8.kubernetes.api.model.apps._
+import io.fabric8.kubernetes.api.model.rbac._
+import io.fabric8.kubernetes.api.model._
+
 import scala.jdk.CollectionConverters._
 
 object AkkaRunner {

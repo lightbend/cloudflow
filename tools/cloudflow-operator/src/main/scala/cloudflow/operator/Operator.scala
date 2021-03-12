@@ -16,43 +16,34 @@
 
 package cloudflow.operator
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
 import akka.NotUsed
 import akka.actor._
 import akka.datap.crd.App
 import akka.kube.actions.{ Action, ActionExecutor, Fabric8ActionExecutor }
 import akka.stream._
 import akka.stream.scaladsl._
-import org.slf4j.LoggerFactory
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 import cloudflow.operator.flow._
-import io.fabric8.kubernetes.api.model.{
-  ConfigMapBuilder,
-  HasMetadata,
-  KubernetesResource,
-  OwnerReference,
-  Pod,
-  PodList,
-  Secret,
-  SecretList
-}
+import io.fabric8.kubernetes.api.model.{ WatchEvent => _, _ }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.base.OperationContext
+import io.fabric8.kubernetes.client.informers.cache.Cache
 import io.fabric8.kubernetes.client.informers.{
   EventType,
   ResourceEventHandler,
   SharedIndexInformer,
   SharedInformerFactory
 }
-import io.fabric8.kubernetes.client.informers.cache.Cache
+import org.slf4j.LoggerFactory
 
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent._
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
+import scala.util._
 
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")

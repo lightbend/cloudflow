@@ -18,19 +18,16 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import akka.kube.actions.{ Action, CustomResourceAdapter }
-import cloudflow.operator.action.Common.jsonToConfig
-
-import scala.collection.immutable._
-import scala.util.{ Failure, Success, Try }
-import org.slf4j.LoggerFactory
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{ ContainerState, Pod }
 import io.fabric8.kubernetes.api.{ model => fabric8 }
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
-import io.fabric8.kubernetes.client.utils.Serialization
+import org.slf4j.LoggerFactory
 
+import scala.collection.immutable._
 import scala.jdk.CollectionConverters._
+import scala.util.{ Failure, Success, Try }
 
 object CloudflowStatus {
   private val log = LoggerFactory.getLogger(Status.getClass)

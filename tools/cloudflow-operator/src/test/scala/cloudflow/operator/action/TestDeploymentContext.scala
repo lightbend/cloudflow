@@ -16,8 +16,8 @@
 
 package cloudflow.operator.action
 
-import io.fabric8.kubernetes.api.model.{ Quantity, SecretBuilder }
 import cloudflow.operator.action.runner._
+import io.fabric8.kubernetes.api.model.{ Quantity, SecretBuilder }
 
 import scala.jdk.CollectionConverters._
 

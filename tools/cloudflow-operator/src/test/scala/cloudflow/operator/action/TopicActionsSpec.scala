@@ -15,15 +15,15 @@
  */
 
 package cloudflow.operator.action
-import cloudflow.blueprint.{ Topic => BTopic, _ }
-import BlueprintBuilder._
 import akka.datap.crd.App
 import akka.kube.actions.{ CompositeAction, CreateOrReplaceAction, GetAction, OperatorAction }
+import cloudflow.blueprint.BlueprintBuilder._
+import cloudflow.blueprint.{ Topic => BTopic, _ }
 import cloudflow.operator.action.runner.Base64Helper
-import io.fabric8.kubernetes.api.model.{ HasMetadata, Secret, SecretBuilder }
-import org.scalatest.{ EitherValues, GivenWhenThen, OptionValues }
+import io.fabric8.kubernetes.api.model.{ Secret, SecretBuilder }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ EitherValues, GivenWhenThen, OptionValues }
 
 import scala.jdk.CollectionConverters._
 import scala.util.{ Success, Try }

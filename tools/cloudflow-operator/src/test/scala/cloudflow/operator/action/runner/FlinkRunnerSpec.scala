@@ -17,26 +17,15 @@
 package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
-import com.typesafe.config.ConfigFactory
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.FlinkApp
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import io.fabric8.kubernetes.api.model.{
-  ConfigMapVolumeSource,
-  ConfigMapVolumeSourceBuilder,
-  EnvVarBuilder,
-  Quantity,
-  SecretBuilder,
-  SecretVolumeSourceBuilder,
-  VolumeBuilder,
-  VolumeMountBuilder
-}
+import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.client.utils.Serialization
-import org.scalatest.{ GivenWhenThen, OptionValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{ GivenWhenThen, OptionValues }
 
 import scala.jdk.CollectionConverters._
 import scala.util.Try

@@ -19,12 +19,12 @@ package event
 
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import scala.collection.immutable.Seq
 import cloudflow.operator.action._
 import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference }
 import io.fabric8.kubernetes.client.informers.EventType
 import org.slf4j.LoggerFactory
+
+import scala.collection.immutable.Seq
 
 /**
  * Indicates that a cloudflow application was deployed or undeployed.

@@ -16,21 +16,19 @@
 
 package cloudflow.operator
 
-import java.lang.management.ManagementFactory
 import akka.actor._
 import akka.datap.crd.App
-
-import scala.jdk.CollectionConverters._
-import scala.util.Try
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.{ FlinkApp, SparkApp }
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import io.fabric8.kubernetes.api.model.{ ObjectMetaBuilder, OwnerReference }
+import io.fabric8.kubernetes.api.model.OwnerReference
 import io.fabric8.kubernetes.client.utils.Serialization
 import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
-import io.fabric8.kubernetes.internal.KubernetesDeserializer
+
+import java.lang.management.ManagementFactory
+import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 object Main extends {
 

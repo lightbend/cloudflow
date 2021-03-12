@@ -19,13 +19,13 @@ package event
 
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import scala.collection.immutable.Seq
-import org.slf4j.LoggerFactory
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
 import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference, Secret }
 import io.fabric8.kubernetes.client.informers.EventType
+import org.slf4j.LoggerFactory
+
+import scala.collection.immutable.Seq
 
 /**
  * Indicates that a streamlet has changed.

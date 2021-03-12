@@ -17,17 +17,15 @@
 package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
-import com.typesafe.config.ConfigFactory
 import cloudflow.blueprint._
-import cloudflow.blueprint.deployment.{ PrometheusConfig, StreamletDeployment }
+import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.SparkApp
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import io.fabric8.kubernetes.api.model.{ EnvVarBuilder, SecretBuilder }
 import io.fabric8.kubernetes.client.utils.Serialization
-import org.scalatest.{ GivenWhenThen, OptionValues }
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{ GivenWhenThen, OptionValues }
 
 import scala.util.Try
 

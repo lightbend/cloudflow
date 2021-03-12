@@ -18,23 +18,13 @@ package cloudflow.operator
 package action
 
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, OperatorAction }
+import akka.kube.actions.Action
 import cloudflow.blueprint.deployment.StreamletDeployment
+import io.fabric8.kubernetes.api.model._
+import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
 import scala.collection.immutable._
-import io.fabric8.kubernetes.api.model.{
-  IntOrStringBuilder,
-  OwnerReference,
-  OwnerReferenceBuilder,
-  Service,
-  ServiceBuilder,
-  ServiceList,
-  ServicePortBuilder,
-  ServiceSpecBuilder
-}
-import io.fabric8.kubernetes.client.KubernetesClient
-import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource, ServiceResource }
-
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.util.Try

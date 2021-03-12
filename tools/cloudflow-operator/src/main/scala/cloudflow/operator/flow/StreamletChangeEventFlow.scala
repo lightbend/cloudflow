@@ -17,13 +17,14 @@
 package cloudflow.operator
 package event
 
-import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import akka.stream.scaladsl._
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.Secret
+
+import java.util.concurrent.atomic.AtomicReference
 
 object StreamletChangeEventFlow {
 

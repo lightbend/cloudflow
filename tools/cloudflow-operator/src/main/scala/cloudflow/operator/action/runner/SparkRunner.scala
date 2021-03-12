@@ -18,43 +18,19 @@ package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
 import akka.kube.actions.{ Action, CustomResourceAdapter }
-
-import scala.jdk.CollectionConverters._
 import cloudflow.blueprint.deployment.PrometheusConfig
-import com.typesafe.config._
 import cloudflow.operator.action._
 import com.fasterxml.jackson.annotation.{ JsonCreator, JsonIgnoreProperties, JsonProperty }
-import com.fasterxml.jackson.databind.{ JsonDeserializer, PropertyNamingStrategy }
-import com.fasterxml.jackson.databind.annotation.{ JsonDeserialize, JsonNaming }
-import io.fabric8.kubernetes.api.model.rbac.{
-  PolicyRuleBuilder,
-  Role,
-  RoleBinding,
-  RoleBindingBuilder,
-  RoleBuilder,
-  SubjectBuilder
-}
-import io.fabric8.kubernetes.api.model.{
-  EnvVar,
-  KubernetesResource,
-  Namespaced,
-  ObjectMeta,
-  ObjectMetaBuilder,
-  OwnerReference,
-  OwnerReferenceBuilder,
-  Quantity,
-  QuantityBuilder,
-  ResourceRequirementsBuilder,
-  Secret,
-  Volume,
-  VolumeBuilder,
-  VolumeMount,
-  VolumeMountBuilder
-}
-import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.typesafe.config._
+import io.fabric8.kubernetes.api.model.rbac._
+import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
+import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
 
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
 object SparkRunner {

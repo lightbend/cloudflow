@@ -17,49 +17,19 @@
 package cloudflow.operator.action.runner
 
 import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
-
-import scala.jdk.CollectionConverters._
-import scala.util._
-import com.typesafe.config._
-import org.slf4j._
-import cloudflow.blueprint.deployment._
 import akka.datap.crd.App
 import akka.kube.actions.Action
+import cloudflow.blueprint.deployment._
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
-import io.fabric8.kubernetes.api.model.apps.Deployment
-import io.fabric8.kubernetes.api.model.rbac.{
-  PolicyRuleBuilder,
-  RoleBinding,
-  RoleBindingBuilder,
-  RoleRefBuilder,
-  SubjectBuilder
-}
-import io.fabric8.kubernetes.api.model.{
-  ConfigMap,
-  ConfigMapBuilder,
-  ContainerPort,
-  ContainerPortBuilder,
-  DownwardAPIVolumeFileBuilder,
-  EnvVar,
-  EnvVarBuilder,
-  HasMetadata,
-  ObjectFieldSelectorBuilder,
-  OwnerReference,
-  OwnerReferenceBuilder,
-  PersistentVolumeClaimVolumeSourceBuilder,
-  Quantity,
-  ResourceRequirements,
-  ResourceRequirementsBuilder,
-  Secret,
-  SecretVolumeSourceBuilder,
-  Volume,
-  VolumeBuilder,
-  VolumeMount,
-  VolumeMountBuilder
-}
+import com.typesafe.config._
+import io.fabric8.kubernetes.api.model.rbac._
+import io.fabric8.kubernetes.api.model.{ Config => _, _ }
+import org.slf4j._
 
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
+import scala.util._
 
 object Runner {
   val ConfigMapMountPath = "/etc/cloudflow-runner"

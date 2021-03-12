@@ -18,25 +18,17 @@ package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
 import akka.kube.actions.{ CreateOrReplaceAction, DeleteAction, GetAction, OperatorAction }
-import org.scalatest.{ ConfigMap => _, _ }
-import com.typesafe.config._
-import cloudflow.blueprint.{ Topic => BTopic, _ }
-import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.BlueprintBuilder._
+import cloudflow.blueprint.deployment._
+import cloudflow.blueprint.{ Topic => BTopic, _ }
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
+import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.apps.Deployment
-import io.fabric8.kubernetes.api.model.{
-  ConfigMap,
-  ConfigMapVolumeSource,
-  EnvVarBuilder,
-  ExecAction,
-  Quantity,
-  Secret,
-  SecretBuilder
-}
+import io.fabric8.kubernetes.api.model._
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ ConfigMap => _, _ }
 
 import scala.jdk.CollectionConverters._
 import scala.util.{ Success, Try }

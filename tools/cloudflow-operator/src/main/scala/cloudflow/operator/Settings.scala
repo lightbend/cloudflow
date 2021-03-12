@@ -16,14 +16,13 @@
 
 package cloudflow.operator
 
-import scala.io.{ BufferedSource, Source }
 import akka.actor._
-
-import com.typesafe.config._
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
-
+import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.Quantity
+
+import scala.io.{ BufferedSource, Source }
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   override def lookup = Settings

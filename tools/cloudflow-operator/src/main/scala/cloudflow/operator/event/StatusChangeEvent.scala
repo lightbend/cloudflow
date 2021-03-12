@@ -19,13 +19,13 @@ package event
 
 import akka.datap.crd.App
 import akka.kube.actions.Action
-
-import scala.collection.immutable.Seq
-import org.slf4j._
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.informers.EventType
+import org.slf4j._
+
+import scala.collection.immutable.Seq
 
 /**
  * Indicates that the status of the application has changed.

@@ -17,32 +17,24 @@
 package cloudflow.operator.action
 
 import akka.datap.crd.App
-import akka.kube.actions.{ Action, GetAction, ResourceAction }
-
-import java.nio.charset.StandardCharsets
-import java.util.{ Base64, Collections }
-import scala.collection.immutable._
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters._
-import com.typesafe.config.{ Config, ConfigFactory }
-import org.apache.kafka.clients.admin.Admin
-import org.apache.kafka.clients.admin.AdminClientConfig
-import org.apache.kafka.clients.admin.CreateTopicsOptions
-import org.apache.kafka.clients.admin.NewTopic
-import org.apache.kafka.common.KafkaFuture
-import org.slf4j.LoggerFactory
+import akka.kube.actions.Action
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Base64Helper
 import cloudflow.operator.event.ConfigInput
+import com.typesafe.config.{ Config, ConfigFactory }
 import io.fabric8.kubernetes.api.model.{ ConfigMap, ConfigMapBuilder, Secret }
 import io.fabric8.kubernetes.client.KubernetesClient
+import org.apache.kafka.clients.admin.{ Admin, AdminClientConfig, CreateTopicsOptions, NewTopic }
+import org.apache.kafka.common.KafkaFuture
+import org.slf4j.LoggerFactory
 
-import scala.util.Try
+import java.util.Collections
+import scala.collection.immutable._
+import scala.concurrent.{ ExecutionContext, Future, Promise }
+import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
 
 /**
  * Creates topic actions for managed topics.
