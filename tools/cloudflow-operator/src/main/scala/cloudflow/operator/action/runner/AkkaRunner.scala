@@ -54,18 +54,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   val runtime = Runtime
 
   def createOrReplaceResource(res: Deployment)(implicit ct: ClassTag[Deployment]): Action = {
-    if (res.getMetadata != null && res.getMetadata.getName != null && res.getMetadata.getNamespace != null) {
-      Action.get[Deployment](res.getMetadata.getName, res.getMetadata.getNamespace) { currentDeployment =>
-        currentDeployment match {
-          case Some(_) =>
-            PatchDeploymentAction(res)
-          case _ =>
-            Action.createOrReplace(res)
-        }
-      }
-    } else {
-      Action.createOrReplace(res)
-    }
+    Action.createOrReplace(res)
   }
 
   def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[Deployment]): Action =
