@@ -251,18 +251,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: FlinkApp.Cr)(implicit ct: ClassTag[FlinkApp.Cr]): Action = {
-    if (res.getMetadata != null && res.getMetadata.getName != null && res.getMetadata.getNamespace != null) {
-      Action.Cr.get[FlinkApp.Cr](res.getMetadata.getName, res.getMetadata.getNamespace) { currentDeployment =>
-        currentDeployment match {
-          case Some(curr) if (curr.spec == res.spec) =>
-            Action.noop
-          case _ =>
-            Action.createOrReplace(res)
-        }
-      }
-    } else {
-      Action.createOrReplace(res)
-    }
+    Action.createOrReplace(res)
   }
 
   // TODO: refactor the following two methods? ... optimization
