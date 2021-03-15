@@ -92,10 +92,11 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         val spec = getSpec(deployment, newApp, secret)
 
         // TODO: check if this works as expected or we really need to patch
-        Action.Cr.get[SparkApp.Cr](newApp.name, newApp.namespace) { current =>
+        // TODO: very likely this needs to be a real patch!
+        Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
           current match {
             case Some(curr) if (curr.spec != spec) =>
-              Action.Cr.createOrReplace(res.copy(spec = spec))
+              Action.Cr.createOrReplace[SparkApp.Cr](res.copy(spec = spec))
             case _ =>
               Action.noop
           }
@@ -193,7 +194,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: SparkApp.Cr)(implicit ct: ClassTag[SparkApp.Cr]): Action = {
-    Action.createOrReplace(res)
+    Action.Cr.createOrReplace(res)
   }
 
   def getSpec(
@@ -594,7 +595,7 @@ object SparkApp {
       metadata: ObjectMeta,
       @JsonProperty("status")
       status: Status = null)
-      extends CustomResource
+      extends CustomResource[Spec, Status]
       with Namespaced {
     this.setMetadata(metadata)
 
