@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
 import scala.util.Try
 
 object AkkaRunner {
@@ -51,6 +52,12 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   import akkaRunnerDefaults._
 
   val runtime = Runtime
+
+  def createOrReplaceResource(res: Deployment)(implicit ct: ClassTag[Deployment]): Action =
+    Action.createOrReplace[Deployment](res)
+
+  def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[Deployment]): Action =
+    Action.delete[Deployment](name, namespace)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleAkka = akkaRole(app.namespace, labels, ownerReferences)

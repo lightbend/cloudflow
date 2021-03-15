@@ -64,7 +64,6 @@ object Runner {
   val DockerContainerGroupId = 185
 }
 
-//TODO: the abstraction generic runner for Cr and Deployments leaks everywhere
 /**
  * A Runner translates into a Runner Kubernetes resource, and a ConfigMap that configures the runner.
  */
@@ -235,12 +234,9 @@ trait Runner[T <: HasMetadata] {
       configSecret: Secret,
       updateLabels: Map[String, String] = Map()): T
 
-  // TODO: here the abstraction is leaking, make those methods abstract maybe?
-  def createOrReplaceResource(res: T)(implicit ct: ClassTag[T]): Action = Action.createOrReplace(res)
+  def createOrReplaceResource(res: T)(implicit ct: ClassTag[T]): Action
 
-  def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[T]): Action = {
-    Action.delete(name, namespace)
-  }
+  def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[T]): Action
 
   def getPodsConfig(secret: Secret): PodsConfig = {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)
