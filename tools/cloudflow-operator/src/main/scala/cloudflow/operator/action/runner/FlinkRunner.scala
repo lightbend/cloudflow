@@ -17,10 +17,10 @@
 package cloudflow.operator.action.runner
 
 import akka.datap.crd.App
-import akka.kube.actions.{Action, CustomResourceAdapter}
+import akka.kube.actions.{ Action, CustomResourceAdapter }
 import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
-import com.fasterxml.jackson.annotation.{JsonCreator, JsonIgnoreProperties, JsonProperty}
+import com.fasterxml.jackson.annotation.{ JsonCreator, JsonIgnoreProperties, JsonProperty }
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.typesafe.config._
@@ -28,8 +28,8 @@ import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.api.model.apps.Deployment
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
-import io.fabric8.kubernetes.client.{CustomResource, CustomResourceList}
-import io.fabric8.kubernetes.model.annotation.{Group, Kind, Plural, Version}
+import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
+import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters._
@@ -251,13 +251,17 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: FlinkApp.Cr)(implicit ct: ClassTag[FlinkApp.Cr]): Action = {
-    Action.Cr.get[FlinkApp.Cr](res.getMetadata.getName, res.getMetadata.getNamespace) { currentDeployment =>
-      currentDeployment match {
-        case Some(curr) if (curr.spec == res.spec) =>
-          Action.noop
-        case _ =>
-          Action.createOrReplace(res)
+    if (res.getMetadata != null && res.getMetadata.getName != null && res.getMetadata.getNamespace != null) {
+      Action.Cr.get[FlinkApp.Cr](res.getMetadata.getName, res.getMetadata.getNamespace) { currentDeployment =>
+        currentDeployment match {
+          case Some(curr) if (curr.spec == res.spec) =>
+            Action.noop
+          case _ =>
+            Action.createOrReplace(res)
+        }
       }
+    } else {
+      Action.createOrReplace(res)
     }
   }
 

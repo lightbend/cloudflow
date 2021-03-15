@@ -17,11 +17,11 @@
 package cloudflow.operator.action
 
 import akka.kube.actions.Action
-import io.fabric8.kubernetes.api.model.{Secret, SecretList}
+import io.fabric8.kubernetes.api.model.{ Secret, SecretList }
 import io.fabric8.kubernetes.client.KubernetesClient
-import io.fabric8.kubernetes.client.dsl.{MixedOperation, Resource}
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object ActionExtension {
 
