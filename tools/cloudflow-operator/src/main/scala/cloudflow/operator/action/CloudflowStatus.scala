@@ -256,7 +256,7 @@ object CloudflowStatus {
 
   // TODO: this failure still happen, seldom and not reproduciple ...
   // maybe I can reproduce and battle harden deploying 2 operators!
-  def statusUpdateAction(app: App.Cr)(retry: Int = 10): Action = {
+  def statusUpdateAction(app: App.Cr)(retry: Int = 5): Action = {
     Action.operation[App.Cr, App.List, Try[App.Cr]](
       { client: KubernetesClient =>
         client
@@ -275,8 +275,9 @@ object CloudflowStatus {
               current.updateStatus(newAppWithStatus)
             case _ =>
               if (retry > 0) {
-                throw new Exception("Trying to update the CR that has been deleted")
+                throw new Exception("Trying to update a CR that has been deleted")
               } else {
+                log.warn(s"Cannot yet find the CR to update, giving up")
                 App.Cr(spec = null, metadata = null)
               }
           }

@@ -185,8 +185,16 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   override def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[SparkApp.Cr]): Action =
     Action.Cr.delete(name, namespace)
 
-  override def createOrReplaceResource(res: SparkApp.Cr)(implicit ct: ClassTag[SparkApp.Cr]): Action =
-    Action.Cr.createOrReplace(res)
+  override def createOrReplaceResource(res: SparkApp.Cr)(implicit ct: ClassTag[SparkApp.Cr]): Action = {
+    Action.Cr.get[SparkApp.Cr](res.getMetadata.getName, res.getMetadata.getNamespace) { currentDeployment =>
+      currentDeployment match {
+        case Some(curr) if (curr.spec == res.spec) =>
+          Action.noop
+        case _ =>
+          Action.createOrReplace(res)
+      }
+    }
+  }
 
   def getSpec(
       deployment: App.Deployment,
