@@ -40,6 +40,30 @@
   "fields":[{"name":"MODULE$"}]
 },
 {
+  "name":"akka.cli.cloudflow.kubeclient.KubeClientFabric8$DockerConfig",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.cloudflow.kubeclient.KubeClientFabric8$DockerConfig$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.cloudflow.kubeclient.KubeClientFabric8$DockerConfigEntry",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.cloudflow.kubeclient.KubeClientFabric8$DockerConfigEntry$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
   "name":"akka.cli.cloudflow.models$ApplicationStatus",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,

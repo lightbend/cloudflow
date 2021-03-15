@@ -81,6 +81,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
+    // TODO: this should become a proper patch action, if it works ...
     Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
       current match {
         case Some(curr) if (curr.spec != res.spec) =>
