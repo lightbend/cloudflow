@@ -92,7 +92,14 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         val spec = getSpec(deployment, newApp, secret)
 
         // TODO: check if this works as expected or we really need to patch
-        Action.Cr.createOrReplace(res.copy(spec = spec))
+        Action.Cr.get[SparkApp.Cr](newApp.name, newApp.namespace) { current =>
+          current match {
+            case Some(curr) if (curr.spec != spec) =>
+              Action.Cr.createOrReplace(res.copy(spec = spec))
+            case _ =>
+              Action.noop
+          }
+        }
       case None =>
         val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
         log.error(msg)
@@ -235,7 +242,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       else
         None
 
-    // TODO: check and fix how RestartPolicy get serialized ... if it doesn't work
     val alwaysRestartPolicy: SparkApp.RestartPolicy = SparkApp.RestartPolicy(
       onFailureRetryInterval = Some(OnFailureRetryIntervalSecs),
       onSubmissionFailureRetryInterval = Some(OnSubmissionFailureRetryIntervalSecs),
