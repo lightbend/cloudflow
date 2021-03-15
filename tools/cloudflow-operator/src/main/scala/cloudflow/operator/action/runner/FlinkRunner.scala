@@ -251,7 +251,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: FlinkApp.Cr)(implicit ct: ClassTag[FlinkApp.Cr]): Action = {
-    Action.createOrReplace(res)
+    Action.Cr.createOrReplace(res)
   }
 
   // TODO: refactor the following two methods? ... optimization

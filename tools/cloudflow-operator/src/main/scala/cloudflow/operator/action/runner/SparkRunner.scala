@@ -81,7 +81,14 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    Action.Cr.createOrReplace(res)
+    Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
+      current match {
+        case Some(curr) if (curr.spec != res.spec) =>
+          Action.Cr.createOrReplace(res)
+        case _ =>
+          Action.noop
+      }
+    }
   }
 
   override def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
