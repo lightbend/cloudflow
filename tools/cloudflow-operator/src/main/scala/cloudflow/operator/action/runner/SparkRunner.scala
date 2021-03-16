@@ -51,8 +51,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   import sparkRunnerDefaults._
   val runtime = Runtime
 
-  implicit val adapter =
-    CustomResourceAdapter[SparkApp.Cr, SparkApp.List](SparkApp.customResourceDefinitionContext)
+  implicit val adapter = SparkApp.adapter
 
   def prometheusConfig = PrometheusConfig(prometheusRules)
 
@@ -86,7 +85,9 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    Action.Cr.createOrReplace(res)
+    // TODO: verify again
+    // Action.Cr.createOrReplace(res)
+    SparkApp.createOrPatchCrAction(res)
   }
 
   override def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
@@ -602,6 +603,9 @@ object SparkApp {
   @JsonCreator
   class List extends CustomResourceList[Cr] {}
 
+  implicit val adapter =
+    CustomResourceAdapter[SparkApp.Cr, SparkApp.List](SparkApp.customResourceDefinitionContext)
+
   private final case class CreateOrPatchOperation(current: Option[Cr], create: Cr => Cr, patch: Cr => Cr)
   def createOrPatchCrAction(cr: Cr) = PatchCrAction(cr)
 
@@ -616,24 +620,35 @@ object SparkApp {
           .withName(cr.name)
 
         Option(typedSelector.fromServer().get()) match {
-          case Some(_) =>
+          case Some(curr) =>
             // NOTE: the typed API for patching doesn't work ...
             Action.log.warn(s"Patching Spark Cr ${cr.name} in ${cr.namespace}")
+
+            val newLabels = Option(cr.getMetadata.getLabels.asScala).getOrElse(Map.empty[String, String])
+            val labels = Option(curr.getMetadata.getLabels.asScala).getOrElse(Map.empty[String, String])
+
+            val metadata = curr.getMetadata
+            metadata.setLabels((labels ++ newLabels).asJava)
+
             try {
               client
                 .customResource(customResourceDefinitionContext)
-                .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
+                .edit(
+                  cr.namespace,
+                  cr.name,
+                  Serialization.jsonMapper().writeValueAsString(curr.copy(metadata = metadata, spec = cr.spec)))
+              this
             } catch {
               case ex: Throwable =>
                 Action.log.warn(
                   s"Exception thrown while editing the Spark Cr ${cr.name} in ${cr.namespace}, ignoring",
                   ex)
+                Action.noop
             }
           case None =>
             Action.log.warn(s"Create or replace Spark Cr ${cr.name} in ${cr.namespace}")
-            typedSelector.createOrReplace(cr)
+            Action.Cr.createOrReplace(cr)
         }
-        Action.noop
       }.flatMap(_.execute(client))
     }
 
