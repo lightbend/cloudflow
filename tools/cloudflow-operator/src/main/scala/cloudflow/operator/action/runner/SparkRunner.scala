@@ -85,7 +85,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    // TODO: verify again
+    // TODO: verify again with IT tests ...
     // Action.Cr.createOrReplace(res)
     SparkApp.createOrPatchCrAction(res)
   }
@@ -637,7 +637,7 @@ object SparkApp {
                   cr.namespace,
                   cr.name,
                   Serialization.jsonMapper().writeValueAsString(curr.copy(metadata = metadata, spec = cr.spec)))
-              this
+              Action.noop
             } catch {
               case ex: Throwable =>
                 Action.log.warn(
