@@ -618,15 +618,22 @@ object SparkApp {
         Option(typedSelector.fromServer().get()) match {
           case Some(_) =>
             // NOTE: the typed API for patching doesn't work ...
-            Action.log.warn(s"Patching Spark Cr ${cr.name} in  ${cr.namespace}")
-            client
-              .customResource(customResourceDefinitionContext)
-              .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
+            Action.log.warn(s"Patching Spark Cr ${cr.name} in ${cr.namespace}")
+            try {
+              client
+                .customResource(customResourceDefinitionContext)
+                .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
+            } catch {
+              case ex: Throwable =>
+                Action.log.warn(
+                  s"Exception thrown while editing the Spark Cr ${cr.name} in ${cr.namespace}, ignoring",
+                  ex)
+            }
           case None =>
-            Action.log.warn(s"Create or replace Spark Cr ${cr.name} in  ${cr.namespace}")
+            Action.log.warn(s"Create or replace Spark Cr ${cr.name} in ${cr.namespace}")
             typedSelector.createOrReplace(cr)
         }
-        this
+        Action.noop
       }.flatMap(_.execute(client))
     }
 
