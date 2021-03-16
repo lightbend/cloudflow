@@ -86,18 +86,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    // TODO: this should become a proper patch action, verify that it properly works ...
-    // probably even the Flink actions
-    SparkApp.createOrPatchCrAction(res)
-
-//    Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
-//      current match {
-//        case Some(curr) if (curr.spec != res.spec) =>
-//          SparkApp.patchCrAction(res)
-//        case _ =>
-//          Action.noop
-//      }
-//    }
+    Action.Cr.createOrReplace(res)
   }
 
   override def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
@@ -107,18 +96,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         val res: SparkApp.Cr = resource(deployment, newApp, secret)
         val spec = getSpec(deployment, newApp, secret)
 
-        // TODO: check if this works as expected or we really need to patch
-        // TODO: very likely this needs to be a real patch!
-
-        SparkApp.createOrPatchCrAction(res)
-//        Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
-//          current match {
-//            case Some(curr) if (curr.spec != spec) =>
-//              Action.Cr.createOrReplace[SparkApp.Cr](res.copy(spec = spec))
-//            case _ =>
-//              Action.noop
-//          }
-//        }
+        SparkApp.createOrPatchCrAction(res.copy(spec = spec))
       case None =>
         val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
         log.error(msg)
@@ -627,39 +605,6 @@ object SparkApp {
   private final case class CreateOrPatchOperation(current: Option[Cr], create: Cr => Cr, patch: Cr => Cr)
   def createOrPatchCrAction(cr: Cr) = PatchCrAction(cr)
 
-//  {
-//    Action.operation[Cr, List, Try[CreateOrPatchOperation]](
-//      { client: KubernetesClient =>
-//
-//        client.customResources(customResourceDefinitionContext, classOf[Cr], classOf[List])
-//      }, { crs: MixedOperation[Cr, List, Resource[Cr]] =>
-//        {
-//          val selector = crs
-//            .inNamespace(cr.namespace)
-//            .withName(cr.name)
-//
-//          selector
-//            .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
-//          //.edit(new UnaryOperator)
-//          Try(CreateOrPatchOperation(Option(selector.fromServer().get()), selector.create(_), selector.patch(_)))
-//        }
-//      }, { res =>
-//        res match {
-//          case Success(po @ CreateOrPatchOperation(Some(_), _, _)) =>
-//            po.patch(cr)
-//            Action.log.info("Spark Cr patched")
-//            Action.noop
-//          case Success(po @ CreateOrPatchOperation(None, _, _)) =>
-//            po.create(cr)
-//            Action.log.info("Spark Cr created")
-//            Action.noop
-//          case Failure(ex) =>
-//            Action.log.error(s"Error while getting Cr ${cr.name} in ${cr.namespace}", ex)
-//            throw new Exception(s"Error while getting Cr ${cr.name} in ${cr.namespace}", ex)
-//        }
-//      })
-//  }
-
   final case class PatchCrAction(cr: Cr)(implicit val lineNumber: sourcecode.Line, val file: sourcecode.File)
       extends Action {
 
@@ -673,10 +618,12 @@ object SparkApp {
         Option(typedSelector.fromServer().get()) match {
           case Some(_) =>
             // NOTE: the typed API for patching doesn't work ...
+            Action.log.warn(s"Patching Spark Cr ${cr.name} in  ${cr.namespace}")
             client
               .customResource(customResourceDefinitionContext)
               .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
           case None =>
+            Action.log.warn(s"Create or replace Spark Cr ${cr.name} in  ${cr.namespace}")
             typedSelector.createOrReplace(cr)
         }
         this

@@ -497,49 +497,6 @@ object FlinkApp {
   @JsonCreator
   final case class NamePathSecretType(name: String, path: String, secretType: String = "Generic")
 
-//  @JsonIgnoreProperties(ignoreUnknown = true)
-//  @JsonDeserialize(using = classOf[JsonDeserializer.None])
-//  @JsonCreator
-//  final case class ResourceRequests(memory: Option[String] = None, cpu: Option[String] = None)
-//
-//  object ResourceRequests {
-//    def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceRequests] = (memory, cpu) match {
-//      case (Some(_), Some(_)) => Some(ResourceRequests(memory, cpu))
-//      case (Some(_), None)    => Some(ResourceRequests(memory, None))
-//      case (None, Some(_))    => Some(ResourceRequests(None, cpu))
-//      case (None, None)       => None
-//    }
-//  }
-//
-//  @JsonIgnoreProperties(ignoreUnknown = true)
-//  @JsonDeserialize(using = classOf[JsonDeserializer.None])
-//  @JsonCreator
-//  final case class ResourceLimits(memory: Option[String] = None, cpu: Option[String] = None)
-//
-//  object ResourceLimits {
-//    def make(memory: Option[String] = None, cpu: Option[String] = None): Option[ResourceLimits] = (memory, cpu) match {
-//      case (Some(_), Some(_)) => Some(ResourceLimits(memory, cpu))
-//      case (Some(_), None)    => Some(ResourceLimits(memory, None))
-//      case (None, Some(_))    => Some(ResourceLimits(None, cpu))
-//      case (None, None)       => None
-//    }
-//  }
-//
-//  @JsonIgnoreProperties(ignoreUnknown = true)
-//  @JsonDeserialize(using = classOf[JsonDeserializer.None])
-//  @JsonCreator
-//  final case class Resources(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None)
-//
-//  object Resources {
-//    def make(requests: Option[ResourceRequests] = None, limits: Option[ResourceLimits] = None): Option[Resources] =
-//      (requests, limits) match {
-//        case (Some(_), Some(_)) => Some(Resources(requests, limits))
-//        case (Some(_), None)    => Some(Resources(requests, None))
-//        case (None, Some(_))    => Some(Resources(None, limits))
-//        case (None, None)       => None
-//      }
-//  }
-
   @JsonIgnoreProperties(ignoreUnknown = true)
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonCreator

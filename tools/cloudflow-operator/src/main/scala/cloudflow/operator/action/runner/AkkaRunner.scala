@@ -80,6 +80,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
           .inNamespace(deployment.getMetadata.getNamespace)
           .withName(deployment.getMetadata.getName)
           .patch(deployment)
+        Action.log.warn("Akka deployment patched!")
         Action.noop
       }.flatMap(_.execute(client))
     }
@@ -98,14 +99,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         case Some(dep) =>
           val labels = Option(dep.getMetadata.getLabels).map(_.asScala).getOrElse(Map[String, String]())
 
-          val templateDeployment =
-            resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap)
-
-          if (templateDeployment.getSpec == dep.getSpec) {
-            PatchDeploymentAction(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
-          } else {
-            Action.createOrReplace(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
-          }
+          Action.createOrReplace(resource(streamletDeployment, app, secret, (labels ++ updateLabels).toMap))
         case _ =>
           Action.createOrReplace(resource(streamletDeployment, app, secret, updateLabels))
       }
