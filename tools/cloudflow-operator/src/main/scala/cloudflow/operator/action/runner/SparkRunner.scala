@@ -26,12 +26,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.api.model._
+import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
-import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
+import io.fabric8.kubernetes.client.utils.Serialization
+import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList, KubernetesClient }
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
 
+import java.util.function.UnaryOperator
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
+import scala.util.{ Failure, Success, Try }
 
 object SparkRunner {
   final val Runtime = "spark"
@@ -81,15 +86,18 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    // TODO: this should become a proper patch action, if it works ...
-    Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
-      current match {
-        case Some(curr) if (curr.spec != res.spec) =>
-          Action.Cr.createOrReplace(res)
-        case _ =>
-          Action.noop
-      }
-    }
+    // TODO: this should become a proper patch action, verify that it properly works ...
+    // probably even the Flink actions
+    SparkApp.createOrPatchCrAction(res)
+
+//    Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
+//      current match {
+//        case Some(curr) if (curr.spec != res.spec) =>
+//          SparkApp.patchCrAction(res)
+//        case _ =>
+//          Action.noop
+//      }
+//    }
   }
 
   override def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
@@ -101,14 +109,16 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
         // TODO: check if this works as expected or we really need to patch
         // TODO: very likely this needs to be a real patch!
-        Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
-          current match {
-            case Some(curr) if (curr.spec != spec) =>
-              Action.Cr.createOrReplace[SparkApp.Cr](res.copy(spec = spec))
-            case _ =>
-              Action.noop
-          }
-        }
+
+        SparkApp.createOrPatchCrAction(res)
+//        Action.Cr.get[SparkApp.Cr](res.name, res.namespace) { current =>
+//          current match {
+//            case Some(curr) if (curr.spec != spec) =>
+//              Action.Cr.createOrReplace[SparkApp.Cr](res.copy(spec = spec))
+//            case _ =>
+//              Action.noop
+//          }
+//        }
       case None =>
         val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
         log.error(msg)
@@ -613,5 +623,66 @@ object SparkApp {
 
   @JsonCreator
   class List extends CustomResourceList[Cr] {}
+
+  private final case class CreateOrPatchOperation(current: Option[Cr], create: Cr => Cr, patch: Cr => Cr)
+  def createOrPatchCrAction(cr: Cr) = PatchCrAction(cr)
+
+//  {
+//    Action.operation[Cr, List, Try[CreateOrPatchOperation]](
+//      { client: KubernetesClient =>
+//
+//        client.customResources(customResourceDefinitionContext, classOf[Cr], classOf[List])
+//      }, { crs: MixedOperation[Cr, List, Resource[Cr]] =>
+//        {
+//          val selector = crs
+//            .inNamespace(cr.namespace)
+//            .withName(cr.name)
+//
+//          selector
+//            .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
+//          //.edit(new UnaryOperator)
+//          Try(CreateOrPatchOperation(Option(selector.fromServer().get()), selector.create(_), selector.patch(_)))
+//        }
+//      }, { res =>
+//        res match {
+//          case Success(po @ CreateOrPatchOperation(Some(_), _, _)) =>
+//            po.patch(cr)
+//            Action.log.info("Spark Cr patched")
+//            Action.noop
+//          case Success(po @ CreateOrPatchOperation(None, _, _)) =>
+//            po.create(cr)
+//            Action.log.info("Spark Cr created")
+//            Action.noop
+//          case Failure(ex) =>
+//            Action.log.error(s"Error while getting Cr ${cr.name} in ${cr.namespace}", ex)
+//            throw new Exception(s"Error while getting Cr ${cr.name} in ${cr.namespace}", ex)
+//        }
+//      })
+//  }
+
+  final case class PatchCrAction(cr: Cr)(implicit val lineNumber: sourcecode.Line, val file: sourcecode.File)
+      extends Action {
+
+    def execute(client: KubernetesClient)(implicit ec: ExecutionContext): Future[Action] = {
+      Future {
+        val typedSelector = client
+          .customResources(customResourceDefinitionContext, classOf[Cr], classOf[List])
+          .inNamespace(cr.namespace)
+          .withName(cr.name)
+
+        Option(typedSelector.fromServer().get()) match {
+          case Some(_) =>
+            // NOTE: the typed API for patching doesn't work ...
+            client
+              .customResource(customResourceDefinitionContext)
+              .edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(cr))
+          case None =>
+            typedSelector.createOrReplace(cr)
+        }
+        this
+      }.flatMap(_.execute(client))
+    }
+
+  }
 
 }
