@@ -291,7 +291,7 @@ object CloudflowStatus {
             statusUpdateAction(app)(retry - 1)
           case Failure(err) =>
             log.error("Failure updating the CR status retries exhausted, giving up", err)
-            throw err
+            Action.noop
         }
       })
   }
