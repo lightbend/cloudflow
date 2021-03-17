@@ -106,7 +106,7 @@ object BuildAppPlugin extends AutoPlugin {
     new File("target").mkdir()
     val file = new File(s"target/${appDescriptor.appId}.json")
     IO.write(file, cr.toJson.compactPrint)
-    log.success(s"Cloudflow application CR generated in ${file.getAbsolutePath}")
+    log.success(s"Cloudflow application CRRR generated in ${file.getAbsolutePath}")
     log.success(s"Use the following command to deploy the Cloudflow application:")
     log.success(s"kubectl cloudflow deploy ${file.getAbsolutePath}")
   }

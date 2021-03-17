@@ -64,13 +64,18 @@ object ApplicationDescriptor {
             StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
         }
 
-    ApplicationDescriptor(sanitizedApplicationId,
-                          appVersion,
-                          namedStreamletDescriptors.map { case (_, instance) => instance },
-                          deployments,
-                          agentPaths,
-                          Version,
-                          libraryVersion)
+    ApplicationDescriptor(
+      sanitizedApplicationId,
+      appVersion,
+      namedStreamletDescriptors.map {
+        case (_, instance) =>
+          StreamletInstance(instance.name, sanitizeDescriptor(instance.descriptor))
+      },
+      deployments,
+      agentPaths,
+      Version,
+      libraryVersion
+    )
   }
 
   def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint): Map[String, Topic] =
@@ -85,6 +90,18 @@ object ApplicationDescriptor {
     }.toMap
   private def streamletToNamedStreamletDescriptor(streamlet: VerifiedStreamlet) =
     (streamlet, StreamletInstance(streamlet.name, streamlet.descriptor))
+
+  /*
+   *  Deletes every schema
+   *  StreamletDescriptor.[inlets | outlets].SchemaDescriptor.schema
+   *  to avoid adding the description of each type of the schema in the CR
+   */
+  private def sanitizeDescriptor(descriptor: StreamletDescriptor): StreamletDescriptor = {
+    val sanitizedInlets  = descriptor.inlets.map(each => each.copy(schema = each.schema.copy(schema = "")))
+    val sanitizedOutlets = descriptor.outlets.map(each => each.copy(schema = each.schema.copy(schema = "")))
+    descriptor.copy(inlets = sanitizedInlets, outlets = sanitizedOutlets)
+  }
+
 }
 
 /**
