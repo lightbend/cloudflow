@@ -6,6 +6,8 @@
     {"pattern":"\\Qakka/cli/cloudflow/ListResult.class\\E"}, 
     {"pattern":"\\Qakka/cli/cloudflow/StatusResult.class\\E"}, 
     {"pattern":"\\Qakka/cli/cloudflow/VersionResult.class\\E"}, 
+    {"pattern":"\\Qakka/cli/cloudflow/kubeclient/KubeClientFabric8$DockerConfig.class\\E"}, 
+    {"pattern":"\\Qakka/cli/cloudflow/kubeclient/KubeClientFabric8$DockerConfigEntry.class\\E"}, 
     {"pattern":"\\Qakka/cli/cloudflow/models$ApplicationStatus.class\\E"}, 
     {"pattern":"\\Qakka/cli/cloudflow/models$CRSummary.class\\E"}, 
     {"pattern":"\\Qakka/cli/cloudflow/models$ContainersReady.class\\E"}, 
