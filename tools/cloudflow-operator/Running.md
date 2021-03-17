@@ -18,7 +18,7 @@ Install from helm chart using the docker image such as:
 helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
   --version "2.0.24" \
   --set cloudflow_operator.image.name=andreatp/cloudflow-operator \
-  --set cloudflow_operator.image.tag=2.0.25-SNAP2-17-bbb044ea \
+  --set cloudflow_operator.image.tag=2.0.25-SNAP2-18-dbdc9923-20210317-1421 \
   --set cloudflow_operator.jvm.opts="-XX:MaxRAMPercentage=90.0 -XX:+UseContainerSupport" \
   --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
   --namespace cloudflow

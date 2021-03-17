@@ -66,9 +66,6 @@ object CodepathCoverageMain extends App {
   cli.run(
     commands
       .Deploy(crFile = new File("../cloudflow-cli/src/test/resources/swiss-knife.json"), noRegistryCredentials = true))
-  cli.run(
-    commands
-      .Deploy(crFile = new File("../cloudflow-cli/src/test/resources/swiss-knife.json"), noRegistryCredentials = true))
 
   val list = commands.List()
   def exists() = {

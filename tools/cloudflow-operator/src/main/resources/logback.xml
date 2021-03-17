@@ -12,11 +12,11 @@
     <appender-ref ref="STDOUT"/>
   </appender>
 
- <root level="${LOGLEVEL_ROOT:-info}">
+ <root level="${LOGLEVEL_ROOT:-debug}">
    <appender-ref ref="ASYNCSTDOUT"/>
  </root>
 
- <logger name="akka"                                     level="${LOGLEVEL_AKKA:-info}" />
+ <logger name="akka"                                     level="${LOGLEVEL_AKKA:-debug}" />
  <logger name="org.apache.kafka"                         level="${LOGLEVEL_KAFKA_ADMIN:-warn}" />
 
 </configuration>

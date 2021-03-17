@@ -90,7 +90,9 @@ object AppEvent {
       case EventType.ADDITION | EventType.UPDATION =>
         if (hasChanged) {
           (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, toObjectReference(watchEvent.obj))))
-        } else (currentApps, List())
+        } else {
+          (currentApps, List())
+        }
       case EventType.ERROR =>
         log.error("Received an error event!")
         (Map.empty[String, WatchEvent[App.Cr]], List.empty[AppEvent])

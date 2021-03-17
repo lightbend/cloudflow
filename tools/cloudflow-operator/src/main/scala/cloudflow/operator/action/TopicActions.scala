@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory
 
 import java.util.Collections
 import scala.collection.immutable._
-import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.jdk.CollectionConverters._
 
 /**

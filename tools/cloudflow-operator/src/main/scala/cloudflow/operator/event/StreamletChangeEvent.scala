@@ -48,11 +48,9 @@ object StreamletChangeEvent extends Event {
     val namespace = metadata.getNamespace
     val absoluteName = s"$namespace.$secretName"
 
-    def hasChanged(existingEvent: WatchEvent[Secret]) =
-      secret.getMetadata.getResourceVersion != existingEvent.obj
-          .asInstanceOf[Secret]
-          .getMetadata
-          .getResourceVersion
+    def hasChanged(existingEvent: WatchEvent[Secret]) = {
+      secret.getMetadata.getResourceVersion != existingEvent.obj.getMetadata.getResourceVersion
+    }
 
     watchEvent.eventType match {
       case EventType.DELETION =>

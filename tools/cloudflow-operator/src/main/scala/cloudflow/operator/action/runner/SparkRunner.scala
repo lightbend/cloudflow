@@ -21,22 +21,20 @@ import akka.kube.actions.{ Action, CustomResourceAdapter }
 import cloudflow.blueprint.deployment.PrometheusConfig
 import cloudflow.operator.action._
 import com.fasterxml.jackson.annotation.{ JsonCreator, JsonIgnoreProperties, JsonProperty }
-import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.{ JsonDeserializer, ObjectMapper }
 import com.typesafe.config._
-import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.api.model._
-import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
+import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
 import io.fabric8.kubernetes.client.utils.Serialization
-import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList, KubernetesClient }
+import io.fabric8.kubernetes.client.{ BaseClient, CustomResource, CustomResourceList, KubernetesClient }
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
 
-import java.util.function.UnaryOperator
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
-import scala.util.{ Failure, Success, Try }
+import scala.util.Try
 
 object SparkRunner {
   final val Runtime = "spark"
@@ -85,8 +83,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     metadata.setLabels(newLabels.asJava)
     res.setMetadata(metadata)
 
-    // TODO: verify again with IT tests ...
-    // Action.Cr.createOrReplace(res)
     SparkApp.createOrPatchCrAction(res)
   }
 
@@ -191,7 +187,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     Action.Cr.delete(name, namespace)
 
   override def createOrReplaceResource(res: SparkApp.Cr)(implicit ct: ClassTag[SparkApp.Cr]): Action = {
-    Action.Cr.createOrReplace(res)
+    SparkApp.createOrPatchCrAction(res)
   }
 
   def getSpec(
@@ -624,26 +620,37 @@ object SparkApp {
             // NOTE: the typed API for patching doesn't work ...
             Action.log.warn(s"Patching Spark Cr ${cr.name} in ${cr.namespace}")
 
-            val newLabels = Option(cr.getMetadata.getLabels.asScala).getOrElse(Map.empty[String, String])
-            val labels = Option(curr.getMetadata.getLabels.asScala).getOrElse(Map.empty[String, String])
+            val newLabels = Try {
+              val lbls = cr.getMetadata.getLabels
+              assert { lbls != null }
+              assert { !lbls.isEmpty }
+              lbls.asScala
+            }.getOrElse(Map.empty[String, String])
+            val labels = Try {
+              val lbls = curr.getMetadata.getLabels
+              assert { lbls != null }
+              assert { !lbls.isEmpty }
+              lbls.asScala
+            }.getOrElse(Map.empty[String, String])
 
             val metadata = curr.getMetadata
             metadata.setLabels((labels ++ newLabels).asJava)
 
+            val res = curr.copy(metadata = metadata, spec = cr.spec)
+
             try {
-              client
-                .customResource(customResourceDefinitionContext)
-                .edit(
-                  cr.namespace,
-                  cr.name,
-                  Serialization.jsonMapper().writeValueAsString(curr.copy(metadata = metadata, spec = cr.spec)))
+              new RawCustomResourceOperationsImpl(
+                client.asInstanceOf[BaseClient].getHttpClient(),
+                client.getConfiguration(),
+                customResourceDefinitionContext,
+                new ObjectMapper()).edit(cr.namespace, cr.name, Serialization.jsonMapper().writeValueAsString(res))
+
               Action.noop
             } catch {
               case ex: Throwable =>
-                Action.log.warn(
-                  s"Exception thrown while editing the Spark Cr ${cr.name} in ${cr.namespace}, ignoring",
-                  ex)
-                Action.noop
+                Action.log.warn(s"Exception thrown while editing the Spark Cr ${cr.name} in ${cr.namespace}, retry", ex)
+                System.exit(-1)
+                this
             }
           case None =>
             Action.log.warn(s"Create or replace Spark Cr ${cr.name} in ${cr.namespace}")

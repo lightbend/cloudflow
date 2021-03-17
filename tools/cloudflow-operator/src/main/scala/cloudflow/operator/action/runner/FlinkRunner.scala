@@ -24,9 +24,8 @@ import com.fasterxml.jackson.annotation.{ JsonCreator, JsonIgnoreProperties, Jso
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.typesafe.config._
-import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.api.model._
-import io.fabric8.kubernetes.api.model.apps.Deployment
+import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
 import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
