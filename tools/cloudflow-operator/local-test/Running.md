@@ -3,7 +3,7 @@ Notes on running the operator locally:
  - spawn a cluster (with cloudflow-it commands)
  - prepare the cluster (with cloudflow-it commands)
  - helm uninstall cloudflow -n cloudflow
- - kubectl apply -f kafka-secret.yaml -n cloudflow (point the default Kafka cluster to the installed strimzi one)
+ - kubectl apply -f kafka-secret.yaml -n cloudflow (points to the default Kafka cluster to the installed strimzi one)
  - in a separate shell start `telepresence` (https://www.telepresence.io/)
  - sbt run
 
