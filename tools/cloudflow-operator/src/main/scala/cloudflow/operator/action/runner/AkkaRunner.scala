@@ -79,7 +79,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
           .withName(deployment.getMetadata.getName)
           .patch(deployment)
         Action.log.info("Akka deployment patched.")
-        Action.noop
+        this
       }.flatMap(_.execute(client))
     }
 
@@ -192,12 +192,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val podsConfig = getPodsConfig(configSecret)
 
-    // TODO check if this is still valid.
-    // Pass this argument to the entry point script. The top level entry point will be a
-    // cloudflow-entrypoint.sh which will route to the appropriate entry point based on the
-    // arguments passed to it
-    val args = List("akka")
-
     val configMapName = Name.ofConfigMap(deployment.name)
 
     val volume = {
@@ -275,7 +269,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         .withResources(resourceRequirements)
         .withImage(deployment.image)
         .withEnv(environmentVariables: _*)
-        .withArgs(args: _*)
         .withPorts((k8sStreamletPorts ++ userConfiguredPorts :+ k8sPrometheusMetricsPort): _*)
         .withVolumeMounts((List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(
           podsConfig,
