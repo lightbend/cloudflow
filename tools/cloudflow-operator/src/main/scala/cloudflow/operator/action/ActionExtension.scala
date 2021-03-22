@@ -45,7 +45,8 @@ object ActionExtension {
             throw new Exception(s"Retry exhausted while trying to get $name in $namespace, giving up")
           case Success(null) =>
             Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
-            Thread.sleep(100)
+            // TODO: remove the Thread.sleep when we move the operator to Actors
+            Thread.sleep(200)
             providedSecretRetry(name, namespace)(fAction)(retry - 1)
           case Failure(_) =>
             Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")

@@ -254,8 +254,8 @@ object CloudflowStatus {
   implicit val adapter =
     CustomResourceAdapter[App.Cr, App.List](App.customResourceDefinitionContext)
 
-  def statusUpdateAction(app: App.Cr)(retry: Int = 5): Action = {
-    Action.operation[App.Cr, App.List, Try[App.Cr]](
+  def statusUpdateAction(app: App.Cr)(retry: Int = 3): Action = {
+    Action.operation[App.Cr, App.List, Try[Option[App.Cr]]](
       { client: KubernetesClient =>
         client
           .customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
@@ -270,14 +270,12 @@ object CloudflowStatus {
               curr.setStatus(app.getStatus)
 
               val newAppWithStatus = App.Cr(spec = null, metadata = curr.getMetadata, status = curr.getStatus)
-              current.updateStatus(newAppWithStatus)
+              Some(current.updateStatus(newAppWithStatus))
             case _ =>
-              if (retry > 0) {
-                throw new Exception("Trying to update a CR that has been deleted")
-              } else {
+              if (retry <= 0) {
                 log.warn(s"Cannot yet find the CR to update, giving up")
-                App.Cr(spec = null, metadata = null)
               }
+              None
           }
         }
       }, { res =>
@@ -285,7 +283,8 @@ object CloudflowStatus {
           case Success(_) => Action.noop
           case Failure(err) if retry > 0 =>
             log.error(s"Failure updating the CR status retries: $retry", err)
-            Thread.sleep(100)
+            // TODO: remove the Thread.sleep when we move the operator to Actors
+            Thread.sleep(200)
             statusUpdateAction(app)(retry - 1)
           case Failure(err) =>
             log.error("Failure updating the CR status retries exhausted, giving up", err)
