@@ -17,10 +17,21 @@
 package cloudflow.operator
 package event
 
-import io.fabric8.kubernetes.api.model.HasMetadata
+import io.fabric8.kubernetes.api.model.{ HasMetadata, ObjectReference }
 import io.fabric8.kubernetes.client.informers.EventType
 
-object Event extends Event
+object Event extends Event {
+  def toObjectReference(hm: HasMetadata): ObjectReference = {
+    new ObjectReference(
+      hm.getApiVersion,
+      "",
+      hm.getKind,
+      hm.getMetadata.getName,
+      hm.getMetadata.getNamespace,
+      hm.getMetadata.getResourceVersion,
+      hm.getMetadata.getUid)
+  }
+}
 trait Event {
 
   def changeInfo[T <: HasMetadata](watchEvent: WatchEvent[T]) = {

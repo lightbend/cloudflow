@@ -101,18 +101,6 @@ object StreamletChangeEvent extends Event {
       case _ => Nil // app could not be found, do nothing.
     }
 
-  // TODO: duplicated fixme
-  def toObjectReference(hm: HasMetadata): ObjectReference = {
-    new ObjectReference(
-      hm.getApiVersion,
-      "",
-      hm.getKind,
-      hm.getMetadata.getName,
-      hm.getMetadata.getNamespace,
-      hm.getMetadata.getResourceVersion,
-      hm.getMetadata.getUid)
-  }
-
   def actionsForRunner(
       app: App.Cr,
       streamletChangeEvent: StreamletChangeEvent[Secret],
@@ -129,7 +117,7 @@ object StreamletChangeEvent extends Event {
           .map(_.streamletChangeAction(app, runners, streamletDeployment, secret))
           .toList
         val streamletChangeEventAction =
-          EventActions.streamletChangeEvent(app, streamletDeployment, podName, toObjectReference(secret))
+          EventActions.streamletChangeEvent(app, streamletDeployment, podName, Event.toObjectReference(secret))
 
         updateAction :+ streamletChangeEventAction
       }

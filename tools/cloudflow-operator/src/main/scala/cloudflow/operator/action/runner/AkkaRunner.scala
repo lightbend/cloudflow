@@ -51,11 +51,11 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
   val runtime = Runtime
 
-  def createOrReplaceResource(res: Deployment)(implicit ct: ClassTag[Deployment]): Action = {
+  override def createOrReplaceResource(res: Deployment)(implicit ct: ClassTag[Deployment]): Action = {
     Action.createOrReplace(res)
   }
 
-  def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[Deployment]): Action =
+  override def deleteResource(name: String, namespace: String)(implicit ct: ClassTag[Deployment]): Action =
     Action.delete[Deployment](name, namespace)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
@@ -78,7 +78,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
           .inNamespace(deployment.getMetadata.getNamespace)
           .withName(deployment.getMetadata.getName)
           .patch(deployment)
-        Action.log.warn("Akka deployment patched!")
+        Action.log.info("Akka deployment patched.")
         Action.noop
       }.flatMap(_.execute(client))
     }
@@ -163,7 +163,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       app: App.Cr,
       configSecret: Secret,
       updateLabels: Map[String, String] = Map()): Deployment = {
-    // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
 
     val labels = CloudflowLabels(app)
     val ownerReferences = List(AppOwnerReference(app.getMetadata.getName, app.getMetadata.getUid))
@@ -407,21 +406,39 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       Map("cpu" -> resourceConstraints.cpuRequests, "memory" -> resourceConstraints.memoryRequests)
     }
 
-    lazy val resourceRequirements =
+    lazy val resourceRequirementsFromDefaults =
       new ResourceRequirementsBuilder()
         .withLimits(limits.asJava)
         .withRequests(requests.asJava)
         .build()
 
-    // TODO slightly changed the logic / doublecheck the correctness
-    // e.g. now we go with "less defaults" probably
     (for {
       pod <- podsConfig.pods.get(PodsConfig.CloudflowPodName)
       containerConfig <- pod.containers.get(PodsConfig.CloudflowContainerName)
       resources <- containerConfig.resources
     } yield {
+      val limits =
+        if (resources.getLimits == null) {
+          resourceRequirementsFromDefaults.getLimits
+        } else {
+          val lim = resources.getLimits
+          lim.putAll(resourceRequirementsFromDefaults.getLimits)
+          lim
+        }
+      resources.setLimits(limits)
+
+      val requests =
+        if (resources.getRequests == null) {
+          resourceRequirementsFromDefaults.getRequests
+        } else {
+          val req = resources.getRequests
+          req.putAll(resourceRequirementsFromDefaults.getRequests)
+          req
+        }
+      resources.setRequests(requests)
+
       resources
-    }).getOrElse(resourceRequirements)
+    }).getOrElse(resourceRequirementsFromDefaults)
   }
 
   private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {

@@ -58,17 +58,6 @@ trait AppChangeEvent[T <: HasMetadata] {
 object AppEvent {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  def toObjectReference(hm: HasMetadata): ObjectReference = {
-    new ObjectReference(
-      hm.getApiVersion,
-      "",
-      hm.getKind,
-      hm.getMetadata.getName,
-      hm.getMetadata.getNamespace,
-      hm.getMetadata.getResourceVersion,
-      hm.getMetadata.getUid)
-  }
-
   def toDeployEvent(
       currentApps: Map[String, WatchEvent[App.Cr]],
       watchEvent: WatchEvent[App.Cr]): (Map[String, WatchEvent[App.Cr]], List[AppEvent]) = {
@@ -86,10 +75,12 @@ object AppEvent {
 
     watchEvent.eventType match {
       case EventType.DELETION =>
-        (currentApps - appId, List(UndeployEvent(cr, toObjectReference(watchEvent.obj))))
+        (currentApps - appId, List(UndeployEvent(cr, Event.toObjectReference(watchEvent.obj))))
       case EventType.ADDITION | EventType.UPDATION =>
         if (hasChanged) {
-          (currentApps + (appId -> watchEvent), List(DeployEvent(cr, currentApp, toObjectReference(watchEvent.obj))))
+          (
+            currentApps + (appId -> watchEvent),
+            List(DeployEvent(cr, currentApp, Event.toObjectReference(watchEvent.obj))))
         } else {
           (currentApps, List())
         }

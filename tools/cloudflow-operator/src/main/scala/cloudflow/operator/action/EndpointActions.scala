@@ -114,8 +114,7 @@ object EndpointActions {
     val executeOperation = { services: MixedOperation[Service, ServiceList, Resource[Service]] =>
       val thisService =
         services.inNamespace(service.getMetadata.getNamespace).withName(service.getMetadata.getName)
-      val ser = thisService.get()
-      Option(ser) match {
+      Option(thisService.fromServer().get()) match {
         case Some(s) =>
           val resourceVersion = s.getMetadata.getResourceVersion
           val clusterIp = Try {

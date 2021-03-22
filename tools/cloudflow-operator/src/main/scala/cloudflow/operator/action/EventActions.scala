@@ -111,10 +111,7 @@ object EventActions {
     val metadataName = newEventName(podName, app.spec.appId)
 
     // the object reference fieldPath is irrelevant for application events.
-    fieldPath match {
-      case Some(path) => objectReference.setFieldPath(path)
-      case _          =>
-    }
+    fieldPath.foreach(path => objectReference.setFieldPath(path))
 
     val event = new EventBuilder()
       .withNewMetadata()

@@ -138,7 +138,6 @@ trait Runner[T <: HasMetadata] {
             case Some(secret) =>
               createOrReplaceResource(resource(deployment, newApp, secret))
             case None =>
-              // TODO: this is an un-recoverable error -> errorAction instead? @Ray
               val msg =
                 s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
               log.info(msg)

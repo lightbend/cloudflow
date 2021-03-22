@@ -22,6 +22,7 @@ import cloudflow.blueprint.BlueprintBuilder._
 import cloudflow.blueprint._
 import cloudflow.operator.action.runner.AkkaRunner
 import cloudflow.operator.event.AppEvent
+import cloudflow.operator.event.Event.toObjectReference
 import io.fabric8.kubernetes.api.model.Event
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -67,7 +68,7 @@ class EventActionsSpec
       val appCr = App.Cr(spec = app, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(appCr, None, runners, ctx.podNamespace, AppEvent.toObjectReference(appCr))
+      val actions = EventActions.deployEvents(appCr, None, runners, ctx.podNamespace, toObjectReference(appCr))
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -88,12 +89,8 @@ class EventActionsSpec
       val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(
-        appCr,
-        Some(currentAppCr),
-        runners,
-        ctx.podNamespace,
-        AppEvent.toObjectReference(currentAppCr))
+      val actions =
+        EventActions.deployEvents(appCr, Some(currentAppCr), runners, ctx.podNamespace, toObjectReference(currentAppCr))
 
       Then("One event should be created")
       actions.size mustBe 1
@@ -116,12 +113,8 @@ class EventActionsSpec
       val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
-      val actions = EventActions.deployEvents(
-        app,
-        Some(currentAppCr),
-        runners,
-        ctx.podNamespace,
-        AppEvent.toObjectReference(currentAppCr))
+      val actions =
+        EventActions.deployEvents(app, Some(currentAppCr), runners, ctx.podNamespace, toObjectReference(currentAppCr))
 
       Then("Three events should be created")
       actions.size mustBe 3
@@ -148,7 +141,7 @@ class EventActionsSpec
           currentAppCr,
           currentApp.deployments.head,
           ctx.podName,
-          AppEvent.toObjectReference(currentAppCr))
+          toObjectReference(currentAppCr))
 
       Then("An StreamletConfigurationChanged event should be created")
       action
@@ -164,7 +157,7 @@ class EventActionsSpec
       val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created for a streamlet")
-      val action = EventActions.undeployEvent(currentAppCr, ctx.podName, AppEvent.toObjectReference(currentAppCr))
+      val action = EventActions.undeployEvent(currentAppCr, ctx.podName, toObjectReference(currentAppCr))
 
       Then("An ApplicationUndeployed event should be created")
       action.asInstanceOf[CreateOrReplaceAction[Event]].resource.getReason.contains("ApplicationUndeployed") mustBe true

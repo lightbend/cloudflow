@@ -29,7 +29,7 @@ import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
 
 import scala.jdk.CollectionConverters._
 
-class CloudflowApplicationSpec
+class AppCrSpec
     extends AnyWordSpec
     with Matchers
     with GivenWhenThen

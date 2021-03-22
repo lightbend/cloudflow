@@ -252,26 +252,14 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     var resReqManagerBuilder = new ResourceRequirementsBuilder()
 
     val defaultRequests =
-      ((resourceDefaults.cpuRequest match {
-        case Some(req) => Map("cpu" -> req)
-        case _         => Map.empty[String, Quantity]
-      }) ++
-      (resourceDefaults.memoryRequest match {
-        case Some(req) => Map("memory" -> req)
-        case _         => Map.empty[String, Quantity]
-      }))
+      (resourceDefaults.cpuRequest.map(req => Map("cpu" -> req)).getOrElse(Map.empty[String, Quantity])) ++
+      (resourceDefaults.memoryRequest.map(req => Map("memory" -> req)).getOrElse(Map.empty[String, Quantity]))
 
     resReqManagerBuilder = resReqManagerBuilder.withRequests(defaultRequests.asJava)
 
     val defaultLimits =
-      ((resourceDefaults.cpuLimit match {
-        case Some(lim) => Map("cpu" -> lim)
-        case _         => Map.empty[String, Quantity]
-      }) ++
-      (resourceDefaults.memoryLimit match {
-        case Some(lim) => Map("memory" -> lim)
-        case _         => Map.empty[String, Quantity]
-      }))
+      (resourceDefaults.cpuLimit.map(req => Map("cpu" -> req)).getOrElse(Map.empty[String, Quantity])) ++
+      (resourceDefaults.memoryLimit.map(req => Map("memory" -> req)).getOrElse(Map.empty[String, Quantity]))
 
     resReqManagerBuilder = resReqManagerBuilder.withLimits(defaultLimits.asJava)
 

@@ -372,7 +372,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     updatedExecutor
   }
 
-  // TODO: changed the original logic that seem to be incorrect
   private def toIntCores(cores: Option[Quantity]): Option[Int] =
     cores
       .map { quantity =>
@@ -607,8 +606,7 @@ object SparkApp {
 
         Option(typedSelector.fromServer().get()) match {
           case Some(curr) =>
-            // NOTE: the typed API for patching doesn't work ...
-            Action.log.warn(s"Patching Spark Cr ${cr.name} in ${cr.namespace}")
+            Action.log.info(s"Patching Spark Cr ${cr.name} in ${cr.namespace}")
 
             val newLabels = Try {
               val lbls = cr.getMetadata.getLabels
@@ -643,7 +641,7 @@ object SparkApp {
                 this
             }
           case None =>
-            Action.log.warn(s"Create or replace Spark Cr ${cr.name} in ${cr.namespace}")
+            Action.log.info(s"Create or replace Spark Cr ${cr.name} in ${cr.namespace}")
             Action.Cr.createOrReplace(cr)
         }
       }.flatMap(_.execute(client))

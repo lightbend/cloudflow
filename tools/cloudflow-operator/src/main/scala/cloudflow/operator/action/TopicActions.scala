@@ -42,7 +42,6 @@ object TopicActions {
 
   private val log = LoggerFactory.getLogger(TopicActions.getClass)
 
-  // TOOD: again Blueprint and CR overlapping
   def portMappingToTopic(pm: App.PortMapping): Topic = {
     Topic(id = pm.id, cluster = pm.cluster, config = JsonConfig(pm.config))
   }
