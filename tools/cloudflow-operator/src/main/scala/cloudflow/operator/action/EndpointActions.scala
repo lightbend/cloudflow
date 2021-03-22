@@ -34,6 +34,9 @@ import scala.util.Try
  * between a current application and a new application.
  */
 object EndpointActions {
+
+  final val DefaultContainerPort = 3000
+
   def apply(newApp: App.Cr, currentApp: Option[App.Cr]): Seq[Action] = {
     def distinctEndpoints(app: App.Spec) =
       app.deployments.flatMap(deployment => deployment.endpoint).toSet
@@ -66,12 +69,11 @@ object EndpointActions {
       ownerReferences: List[OwnerReference]): Service = {
     val servicePort = {
       new ServicePortBuilder()
-      // TODO: Check if 3000 is a good default
-        .withName(Name.ofContainerPort(endpoint.containerPort.getOrElse(3000)))
-        .withPort(Integer.valueOf(endpoint.containerPort.getOrElse(3000)))
+        .withName(Name.ofContainerPort(endpoint.containerPort.getOrElse(DefaultContainerPort)))
+        .withPort(Integer.valueOf(endpoint.containerPort.getOrElse(DefaultContainerPort)))
         .withTargetPort(
           new IntOrStringBuilder()
-            .withNewStrVal(Name.ofContainerPort(endpoint.containerPort.getOrElse(3000)))
+            .withNewStrVal(Name.ofContainerPort(endpoint.containerPort.getOrElse(DefaultContainerPort)))
             .build())
         .build()
     }
@@ -94,16 +96,7 @@ object EndpointActions {
 
   private def createServiceAction(endpoint: App.Endpoint, app: App.Cr, streamletDeploymentName: String): Action = {
     val labels = CloudflowLabels(app)
-    val ownerReferences = List(
-      // TODO: pretty sure this is repeated somewhere
-      new OwnerReferenceBuilder()
-        .withApiVersion(app.getApiVersion)
-        .withKind(app.getKind)
-        .withName(app.getMetadata().getName())
-        .withUid(app.getMetadata().getUid())
-        .withController(true)
-        .withBlockOwnerDeletion(true)
-        .build())
+    val ownerReferences = List(AppOwnerReference(app.getMetadata().getName(), app.getMetadata().getUid()))
 
     CreateServiceAction(serviceResource(endpoint, streamletDeploymentName, app.namespace, labels, ownerReferences))
   }
@@ -137,7 +130,6 @@ object EndpointActions {
           val serviceSpec = s.getSpec
           serviceSpec.setClusterIP(clusterIp)
 
-          // TODO: This needs to be a patch to prevent re-assignements of cluster-ip
           thisService.patch(
             new ServiceBuilder(service)
               .withMetadata(serviceMetadata)

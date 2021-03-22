@@ -16,10 +16,7 @@
 
 package cloudflow.operator.action
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.typesafe.config.{ Config, ConfigFactory }
 import io.fabric8.kubernetes.api.model.Quantity
-import io.fabric8.kubernetes.client.utils.Serialization
 
 final case class Resources(request: String, limit: String)
 
@@ -68,11 +65,3 @@ final case class FlinkRunnerDefaults(
     taskManagerDefaults: FlinkTaskManagerDefaults,
     prometheusRules: String)
     extends RunnerDefaults
-
-object Common {
-
-  def jsonToConfig(json: JsonNode): Config = {
-    ConfigFactory.parseString(Serialization.jsonMapper().writeValueAsString(json))
-  }
-
-}

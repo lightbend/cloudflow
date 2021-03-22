@@ -68,10 +68,6 @@ object Operator {
 
   val DefaultWatchOptions = Map(CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow)
 
-  val MaxObjectBufSize = 8 * 1024 * 1024
-
-  val restartSettings = RestartSettings(minBackoff = 3.seconds, maxBackoff = 30.seconds, randomFactor = 0.2)
-
   val decider: Supervision.Decider = {
     case _ => Supervision.Stop
   }
@@ -255,7 +251,6 @@ object Operator {
   private def watchPod(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
       implicit system: ActorSystem): Source[WatchEvent[Pod], NotUsed] = {
 
-    // TODO probably should be an atomic ref as well
     val informer = setOnceAndGet(
       podInformer,
       () =>

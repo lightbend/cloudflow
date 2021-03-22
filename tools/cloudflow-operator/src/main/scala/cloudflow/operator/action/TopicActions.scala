@@ -20,7 +20,6 @@ import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.Blueprint
 import cloudflow.blueprint.deployment._
-import cloudflow.operator.action.Common.jsonToConfig
 import cloudflow.operator.action.runner.Base64Helper
 import cloudflow.operator.event.ConfigInput
 import com.typesafe.config.{ Config, ConfigFactory }
@@ -45,7 +44,7 @@ object TopicActions {
 
   // TOOD: again Blueprint and CR overlapping
   def portMappingToTopic(pm: App.PortMapping): Topic = {
-    Topic(id = pm.id, cluster = pm.cluster, config = jsonToConfig(pm.config))
+    Topic(id = pm.id, cluster = pm.cluster, config = JsonConfig(pm.config))
   }
 
   def apply(newApp: App.Cr, runners: Map[String, runner.Runner[_]], namedClustersNamespace: String): Seq[Action] = {

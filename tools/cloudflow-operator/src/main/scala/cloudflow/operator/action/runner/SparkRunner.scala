@@ -159,16 +159,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       app: App.Cr,
       configSecret: Secret,
       updateLabels: Map[String, String] = Map()): SparkApp.Cr = {
-    val ownerReferences = List(
-      // TODO: repeated again and again
-      new OwnerReferenceBuilder()
-        .withApiVersion(app.getApiVersion)
-        .withKind(app.getKind)
-        .withName(app.getMetadata.getName)
-        .withUid(app.getMetadata.getUid)
-        .withController(true)
-        .withBlockOwnerDeletion(true)
-        .build())
+    val ownerReferences = List(AppOwnerReference(app.getMetadata.getName, app.getMetadata.getUid))
     val spec = getSpec(deployment, app, configSecret, updateLabels)
     val name = resourceName(deployment)
 
@@ -276,19 +267,18 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       deployment)
 
     val monitoring = {
-      if (!agentPaths.contains(Util.PrometheusAgentKey)) {
+      if (!agentPaths.contains(PrometheusAgentKey)) {
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
           jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
           configFile = "/etc/cloudflow-runner/prometheus.yaml",
           port = 2050))
       } else {
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
-          jmxExporterJar = agentPaths(Util.PrometheusAgentKey),
+          jmxExporterJar = agentPaths(PrometheusAgentKey),
           configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)))
       }
     }
 
-    // TODO all this going from quantity to string and back is starting to make me feel uncomfortable
     val defaultDriverCores = toIntCores(driverDefaults.cores)
     val defaultDriverMemory = driverDefaults.memory.map(_.toString)
     val defaultDriverMemoryOverhead = driverDefaults.memoryOverhead.map(_.toString)

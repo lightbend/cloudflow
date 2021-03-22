@@ -52,7 +52,7 @@ class SparkRunnerSpec
 
     val appId = "some-app-id"
     val appVersion = "42-abcdef0"
-    val agentPaths = Map(Util.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
+    val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
     val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute
@@ -108,7 +108,7 @@ class SparkRunnerSpec
       cr.spec.restartPolicy.`type` mustBe "Always"
       cr.spec.monitoring.exposeDriverMetrics mustBe true
       cr.spec.monitoring.exposeExecutorMetrics mustBe true
-      cr.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths(Util.PrometheusAgentKey)
+      cr.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths("prometheus")
       cr.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 

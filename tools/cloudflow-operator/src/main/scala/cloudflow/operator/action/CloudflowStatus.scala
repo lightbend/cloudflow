@@ -254,8 +254,6 @@ object CloudflowStatus {
   implicit val adapter =
     CustomResourceAdapter[App.Cr, App.List](App.customResourceDefinitionContext)
 
-  // TODO: this failure still happen, seldom and not reproduciple ...
-  // maybe I can reproduce and battle harden deploying 2 operators!
   def statusUpdateAction(app: App.Cr)(retry: Int = 5): Action = {
     Action.operation[App.Cr, App.List, Try[App.Cr]](
       { client: KubernetesClient =>

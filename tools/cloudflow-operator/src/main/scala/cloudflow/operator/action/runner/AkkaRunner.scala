@@ -166,16 +166,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     // The runtimeConfig is already applied in the runner config secret, so it can be safely ignored.
 
     val labels = CloudflowLabels(app)
-    val ownerReferences = List(
-      // TODO: this is repeated in other places ...
-      new OwnerReferenceBuilder()
-        .withApiVersion(app.getApiVersion)
-        .withKind(app.getKind)
-        .withName(app.getMetadata.getName)
-        .withUid(app.getMetadata.getUid)
-        .withController(true)
-        .withBlockOwnerDeletion(true)
-        .build())
+    val ownerReferences = List(AppOwnerReference(app.getMetadata.getName, app.getMetadata.getUid))
     val appId = app.spec.appId
     val podName = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
@@ -369,7 +360,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val deploymentStrategy: DeploymentStrategy = {
       if (deployment.endpoint.isDefined) {
-        // TODO: not sure how this works
         new DeploymentStrategyBuilder()
           .withType("RollingUpdate")
           .withNewRollingUpdate()
@@ -436,7 +426,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
   private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {
     val agentPaths = app.spec.agentPaths
-    val prometheusEnvVars = if (agentPaths.contains(Util.PrometheusAgentKey)) {
+    val prometheusEnvVars = if (agentPaths.contains(PrometheusAgentKey)) {
       List(
         new EnvVarBuilder()
           .withName(PrometheusExporterPortEnvVar)

@@ -53,7 +53,7 @@ class FlinkRunnerSpec
 
     val appId = "some-app-id"
     val appVersion = "42-abcdef0"
-    val agentPaths = Map(Util.PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
+    val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
     val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute

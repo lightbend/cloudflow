@@ -217,16 +217,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       Map(CloudflowLabels.StreamletNameLabel -> deployment.streamletName, CloudflowLabels.AppIdLabel -> app.spec.appId).view
         .mapValues(Name.ofLabelValue) ++
       getLabels(podsConfig, PodsConfig.CloudflowPodName)
-    val ownerReferences = List(
-      // TODO: just wrote this again!!!!
-      new OwnerReferenceBuilder()
-        .withApiVersion(app.getApiVersion)
-        .withKind(app.getKind)
-        .withName(app.getMetadata.getName)
-        .withUid(app.getMetadata.getUid)
-        .withController(true)
-        .withBlockOwnerDeletion(true)
-        .build())
+    val ownerReferences = List(AppOwnerReference(app.getMetadata.getName, app.getMetadata.getUid))
 
     val metadata = new ObjectMetaBuilder()
       .withName(name)
@@ -253,38 +244,38 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     Action.Cr.createOrReplace(res)
   }
 
-  // TODO: refactor the following two methods? ... optimization
-  private def getJobManagerResourceRequirements(
+  private def getResourceRequirements(
+      resourceDefaults: FlinkPodResourceDefaults,
       podsConfig: PodsConfig,
       podName: String): Option[ResourceRequirements] = {
 
-    var resReqJobManagerBuilder = new ResourceRequirementsBuilder()
+    var resReqManagerBuilder = new ResourceRequirementsBuilder()
 
     val defaultRequests =
-      ((jobManagerDefaults.resources.cpuRequest match {
+      ((resourceDefaults.cpuRequest match {
         case Some(req) => Map("cpu" -> req)
         case _         => Map.empty[String, Quantity]
       }) ++
-      (jobManagerDefaults.resources.memoryRequest match {
+      (resourceDefaults.memoryRequest match {
         case Some(req) => Map("memory" -> req)
         case _         => Map.empty[String, Quantity]
       }))
 
-    resReqJobManagerBuilder = resReqJobManagerBuilder.withRequests(defaultRequests.asJava)
+    resReqManagerBuilder = resReqManagerBuilder.withRequests(defaultRequests.asJava)
 
     val defaultLimits =
-      ((jobManagerDefaults.resources.cpuLimit match {
+      ((resourceDefaults.cpuLimit match {
         case Some(lim) => Map("cpu" -> lim)
         case _         => Map.empty[String, Quantity]
       }) ++
-      (jobManagerDefaults.resources.memoryLimit match {
+      (resourceDefaults.memoryLimit match {
         case Some(lim) => Map("memory" -> lim)
         case _         => Map.empty[String, Quantity]
       }))
 
-    resReqJobManagerBuilder = resReqJobManagerBuilder.withLimits(defaultLimits.asJava)
+    resReqManagerBuilder = resReqManagerBuilder.withLimits(defaultLimits.asJava)
 
-    val _resourceRequirements = resReqJobManagerBuilder.build()
+    val _resourceRequirements = resReqManagerBuilder.build()
 
     val resourceRequirements = podsConfig.pods
       .get(PodsConfig.CloudflowPodName)
@@ -314,67 +305,14 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       Some(resourceRequirements)
     else None
   }
+
+  private def getJobManagerResourceRequirements(podsConfig: PodsConfig, podName: String): Option[ResourceRequirements] =
+    getResourceRequirements(jobManagerDefaults.resources, podsConfig, podName)
 
   private def getTaskManagerResourceRequirements(
       podsConfig: PodsConfig,
-      podName: String): Option[ResourceRequirements] = {
-
-    var resReqTaskManagerBuilder = new ResourceRequirementsBuilder()
-
-    val defaultRequests =
-      ((taskManagerDefaults.resources.cpuRequest match {
-        case Some(req) => Map("cpu" -> req)
-        case _         => Map.empty[String, Quantity]
-      }) ++
-      (taskManagerDefaults.resources.memoryRequest match {
-        case Some(req) => Map("memory" -> req)
-        case _         => Map.empty[String, Quantity]
-      }))
-
-    resReqTaskManagerBuilder = resReqTaskManagerBuilder.withRequests(defaultRequests.asJava)
-
-    val defaultLimits =
-      ((taskManagerDefaults.resources.cpuLimit match {
-        case Some(lim) => Map("cpu" -> lim)
-        case _         => Map.empty[String, Quantity]
-      }) ++
-      (taskManagerDefaults.resources.memoryLimit match {
-        case Some(lim) => Map("memory" -> lim)
-        case _         => Map.empty[String, Quantity]
-      }))
-
-    resReqTaskManagerBuilder = resReqTaskManagerBuilder.withLimits(defaultLimits.asJava)
-
-    val _resourceRequirements = resReqTaskManagerBuilder.build()
-
-    val resourceRequirements = podsConfig.pods
-      .get(PodsConfig.CloudflowPodName)
-      .orElse(podsConfig.pods.get(podName))
-      .flatMap { podConfig =>
-        podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
-          val req = _resourceRequirements.getRequests
-          val lim = _resourceRequirements.getLimits
-
-          containerConfig.resources.foreach { res =>
-            if (res.getRequests != null) {
-              req.putAll(res.getRequests)
-            }
-            if (res.getLimits != null) {
-              lim.putAll(res.getLimits)
-            }
-          }
-
-          new ResourceRequirementsBuilder()
-            .withRequests(req)
-            .withLimits(lim)
-            .build()
-        }
-      }
-      .getOrElse(_resourceRequirements)
-    if ((resourceRequirements.getLimits != null && !resourceRequirements.getLimits.isEmpty) || (resourceRequirements.getRequests != null && !resourceRequirements.getRequests.isEmpty))
-      Some(resourceRequirements)
-    else None
-  }
+      podName: String): Option[ResourceRequirements] =
+    getResourceRequirements(taskManagerDefaults.resources, podsConfig, podName)
 
   def getFlinkConfig(configSecret: Secret): Map[String, String] = {
     val conf = Try(getRuntimeConfig(configSecret).getConfig(runtime)).getOrElse(ConfigFactory.empty)

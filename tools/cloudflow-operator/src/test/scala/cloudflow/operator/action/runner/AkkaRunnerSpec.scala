@@ -19,7 +19,6 @@ package cloudflow.operator.action.runner
 import akka.datap.crd.App
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment.PrometheusConfig
-import cloudflow.operator.action.Util.PrometheusAgentKey
 import cloudflow.operator.action._
 import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.matchers.must.Matchers
@@ -52,7 +51,7 @@ class AkkaRunnerSpec
 
     val appId = "some-app-id"
     val appVersion = "42-abcdef0"
-    val agentPaths = Map(PrometheusAgentKey -> "/app/prometheus/prometheus.jar")
+    val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
     val image = "docker-registry.foo.com/lightbend/call-record-pipeline:277-ceb9629"
 
     val ingress = randomStreamlet().asIngress[Foo].withServerAttribute

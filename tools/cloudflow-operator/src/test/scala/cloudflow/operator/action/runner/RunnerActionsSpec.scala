@@ -254,7 +254,7 @@ class RunnerActionsSpec
     (configMap.getData.asScala must contain).key(RunnerConfig.AppConfigFilename)
     val mountedAppConfiguration = ConfigFactory.parseString(configMap.getData.get(RunnerConfig.AppConfigFilename))
     val expectedAppConfiguration =
-      ConfigFactory.parseString(RunnerConfig(appId, appVersion, Util.toBlueprint(deployment)).data)
+      ConfigFactory.parseString(RunnerConfig(appId, appVersion, Runner.toBlueprint(deployment)).data)
     mountedAppConfiguration mustEqual expectedAppConfiguration
     (configMap.getData.asScala must contain).key(PrometheusConfig.PrometheusConfigFilename)
     val mountedPromConfiguration = configMap.getData.get(PrometheusConfig.PrometheusConfigFilename)

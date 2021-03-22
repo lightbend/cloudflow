@@ -45,7 +45,7 @@ object Actions {
       cause: ObjectReference): Seq[Action] = {
     require(currentApp.forall(_.spec.appId == newApp.spec.appId))
     val labels = CloudflowLabels(newApp)
-    val ownerReferences = List(Util.getOwnerReference(newApp.name, newApp.getMetadata.getUid))
+    val ownerReferences = List(AppOwnerReference(newApp.name, newApp.getMetadata.getUid))
     prepareNamespace(newApp, runners, labels, ownerReferences) ++
     deployTopics(newApp, runners, podNamespace) ++
     deployRunners(newApp, currentApp, runners) ++

@@ -19,6 +19,7 @@ package cloudflow.operator.action.runner
 import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
 import akka.kube.actions.Action
+import cloudflow.blueprint.VolumeMountDescriptor
 import cloudflow.blueprint.deployment._
 import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
@@ -62,6 +63,42 @@ object Runner {
   }
 
   val DockerContainerGroupId = 185
+
+  def toBlueprint(deployment: App.Deployment): StreamletDeployment = {
+    StreamletDeployment(
+      name = deployment.name,
+      runtime = deployment.runtime,
+      image = deployment.image,
+      streamletName = deployment.streamletName,
+      className = deployment.className,
+      endpoint = deployment.endpoint.flatMap { endpoint =>
+        for {
+          appId <- endpoint.appId
+          streamlet <- endpoint.streamlet
+          containerPort <- endpoint.containerPort
+        } yield {
+          Endpoint(appId = appId, streamlet = streamlet, containerPort = containerPort)
+        }
+      },
+      secretName = deployment.secretName,
+      config = JsonConfig(deployment.config),
+      portMappings = deployment.portMappings.map {
+        case (k, v) =>
+          k -> Topic(id = v.id, cluster = v.cluster, config = JsonConfig(v.config))
+      },
+      volumeMounts = {
+        if (deployment.volumeMounts == null || deployment.volumeMounts.isEmpty) None
+        else
+          Some(deployment.volumeMounts.map { vmd =>
+            VolumeMountDescriptor(
+              name = vmd.appId,
+              path = vmd.path,
+              accessMode = vmd.accessMode,
+              pvcName = vmd.pvcName.getOrElse(""))
+          }.toList)
+      },
+      replicas = deployment.replicas)
+  }
 }
 
 /**
@@ -97,7 +134,7 @@ trait Runner[T <: HasMetadata] {
       .flatMap { deployment =>
         Seq(
           Action.createOrReplace(configResource(deployment, newApp)),
-          ActionExtension.providedRetry(deployment.secretName, newApp.namespace)({
+          ActionExtension.providedSecretRetry(deployment.secretName, newApp.namespace)({
             case Some(secret) =>
               createOrReplaceResource(resource(deployment, newApp, secret))
             case None =>
@@ -192,6 +229,7 @@ trait Runner[T <: HasMetadata] {
   final val RunnerJarName = "cloudflow-runner.jar"
   final val JavaOptsEnvVarName = "JAVA_OPTS"
 
+  final val PrometheusAgentKey = "prometheus"
   def prometheusConfig: PrometheusConfig
 
   /**
@@ -209,7 +247,7 @@ trait Runner[T <: HasMetadata] {
       .build()
 
     val configData =
-      Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, Util.toBlueprint(deployment)), prometheusConfig)
+      Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, Runner.toBlueprint(deployment)), prometheusConfig)
     val name = Name.ofConfigMap(deployment.name)
 
     new ConfigMapBuilder()

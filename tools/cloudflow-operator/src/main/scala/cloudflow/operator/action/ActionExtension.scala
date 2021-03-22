@@ -26,7 +26,7 @@ import scala.util.{ Failure, Success, Try }
 object ActionExtension {
 
   // This is needed since, sometimes, the secrets created by the CLI are taking time to be materialized
-  def providedRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(
+  def providedSecretRetry(name: String, namespace: String)(fAction: Option[Secret] => Action)(
       retry: Int)(implicit lineNumber: sourcecode.Line, file: sourcecode.File): Action = {
     Action.operation[Secret, SecretList, Try[Secret]](
       { client: KubernetesClient => client.secrets() }, {
@@ -46,10 +46,10 @@ object ActionExtension {
           case Success(null) =>
             Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
             Thread.sleep(100)
-            providedRetry(name, namespace)(fAction)(retry - 1)
+            providedSecretRetry(name, namespace)(fAction)(retry - 1)
           case Failure(_) =>
             Action.log.error(s"Retry exhausted while trying to get $name in $namespace, retries: $retry")
-            providedRetry(name, namespace)(fAction)(retry - 1)
+            providedSecretRetry(name, namespace)(fAction)(retry - 1)
         }
       })
   }
