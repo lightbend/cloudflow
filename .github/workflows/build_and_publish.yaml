@@ -19,6 +19,8 @@ jobs:
       run: |
         cd core
         sbt "whitesourceCheckPolicies; whitesourceUpdate"
+        cd ../tools
+        sbt "whitesourceCheckPolicies; whitesourceUpdate"
     - name: Build documentation  
       run: |
         sudo snap install yq

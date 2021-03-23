@@ -21,6 +21,8 @@ jobs:
       run: |
         cd core
         sbt "scalafmtCheckAll; scalafmtSbtCheck"
+        cd ../tools
+        sbt "scalafmtCheckAll; scalafmtSbtCheck"
     - name: Build documentation
       run: |
         sudo snap install yq
