@@ -40,8 +40,7 @@ metricsPrefix: ""
 resyncInterval: 30
 webhookPort: 8080
 sparkJobNamespace: ""
-operatorImageName: "lightbend/sparkoperator"
-operatorVersion: "{cloudflow-version}-cloudflow-spark-2.4.5-1.1.2-scala-2.12"
+operatorVersion: latest
 ---
 kind: Service
 apiVersion: v1
@@ -52,7 +51,6 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: sparkoperator
-    app.kubernetes.io/version: {cloudflow-version}-cloudflow-spark-2.4.5-1.1.2-scala-2.12
 EOF
 ----
 
@@ -60,10 +58,9 @@ Now we can install the Spark operator using Helm. Note that we use a specific ve
 
 [source,shell script,subs="attributes"]
 ----
-  helm install spark-operator incubator/sparkoperator \
-    --namespace cloudflow \
+  helm upgrade -i spark-operator incubator/sparkoperator \
     --values="spark-values.yaml" \
-    --version "0.6.7"
+    --namespace cloudflow
 ----
 
 [IMPORTANT]
@@ -123,7 +120,7 @@ spec:
             - "-c"
             - |
               apk update && apk add wget
-              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.12/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
+              wget -q -O /bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.19.6/bin/linux/amd64/kubectl && chmod 755 /bin/kubectl
               NAME="spark-operator-sparkoperator"
               API_VERSION=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.apiVersion}')
               UUID=$(kubectl get deployment -n cloudflow $NAME -o jsonpath='{.metadata.uid}')
