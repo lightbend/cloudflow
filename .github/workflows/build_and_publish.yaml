@@ -19,7 +19,7 @@ jobs:
       run: |
         cd core
         sbt "whitesourceCheckPolicies; whitesourceUpdate"
-        cd tools
+        cd ../tools
         sbt "whitesourceCheckPolicies; whitesourceUpdate"
     - name: Build documentation  
       run: |

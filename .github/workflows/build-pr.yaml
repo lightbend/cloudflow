@@ -21,7 +21,7 @@ jobs:
       run: |
         cd core
         sbt "scalafmtCheckAll; scalafmtSbtCheck"
-        cd tools
+        cd ../tools
         sbt "scalafmtCheckAll; scalafmtSbtCheck"
     - name: Build documentation
       run: |
