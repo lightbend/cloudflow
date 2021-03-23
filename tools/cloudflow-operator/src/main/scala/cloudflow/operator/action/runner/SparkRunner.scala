@@ -597,6 +597,8 @@ object SparkApp {
   final case class PatchCrAction(cr: Cr)(implicit val lineNumber: sourcecode.Line, val file: sourcecode.File)
       extends Action {
 
+    val errorMessageExtraInfo = s"created on: ${file.value}:${lineNumber.value}"
+
     def execute(client: KubernetesClient)(implicit ec: ExecutionContext): Future[Action] = {
       Future {
         val typedSelector = client

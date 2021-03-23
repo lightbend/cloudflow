@@ -107,6 +107,8 @@ object EndpointActions {
   case class CreateServiceAction(service: Service)(implicit val lineNumber: sourcecode.Line, val file: sourcecode.File)
       extends Action {
 
+    val errorMessageExtraInfo = s"created on: ${file.value}:${lineNumber.value}"
+
     val getOperation = { client: KubernetesClient =>
       (client.services().asInstanceOf[MixedOperation[Service, ServiceList, Resource[Service]]])
     }

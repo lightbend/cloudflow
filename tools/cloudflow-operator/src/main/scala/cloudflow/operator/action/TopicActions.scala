@@ -184,6 +184,9 @@ object TopicActions {
       partitions: Int,
       replicas: Int)(implicit val file: sourcecode.File, val lineNumber: sourcecode.Line)
       extends Action {
+
+    val errorMessageExtraInfo = s"created on: ${file.value}:${lineNumber.value}"
+
     private def topicExists(name: String)(implicit executionContext: ExecutionContext) =
       adminClient.listTopics().namesToListings().asScala.map(_.asScala.toMap).map(_.contains(name))
 

@@ -70,6 +70,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       val file: sourcecode.File)
       extends Action {
 
+    val errorMessageExtraInfo = s"created on: ${file.value}:${lineNumber.value}"
+
     def execute(client: KubernetesClient)(implicit ec: ExecutionContext): Future[Action] = {
       Future {
         client
@@ -414,8 +416,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         if (resources.getLimits == null) {
           resourceRequirementsFromDefaults.getLimits
         } else {
-          val lim = resources.getLimits
-          lim.putAll(resourceRequirementsFromDefaults.getLimits)
+          val lim = resourceRequirementsFromDefaults.getLimits
+          lim.putAll(resources.getLimits)
           lim
         }
       resources.setLimits(limits)
@@ -424,8 +426,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         if (resources.getRequests == null) {
           resourceRequirementsFromDefaults.getRequests
         } else {
-          val req = resources.getRequests
-          req.putAll(resourceRequirementsFromDefaults.getRequests)
+          val req = resourceRequirementsFromDefaults.getRequests
+          req.putAll(resources.getRequests)
           req
         }
       resources.setRequests(requests)
