@@ -149,6 +149,7 @@ lazy val cloudflowNewIt =
 
         (ThisProject / scriptedDependencies).value
         (cloudflowCrd / publishLocal).value
+        (cloudflowConfig / publishLocal).value
         (cloudflowCli / publishLocal).value
         (cloudflowNewItLibrary / publishLocal).value
       },
