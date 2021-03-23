@@ -5,6 +5,7 @@
 package akka.cli.cloudflow.execution
 
 import akka.cli.cloudflow.CliLogger
+import akka.cloudflow.config.CloudflowConfig
 import akka.datap.crd.App
 import com.typesafe.config.ConfigFactory
 import org.scalatest.TryValues
@@ -306,7 +307,7 @@ class ConfigValidationSpec extends AnyFlatSpec with Matchers with TryValues {
       Seq(
         App.ConfigParameterDescriptor(key = "foo", description = "", validationType = "memorysize", defaultValue = "")))
 
-    val cloudflowConfig = cloudflowConfigWithCP("foo=512E")
+    val cloudflowConfig = cloudflowConfigWithCP("foo=512A")
 
     val configValidator = new WithConfiguration {
       val logger: CliLogger = new CliLogger(None)

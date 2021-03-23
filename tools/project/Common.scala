@@ -22,6 +22,7 @@ object Common extends AutoPlugin {
   override lazy val projectSettings = Seq(
     crossVersion := CrossVersion.binary,
     scalaVersion := Dependencies.Scala213,
+    scalacOptions ++= List("-feature", "-deprecation"),
     javacOptions ++= List("-Xlint:unchecked", "-Xlint:deprecation"),
     scalafmtOnCompile := true,
     run / fork := false,

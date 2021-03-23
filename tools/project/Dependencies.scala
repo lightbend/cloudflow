@@ -7,6 +7,8 @@ object Dependencies {
   val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
+    val akka = "2.6.13"
+    val akkaHttp = "10.2.4"
     val fabric8 = "5.0.0"
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
@@ -17,7 +19,7 @@ object Dependencies {
     val fabric8KubernetesClient = "io.fabric8" % "kubernetes-client" % Versions.fabric8
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
-    val typesafeConfig = "com.typesafe" % "config" % "1.4.0"
+    val typesafeConfig = "com.typesafe" % "config" % "1.4.1"
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.14.0"
     val pureConfigMagnolia = "com.github.pureconfig" %% "pureconfig-magnolia" % "0.14.0"
     val scopt = "com.github.scopt" %% "scopt" % "4.0.0-RC2"
@@ -35,23 +37,41 @@ object Dependencies {
 
     val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
+
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
+    val akkaStream = "com.typesafe.akka" %% "akka-stream" % Versions.akka
+    val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % Versions.akka
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
+
+    val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
+    val avro = "org.apache.avro" % "avro" % "1.8.2"
+    val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
+
+    val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
   }
 
   object TestDeps {
 
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
+    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
+
   }
 
-  val cloudflowCli =
+  val cloudflowConfig =
     libraryDependencies ++= Seq(
         Compile.fabric8KubernetesClient,
         Compile.jacksonScala,
-        Compile.logback,
-        Compile.scopt,
         Compile.typesafeConfig,
         Compile.pureConfig,
         Compile.pureConfigMagnolia,
+        Compile.scalatest % Test)
+
+  val cloudflowCli =
+    libraryDependencies ++= Seq(
+        Compile.logback,
+        Compile.scopt,
         Compile.airframeLog,
         Compile.asciiTable,
         Compile.bouncyCastleCore,
@@ -67,5 +87,28 @@ object Dependencies {
 
   val cloudflowNewItLibrary =
     libraryDependencies ++= Seq(Compile.commonsCodec, Compile.commonsCompress, Compile.scalatest)
+
+  val cloudflowBlueprint =
+    libraryDependencies ++= Seq(
+        Compile.typesafeConfig,
+        Compile.sprayJson,
+        // TODO: check if Avro and ScalaPB can stay in a separate module
+        Compile.avro,
+        Compile.scalaPbRuntime,
+        Compile.logback % Test,
+        Compile.scalatest % Test,
+        Compile.kafkaClient % Test,
+        TestDeps.avro4s)
+
+  val cloudflowOperator =
+    libraryDependencies ++= Seq(
+        Compile.akkaActor,
+        Compile.akkaStream,
+        Compile.akkaHttp,
+        Compile.akkaSlf4j,
+        Compile.logback,
+        Compile.kubeActions,
+        Compile.kafkaClient,
+        Compile.scalatest % Test)
 
 }

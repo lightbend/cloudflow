@@ -12,10 +12,10 @@ object Setup {
 
   def init() = {
     Serialization.jsonMapper().registerModule(DefaultScalaModule)
-    // doublecheck if needed
+    // REMIND ME: should we turn this off?
     Serialization
       .jsonMapper()
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
 
 }

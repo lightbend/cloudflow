@@ -143,6 +143,11 @@ trait ItSetup {
       fail(s"$appName doesn't exists.")
     } else if (!exists) {
       logger.debug("App already undeployed, cleaning up")
+      withK8s { k8s =>
+        eventually {
+          k8s.pods().inNamespace(appName).list().getItems().isEmpty() shouldBe true
+        }
+      }
       // Already undeployed
       safeCleanup(appName)
     } else {
@@ -152,6 +157,11 @@ trait ItSetup {
         val list = cli.run(commands.List()).get
         if (!list.summaries.isEmpty) {
           fail(s"$appName not undeployed.")
+        }
+      }
+      withK8s { k8s =>
+        eventually {
+          k8s.pods().inNamespace(appName).list().getItems().isEmpty() shouldBe true
         }
       }
       logger.debug("cleaning up")

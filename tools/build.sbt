@@ -1,7 +1,5 @@
 Global / cancelable := true
 
-ThisBuild / resolvers += Resolver.mavenLocal
-
 lazy val tooling =
   Project(id = "tooling", base = file("tooling"))
     .dependsOn(cloudflowCli)
@@ -14,6 +12,15 @@ lazy val cloudflowCrd =
       // make version compatible with docker for publishing
       ThisBuild / dynverSeparator := "-",
       Defaults.itSettings)
+
+lazy val cloudflowConfig =
+  Project(id = "cloudflow-config", base = file("cloudflow-config"))
+    .settings(Dependencies.cloudflowConfig)
+    .settings(
+      name := "cloudflow-config",
+      // make version compatible with docker for publishing
+      ThisBuild / dynverSeparator := "-")
+    .dependsOn(cloudflowCrd)
 
 val getMuslBundle = taskKey[Unit]("Fetch Musl bundle")
 val winPackageBin = taskKey[Unit]("PackageBin Graal on Windows")
@@ -99,7 +106,7 @@ lazy val cloudflowCli =
         }
       })
     .enablePlugins(BuildInfoPlugin, GraalVMNativeImagePlugin)
-    .dependsOn(cloudflowCrd)
+    .dependsOn(cloudflowConfig)
 
 lazy val cloudflowIt =
   Project(id = "cloudflow-it", base = file("cloudflow-it"))
@@ -175,3 +182,40 @@ addCommandAlias(
   "regenerateGraalVMConfig",
   s""";project tooling ; set run / fork := true; set run / javaOptions += "-agentlib:native-image-agent=config-output-dir=${file(
     ".").getAbsolutePath}/cloudflow-cli/src/main/resources/META-INF/native-image"; runMain cli.CodepathCoverageMain""")
+
+lazy val cloudflowBlueprint =
+  Project(id = "cloudflow-blueprint", base = file("cloudflow-blueprint"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowBlueprint)
+    .settings(
+      scalafmtOnCompile := true,
+      buildInfoKeys := Seq[BuildInfoKey](name, version),
+      buildInfoPackage := "cloudflow.blueprint")
+
+lazy val cloudflowOperator =
+  Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
+    .enablePlugins(ScalafmtPlugin, BuildInfoPlugin, JavaServerAppPackaging, DockerPlugin, AshScriptPlugin)
+    .dependsOn(cloudflowConfig, cloudflowBlueprint % "compile->compile;test->test")
+    .settings(Dependencies.cloudflowOperator)
+    .settings(
+      scalafmtOnCompile := true,
+      run / fork := true,
+      Global / cancelable := true,
+      buildInfoKeys := Seq[BuildInfoKey](
+          name,
+          version,
+          scalaVersion,
+          sbtVersion,
+          BuildInfoKey.action("buildTime") {
+            java.time.Instant.now().toString
+          },
+          BuildInfoKey.action("buildUser") {
+            sys.props.getOrElse("user.name", "unknown")
+          }),
+      buildInfoPackage := "cloudflow.operator")
+    .settings(
+      Docker / packageName := "cloudflow-operator",
+      dockerUpdateLatest := false,
+      dockerUsername := sys.props.get("docker.username"),
+      dockerRepository := sys.props.get("docker.registry"),
+      dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")

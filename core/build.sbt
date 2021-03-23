@@ -101,9 +101,7 @@ lazy val root =
       localRunner,
       runner,
       blueprint,
-      plugin,
-      operator,
-      operatorActions
+      plugin
     )
 
 lazy val streamlets =
@@ -357,7 +355,8 @@ lazy val blueprint =
   cloudflowModule("cloudflow-blueprint")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(
-      scalafmtOnCompile := true,
+      scalafmtOnCompile := false,
+      Compile / scalafmtCheck := true,
       libraryDependencies ++= Vector(
             Avro,
             Config,
@@ -372,11 +371,9 @@ lazy val blueprint =
       publishArtifact in Test := true
     )
     .settings(
+      Compile / unmanagedSourceDirectories += (ThisProject / baseDirectory).value / ".." / ".." / "tools" / "cloudflow-blueprint" / "src" / "main" / "scala",
       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-      buildInfoKeys := Seq[BuildInfoKey](
-            name,
-            version
-          ),
+      buildInfoKeys := Seq[BuildInfoKey](name, version),
       buildInfoPackage := "cloudflow.blueprint"
     )
 
@@ -452,117 +449,6 @@ lazy val localRunner =
     .settings(
       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true
-    )
-lazy val operatorActions =
-  cloudflowModule("cloudflow-operator-actions")
-    .enablePlugins(
-      ScalafmtPlugin
-    )
-    .dependsOn(blueprint % "compile->compile;test->test")
-    .settings(
-      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-      scalafmtOnCompile := true,
-      libraryDependencies ++= Vector(
-            AkkaSlf4j,
-            Ficus,
-            LogbackClassic,
-            LogbackCore,
-            Skuber,
-            ScalaTest,
-            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
-            ScalaCheck         % "test"
-          )
-    )
-
-lazy val operator =
-  cloudflowModule("cloudflow-operator")
-    .enablePlugins(
-      sbtdocker.DockerPlugin,
-      JavaAppPackaging,
-      BuildInfoPlugin,
-      ScalafmtPlugin
-    )
-    .dependsOn(blueprint % "compile->compile;test->test")
-    .dependsOn(operatorActions)
-    .settings(
-      scalafmtOnCompile := true,
-      libraryDependencies ++= Vector(
-            AkkaSlf4j,
-            AkkaStream,
-            Ficus,
-            Skuber,
-            ScalaTest,
-            "org.apache.kafka" % "kafka-clients" % Version.KafkaClients,
-            AkkaStreamTestkit  % "test",
-            ScalaCheck         % "test",
-            Avro4sJson         % "test"
-          )
-    )
-    .settings(
-      skip in publish := scalaVersion.value == Version.Scala212,
-      crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-      organization := "com.lightbend.cloudflow",
-      skip in publish := true,
-      mainClass in Compile := Some("cloudflow.operator.Main"),
-      publishArtifact in (Compile, packageDoc) := false,
-      publishArtifact in (Compile, packageSrc) := false,
-      buildOptions in docker := BuildOptions(
-            cache = true,
-            removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
-            pullBaseImage = BuildOptions.Pull.IfMissing
-            // TODO: "Always" won't work unless you have used `docker login` with
-            // your own service/user account. We should move to use some
-            // way to call `gcloud docker --` instead.
-            // pullBaseImage = BuildOptions.Pull.Always
-          ),
-      imageNames in docker := Seq(
-            ImageName(
-              registry = None,
-              namespace = Some("lightbend"),
-              repository = "cloudflow-operator",
-              tag = Some((ThisBuild / version).value)
-            )
-          ),
-      dockerfile in docker := {
-        val appDir: File = stage.value
-        val targetDir    = "/app"
-
-        new Dockerfile {
-          from("adoptopenjdk/openjdk8:alpine")
-          entryPoint(s"$targetDir/bin/${executableScriptName.value}")
-          copy(appDir, targetDir, chown = "daemon:daemon")
-          addInstruction(Instructions.Run("apk add bash; \\"))
-        }
-      },
-      Test / fork := true,
-      scalacOptions ++= Seq(
-            "-encoding",
-            "UTF-8",
-            "-target:jvm-1.8",
-            "-Xlog-reflective-calls",
-            "-Xlint",
-            "-Ywarn-unused",
-            "-deprecation",
-            "-feature",
-            "-language:_",
-            "-unchecked"
-          ),
-      scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import")
-    )
-    .settings(
-      buildInfoKeys := Seq[BuildInfoKey](
-            name,
-            version,
-            scalaVersion,
-            sbtVersion,
-            BuildInfoKey.action("buildTime") {
-              java.time.Instant.now().toString
-            },
-            BuildInfoKey.action("buildUser") {
-              sys.props.getOrElse("user.name", "unknown")
-            }
-          ),
-      buildInfoPackage := "cloudflow.operator"
     )
 
 def cloudflowModule(moduleID: String): Project =
