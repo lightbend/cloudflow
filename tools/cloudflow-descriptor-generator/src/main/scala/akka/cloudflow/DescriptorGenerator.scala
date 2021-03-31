@@ -3,30 +3,30 @@ package akka.cloudflow
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 
 import java.io.File
-import java.net.URLClassLoader
+import java.net.{ URL, URLClassLoader }
 import scala.util.{ Failure, Success }
 
 object DescriptorGenerator {
 
-  final case class Configuration(projectId: String, dockerImageName: String, classpath: Array[String]) {
+  final case class ScanConfiguration(projectId: String, classpathUrls: Array[URL])
+  final case class ResolveConfiguration(dockerImageName: String)
 
-    def classpathUrls() = classpath.map(s => new File(s).toURI.toURL)
-  }
-
-  def apply(config: Configuration): Config = {
-    val cl = new URLClassLoader(config.classpathUrls(), ClassLoader.getSystemClassLoader.getParent)
+  def scan(config: ScanConfiguration): Map[String, Config] = {
+    val cl = new URLClassLoader(config.classpathUrls, ClassLoader.getSystemClassLoader.getParent)
 
     val streamletDescriptors = StreamletScanner.scanForStreamletDescriptors(cl, config.projectId)
 
-    val result = streamletDescriptors.flatMap {
+    streamletDescriptors.flatMap {
       case (streamletClassName, Success(descriptor)) =>
         Some(streamletClassName -> descriptor)
 
       case (_, Failure(error)) =>
         None
     }
+  }
 
-    val descriptor = result.foldLeft(ConfigFactory.empty) {
+  def resolve(config: ResolveConfiguration, streamlets: Map[String, Config]) = {
+    val descriptor = streamlets.foldLeft(ConfigFactory.empty) {
       case (acc, (name, conf)) =>
         acc.withValue(
           s""""$name"""",

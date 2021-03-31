@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier
 import io.github.classgraph.ClassGraph
 import com.typesafe.config._
 
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 import scala.util._
 import scala.util.control.NoStackTrace
 
@@ -39,7 +39,7 @@ object StreamletScanner {
     rawStreamlet.map(_.withValue("project_id", ConfigValueFactory.fromAnyRef(projectId)))
   }
 
-  private def scan(classLoader: ClassLoader): Map[String, Try[Config]] = {
+  def scan(classLoader: ClassLoader): Map[String, Try[Config]] = {
     val scanResult: List[String] = new ClassGraph()
       .enableClassInfo()
       .addClassLoader(classLoader)
@@ -49,11 +49,20 @@ object StreamletScanner {
       .asScala
       .toList
 
-    val nonAbstractClasses: List[Class[_]] =
-      scanResult.map(nonAbstract(_, classLoader)).collect { case Success(x) => x }
-    val descriptors = nonAbstractClasses
-      .map(clazz => clazz.getName -> getDescriptor(clazz))
-      .toMap
+    val originalClassLoader = Thread.currentThread().getContextClassLoader()
+    val descriptors =
+      try {
+        Thread.currentThread().setContextClassLoader(classLoader)
+        val nonAbstractClasses: List[Class[_]] =
+          scanResult.map(nonAbstract(_, classLoader)).collect { case Success(x) => x }
+
+        nonAbstractClasses
+          .map(clazz => clazz.getName -> getDescriptor(clazz))
+          .toMap
+      } finally {
+        Thread.currentThread().setContextClassLoader(originalClassLoader)
+      }
+
     descriptors
   }
 

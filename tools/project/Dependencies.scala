@@ -9,6 +9,7 @@ object Dependencies {
   object Versions {
     val akka = "2.6.13"
     val akkaHttp = "10.2.4"
+    val akkaGrpc = "1.0.2"
     val fabric8 = "5.0.0"
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
@@ -51,6 +52,10 @@ object Dependencies {
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
 
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.104"
+
+    val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.15.2"
+    val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
   }
 
   object TestDeps {
@@ -114,9 +119,13 @@ object Dependencies {
         Compile.scalatest % Test)
 
   val cloudflowDescriptorGenerator =
-    libraryDependencies ++= Seq(
-      Compile.typesafeConfig,
-      Compile.classgraph
-    )
+    libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
 
+  val cloudflowSbtPlugin =
+    libraryDependencies ++= Seq(
+        Compile.scalaPbCompilerPlugin,
+        Compile.asciigraphs,
+        Compile.testcontainersKafka,
+        Compile.kafkaClient,
+        Compile.scalatest % Test)
 }

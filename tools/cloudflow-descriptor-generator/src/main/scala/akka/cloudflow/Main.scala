@@ -1,9 +1,9 @@
 package akka.cloudflow
 
-import akka.cloudflow.DescriptorGenerator.Configuration
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
 
-import scala.jdk.CollectionConverters._
+import java.net.URL
+import scala.collection.JavaConverters._
 
 object Main {
 
@@ -13,12 +13,16 @@ object Main {
       System.exit(1)
     } else {
       val config = ConfigFactory.load(args(0))
-      val c = Configuration(
+      val scanConfig = DescriptorGenerator.ScanConfiguration(
         projectId = config.getString("projectId"),
-        dockerImageName = config.getString("dockerImageName"),
-        classpath = config.getStringList("classpath").asScala.toArray)
+        classpathUrls = config.getStringList("classpath").asScala.map(new URL(_)).toArray)
+      val resolveConfig =
+        DescriptorGenerator.ResolveConfiguration(dockerImageName = config.getString("dockerImageName"))
 
-      Console.out.println(DescriptorGenerator(c).root().render(ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)))
+      val result =
+        DescriptorGenerator.resolve(resolveConfig, DescriptorGenerator.scan(scanConfig))
+      Console.out.println(
+        result.root().render(ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)))
       System.exit(0)
     }
   }

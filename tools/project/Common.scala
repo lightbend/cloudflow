@@ -17,7 +17,7 @@ object Common extends AutoPlugin {
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://www.lightbend.com/")),
       startYear := Some(2020),
-      description := "Cloudflow kubectl plugin")
+      description := "Cloudflow tools")
 
   override lazy val projectSettings = Seq(
     crossVersion := CrossVersion.binary,
