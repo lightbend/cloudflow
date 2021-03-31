@@ -379,7 +379,7 @@ lazy val blueprint =
 
 lazy val plugin =
   cloudflowModule("sbt-cloudflow")
-    .dependsOn(streamlets, blueprint)
+    .dependsOn(blueprint)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(
       scalafmtOnCompile := true,

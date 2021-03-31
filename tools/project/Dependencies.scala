@@ -49,6 +49,8 @@ object Dependencies {
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
+
+    val classgraph = "io.github.classgraph" % "classgraph" % "4.8.104"
   }
 
   object TestDeps {
@@ -110,5 +112,11 @@ object Dependencies {
         Compile.kubeActions,
         Compile.kafkaClient,
         Compile.scalatest % Test)
+
+  val cloudflowDescriptorGenerator =
+    libraryDependencies ++= Seq(
+      Compile.typesafeConfig,
+      Compile.classgraph
+    )
 
 }

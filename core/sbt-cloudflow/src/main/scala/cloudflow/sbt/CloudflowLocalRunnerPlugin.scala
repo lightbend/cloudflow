@@ -26,7 +26,6 @@ import scala.sys.SystemProperties
 import scala.util.{ Failure, Success, Try }
 
 import com.typesafe.config.{ Config, ConfigFactory }
-import net.ceedubs.ficus.Ficus._
 import sbt._
 import sbt.Keys._
 import spray.json._
@@ -38,7 +37,6 @@ import org.testcontainers.containers.wait.strategy.Wait
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.sbt.CloudflowKeys._
-import cloudflow.streamlets.ServerAttribute
 
 /**
  * SBT Plugin for running Cloudflow applications locally
@@ -47,6 +45,14 @@ import cloudflow.streamlets.ServerAttribute
 object CloudflowLocalRunnerPlugin extends AutoPlugin {
   override def requires: Plugins = BlueprintVerificationPlugin
   override def trigger           = allRequirements
+
+  // Needs to match StreamletAttribute
+  final val configPrefix          = "cloudflow.internal"
+  final def configSection: String = s"$configPrefix.$attributeName"
+  final def configPath            = s"$configSection.$configKey"
+  // Needs to match ServerAttribute
+  final val attributeName = "server"
+  final val configKey     = "container-port"
 
   val LocalRunnerClass = "cloudflow.localrunner.LocalRunner"
   val Slf4jLog4jBridge = "org.slf4j" % "slf4j-log4j12" % "1.7.30"
@@ -502,16 +508,16 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       val streamletVolumeConf = if (localConf.hasPath(confPath)) localConf.getConfig(confPath) else ConfigFactory.empty()
       val volumeMounts        = streamlet.descriptor.volumeMounts
       val localVolumeMounts = volumeMounts.map { volumeMount =>
-        val tryLocalPath = streamletVolumeConf
-          .as[Option[String]](volumeMount.name)
-          .map(Success(_))
-          .getOrElse {
+        val tryLocalPath = Try {
+          streamletVolumeConf.getString(volumeMount.name)
+        }.recoverWith {
+          case _ =>
             Try {
               val path = localStorageDir.resolve(volumeMount.name).toFile
               path.mkdirs() // create the temp dir
               path.getAbsolutePath
             }
-          }
+        }
         tryLocalPath.map(localPath => volumeMount.copy(path = localPath))
       }
       foldExceptions(localVolumeMounts).map(volumeMounts =>
@@ -550,8 +556,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     streamletInstances.map { streamlet =>
       val streamletDeployment = descriptor.deployments.find(_.streamletName == streamlet.name)
       val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
-        if (sd.config.hasPath(ServerAttribute.configPath)) {
-          Some(ServerAttribute.containerPort(sd.config))
+        if (sd.config.hasPath(configPath)) {
+          Some(sd.config.getInt(configPath))
         } else {
           None
         }

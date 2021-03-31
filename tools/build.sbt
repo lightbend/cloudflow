@@ -220,3 +220,13 @@ lazy val cloudflowOperator =
       dockerUsername := sys.props.get("docker.username"),
       dockerRepository := sys.props.get("docker.registry"),
       dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")
+
+lazy val cloudflowDescriptorGenerator =
+  Project(id = "cloudflow-descriptor-generator", base = file("cloudflow-descriptor-generator"))
+  .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
+    .settings(Dependencies.cloudflowDescriptorGenerator)
+    .settings(
+      scalafmtOnCompile := true,
+      run / fork := true,
+      Global / cancelable := true
+    )
