@@ -33,7 +33,8 @@ object CloudflowLibraryPlugin extends AutoPlugin {
   override def requires: Plugins = CommonSettingsAndTasksPlugin
 
   /** Set default values for keys. */
-  override def projectSettings = Seq(libraryDependencies ++= Vector(
-      "com.lightbend.cloudflow" % s"cloudflow-streamlets_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value))
+  override def projectSettings =
+    Seq(libraryDependencies ++= Vector(
+        "com.lightbend.cloudflow" % s"cloudflow-streamlets_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value))
 
 }

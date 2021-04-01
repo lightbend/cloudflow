@@ -20,8 +20,7 @@ object Common extends AutoPlugin {
       description := "Cloudflow tools")
 
   override lazy val projectSettings = Seq(
-    crossVersion := CrossVersion.binary,
-    scalaVersion := Dependencies.Scala213,
+    crossVersion := CrossVersion.full,
     scalacOptions ++= List("-feature", "-deprecation"),
     javacOptions ++= List("-Xlint:unchecked", "-Xlint:deprecation"),
     scalafmtOnCompile := true,

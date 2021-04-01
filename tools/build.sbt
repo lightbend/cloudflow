@@ -3,12 +3,14 @@ Global / cancelable := true
 lazy val tooling =
   Project(id = "tooling", base = file("tooling"))
     .dependsOn(cloudflowCli)
+    .settings(scalaVersion := Dependencies.Scala213)
 
 lazy val cloudflowCrd =
   Project(id = "cloudflow-crd", base = file("cloudflow-crd"))
     .settings(Dependencies.cloudflowCrd)
     .settings(
       name := "cloudflow-crd",
+      scalaVersion := Dependencies.Scala213,
       // make version compatible with docker for publishing
       ThisBuild / dynverSeparator := "-",
       Defaults.itSettings)
@@ -18,6 +20,7 @@ lazy val cloudflowConfig =
     .settings(Dependencies.cloudflowConfig)
     .settings(
       name := "cloudflow-config",
+      scalaVersion := Dependencies.Scala213,
       // make version compatible with docker for publishing
       ThisBuild / dynverSeparator := "-")
     .dependsOn(cloudflowCrd)
@@ -30,6 +33,7 @@ lazy val cloudflowCli =
     .settings(Dependencies.cloudflowCli)
     .settings(name := "kubectl-cloudflow")
     .settings(
+      scalaVersion := Dependencies.Scala213,
       Compile / mainClass := Some("akka.cli.cloudflow.Main"),
       Compile / discoveredMainClasses := Seq(),
       // make version compatible with docker for publishing
@@ -113,6 +117,7 @@ lazy val cloudflowIt =
     .configs(IntegrationTest.extend(Test))
     .settings(Defaults.itSettings, Dependencies.cloudflowIt)
     .settings(
+      scalaVersion := Dependencies.Scala213,
       inConfig(IntegrationTest)(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings),
       IntegrationTest / fork := true)
     .dependsOn(cloudflowCli)
@@ -120,6 +125,7 @@ lazy val cloudflowIt =
 lazy val cloudflowNewItLibrary =
   Project(id = "cloudflow-new-it-library", base = file("cloudflow-new-it-library"))
     .settings(Dependencies.cloudflowNewItLibrary)
+    .settings(scalaVersion := Dependencies.Scala213)
     .dependsOn(cloudflowCli)
 
 lazy val cloudflowNewIt =
@@ -189,6 +195,7 @@ lazy val cloudflowBlueprint =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(Dependencies.cloudflowBlueprint)
     .settings(
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala213, Dependencies.Scala212),
       scalafmtOnCompile := true,
       buildInfoKeys := Seq[BuildInfoKey](name, version),
@@ -200,6 +207,7 @@ lazy val cloudflowOperator =
     .dependsOn(cloudflowConfig, cloudflowBlueprint % "compile->compile;test->test")
     .settings(Dependencies.cloudflowOperator)
     .settings(
+      scalaVersion := Dependencies.Scala213,
       scalafmtOnCompile := true,
       run / fork := true,
       Global / cancelable := true,
@@ -234,6 +242,7 @@ lazy val cloudflowDescriptorGenerator =
 
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
+    .settings(name := "sbt-cloudflow")
     .dependsOn(cloudflowBlueprint, cloudflowDescriptorGenerator)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(Dependencies.cloudflowSbtPlugin)
@@ -256,3 +265,19 @@ lazy val cloudflowSbtPlugin =
         Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
       },
       scriptedBufferLog := false)
+
+lazy val root = Project(id = "root", base = file("."))
+  .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
+  .withId("root")
+  .aggregate(
+    cloudflowBlueprint,
+    cloudflowCli,
+    cloudflowConfig,
+    cloudflowCrd,
+    cloudflowDescriptorGenerator,
+    cloudflowIt,
+    cloudflowNewIt,
+    cloudflowNewItLibrary,
+    cloudflowOperator,
+    cloudflowSbtPlugin,
+    tooling)

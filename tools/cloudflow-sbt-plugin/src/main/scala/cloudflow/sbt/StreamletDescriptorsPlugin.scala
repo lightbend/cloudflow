@@ -38,13 +38,14 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
   override def requires =
     CommonSettingsAndTasksPlugin && StreamletScannerPlugin
 
-  override def projectSettings = Seq(cloudflowDockerImageName := Def.task {
-      Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
-    }.value, streamletDescriptorsInProject := Def.taskDyn {
-      val detectedStreamlets = cloudflowStreamletDescriptors.value
-      // TODO add a streamlet descriptors file to jar META-INF dir, could be useful for discovery.
-      buildStreamletDescriptors(detectedStreamlets)
-    }.value)
+  override def projectSettings =
+    Seq(cloudflowDockerImageName := Def.task {
+        Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
+      }.value, streamletDescriptorsInProject := Def.taskDyn {
+        val detectedStreamlets = cloudflowStreamletDescriptors.value
+        // TODO add a streamlet descriptors file to jar META-INF dir, could be useful for discovery.
+        buildStreamletDescriptors(detectedStreamlets)
+      }.value)
 
   private[sbt] def buildStreamletDescriptors(
       detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Map[String, StreamletDescriptor]]] =

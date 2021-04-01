@@ -39,73 +39,74 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       } else None
     }
 
-  override def projectSettings = Seq(
-    blueprintFile := Def.taskDyn {
-        Def.task {
-          val defaultBlueprint = blueprintConf(baseDirectory.value)
-          blueprint.value
-            .map { bpFilename =>
-              baseDirectory.value / "src" / "main" / "blueprint" / bpFilename
-            }
-            .getOrElse(defaultBlueprint)
-        }
-      }.value,
-    verifyBlueprint := Def.taskDyn {
-        Def.task {
-          val log = streams.value.log
-          feedbackResults(verificationResult.value, log)
-        }
-      }.value,
-    allProjectsWithStreamletScannerPlugin := Def.taskDyn {
-        Def.task {
-          projectWithStreamletScannerPlugin.all(ScopeFilter(inAnyProject)).value.flatten
-        }
-      }.value,
-    allCloudflowStreamletDescriptors := Def
-        .taskDyn {
-          val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+  override def projectSettings =
+    Seq(
+      blueprintFile := Def.taskDyn {
           Def.task {
-            val allValues = cloudflowStreamletDescriptors.all(filter).value
-            allValues
+            val defaultBlueprint = blueprintConf(baseDirectory.value)
+            blueprint.value
+              .map { bpFilename =>
+                baseDirectory.value / "src" / "main" / "blueprint" / bpFilename
+              }
+              .getOrElse(defaultBlueprint)
           }
+        }.value,
+      verifyBlueprint := Def.taskDyn {
+          Def.task {
+            val log = streams.value.log
+            feedbackResults(verificationResult.value, log)
+          }
+        }.value,
+      allProjectsWithStreamletScannerPlugin := Def.taskDyn {
+          Def.task {
+            projectWithStreamletScannerPlugin.all(ScopeFilter(inAnyProject)).value.flatten
+          }
+        }.value,
+      allCloudflowStreamletDescriptors := Def
+          .taskDyn {
+            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+            Def.task {
+              val allValues = cloudflowStreamletDescriptors.all(filter).value
+              allValues
+            }
+          }
+          .value
+          .flatten
+          .toMap,
+      verificationResult := Def.taskDyn {
+          val bpFile = blueprintFile.value
+          val detectedStreamlets = allCloudflowStreamletDescriptors.value
+          verifiedBlueprints(bpFile, detectedStreamlets)
+        }.value,
+      verifiedBlueprintFile := Def.taskDyn {
+          val res = verificationResult.value
+          writeVerifiedBlueprintFile(res)
+        }.value,
+      mappings in (Compile, packageBin) ++= {
+        val _ = verifyBlueprint.value // dependency
+        verifiedBlueprintFile.value.map { bpFile =>
+          bpFile -> bpFile.getName
         }
-        .value
-        .flatten
-        .toMap,
-    verificationResult := Def.taskDyn {
-        val bpFile = blueprintFile.value
-        val detectedStreamlets = allCloudflowStreamletDescriptors.value
-        verifiedBlueprints(bpFile, detectedStreamlets)
-      }.value,
-    verifiedBlueprintFile := Def.taskDyn {
-        val res = verificationResult.value
-        writeVerifiedBlueprintFile(res)
-      }.value,
-    mappings in (Compile, packageBin) ++= {
-      val _ = verifyBlueprint.value // dependency
-      verifiedBlueprintFile.value.map { bpFile =>
-        bpFile -> bpFile.getName
-      }
-    },
-    applicationDescriptor := {
-      val appId = (ThisProject / name).value
-      val appVersion = (ThisProject / version).value
-      val agentPathsMap = Map("prometheus" -> "/prometheus/jmx_prometheus_javaagent.jar")
-      val dockerImageName = cloudflowDockerImageName.value
-      val libraryVersion = (ThisProject / cloudflowVersion).value
+      },
+      applicationDescriptor := {
+        val appId = (ThisProject / name).value
+        val appVersion = (ThisProject / version).value
+        val agentPathsMap = Map("prometheus" -> "/prometheus/jmx_prometheus_javaagent.jar")
+        val dockerImageName = cloudflowDockerImageName.value
+        val libraryVersion = (ThisProject / cloudflowVersion).value
 
-      for {
-        BlueprintVerified(bp, _) <- verificationResult.value.toOption
-        verifiedBlueprint <- bp.verified.toOption
-      } yield ApplicationDescriptor(
-        appId,
-        appVersion,
-        dockerImageName.get.name,
-        verifiedBlueprint,
-        agentPathsMap,
-        libraryVersion)
-    },
-    fork in Compile := true)
+        for {
+          BlueprintVerified(bp, _) <- verificationResult.value.toOption
+          verifiedBlueprint <- bp.verified.toOption
+        } yield ApplicationDescriptor(
+          appId,
+          appVersion,
+          dockerImageName.get.name,
+          verifiedBlueprint,
+          agentPathsMap,
+          libraryVersion)
+      },
+      fork in Compile := true)
 
   private def blueprintConf(base: File): File = base / "src" / "main" / "blueprint" / "blueprint.conf"
 

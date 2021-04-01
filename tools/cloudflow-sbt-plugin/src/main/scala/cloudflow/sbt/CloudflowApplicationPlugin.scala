@@ -32,23 +32,25 @@ object CloudflowApplicationPlugin extends AutoPlugin {
 
   val InitialDebugPort = 5004
 
-  override def buildSettings = Seq(
-    cloudflowDockerRegistry := None,
-    cloudflowDockerRepository := None,
-    runLocalKafka := None,
-    initialDebugPort := InitialDebugPort,
-    remoteDebugRunLocal := true)
+  override def buildSettings =
+    Seq(
+      cloudflowDockerRegistry := None,
+      cloudflowDockerRepository := None,
+      runLocalKafka := None,
+      initialDebugPort := InitialDebugPort,
+      remoteDebugRunLocal := true)
 
   val DefaultLocalLog4jConfigFile = "local-run-log4j.properties"
 
   /** Set default values for keys. */
-  override def projectSettings = Seq(
-    blueprint := None,
-    runLocalConfigFile := None,
-    runLocalLog4jConfigFile := None,
-    runLocalJavaOptions := None,
-    packageOptions in (Compile, packageBin) +=
-      Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
-    verifyBlueprint := verifyBlueprint.value,
-    buildApp := cloudflowApplicationCR.value)
+  override def projectSettings =
+    Seq(
+      blueprint := None,
+      runLocalConfigFile := None,
+      runLocalLog4jConfigFile := None,
+      runLocalJavaOptions := None,
+      packageOptions in (Compile, packageBin) +=
+        Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
+      verifyBlueprint := verifyBlueprint.value,
+      buildApp := cloudflowApplicationCR.value)
 }
