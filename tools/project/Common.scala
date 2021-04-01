@@ -1,9 +1,9 @@
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
-import sbt.Global
 import sbt.Keys._
 import sbt._
 import sbt.plugins.JvmPlugin
-import sbtdynver.DynVerPlugin.autoImport._
+import xerial.sbt.Sonatype.SonatypeKeys.sonatypePublishToBundle
+import com.jsuereth.sbtpgp.PgpKeys.useGpgAgent
 
 object Common extends AutoPlugin {
 
@@ -23,6 +23,8 @@ object Common extends AutoPlugin {
     crossVersion := CrossVersion.full,
     scalacOptions ++= List("-feature", "-deprecation"),
     javacOptions ++= List("-Xlint:unchecked", "-Xlint:deprecation"),
+    publishTo := sonatypePublishToBundle.value,
+    useGpgAgent := false,
     scalafmtOnCompile := true,
     run / fork := false,
     // show full stack traces and test case durations
