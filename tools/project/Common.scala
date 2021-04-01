@@ -17,7 +17,14 @@ object Common extends AutoPlugin {
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://www.lightbend.com/")),
       startYear := Some(2020),
-      description := "Cloudflow tools")
+      description := "Cloudflow tools",
+      homepage := Some(url("https://cloudflow.io")),
+      scmInfo := Some(ScmInfo(url("https://github.com/lightbend/cloudflow"), "git@github.com:lightbend/cloudflow.git")),
+      developers += Developer(
+          "contributors",
+          "Contributors",
+          "https://cloudflow.zulipchat.com/",
+          url("https://github.com/lightbend/cloudflow/graphs/contributors")))
 
   override lazy val projectSettings = Seq(
     crossVersion := CrossVersion.full,
