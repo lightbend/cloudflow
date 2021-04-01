@@ -17,9 +17,12 @@ object Common extends AutoPlugin {
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://www.lightbend.com/")),
       startYear := Some(2020),
-      description := "Cloudflow tools",
+      description := "Cloudflow enables users to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.",
+      sonatypeProfileName := "com.lightbend.cloudflow",
       homepage := Some(url("https://cloudflow.io")),
       scmInfo := Some(ScmInfo(url("https://github.com/lightbend/cloudflow"), "git@github.com:lightbend/cloudflow.git")),
+      licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      publishMavenStyle := true,
       developers += Developer(
           "contributors",
           "Contributors",
