@@ -27,8 +27,9 @@ import scala.util.control.NonFatal
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.slf4j.LoggerFactory
 import spray.json._
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
+import cloudflow.blueprint.VolumeMountDescriptor
 import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
 import com.typesafe.config._
@@ -97,6 +98,46 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
+  private def getRunnerConfig(appId: String, appVersion: String, deployment: StreamletDeployment): String = {
+    implicit val topicFormat = jsonFormat(Topic.apply, "id", "cluster", "config")
+
+    def toRunnerJson(appId: String, appVersion: String, deployment: StreamletDeployment) =
+      JsObject(
+        "streamlet" -> JsObject(
+              "class_name"    -> JsString(deployment.className),
+              "streamlet_ref" -> JsString(deployment.streamletName),
+              "context" -> JsObject(
+                    "app_id"        -> appId.toJson,
+                    "app_version"   -> appVersion.toJson,
+                    "config"        -> toJson(deployment.config),
+                    "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
+                    "port_mappings" -> toPortMappingsJson(deployment.portMappings)
+                  )
+            )
+      )
+
+    def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
+
+    def toPortMappingsJson(portMappings: Map[String, Topic]) =
+      JsObject(portMappings.map {
+        case (portName, topic) => portName -> topic.toJson
+      })
+
+    def toVolumeMountJson(volumeMounts: Option[List[VolumeMountDescriptor]]) =
+      JsArray(
+        volumeMounts
+          .getOrElse(Vector())
+          .map {
+            case VolumeMountDescriptor(name, path, accessMode, _) =>
+              JsObject("name" -> JsString(name), "path" -> JsString(path), "access_mode" -> JsString(accessMode))
+          }
+          .toVector
+      )
+
+    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment))
+    JsObject("cloudflow" -> JsObject(map)).compactPrint
+  }
+
   private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaHost: String): Unit = {
     val bootstrapServers =
       if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else kafkaHost
@@ -137,8 +178,8 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment)
-      val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
+      val runnerConfigObj = getRunnerConfig(appId, appVersion, deployment)
+      val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig
         .withFallback(streamletParamConfig)

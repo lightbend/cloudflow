@@ -28,20 +28,26 @@ trait RunnerConfigResolver {
   final val SecretConfigFile      = "secret.conf"
 
   def makeConfig: Try[Config] = Try {
-    val configFilePathString = Option(System.getProperty("config.file")).getOrElse(s"$ConfigMountPath/$ConfigFile")
+    val configFilePathString = Option(System.getProperty("config.file")).getOrElse(s"$ConfigSecretMountPath/$ConfigFile")
     val configPath           = Paths.get(configFilePathString)
     val secretPath           = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
 
+    val applicationConfig = if (Files.exists(configPath)) {
+      configPath
+    } else {
+      Paths.get(s"$ConfigMountPath/$ConfigFile")
+    }
+
     val config = if (Files.exists(secretPath)) {
-      println(s"Loading application.conf from: $configPath, secret config from: $secretPath")
+      println(s"Loading application.conf from: $applicationConfig, secret config from: $secretPath")
       // secret takes precedence, since it contains config.
       loadConfig(secretPath)
-        .withFallback(loadConfig(configPath))
+        .withFallback(loadConfig(applicationConfig))
         .withFallback(ConfigFactory.load)
     } else {
-      println(s"Loading application.conf from: $configPath")
+      println(s"Loading application.conf from: $applicationConfig")
 
-      loadConfig(configPath)
+      loadConfig(applicationConfig)
         .withFallback(ConfigFactory.load)
     }
 

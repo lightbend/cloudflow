@@ -12,13 +12,64 @@ import scala.util.hashing.MurmurHash3
 import akka.cli.cloudflow.{ CliException, CliLogger }
 import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
+import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.annotation.{ JsonCreator, JsonInclude, JsonProperty }
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.{ JsonDeserializer, JsonNode }
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization
 
-private final case class StreamletConfigs(streamlet: Config, runtime: Config, pods: Config)
+private final case class StreamletConfigs(streamlet: Config, runtime: Config, pods: Config, application: Config)
 
 trait WithConfiguration {
   val logger: CliLogger
+
+  @JsonDeserialize(using = classOf[JsonDeserializer.None])
+  @JsonInclude(Include.NON_NULL)
+  @JsonCreator
+  private case class RunnerContext(
+      @JsonProperty("app_id")
+      appId: String,
+      @JsonProperty("app_version")
+      appVersion: String,
+      @JsonProperty("config")
+      config: JsonNode,
+      @JsonProperty("volume_mounts")
+      volumeMounts: JsonNode,
+      @JsonProperty("port_mappings")
+      portMappings: JsonNode)
+
+  @JsonDeserialize(using = classOf[JsonDeserializer.None])
+  @JsonInclude(Include.NON_NULL)
+  @JsonCreator
+  private case class StreamletConfig(
+      @JsonProperty("class_name")
+      className: String,
+      @JsonProperty("streamlet_ref")
+      streamletRef: String,
+      @JsonProperty("context")
+      context: RunnerContext)
+
+  private def applicationRunnerConfig(appId: String, appVersion: String, deployment: App.Deployment): Config = {
+    ConfigFactory
+      .parseString(
+        Serialization
+          .jsonMapper()
+          .writeValueAsString(StreamletConfig(
+            className = deployment.className,
+            streamletRef = deployment.streamletName,
+            context = RunnerContext(
+              appId = appId,
+              appVersion = appVersion,
+              config = deployment.config,
+              volumeMounts = Serialization
+                .jsonMapper()
+                .readTree(Serialization.jsonMapper().writeValueAsString(deployment.volumeMounts)),
+              portMappings = Serialization
+                .jsonMapper()
+                .readTree(Serialization.jsonMapper().writeValueAsString(deployment.portMappings))))))
+      .atPath("cloudflow.runner.streamlet")
+  }
 
   private def referencedPvcsExists(
       cloudflowConfig: CloudflowConfig.CloudflowRoot,
@@ -297,6 +348,7 @@ trait WithConfiguration {
   val SecretDataKey = "secret.conf"
   val RuntimeConfigDataKey = "runtime-config.conf"
   val PodsConfigDataKey = "pods-config.conf"
+  val ApplicationDataKey = "application.conf"
 
   def streamletsConfigs(
       appCr: App.Cr,
@@ -326,16 +378,19 @@ trait WithConfiguration {
         appCr.spec.deployments.map { deployment =>
           val streamletConfig = CloudflowConfig.streamletConfig(deployment.streamletName, deployment.runtime, appConfig)
           val streamletWithPortMappingsConfig = portMappings(deployment, appConfig, streamletConfig, clustersConfig)
+          val applicationConfig = applicationRunnerConfig(appCr.name, appCr.spec.appVersion, deployment)
           deployment -> StreamletConfigs(
             streamlet = streamletWithPortMappingsConfig,
             runtime = CloudflowConfig.runtimeConfig(deployment.streamletName, deployment.runtime, appConfig),
-            pods = CloudflowConfig.podsConfig(deployment.streamletName, deployment.runtime, appConfig))
+            pods = CloudflowConfig.podsConfig(deployment.streamletName, deployment.runtime, appConfig),
+            application = applicationConfig)
         }.toMap
       }
     } yield {
       res.map {
         case (k, v) =>
           k -> Map(
+            ApplicationDataKey -> render(v.application),
             SecretDataKey -> render(v.streamlet),
             RuntimeConfigDataKey -> render(v.runtime),
             PodsConfigDataKey -> render(v.pods))

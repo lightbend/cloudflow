@@ -245,8 +245,7 @@ trait Runner[T <: HasMetadata] {
       .withBlockOwnerDeletion(true)
       .build()
 
-    val configData =
-      Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, Runner.toBlueprint(deployment)), prometheusConfig)
+    val configData = Vector(prometheusConfig)
     val name = Name.ofConfigMap(deployment.name)
 
     new ConfigMapBuilder()
