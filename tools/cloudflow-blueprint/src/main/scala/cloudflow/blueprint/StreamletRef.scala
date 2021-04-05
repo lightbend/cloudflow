@@ -16,6 +16,7 @@
 
 package cloudflow.blueprint
 
+import akka.datap.crd.App
 import com.typesafe.config._
 
 final case class StreamletRef(
@@ -26,7 +27,7 @@ final case class StreamletRef(
     metadata: Option[Config] = None) {
   private final val ClassNamePattern = """([\p{L}_$][\p{L}\p{N}_$]*\.)*[\p{L}_$][\p{L}\p{N}_$]*""".r
 
-  def verify(streamletDescriptors: Vector[StreamletDescriptor]): StreamletRef = {
+  def verify(streamletDescriptors: Vector[App.Descriptor]): StreamletRef = {
     val nameProblem =
       if (NameUtils.isDnsLabelCompatible(name)) None else Some(InvalidStreamletName(name))
 
@@ -35,7 +36,7 @@ final case class StreamletRef(
       case _                   => Some(InvalidStreamletClassName(name, className))
     }
     val foundDescriptor = streamletDescriptors.find(_.className == className)
-    val descriptorFound: Either[BlueprintProblem, StreamletDescriptor] =
+    val descriptorFound: Either[BlueprintProblem, App.Descriptor] =
       foundDescriptor match {
         case Some(streamlet) => Right(streamlet)
         case None => {

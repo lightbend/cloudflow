@@ -91,7 +91,6 @@ object Dependencies {
   val cloudflowBlueprint =
     libraryDependencies ++= Seq(
         Compile.typesafeConfig,
-        Compile.sprayJson,
         // TODO: check if Avro and ScalaPB can stay in a separate module
         Compile.avro,
         Compile.scalaPbRuntime,

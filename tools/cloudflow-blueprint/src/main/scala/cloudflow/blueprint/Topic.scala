@@ -15,8 +15,12 @@
  */
 
 package cloudflow.blueprint
+
+import akka.datap.crd.App
+
 import scala.util.Try
 import com.typesafe.config._
+
 object Topic {
   val LegalTopicChars = "[a-zA-Z0-9\\._\\-]"
   val LegalTopicPattern = s"$LegalTopicChars+".r
@@ -139,7 +143,7 @@ final case class Topic(
    * Schema resolution is done based on the information in http://avro.apache.org/docs/current/spec.html#Schema+Resolution
    * all connections should use compatible schemas
    */
-  private def compatibleAvroSchema(schema: SchemaDescriptor, otherSchema: SchemaDescriptor): Boolean = {
+  private def compatibleAvroSchema(schema: App.InOutletSchema, otherSchema: App.InOutletSchema): Boolean = {
     import org.apache.avro._
 
     val writerSchema = new Schema.Parser().parse(otherSchema.schema)

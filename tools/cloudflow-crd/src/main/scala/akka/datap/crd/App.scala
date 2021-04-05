@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder
-import io.fabric8.kubernetes.api.model.{ KubernetesResource, Namespaced, ObjectMeta }
+import io.fabric8.kubernetes.api.model.{ HasMetadata, KubernetesResource, Namespaced, ObjectMeta }
 import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
@@ -172,7 +172,13 @@ object App {
       runtime: String,
       @JsonProperty("description")
       description: String)
-      extends KubernetesResource {}
+      extends KubernetesResource {
+    def isIngress: Boolean = inlets.isEmpty && outlets.nonEmpty
+    def isServer: Boolean = attributes.exists(_.attributeName == "server")
+    def getAttribute(name: String): Option[Attribute] = attributes.find { attrib =>
+      attrib.attributeName == name
+    }
+  }
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonCreator
   final case class Streamlet(

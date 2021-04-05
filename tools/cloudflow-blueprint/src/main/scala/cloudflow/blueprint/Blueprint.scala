@@ -16,13 +16,12 @@
 
 package cloudflow.blueprint
 
+import akka.datap.crd.App
+
 import java.io._
 import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.util._
-
 import com.typesafe.config._
 
 object Blueprint {
@@ -50,7 +49,7 @@ object Blueprint {
    * @param blueprintString the blueprint file contents
    * @param streamletDescriptors the streamlet descriptors
    */
-  def parseString(blueprintString: String, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+  def parseString(blueprintString: String, streamletDescriptors: Vector[App.Descriptor]): Blueprint =
     try {
       parseConfig(ConfigFactory.parseString(blueprintString).resolve(), streamletDescriptors)
     } catch {
@@ -62,7 +61,7 @@ object Blueprint {
    * @param config a Config containing the blueprint contents
    * @param streamletDescriptors the streamlet descriptors
    */
-  def parseConfig(config: Config, streamletDescriptors: Vector[StreamletDescriptor]): Blueprint =
+  def parseConfig(config: Config, streamletDescriptors: Vector[App.Descriptor]): Blueprint =
     if (!config.hasPath(StreamletsSectionKey)) {
       Blueprint(globalProblems = Vector(MissingStreamletsSection))
     } else {
@@ -137,7 +136,7 @@ object Blueprint {
 final case class Blueprint(
     streamlets: Vector[StreamletRef] = Vector.empty[StreamletRef],
     topics: Vector[Topic] = Vector.empty[Topic],
-    streamletDescriptors: Vector[StreamletDescriptor] = Vector.empty,
+    streamletDescriptors: Vector[App.Descriptor] = Vector.empty,
     globalProblems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem]) {
   val problems = globalProblems ++ streamlets.flatMap(_.problems) ++ topics.flatMap(_.problems)
 
@@ -190,9 +189,10 @@ final case class Blueprint(
       verifiedStreamlets: Vector[VerifiedStreamlet],
       verifiedTopics: Vector[VerifiedTopic]): Vector[UnconnectedPorts] = {
     var problems = Vector.empty[UnconnectedPorts]
-    val (outlets, inlets) = verifiedStreamlets
+    // TODO: refactor the following two methods
+    val inlets = verifiedStreamlets
       .flatMap { streamlet =>
-        def unconnected(portDescriptors: immutable.IndexedSeq[PortDescriptor]) =
+        def unconnected(portDescriptors: Seq[App.InOutlet]) =
           portDescriptors
             .filterNot { port =>
               verifiedTopics.exists(topic =>
@@ -202,10 +202,24 @@ final case class Blueprint(
             .map(port => UnconnectedPort(streamlet.name, port))
 
         val unconnectedInlets = unconnected(streamlet.descriptor.inlets)
-        val unconnectedOutlets = unconnected(streamlet.descriptor.outlets)
-        unconnectedInlets ++ unconnectedOutlets
+        unconnectedInlets
       }
-      .partition(_.port.isOutlet)
+
+    val outlets = verifiedStreamlets
+      .flatMap { streamlet =>
+        def unconnected(portDescriptors: Seq[App.InOutlet]) =
+          portDescriptors
+            .filterNot { port =>
+              verifiedTopics.exists(topic =>
+                topic.connections.exists(verifiedPort =>
+                  verifiedPort.streamlet == streamlet && verifiedPort.portName == port.name))
+            }
+            .map(port => UnconnectedPort(streamlet.name, port))
+
+        val unconnectedOutlets = unconnected(streamlet.descriptor.outlets)
+        unconnectedOutlets
+      }
+
     if (outlets.nonEmpty) problems = problems :+ UnconnectedOutlets(outlets)
     if (inlets.nonEmpty) problems = problems :+ UnconnectedInlets(inlets)
     problems
@@ -227,7 +241,7 @@ final case class Blueprint(
     if (problems.isEmpty) Right(this)
     else Left(problems)
 
-  private def verifyPortNames(streamletDescriptors: Vector[StreamletDescriptor]): Vector[BlueprintProblem] =
+  private def verifyPortNames(streamletDescriptors: Vector[App.Descriptor]): Vector[BlueprintProblem] =
     streamletDescriptors.flatMap { descriptor =>
       val inletProblems = descriptor.inlets.flatMap { inlet =>
         if (NameUtils.isDnsLabelCompatible(inlet.name))
@@ -246,7 +260,7 @@ final case class Blueprint(
       inletProblems ++ outletProblems
     }
 
-  private def verifyVolumeMounts(streamletDescriptors: Vector[StreamletDescriptor]): Vector[BlueprintProblem] = {
+  private def verifyVolumeMounts(streamletDescriptors: Vector[App.Descriptor]): Vector[BlueprintProblem] = {
     val DNS1123LabelMaxLength = 63
     val separator = java.io.File.separator
     val invalidPaths = streamletDescriptors.flatMap { descriptor =>
@@ -254,14 +268,14 @@ final case class Blueprint(
         val invalidPath = volumeMount.path
           .split(separator)
           .find(_ == "..")
-          .map(_ => BacktrackingVolumeMounthPath(descriptor.className, volumeMount.name, volumeMount.path))
+          .map(_ => BacktrackingVolumeMounthPath(descriptor.className, volumeMount.appId, volumeMount.path))
         val emptyPath =
           if (volumeMount.path.isEmpty())
-            Some(EmptyVolumeMountPath(descriptor.className, volumeMount.name))
+            Some(EmptyVolumeMountPath(descriptor.className, volumeMount.appId))
           else None
         val nonAbsolutePath =
           if (!new File(volumeMount.path).toPath.isAbsolute())
-            Some(NonAbsoluteVolumeMountPath(descriptor.className, volumeMount.name, volumeMount.path))
+            Some(NonAbsoluteVolumeMountPath(descriptor.className, volumeMount.appId, volumeMount.path))
           else None
 
         Vector(invalidPath, emptyPath, nonAbsolutePath).flatten
@@ -270,20 +284,20 @@ final case class Blueprint(
 
     val invalidNames = streamletDescriptors.flatMap { descriptor =>
       descriptor.volumeMounts.map { volumeMount =>
-        if (NameUtils.isDnsLabelCompatible(volumeMount.name)) {
-          if (volumeMount.name.length > DNS1123LabelMaxLength)
-            Some(InvalidVolumeMountName(descriptor.className, volumeMount.name))
+        if (NameUtils.isDnsLabelCompatible(volumeMount.appId)) {
+          if (volumeMount.appId.length > DNS1123LabelMaxLength)
+            Some(InvalidVolumeMountName(descriptor.className, volumeMount.appId))
           else
             None
         } else {
-          Some(InvalidVolumeMountName(descriptor.className, volumeMount.name))
+          Some(InvalidVolumeMountName(descriptor.className, volumeMount.appId))
         }
       }
     }
 
     val duplicateNames = streamletDescriptors.flatMap { descriptor =>
       val names = descriptor.volumeMounts.map { volumeMount =>
-        volumeMount.name
+        volumeMount.appId
       }
       names.diff(names.distinct).distinct.map { name =>
         DuplicateVolumeMountName(descriptor.className, name)
@@ -302,7 +316,7 @@ final case class Blueprint(
     invalidNames.flatten ++ invalidPaths.flatten ++ duplicateNames ++ duplicatePaths
   }
 
-  private def verifyConfigParameters(streamletDescriptors: Vector[StreamletDescriptor]): Vector[BlueprintProblem] = {
+  private def verifyConfigParameters(streamletDescriptors: Vector[App.Descriptor]): Vector[BlueprintProblem] = {
     val ConfigParameterKeyPattern = """[a-zA-Z]+(-[a-zA-Z-0-9]+)*""".r
 
     val invalidConfigParametersKeyProblems = {
@@ -331,22 +345,21 @@ final case class Blueprint(
         descriptor.configParameters.map { configKey =>
           configKey.validationType match {
             case "string" =>
-              configKey.validationPattern.flatMap { regexpString =>
-                // This is a Regular expression string with validation and possibly a default value
-                Try(regexpString.r) match {
-                  case Success(_) =>
-                    val ConfigParameterPattern = regexpString.r
-                    configKey.defaultValue.flatMap {
-                      case ConfigParameterPattern() => None
-                      case defaultValue =>
-                        Some(InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, defaultValue))
-                    }
-                  case Failure(_) =>
-                    Some(InvalidValidationPatternConfigParameter(descriptor.className, configKey.key, regexpString))
-                }
+              val regexpString = configKey.validationPattern
+              // This is a Regular expression string with validation and possibly a default value
+              Try(regexpString.r) match {
+                case Success(_) =>
+                  val ConfigParameterPattern = regexpString.r
+                  configKey.defaultValue match {
+                    case ConfigParameterPattern() => None
+                    case defaultValue =>
+                      Some(InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, defaultValue))
+                  }
+                case Failure(_) =>
+                  Some(InvalidValidationPatternConfigParameter(descriptor.className, configKey.key, regexpString))
               }
             case "duration" =>
-              configKey.defaultValue.fold[Option[BlueprintProblem]](None) { durationDefaultValue =>
+              Option(configKey.defaultValue).fold[Option[BlueprintProblem]](None) { durationDefaultValue =>
                 Try(
                   ConfigFactory
                     .parseString(s"value=${durationDefaultValue}")
@@ -358,7 +371,7 @@ final case class Blueprint(
                 }
               }
             case "memorysize" =>
-              configKey.defaultValue.fold[Option[BlueprintProblem]](None) { memorySizeDefaultValue =>
+              Option(configKey.defaultValue).fold[Option[BlueprintProblem]](None) { memorySizeDefaultValue =>
                 Try(ConfigFactory.parseString(s"value=${memorySizeDefaultValue}").getMemorySize("value")) match {
                   case Success(_) => None
                   case Failure(_) =>

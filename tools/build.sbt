@@ -186,6 +186,7 @@ addCommandAlias(
 
 lazy val cloudflowBlueprint =
   Project(id = "cloudflow-blueprint", base = file("cloudflow-blueprint"))
+    .dependsOn(cloudflowCrd)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(Dependencies.cloudflowBlueprint)
     .settings(

@@ -16,6 +16,8 @@
 
 package cloudflow.blueprint
 
+import akka.datap.crd.App
+
 import scala.collection.immutable
 
 sealed trait BlueprintProblem
@@ -141,7 +143,7 @@ sealed trait UnconnectedPorts extends BlueprintProblem {
 final case class UnconnectedInlets(unconnectedInlets: immutable.IndexedSeq[UnconnectedPort]) extends UnconnectedPorts {
   def nonEmpty: Boolean = unconnectedInlets.nonEmpty
 }
-final case class UnconnectedPort(streamletRef: String, port: PortDescriptor)
+final case class UnconnectedPort(streamletRef: String, port: App.InOutlet)
 final case class UnconnectedOutlets(unconnectedOutlets: immutable.IndexedSeq[UnconnectedPort])
     extends UnconnectedPorts {
   def nonEmpty: Boolean = unconnectedOutlets.nonEmpty

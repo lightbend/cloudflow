@@ -16,6 +16,7 @@
 
 package cloudflow.blueprint
 
+import akka.datap.crd.App
 import com.typesafe.config.Config
 
 case class VerifiedBlueprint(streamlets: Vector[VerifiedStreamlet], topics: Vector[VerifiedTopic])
@@ -48,9 +49,9 @@ final case class VerifiedPortPath(streamletRef: String, portName: String) {
   override def toString = s"$streamletRef.$portName"
 }
 
-final case class VerifiedStreamlet(name: String, descriptor: StreamletDescriptor) {
-  def outlet(outlet: OutletDescriptor) = VerifiedOutlet(this, outlet.name, outlet.schema)
-  def inlet(inlet: InletDescriptor) = VerifiedInlet(this, inlet.name, inlet.schema)
+final case class VerifiedStreamlet(name: String, descriptor: App.Descriptor) {
+  def outlet(outlet: App.InOutlet) = VerifiedOutlet(this, outlet.name, outlet.schema)
+  def inlet(inlet: App.InOutlet) = VerifiedInlet(this, inlet.name, inlet.schema)
 }
 
 final case class VerifiedTopic(
@@ -66,7 +67,7 @@ final case class VerifiedStreamletConnection(
 sealed trait VerifiedPort {
   def streamlet: VerifiedStreamlet
   def portName: String
-  def schemaDescriptor: SchemaDescriptor
+  def schemaDescriptor: App.InOutletSchema
   def portPath: VerifiedPortPath
   def isOutlet: Boolean
 }
@@ -106,15 +107,15 @@ object VerifiedPort {
   }
 }
 
-final case class VerifiedInlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor)
+final case class VerifiedInlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: App.InOutletSchema)
     extends VerifiedPort {
   def portPath = VerifiedPortPath(streamlet.name, portName)
   def isOutlet = false
 }
 
-final case class VerifiedOutlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: SchemaDescriptor)
+final case class VerifiedOutlet(streamlet: VerifiedStreamlet, portName: String, schemaDescriptor: App.InOutletSchema)
     extends VerifiedPort {
-  def matches(outletDescriptor: OutletDescriptor) =
+  def matches(outletDescriptor: App.InOutlet) =
     outletDescriptor.name == portName &&
     outletDescriptor.schema.fingerprint == schemaDescriptor.fingerprint
   def portPath = VerifiedPortPath(streamlet.name, portName)
