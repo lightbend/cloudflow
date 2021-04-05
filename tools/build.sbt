@@ -195,16 +195,20 @@ lazy val cloudflowBlueprint =
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
     .settings(Dependencies.cloudflowBlueprint)
     .settings(
-      scalaVersion := Dependencies.Scala212,
-      crossScalaVersions := Vector(Dependencies.Scala213, Dependencies.Scala212),
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       buildInfoKeys := Seq[BuildInfoKey](name, version),
       buildInfoPackage := "cloudflow.blueprint")
+    .cross
+
+lazy val cloudflowBlueprint212 = cloudflowBlueprint(Dependencies.Scala212)
+lazy val cloudflowBlueprint213 = cloudflowBlueprint(Dependencies.Scala213)
 
 lazy val cloudflowOperator =
   Project(id = "cloudflow-operator", base = file("cloudflow-operator"))
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin, JavaServerAppPackaging, DockerPlugin, AshScriptPlugin)
-    .dependsOn(cloudflowConfig, cloudflowBlueprint % "compile->compile;test->test")
+    .dependsOn(cloudflowConfig, cloudflowBlueprint213)
     .settings(Dependencies.cloudflowOperator)
     .settings(
       scalaVersion := Dependencies.Scala213,
@@ -243,7 +247,7 @@ lazy val cloudflowExtractor =
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
     .settings(name := "sbt-cloudflow")
-    .dependsOn(cloudflowBlueprint, cloudflowExtractor)
+    .dependsOn(cloudflowBlueprint212, cloudflowExtractor)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(Dependencies.cloudflowSbtPlugin)
     .settings(
@@ -270,7 +274,8 @@ lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
   .aggregate(
-    cloudflowBlueprint,
+    cloudflowBlueprint212,
+    cloudflowBlueprint213,
     cloudflowCli,
     cloudflowConfig,
     cloudflowCrd,

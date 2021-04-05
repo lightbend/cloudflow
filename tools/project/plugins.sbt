@@ -1,6 +1,7 @@
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.8.0")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.1.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
+addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")
 // discipline
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.2")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
