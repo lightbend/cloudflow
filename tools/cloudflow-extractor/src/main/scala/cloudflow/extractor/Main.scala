@@ -1,4 +1,4 @@
-package akka.cloudflow
+package cloudflow.extractor
 
 import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
 
@@ -13,14 +13,14 @@ object Main {
       System.exit(1)
     } else {
       val config = ConfigFactory.load(args(0))
-      val scanConfig = DescriptorGenerator.ScanConfiguration(
+      val scanConfig = DescriptorExtractor.ScanConfiguration(
         projectId = config.getString("projectId"),
         classpathUrls = config.getStringList("classpath").asScala.map(new URL(_)).toArray)
       val resolveConfig =
-        DescriptorGenerator.ResolveConfiguration(dockerImageName = config.getString("dockerImageName"))
+        DescriptorExtractor.ResolveConfiguration(dockerImageName = config.getString("dockerImageName"))
 
       val result =
-        DescriptorGenerator.resolve(resolveConfig, DescriptorGenerator.scan(scanConfig))
+        DescriptorExtractor.resolve(resolveConfig, DescriptorExtractor.scan(scanConfig))
       Console.out.println(
         result.root().render(ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)))
       System.exit(0)

@@ -1,4 +1,4 @@
-package akka.cloudflow
+package cloudflow.extractor
 
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 
@@ -6,7 +6,7 @@ import java.io.File
 import java.net.{ URL, URLClassLoader }
 import scala.util.{ Failure, Success }
 
-object DescriptorGenerator {
+object DescriptorExtractor {
 
   final case class ScanConfiguration(projectId: String, classpathUrls: Array[URL])
   final case class ResolveConfiguration(dockerImageName: String)

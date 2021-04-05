@@ -118,7 +118,7 @@ object Dependencies {
         Compile.kafkaClient,
         Compile.scalatest % Test)
 
-  val cloudflowDescriptorGenerator =
+  val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
 
   val cloudflowSbtPlugin =

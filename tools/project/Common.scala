@@ -2,7 +2,7 @@ import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 import sbt.plugins.JvmPlugin
-import xerial.sbt.Sonatype.SonatypeKeys.sonatypePublishToBundle
+import xerial.sbt.Sonatype.SonatypeKeys.{ sonatypeProfileName, sonatypePublishToBundle }
 import com.jsuereth.sbtpgp.PgpKeys.useGpgAgent
 
 object Common extends AutoPlugin {

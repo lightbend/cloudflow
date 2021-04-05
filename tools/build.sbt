@@ -230,10 +230,10 @@ lazy val cloudflowOperator =
       dockerRepository := sys.props.get("docker.registry"),
       dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")
 
-lazy val cloudflowDescriptorGenerator =
-  Project(id = "cloudflow-descriptor-generator", base = file("cloudflow-descriptor-generator"))
+lazy val cloudflowExtractor =
+  Project(id = "cloudflow-extractor", base = file("cloudflow-extractor"))
     .enablePlugins(ScalafmtPlugin, BuildInfoPlugin)
-    .settings(Dependencies.cloudflowDescriptorGenerator)
+    .settings(Dependencies.cloudflowExtractor)
     .settings(
       scalaVersion := Dependencies.Scala212,
       scalafmtOnCompile := true,
@@ -243,7 +243,7 @@ lazy val cloudflowDescriptorGenerator =
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
     .settings(name := "sbt-cloudflow")
-    .dependsOn(cloudflowBlueprint, cloudflowDescriptorGenerator)
+    .dependsOn(cloudflowBlueprint, cloudflowExtractor)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(Dependencies.cloudflowSbtPlugin)
     .settings(
@@ -274,7 +274,7 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowCli,
     cloudflowConfig,
     cloudflowCrd,
-    cloudflowDescriptorGenerator,
+    cloudflowExtractor,
     cloudflowIt,
     cloudflowNewIt,
     cloudflowNewItLibrary,

@@ -18,7 +18,7 @@ package cloudflow.sbt
 
 import scala.util._
 
-import akka.cloudflow.DescriptorGenerator
+import cloudflow.extractor.DescriptorExtractor
 import sbt._
 import sbt.Keys._
 import com.typesafe.config._
@@ -50,16 +50,16 @@ object StreamletScannerPlugin extends AutoPlugin {
   private def scanForStreamlets: Def.Initialize[Task[Map[String, Config]]] = Def.task {
     val log = streams.value.log
 
-    DescriptorGenerator.scan(
-      DescriptorGenerator
+    DescriptorExtractor.scan(
+      DescriptorExtractor
         .ScanConfiguration(projectId = (ThisProject / name).value, classpathUrls = applicationClasspath.value))
   }
 
   private def streamletDescriptorsFile: Def.Initialize[Task[File]] = Def.task {
     val file = (classDirectory in Compile).value / "streamlet-descriptors.conf"
 
-    val config = DescriptorGenerator.resolve(
-      DescriptorGenerator.ResolveConfiguration(dockerImageName =
+    val config = DescriptorExtractor.resolve(
+      DescriptorExtractor.ResolveConfiguration(dockerImageName =
         (ThisProject / cloudflowDockerImageName).value.map(_.asTaggedName).getOrElse("placeholder")),
       scanForStreamlets.value)
 

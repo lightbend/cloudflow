@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package akka.cloudflow
+package cloudflow.extractor
 
 import java.lang.reflect.Modifier
 
@@ -99,11 +99,6 @@ object StreamletScanner {
   private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] = {
     getNoArgConstructor(streamletClass) match {
       case Some(constructor) =>
-        try {
-          constructor.newInstance()
-        } catch {
-          case ex: Throwable => ex.getCause.printStackTrace()
-        }
         Try(constructor.newInstance()).recoverWith {
           case error => Failure(ConstructorFailure(streamletClass, error))
         }
