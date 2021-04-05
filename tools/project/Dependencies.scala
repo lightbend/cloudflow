@@ -116,7 +116,8 @@ object Dependencies {
         Compile.logback,
         Compile.kubeActions,
         Compile.kafkaClient,
-        Compile.scalatest % Test)
+        Compile.scalatest % Test,
+        TestDeps.avro4s)
 
   val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
