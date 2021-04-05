@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package cloudflow.streamlets
 
 case class ConfigParameter(key: String, description: String)

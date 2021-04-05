@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package akka.cloudflow
+package cloudflow.extractor
 
 import org.scalatest.{ OptionValues, TryValues }
 
@@ -72,18 +72,18 @@ final class StreamletScannerSpec extends AnyWordSpec with TryValues with OptionV
     }
 
     "produce failures for classes with no default constructor" in {
-      val noConstructorFailure = invalidStreamlets.get("akka.cloudflow.NoDefaultConstructorStreamlet").value
+      val noConstructorFailure = invalidStreamlets.get("cloudflow.extractor.NoDefaultConstructorStreamlet").value
       noConstructorFailure.failure.exception mustBe a[ConstructorMissing]
     }
 
     "produce failures for classes with constructors that throw exceptions" in {
       val noConstructorFailure =
-        invalidStreamlets.get("akka.cloudflow.StreamletThatThrowsAnExceptionInItsConstructor").value
+        invalidStreamlets.get("cloudflow.extractor.StreamletThatThrowsAnExceptionInItsConstructor").value
       noConstructorFailure.failure.exception mustBe a[ConstructorFailure]
     }
 
     "produce no failures for abstract Streamlet classes" in {
-      val abstractClassFailure = invalidStreamlets.get("akka.cloudflow.AbstractStreamlet")
+      val abstractClassFailure = invalidStreamlets.get("cloudflow.extractor.AbstractStreamlet")
       abstractClassFailure mustBe None
     }
   }

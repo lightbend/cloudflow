@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package akka.cloudflow
+package cloudflow.extractor
 
 import com.typesafe.config.Config
 import cloudflow.streamlets._
