@@ -98,6 +98,7 @@ lazy val root =
       flink,
       flinkTestkit,
       flinkTests,
+      runnerConfig,
       localRunner,
       runner,
       blueprint
