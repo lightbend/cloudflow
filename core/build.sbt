@@ -376,6 +376,19 @@ lazy val blueprint =
       buildInfoPackage := "cloudflow.blueprint"
     )
 
+lazy val runnerConfig =
+  cloudflowModule("cloudflow-runner-config")
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .settings(
+      scalafmtOnCompile := false,
+      Compile / scalafmtCheck := true,
+      libraryDependencies ++= Vector(JacksonScalaModule)
+    )
+    .settings(
+      Compile / unmanagedSourceDirectories += (ThisProject / baseDirectory).value / ".." / ".." / "tools" / "cloudflow-runner-config" / "src" / "main" / "scala",
+      crossScalaVersions := Vector(Version.Scala212, Version.Scala213)
+    )
+
 lazy val runner =
   cloudflowModule("cloudflow-runner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
@@ -412,7 +425,7 @@ lazy val runner =
 lazy val localRunner =
   cloudflowModule("cloudflow-localrunner")
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    .dependsOn(streamlets, blueprint)
+    .dependsOn(streamlets, blueprint, runnerConfig)
     .settings(
       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       scalafmtOnCompile := true

@@ -12,10 +12,7 @@ import scala.util.hashing.MurmurHash3
 import akka.cli.cloudflow.{ CliException, CliLogger }
 import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
-import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.annotation.{ JsonCreator, JsonInclude, JsonProperty }
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.{ JsonDeserializer, JsonNode }
+import cloudflow.runner
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization
 
@@ -24,51 +21,27 @@ private final case class StreamletConfigs(streamlet: Config, runtime: Config, po
 trait WithConfiguration {
   val logger: CliLogger
 
-  @JsonDeserialize(using = classOf[JsonDeserializer.None])
-  @JsonInclude(Include.NON_NULL)
-  @JsonCreator
-  private case class RunnerContext(
-      @JsonProperty("app_id")
-      appId: String,
-      @JsonProperty("app_version")
-      appVersion: String,
-      @JsonProperty("config")
-      config: JsonNode,
-      @JsonProperty("volume_mounts")
-      volumeMounts: JsonNode,
-      @JsonProperty("port_mappings")
-      portMappings: JsonNode)
-
-  @JsonDeserialize(using = classOf[JsonDeserializer.None])
-  @JsonInclude(Include.NON_NULL)
-  @JsonCreator
-  private case class StreamletConfig(
-      @JsonProperty("class_name")
-      className: String,
-      @JsonProperty("streamlet_ref")
-      streamletRef: String,
-      @JsonProperty("context")
-      context: RunnerContext)
-
+  // TODO: when names are finalized run the GraalVM assisted config
   private def applicationRunnerConfig(appId: String, appVersion: String, deployment: App.Deployment): Config = {
-    ConfigFactory
-      .parseString(
-        Serialization
-          .jsonMapper()
-          .writeValueAsString(StreamletConfig(
-            className = deployment.className,
-            streamletRef = deployment.streamletName,
-            context = RunnerContext(
-              appId = appId,
-              appVersion = appVersion,
-              config = deployment.config,
-              volumeMounts = Serialization
-                .jsonMapper()
-                .readTree(Serialization.jsonMapper().writeValueAsString(deployment.volumeMounts)),
-              portMappings = Serialization
-                .jsonMapper()
-                .readTree(Serialization.jsonMapper().writeValueAsString(deployment.portMappings))))))
-      .atPath("cloudflow.runner.streamlet")
+    val configStreamlet =
+      runner.config.Streamlet(
+        streamletRef = deployment.streamletName,
+        className = deployment.className,
+        context = runner.config.StreamletContext(
+          appId = appId,
+          appVersion = appVersion,
+          config = deployment.config,
+          volumeMounts = Option(deployment.volumeMounts).getOrElse(Seq.empty).map { vm =>
+            // TODO: check with Ray: name = vm.appId
+            runner.config.VolumeMount(name = vm.appId, path = vm.path, accessMode = vm.accessMode)
+          },
+          portMappings = Option(deployment.portMappings).getOrElse(Map.empty).map {
+            case (name, pm) =>
+              // TODO: check with Ray: cluster should be "default"?
+              name -> runner.config.Topic(id = pm.id, cluster = pm.cluster.getOrElse(""), config = pm.config)
+          }))
+
+    ConfigFactory.parseString(runner.config.toJson(configStreamlet))
   }
 
   private def referencedPvcsExists(

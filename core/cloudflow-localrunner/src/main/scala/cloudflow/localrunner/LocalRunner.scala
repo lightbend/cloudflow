@@ -19,7 +19,6 @@ package cloudflow.localrunner
 import java.io.{ Closeable, File, FileOutputStream, OutputStream, PrintStream }
 import java.lang.{ Runtime => JRuntime }
 import java.nio.file._
-
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
 import scala.util.{ Failure, Success, Try }
@@ -29,9 +28,11 @@ import org.slf4j.LoggerFactory
 import spray.json._
 import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
-import cloudflow.blueprint.VolumeMountDescriptor
 import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
+import cloudflow.runner
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -98,44 +99,31 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
+  private val mapper = new ObjectMapper().registerModule(new DefaultScalaModule())
   private def getRunnerConfig(appId: String, appVersion: String, deployment: StreamletDeployment): String = {
-    implicit val topicFormat = jsonFormat(Topic.apply, "id", "cluster", "config")
+    def toJsonNode(config: Config) =
+      mapper.readTree(config.root().render(ConfigRenderOptions.concise().setJson(true).setOriginComments(false).setComments(false)))
 
-    def toRunnerJson(appId: String, appVersion: String, deployment: StreamletDeployment) =
-      JsObject(
-        "streamlet" -> JsObject(
-              "class_name"    -> JsString(deployment.className),
-              "streamlet_ref" -> JsString(deployment.streamletName),
-              "context" -> JsObject(
-                    "app_id"        -> appId.toJson,
-                    "app_version"   -> appVersion.toJson,
-                    "config"        -> toJson(deployment.config),
-                    "volume_mounts" -> toVolumeMountJson(deployment.volumeMounts),
-                    "port_mappings" -> toPortMappingsJson(deployment.portMappings)
-                  )
-            )
+    val streamletConfig = runner.config.Streamlet(
+      className = deployment.className,
+      streamletRef = deployment.streamletName,
+      context = runner.config.StreamletContext(
+        appId = appId,
+        appVersion = appVersion,
+        config = toJsonNode(deployment.config),
+        volumeMounts = deployment.volumeMounts.getOrElse(List.empty).map { vm =>
+          runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
+        },
+        portMappings = deployment.portMappings.map {
+          case (name, topic) =>
+            name -> runner.config.Topic(id = topic.id,
+                                        // TODO: check with Ray the default
+                                        cluster = topic.cluster.getOrElse(""),
+                                        config = toJsonNode(topic.config))
+        }
       )
-
-    def toJson(config: Config) = config.root().render(ConfigRenderOptions.concise()).parseJson
-
-    def toPortMappingsJson(portMappings: Map[String, Topic]) =
-      JsObject(portMappings.map {
-        case (portName, topic) => portName -> topic.toJson
-      })
-
-    def toVolumeMountJson(volumeMounts: Option[List[VolumeMountDescriptor]]) =
-      JsArray(
-        volumeMounts
-          .getOrElse(Vector())
-          .map {
-            case VolumeMountDescriptor(name, path, accessMode, _) =>
-              JsObject("name" -> JsString(name), "path" -> JsString(path), "access_mode" -> JsString(accessMode))
-          }
-          .toVector
-      )
-
-    val map = Map("runner" -> toRunnerJson(appId, appVersion, deployment))
-    JsObject("cloudflow" -> JsObject(map)).compactPrint
+    )
+    runner.config.toJson(streamletConfig)
   }
 
   private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaHost: String): Unit = {
