@@ -131,9 +131,6 @@ object Dependencies {
         Compile.scalatest % Test)
 
   val cloudflowRunnerConfig =
-    libraryDependencies ++= Seq(
-        Compile.jacksonScala,
-        Compile.typesafeConfig % Test,
-        Compile.scalatest % Test)
+    libraryDependencies ++= Seq(Compile.jacksonScala, Compile.typesafeConfig % Test, Compile.scalatest % Test)
 
 }
