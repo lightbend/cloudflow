@@ -55,6 +55,7 @@ fi
 gcloud container clusters create $CLUSTER_NAME \
   --cluster-version $CLUSTER_VERSION  \
   --image-type cos \
+  --enable-ip-alias \
   --machine-type n1-standard-4 \
   --num-nodes 5 \
   --enable-autoscaling \
