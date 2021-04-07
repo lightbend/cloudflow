@@ -74,7 +74,7 @@ object CloudflowApplicationSpecBuilder {
   }
 
   private def toVolumeMount(vmd: VolumeMountDescriptor) = {
-    App.VolumeMountDescriptor(appId = vmd.name, path = vmd.path, accessMode = vmd.accessMode, pvcName = {
+    App.VolumeMountDescriptor(name = vmd.name, path = vmd.path, accessMode = vmd.accessMode, pvcName = {
       if (vmd.pvcName == null || vmd.pvcName.isEmpty) {
         Some(vmd.pvcName)
       } else None

@@ -200,7 +200,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val streamletPvcVolume = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       new VolumeBuilder()
-        .withName(mount.appId)
+        .withName(mount.name)
         .withNewPersistentVolumeClaim()
         .withClaimName(mount.pvcName.getOrElse(""))
         .endPersistentVolumeClaim()
@@ -208,7 +208,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     })
     val streamletVolumeMount = streamletToDeploy.toSeq.flatMap(_.descriptor.volumeMounts.map { mount =>
       new VolumeMountBuilder()
-        .withName(mount.appId)
+        .withName(mount.name)
         .withMountPath(mount.path)
         .build()
     })

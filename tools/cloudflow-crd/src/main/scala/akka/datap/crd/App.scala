@@ -196,8 +196,8 @@ object App {
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonCreator
   final case class VolumeMountDescriptor(
-      @JsonProperty("app_id")
-      appId: String,
+      @JsonProperty("name")
+      name: String,
       @JsonProperty("path")
       path: String,
       @JsonProperty("access_mode")

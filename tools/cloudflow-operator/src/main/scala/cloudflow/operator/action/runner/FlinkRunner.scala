@@ -361,7 +361,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
     val streamletPvcVolume = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       new VolumeBuilder()
-        .withName(mount.appId)
+        .withName(mount.name)
         .withNewPersistentVolumeClaim()
         .withClaimName(mount.pvcName.getOrElse(""))
         .endPersistentVolumeClaim()
@@ -387,7 +387,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   private def makeVolumeMountsSpec(streamletToDeploy: Option[App.Streamlet]): Vector[VolumeMount] = {
     val streamletVolumeMount = streamletToDeploy.toVector.flatMap(_.descriptor.volumeMounts.map { mount =>
       new VolumeMountBuilder()
-        .withName(mount.appId)
+        .withName(mount.name)
         .withMountPath(mount.path)
         .build()
     })

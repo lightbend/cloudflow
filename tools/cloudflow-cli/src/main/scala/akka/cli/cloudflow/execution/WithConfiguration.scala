@@ -32,8 +32,7 @@ trait WithConfiguration {
           appVersion = appVersion,
           config = deployment.config,
           volumeMounts = Option(deployment.volumeMounts).getOrElse(Seq.empty).map { vm =>
-            // TODO: check with Ray: name = vm.appId
-            runner.config.VolumeMount(name = vm.appId, path = vm.path, accessMode = vm.accessMode)
+            runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
           },
           portMappings = Option(deployment.portMappings).getOrElse(Map.empty).map {
             case (name, pm) =>

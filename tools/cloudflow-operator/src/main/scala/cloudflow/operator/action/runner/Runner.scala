@@ -91,7 +91,7 @@ object Runner {
         else
           Some(deployment.volumeMounts.map { vmd =>
             VolumeMountDescriptor(
-              name = vmd.appId,
+              name = vmd.name,
               path = vmd.path,
               accessMode = vmd.accessMode,
               pvcName = vmd.pvcName.getOrElse(""))

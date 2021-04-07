@@ -213,7 +213,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val pvcRefVolumes =
       streamletToDeploy.map(_.descriptor.volumeMounts.map { mount =>
         new VolumeBuilder()
-          .withName(mount.appId)
+          .withName(mount.name)
           .withPersistentVolumeClaim(
             new PersistentVolumeClaimVolumeSourceBuilder()
               .withClaimName(mount.pvcName.getOrElse(""))
@@ -228,7 +228,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         }
 
         new VolumeMountBuilder()
-          .withName(mount.appId)
+          .withName(mount.name)
           .withMountPath(mount.path)
           .withReadOnly(readOnly)
           .build()
