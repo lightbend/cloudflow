@@ -3,12 +3,13 @@ import sbt._
 
 object Dependencies {
 
-  val Scala212 = "2.12.13"
+  val Scala212 = "2.12.12" // has to be the very same as sbt
   val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
     val akka = "2.6.13"
     val akkaHttp = "10.2.4"
+    val akkaGrpc = "1.0.2"
     val fabric8 = "5.0.0"
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
@@ -49,6 +50,12 @@ object Dependencies {
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
+
+    val classgraph = "io.github.classgraph" % "classgraph" % "4.8.104"
+
+    val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.15.2"
+    val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
   }
 
   object TestDeps {
@@ -109,6 +116,17 @@ object Dependencies {
         Compile.logback,
         Compile.kubeActions,
         Compile.kafkaClient,
-        Compile.scalatest % Test)
+        Compile.scalatest % Test,
+        TestDeps.avro4s)
 
+  val cloudflowExtractor =
+    libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
+
+  val cloudflowSbtPlugin =
+    libraryDependencies ++= Seq(
+        Compile.scalaPbCompilerPlugin,
+        Compile.asciigraphs,
+        Compile.testcontainersKafka,
+        Compile.kafkaClient,
+        Compile.scalatest % Test)
 }

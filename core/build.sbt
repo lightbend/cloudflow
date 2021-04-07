@@ -100,8 +100,7 @@ lazy val root =
       flinkTests,
       localRunner,
       runner,
-      blueprint,
-      plugin
+      blueprint
     )
 
 lazy val streamlets =
@@ -375,38 +374,6 @@ lazy val blueprint =
       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
       buildInfoKeys := Seq[BuildInfoKey](name, version),
       buildInfoPackage := "cloudflow.blueprint"
-    )
-
-lazy val plugin =
-  cloudflowModule("sbt-cloudflow")
-    .dependsOn(streamlets, blueprint)
-    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
-    .settings(
-      scalafmtOnCompile := true,
-      sbtPlugin := true,
-      crossSbtVersions := Vector("1.4.3"),
-      buildInfoKeys := Seq[BuildInfoKey](version),
-      buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg"       % "sbt-docker"          % "1.8.0"),
-      addSbtPlugin("com.typesafe.sbt"        % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite"            % "sbt-avro-1-8"        % "1.1.9"),
-      addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc"       % Version.AkkaGrpc),
-      addSbtPlugin("com.julianpeeters"       % "sbt-avrohugger"      % "2.0.0-RC18"),
-      addSbtPlugin("com.lightbend.sbt"       % "sbt-javaagent"       % "0.1.5"),
-      addSbtPlugin("de.heikoseeberger"       % "sbt-header"          % "5.2.0"),
-      libraryDependencies ++= Vector(
-            FastClasspathScanner,
-            ScalaPbCompilerPlugin,
-            "com.github.mutcianm" %% "ascii-graphs" % "0.0.6",
-            ScalaTest,
-            TestcontainersKafka,
-            KafkaClient
-          ),
-      scriptedLaunchOpts := {
-        scriptedLaunchOpts.value ++
-          Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-      },
-      scriptedBufferLog := false
     )
 
 lazy val runner =

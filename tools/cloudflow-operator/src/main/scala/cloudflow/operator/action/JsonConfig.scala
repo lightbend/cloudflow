@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package cloudflow.operator.action
 
 import com.fasterxml.jackson.databind.JsonNode

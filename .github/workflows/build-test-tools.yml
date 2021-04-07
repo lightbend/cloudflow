@@ -31,15 +31,15 @@ jobs:
       - name: Cache Coursier cache
         uses: coursier/cache-action@v5
 
-      - name: Check Cli fmt
+      - name: Check Tools fmt
         run: |
           cd tools
           sbt "scalafmtCheckAll; scalafmtSbtCheck"
 
-      - name: Test the Cli
+      - name: Test the Tools
         run: |
           cd tools
-          sbt test
+          sbt +test
 
       - name: Build and run the binary
         run: |

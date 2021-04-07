@@ -1,9 +1,9 @@
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
-import sbt.Global
 import sbt.Keys._
 import sbt._
 import sbt.plugins.JvmPlugin
-import sbtdynver.DynVerPlugin.autoImport._
+import xerial.sbt.Sonatype.SonatypeKeys.sonatypePublishToBundle
+import com.jsuereth.sbtpgp.PgpKeys.useGpgAgent
 
 object Common extends AutoPlugin {
 
@@ -17,13 +17,23 @@ object Common extends AutoPlugin {
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://www.lightbend.com/")),
       startYear := Some(2020),
-      description := "Cloudflow kubectl plugin")
+      description := "Cloudflow enables users to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.",
+      homepage := Some(url("https://cloudflow.io")),
+      scmInfo := Some(ScmInfo(url("https://github.com/lightbend/cloudflow"), "git@github.com:lightbend/cloudflow.git")),
+      licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+      publishMavenStyle := true,
+      developers += Developer(
+          "contributors",
+          "Contributors",
+          "https://cloudflow.zulipchat.com/",
+          url("https://github.com/lightbend/cloudflow/graphs/contributors")))
 
   override lazy val projectSettings = Seq(
-    crossVersion := CrossVersion.binary,
-    scalaVersion := Dependencies.Scala213,
+    crossVersion := CrossVersion.full,
     scalacOptions ++= List("-feature", "-deprecation"),
     javacOptions ++= List("-Xlint:unchecked", "-Xlint:deprecation"),
+    publishTo := sonatypePublishToBundle.value,
+    useGpgAgent := false,
     scalafmtOnCompile := true,
     run / fork := false,
     // show full stack traces and test case durations
