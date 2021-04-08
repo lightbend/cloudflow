@@ -22,18 +22,17 @@ object StreamletDescriptor {
   private val Server = "server"
 }
 
-final case class StreamletDescriptor(
-    className: String,
-    runtime: StreamletRuntimeDescriptor,
-    labels: immutable.IndexedSeq[String],
-    description: String,
-    inlets: immutable.IndexedSeq[InletDescriptor],
-    outlets: immutable.IndexedSeq[OutletDescriptor],
-    configParameters: immutable.IndexedSeq[ConfigParameterDescriptor],
-    attributes: immutable.IndexedSeq[StreamletAttributeDescriptor] = Vector.empty,
-    volumeMounts: immutable.IndexedSeq[VolumeMountDescriptor]) {
+final case class StreamletDescriptor(className: String,
+                                     runtime: StreamletRuntimeDescriptor,
+                                     labels: immutable.IndexedSeq[String],
+                                     description: String,
+                                     inlets: immutable.IndexedSeq[InletDescriptor],
+                                     outlets: immutable.IndexedSeq[OutletDescriptor],
+                                     configParameters: immutable.IndexedSeq[ConfigParameterDescriptor],
+                                     attributes: immutable.IndexedSeq[StreamletAttributeDescriptor] = Vector.empty,
+                                     volumeMounts: immutable.IndexedSeq[VolumeMountDescriptor]) {
   def isIngress: Boolean = inlets.isEmpty && outlets.nonEmpty
-  def isServer: Boolean = attributes.exists(_.attributeName == StreamletDescriptor.Server)
+  def isServer: Boolean  = attributes.exists(_.attributeName == StreamletDescriptor.Server)
   def getAttribute(name: String): Option[StreamletAttributeDescriptor] = attributes.find { attrib =>
     attrib.attributeName == name
   }
@@ -60,12 +59,11 @@ final case class SchemaDescriptor(name: String, schema: String, fingerprint: Str
 
 final case class StreamletAttributeDescriptor(attributeName: String, configPath: String)
 
-final case class ConfigParameterDescriptor(
-    key: String,
-    description: String,
-    validationType: String,
-    validationPattern: Option[String],
-    defaultValue: Option[String])
+final case class ConfigParameterDescriptor(key: String,
+                                           description: String,
+                                           validationType: String,
+                                           validationPattern: Option[String],
+                                           defaultValue: Option[String])
 
 final case class VolumeMountDescriptor(
     name: String,

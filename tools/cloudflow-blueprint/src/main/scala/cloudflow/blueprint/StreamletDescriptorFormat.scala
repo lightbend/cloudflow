@@ -22,17 +22,11 @@ object StreamletDescriptorFormat extends StreamletDescriptorFormat
 
 trait StreamletDescriptorFormat extends DefaultJsonProtocol {
   implicit val attributeFormat = jsonFormat(StreamletAttributeDescriptor.apply, "attribute_name", "config_path")
-  implicit val schemaFormat = jsonFormat4(SchemaDescriptor.apply)
-  implicit val inletFormat = jsonFormat2(InletDescriptor.apply)
-  implicit val outletFormat = jsonFormat2(OutletDescriptor.apply)
+  implicit val schemaFormat    = jsonFormat4(SchemaDescriptor.apply)
+  implicit val inletFormat     = jsonFormat2(InletDescriptor.apply)
+  implicit val outletFormat    = jsonFormat2(OutletDescriptor.apply)
   implicit val configParameterDescriptorFormat =
-    jsonFormat(
-      ConfigParameterDescriptor.apply,
-      "key",
-      "description",
-      "validation_type",
-      "validation_pattern",
-      "default_value")
+    jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
   implicit val volumeMountDescriptorFormat =
     jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
 
@@ -45,15 +39,14 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
       }
   }
 
-  implicit val streamletDescriptorFormat = jsonFormat(
-    StreamletDescriptor.apply,
-    "class_name",
-    "runtime",
-    "labels",
-    "description",
-    "inlets",
-    "outlets",
-    "config_parameters",
-    "attributes",
-    "volume_mounts")
+  implicit val streamletDescriptorFormat = jsonFormat(StreamletDescriptor.apply,
+                                                      "class_name",
+                                                      "runtime",
+                                                      "labels",
+                                                      "description",
+                                                      "inlets",
+                                                      "outlets",
+                                                      "config_parameters",
+                                                      "attributes",
+                                                      "volume_mounts")
 }

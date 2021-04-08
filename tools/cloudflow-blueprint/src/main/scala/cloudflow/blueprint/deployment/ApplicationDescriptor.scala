@@ -27,16 +27,15 @@ import cloudflow.blueprint._
  * Note: this class represents a wire format and therefore tries to minimize
  *       duplication of data
  */
-final case class ApplicationDescriptor(
-    appId: String,
-    appVersion: String,
-    streamlets: Vector[StreamletInstance],
-    deployments: Vector[StreamletDeployment],
-    agentPaths: Map[String, String],
-    /* The version of the Application Descriptor format */
-    version: String,
-    /* The version of the library that has created this Application Descriptor */
-    libraryVersion: String)
+final case class ApplicationDescriptor(appId: String,
+                                       appVersion: String,
+                                       streamlets: Vector[StreamletInstance],
+                                       deployments: Vector[StreamletDeployment],
+                                       agentPaths: Map[String, String],
+                                       /* The version of the Application Descriptor format */
+                                       version: String,
+                                       /* The version of the library that has created this Application Descriptor */
+                                       libraryVersion: String)
 
 object ApplicationDescriptor {
   /*
@@ -47,15 +46,14 @@ object ApplicationDescriptor {
 
   val PrometheusAgentKey = "prometheus"
 
-  def apply(
-      appId: String,
-      appVersion: String,
-      image: String,
-      blueprint: VerifiedBlueprint,
-      agentPaths: Map[String, String],
-      libraryVersion: String): ApplicationDescriptor = {
+  def apply(appId: String,
+            appVersion: String,
+            image: String,
+            blueprint: VerifiedBlueprint,
+            agentPaths: Map[String, String],
+            libraryVersion: String): ApplicationDescriptor = {
 
-    val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
+    val sanitizedApplicationId    = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
     val deployments =
       namedStreamletDescriptors
@@ -64,10 +62,18 @@ object ApplicationDescriptor {
             StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
         }
 
-    ApplicationDescriptor(sanitizedApplicationId, appVersion, namedStreamletDescriptors.map {
-      case (_, instance) =>
-        StreamletInstance(instance.name, sanitizeDescriptor(instance.descriptor))
-    }, deployments, agentPaths, Version, libraryVersion)
+    ApplicationDescriptor(
+      sanitizedApplicationId,
+      appVersion,
+      namedStreamletDescriptors.map {
+        case (_, instance) =>
+          StreamletInstance(instance.name, sanitizeDescriptor(instance.descriptor))
+      },
+      deployments,
+      agentPaths,
+      Version,
+      libraryVersion
+    )
   }
 
   def portMappingsForStreamlet(streamlet: VerifiedStreamlet, blueprint: VerifiedBlueprint): Map[String, Topic] =
@@ -85,7 +91,7 @@ object ApplicationDescriptor {
    *  to avoid adding the description of each type of the schema in the CR
    */
   private def sanitizeDescriptor(descriptor: StreamletDescriptor): StreamletDescriptor = {
-    val sanitizedInlets = descriptor.inlets.map(each => each.copy(schema = each.schema.copy(schema = "")))
+    val sanitizedInlets  = descriptor.inlets.map(each => each.copy(schema = each.schema.copy(schema = "")))
     val sanitizedOutlets = descriptor.outlets.map(each => each.copy(schema = each.schema.copy(schema = "")))
     descriptor.copy(inlets = sanitizedInlets, outlets = sanitizedOutlets)
   }
@@ -102,32 +108,30 @@ final case class StreamletInstance(name: String, descriptor: StreamletDescriptor
  * Describes the deployable unit for a single streamlet instance, e.g. everything
  * required to deploy it.
  */
-final case class StreamletDeployment(
-    name: String,
-    runtime: String,
-    image: String,
-    streamletName: String,
-    className: String,
-    endpoint: Option[Endpoint],
-    secretName: String,
-    config: Config,
-    portMappings: Map[String, Topic],
-    volumeMounts: Option[List[VolumeMountDescriptor]],
-    replicas: Option[Int])
+final case class StreamletDeployment(name: String,
+                                     runtime: String,
+                                     image: String,
+                                     streamletName: String,
+                                     className: String,
+                                     endpoint: Option[Endpoint],
+                                     secretName: String,
+                                     config: Config,
+                                     portMappings: Map[String, Topic],
+                                     volumeMounts: Option[List[VolumeMountDescriptor]],
+                                     replicas: Option[Int])
 
 object StreamletDeployment {
-  val ServerAttributeName = "server"
+  val ServerAttributeName   = "server"
   val EndpointContainerPort = 3000
 
   def name(appId: String, streamlet: String) = s"${appId}.${streamlet}"
 
-  def apply(
-      appId: String,
-      streamlet: StreamletInstance,
-      image: String,
-      portMappings: Map[String, Topic],
-      containerPort: Int = EndpointContainerPort,
-      replicas: Option[Int] = None): StreamletDeployment = {
+  def apply(appId: String,
+            streamlet: StreamletInstance,
+            image: String,
+            portMappings: Map[String, Topic],
+            containerPort: Int = EndpointContainerPort,
+            replicas: Option[Int] = None): StreamletDeployment = {
     val (config, endpoint) = configAndEndpoint(appId, streamlet, containerPort)
     StreamletDeployment(
       name(appId, streamlet.name),
@@ -140,22 +144,19 @@ object StreamletDeployment {
       config,
       portMappings,
       preserveEmpty(streamlet.descriptor.volumeMounts.toList),
-      replicas)
+      replicas
+    )
   }
 
   def preserveEmpty[T](list: List[T]): Option[List[T]] =
     Option(list).filter(_.nonEmpty)
 
-  private def configAndEndpoint(
-      appId: String,
-      streamlet: StreamletInstance,
-      containerPort: Int): Tuple2[Config, Option[Endpoint]] =
+  private def configAndEndpoint(appId: String, streamlet: StreamletInstance, containerPort: Int): Tuple2[Config, Option[Endpoint]] =
     streamlet.descriptor
       .getAttribute(ServerAttributeName)
       .map { serverAttribute =>
-        (
-          ConfigFactory.parseString(s"${serverAttribute.configPath} = ${containerPort}"),
-          Some(Endpoint(appId, streamlet.name, containerPort)))
+        (ConfigFactory.parseString(s"${serverAttribute.configPath} = ${containerPort}"),
+         Some(Endpoint(appId, streamlet.name, containerPort)))
       }
       .getOrElse((ConfigFactory.empty(), None))
 }
@@ -177,12 +178,13 @@ object Topic {
 final case class Topic(
     id: String,
     cluster: Option[String] = None, // needs to be top level and not part of config so can be easily parsed in app spec in cli
-    config: Config = ConfigFactory.empty()) {
-  def name: String = Try(config.getString(Blueprint.TopicKey)).getOrElse(id)
+    config: Config = ConfigFactory.empty()
+) {
+  def name: String     = Try(config.getString(Blueprint.TopicKey)).getOrElse(id)
   def managed: Boolean = Try(config.getBoolean(Blueprint.ManagedKey)).getOrElse(true)
 }
 
 final case class Endpoint(appId: String, streamlet: String, containerPort: Int) {
   val subdomain: String = appId.toLowerCase()
-  val path: String = s"/${streamlet}"
+  val path: String      = s"/${streamlet}"
 }
