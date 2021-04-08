@@ -18,7 +18,7 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import akka.kube.actions.{ Action, CustomResourceAdapter }
-import cloudflow.operator.action.runner.Runner
+import cloudflow.operator.action.runner.{ FlinkRunner, Runner }
 import io.fabric8.kubernetes.api.model.{ ContainerState, Pod }
 import io.fabric8.kubernetes.api.{ model => fabric8 }
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -47,7 +47,7 @@ object CloudflowStatus {
   }
 
   private def podReady(ps: App.PodStatus) = {
-    ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0
+    (ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0) || (ps.nrOfContainers == 0 && ps.nrOfContainersReady == 0)
   }
 
   private def podStatus(
@@ -57,7 +57,7 @@ object CloudflowStatus {
       nrOfContainersReady: Int,
       nrOfContainers: Int): App.PodStatus = {
     val ready =
-      if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) PodStatus.ReadyTrue else PodStatus.ReadyFalse
+      if ((nrOfContainersReady == nrOfContainers && nrOfContainers > 0)) PodStatus.ReadyTrue else PodStatus.ReadyFalse
     App.PodStatus(
       name = name,
       status = status,
@@ -102,8 +102,10 @@ object CloudflowStatus {
       nrOfContainers = nrOfContainers)
   }
 
-  private def getStatusFromContainerStates(containerStates: List[ContainerState], nrOfContainers: Int): String =
-    if (containerStates.nonEmpty) {
+  private def getStatusFromContainerStates(containerStates: List[ContainerState], nrOfContainers: Int): String = {
+    if (nrOfContainers == 0) {
+      PodStatus.Unknown
+    } else if (nrOfContainers > 0 && containerStates.nonEmpty) {
       // - Running if all containers running;
       // - Terminated if all containers terminated;
       // - first Waiting reason found (ContainerCreating, CrashLoopBackOff, ErrImagePull, ...);
@@ -118,9 +120,12 @@ object CloudflowStatus {
           .getOrElse(PodStatus.Pending)
       }
     } else PodStatus.Pending
+  }
 
   private def hasExpectedPods(streamlet: App.StreamletStatus)(nrOfPodsDetected: Int) =
-    streamlet.expectedPodCount.getOrElse(0) == nrOfPodsDetected
+    streamlet.expectedPodCount.getOrElse(0) == nrOfPodsDetected || streamlet.expectedPodCount
+      .map(_ == 0)
+      .getOrElse(false)
 
   private def updatePod(streamlet: App.StreamletStatus)(pod: Pod) = {
     val podStatus = fromPod(pod)
@@ -170,11 +175,25 @@ object CloudflowStatus {
 
   private def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
     spec.deployments.map { deployment =>
-      val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
-      App.StreamletStatus(
-        streamletName = deployment.streamletName,
-        expectedPodCount = Some(expectedPodCount),
-        podStatuses = Nil)
+      if (deployment.runtime == FlinkRunner.Runtime && !runners.contains(FlinkRunner.Runtime)) {
+        App.StreamletStatus(
+          streamletName = deployment.streamletName,
+          expectedPodCount = Some(0),
+          podStatuses = Seq(
+            App.PodStatus(
+              name = "<external>",
+              ready = PodStatus.ReadyTrue,
+              nrOfContainersReady = 0,
+              nrOfContainers = 0,
+              restarts = 0,
+              status = PodStatus.Unknown)))
+      } else {
+        val expectedPodCount = runners.get(deployment.runtime).map(_.expectedPodCount(deployment)).getOrElse(1)
+        App.StreamletStatus(
+          streamletName = deployment.streamletName,
+          expectedPodCount = Some(expectedPodCount),
+          podStatuses = Nil)
+      }
     }.toVector
 
   private def calcAppStatus(streamletStatuses: Seq[App.StreamletStatus]): String = {

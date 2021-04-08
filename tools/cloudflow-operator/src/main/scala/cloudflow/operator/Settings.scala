@@ -150,6 +150,8 @@ final case class Settings(config: Config) extends Extension {
   val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
   val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
+  val flinkEnabled = config.getBoolean(s"$root.flink-enabled")
+
   val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
 
   val deploymentContext = {
