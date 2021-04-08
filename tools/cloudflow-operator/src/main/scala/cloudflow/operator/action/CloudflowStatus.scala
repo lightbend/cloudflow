@@ -46,8 +46,10 @@ object CloudflowStatus {
     val ReadyFalse = "False"
   }
 
-  private def podReady(ps: App.PodStatus) = {
-    (ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0) || (ps.nrOfContainers == 0 && ps.nrOfContainersReady == 0)
+  private def podReady(ps: App.PodStatus, expectedPodCount: Option[Int]) = {
+    (ps.status == PodStatus.Running && ps.nrOfContainersReady == ps.nrOfContainers && ps.nrOfContainers > 0) || (expectedPodCount
+      .map(_ == 0)
+      .getOrElse(false) && ps.nrOfContainers == 0 && ps.nrOfContainersReady == 0)
   }
 
   private def podStatus(
@@ -57,7 +59,7 @@ object CloudflowStatus {
       nrOfContainersReady: Int,
       nrOfContainers: Int): App.PodStatus = {
     val ready =
-      if ((nrOfContainersReady == nrOfContainers && nrOfContainers > 0)) PodStatus.ReadyTrue else PodStatus.ReadyFalse
+      if (nrOfContainersReady == nrOfContainers && nrOfContainers > 0) PodStatus.ReadyTrue else PodStatus.ReadyFalse
     App.PodStatus(
       name = name,
       status = status,
@@ -103,9 +105,7 @@ object CloudflowStatus {
   }
 
   private def getStatusFromContainerStates(containerStates: List[ContainerState], nrOfContainers: Int): String = {
-    if (nrOfContainers == 0) {
-      PodStatus.Unknown
-    } else if (nrOfContainers > 0 && containerStates.nonEmpty) {
+    if (nrOfContainers > 0 && containerStates.nonEmpty) {
       // - Running if all containers running;
       // - Terminated if all containers terminated;
       // - first Waiting reason found (ContainerCreating, CrashLoopBackOff, ErrImagePull, ...);
@@ -199,7 +199,7 @@ object CloudflowStatus {
   private def calcAppStatus(streamletStatuses: Seq[App.StreamletStatus]): String = {
     if (streamletStatuses.forall { streamletStatus =>
           hasExpectedPods(streamletStatus)(streamletStatus.podStatuses.size) &&
-          streamletStatus.podStatuses.forall(podReady)
+          streamletStatus.podStatuses.forall(p => podReady(p, streamletStatus.expectedPodCount))
         }) {
       Status.Running
     } else if (streamletStatuses.flatMap(_.podStatuses).exists(_.status == PodStatus.CrashLoopBackOff)) {
