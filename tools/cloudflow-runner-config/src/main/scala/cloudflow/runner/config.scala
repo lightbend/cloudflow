@@ -33,7 +33,7 @@ object config {
       @JsonProperty("id")
       id: String,
       @JsonProperty("cluster")
-      cluster: Option[String],
+      cluster: Option[String] = None,
       @JsonProperty("config")
       config: JsonNode)
 
