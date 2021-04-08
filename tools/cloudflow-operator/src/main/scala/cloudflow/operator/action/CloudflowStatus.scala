@@ -105,7 +105,7 @@ object CloudflowStatus {
   }
 
   private def getStatusFromContainerStates(containerStates: List[ContainerState], nrOfContainers: Int): String = {
-    if (nrOfContainers > 0 && containerStates.nonEmpty) {
+    if (containerStates.nonEmpty) {
       // - Running if all containers running;
       // - Terminated if all containers terminated;
       // - first Waiting reason found (ContainerCreating, CrashLoopBackOff, ErrImagePull, ...);
