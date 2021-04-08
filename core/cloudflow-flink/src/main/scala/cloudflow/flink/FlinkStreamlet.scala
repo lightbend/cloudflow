@@ -25,7 +25,7 @@ import com.typesafe.config.{ Config, ConfigValueType }
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.client.program.OptimizerPlanEnvironment
+import org.apache.flink.client.program.ProgramAbortException
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.{ DataStreamSink, DataStream => JDataStream }
 import org.apache.flink.streaming.api.environment.CheckpointConfig
@@ -285,8 +285,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         th =>
           th match {
             // rethrow for Flink to catch as Flink control flow depends on this
-            case pax: OptimizerPlanEnvironment.ProgramAbortException => throw pax
-            case _: Throwable                                        => completionPromise.tryFailure(th)
+            case pax: ProgramAbortException => throw pax
+            case _: Throwable               => completionPromise.tryFailure(th)
           },
         _ => completionPromise.trySuccess(Dun)
       )

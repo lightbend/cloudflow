@@ -474,6 +474,9 @@ lazy val commonSettings = bintraySettings ++ Seq(
               releaseStepCommand("sonatypeBundleRelease"),
               pushChanges
             ),
+        resolvers ++=Seq(
+          "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots")
+        ),
         unidocGenjavadocVersion := "0.16",
         scalacOptions ++= Seq(
               "-encoding",

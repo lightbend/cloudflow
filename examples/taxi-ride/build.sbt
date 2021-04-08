@@ -98,7 +98,9 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
-
+  resolvers ++=Seq(
+    "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots")
+  ),
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
 )
