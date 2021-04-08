@@ -27,16 +27,20 @@ trait RunnerConfigResolver {
   final val ConfigSecretMountPath = "/etc/cloudflow-runner-secret"
   final val SecretConfigFile      = "secret.conf"
 
+  def backwardsCompatConfig(configPath: Path): Path =
+    if (Files.exists(configPath)) {
+      configPath
+    } else {
+      // Backward compatibility: Use the ConfigMap populated by the operator
+      Paths.get(s"$ConfigMountPath/$ConfigFile")
+    }
+
   def makeConfig: Try[Config] = Try {
     val configFilePathString = Option(System.getProperty("config.file")).getOrElse(s"$ConfigSecretMountPath/$ConfigFile")
     val configPath           = Paths.get(configFilePathString)
     val secretPath           = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
 
-    val applicationConfig = if (Files.exists(configPath)) {
-      configPath
-    } else {
-      Paths.get(s"$ConfigMountPath/$ConfigFile")
-    }
+    val applicationConfig = backwardsCompatConfig(configPath)
 
     val config = if (Files.exists(secretPath)) {
       println(s"Loading application.conf from: $applicationConfig, secret config from: $secretPath")
