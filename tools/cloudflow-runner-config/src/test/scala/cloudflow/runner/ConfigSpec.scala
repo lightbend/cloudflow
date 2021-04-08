@@ -31,7 +31,7 @@ class ConfigSpec extends AnyWordSpec with Matchers {
           config = asJson("{ foo: bar }"),
           volumeMounts = immutable.Seq(config.VolumeMount(name = "foo1", path = "bar", accessMode = "readOnly")),
           portMappings =
-            Map("port0" -> config.Topic(id = "id0", cluster = "cluster0", config = asJson("{ bar: baz }")))))
+            Map("port0" -> config.Topic(id = "id0", cluster = Some("cluster0"), config = asJson("{ bar: baz }")))))
 
       // Act
       val str = config.toJson(streamlet)
@@ -65,7 +65,7 @@ class ConfigSpec extends AnyWordSpec with Matchers {
           config = asJson("{ foo: bar }"),
           volumeMounts = immutable.Seq(config.VolumeMount(name = "foo1", path = "bar", accessMode = "readOnly")),
           portMappings =
-            Map("port0" -> config.Topic(id = "id0", cluster = "cluster0", config = asJson("{ bar: baz }")))))
+            Map("port0" -> config.Topic(id = "id0", cluster = Some("cluster0"), config = asJson("{ bar: baz }")))))
 
       // Act
       val str = config.toJson(streamlet)

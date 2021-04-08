@@ -115,10 +115,7 @@ object LocalRunner extends StreamletLoader {
         },
         portMappings = deployment.portMappings.map {
           case (name, topic) =>
-            name -> cloudflow.runner.config.Topic(id = topic.id,
-                                                  // TODO: check with Ray the default
-                                                  cluster = topic.cluster.getOrElse(""),
-                                                  config = toJsonNode(topic.config))
+            name -> cloudflow.runner.config.Topic(id = topic.id, cluster = topic.cluster, config = toJsonNode(topic.config))
         }
       )
     )
