@@ -12,7 +12,6 @@ import scala.util.hashing.MurmurHash3
 import akka.cli.cloudflow.{ CliException, CliLogger }
 import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
-import cloudflow.runner
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization
 
@@ -24,23 +23,23 @@ trait WithConfiguration {
   // TODO: when names are finalized run the GraalVM assisted config
   private def applicationRunnerConfig(appId: String, appVersion: String, deployment: App.Deployment): Config = {
     val configStreamlet =
-      runner.config.Streamlet(
+      cloudflow.runner.config.Streamlet(
         streamletRef = deployment.streamletName,
         className = deployment.className,
-        context = runner.config.StreamletContext(
+        context = cloudflow.runner.config.StreamletContext(
           appId = appId,
           appVersion = appVersion,
           config = deployment.config,
           volumeMounts = Option(deployment.volumeMounts).getOrElse(Seq.empty).map { vm =>
-            runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
+            cloudflow.runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
           },
           portMappings = Option(deployment.portMappings).getOrElse(Map.empty).map {
             case (name, pm) =>
               // TODO: check with Ray: cluster should be "default"?
-              name -> runner.config.Topic(id = pm.id, cluster = pm.cluster.getOrElse(""), config = pm.config)
+              name -> cloudflow.runner.config.Topic(id = pm.id, cluster = pm.cluster.getOrElse(""), config = pm.config)
           }))
 
-    ConfigFactory.parseString(runner.config.toJson(configStreamlet))
+    ConfigFactory.parseString(cloudflow.runner.config.toJson(configStreamlet))
   }
 
   private def referencedPvcsExists(
