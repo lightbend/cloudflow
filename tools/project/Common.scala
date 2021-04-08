@@ -29,7 +29,7 @@ object Common extends AutoPlugin {
           url("https://github.com/lightbend/cloudflow/graphs/contributors")))
 
   override lazy val projectSettings = Seq(
-    crossVersion := CrossVersion.full,
+    crossVersion := CrossVersion.binary,
     scalacOptions ++= List("-feature", "-deprecation"),
     javacOptions ++= List("-Xlint:unchecked", "-Xlint:deprecation"),
     publishTo := sonatypePublishToBundle.value,
