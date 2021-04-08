@@ -35,7 +35,6 @@ trait WithConfiguration {
           },
           portMappings = Option(deployment.portMappings).getOrElse(Map.empty).map {
             case (name, pm) =>
-              // TODO: check with Ray: cluster should be "default"?
               name -> cloudflow.runner.config.Topic(id = pm.id, cluster = pm.cluster, config = pm.config)
           }))
 
