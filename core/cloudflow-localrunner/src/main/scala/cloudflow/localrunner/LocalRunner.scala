@@ -30,7 +30,6 @@ import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployme
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
-import cloudflow.runner
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config._
@@ -104,26 +103,26 @@ object LocalRunner extends StreamletLoader {
     def toJsonNode(config: Config) =
       mapper.readTree(config.root().render(ConfigRenderOptions.concise().setJson(true).setOriginComments(false).setComments(false)))
 
-    val streamletConfig = runner.config.Streamlet(
+    val streamletConfig = cloudflow.runner.config.Streamlet(
       className = deployment.className,
       streamletRef = deployment.streamletName,
-      context = runner.config.StreamletContext(
+      context = cloudflow.runner.config.StreamletContext(
         appId = appId,
         appVersion = appVersion,
         config = toJsonNode(deployment.config),
         volumeMounts = deployment.volumeMounts.getOrElse(List.empty).map { vm =>
-          runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
+          cloudflow.runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
         },
         portMappings = deployment.portMappings.map {
           case (name, topic) =>
-            name -> runner.config.Topic(id = topic.id,
-                                        // TODO: check with Ray the default
-                                        cluster = topic.cluster.getOrElse(""),
-                                        config = toJsonNode(topic.config))
+            name -> cloudflow.runner.config.Topic(id = topic.id,
+                                                  // TODO: check with Ray the default
+                                                  cluster = topic.cluster.getOrElse(""),
+                                                  config = toJsonNode(topic.config))
         }
       )
     )
-    runner.config.toJson(streamletConfig)
+    cloudflow.runner.config.toJson(streamletConfig)
   }
 
   private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaHost: String): Unit = {
