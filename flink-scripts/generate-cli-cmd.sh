@@ -27,7 +27,7 @@ cat > "${OUTPUT_CMD}" << EOF
     -Dparallelism.default=2 \\
     -Dhigh-availability=org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory \\
     -Dhigh-availability.storageDir=/mnt/flink/storage/ksha \\
-    -Dkubernetes.pod-template-file=pod-template.yaml \\
+    -Dkubernetes.pod-template-file=output/pod-template.yaml \\
     local:///opt/flink/usrlib/cloudflow-runner.jar
 EOF
 chmod a+x "${OUTPUT_CMD}"
