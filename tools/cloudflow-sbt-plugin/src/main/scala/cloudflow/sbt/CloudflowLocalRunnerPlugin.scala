@@ -177,7 +177,8 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             }
           }
         }.value,
-      printAppGraph := printApplicationGraph.value)
+      printAppGraph := printApplicationGraph.value,
+      saveAppGraph := saveApplicationGraph.value)
 
   def banner(bannerChar: Char)(name: String)(message: Any): Unit = {
     val title = s" $name "
@@ -313,6 +314,21 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     printAppLayout(resolveConnections(appDescriptor))
   }
 
+  def saveApplicationGraph: Def.Initialize[Task[File]] = Def.task {
+    implicit val logger = streams.value.log
+    val _appDescriptor = applicationDescriptor.value
+    val blueprintBaseDir = baseDirectory.value / "src" / "main" / "blueprint"
+    val appGraphFile = blueprintBaseDir / "appGraph.txt"
+    val appDescriptor = _appDescriptor.getOrElse {
+      logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
+      throw new IllegalStateException("ApplicationDescriptor is not present")
+    }
+    val layoutGraph = getAppLayout(resolveConnections(appDescriptor))
+    IO.write(appGraphFile, layoutGraph)
+    logger.info(s"App graph ASCII file is generated: $appGraphFile")
+    appGraphFile
+  }
+
   def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
     def topicFormat(topic: String): String =
       s"[$topic]"
@@ -346,6 +362,12 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val vertices = connections.flatMap { case (a, b) => Seq(a, b) }.toSet
     val graph = Graph(vertices = vertices, edges = connections)
     println(GraphLayout.renderGraph(graph))
+  }
+
+  def getAppLayout(connections: List[(String, String)]): String = {
+    val vertices = connections.flatMap { case (a, b) => Seq(a, b) }.toSet
+    val graph = Graph(vertices = vertices, edges = connections)
+    GraphLayout.renderGraph(graph)
   }
 
   def scaffoldRuntime(
