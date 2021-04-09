@@ -189,6 +189,20 @@ class AppCrSpec
       CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
     }
 
+    "report its status as Running when all streamlet pods but flink are running and ready in a mixed app" in {
+      var status = mkTestStatusExternalFlinkApp()
+      status = CloudflowStatus.updatePod(status)("ingress", mkRunningReadyPod("ingress"))
+
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      (1 to SparkRunner.DefaultNrOfExecutorInstances).foreach { _ =>
+        status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
+        CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
+      }
+      status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
+
+      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
+    }
+
     "report pod status as Running" in {
       val podStatus = CloudflowStatus.fromPod(mkRunningReadyPod("s1"))
       podStatus.status mustBe CloudflowStatus.PodStatus.Running
@@ -270,6 +284,30 @@ class AppCrSpec
 
     val newApp = mkApp(verifiedBlueprint)
     CloudflowStatus.freshStatus(newApp, runners)
+  }
+
+  def mkTestStatusExternalFlinkApp() = {
+    val ingress = randomStreamlet("akka").asIngress[Foo].withServerAttribute
+    val sparkEgress = randomStreamlet("spark").asEgress[Foo]
+    val flinkEgress = randomStreamlet("flink").asEgress[Foo]
+
+    val ingressRef = ingress.ref("ingress")
+    val sparkEgressRef = sparkEgress.ref("spark-egress")
+    val flinkEgressRef = flinkEgress.ref("flink-egress")
+
+    val verifiedBlueprint = Blueprint()
+      .define(Vector(ingress, sparkEgress, flinkEgress))
+      .use(ingressRef)
+      .use(sparkEgressRef)
+      .use(flinkEgressRef)
+      .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
+      .connect(Topic("foos2"), flinkEgressRef.in)
+      .verified
+      .right
+      .value
+
+    val newApp = mkApp(verifiedBlueprint)
+    CloudflowStatus.freshStatus(newApp, runners.filter { case (k, _) => k != "flink" })
   }
 
   def mkApp(verifiedBlueprint: VerifiedBlueprint) =

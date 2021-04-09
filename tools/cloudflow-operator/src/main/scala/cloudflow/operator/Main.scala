@@ -64,10 +64,18 @@ object Main extends {
       installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
+      val flinkRunner = {
+        if (settings.flinkEnabled) {
+          Map(FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
+        } else {
+          Map.empty
+        }
+      }
+
       val runners = Map(
-        AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
-        SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults),
-        FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
+          AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
+          SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults)) ++ flinkRunner
+
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {
       case t: Throwable =>
