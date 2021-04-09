@@ -21,7 +21,7 @@ pvc_claim_name="not-exists"
 # find the attached PVC
 jq -rc '.kubernetes.pods.pod.containers.container."volume-mounts" | keys[]' "${STREAMLET_FOLDER}secrets/pods-config.conf" | \
   while IFS='' read volume_name; do
-    echo "Volume name: $volume_name"
+    # echo "Volume name: $volume_name"
 
     is_pvc=$(jq -rc ".kubernetes.pods.pod.volumes.${volume_name}.pvc" "${STREAMLET_FOLDER}secrets/pods-config.conf")
     if [ -z $is_pvc ] || [ "$is_pvc" = "null" ] || [ "$is_pvc" = "" ]; then
