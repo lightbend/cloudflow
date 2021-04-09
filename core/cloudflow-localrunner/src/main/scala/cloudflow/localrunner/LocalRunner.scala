@@ -19,7 +19,6 @@ package cloudflow.localrunner
 import java.io.{ Closeable, File, FileOutputStream, OutputStream, PrintStream }
 import java.lang.{ Runtime => JRuntime }
 import java.nio.file._
-
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
 import scala.util.{ Failure, Success, Try }
@@ -27,10 +26,12 @@ import scala.util.control.NonFatal
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.slf4j.LoggerFactory
 import spray.json._
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, RunnerConfig, StreamletDeployment, StreamletInstance, Topic }
+import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletDeployment, StreamletInstance, Topic }
 import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import cloudflow.blueprint.RunnerConfigUtils._
 import cloudflow.streamlets.{ BooleanValidationType, DoubleValidationType, IntegerValidationType, StreamletExecution, StreamletLoader }
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -97,6 +98,30 @@ object LocalRunner extends StreamletLoader {
     }
   }
 
+  private val mapper = new ObjectMapper().registerModule(new DefaultScalaModule())
+  private def getRunnerConfig(appId: String, appVersion: String, deployment: StreamletDeployment): String = {
+    def toJsonNode(config: Config) =
+      mapper.readTree(config.root().render(ConfigRenderOptions.concise().setJson(true).setOriginComments(false).setComments(false)))
+
+    val streamletConfig = cloudflow.runner.config.Streamlet(
+      className = deployment.className,
+      streamletRef = deployment.streamletName,
+      context = cloudflow.runner.config.StreamletContext(
+        appId = appId,
+        appVersion = appVersion,
+        config = toJsonNode(deployment.config),
+        volumeMounts = deployment.volumeMounts.getOrElse(List.empty).map { vm =>
+          cloudflow.runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
+        },
+        portMappings = deployment.portMappings.map {
+          case (name, topic) =>
+            name -> cloudflow.runner.config.Topic(id = topic.id, cluster = topic.cluster, config = toJsonNode(topic.config))
+        }
+      )
+    )
+    cloudflow.runner.config.toJson(streamletConfig)
+  }
+
   private def run(appDescriptor: ApplicationDescriptor, localConfig: Config, kafkaHost: String): Unit = {
     val bootstrapServers =
       if (localConfig.hasPath(BootstrapServersKey)) localConfig.getString(BootstrapServersKey) else kafkaHost
@@ -137,8 +162,8 @@ object LocalRunner extends StreamletLoader {
                             StreamletDeployment.EndpointContainerPort + endpointIdx)
       deployment.endpoint.foreach(_ => endpointIdx += 1)
 
-      val runnerConfigObj = RunnerConfig(appId, appVersion, deployment)
-      val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj.data), localStorageDirectory)
+      val runnerConfigObj = getRunnerConfig(appId, appVersion, deployment)
+      val runnerConfig    = addStorageConfig(ConfigFactory.parseString(runnerConfigObj), localStorageDirectory)
 
       val patchedRunnerConfig = runnerConfig
         .withFallback(streamletParamConfig)

@@ -129,4 +129,8 @@ object Dependencies {
         Compile.testcontainersKafka,
         Compile.kafkaClient,
         Compile.scalatest % Test)
+
+  val cloudflowRunnerConfig =
+    libraryDependencies ++= Seq(Compile.jacksonScala, Compile.typesafeConfig % Test, Compile.scalatest % Test)
+
 }

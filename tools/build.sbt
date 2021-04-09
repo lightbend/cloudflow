@@ -110,7 +110,7 @@ lazy val cloudflowCli =
         }
       })
     .enablePlugins(BuildInfoPlugin, GraalVMNativeImagePlugin)
-    .dependsOn(cloudflowConfig)
+    .dependsOn(cloudflowConfig, cloudflowRunnerConfig)
 
 lazy val cloudflowIt =
   Project(id = "cloudflow-it", base = file("cloudflow-it"))
@@ -270,6 +270,15 @@ lazy val cloudflowSbtPlugin =
       },
       scriptedBufferLog := false)
 
+lazy val cloudflowRunnerConfig =
+  Project(id = "cloudflow-runner-config", base = file("cloudflow-runner-config"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowRunnerConfig)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true)
+
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
@@ -285,4 +294,5 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowNewItLibrary,
     cloudflowOperator,
     cloudflowSbtPlugin,
+    cloudflowRunnerConfig,
     tooling)

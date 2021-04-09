@@ -91,7 +91,7 @@ object Runner {
         else
           Some(deployment.volumeMounts.map { vmd =>
             VolumeMountDescriptor(
-              name = vmd.appId,
+              name = vmd.name,
               path = vmd.path,
               accessMode = vmd.accessMode,
               pvcName = vmd.pvcName.getOrElse(""))
@@ -245,8 +245,7 @@ trait Runner[T <: HasMetadata] {
       .withBlockOwnerDeletion(true)
       .build()
 
-    val configData =
-      Vector(RunnerConfig(app.spec.appId, app.spec.appVersion, Runner.toBlueprint(deployment)), prometheusConfig)
+    val configData = Vector(prometheusConfig)
     val name = Name.ofConfigMap(deployment.name)
 
     new ConfigMapBuilder()

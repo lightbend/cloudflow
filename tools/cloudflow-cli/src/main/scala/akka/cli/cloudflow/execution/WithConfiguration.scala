@@ -15,10 +15,31 @@ import akka.datap.crd.App
 import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 import io.fabric8.kubernetes.client.utils.Serialization
 
-private final case class StreamletConfigs(streamlet: Config, runtime: Config, pods: Config)
+private final case class StreamletConfigs(streamlet: Config, runtime: Config, pods: Config, application: Config)
 
 trait WithConfiguration {
   val logger: CliLogger
+
+  // TODO: when names are finalized run the GraalVM assisted config
+  private def applicationRunnerConfig(appId: String, appVersion: String, deployment: App.Deployment): Config = {
+    val configStreamlet =
+      cloudflow.runner.config.Streamlet(
+        streamletRef = deployment.streamletName,
+        className = deployment.className,
+        context = cloudflow.runner.config.StreamletContext(
+          appId = appId,
+          appVersion = appVersion,
+          config = deployment.config,
+          volumeMounts = Option(deployment.volumeMounts).getOrElse(Seq.empty).map { vm =>
+            cloudflow.runner.config.VolumeMount(name = vm.name, path = vm.path, accessMode = vm.accessMode)
+          },
+          portMappings = Option(deployment.portMappings).getOrElse(Map.empty).map {
+            case (name, pm) =>
+              name -> cloudflow.runner.config.Topic(id = pm.id, cluster = pm.cluster, config = pm.config)
+          }))
+
+    ConfigFactory.parseString(cloudflow.runner.config.toJson(configStreamlet))
+  }
 
   private def referencedPvcsExists(
       cloudflowConfig: CloudflowConfig.CloudflowRoot,
@@ -297,6 +318,7 @@ trait WithConfiguration {
   val SecretDataKey = "secret.conf"
   val RuntimeConfigDataKey = "runtime-config.conf"
   val PodsConfigDataKey = "pods-config.conf"
+  val ApplicationDataKey = "application.conf"
 
   def streamletsConfigs(
       appCr: App.Cr,
@@ -326,16 +348,19 @@ trait WithConfiguration {
         appCr.spec.deployments.map { deployment =>
           val streamletConfig = CloudflowConfig.streamletConfig(deployment.streamletName, deployment.runtime, appConfig)
           val streamletWithPortMappingsConfig = portMappings(deployment, appConfig, streamletConfig, clustersConfig)
+          val applicationConfig = applicationRunnerConfig(appCr.name, appCr.spec.appVersion, deployment)
           deployment -> StreamletConfigs(
             streamlet = streamletWithPortMappingsConfig,
             runtime = CloudflowConfig.runtimeConfig(deployment.streamletName, deployment.runtime, appConfig),
-            pods = CloudflowConfig.podsConfig(deployment.streamletName, deployment.runtime, appConfig))
+            pods = CloudflowConfig.podsConfig(deployment.streamletName, deployment.runtime, appConfig),
+            application = applicationConfig)
         }.toMap
       }
     } yield {
       res.map {
         case (k, v) =>
           k -> Map(
+            ApplicationDataKey -> render(v.application),
             SecretDataKey -> render(v.streamlet),
             RuntimeConfigDataKey -> render(v.runtime),
             PodsConfigDataKey -> render(v.pods))
