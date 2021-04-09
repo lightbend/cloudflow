@@ -20,7 +20,7 @@ fi
 
 ./fetch-streamlets.sh "${APPLICATION}"
 
-./foreach-streamlet.sh swiss-knife ./generate-cli-cmd.sh "${SERVICE_ACCOUNT}"
-./foreach-streamlet.sh swiss-knife ./generate-pod-template.sh
+./foreach-streamlet.sh "${APPLICATION}" ./generate-cli-cmd.sh "${SERVICE_ACCOUNT}"
+./foreach-streamlet.sh "${APPLICATION}" ./generate-pod-template.sh
 
-./foreach-streamlet.sh swiss-knife ./create-streamlet.sh
+./foreach-streamlet.sh "${APPLICATION}" ./create-streamlet.sh
