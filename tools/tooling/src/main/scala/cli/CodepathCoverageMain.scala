@@ -143,5 +143,27 @@ object CodepathCoverageMain extends App {
     .jsonMapper()
     .readValue("{}", classOf[io.fabric8.kubernetes.api.model.EndpointsList])
 
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.Topic])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.VolumeMount])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.StreamletContext])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.Streamlet])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.Runner])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.Cloudflow])
+  Serialization
+    .jsonMapper()
+    .readValue("{}", classOf[cloudflow.runner.config.CloudflowRoot])
+
   System.exit(0)
 }

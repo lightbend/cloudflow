@@ -429,6 +429,18 @@
   "fields":[{"name":"MODULE$"}]
 },
 {
+  "name":"cloudflow.runner.config$VolumeMount",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"cloudflow.runner.config$VolumeMount$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
   "name":"com.fasterxml.jackson.annotation.JsonCreator[]"
 },
 {

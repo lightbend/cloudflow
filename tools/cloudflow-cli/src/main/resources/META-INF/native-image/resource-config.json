@@ -35,6 +35,7 @@
     {"pattern":"\\Qcloudflow/runner/config$Streamlet.class\\E"}, 
     {"pattern":"\\Qcloudflow/runner/config$StreamletContext.class\\E"}, 
     {"pattern":"\\Qcloudflow/runner/config$Topic.class\\E"}, 
+    {"pattern":"\\Qcloudflow/runner/config$VolumeMount.class\\E"}, 
     {"pattern":"\\Qcom/fasterxml/jackson/module/scala/build.properties\\E"}, 
     {"pattern":"\\Qio/fabric8/kubernetes/api/model/ConfigMap.class\\E"}, 
     {"pattern":"\\Qio/fabric8/kubernetes/api/model/ConfigMapList.class\\E"}, 
