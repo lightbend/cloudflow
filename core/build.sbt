@@ -475,7 +475,8 @@ lazy val commonSettings = bintraySettings ++ Seq(
               pushChanges
             ),
         resolvers ++=Seq(
-          "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots")
+          "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots"),
+          "Flink RC0".at("https://repository.apache.org/content/repositories/orgapacheflink-1417/")
         ),
         unidocGenjavadocVersion := "0.16",
         scalacOptions ++= Seq(

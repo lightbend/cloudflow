@@ -49,7 +49,7 @@ lazy val ingestor = appModule("ingestor")
 
 
 lazy val processor = appModule("processor")
-  .enablePlugins(CloudflowFlinkPlugin)
+  .enablePlugins(CloudflowNativeFlinkPlugin)
   .settings(
     commonSettings,
     libraryDependencies ++= Seq(
@@ -99,7 +99,8 @@ lazy val commonSettings = Seq(
     "-unchecked"
   ),
   resolvers ++=Seq(
-    "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots")
+    "Flink Snapshots".at("https://repository.apache.org/content/repositories/snapshots"),
+    "Flink 1.13 RC0".at("https://repository.apache.org/content/repositories/orgapacheflink-1417/")
   ),
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
