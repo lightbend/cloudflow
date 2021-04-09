@@ -34,10 +34,10 @@ class ConfigSpec extends AnyWordSpec with Matchers {
             Map("port0" -> config.Topic(id = "id0", cluster = Some("cluster0"), config = asJson("{ bar: baz }")))))
 
       // Act
-      val str = config.toJson(streamlet)
+      val jsonStr = config.toJson(streamlet)
 
       // Assert
-      val runnerConfig = ConfigFactory.parseString(str).getConfig("cloudflow.runner.streamlet")
+      val runnerConfig = ConfigFactory.parseString(jsonStr).getConfig("cloudflow.runner.streamlet")
       runnerConfig.getString("streamlet_ref") mustBe "reference"
       runnerConfig.getString("class_name") mustBe "clazz"
       runnerConfig.getString("context.app_id") mustBe "application"
@@ -68,12 +68,12 @@ class ConfigSpec extends AnyWordSpec with Matchers {
             Map("port0" -> config.Topic(id = "id0", cluster = Some("cluster0"), config = asJson("{ bar: baz }")))))
 
       // Act
-      val str = config.toJson(streamlet)
-      val deser = config.fromJson(str)
+      val jsonStr = config.toJson(streamlet)
+      val deser = config.fromJson(jsonStr)
       val res = config.toJson(deser)
 
       // Assert
-      str mustBe res
+      jsonStr mustBe res
     }
   }
 
