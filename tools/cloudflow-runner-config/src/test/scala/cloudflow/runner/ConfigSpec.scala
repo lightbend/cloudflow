@@ -43,11 +43,11 @@ class ConfigSpec extends AnyWordSpec with Matchers {
       runnerConfig.getString("context.app_id") mustBe "application"
       runnerConfig.getString("context.app_version") mustBe "123"
       runnerConfig.getConfig("context.config").getString("foo") mustBe "bar"
-      val volumeMounts = runnerConfig.getConfigList("context.volume_mounts").asScala
-      volumeMounts.size mustBe 1
-      volumeMounts.head.getString("name") mustBe "foo1"
-      volumeMounts.head.getString("path") mustBe "bar"
-      volumeMounts.head.getString("access_mode") mustBe "readOnly"
+      val vms = runnerConfig.getConfigList("context.volume_mounts").asScala
+      vms.size mustBe 1
+      vms.head.getString("name") mustBe "foo1"
+      vms.head.getString("path") mustBe "bar"
+      vms.head.getString("access_mode") mustBe "readOnly"
       val port0Mapping = runnerConfig.getConfig("context.port_mappings").getConfig("port0")
       port0Mapping.getString("id") mustBe "id0"
       port0Mapping.getString("cluster") mustBe "cluster0"
