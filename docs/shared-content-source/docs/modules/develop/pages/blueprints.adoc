@@ -248,3 +248,21 @@ You can explicitly verify if the blueprint connects all the streamlets correctly
 ----
 
 The blueprint is automatically verified when you use application-level targets, like `buildApp` and `runLocal`.
+
+You can visualize your blueprint as a graph by using:
+
+[source,bash]
+----
+  sbt printAppGraph
+----
+
+This task will print an ASCII graph to the console.
+
+Or use:
+
+[source,bash]
+----
+  sbt saveAppGraph
+----
+
+Which will save an ASCII graph to the `appGraph.txt` file under the `/blueprint` folder of your Cloudflow project.
