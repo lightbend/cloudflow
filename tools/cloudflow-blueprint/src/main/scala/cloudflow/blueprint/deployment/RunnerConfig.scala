@@ -34,7 +34,7 @@ case class PrometheusConfig(data: String) extends ConfigMapData {
 }
 
 object PrometheusConfig extends DefaultJsonProtocol {
-  val PrometheusConfigFilename               = "prometheus.yaml"
-  val PrometheusJmxExporterPort              = 2050
+  val PrometheusConfigFilename = "prometheus.yaml"
+  val PrometheusJmxExporterPort = 2050
   def prometheusConfigPath(basePath: String) = basePath + File.separator + PrometheusConfig.PrometheusConfigFilename
 }
