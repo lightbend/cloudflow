@@ -6,7 +6,13 @@ if [ -z "$STREAMLET_FOLDER" ]; then
     exit 1
 fi
 
-SERVICE_ACCOUNT=$2
+APPLICATION=$2
+if [ -z "$APPLICATION" ]; then
+    echo "No application name specified."
+    exit 1
+fi
+
+SERVICE_ACCOUNT=$3
 if [ -z "$SERVICE_ACCOUNT" ]; then
     echo "No service account specified."
     exit 1
@@ -24,6 +30,7 @@ cat > "${OUTPUT_CMD}" << EOF
     -Dkubernetes.cluster-id=${cluster_id} \\
     -Dkubernetes.service-account=${SERVICE_ACCOUNT} \\
     -Dkubernetes.container.image=${docker_image} \\
+    -Dkubernetes.namespace=${APPLICATION} \\
     -Dparallelism.default=2 \\
     -Dhigh-availability=org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory \\
     -Dhigh-availability.storageDir=/mnt/flink/storage/ksha \\

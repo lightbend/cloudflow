@@ -12,5 +12,5 @@ if [ -z "$COMMAND" ]; then
 fi
 
 for streamlet_folder in .tmp/${APPLICATION}/*/; do
-  eval "$COMMAND $streamlet_folder ${@:3}"
+  eval "$COMMAND $streamlet_folder ${APPLICATION} ${@:3}"
 done
