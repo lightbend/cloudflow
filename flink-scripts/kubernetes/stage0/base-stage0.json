@@ -1,0 +1,23 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "flink-pod-template"
+  },
+  "spec": {
+    "volumes": [
+      {
+        "name": "secret-vol",
+        "secret": {
+          "secretName": "streamlet-secret-name"
+        }
+      },
+      {
+        "name": "default",
+        "persistentVolumeClaim": {
+          "claimName": "streamlet-pvc"
+        }
+      }
+    ]
+  }
+}

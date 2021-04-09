@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flink-pod-template
+spec:
+  containers:
+    # Do not change the main container name
+    - name: flink-main-container
+      volumeMounts:
+        - mountPath: /etc/cloudflow-runner-secret
+          name: secret-vol
+        - mountPath: /mnt/downward-api-volume/
+          name: downward-api-volume
+        - mountPath: /mnt/flink/storage
+          name: default
+  volumes:
+  - name: secret-vol
+    secret:
+      defaultMode: 420
+      secretName: streamlet-secret-name
+  - downwardAPI:
+      defaultMode: 420
+      items:
+      - fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.uid
+        path: metadata.uid
+      - fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+        path: metadata.name
+      - fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+        path: metadata.namespace
+    name: downward-api-volume
