@@ -71,10 +71,15 @@ object Main extends {
           Map.empty
         }
       }
+      val sparkRunner = {
+        if (settings.sparkEnabled) {
+          Map(SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults))
+        } else {
+          Map.empty
+        }
+      }
 
-      val runners = Map(
-          AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults),
-          SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults)) ++ flinkRunner
+      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults)) ++ flinkRunner ++ sparkRunner
 
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {
