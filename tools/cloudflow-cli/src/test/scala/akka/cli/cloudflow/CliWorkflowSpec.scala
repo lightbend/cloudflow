@@ -160,7 +160,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
     res.failure.exception.getMessage.contains("required version") shouldBe true
   }
 
-  it should "succeed a mocked deploy if flink is un unamanged runtime" in {
+  it should "succeed a mocked deploy if flink is an unmanaged runtime" in {
     // Arrange
     val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
 
