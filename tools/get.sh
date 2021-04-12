@@ -68,27 +68,31 @@ fetch() {
 }
 
 resolve_cloudflow_version() {
-  local tag="$1"
-  local match_before="<span class=\"nav-text\">Cloudflow Docs - version "
-  local match_after="<\/span>"
-  local current=$(
-    fetch "https://cloudflow.io/docs/current/index.html" | \
-    grep "$match_before" | \
-    sed "s/${match_before}//" | \
-    sed "s/${match_after}//" | \
-    tr -d '[:space:]')
+  if [ -z "${UNSAFE-}" ]; then
+    local tag="$1"
+    local match_before="<span class=\"nav-text\">Cloudflow Docs - version "
+    local match_after="<\/span>"
+    local current=$(
+      fetch "https://cloudflow.io/docs/current/index.html" | \
+      grep "$match_before" | \
+      sed "s/${match_before}//" | \
+      sed "s/${match_after}//" | \
+      tr -d '[:space:]')
 
-  if [ "${tag}" = "${current}" ]; then
-    tag=current
+    if [ "${tag}" = "${current}" ]; then
+      tag=current
+    fi
+
+    local version=$(
+      fetch "https://cloudflow.io/docs/$tag/index.html" | \
+      grep "$match_before" | \
+      sed "s/${match_before}//" | \
+      sed "s/${match_after}//" | \
+      tr -d '[:space:]')
+    echo "$version"
+  else
+    echo "$1"
   fi
-
-  local version=$(
-    fetch "https://cloudflow.io/docs/$tag/index.html" | \
-    grep "$match_before" | \
-    sed "s/${match_before}//" | \
-    sed "s/${match_after}//" | \
-    tr -d '[:space:]')
-  echo "$version"
 }
 
 # Currently known to support:
@@ -200,6 +204,7 @@ while [ "$#" -gt 0 ]; do
 
     -V|--verbose) VERBOSE=1; shift 1;;
     -f|-y|--force|--yes) FORCE=1; shift 1;;
+    -u|--unsafe) UNSAFE=1; shift 1;;
 
     -v=*|--version=*) VERSION="${1#*=}"; shift 1;;
     -p=*|--platform=*) PLATFORM="${1#*=}"; shift 1;;
