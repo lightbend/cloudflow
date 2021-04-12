@@ -175,7 +175,7 @@ object CloudflowStatus {
 
   private def createStreamletStatuses(spec: App.Spec, runners: Map[String, Runner[_]]) =
     spec.deployments.map { deployment =>
-      if (deployment.runtime == FlinkRunner.Runtime && !runners.contains(FlinkRunner.Runtime)) {
+      if (!runners.contains(deployment.runtime)) {
         App.StreamletStatus(
           streamletName = deployment.streamletName,
           expectedPodCount = Some(0),
