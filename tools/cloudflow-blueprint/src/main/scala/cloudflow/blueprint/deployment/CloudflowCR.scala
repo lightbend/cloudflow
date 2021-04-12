@@ -24,6 +24,6 @@ case class CloudflowCR(apiVersion: String, kind: String, metadata: Metadata, spe
 
 object CloudflowCRFormat extends CloudflowCRFormat
 trait CloudflowCRFormat extends DefaultJsonProtocol {
-  implicit val metadataFormat = jsonFormat3(Metadata.apply)
+  implicit val metadataFormat    = jsonFormat3(Metadata.apply)
   implicit val cloudflowCRFormat = jsonFormat4(CloudflowCR.apply)
 }

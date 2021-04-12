@@ -18,12 +18,11 @@ package cloudflow.blueprint
 
 import com.typesafe.config._
 
-final case class StreamletRef(
-    name: String,
-    className: String,
-    problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
-    verified: Option[VerifiedStreamlet] = None,
-    metadata: Option[Config] = None) {
+final case class StreamletRef(name: String,
+                              className: String,
+                              problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
+                              verified: Option[VerifiedStreamlet] = None,
+                              metadata: Option[Config] = None) {
   private final val ClassNamePattern = """([\p{L}_$][\p{L}\p{N}_$]*\.)*[\p{L}_$][\p{L}\p{N}_$]*""".r
 
   def verify(streamletDescriptors: Vector[StreamletDescriptor]): StreamletRef = {
@@ -57,6 +56,7 @@ final case class StreamletRef(
     copy(
       className = descriptorFound.toOption.map(_.className).getOrElse(this.className), // use the raw value as found in the blueprint
       problems = Vector(nameProblem, refProblem).flatten ++ descriptorFound.left.toSeq,
-      verified = descriptorFound.toOption.map(descriptor => VerifiedStreamlet(name, descriptor)))
+      verified = descriptorFound.toOption.map(descriptor => VerifiedStreamlet(name, descriptor))
+    )
   }
 }

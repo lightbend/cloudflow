@@ -18,23 +18,22 @@ package cloudflow.blueprint
 import scala.util.Try
 import com.typesafe.config._
 object Topic {
-  val LegalTopicChars = "[a-zA-Z0-9\\._\\-]"
+  val LegalTopicChars   = "[a-zA-Z0-9\\._\\-]"
   val LegalTopicPattern = s"$LegalTopicChars+".r
-  val MaxLength = 249
+  val MaxLength         = 249
 }
 
 /**
  * Defines a Topic and the streamlet inlets and outlets that connect to it.
  */
 // TODO check that topic-name is valid topic-name.
-final case class Topic(
-    id: String,
-    producers: Vector[String] = Vector.empty[String],
-    consumers: Vector[String] = Vector.empty[String],
-    cluster: Option[String] = None,
-    kafkaConfig: Config = ConfigFactory.empty(),
-    problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
-    verified: Option[VerifiedTopic] = None) {
+final case class Topic(id: String,
+                       producers: Vector[String] = Vector.empty[String],
+                       consumers: Vector[String] = Vector.empty[String],
+                       cluster: Option[String] = None,
+                       kafkaConfig: Config = ConfigFactory.empty(),
+                       problems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem],
+                       verified: Option[VerifiedTopic] = None) {
   def name = Try(kafkaConfig.getString("topic.name")).getOrElse(id)
   import Topic._
   def verify(verifiedStreamlets: Vector[VerifiedStreamlet]): Topic = {
@@ -45,14 +44,14 @@ final case class Topic(
       case _ => Vector(InvalidTopicName(name))
     }
 
-    val patternErrors = (producers ++ consumers).flatMap(port => VerifiedPortPath(port).left.toOption)
-    val verifiedProducerPaths = producers.flatMap(producer => VerifiedPortPath(producer).toOption)
-    val verifiedConsumerPaths = consumers.flatMap(consumer => VerifiedPortPath(consumer).toOption)
+    val patternErrors               = (producers ++ consumers).flatMap(port => VerifiedPortPath(port).left.toOption)
+    val verifiedProducerPaths       = producers.flatMap(producer => VerifiedPortPath(producer).toOption)
+    val verifiedConsumerPaths       = consumers.flatMap(consumer => VerifiedPortPath(consumer).toOption)
     val verifiedProducerPortsResult = VerifiedPort.collectPorts(verifiedProducerPaths, verifiedStreamlets)
     val verifiedConsumerPortsResult = VerifiedPort.collectPorts(verifiedConsumerPaths, verifiedStreamlets)
 
     val portPathErrors = verifiedProducerPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError]) ++
-      verifiedConsumerPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError])
+          verifiedConsumerPortsResult.left.toOption.getOrElse(Vector.empty[PortPathError])
 
     // producers must be outlets
     val producerErrors = verifiedProducerPortsResult
@@ -81,8 +80,7 @@ final case class Topic(
     }.toVector
 
     val verifiedPorts =
-      verifiedProducerPortsResult.getOrElse(Vector.empty[VerifiedPort]) ++ verifiedConsumerPortsResult.getOrElse(
-        Vector.empty[VerifiedPort])
+      verifiedProducerPortsResult.getOrElse(Vector.empty[VerifiedPort]) ++ verifiedConsumerPortsResult.getOrElse(Vector.empty[VerifiedPort])
     val schemaErrors = verifySchema(verifiedPorts)
     copy(
       problems =
@@ -90,14 +88,15 @@ final case class Topic(
       verified =
         if (verifiedPorts.nonEmpty)
           Some(VerifiedTopic(id, verifiedPorts.distinct.sortBy(_.portPath.toString), cluster, kafkaConfig))
-        else None)
+        else None
+    )
   }
 
   val connections = producers ++ consumers
 
   // TODO decouple this from avro, any schema can be used. It should be easy for users to register
   // their own compatibility checks.
-  val AvroFormat = "avro"
+  val AvroFormat  = "avro"
   val ProtoFormat = "proto"
 
   private def verifySchema(verifiedPorts: Vector[VerifiedPort]): Vector[BlueprintProblem] =
@@ -115,7 +114,7 @@ final case class Topic(
 
   private def checkCompatibility(port: VerifiedPort, otherPort: VerifiedPort): Option[IncompatibleSchema] =
     if (otherPort.portPath != port.portPath) {
-      val schema = port.schemaDescriptor
+      val schema      = port.schemaDescriptor
       val otherSchema = otherPort.schemaDescriptor
       // TODO make this more dynamic / pluggable
       if (otherSchema.format == schema.format &&
@@ -129,7 +128,7 @@ final case class Topic(
     } else None
 
   private def checkAvroCompatibility(port: VerifiedPort, otherPort: VerifiedPort): Option[IncompatibleSchema] = {
-    val schema = port.schemaDescriptor
+    val schema      = port.schemaDescriptor
     val otherSchema = otherPort.schemaDescriptor
     if (compatibleAvroSchema(schema, otherSchema)) None
     else Some(IncompatibleSchema(port.portPath, otherPort.portPath))
@@ -179,10 +178,10 @@ final case class Topic(
    * Even if the maps are identical, nested types names are based on surrounding messages.
    */
   private def checkProtoCompatibility(port: VerifiedPort, otherPort: VerifiedPort): Option[IncompatibleSchema] = {
-    val descriptorProtoString = port.schemaDescriptor.schema
+    val descriptorProtoString      = port.schemaDescriptor.schema
     val otherDescriptorProtoString = otherPort.schemaDescriptor.schema
-    val descriptor = DescriptorProto.parseFrom(descriptorProtoString.getBytes("UTF8"))
-    val otherDescriptor = DescriptorProto.parseFrom(otherDescriptorProtoString.getBytes("UTF8"))
+    val descriptor                 = DescriptorProto.parseFrom(descriptorProtoString.getBytes("UTF8"))
+    val otherDescriptor            = DescriptorProto.parseFrom(otherDescriptorProtoString.getBytes("UTF8"))
 
     if (compatibleProtobufDescriptor(descriptor, otherDescriptor)) None
     else Some(IncompatibleSchema(port.portPath, otherPort.portPath))
@@ -206,9 +205,9 @@ final case class Topic(
   object FieldComparator {
     def compare(f1: FieldDescriptorProto, f2: FieldDescriptorProto): Boolean =
       (f1.name == f2.name) &&
-      (f1.typeName == f2.typeName) &&
-      (f1.label == f2.label) &&
-      (f1.`type` == f2.`type`) &&
-      ((f1.oneofIndex.isDefined && f2.oneofIndex.isDefined) || (f1.oneofIndex.isEmpty && f2.oneofIndex.isEmpty))
+        (f1.typeName == f2.typeName) &&
+        (f1.label == f2.label) &&
+        (f1.`type` == f2.`type`) &&
+        ((f1.oneofIndex.isDefined && f2.oneofIndex.isDefined) || (f1.oneofIndex.isEmpty && f2.oneofIndex.isEmpty))
   }
 }

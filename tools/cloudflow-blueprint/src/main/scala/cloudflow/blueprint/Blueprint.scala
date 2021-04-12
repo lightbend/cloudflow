@@ -26,24 +26,24 @@ import scala.util._
 import com.typesafe.config._
 
 object Blueprint {
-  val StreamletsSectionKey = "blueprint.streamlets"
-  val TopicsSectionKey = "blueprint.topics"
+  val StreamletsSectionKey             = "blueprint.streamlets"
+  val TopicsSectionKey                 = "blueprint.topics"
   val UnsupportedConnectionsSectionKey = "blueprint.connections"
-  val TopicKey = "topic.name"
-  val ManagedKey = "managed"
-  val ProducersKey = "producers"
-  val ConsumersKey = "consumers"
-  val ClusterKey = "cluster"
+  val TopicKey                         = "topic.name"
+  val ManagedKey                       = "managed"
+  val ProducersKey                     = "producers"
+  val ConsumersKey                     = "consumers"
+  val ClusterKey                       = "cluster"
 
   // kafka config items
   // must align with cloudflow.streamlets.Topic
   val BootstrapServersKey = "bootstrap.servers"
   val ConnectionConfigKey = "connection-config"
-  val ProducerConfigKey = "producer-config"
-  val ConsumerConfigKey = "consumer-config"
-  val PartitionsKey = "partitions"
-  val ReplicasKey = "replicas"
-  val TopicConfigKey = "topic"
+  val ProducerConfigKey   = "producer-config"
+  val ConsumerConfigKey   = "consumer-config"
+  val PartitionsKey       = "partitions"
+  val ReplicasKey         = "replicas"
+  val TopicConfigKey      = "topic"
 
   /**
    * Parses the blueprint from a String.
@@ -69,7 +69,7 @@ object Blueprint {
       try {
         val streamletRefs = getKeys(config, StreamletsSectionKey).map { key =>
           val simpleClassKey = s"$StreamletsSectionKey.${key}"
-          val className = config.getString(simpleClassKey)
+          val className      = config.getString(simpleClassKey)
 
           StreamletRef(name = key, className = className)
         }.toVector
@@ -78,13 +78,13 @@ object Blueprint {
           getKeys(config, TopicsSectionKey).map { key =>
             val producersKey = s"$TopicsSectionKey.${key}.$ProducersKey"
             val consumersKey = s"$TopicsSectionKey.${key}.$ConsumersKey"
-            val clusterKey = s"$TopicsSectionKey.${key}.$ClusterKey"
-            val configKey = s"$TopicsSectionKey.${key}"
+            val clusterKey   = s"$TopicsSectionKey.${key}.$ClusterKey"
+            val configKey    = s"$TopicsSectionKey.${key}"
 
-            val topicId = key
+            val topicId   = key
             val producers = getStringListOrEmpty(config, producersKey)
             val consumers = getStringListOrEmpty(config, consumersKey)
-            val cluster = getStringOrEmpty(config, clusterKey)
+            val cluster   = getStringOrEmpty(config, clusterKey)
             val kafkaConfig = getConfigOrEmpty(config, configKey)
               .withoutPath(ProducersKey)
               .withoutPath(ConsumersKey)
@@ -108,7 +108,8 @@ object Blueprint {
         if (config.hasPath(UnsupportedConnectionsSectionKey)) {
           throw new ConfigException.BadPath(
             UnsupportedConnectionsSectionKey,
-            s"Please specify '${TopicsSectionKey}' section instead of previously supported '${UnsupportedConnectionsSectionKey}' section.")
+            s"Please specify '${TopicsSectionKey}' section instead of previously supported '${UnsupportedConnectionsSectionKey}' section."
+          )
         }
 
         Blueprint(streamletRefs, topics, streamletDescriptors).verify
@@ -134,34 +135,33 @@ object Blueprint {
     if (config.hasPath(key)) Option(config.getString(key)) else None
 }
 
-final case class Blueprint(
-    streamlets: Vector[StreamletRef] = Vector.empty[StreamletRef],
-    topics: Vector[Topic] = Vector.empty[Topic],
-    streamletDescriptors: Vector[StreamletDescriptor] = Vector.empty,
-    globalProblems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem]) {
+final case class Blueprint(streamlets: Vector[StreamletRef] = Vector.empty[StreamletRef],
+                           topics: Vector[Topic] = Vector.empty[Topic],
+                           streamletDescriptors: Vector[StreamletDescriptor] = Vector.empty,
+                           globalProblems: Vector[BlueprintProblem] = Vector.empty[BlueprintProblem]) {
   val problems = globalProblems ++ streamlets.flatMap(_.problems) ++ topics.flatMap(_.problems)
 
   val isValid = problems.isEmpty
 
   def verify: Blueprint = {
-    val emptyStreamletsProblem = if (streamlets.isEmpty) Some(EmptyStreamlets) else None
+    val emptyStreamletsProblem           = if (streamlets.isEmpty) Some(EmptyStreamlets) else None
     val emptyStreamletDescriptorsProblem = if (streamletDescriptors.isEmpty) Some(EmptyStreamletDescriptors) else None
 
-    val newStreamlets = streamlets.map(_.verify(streamletDescriptors))
+    val newStreamlets      = streamlets.map(_.verify(streamletDescriptors))
     val verifiedStreamlets = newStreamlets.flatMap(_.verified)
 
     // verify that all topics are unique
-    val newTopics = topics.map(_.verify(verifiedStreamlets))
+    val newTopics      = topics.map(_.verify(verifiedStreamlets))
     val verifiedTopics = newTopics.flatMap(_.verified)
 
     val duplicatesProblem = verifyNoDuplicateStreamletNames(newStreamlets).left.toOption
 
-    val portNameProblems = verifyPortNames(streamletDescriptors)
+    val portNameProblems        = verifyPortNames(streamletDescriptors)
     val configParameterProblems = verifyConfigParameters(streamletDescriptors)
-    val volumeMountProblems = verifyVolumeMounts(streamletDescriptors)
+    val volumeMountProblems     = verifyVolumeMounts(streamletDescriptors)
 
     val unconnectedPortProblems = verifyPortsConnected(verifiedStreamlets, verifiedTopics)
-    val portsBoundToManyTopics = verifyPortsBoundToManyTopics(verifiedTopics)
+    val portsBoundToManyTopics  = verifyPortsBoundToManyTopics(verifiedTopics)
     val globalProblems =
       Vector(emptyStreamletsProblem, emptyStreamletDescriptorsProblem, duplicatesProblem).flatten ++ unconnectedPortProblems ++ portsBoundToManyTopics ++ portNameProblems ++ configParameterProblems ++ volumeMountProblems
 
@@ -174,7 +174,8 @@ final case class Blueprint(
     } yield VerifiedBlueprint(validBlueprint.streamlets.flatMap(_.verified), validBlueprint.topics.flatMap(_.verified))
 
   private def verifyNoDuplicateStreamletNames(
-      streamlets: Vector[StreamletRef]): Either[DuplicateStreamletNamesFound, Vector[StreamletRef]] = {
+      streamlets: Vector[StreamletRef]
+  ): Either[DuplicateStreamletNamesFound, Vector[StreamletRef]] = {
     val dups =
       streamlets
         .groupBy(_.name.trim())
@@ -186,9 +187,8 @@ final case class Blueprint(
     else Left(DuplicateStreamletNamesFound(dups.toVector))
   }
 
-  private def verifyPortsConnected(
-      verifiedStreamlets: Vector[VerifiedStreamlet],
-      verifiedTopics: Vector[VerifiedTopic]): Vector[UnconnectedPorts] = {
+  private def verifyPortsConnected(verifiedStreamlets: Vector[VerifiedStreamlet],
+                                   verifiedTopics: Vector[VerifiedTopic]): Vector[UnconnectedPorts] = {
     var problems = Vector.empty[UnconnectedPorts]
     val (outlets, inlets) = verifiedStreamlets
       .flatMap { streamlet =>
@@ -196,12 +196,12 @@ final case class Blueprint(
           portDescriptors
             .filterNot { port =>
               verifiedTopics.exists(topic =>
-                topic.connections.exists(verifiedPort =>
-                  verifiedPort.streamlet == streamlet && verifiedPort.portName == port.name))
+                topic.connections.exists(verifiedPort => verifiedPort.streamlet == streamlet && verifiedPort.portName == port.name)
+              )
             }
             .map(port => UnconnectedPort(streamlet.name, port))
 
-        val unconnectedInlets = unconnected(streamlet.descriptor.inlets)
+        val unconnectedInlets  = unconnected(streamlet.descriptor.inlets)
         val unconnectedOutlets = unconnected(streamlet.descriptor.outlets)
         unconnectedInlets ++ unconnectedOutlets
       }
@@ -248,7 +248,7 @@ final case class Blueprint(
 
   private def verifyVolumeMounts(streamletDescriptors: Vector[StreamletDescriptor]): Vector[BlueprintProblem] = {
     val DNS1123LabelMaxLength = 63
-    val separator = java.io.File.separator
+    val separator             = java.io.File.separator
     val invalidPaths = streamletDescriptors.flatMap { descriptor =>
       descriptor.volumeMounts.map { volumeMount =>
         val invalidPath = volumeMount.path
@@ -350,11 +350,11 @@ final case class Blueprint(
                 Try(
                   ConfigFactory
                     .parseString(s"value=${durationDefaultValue}")
-                    .getDuration("value", TimeUnit.NANOSECONDS)) match {
+                    .getDuration("value", TimeUnit.NANOSECONDS)
+                ) match {
                   case Success(_) => None
                   case Failure(_) =>
-                    Some(
-                      InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, durationDefaultValue))
+                    Some(InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, durationDefaultValue))
                 }
               }
             case "memorysize" =>
@@ -362,8 +362,7 @@ final case class Blueprint(
                 Try(ConfigFactory.parseString(s"value=${memorySizeDefaultValue}").getMemorySize("value")) match {
                   case Success(_) => None
                   case Failure(_) =>
-                    Some(
-                      InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, memorySizeDefaultValue))
+                    Some(InvalidDefaultValueInConfigParameter(descriptor.className, configKey.key, memorySizeDefaultValue))
                 }
               }
             case _ => None
