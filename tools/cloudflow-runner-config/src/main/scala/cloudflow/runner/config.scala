@@ -29,70 +29,71 @@ object config {
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
-  case class Topic(@JsonProperty("id")
-                   id: String,
-                   @JsonProperty("cluster")
-                   cluster: Option[String] = None,
-                   @JsonProperty("config")
-                   config: JsonNode)
+  case class Topic(
+      @JsonProperty("id")
+      id: String,
+      @JsonProperty("cluster")
+      cluster: Option[String] = None,
+      @JsonProperty("config")
+      config: JsonNode)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
-  case class VolumeMount(@JsonProperty("name")
-                         name: String,
-                         @JsonProperty("path")
-                         path: String,
-                         @JsonProperty("access_mode")
-                         accessMode: String)
+  case class VolumeMount(
+      @JsonProperty("name")
+      name: String,
+      @JsonProperty("path")
+      path: String,
+      @JsonProperty("access_mode")
+      accessMode: String)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
-  case class StreamletContext(@JsonProperty("app_id")
-                              appId: String,
-                              @JsonProperty("app_version")
-                              appVersion: String,
-                              @JsonProperty("config")
-                              config: JsonNode,
-                              @JsonProperty("volume_mounts")
-                              volumeMounts: immutable.Seq[VolumeMount] = immutable.Seq.empty,
-                              @JsonProperty("port_mappings")
-                              portMappings: Map[String, Topic] = Map.empty)
+  case class StreamletContext(
+      @JsonProperty("app_id")
+      appId: String,
+      @JsonProperty("app_version")
+      appVersion: String,
+      @JsonProperty("config")
+      config: JsonNode,
+      @JsonProperty("volume_mounts")
+      volumeMounts: immutable.Seq[VolumeMount] = immutable.Seq.empty,
+      @JsonProperty("port_mappings")
+      portMappings: Map[String, Topic] = Map.empty)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
-  case class Streamlet(@JsonProperty("class_name")
-                       className: String,
-                       @JsonProperty("streamlet_ref")
-                       streamletRef: String,
-                       @JsonProperty("context")
-                       context: StreamletContext)
+  case class Streamlet(
+      @JsonProperty("class_name")
+      className: String,
+      @JsonProperty("streamlet_ref")
+      streamletRef: String,
+      @JsonProperty("context")
+      context: StreamletContext)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
   case class Runner(
       @JsonProperty("streamlet")
-      streamlet: Streamlet
-  )
+      streamlet: Streamlet)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
   case class Cloudflow(
       @JsonProperty("runner")
-      runner: Runner
-  )
+      runner: Runner)
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
   @JsonInclude(Include.NON_NULL)
   @JsonCreator
   case class CloudflowRoot(
       @JsonProperty("cloudflow")
-      cloudflow: Cloudflow
-  )
+      cloudflow: Cloudflow)
 
   private val mapper = new ObjectMapper().registerModule(new DefaultScalaModule())
 
