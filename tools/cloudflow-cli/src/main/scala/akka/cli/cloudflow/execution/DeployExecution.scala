@@ -168,7 +168,9 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       _ <- applicationDescriptorValidation(applicationCr)
       streamletChecks = Map(
         ("spark", StreamletVersion(Cli.RequiredSparkVersion, (() => client.sparkAppVersion()))),
-        ("flink", StreamletVersion(Cli.RequiredFlinkVersion, (() => client.flinkAppVersion()))))
+        ("flink", StreamletVersion(Cli.RequiredFlinkVersion, (() => client.flinkAppVersion())))).filter {
+        case (k, _) => !d.unmanagedRuntimes.contains(k)
+      }
       _ <- validateStreamletsDependencies(applicationCr, streamletChecks)
 
       // validate the Cr against the cluster
