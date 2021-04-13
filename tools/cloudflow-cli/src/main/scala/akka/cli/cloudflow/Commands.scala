@@ -193,6 +193,10 @@ object OptionsParser {
         commandParse[commands.Deploy, File](opt("logback-config"))((c, f) => c.copy(logbackConfig = Some(f)))
           .optional()
           .text("the logback configuration to be applied"),
+        commandParse[commands.Deploy, Seq[String]](opt("unmanaged-runtimes"))((c, r) =>
+          c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
+          .optional()
+          .text("The runtimes that should not be checked"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -448,6 +452,7 @@ object commands {
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
+      unmanagedRuntimes: Seq[String] = Seq(),
       output: format.Format = format.Default)
       extends Command[DeployResult]
       with WithConfiguration {
