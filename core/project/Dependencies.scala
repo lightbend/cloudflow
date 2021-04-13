@@ -53,7 +53,7 @@ object Library {
   val SprayJson             = "io.spray"              %% "spray-json"               % "1.3.5"
   val Bijection             = "com.twitter"           %% "bijection-avro"           % "0.9.7"
 
-  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.4"
+  val JacksonScalaModule    = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.11.4"
 
   val Skuber                = "io.skuber"                  %% "skuber"               % "2.6.0"
   
