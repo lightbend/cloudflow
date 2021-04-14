@@ -190,8 +190,7 @@ if [ -z "${ARCH-}" ]; then
 fi
 
 if [ -z "${BASE_URL-}" ]; then
-  # BASE_URL="https://repo.lightbend.com/raw/cloudflow-cli/versions/"
-  BASE_URL="https://dl.cloudsmith.io/public/lightbend/cloudflow-cli/raw/versions/"
+  BASE_URL="https://repo.lightbend.com/raw/cloudflow-cli/versions/"
 fi
 
 # parse argv variables
