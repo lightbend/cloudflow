@@ -190,7 +190,8 @@ if [ -z "${ARCH-}" ]; then
 fi
 
 if [ -z "${BASE_URL-}" ]; then
-  BASE_URL="https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-"
+  # BASE_URL="https://repo.lightbend.com/raw/cloudflow-cli/versions/"
+  BASE_URL="https://dl.cloudsmith.io/public/lightbend/cloudflow-cli/raw/versions/"
 fi
 
 # parse argv variables
@@ -254,7 +255,7 @@ echo
 
 EXT=tar.gz
 
-URL="${BASE_URL}${RESOLVED}-${PLATFORM}-${ARCH}.tar.gz"
+URL="${BASE_URL}${RESOLVED}/kubectl-cloudflow-${RESOLVED}-${PLATFORM}-${ARCH}.tar.gz"
 info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
 check_prefix "${PREFIX}"
 confirm "Install Cloudflow CLI ${GREEN}${RESOLVED}${NO_COLOR} to ${BOLD}${GREEN}${PREFIX}${NO_COLOR}?"
