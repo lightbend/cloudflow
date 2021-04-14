@@ -94,7 +94,9 @@ trait ItSetup {
         loadResource(k8s, resource.pvcResourceFlink)
       }
     }
-    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
+    val res = cli.run(
+      commands
+        .Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration), unmanagedRuntimes = Seq("flink")))
     assertSuccess(res).withClue("Deploy command failed")
     assumeAppListed()
     assumeAppRunning()

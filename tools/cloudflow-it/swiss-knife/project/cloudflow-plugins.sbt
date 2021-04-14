@@ -7,4 +7,4 @@ val latestVersion = {
 }
 
 addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % latestVersion)
-
+addSbtPlugin("com.lightbend.cloudflow" % "contrib-sbt-flink" % "0.0.1")

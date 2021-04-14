@@ -51,8 +51,13 @@ lazy val spark = (project in file("./spark"))
   .dependsOn(datamodel)
 
 lazy val flink = (project in file("./flink"))
-  .enablePlugins(CloudflowFlinkPlugin)
-  .settings(commonSettings)
+  .enablePlugins(CloudflowFlinkPlugin, CloudflowNativeFlinkPlugin)
+  .settings(
+    commonSettings,
+    resolvers += "Flink 13.0 RC0".at("https://repository.apache.org/content/repositories/orgapacheflink-1417/"),
+    baseDockerInstructions := flinkNativeCloudflowDockerInstructions.value,
+    libraryDependencies ~= fixFlinkNativeCloudflowDeps
+  )
   .settings(
     name := "swiss-knife-flink"
   )

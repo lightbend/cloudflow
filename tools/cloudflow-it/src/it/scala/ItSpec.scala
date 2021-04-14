@@ -49,7 +49,9 @@ class ItGlobalSpec
 trait ItDeploySpec extends ItSpec {
 
   "Deploy without PVCs should fail" in {
-    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
+    val res = cli.run(
+      commands
+        .Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration), unmanagedRuntimes = Seq("flink")))
     res.failure.exception.getMessage() should {
       include("contains pvcs") and include("cloudflow-spark") and include("cloudflow-flink") and include(
         "that are not present in the namespace")
@@ -78,7 +80,9 @@ trait ItDeploySpec extends ItSpec {
 
   "The application" - {
     "should deploy" in {
-      val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
+      val res = cli.run(
+        commands
+          .Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration), unmanagedRuntimes = Seq("flink")))
       assertSuccess(res)
     }
 
@@ -115,7 +119,9 @@ trait ItDeploySpec extends ItSpec {
     }
 
     "should re-deploy to continue testing" in {
-      val deploy = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
+      val deploy = cli.run(
+        commands
+          .Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration), unmanagedRuntimes = Seq("flink")))
       assertSuccess(deploy)
       eventually {
         val res = cli.run(commands.Status(appName))

@@ -1,4 +1,5 @@
 import akka.cli.cloudflow._
+import akka.cli.cloudflow.commands
 import akka.cli.cloudflow.commands.{ format, Command }
 import akka.cli.cloudflow.kubeclient.KubeClientFabric8
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -12,6 +13,29 @@ class TestingCli(val client: KubernetesClient, logger: CliLogger = new CliLogger
   var lastResult: String = ""
 
   def transform[T](cmd: Command[T], res: T): T = {
+    import scala.sys.process._
+    cmd match {
+      case _: commands.Deploy =>
+        Process(
+          Seq(
+            "sh",
+            "-c",
+            "(cd ../cloudflow-contrib/example-scripts/flink/deploy && ./deploy-application.sh swiss-knife flink-service-account)")).!
+      case _: commands.Configure =>
+        Process(
+          Seq(
+            "sh",
+            "-c",
+            "(cd ../cloudflow-contrib/example-scripts/flink/redeploy && ./redeploy-application.sh swiss-knife flink-service-account)")).!
+      case _: commands.Undeploy =>
+        Process(
+          Seq(
+            "sh",
+            "-c",
+            "(cd ../cloudflow-contrib/example-scripts/flink/undeploy && ./undeploy-application.sh swiss-knife)")).!
+      case _ =>
+    }
+
     val newResult = cmd.toString + "\n" + res.asInstanceOf[Result].render(format.Table)
     if (newResult != lastResult) {
       lastResult = newResult
