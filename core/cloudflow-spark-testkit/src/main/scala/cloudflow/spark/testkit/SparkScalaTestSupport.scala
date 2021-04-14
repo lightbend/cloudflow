@@ -21,7 +21,12 @@ import org.scalatest._
 
 trait SparkScalaTestSupport extends WordSpec with MustMatchers with BeforeAndAfterAll {
 
-  val session: SparkSession = SparkSession.builder().master("local[2]").appName("test").getOrCreate()
+  val session: SparkSession = SparkSession
+    .builder()
+    .master("local[*]")
+    .config("spark.driver.bindAddress", "127.0.0.1")
+    .appName("test")
+    .getOrCreate()
   session.sparkContext.setLogLevel("WARN")
 
   implicit lazy val sqlCtx = session.sqlContext
