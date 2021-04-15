@@ -1,3 +1,6 @@
 # save an app graph file to the default path
 > saveAppGraph
 $ exists target/visuals/blueprint/appGraph.txt
+
+# print an app graph to the console
+> printAppGraph
