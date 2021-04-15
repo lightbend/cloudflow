@@ -265,4 +265,6 @@ Or use:
   sbt saveAppGraph
 ----
 
-Which will save an ASCII graph to the `appGraph.txt` file under the `/blueprint` folder of your Cloudflow project.
+Which will save an ASCII graph to the `appGraph.txt` file under the `target/visuals/blueprint` folder of your Cloudflow project.
+
+You can also override the `appGraphSavePath` setting key to provide a new path for the App Graph file to save.
