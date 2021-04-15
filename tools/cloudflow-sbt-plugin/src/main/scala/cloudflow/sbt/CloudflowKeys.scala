@@ -68,6 +68,7 @@ trait CloudflowSettingKeys {
   val initialDebugPort =
     settingKey[Int]("Initial port number for debugging in runLocal. It will be increased by one for each Streamlet")
   val remoteDebugRunLocal = settingKey[Boolean]("Enable/Disable remote debugging for streamlets in runLocal")
+  val appGraphSavePath = settingKey[File]("The path where an application graph visualization should be saved.")
 }
 
 trait CloudflowTaskKeys {
@@ -82,7 +83,7 @@ trait CloudflowTaskKeys {
   val extraDockerInstructions = taskKey[Seq[sbtdocker.Instruction]]("A list of instructions to add to the dockerfile.")
   val verifyBlueprint = taskKey[Unit]("Verify Blueprint.")
   val printAppGraph = taskKey[Unit]("Print graph of all streamlets and how they are connected.")
-  val saveAppGraph = taskKey[Unit]("Save graph of all streamlets and how they are connected as a text file.")
+  val saveAppGraph = taskKey[File]("Save graph of all streamlets and how they are connected as a text file.")
   val build = taskKey[Unit]("Build the image.")
   val buildAndPublish = taskKey[Unit]("[Deprecated! Use buildApp] Build and publish the image.")
   val runLocal = taskKey[Unit]("Run the Cloudflow application in a local Sandbox.")
