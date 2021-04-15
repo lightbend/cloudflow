@@ -33,10 +33,13 @@ prepare-cluster:
 	helm uninstall spark-operator --namespace cloudflow | true
 	kubectl delete job cloudflow-patch-spark-mutatingwebhookconfig -n cloudflow | true
 	@echo '****** Installing Kafka'
-	helm repo add strimzi https://strimzi.io/charts/ | true
+	kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(shell sh -c "gcloud config get-value core/account") | true
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.0/cert-manager.yaml
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.0/cert-manager.crds.yaml
+	kubectl apply -k 'https://github.com/vectorizedio/redpanda/src/go/k8s/config/crd?ref=v21.4.10'
 	helm repo update
-	helm upgrade -i strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
-	(for i in 1 2 3; do kubectl apply -f kafka-cluster.yaml && break || sleep 2; done)
+	helm upgrade -i --namespace redpanda-system --create-namespace redpanda-operator redpanda/redpanda-operator
+	(for i in 1 2 3; do kubectl apply -f one_node_cluster.yaml -n cloudflow && break || sleep 2; done)
 	@echo '****** Installing NFS provisioner'
 	helm repo add stable https://charts.helm.sh/stable --force-update | true
 	helm repo update
@@ -52,7 +55,7 @@ prepare-cluster:
 	(helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
 		--atomic \
 		--version "${version}" \
-		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
+		--set kafkaClusters.default.bootstrapServers=one-node-cluster.cloudflow:9092 \
 		--namespace cloudflow)
 	@echo '****** Installing Spark Operator'
 	helm repo add incubator https://charts.helm.sh/incubator | true
