@@ -142,7 +142,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               host
             }
 
-            printAppLayout(resolveConnections(appDescriptor))
+            println(getAppLayout(resolveConnections(appDescriptor)))
             printInfo(runtimeDescriptorByProject, tempDir.toFile, topics, localConfig.message)
 
             val processes = runtimeDescriptorByProject.zipWithIndex.map {
@@ -311,21 +311,21 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
       logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
       throw new IllegalStateException("ApplicationDescriptor is not present")
     }
-    printAppLayout(resolveConnections(appDescriptor))
+    println(getAppLayout(resolveConnections(appDescriptor)))
   }
 
   def saveApplicationGraph: Def.Initialize[Task[File]] = Def.task {
     implicit val logger = streams.value.log
     val _appDescriptor = applicationDescriptor.value
-    val blueprintBaseDir = baseDirectory.value / "src" / "main" / "blueprint"
-    val appGraphFile = blueprintBaseDir / "appGraph.txt"
+    val appGraphDir = appGraphSavePath.value
+    val appGraphFile = appGraphDir / "appGraph.txt"
     val appDescriptor = _appDescriptor.getOrElse {
       logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")
       throw new IllegalStateException("ApplicationDescriptor is not present")
     }
     val layoutGraph = getAppLayout(resolveConnections(appDescriptor))
     IO.write(appGraphFile, layoutGraph)
-    logger.info(s"App graph ASCII file is generated: $appGraphFile")
+    logger.info(s"App graph file is generated: $appGraphFile")
     appGraphFile
   }
 
@@ -358,6 +358,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     }.toList
   }
 
+  @deprecated("Use 'getAppLayout' instead")
   def printAppLayout(connections: List[(String, String)]): Unit = {
     val vertices = connections.flatMap { case (a, b) => Seq(a, b) }.toSet
     val graph = Graph(vertices = vertices, edges = connections)
