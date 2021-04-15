@@ -52,5 +52,6 @@ object CloudflowApplicationPlugin extends AutoPlugin {
       packageOptions in (Compile, packageBin) +=
         Package.ManifestAttributes(new java.util.jar.Attributes.Name("Blueprint") -> blueprintFile.value.getName),
       verifyBlueprint := verifyBlueprint.value,
-      buildApp := cloudflowApplicationCR.value)
+      buildApp := cloudflowApplicationCR.value,
+      appGraphSavePath := target.value / "visuals" / "blueprint")
 }
