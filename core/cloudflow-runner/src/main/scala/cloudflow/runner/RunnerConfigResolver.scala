@@ -22,7 +22,6 @@ import scala.util.Try
 
 trait RunnerConfigResolver {
 
-  final val ConfigMountPath       = "/etc/cloudflow-runner"
   final val ConfigFile            = "application.conf"
   final val ConfigSecretMountPath = "/etc/cloudflow-runner-secret"
   final val SecretConfigFile      = "secret.conf"
@@ -32,7 +31,7 @@ trait RunnerConfigResolver {
       configPath
     } else {
       // Backward compatibility: Use the ConfigMap populated by the operator
-      Paths.get(s"$ConfigMountPath/$ConfigFile")
+      Paths.get(s"/etc/cloudflow-runner/$ConfigFile")
     }
 
   def makeConfig: Try[Config] = Try {

@@ -257,7 +257,7 @@ lazy val cloudflowSbtPlugin =
       crossSbtVersions := Vector("1.4.9"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.8.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.8.2"),
       addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("com.cavorite" % "sbt-avro-1-8" % "1.1.9"),
       addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % Dependencies.Versions.akkaGrpc),
