@@ -34,7 +34,7 @@ curl -sL http://cloudflow.io/docs/get.sh | bash -s -- -P $HOME -v 2.0.22 -V
 
 If the installer script fails, please, report the failure and download the binaries at the specific version at the url:
 
-* https://bintray.com/lightbend/cloudflow-cli/download_file?file_path=kubectl-cloudflow-<version>-<platform>-amd64.tar.gz
+* https://repo.lightbend.com/raw/cloudflow-cli/versions/<version>/kubectl-cloudflow-<version>-<platform>-amd64.tar.gz
 
 where you have to substitute:
 
