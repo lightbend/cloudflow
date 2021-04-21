@@ -128,9 +128,6 @@ object Name {
   def ofPod(streamletDeploymentName: String) =
     makeDNS1039Compatible(fixDots(streamletDeploymentName))
 
-  def ofConfigMap(streamletDeploymentName: String) =
-    makeDNS1123CompatibleSubDomainName(s"configmap-${fixDots(streamletDeploymentName)}")
-
   def ofLabelValue(name: String) =
     truncateTo63Characters(name)
 

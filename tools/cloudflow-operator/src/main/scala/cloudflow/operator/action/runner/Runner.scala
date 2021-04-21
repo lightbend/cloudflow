@@ -33,7 +33,6 @@ import scala.reflect.ClassTag
 import scala.util._
 
 object Runner {
-  val ConfigMapMountPath = "/etc/cloudflow-runner"
   val SecretMountPath = "/etc/cloudflow-runner-secret"
   val DownwardApiVolume =
     new VolumeBuilder()
@@ -122,30 +121,25 @@ trait Runner[T <: HasMetadata] {
     val deleteActions = currentDeployments
       .filterNot(deployment => newDeploymentNames.contains(deployment.name))
       .flatMap { deployment =>
-        Seq(
-          deleteResource(resourceName(deployment), newApp.namespace),
-          Action
-            .delete[ConfigMap](configResourceName(deployment), newApp.namespace))
+        Seq(deleteResource(resourceName(deployment), newApp.namespace))
       }
 
     // create streamlet deployments by name that are not in the current app but are listed in the new app
     val createActions = newDeployments
       .filterNot(deployment => currentDeploymentNames.contains(deployment.name))
       .flatMap { deployment =>
-        Seq(
-          Action.createOrReplace(configResource(deployment, newApp)),
-          ActionExtension.providedSecretRetry(deployment.secretName, newApp.namespace)({
-            case Some(secret) =>
-              createOrReplaceResource(resource(deployment, newApp, secret))
-            case None =>
-              val msg =
-                s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-              log.info(msg)
-              CloudflowStatus.pendingAction(
-                newApp,
-                runners,
-                s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
-          })(60))
+        Seq(ActionExtension.providedSecretRetry(deployment.secretName, newApp.namespace)({
+          case Some(secret) =>
+            createOrReplaceResource(resource(deployment, newApp, secret))
+          case None =>
+            val msg =
+              s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+            log.info(msg)
+            CloudflowStatus.pendingAction(
+              newApp,
+              runners,
+              s"Awaiting configuration secret ${deployment.secretName} for streamlet deployment '${deployment.name}'.")
+        })(60))
       }
 
     // update streamlet deployments by name that are in both the current app and the new app
@@ -165,18 +159,16 @@ trait Runner[T <: HasMetadata] {
 
   def updateActions(newApp: App.Cr, runners: Map[String, Runner[_]], deployment: App.Deployment)(
       implicit ct: ClassTag[T]): Seq[Action] = {
-    Seq(
-      Action.createOrReplace[ConfigMap](configResource(deployment, newApp)),
-      Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
-        secret match {
-          case Some(sec) =>
-            createOrReplaceResource(resource(deployment, newApp, sec))
-          case None =>
-            val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
-            log.error(msg)
-            CloudflowStatus.errorAction(newApp, runners, msg)
-        }
-      })
+    Seq(Action.get[Secret](deployment.secretName, newApp.namespace) { secret: Option[Secret] =>
+      secret match {
+        case Some(sec) =>
+          createOrReplaceResource(resource(deployment, newApp, sec))
+        case None =>
+          val msg = s"Secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+          log.error(msg)
+          CloudflowStatus.errorAction(newApp, runners, msg)
+      }
+    })
   }
 
   def streamletChangeAction(
@@ -231,34 +223,6 @@ trait Runner[T <: HasMetadata] {
   final val PrometheusAgentKey = "prometheus"
   def prometheusConfig: PrometheusConfig
 
-  /**
-   * Creates the configmap for the runner.
-   */
-  def configResource(deployment: App.Deployment, app: App.Cr): ConfigMap = {
-    val labels = CloudflowLabels(app)
-    val ownerReference = new OwnerReferenceBuilder()
-      .withApiVersion(app.getApiVersion)
-      .withKind(app.getKind)
-      .withName(app.getMetadata.getName)
-      .withUid(app.getMetadata.getUid)
-      .withController(true)
-      .withBlockOwnerDeletion(true)
-      .build()
-
-    val configData = Vector(prometheusConfig)
-    val name = Name.ofConfigMap(deployment.name)
-
-    new ConfigMapBuilder()
-      .withNewMetadata()
-      .withName(name)
-      .withNamespace(app.namespace)
-      .withLabels(labels(name).asJava)
-      .withOwnerReferences(ownerReference)
-      .endMetadata()
-      .withData(configData.map(cd => cd.filename -> cd.data).toMap.asJava)
-      .build()
-  }
-  def configResourceName(deployment: App.Deployment) = Name.ofConfigMap(deployment.name)
   def resourceName(deployment: App.Deployment): String
 
   /**

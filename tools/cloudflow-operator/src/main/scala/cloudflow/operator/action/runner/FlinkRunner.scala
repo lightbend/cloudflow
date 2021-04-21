@@ -337,17 +337,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
    * // ]
    */
   private def makeVolumesSpec(deployment: App.Deployment, streamletToDeploy: Option[App.Streamlet]): Vector[Volume] = {
-    // config map
-    val configMapName = Name.ofConfigMap(deployment.name)
-    val configMapVolume = {
-      new VolumeBuilder()
-        .withName("config-map-vol")
-        .withNewConfigMap()
-        .withName(configMapName)
-        .endConfigMap()
-        .build()
-    }
-
     // secret
     val secretVolume = {
       new VolumeBuilder()
@@ -368,7 +357,7 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
         .build()
     })
 
-    streamletPvcVolume :+ configMapVolume :+ secretVolume :+ Runner.DownwardApiVolume
+    streamletPvcVolume :+ secretVolume :+ Runner.DownwardApiVolume
   }
 
   /**

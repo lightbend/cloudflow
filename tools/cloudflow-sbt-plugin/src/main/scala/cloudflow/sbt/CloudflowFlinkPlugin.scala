@@ -70,6 +70,9 @@ object CloudflowFlinkPlugin extends AutoPlugin {
         val flinkEntrypoint = (ThisProject / target).value / "cloudflow" / "flink" / "flink-entrypoint.sh"
         IO.write(flinkEntrypoint, flinkEntrypointContent)
 
+        val prometheusYaml = (ThisProject / target).value / "cloudflow" / "flink" / "prometheus.yaml"
+        IO.write(prometheusYaml, prometheusYamlContent)
+
         val scalaVersion = (ThisProject / scalaBinaryVersion).value
         val flinkVersion = "1.10.3"
         val flinkHome = "/opt/flink"
@@ -86,6 +89,7 @@ object CloudflowFlinkPlugin extends AutoPlugin {
           Instructions.Copy(CopyFile(flinkEntrypoint), "/opt/flink-entrypoint.sh"),
           Instructions.Copy(CopyFile(configSh), "/tmp/config.sh"),
           Instructions.Copy(CopyFile(flinkConsole), "/tmp/flink-console.sh"),
+          Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
           Instructions.Run.shell(
             Seq(
               Seq("apk", "add", "curl", "wget", "bash", "snappy-dev", "gettext-dev"),
@@ -176,4 +180,6 @@ object CloudflowFlinkPlugin extends AutoPlugin {
       .getLines
       .mkString("\n")
 
+  private lazy val prometheusYamlContent =
+    scala.io.Source.fromResource("runtimes/flink/prometheus.yaml", getClass().getClassLoader()).getLines.mkString("\n")
 }

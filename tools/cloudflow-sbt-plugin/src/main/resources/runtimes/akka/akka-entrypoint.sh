@@ -6,7 +6,7 @@ lib_dir="/opt/cloudflow"
 java_main="cloudflow.runner.Runner"
 
 # Java agent(s)
-agents="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/cloudflow-runner/prometheus.yaml"
+agents="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/metrics/conf/prometheus.yaml"
 
 # Java options
 java_opts="$agents $LOGBACK_CONFIG $JAVA_OPTS"

@@ -66,6 +66,9 @@ object CloudflowAkkaPlugin extends AutoPlugin {
         val akkaEntrypointFile = (ThisProject / target).value / "cloudflow" / "akka" / "akka-entrypoint.sh"
         IO.write(akkaEntrypointFile, akkaEntrypointContent)
 
+        val prometheusYaml = (ThisProject / target).value / "cloudflow" / "akka" / "prometheus.yaml"
+        IO.write(prometheusYaml, prometheusYamlContent)
+
         Seq(
           Instructions.User("root"),
           // logback configuration
@@ -74,6 +77,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
             "LOGBACK_CONFIG",
             "-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers.0=akka.event.slf4j.Slf4jLogger -Dakka.loglevel=DEBUG -Dakka.logging-filter=akka.event.slf4j.Slf4jLoggingFilter"),
           Instructions.Copy(CopyFile(akkaEntrypointFile), "/opt/akka-entrypoint.sh"),
+          Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
           Instructions.Run.shell(
             Seq(
               Seq("apk", "add", "bash", "curl"),
@@ -142,4 +146,6 @@ object CloudflowAkkaPlugin extends AutoPlugin {
       .getLines
       .mkString("\n")
 
+  private lazy val prometheusYamlContent =
+    scala.io.Source.fromResource("runtimes/akka/prometheus.yaml", getClass().getClassLoader()).getLines.mkString("\n")
 }
