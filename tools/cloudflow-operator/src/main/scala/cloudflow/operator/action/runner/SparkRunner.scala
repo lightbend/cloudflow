@@ -51,8 +51,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
   implicit val adapter = SparkApp.adapter
 
-  def prometheusConfig = PrometheusConfig(prometheusRules)
-
   val DriverPod = "driver"
   val ExecutorPod = "executor"
 
@@ -260,10 +258,15 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
       deployment)
 
     val monitoring = {
-      SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
-        jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
-        configFile = "/etc/metrics/conf/prometheus.yaml",
-        port = 2050))
+      if (!agentPaths.contains(PrometheusAgentKey)) {
+        SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
+          jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
+          configFile = "/prometheus/prometheus.yaml",
+          port = 2050))
+      } else {
+        SparkApp.Monitoring(prometheus = SparkApp
+          .Prometheus(jmxExporterJar = agentPaths(PrometheusAgentKey), configFile = "/prometheus/prometheus.yaml"))
+      }
     }
 
     val defaultDriverCores = toIntCores(driverDefaults.cores)

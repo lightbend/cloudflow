@@ -221,7 +221,6 @@ trait Runner[T <: HasMetadata] {
   final val JavaOptsEnvVarName = "JAVA_OPTS"
 
   final val PrometheusAgentKey = "prometheus"
-  def prometheusConfig: PrometheusConfig
 
   def resourceName(deployment: App.Deployment): String
 

@@ -12,7 +12,8 @@ agents="-javaagent:/prometheus/jmx_prometheus_javaagent.jar=2050:/etc/metrics/co
 java_opts="$agents $LOGBACK_CONFIG $JAVA_OPTS"
 
 # Classpath Opts
-java_classpath="$lib_dir/*"
+app_config="/etc/cloudflow-runner"
+java_classpath="$app_config:$lib_dir/*"
 
 echo "Cloudflow Runner"
 echo "Java opts: $java_opts"

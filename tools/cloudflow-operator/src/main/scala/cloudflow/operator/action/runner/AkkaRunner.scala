@@ -157,8 +157,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       .build()
   }
 
-  def prometheusConfig = PrometheusConfig(prometheusRules)
-
   def resource(
       deployment: App.Deployment,
       app: App.Cr,

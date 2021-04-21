@@ -60,8 +60,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   val nrOfTaskManagers = new AtomicReference(Map[String, Int]()) //DefaultTaskManagerReplicas
   val parallelism = new AtomicReference(Map[String, Int]()) //flinkRunnerDefaults.parallelism
 
-  def prometheusConfig = PrometheusConfig(prometheusRules)
-
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
     val roleFlink = flinkRole(app.namespace, labels, ownerReferences)
     Vector(
@@ -385,10 +383,6 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       new VolumeMountBuilder()
         .withName("secret-vol")
         .withMountPath(Runner.SecretMountPath)
-        .build(),
-      new VolumeMountBuilder()
-        .withName("config-map-vol")
-        .withMountPath("/etc/cloudflow-runner")
         .build(),
       Runner.DownwardApiVolumeMount) ++ streamletVolumeMount
   }

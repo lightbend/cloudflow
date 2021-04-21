@@ -22,7 +22,7 @@ import cloudflow.blueprint.BlueprintBuilder._
 import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.{ Topic => BTopic, _ }
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.AkkaRunner.{ PrometheusExporterPortEnvVar, PrometheusExporterRulesPathEnvVar }
+import cloudflow.operator.action.runner.AkkaRunner.PrometheusExporterPortEnvVar
 import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.apps.Deployment
 import io.fabric8.kubernetes.api.model._
@@ -96,11 +96,8 @@ class RunnerActionsSpec
       val streamletDeployments = newApp.spec.deployments
 
       createActions.size + createDeploymentActions.size mustBe actions.size
-      configMaps.size mustBe streamletDeployments.size
+      configMaps.size mustBe 0
       akkaDeployments.size mustBe streamletDeployments.size
-      configMaps.foreach { configMap =>
-        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
-      }
       akkaDeployments.foreach { deployment =>
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
@@ -181,7 +178,7 @@ class RunnerActionsSpec
 
       Then("delete actions should be created")
       val deleteActions = actions.collect { case d: DeleteAction[_] => d }
-      deleteActions.size mustBe 2
+      deleteActions.size mustBe 1
     }
 
     "create new runner resources when a runner is added" in {
@@ -231,28 +228,13 @@ class RunnerActionsSpec
       }
       val akkaDeployments = createDeploymentActions.map(_.resource)
       // create and update
-      configMaps.size mustBe 2
+      configMaps.size mustBe 0
       akkaDeployments.size mustBe 2
 
-      configMaps.foreach { configMap =>
-        assertConfigMap(configMap, newApp.spec, appId, appVersion, ctx)
-      }
       akkaDeployments.foreach { deployment =>
         assertAkkaDeployment(deployment, configMaps, newApp.spec, appId, ctx)
       }
     }
-  }
-
-  def assertConfigMap(
-      configMap: ConfigMap,
-      app: App.Spec,
-      appId: String,
-      appVersion: String,
-      ctx: DeploymentContext) = {
-    (configMap.getData.asScala must contain).key(PrometheusConfig.PrometheusConfigFilename)
-    val mountedPromConfiguration = configMap.getData.get(PrometheusConfig.PrometheusConfigFilename)
-    val expectedPromConfiguration = PrometheusConfig(ctx.akkaRunnerDefaults.prometheusRules).data
-    mountedPromConfiguration mustEqual expectedPromConfiguration
   }
 
   def assertAkkaDeployment(
@@ -265,28 +247,15 @@ class RunnerActionsSpec
       app.deployments
         .find(streamletDeployment => Name.ofPod(streamletDeployment.name) == deployment.getMetadata.getName)
         .value
-    val configMap = configMaps.find(cm => Name.ofConfigMap(streamletDeployment.name) == cm.getMetadata.getName).value
     val podSpec = deployment.getSpec.getTemplate.getSpec
     val containers = podSpec.getContainers.asScala
     val volumeMounts = containers.flatMap(_.getVolumeMounts.asScala)
 
-    volumeMounts.size mustBe 3
-    forExactly(1, volumeMounts) { volumeMount =>
-      volumeMount.getName mustBe configMap.getMetadata.getName
-      volumeMount.getReadOnly mustBe true
-      volumeMount.getMountPath mustBe Runner.ConfigMapMountPath
-    }
+    volumeMounts.size mustBe 2
 
     val volumes = podSpec.getVolumes.asScala
-    volumes.size mustBe 3
+    volumes.size mustBe 2
     forExactly(1, volumeMounts)(_.getName mustBe volumes.head.getName)
-
-    volumes.size mustBe 3
-    forExactly(1, volumes) { volume =>
-      val vol = volume.getConfigMap
-      vol mustBe a[ConfigMapVolumeSource]
-      vol.getName mustEqual Name.ofConfigMap(streamletDeployment.name)
-    }
 
     if (streamletDeployment.endpoint.isEmpty) {
       deployment.getSpec.getStrategy.getType mustEqual "Recreate"
@@ -327,12 +296,8 @@ class RunnerActionsSpec
       .withName(PrometheusExporterPortEnvVar)
       .withValue(PrometheusConfig.PrometheusJmxExporterPort.toString)
       .build()
-    val promRulesPathEnvVar = new EnvVarBuilder()
-      .withName(PrometheusExporterRulesPathEnvVar)
-      .withValue(PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
-      .build()
 
-    (container.getEnv.asScala must contain).allOf(javaOptsEnvVar, promPortEnvVar, promRulesPathEnvVar)
+    (container.getEnv.asScala must contain).allOf(javaOptsEnvVar, promPortEnvVar)
 
     streamletDeployment.endpoint.map { ep =>
       val exposedStreamletPort =
