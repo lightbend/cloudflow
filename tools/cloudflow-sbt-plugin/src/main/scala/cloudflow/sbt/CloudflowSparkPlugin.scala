@@ -101,23 +101,12 @@ object CloudflowSparkPlugin extends AutoPlugin {
           Instructions.Env("SPARK_VERSION", sparkVersion),
           Instructions.Env("JAVA_OPTS", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
           Instructions.Env("SPARK_JAVA_OPT_LOGGING", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
-          Instructions.Copy(
-            sources = Seq(CopyFile(metricsProperties)),
-            destination = "/etc/metrics/conf/metrics.properties",
-            chown = Some(userAsOwner(UserInImage))),
-          Instructions.Copy(
-            sources = Seq(CopyFile(prometheusYaml)),
-            destination = "/etc/metrics/conf/prometheus.yaml",
-            chown = Some(userAsOwner(UserInImage))),
           Instructions
-            .Copy(
-              sources = Seq(CopyFile(sparkEntrypointSh)),
-              destination = "/opt/spark-entrypoint.sh",
-              chown = Some(userAsOwner(UserInImage))),
-          Instructions.Copy(
-            sources = Seq(CopyFile(log4jProperties)),
-            destination = "/tmp/log4j.properties",
-            chown = Some(userAsOwner(UserInImage))),
+            .Copy(sources = Seq(CopyFile(metricsProperties)), destination = "/etc/metrics/conf/metrics.properties"),
+          Instructions.Copy(sources = Seq(CopyFile(prometheusYaml)), destination = "/etc/metrics/conf/prometheus.yaml"),
+          Instructions
+            .Copy(sources = Seq(CopyFile(sparkEntrypointSh)), destination = "/opt/spark-entrypoint.sh"),
+          Instructions.Copy(sources = Seq(CopyFile(log4jProperties)), destination = "/tmp/log4j.properties"),
           Instructions.Run.shell(
             Seq(
               Seq("wget", sparkTgzUrl),

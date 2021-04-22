@@ -259,6 +259,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
     val monitoring = {
       if (!agentPaths.contains(PrometheusAgentKey)) {
+        // The Spark operator mounts a config-ma in /etc/metris/conf so we use and alternative path
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
           jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
           configFile = "/prometheus/prometheus.yaml",
