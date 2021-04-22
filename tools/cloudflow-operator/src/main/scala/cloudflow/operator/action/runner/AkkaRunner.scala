@@ -32,7 +32,6 @@ import scala.reflect.ClassTag
 object AkkaRunner {
   final val Runtime = "akka"
   val JavaOptsEnvVar = "JAVA_OPTS"
-  val PrometheusExporterRulesPathEnvVar = "PROMETHEUS_JMX_AGENT_CONFIG_PATH"
   val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"
   val DefaultReplicas = 1
   val ImagePullPolicy = "Always"
@@ -158,8 +157,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
       .build()
   }
 
-  def prometheusConfig = PrometheusConfig(prometheusRules)
-
   def resource(
       deployment: App.Deployment,
       app: App.Cr,
@@ -193,18 +190,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         .build()
 
     val podsConfig = getPodsConfig(configSecret)
-
-    val configMapName = Name.ofConfigMap(deployment.name)
-
-    val volume = {
-      new VolumeBuilder()
-        .withName(configMapName)
-        .withConfigMap(
-          new ConfigMapVolumeSourceBuilder()
-            .withName(configMapName)
-            .build())
-        .build()
-    }
 
     val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
@@ -245,13 +230,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
             .build())
         .build()
     }
-    val volumeMount = {
-      new VolumeMountBuilder()
-        .withName(configMapName)
-        .withMountPath(Runner.ConfigMapMountPath)
-        .withReadOnly(true)
-        .build()
-    }
     val secretMount = {
       new VolumeMountBuilder()
         .withName(Name.ofVolume(secretName))
@@ -274,7 +252,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         .withPorts((k8sStreamletPorts ++ userConfiguredPorts :+ k8sPrometheusMetricsPort): _*)
         .withVolumeMounts((List(secretMount) ++ pvcVolumeMounts ++ getVolumeMounts(
           podsConfig,
-          PodsConfig.CloudflowPodName) :+ volumeMount :+ Runner.DownwardApiVolumeMount): _*)
+          PodsConfig.CloudflowPodName) :+ Runner.DownwardApiVolumeMount): _*)
     }
 
     // See cloudflow.akkastream.internal.HealthCheckFiles
@@ -318,7 +296,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val podSpec = {
       val allVolumes: List[Volume] =
-        List(volume, secretVolume, Runner.DownwardApiVolume) ++
+        List(secretVolume, Runner.DownwardApiVolume) ++
         pvcRefVolumes.getOrElse(List.empty) ++
         configSecretVolumes
 
@@ -443,10 +421,6 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         new EnvVarBuilder()
           .withName(PrometheusExporterPortEnvVar)
           .withValue(PrometheusConfig.PrometheusJmxExporterPort.toString)
-          .build(),
-        new EnvVarBuilder()
-          .withName(PrometheusExporterRulesPathEnvVar)
-          .withValue(PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath))
           .build())
     } else Nil
 

@@ -109,7 +109,6 @@ class SparkRunnerSpec
       cr.spec.monitoring.exposeDriverMetrics mustBe true
       cr.spec.monitoring.exposeExecutorMetrics mustBe true
       cr.spec.monitoring.prometheus.jmxExporterJar mustBe agentPaths("prometheus")
-      cr.spec.monitoring.prometheus.configFile mustBe PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)
     }
 
     "read from config custom labels and add them to the driver pod's spec" in {

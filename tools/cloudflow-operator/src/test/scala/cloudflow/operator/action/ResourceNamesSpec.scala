@@ -151,22 +151,6 @@ class ResourceNamesSpec
     }
   }
 
-  "ConfigMaps" should {
-    "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val configMap = akkaRunner.configResource(testApp01.spec.deployments.head, testApp01)
-
-      configMap.getMetadata.getName.length must be <= 253
-
-    }
-
-    "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val configMap = sparkRunner.configResource(testApp01.spec.deployments.head, testApp01)
-
-      configMap.getMetadata.getName.length must be <= 253
-
-    }
-  }
-
   "Custom resources" should {
     "have long names truncate to 253 characters when coming from SparkRunner" in {
       val deployment = sparkRunner.resource(testApp01.spec.deployments.head, testApp01, secret)

@@ -122,10 +122,6 @@ class FlinkRunnerSpec
 
       cr.spec.volumes mustBe Vector(
         new VolumeBuilder()
-          .withName("config-map-vol")
-          .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("configmap-some-app-id").build())
-          .build(),
-        new VolumeBuilder()
           .withName("secret-vol")
           .withSecret(new SecretVolumeSourceBuilder().withSecretName("flink-streamlet").build())
           .build(),
@@ -274,10 +270,6 @@ class FlinkRunnerSpec
 
       cr.spec.volumes mustBe Vector(
         new VolumeBuilder()
-          .withName("config-map-vol")
-          .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("configmap-some-app-id").build())
-          .build(),
-        new VolumeBuilder()
           .withName("secret-vol")
           .withSecret(new SecretVolumeSourceBuilder().withSecretName("flink-streamlet").build())
           .build(),
@@ -285,7 +277,6 @@ class FlinkRunnerSpec
 
       cr.spec.volumeMounts.map(vm => (vm.getName, vm.getMountPath)) mustBe Vector(
         ("secret-vol", "/etc/cloudflow-runner-secret"),
-        ("config-map-vol", "/etc/cloudflow-runner"),
         (Runner.DownwardApiVolumeMount.getName, Runner.DownwardApiVolumeMount.getMountPath))
 
       cr.getKind mustBe "FlinkApplication"
@@ -297,8 +288,7 @@ class FlinkRunnerSpec
       val flinkRunnerDefaults = FlinkRunnerDefaults(
         2,
         jobManagerDefaults = FlinkJobManagerDefaults(1, FlinkPodResourceDefaults()),
-        taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()),
-        prometheusRules = "sample rules")
+        taskManagerDefaults = FlinkTaskManagerDefaults(2, FlinkPodResourceDefaults()))
       val cr = new FlinkRunner(flinkRunnerDefaults)
         .resource(deployment = deployment, app = app, configSecret = new SecretBuilder().build())
 

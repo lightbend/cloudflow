@@ -20,14 +20,9 @@ import io.fabric8.kubernetes.api.model.Quantity
 
 final case class Resources(request: String, limit: String)
 
-sealed trait RunnerDefaults {
-  def prometheusRules: String
-}
+sealed trait RunnerDefaults {}
 
-final case class AkkaRunnerDefaults(
-    resourceConstraints: ResourceConstraints,
-    javaOptions: String,
-    prometheusRules: String)
+final case class AkkaRunnerDefaults(resourceConstraints: ResourceConstraints, javaOptions: String)
     extends RunnerDefaults
 
 final case class ResourceConstraints(
@@ -43,10 +38,7 @@ final case class SparkPodDefaults(
     memoryOverhead: Option[Quantity],
     javaOptions: Option[String])
 
-final case class SparkRunnerDefaults(
-    driverDefaults: SparkPodDefaults,
-    executorDefaults: SparkPodDefaults,
-    prometheusRules: String)
+final case class SparkRunnerDefaults(driverDefaults: SparkPodDefaults, executorDefaults: SparkPodDefaults)
     extends RunnerDefaults
 
 final case class FlinkPodResourceDefaults(
@@ -62,6 +54,5 @@ final case class FlinkTaskManagerDefaults(taskSlots: Int, resources: FlinkPodRes
 final case class FlinkRunnerDefaults(
     parallelism: Int,
     jobManagerDefaults: FlinkJobManagerDefaults,
-    taskManagerDefaults: FlinkTaskManagerDefaults,
-    prometheusRules: String)
+    taskManagerDefaults: FlinkTaskManagerDefaults)
     extends RunnerDefaults

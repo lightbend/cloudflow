@@ -16,10 +16,9 @@ sbt -Ddocker.username=lightbend cloudflow-operator/docker:publish
 Install from helm chart using the docker image such as:
 ```
 helm upgrade -i cloudflow cloudflow-helm-charts/cloudflow \
-  --version "2.0.24" \
+  --version "2.0.26-RC15" \
   --set cloudflow_operator.image.name=lightbend/cloudflow-operator \
-  --set cloudflow_operator.image.tag=2.0.25-SNAP2-19-ff827053 \
-  --set cloudflow_operator.jvm.opts="-XX:MaxRAMPercentage=90.0 -XX:+UseContainerSupport" \
+  --set cloudflow_operator.image.tag=2.0.25-NIGHTLY20210420-2-fec78937-20210421-1831 \
   --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
   --namespace cloudflow
 ```

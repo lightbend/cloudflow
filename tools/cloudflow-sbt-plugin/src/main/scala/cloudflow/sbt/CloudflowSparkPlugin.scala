@@ -101,10 +101,12 @@ object CloudflowSparkPlugin extends AutoPlugin {
           Instructions.Env("SPARK_VERSION", sparkVersion),
           Instructions.Env("JAVA_OPTS", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
           Instructions.Env("SPARK_JAVA_OPT_LOGGING", "-Dlogback.configurationFile=/opt/logging/logback.xml"),
-          Instructions.Copy(CopyFile(metricsProperties), "/etc/metrics/conf/metrics.properties"),
-          Instructions.Copy(CopyFile(prometheusYaml), "/etc/metrics/conf/prometheus.yaml"),
-          Instructions.Copy(CopyFile(sparkEntrypointSh), "/opt/spark-entrypoint.sh"),
-          Instructions.Copy(CopyFile(log4jProperties), "/tmp/log4j.properties"),
+          Instructions
+            .Copy(sources = Seq(CopyFile(metricsProperties)), destination = "/etc/metrics/conf/metrics.properties"),
+          Instructions.Copy(sources = Seq(CopyFile(prometheusYaml)), destination = "/etc/metrics/conf/prometheus.yaml"),
+          Instructions
+            .Copy(sources = Seq(CopyFile(sparkEntrypointSh)), destination = "/opt/spark-entrypoint.sh"),
+          Instructions.Copy(sources = Seq(CopyFile(log4jProperties)), destination = "/tmp/log4j.properties"),
           Instructions.Run.shell(
             Seq(
               Seq("wget", sparkTgzUrl),
@@ -156,6 +158,7 @@ object CloudflowSparkPlugin extends AutoPlugin {
                 "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar",
                 "-o",
                 "/prometheus/jmx_prometheus_javaagent.jar"),
+              Seq("cp", "/etc/metrics/conf/prometheus.yaml", "/prometheus/prometheus.yaml"),
               Seq("chmod", "ug+rwX", "/home/cloudflow"),
               Seq("mkdir", "-p", "/opt/spark/conf"),
               Seq("chgrp", "-R", "0", "/opt/spark"),

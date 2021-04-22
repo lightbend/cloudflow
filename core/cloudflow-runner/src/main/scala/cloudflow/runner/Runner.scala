@@ -31,7 +31,6 @@ import cloudflow.blueprint.RunnerConfigUtils._
  */
 object Runner extends RunnerConfigResolver with StreamletLoader {
   lazy val log = LoggerFactory.getLogger(getClass.getName)
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   sys.props.get("os.name") match {
     case Some(os) if os.startsWith("Win") =>

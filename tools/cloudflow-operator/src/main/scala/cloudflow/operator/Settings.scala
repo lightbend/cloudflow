@@ -76,10 +76,7 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 
   private def getAkkaRunnerDefaults(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerDefaults = {
     val runnerConfig = config.getConfig(runnerPath)
-    AkkaRunnerDefaults(
-      getResourceConstraints(runnerConfig),
-      getNonEmptyString(runnerConfig, "java-opts"),
-      getPrometheusRules(runnerStr))
+    AkkaRunnerDefaults(getResourceConstraints(runnerConfig), getNonEmptyString(runnerConfig, "java-opts"))
   }
 
   private def getSparkRunnerDefaults(config: Config, root: String, runnerStr: String): SparkRunnerDefaults = {
@@ -89,10 +86,7 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     val driverConfig = config.getConfig(driverPath)
     val executorConfig = config.getConfig(executorPath)
 
-    SparkRunnerDefaults(
-      getSparkPodDefaults(driverConfig),
-      getSparkPodDefaults(executorConfig),
-      getPrometheusRules(runnerStr))
+    SparkRunnerDefaults(getSparkPodDefaults(driverConfig), getSparkPodDefaults(executorConfig))
   }
 
   private def getFlinkRunnerDefaults(config: Config, root: String, runnerStr: String): FlinkRunnerDefaults = {
@@ -105,23 +99,7 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     FlinkRunnerDefaults(
       parallelism,
       FlinkJobManagerDefaults(jobManagerConfig.getInt("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
-      FlinkTaskManagerDefaults(taskManagerConfig.getInt("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)),
-      getPrometheusRules(runnerStr))
-  }
-
-  def getPrometheusRules(runnerStr: String): String = runnerStr match {
-    case AkkaRunner.Runtime =>
-      appendResourcesToString("prometheus-rules/base.yaml", "prometheus-rules/kafka-client.yaml")
-    case SparkRunner.Runtime =>
-      appendResourcesToString(
-        "prometheus-rules/base.yaml",
-        "prometheus-rules/spark.yaml",
-        "prometheus-rules/kafka-client.yaml")
-    case FlinkRunner.Runtime =>
-      appendResourcesToString(
-        "prometheus-rules/base.yaml",
-        "prometheus-rules/flink.yaml",
-        "prometheus-rules/kafka-client.yaml")
+      FlinkTaskManagerDefaults(taskManagerConfig.getInt("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)))
   }
 
   private def appendResourcesToString(paths: String*): String =

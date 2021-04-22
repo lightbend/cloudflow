@@ -51,8 +51,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
 
   implicit val adapter = SparkApp.adapter
 
-  def prometheusConfig = PrometheusConfig(prometheusRules)
-
   val DriverPod = "driver"
   val ExecutorPod = "executor"
 
@@ -100,10 +98,7 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         CloudflowStatus.errorAction(newApp, runners, msg)
     }
 
-    val configAction =
-      Action.createOrReplace(configResource(deployment, newApp))
-
-    Seq(configAction, patchAction)
+    Seq(patchAction)
   }
 
   def defaultReplicas = DefaultNrOfExecutorInstances
@@ -192,8 +187,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
     val appId = app.spec.appId
     val agentPaths = app.spec.agentPaths
     val image = deployment.image
-    val configMapName = Name.ofConfigMap(deployment.name)
-    val configMaps = Seq(SparkApp.NamePath(configMapName, Runner.ConfigMapMountPath))
 
     val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
@@ -248,7 +241,6 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, DriverPod),
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, DriverPod),
-        configMaps = configMaps,
         securityContext = securityContext),
       podsConfig,
       deployment)
@@ -261,21 +253,20 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, ExecutorPod),
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, ExecutorPod),
-        configMaps = configMaps,
         securityContext = securityContext),
       podsConfig,
       deployment)
 
     val monitoring = {
       if (!agentPaths.contains(PrometheusAgentKey)) {
+        // The Spark operator mounts a config-ma in /etc/metris/conf so we use and alternative path
         SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
           jmxExporterJar = "/prometheus/jmx_prometheus_javaagent.jar",
-          configFile = "/etc/cloudflow-runner/prometheus.yaml",
+          configFile = "/prometheus/prometheus.yaml",
           port = 2050))
       } else {
-        SparkApp.Monitoring(prometheus = SparkApp.Prometheus(
-          jmxExporterJar = agentPaths(PrometheusAgentKey),
-          configFile = PrometheusConfig.prometheusConfigPath(Runner.ConfigMapMountPath)))
+        SparkApp.Monitoring(prometheus = SparkApp
+          .Prometheus(jmxExporterJar = agentPaths(PrometheusAgentKey), configFile = "/prometheus/prometheus.yaml"))
       }
     }
 
