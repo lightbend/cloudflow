@@ -16,7 +16,7 @@ trait WithProtocolVersion {
       version <- client.getOperatorProtocolVersion()
     } yield {
       version match {
-        case v if v == Cli.ProtocolVersion || v == Cli.CompatibleProtocolVersion =>
+        case v if v == Cli.ProtocolVersion =>
           Success(version)
         case ver =>
           val pVersion = Integer.parseInt(Cli.ProtocolVersion)
