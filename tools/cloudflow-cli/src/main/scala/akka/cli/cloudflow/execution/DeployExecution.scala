@@ -5,12 +5,13 @@
 package akka.cli.cloudflow.execution
 
 import java.io.File
-
 import scala.util.{ Failure, Success, Try }
 import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution, Json }
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.datap.crd.App
 import akka.cli.cloudflow.commands.Deploy
+
+import scala.io.Source
 
 object DeployExecution {
 
@@ -205,6 +206,14 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         logbackContent,
         version == Cli.ProtocolVersion,
         streamletsConfigs)
+      _ <- PluginExecution.execute(
+        plugin = d.plugin,
+        operation = PluginExecution.DEPLOY,
+        appName = name,
+        configs = Some(Json.mapper.writeValueAsString(streamletsConfigs.map {
+          case (d, config) => d.streamletName -> Map("deployment" -> d, "configs" -> config)
+        })),
+        logger = logger)
     } yield {
       logger.trace("Command Deploy executed successfully")
       DeployResult()

@@ -197,6 +197,9 @@ object OptionsParser {
           c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
           .optional()
           .text("The runtimes that should not be checked"),
+        commandParse[commands.Deploy, File](opt("plugin"))((c, f) => c.copy(plugin = Some(f)))
+          .optional()
+          .text("the kubectl cloudflow plugin to be used"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -205,6 +208,11 @@ object OptionsParser {
         commandCheck[commands.Deploy](d => {
           if (!d.crFile.exists()) {
             failure("the provided CR file doesn't exists")
+          } else success
+        }),
+        commandCheck[commands.Deploy](d => {
+          if (!d.plugin.map(_.exists()).getOrElse(true)) {
+            failure("the provided plugin file doesn't exists")
           } else success
         }),
         commandCheck[commands.Deploy](d => {
@@ -277,6 +285,14 @@ object OptionsParser {
         commandParse[commands.Undeploy, String](arg("<cloudflowApp>"))((c, v) => c.copy(cloudflowApp = v))
           .required()
           .text("the name of the cloudflow application"),
+        commandParse[commands.Undeploy, File](opt("plugin"))((c, f) => c.copy(plugin = Some(f)))
+          .optional()
+          .text("the kubectl cloudflow plugin to be used"),
+        commandCheck[commands.Undeploy](u => {
+          if (!u.plugin.map(_.exists()).getOrElse(true)) {
+            failure("the provided plugin file doesn't exists")
+          } else success
+        }),
         outputFmt)
   }
 
@@ -453,6 +469,7 @@ object commands {
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
       unmanagedRuntimes: Seq[String] = Seq(),
+      plugin: Option[File] = None,
       output: format.Format = format.Default)
       extends Command[DeployResult]
       with WithConfiguration {
@@ -469,7 +486,7 @@ object commands {
 
   }
 
-  case class Undeploy(cloudflowApp: String = "", output: format.Format = format.Default)
+  case class Undeploy(cloudflowApp: String = "", plugin: Option[File] = None, output: format.Format = format.Default)
       extends Command[UndeployResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[UndeployResult] = {

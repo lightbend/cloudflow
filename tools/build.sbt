@@ -64,6 +64,8 @@ lazy val cloudflowCli =
           "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
           "-H:+ReportExceptionStackTraces",
           "--no-fallback",
+          "--language:js",
+          "-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime",
           "--initialize-at-build-time",
           "--report-unsupported-elements-at-runtime",
           // TODO: possibly to be removed
