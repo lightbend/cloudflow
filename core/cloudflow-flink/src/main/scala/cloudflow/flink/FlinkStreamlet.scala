@@ -26,6 +26,7 @@ import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.client.program.OptimizerPlanEnvironment
+import org.apache.flink.runtime.client.JobCancellationException
 import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.datastream.{ DataStreamSink, DataStream => JDataStream }
 import org.apache.flink.streaming.api.environment.CheckpointConfig
@@ -285,8 +286,12 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         th =>
           th match {
             // rethrow for Flink to catch as Flink control flow depends on this
-            case pax: OptimizerPlanEnvironment.ProgramAbortException => throw pax
-            case _: Throwable                                        => completionPromise.tryFailure(th)
+            case pax: OptimizerPlanEnvironment.ProgramAbortException =>
+              throw pax
+            case _: JobCancellationException =>
+              completionPromise.trySuccess(Dun)
+            case t: Throwable =>
+              if (causeIsCancellation(t)) completionPromise.trySuccess(Dun) else completionPromise.tryFailure(th)
           },
         _ => completionPromise.trySuccess(Dun)
       )
@@ -299,6 +304,16 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
         def stop(): Future[Dun]    = ???
       }
     }
+
+    def causeIsCancellation(t: Throwable): Boolean =
+      t match {
+        case _: JobCancellationException => true
+        case _ =>
+          if (t.getCause != null) {
+            causeIsCancellation(t.getCause)
+          } else
+            false
+      }
   }
 
   override def logStartRunnerMessage(buildInfo: String): Unit =
