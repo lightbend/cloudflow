@@ -288,8 +288,6 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
             // rethrow for Flink to catch as Flink control flow depends on this
             case pax: OptimizerPlanEnvironment.ProgramAbortException =>
               throw pax
-            case _: JobCancellationException =>
-              completionPromise.trySuccess(Dun)
             case t: Throwable =>
               if (causeIsCancellation(t)) completionPromise.trySuccess(Dun) else completionPromise.tryFailure(th)
           },
