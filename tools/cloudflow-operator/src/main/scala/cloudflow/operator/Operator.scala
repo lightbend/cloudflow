@@ -47,7 +47,7 @@ import scala.util._
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")
 
-  val ProtocolVersion = "5"
+  val ProtocolVersion = "6"
   val ProtocolVersionKey = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
   def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = {
