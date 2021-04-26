@@ -621,8 +621,8 @@ object CloudflowConfig {
 
     ConfigFactory
       .empty()
-      .withFallback(streamletConfig)
       .withFallback(runtimeConfig)
+      .withFallback(streamletConfig)
       .withOnlyPath("kubernetes")
   }
 
