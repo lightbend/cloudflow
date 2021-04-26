@@ -459,8 +459,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     executor.annotations(AnnotationKey("akey3")) shouldBe AnnotationValue("avalue3")
     executor.annotations(AnnotationKey("akey4")) shouldBe AnnotationValue("avalue4")
 
-    val driverContainerEnv = driver.containers("container").env.head
-    val executorContainerEnv = executor.containers("container").env.head
+    val driverContainerEnv = driver.containers("container").env.head.head
+    val executorContainerEnv = executor.containers("container").env.head.head
 
     driverContainerEnv.name shouldBe "FOO"
     driverContainerEnv.value shouldBe "BAR"
@@ -615,6 +615,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
       .pods("pod")
       .containers("container")
       .ports
+      .get
 
     ports(0).containerPort shouldBe 9001
     ports(0).protocol shouldBe "TCP"

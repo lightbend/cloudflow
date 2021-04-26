@@ -384,12 +384,16 @@ object PodsConfig {
    */
 
   private def getContainerConfig(container: CloudflowConfig.Container): ContainerConfig = {
-    val env = container.env.map { env =>
-      new EnvVarBuilder()
-        .withName(env.name)
-        .withValue(env.value)
-        .build()
-    }
+    val env = container.env
+      .map {
+        _.map { env =>
+          new EnvVarBuilder()
+            .withName(env.name)
+            .withValue(env.value)
+            .build()
+        }
+      }
+      .getOrElse(List())
 
     val resources = {
       val limits = {
@@ -423,18 +427,22 @@ object PodsConfig {
           .build()
     }.toList
 
-    val ports = container.ports.map { port =>
-      val base = new ContainerPortBuilder()
-        .withName(port.name.map(_.value).getOrElse(null)) // TODO: check if empty string or null
-        .withContainerPort(port.containerPort)
-        .withHostIP(port.hostIP)
-        .withProtocol(port.protocol)
+    val ports = container.ports
+      .map {
+        _.map { port =>
+          val base = new ContainerPortBuilder()
+            .withName(port.name.map(_.value).getOrElse(null)) // TODO: check if empty string or null
+            .withContainerPort(port.containerPort)
+            .withHostIP(port.hostIP)
+            .withProtocol(port.protocol)
 
-      (port.hostPort match {
-        case Some(hp) => base.withHostPort(hp)
-        case _        => base
-      }).build()
-    }
+          (port.hostPort match {
+            case Some(hp) => base.withHostPort(hp)
+            case _        => base
+          }).build()
+        }
+      }
+      .getOrElse(List())
 
     ContainerConfig(env = env, resources = resources, volumeMounts = volumeMounts, ports = ports)
   }
