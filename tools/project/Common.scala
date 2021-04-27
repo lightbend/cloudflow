@@ -27,7 +27,8 @@ object Common extends AutoPlugin {
           "contributors",
           "Contributors",
           "https://cloudflow.zulipchat.com/",
-          url("https://github.com/lightbend/cloudflow/graphs/contributors")))
+          url("https://github.com/lightbend/cloudflow/graphs/contributors")),
+      excludeLintKeys ++= Set(unidocGenjavadocVersion, useGpgAgent, publishMavenStyle, crossSbtVersions))
 
   override lazy val projectSettings = Seq(
     crossVersion := CrossVersion.binary,

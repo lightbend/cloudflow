@@ -35,7 +35,7 @@ object HealthCheckFiles {
 
   private def createTempFile(relativePath: String, streamletRef: String): Unit = {
     val tempDir = System.getProperty("java.io.tmpdir")
-    val path    = java.nio.file.Paths.get(tempDir, relativePath)
+    val path = java.nio.file.Paths.get(tempDir, relativePath)
 
     Files.write(path, s"an akka streamlet $streamletRef".getBytes(StandardCharsets.UTF_8))
     path.toFile.deleteOnExit()

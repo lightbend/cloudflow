@@ -10,6 +10,8 @@ object Dependencies {
     val akka = "2.6.13"
     val akkaHttp = "10.2.4"
     val akkaGrpc = "1.0.2"
+    val alpakkaKafka = "2.0.5"
+    val akkaMgmt = "1.0.8"
     val fabric8 = "5.0.0"
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
@@ -41,7 +43,23 @@ object Dependencies {
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % Versions.akka
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % Versions.akka
+    val akkaProtobuf = "com.typesafe.akka" %% "akka-protobuf" % Versions.akka
+    val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % Versions.akka
+    val akkaShardingTyped = "com.typesafe.akka" %% "akka-cluster-sharding-typed" % Versions.akka
+    val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % Versions.akka
+
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
+    val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % Versions.akkaHttp
+
+    val akkaStreamKafka = ("com.typesafe.akka" %% "akka-stream-kafka" % Versions.alpakkaKafka)
+      .exclude("com.fasterxml.jackson.core", "jackson-databind")
+      .exclude("com.fasterxml.jackson.module", "jackson-module-scala")
+    val akkaStreamKafaSharding = "com.typesafe.akka" %% "akka-stream-kafka-cluster-sharding" % Versions.alpakkaKafka
+
+    val akkaManagement = "com.lightbend.akka.management" %% "akka-management" % Versions.akkaMgmt
+    val akkaClusterBootstrap =
+      "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Versions.akkaMgmt
+    val akkaDiscoveryK8 = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Versions.akkaMgmt
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val avro = "org.apache.avro" % "avro" % "1.8.2"
@@ -49,7 +67,7 @@ object Dependencies {
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
 
-    val ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
+    val ficus = "com.iheart" %% "ficus" % "1.4.7"
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
@@ -145,4 +163,36 @@ object Dependencies {
         Compile.ficus,
         Compile.scalatest % Test)
 
+  val cloudflowAkkastream =
+    libraryDependencies ++= Seq(
+        Compile.akkaActor,
+        Compile.akkaStream,
+        Compile.akkaSlf4j,
+        Compile.akkaDiscovery,
+        Compile.akkaHttp,
+        Compile.akkaHttpSprayJson,
+        Compile.akkaStreamKafka,
+        Compile.akkaStreamKafaSharding,
+        Compile.akkaShardingTyped,
+        Compile.akkaCluster,
+        Compile.akkaManagement,
+        Compile.akkaClusterBootstrap,
+        Compile.akkaDiscoveryK8,
+        Compile.logback,
+        Compile.jacksonScala,
+        Compile.sprayJson,
+        Compile.ficus)
+
+  val cloudflowAkkastreamTestkit =
+        libraryDependencies ++= Vector(
+            AkkaSlf4j,
+            AkkaStream,
+            AkkaStreamContrib,
+            Ficus,
+            AkkaStreamKafkaTestkit,
+            AkkaStreamTestkit,
+            AkkaTestkit,
+            ScalaTest,
+            Junit
+          )
 }

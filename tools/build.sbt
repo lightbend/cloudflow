@@ -155,11 +155,11 @@ lazy val cloudflowNewIt =
               .map { f => file(f.replaceFirst("!! ", "")) })
         }
 
-        (ThisProject / scriptedDependencies).value
-        (cloudflowCrd / publishLocal).value
-        (cloudflowConfig / publishLocal).value
-        (cloudflowCli / publishLocal).value
-        (cloudflowNewItLibrary / publishLocal).value
+        val _1 = (ThisProject / scriptedDependencies).value
+        val _2 = (cloudflowCrd / publishLocal).value
+        val _3 = (cloudflowConfig / publishLocal).value
+        val _4 = (cloudflowCli / publishLocal).value
+        val _5 = (cloudflowNewItLibrary / publishLocal).value
       },
       // the following settings are to run the tests in parallel
       // tuned to run against a real cluster (for now)
@@ -281,44 +281,36 @@ lazy val cloudflowRunnerConfig =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true)
 
-lazy val streamlets =
+lazy val cloudflowStreamlets =
   Project(id = "cloudflow-streamlets", base = file("cloudflow-streamlets"))
     .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .settings(Dependencies.cloudflowStreamlet)
     .settings(
       scalaVersion := Dependencies.Scala213,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
-      scalafmtOnCompile := true
-    )
+      scalafmtOnCompile := true)
 
-// lazy val akkastream =
-//   cloudflowModule("cloudflow-akka")
-//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-//     .dependsOn(streamlets)
-//     .settings(
-//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-//       javacOptions += "-Xlint:deprecation",
-//       scalafmtOnCompile := true,
-//       libraryDependencies ++= Vector(
-//             AkkaSlf4j,
-//             AkkaStream,
-//             AkkaStreamKafka,
-//             AkkaStreamKafaSharding,
-//             AkkaShardingTyped,
-//             AkkaCluster,
-//             AkkaManagement,
-//             AkkaHttp,
-//             AkkaHttpSprayJson,
-//             AkkaClusterBootstrap,
-//             AkkaDiscovery,
-//             AkkaDiscoveryK8,
-//             LogbackClassic,
-//             LogbackCore,
-//             SprayJson,
-//             JacksonScalaModule,
-//             Ficus
-//           )
-//     )
+lazy val cloudflowAkkastream =
+  Project(id = "cloudflow-akka", base = file("cloudflow-akka"))
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowStreamlets)
+    .settings(Dependencies.cloudflowAkkastream)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      javacOptions += "-Xlint:deprecation",
+      scalafmtOnCompile := true)
+
+lazy val cloudflowAkkastreamTestkit =
+  Project(id = "cloudflow-akka-testkit", base = file("cloudflow-akka-testkit"))
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowAkkastream)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true,
+      javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked")
+    )
 
 // lazy val akkastreamUtil =
 //   cloudflowModule("cloudflow-akka-util")
@@ -343,30 +335,6 @@ lazy val streamlets =
 //     .settings(
 //       javacOptions += "-Xlint:deprecation",
 //       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
-//     )
-
-// lazy val akkastreamTestkit =
-//   cloudflowModule("cloudflow-akka-testkit")
-//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-//     .dependsOn(akkastream)
-//     .settings(
-//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-//       scalafmtOnCompile := true,
-//       libraryDependencies ++= Vector(
-//             AkkaSlf4j,
-//             AkkaStream,
-//             AkkaStreamContrib,
-//             Ficus,
-//             AkkaStreamKafkaTestkit,
-//             AkkaStreamTestkit,
-//             AkkaTestkit,
-//             ScalaTest,
-//             Junit
-//           )
-//     )
-//     .settings(
-//       javacOptions += "-Xlint:deprecation",
-//       javacOptions += "-Xlint:unchecked"
 //     )
 
 // lazy val akkastreamTests =
