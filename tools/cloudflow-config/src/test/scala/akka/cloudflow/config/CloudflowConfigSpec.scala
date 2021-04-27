@@ -459,8 +459,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     executor.annotations(AnnotationKey("akey3")) shouldBe AnnotationValue("avalue3")
     executor.annotations(AnnotationKey("akey4")) shouldBe AnnotationValue("avalue4")
 
-    val driverContainerEnv = driver.containers("container").env.head
-    val executorContainerEnv = executor.containers("container").env.head
+    val driverContainerEnv = driver.containers("container").env.head.head
+    val executorContainerEnv = executor.containers("container").env.head.head
 
     driverContainerEnv.name shouldBe "FOO"
     driverContainerEnv.value shouldBe "BAR"
@@ -615,6 +615,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
       .pods("pod")
       .containers("container")
       .ports
+      .get
 
     ports(0).containerPort shouldBe 9001
     ports(0).protocol shouldBe "TCP"
@@ -1007,4 +1008,60 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("cloudflow.topics.my-topic.topic.replicas") shouldBe true
   }
+
+  it should "stack pod config in the correct order" in {
+    // Arrange
+    val appConfig = ConfigFactory.parseString("""
+      cloudflow {
+        # if u remove the streamlet specific config then it works again
+        streamlets.logger {
+          kubernetes.pods.pod.containers {
+            cloudflow {
+              resources {
+                requests {
+                  memory = "1G"
+                }
+              }
+            }
+          }
+        }
+        runtimes.akka {
+          kubernetes.pods.pod.containers {
+            cloudflow {
+              resources {
+                limits {
+                  memory = "3G"
+                }
+              }
+              env = [
+                { name = "JAVA_OPTS"
+                  value = "-XX:MaxRAMPercentage=40.0"
+                }
+              ]
+            }
+          }
+        }
+      }
+      """)
+
+    // Act
+    val cloudflowConfig = CloudflowConfig.loadAndValidate(appConfig).get
+
+    val podConfig = CloudflowConfig.podsConfig("logger", "akka", cloudflowConfig)
+
+    // Assert
+    podConfig
+      .getConfigList("kubernetes.pods.pod.containers.cloudflow.env")
+      .get(0)
+      .getString("name") shouldBe "JAVA_OPTS"
+    podConfig
+      .getConfigList("kubernetes.pods.pod.containers.cloudflow.env")
+      .get(0)
+      .getString("value") shouldBe "-XX:MaxRAMPercentage=40.0"
+    podConfig
+      .getString("kubernetes.pods.pod.containers.cloudflow.resources.requests.memory") shouldBe "1G"
+    podConfig
+      .getString("kubernetes.pods.pod.containers.cloudflow.resources.limits.memory") shouldBe "3G"
+  }
+
 }

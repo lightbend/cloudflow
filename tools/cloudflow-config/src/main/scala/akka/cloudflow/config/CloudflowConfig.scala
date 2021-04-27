@@ -190,8 +190,8 @@ object CloudflowConfig {
 
   // Container
   final case class Container(
-      env: List[EnvVar] = List(),
-      ports: List[ContainerPort] = List(),
+      env: Option[List[EnvVar]] = None,
+      ports: Option[List[ContainerPort]] = None,
       resources: Requirements = Requirements(),
       volumeMounts: Map[String, VolumeMount] = Map())
 

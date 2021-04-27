@@ -27,7 +27,7 @@ object SamplesGenerator extends App {
                 "my-pvc" -> PvcVolume(name = "cloudflow-pvc", readOnly = false),
                 "my-secret" -> SecretVolume(name = "secret.conf")),
               containers = Map("my-container" -> Container(
-                env = List(EnvVar("ENV_VAR_KEY", "ENV_VAR_VALUE")),
+                env = Some(List(EnvVar("ENV_VAR_KEY", "ENV_VAR_VALUE"))),
                 resources = Requirements(
                   requests = Requirement(cpu = Some(Quantity("1")), memory = Some(Quantity("1Gb"))),
                   limits = Requirement(cpu = Some(Quantity("2")), memory = Some(Quantity("2Gb")))),
@@ -44,7 +44,7 @@ object SamplesGenerator extends App {
                 "my-pvc" -> PvcVolume(name = "cloudflow-pvc", readOnly = false),
                 "my-secret" -> SecretVolume(name = "secret.conf")),
               containers = Map("my-container" -> Container(
-                env = List(EnvVar("ENV_VAR_KEY", "ENV_VAR_VALUE")),
+                env = Some(List(EnvVar("ENV_VAR_KEY", "ENV_VAR_VALUE"))),
                 resources = Requirements(
                   requests = Requirement(cpu = Some(Quantity("1")), memory = Some(Quantity("1Gb"))),
                   limits = Requirement(cpu = Some(Quantity("2")), memory = Some(Quantity("2Gb")))),
