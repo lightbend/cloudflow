@@ -1,0 +1,60 @@
+{
+  "namespace": "cloudflow.spark.avro",
+
+  "type": "record",
+  "name": "Product",
+
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "keywords",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "skus",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "Sku",
+
+          "fields": [
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "stock",
+              "type": ["null", "int"],
+              "default": null
+            },
+            {
+              "name": "price",
+              "type": ["null", "int"],
+              "default": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+

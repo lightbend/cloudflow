@@ -281,6 +281,119 @@ lazy val cloudflowRunnerConfig =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true)
 
+lazy val streamlets =
+  Project(id = "cloudflow-streamlets", base = file("cloudflow-streamlets"))
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowStreamlet)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true
+    )
+
+// lazy val akkastream =
+//   cloudflowModule("cloudflow-akka")
+//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+//     .dependsOn(streamlets)
+//     .settings(
+//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
+//       javacOptions += "-Xlint:deprecation",
+//       scalafmtOnCompile := true,
+//       libraryDependencies ++= Vector(
+//             AkkaSlf4j,
+//             AkkaStream,
+//             AkkaStreamKafka,
+//             AkkaStreamKafaSharding,
+//             AkkaShardingTyped,
+//             AkkaCluster,
+//             AkkaManagement,
+//             AkkaHttp,
+//             AkkaHttpSprayJson,
+//             AkkaClusterBootstrap,
+//             AkkaDiscovery,
+//             AkkaDiscoveryK8,
+//             LogbackClassic,
+//             LogbackCore,
+//             SprayJson,
+//             JacksonScalaModule,
+//             Ficus
+//           )
+//     )
+
+// lazy val akkastreamUtil =
+//   cloudflowModule("cloudflow-akka-util")
+//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+//     .dependsOn(akkastream, akkastreamTestkit % Test)
+//     .settings(
+//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
+//       scalafmtOnCompile := true,
+//       libraryDependencies ++= Vector(
+//             AkkaHttp,
+//             AkkaHttpJackson,
+//             AkkaHttp2Support,
+//             AkkaGrpcRuntime,
+//             AkkaStreamContrib,
+//             AkkaHttpTestkit,
+//             AkkaStreamTestkit,
+//             AkkaHttpSprayJsonTest,
+//             Junit,
+//             ScalaTest
+//           )
+//     )
+//     .settings(
+//       javacOptions += "-Xlint:deprecation",
+//       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
+//     )
+
+// lazy val akkastreamTestkit =
+//   cloudflowModule("cloudflow-akka-testkit")
+//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+//     .dependsOn(akkastream)
+//     .settings(
+//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
+//       scalafmtOnCompile := true,
+//       libraryDependencies ++= Vector(
+//             AkkaSlf4j,
+//             AkkaStream,
+//             AkkaStreamContrib,
+//             Ficus,
+//             AkkaStreamKafkaTestkit,
+//             AkkaStreamTestkit,
+//             AkkaTestkit,
+//             ScalaTest,
+//             Junit
+//           )
+//     )
+//     .settings(
+//       javacOptions += "-Xlint:deprecation",
+//       javacOptions += "-Xlint:unchecked"
+//     )
+
+// lazy val akkastreamTests =
+//   cloudflowModule("cloudflow-akka-tests")
+//     .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
+//     .dependsOn(akkastream, akkastreamTestkit % Test)
+//     .settings(
+//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
+//       scalafmtOnCompile := true,
+//       libraryDependencies ++= Vector(
+//             AkkaHttpTestkit,
+//             AkkaHttpSprayJsonTest,
+//             TestcontainersKafka % Test,
+//             ScalaTest,
+//             Junit
+//           )
+//     )
+//     .settings(
+//       javacOptions += "-Xlint:deprecation",
+//       inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
+//       PB.targets in Compile := Seq(
+//             scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
+//           ),
+//       PB.protoSources in Compile := Seq(baseDirectory.value / "src/test/protobuf"),
+//       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
+//     )
+
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")

@@ -47,6 +47,10 @@ object Dependencies {
     val avro = "org.apache.avro" % "avro" % "1.8.2"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
+    val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
+
+    val ficus                 = "com.iheart"            %% "ficus"                    % "1.4.7"
+
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
 
@@ -130,5 +134,15 @@ object Dependencies {
 
   val cloudflowRunnerConfig =
     libraryDependencies ++= Seq(Compile.jacksonScala, Compile.typesafeConfig % Test, Compile.scalatest % Test)
+
+  val cloudflowStreamlet =
+    libraryDependencies ++= Seq(
+        Compile.sprayJson,
+        Compile.bijection,
+        Compile.avro,
+        Compile.scalaPbRuntime,
+        Compile.typesafeConfig,
+        Compile.ficus,
+        Compile.scalatest % Test)
 
 }

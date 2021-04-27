@@ -4,6 +4,7 @@ import sbt._
 import sbt.plugins.JvmPlugin
 import xerial.sbt.Sonatype.SonatypeKeys.sonatypePublishToBundle
 import com.jsuereth.sbtpgp.PgpKeys.useGpgAgent
+import sbtunidoc.GenJavadocPlugin.autoImport.unidocGenjavadocVersion
 
 object Common extends AutoPlugin {
 
@@ -36,6 +37,7 @@ object Common extends AutoPlugin {
     useGpgAgent := false,
     scalafmtOnCompile := true,
     run / fork := false,
+    unidocGenjavadocVersion := "0.17",
     // show full stack traces and test case durations
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     // -a Show stack traces and exception class name for AssertionErrors.
