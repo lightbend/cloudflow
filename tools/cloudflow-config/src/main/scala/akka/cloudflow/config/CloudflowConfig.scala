@@ -21,8 +21,7 @@ import pureconfig.{
 }
 import pureconfig.error.{ CannotConvert, ConfigReaderFailures, ExceptionThrown, FailureReason }
 import pureconfig.generic.ProductHint
-import pureconfig.module.magnolia.auto.reader.exportReader
-import pureconfig.module.magnolia.auto.writer.exportWriter
+import pureconfig.generic.auto.{ exportReader, exportWriter }
 
 // The order of the elements in this file matter, please make sure you go from leaf to nodes
 object CloudflowConfig {

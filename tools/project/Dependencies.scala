@@ -22,7 +22,6 @@ object Dependencies {
 
     val typesafeConfig = "com.typesafe" % "config" % "1.4.1"
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.14.0"
-    val pureConfigMagnolia = "com.github.pureconfig" %% "pureconfig-magnolia" % "0.14.0"
     val scopt = "com.github.scopt" %% "scopt" % "4.0.0-RC2"
     val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.10.0"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
@@ -72,7 +71,6 @@ object Dependencies {
         Compile.jacksonScala,
         Compile.typesafeConfig,
         Compile.pureConfig,
-        Compile.pureConfigMagnolia,
         Compile.scalatest % Test)
 
   val cloudflowCli =
