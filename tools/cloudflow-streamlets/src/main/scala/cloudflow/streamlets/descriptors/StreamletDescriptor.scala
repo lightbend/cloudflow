@@ -76,12 +76,13 @@ object StreamletDescriptor extends DefaultJsonProtocol {
 
   implicit final class ConfigParameterDescriptorToDescriptor(val configParameterDescriptor: ConfigParameterDescriptor)
       extends AnyVal {
-    def toDescriptor = ConfigParameterDescriptor(
-      configParameterDescriptor.key,
-      configParameterDescriptor.description,
-      configParameterDescriptor.validationType,
-      configParameterDescriptor.validationPattern,
-      configParameterDescriptor.defaultValue)
+    def toDescriptor =
+      ConfigParameterDescriptor(
+        configParameterDescriptor.key,
+        configParameterDescriptor.description,
+        configParameterDescriptor.validationType,
+        configParameterDescriptor.validationPattern,
+        configParameterDescriptor.defaultValue)
   }
 
   final case class StreamletAttributeDescriptor(attributeName: String, configPath: String)

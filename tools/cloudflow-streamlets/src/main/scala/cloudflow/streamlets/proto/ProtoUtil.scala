@@ -24,11 +24,12 @@ import cloudflow.streamlets.SchemaDefinition
 object ProtoUtil {
   val Format = "proto"
 
-  def createSchemaDefinition(descriptor: Descriptor) = SchemaDefinition(
-    name = descriptor.fullName,
-    schema = descriptor.asProto.toProtoString,
-    fingerprint = fingerprintSha256(descriptor),
-    format = Format)
+  def createSchemaDefinition(descriptor: Descriptor) =
+    SchemaDefinition(
+      name = descriptor.fullName,
+      schema = descriptor.asProto.toProtoString,
+      fingerprint = fingerprintSha256(descriptor),
+      format = Format)
 
   private def fingerprintSha256(descriptor: Descriptor): String =
     Base64

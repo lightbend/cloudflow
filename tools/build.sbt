@@ -305,12 +305,12 @@ lazy val cloudflowAkkastreamTestkit =
   Project(id = "cloudflow-akka-testkit", base = file("cloudflow-akka-testkit"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(cloudflowAkkastream)
+    .settings(Dependencies.cloudflowAkkastreamTestkit)
     .settings(
       scalaVersion := Dependencies.Scala213,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
-      javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked")
-    )
+      javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"))
 
 // lazy val akkastreamUtil =
 //   cloudflowModule("cloudflow-akka-util")

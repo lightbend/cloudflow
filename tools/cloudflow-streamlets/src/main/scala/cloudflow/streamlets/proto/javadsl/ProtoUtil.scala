@@ -26,11 +26,12 @@ import com.google.protobuf.TextFormat
 object ProtoUtil {
   val Format = "proto"
 
-  def createSchemaDefinition(descriptor: Descriptor) = SchemaDefinition(
-    name = descriptor.getFullName,
-    schema = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto),
-    fingerprint = fingerprintSha256(descriptor),
-    format = Format)
+  def createSchemaDefinition(descriptor: Descriptor) =
+    SchemaDefinition(
+      name = descriptor.getFullName,
+      schema = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto),
+      fingerprint = fingerprintSha256(descriptor),
+      format = Format)
 
   private def fingerprintSha256(descriptor: Descriptor): String =
     Base64

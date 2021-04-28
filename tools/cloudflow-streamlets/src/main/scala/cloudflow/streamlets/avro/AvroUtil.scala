@@ -48,9 +48,10 @@ object AvroUtil {
       .encodeToString(parsingFingerprint("SHA-256", schema))
   }
 
-  def createSchemaDefinition(schema: Schema) = SchemaDefinition(
-    name = schema.getFullName,
-    schema = schema.toString(false),
-    fingerprint = fingerprintSha256(schema),
-    format = Format)
+  def createSchemaDefinition(schema: Schema) =
+    SchemaDefinition(
+      name = schema.getFullName,
+      schema = schema.toString(false),
+      fingerprint = fingerprintSha256(schema),
+      format = Format)
 }

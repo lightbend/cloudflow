@@ -31,6 +31,7 @@ object Dependencies {
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest
+
     // These two dependencies are required to be present at runtime by fabric8, specifically its pod file read methods.
     // Reference:
     // https://github.com/fabric8io/kubernetes-client/blob/0c4513ff30ac9229426f1481a46fde2eb54933d9/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/internal/core/v1/PodOperationsImpl.java#L451
@@ -41,7 +42,9 @@ object Dependencies {
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
 
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % Versions.akka
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % Versions.akka
+    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % Versions.akka
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % Versions.akka
     val akkaProtobuf = "com.typesafe.akka" %% "akka-protobuf" % Versions.akka
     val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % Versions.akka
@@ -55,11 +58,15 @@ object Dependencies {
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
       .exclude("com.fasterxml.jackson.module", "jackson-module-scala")
     val akkaStreamKafaSharding = "com.typesafe.akka" %% "akka-stream-kafka-cluster-sharding" % Versions.alpakkaKafka
+    val akkaStreamKafkaTestkit = ("com.typesafe.akka" %% "akka-stream-kafka-testkit" % Versions.alpakkaKafka)
+      .exclude("com.typesafe.akka", "akka-stream-testkit")
 
     val akkaManagement = "com.lightbend.akka.management" %% "akka-management" % Versions.akkaMgmt
     val akkaClusterBootstrap =
       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Versions.akkaMgmt
     val akkaDiscoveryK8 = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Versions.akkaMgmt
+
+    val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.10"
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val avro = "org.apache.avro" % "avro" % "1.8.2"
@@ -84,6 +91,8 @@ object Dependencies {
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
     val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
+
+    val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
   }
 
@@ -184,15 +193,14 @@ object Dependencies {
         Compile.ficus)
 
   val cloudflowAkkastreamTestkit =
-        libraryDependencies ++= Vector(
-            AkkaSlf4j,
-            AkkaStream,
-            AkkaStreamContrib,
-            Ficus,
-            AkkaStreamKafkaTestkit,
-            AkkaStreamTestkit,
-            AkkaTestkit,
-            ScalaTest,
-            Junit
-          )
+    libraryDependencies ++= Seq(
+        Compile.akkaSlf4j,
+        Compile.akkaStream,
+        Compile.akkaStreamContrib,
+        Compile.ficus,
+        Compile.akkaStreamKafkaTestkit,
+        Compile.akkaStreamTestkit,
+        Compile.akkaTestkit,
+        Compile.scalatest,
+        TestDeps.scalatestJunit)
 }

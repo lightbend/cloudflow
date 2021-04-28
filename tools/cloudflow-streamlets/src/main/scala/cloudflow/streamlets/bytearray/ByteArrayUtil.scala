@@ -25,11 +25,12 @@ object ByteArrayUtil {
   val Format = "bytearray"
   val schemaName = "ByteArraySchema"
 
-  def createSchemaDefinition() = SchemaDefinition(
-    name = schemaName,
-    schema = schemaName,
-    fingerprint = fingerprintSha256(schemaName),
-    format = Format)
+  def createSchemaDefinition() =
+    SchemaDefinition(
+      name = schemaName,
+      schema = schemaName,
+      fingerprint = fingerprintSha256(schemaName),
+      format = Format)
 
   private def fingerprintSha256(descriptor: String): String =
     Base64
