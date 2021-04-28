@@ -69,6 +69,8 @@ lazy val cloudflowCli =
           // TODO: possibly to be removed
           "--allow-incomplete-classpath",
           "--initialize-at-run-time" + Seq(
+            "akka.cloudflow.config.CloudflowConfig$",
+            "akka.cloudflow.config.UnsafeCloudflowConfigLoader$",
             "com.typesafe.config.impl.ConfigImpl",
             "com.typesafe.config.impl.ConfigImpl$EnvVariablesHolder",
             "com.typesafe.config.impl.ConfigImpl$SystemPropertiesHolder",
