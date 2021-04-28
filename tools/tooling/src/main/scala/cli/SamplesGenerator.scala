@@ -9,7 +9,7 @@ import akka.cloudflow.config.CloudflowConfig._
 import java.io._
 import com.typesafe.config.ConfigFactory
 import pureconfig._
-import pureconfig.module.magnolia.auto.writer.exportWriter
+import pureconfig.generic.auto.exportWriter
 
 object SamplesGenerator extends App {
 
