@@ -52,16 +52,16 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
   "Akka streamlet instances" should {
     "consume from an outlet as a group per streamlet reference" in {
       // Generate some test data
-      val dataSize     = 5000
-      val data         = List.range(0, dataSize).map(i => Data(i, s"data"))
-      val outlet       = mkUniqueGenOutlet()
+      val dataSize = 5000
+      val data = List.range(0, dataSize).map(i => Data(i, s"data"))
+      val outlet = mkUniqueGenOutlet()
       val genExecution = Generator.run(data, outlet)
       // gen auto-completes, the source is finite.
       val _ = genExecution.completed.futureValue // assert that the future completed
 
       // all test receivers will write their data to a sink which is probed.
       val probe = akka.testkit.TestProbe()
-      val sink  = Sink.actorRef[Data](probe.ref, Completed)
+      val sink = Sink.actorRef[Data](probe.ref, Completed)
 
       val instanceIds = List.range(0, 4)
       val executions = instanceIds.map { i =>
@@ -87,24 +87,24 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
     "consume from an outlet separately if the streamlet name is different" in {
       // Generate some test data
       val dataSize = 500
-      val data     = List.range(0, dataSize).map(i => Data(i, s"data"))
+      val data = List.range(0, dataSize).map(i => Data(i, s"data"))
 
-      val outlet       = mkUniqueGenOutlet()
+      val outlet = mkUniqueGenOutlet()
       val genExecution = Generator.run(data, outlet)
       // gen auto-completes, the source is finite.
       genExecution.completed.futureValue
 
       // all test receivers will write their data to a sink which is probed.
       val probe1 = akka.testkit.TestProbe()
-      val sink1  = Sink.actorRef[Data](probe1.ref, Completed)
+      val sink1 = Sink.actorRef[Data](probe1.ref, Completed)
 
       val probe2 = akka.testkit.TestProbe()
-      val sink2  = Sink.actorRef[Data](probe2.ref, Completed)
+      val sink2 = Sink.actorRef[Data](probe2.ref, Completed)
 
       // unique streamlet references, receivers should all receive all data.
-      val receiver1  = new TestReceiver(sink1, 1)
+      val receiver1 = new TestReceiver(sink1, 1)
       val execution1 = TestReceiver.run(s"receiver-1", receiver1, outlet)
-      val receiver2  = new TestReceiver(sink2, 2)
+      val receiver2 = new TestReceiver(sink2, 2)
       val execution2 = TestReceiver.run(s"receiver-2", receiver2, outlet)
       val executions = List(execution1, execution2)
 
@@ -132,37 +132,38 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
 
   object Completed
 
-  val appId      = "my-app"
+  val appId = "my-app"
   val appVersion = "abc"
 
   object Generator {
     val StreamletClass = "Generator"
-    val Out            = "out"
-    val StreamletRef   = "gen"
+    val Out = "out"
+    val StreamletRef = "gen"
 
     def run(testData: List[Data], outlet: String): StreamletExecution = {
-      val gen     = new Generator(testData)
+      val gen = new Generator(testData)
       val context = new AkkaStreamletContextImpl(definition(outlet), system)
       gen.setContext(context)
       gen.run(context)
     }
 
-    def definition(outlet: String) = StreamletDefinition(
-      appId = appId,
-      appVersion = appVersion,
-      streamletRef = StreamletRef,
-      streamletClass = StreamletClass,
-      portMappings = List(
-        PortMapping("out", Topic(outlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))
-      ),
-      volumeMounts = List.empty[VolumeMount],
-      config = config
-    )
+    def definition(outlet: String) =
+      StreamletDefinition(
+        appId = appId,
+        appVersion = appVersion,
+        streamletRef = StreamletRef,
+        streamletClass = StreamletClass,
+        portMappings = List(
+          PortMapping(
+            "out",
+            Topic(outlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))),
+        volumeMounts = List.empty[VolumeMount],
+        config = config)
   }
 
   class Generator(testData: List[Data]) extends AkkaStreamlet {
     import Generator._
-    val out                  = AvroOutlet[Data](Out)
+    val out = AvroOutlet[Data](Out)
     final override val shape = StreamletShape.withOutlets(out)
     override final def createLogic = new RunnableGraphStreamletLogic() {
       def runnableGraph = Source(testData).to(plainSink(out))
@@ -171,30 +172,31 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
 
   object TestReceiver {
     val streamletClass = "TestReceiver"
-    val out            = "out"
+    val out = "out"
 
     def run(streamletRef: String, receiver: TestReceiver, genOutlet: String): StreamletExecution = {
       val streamletDef = definition(streamletRef, genOutlet)
-      val context      = new AkkaStreamletContextImpl(streamletDef, system)
+      val context = new AkkaStreamletContextImpl(streamletDef, system)
       receiver.setContext(context)
       receiver.run(context)
     }
 
-    def definition(streamletRef: String, genOutlet: String) = StreamletDefinition(
-      appId = appId,
-      appVersion = appVersion,
-      streamletRef = streamletRef,
-      streamletClass = "TestReceiver",
-      portMappings = List(
-        PortMapping("in", Topic(genOutlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))
-      ),
-      volumeMounts = List.empty[VolumeMount],
-      config = config
-    )
+    def definition(streamletRef: String, genOutlet: String) =
+      StreamletDefinition(
+        appId = appId,
+        appVersion = appVersion,
+        streamletRef = streamletRef,
+        streamletClass = "TestReceiver",
+        portMappings = List(
+          PortMapping(
+            "in",
+            Topic(genOutlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))),
+        volumeMounts = List.empty[VolumeMount],
+        config = config)
   }
 
   class TestReceiver(sink: Sink[Data, NotUsed], instance: Int) extends AkkaStreamlet {
-    val in                   = AvroInlet[Data]("in")
+    val in = AvroInlet[Data]("in")
     final override val shape = StreamletShape.withInlets(in)
 
     val flow = Flow[Data].map(_.copy(name = s"$instance"))

@@ -19,7 +19,7 @@ package cloudflow.akkastream.testkit
 import cloudflow.streamlets.ConfigParameter
 
 package object javadsl {
-  type InletTap[T]  = cloudflow.akkastream.testkit.InletTap[T]
+  type InletTap[T] = cloudflow.akkastream.testkit.InletTap[T]
   type OutletTap[T] = cloudflow.akkastream.testkit.OutletTap[T]
 }
 
@@ -39,10 +39,8 @@ package javadsl {
     def completed(): cloudflow.akkastream.testkit.Completed = this
   }
 
-  final case class ConfigParameterValueImpl private (
-      configParameterKey: String,
-      value: String
-  ) extends ConfigParameterValue
+  final case class ConfigParameterValueImpl private (configParameterKey: String, value: String)
+      extends ConfigParameterValue
 
   object ConfigParameterValue {
     def create(configParameter: ConfigParameter, value: String): ConfigParameterValue =

@@ -16,7 +16,9 @@
 
 package cloudflow.streamlets
 
-import org.scalatest.{ MustMatchers, TryValues, WordSpec }
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.TryValues
 
 // Definitions for test purposes
 class Foo
@@ -37,7 +39,7 @@ class ClassWithArgsAndCompanionObject(arg: Int) {
 }
 object ClassWithArgsAndCompanionObject
 
-class ClassOpsSpec extends WordSpec with MustMatchers with TryValues {
+class ClassOpsSpec extends AnyWordSpec with Matchers with TryValues {
 
   import ClassOps._
 

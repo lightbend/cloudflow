@@ -33,12 +33,7 @@ trait StreamletPort {
  * The `format` specifies the format of the schema. Unique names should be used for different formats.
  * (In the case of Avro, format is "avro")
  */
-final case class SchemaDefinition(
-    name: String,
-    schema: String,
-    fingerprint: String,
-    format: String
-)
+final case class SchemaDefinition(name: String, schema: String, fingerprint: String, format: String)
 
 /**
  * A handle to read data according to a schema.

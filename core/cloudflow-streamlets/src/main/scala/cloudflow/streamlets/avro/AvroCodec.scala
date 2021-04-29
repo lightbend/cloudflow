@@ -28,11 +28,11 @@ import cloudflow.streamlets._
 class AvroCodec[T <: SpecificRecordBase](avroSchema: Schema) extends Codec[T] {
 
   val recordInjection: Injection[T, Array[Byte]] = SpecificAvroCodecs.toBinary(avroSchema)
-  val avroSerde                                  = new AvroSerde(recordInjection)
+  val avroSerde = new AvroSerde(recordInjection)
 
-  def encode(value: T): Array[Byte]      = avroSerde.encode(value)
+  def encode(value: T): Array[Byte] = avroSerde.encode(value)
   def decode(bytes: Array[Byte]): Try[T] = avroSerde.decode(bytes)
-  def schema: Schema                     = avroSchema
+  def schema: Schema = avroSchema
 }
 
 private[avro] class AvroSerde[T <: SpecificRecordBase](injection: Injection[T, Array[Byte]]) extends Serializable {

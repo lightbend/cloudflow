@@ -32,16 +32,16 @@ final class MultiData2[O1, O2] private (val data1: immutable.Seq[O1], val data2:
 
   override def toString: String =
     "MultiData2(" +
-        s"data1=${data1.mkString(",")}, " +
-        s"data2=${data2.mkString(",")}" +
-        ")"
+    s"data1=${data1.mkString(",")}, " +
+    s"data2=${data2.mkString(",")}" +
+    ")"
 }
 
 object MultiData2 {
 
   def apply[O1, O2](data1: immutable.Seq[O1], data2: immutable.Seq[O2]) = new MultiData2(data1, data2)
-  def createData1[O1, O2](data: immutable.Seq[O1]): MultiData2[O1, O2]  = new MultiData2(data, immutable.Seq.empty)
-  def createData2[O1, O2](data: immutable.Seq[O2]): MultiData2[O1, O2]  = new MultiData2(immutable.Seq.empty, data)
+  def createData1[O1, O2](data: immutable.Seq[O1]): MultiData2[O1, O2] = new MultiData2(data, immutable.Seq.empty)
+  def createData2[O1, O2](data: immutable.Seq[O2]): MultiData2[O1, O2] = new MultiData2(immutable.Seq.empty, data)
 
   def fromEither[O1, O2](data: Either[O1, O2]): MultiData2[O1, O2] =
     data match {
@@ -49,9 +49,12 @@ object MultiData2 {
       case Right(r) => MultiData2.createData2(immutable.Seq(r))
     }
 
-  def create[O1, O2](data1: java.util.Collection[O1], data2: java.util.Collection[O2]) = new MultiData2(asScala(data1), asScala(data2))
-  def createData1[O](data: java.util.Collection[O]): MultiData2[O, Object]             = new MultiData2(asScala(data), immutable.Seq.empty)
-  def createData2[O](data: java.util.Collection[O]): MultiData2[Object, O]             = new MultiData2(immutable.Seq.empty, asScala(data))
+  def create[O1, O2](data1: java.util.Collection[O1], data2: java.util.Collection[O2]) =
+    new MultiData2(asScala(data1), asScala(data2))
+  def createData1[O](data: java.util.Collection[O]): MultiData2[O, Object] =
+    new MultiData2(asScala(data), immutable.Seq.empty)
+  def createData2[O](data: java.util.Collection[O]): MultiData2[Object, O] =
+    new MultiData2(immutable.Seq.empty, asScala(data))
 
   private def asScala[O](data: java.util.Collection[O]): immutable.Seq[O] = data.asScala.toIndexedSeq
 }

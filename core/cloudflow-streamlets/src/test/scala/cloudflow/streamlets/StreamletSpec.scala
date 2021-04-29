@@ -16,20 +16,21 @@
 
 package cloudflow.streamlets
 
-import org.scalatest._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import spray.json.JsonParser
 
 import cloudflow.streamlets.StreamletJsonOps._
 import cloudflow.streamlets.descriptors.CoffeeIngress
 
-class StreamletSpec extends WordSpec with MustMatchers {
+class StreamletSpec extends AnyWordSpec with Matchers {
 
   "Streamlet" must {
     val simpleStreamlet = new CoffeeIngress()
 
     "produce a valid descriptor" in {
       val jsonStr = simpleStreamlet.jsonDescriptor
-      val json    = JsonParser(jsonStr)
+      val json = JsonParser(jsonStr)
       json mustBeAStreamletDescriptorFor (simpleStreamlet)
     }
 

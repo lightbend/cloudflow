@@ -19,18 +19,20 @@ package cloudflow.spark
 import com.typesafe.config._
 import net.ceedubs.ficus.Ficus._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 
 import cloudflow.streamlets._
 
-class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatchers with TryValues {
-  val streamletObjectImpl                          = ClassOps.nameOf(ToUpperObject)
-  val streamletClassImpl                           = ClassOps.nameOf[ToUpperClass]
-  val streamletClassImplWithArgs                   = ClassOps.nameOf[ToUpperCaseParamClass]
-  val streamletClassWithCompanionObjectImpl        = ClassOps.nameOf[SparkStreamletWithCompanionObject]
+class StreamletLoaderSpec extends AnyWordSpec with StreamletLoader with Matchers with TryValues {
+  val streamletObjectImpl = ClassOps.nameOf(ToUpperObject)
+  val streamletClassImpl = ClassOps.nameOf[ToUpperClass]
+  val streamletClassImplWithArgs = ClassOps.nameOf[ToUpperCaseParamClass]
+  val streamletClassWithCompanionObjectImpl = ClassOps.nameOf[SparkStreamletWithCompanionObject]
   val streamletClassWithArgsAndCompanionObjectImpl = ClassOps.nameOf[SparkStreamletWithArgsAndCompanionObject]
-  val streamletAsCompanionObjectImpl               = ClassOps.nameOf[SparkStreamletAsCompanionObject]
-  val streamletRef                                 = "1"
-  val emptyConfig                                  = ConfigFactory.empty()
+  val streamletAsCompanionObjectImpl = ClassOps.nameOf[SparkStreamletAsCompanionObject]
+  val streamletRef = "1"
+  val emptyConfig = ConfigFactory.empty()
 
   def flowConfig(appId: String, appVersion: String, streamletClass: String): StreamletDefinition =
     ConfigFactory.parseString(s"""
@@ -69,7 +71,7 @@ class StreamletLoaderSpec extends WordSpec with StreamletLoader with MustMatcher
   """).as[StreamletDefinition]("streamlet-config")
 
   // val context = StreamletDeploymentContext("appid", "unknown", List.empty[ConnectedPorts], emptyConfig)
-  val appId      = "tipsy-rhinoceros-42"
+  val appId = "tipsy-rhinoceros-42"
   val appVersion = "unknown"
 
   "StreamletLoader" should {

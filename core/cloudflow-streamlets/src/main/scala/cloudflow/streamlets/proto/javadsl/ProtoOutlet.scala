@@ -20,16 +20,13 @@ import cloudflow.streamlets._
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
 
-final case class ProtoOutlet[T <: GeneratedMessageV3](
-    name: String,
-    partitioner: T => String,
-    clazz: Class[T]
-) extends CodecOutlet[T] {
+final case class ProtoOutlet[T <: GeneratedMessageV3](name: String, partitioner: T => String, clazz: Class[T])
+    extends CodecOutlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
-  override def codec: Codec[T]  = new ProtoCodec(clazz)
-  override def schemaAsString   = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
+  override def codec: Codec[T] = new ProtoCodec(clazz)
+  override def schemaAsString = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
   override def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
   /**

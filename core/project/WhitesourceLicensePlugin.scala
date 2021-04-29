@@ -27,8 +27,7 @@ object Whitesource extends AutoPlugin {
       )
     },
     whitesourceForceCheckAllDependencies := true,
-    whitesourceFailOnError := true
-  )
+    whitesourceFailOnError := true)
 
   private def majorMinor(version: String): Option[String] = """\d+\.\d+""".r.findFirstIn(version)
 }

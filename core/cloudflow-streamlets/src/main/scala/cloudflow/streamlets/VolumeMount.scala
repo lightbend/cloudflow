@@ -18,11 +18,11 @@ package cloudflow.streamlets
 
 sealed trait AccessMode
 case object ReadWriteMany extends AccessMode
-case object ReadOnlyMany  extends AccessMode
+case object ReadOnlyMany extends AccessMode
 
 case class VolumeMount(name: String, private[cloudflow] val path: String, accessMode: AccessMode)
 object VolumeMount {
   // Java Api
-  def createReadOnlyMany(name: String, path: String)  = VolumeMount(name, path, ReadOnlyMany)
+  def createReadOnlyMany(name: String, path: String) = VolumeMount(name, path, ReadOnlyMany)
   def createReadWriteMany(name: String, path: String) = VolumeMount(name, path, ReadWriteMany)
 }

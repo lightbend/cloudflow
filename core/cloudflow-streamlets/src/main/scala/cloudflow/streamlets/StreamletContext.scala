@@ -110,8 +110,7 @@ trait StreamletContext {
 
 case class TopicForPortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
     extends Exception(
-      s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
-    )
+      s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'")
 
 case class BootstrapServersForTopicNotFound(topic: Topic) extends Exception(s"""
   |Runtime Kafka bootstrap.servers is not set for topic ${topic.id}

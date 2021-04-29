@@ -31,15 +31,15 @@ import scala.util.{ Failure, Success }
 class SparkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     session: SparkSession,
-    override val config: Config
-) extends SparkStreamletContext(streamletDefinition, session) {
+    override val config: Config)
+    extends SparkStreamletContext(streamletDefinition, session) {
 
-  val storageDir           = config.getString("storage.mountPath")
+  val storageDir = config.getString("storage.mountPath")
   val maxOffsetsPerTrigger = config.getLong("cloudflow.spark.read.options.max-offsets-per-trigger")
   def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = {
-    val topic    = findTopicForPort(inPort)
+    val topic = findTopicForPort(inPort)
     val srcTopic = topic.name
-    val brokers  = runtimeBootstrapServers(topic)
+    val brokers = runtimeBootstrapServers(topic)
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -62,8 +62,7 @@ class SparkStreamletContextImpl(
               case Some(r) => r
               case _       => null.asInstanceOf[In]
             }
-        }
-      )
+        })
       .filter(validateNotNull[In](_))
   }
 
@@ -76,10 +75,13 @@ class SparkStreamletContextImpl(
 
   private def validateNotNull[T](message: T): Boolean = message != null
 
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
+  def writeStream[Out](
+      stream: Dataset[Out],
+      outPort: CodecOutlet[Out],
+      outputMode: OutputMode,
+      optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
-      typeTag: TypeTag[Out]
-  ): StreamingQuery = {
+      typeTag: TypeTag[Out]): StreamingQuery = {
 
     val encodedStream = stream.map { value =>
       val key = outPort.partitioner match {
@@ -89,13 +91,13 @@ class SparkStreamletContextImpl(
       EncodedKV(key, outPort.codec.encode(value))
     }
 
-    val topic     = findTopicForPort(outPort)
+    val topic = findTopicForPort(outPort)
     val destTopic = topic.name
-    val brokers   = runtimeBootstrapServers(topic)
+    val brokers = runtimeBootstrapServers(topic)
 
     // metadata checkpoint directory on mount
     val checkpointLocation = checkpointDir(outPort.name)
-    val queryName          = s"$streamletRef.$outPort"
+    val queryName = s"$streamletRef.$outPort"
 
     val writeStreamWithOptions = encodedStream.writeStream
       .outputMode(outputMode)
@@ -120,7 +122,7 @@ class SparkStreamletContextImpl(
 
   def checkpointDir(dirName: String): String = {
     val baseCheckpointDir = new File(storageDir, streamletRef)
-    val dir               = new File(baseCheckpointDir, dirName)
+    val dir = new File(baseCheckpointDir, dirName)
     if (!dir.exists()) {
       val created = dir.mkdirs()
       require(created, s"Could not create checkpoint directory: $dir")

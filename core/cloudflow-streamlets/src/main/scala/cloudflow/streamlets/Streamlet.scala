@@ -32,7 +32,8 @@ abstract class Streamlet[Context <: StreamletContext] {
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
    */
   protected final implicit def context: Context = {
-    if (ctx == null) throw new StreamletContextException("StreamletContext can only be accessed from the `createLogic()` method.")
+    if (ctx == null)
+      throw new StreamletContextException("StreamletContext can only be accessed from the `createLogic()` method.")
     ctx
   }
 
@@ -56,11 +57,11 @@ abstract class Streamlet[Context <: StreamletContext] {
 
   def shape(): StreamletShape
 
-  final def inlets: immutable.IndexedSeq[Inlet]   = shape.inlets
+  final def inlets: immutable.IndexedSeq[Inlet] = shape.inlets
   final def outlets: immutable.IndexedSeq[Outlet] = shape.outlets
 
   def labels: immutable.IndexedSeq[String] = Vector.empty
-  def description: String                  = ""
+  def description: String = ""
 
   /**
    * Defines a set of configuration parameters that will be used in this streamlet to lookup

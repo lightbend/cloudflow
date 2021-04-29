@@ -35,9 +35,8 @@ object Merger {
    * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all sources.
    */
-  def source[T](
-      sources: java.util.List[akka.stream.javadsl.SourceWithContext[T, Committable, _]]
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+  def source[T](sources: java.util.List[akka.stream.javadsl.SourceWithContext[T, Committable, _]])
+      : akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(sources.asScala.map(_.asScala).toSeq).asJava
 
   /**
@@ -48,16 +47,14 @@ object Merger {
    */
   def source[T](
       context: AkkaStreamletContext,
-      inlets: java.util.List[CodecInlet[T]]
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+      inlets: java.util.List[CodecInlet[T]]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlets.asScala.toSeq)(context).asJava
 
   @varargs
   def source[T](
       context: AkkaStreamletContext,
       inlet: CodecInlet[T],
-      inlets: CodecInlet[T]*
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+      inlets: CodecInlet[T]*): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     cloudflow.akkastream.util.scaladsl.Merger.source(inlet +: inlets)(context).asJava
 }
 
@@ -71,5 +68,5 @@ object Merger {
 final class MergeLogic[T](
     inletPorts: java.util.List[CodecInlet[T]],
     outlet: CodecOutlet[T],
-    context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.MergeLogic(inletPorts.asScala.toIndexedSeq, outlet)(context)
+    context: AkkaStreamletContext)
+    extends akkastream.util.scaladsl.MergeLogic(inletPorts.asScala.toIndexedSeq, outlet)(context)

@@ -29,7 +29,7 @@ import cloudflow.streamlets.avro.AvroInlet;
 import cloudflow.streamlets.avro.AvroOutlet;
 
 import org.junit.Test;
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 
 public class MergeTest extends JUnitSuite {
   private int inletCount = 10;

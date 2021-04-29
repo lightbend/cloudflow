@@ -19,7 +19,7 @@ package cloudflow.akkastream.testkit;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
 
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 
 import scala.concurrent.duration.Duration;
 

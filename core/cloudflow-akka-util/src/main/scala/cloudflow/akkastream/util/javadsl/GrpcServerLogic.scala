@@ -36,10 +36,7 @@ abstract class GrpcServerLogic(server: Server, context: AkkaStreamletContext) ex
     import scala.jdk.CollectionConverters._
     val handler = ServiceHandler.concatOrNotFound(handlers().asScala.toSeq: _*)
 
-    concat(
-      pathEndOrSingleSlash(() => complete(OK, "")),
-      handle(request => handler(request))
-    )
+    concat(pathEndOrSingleSlash(() => complete(OK, "")), handle(request => handler(request)))
 
   }
 }

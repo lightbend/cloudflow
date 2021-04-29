@@ -73,11 +73,11 @@ class MySparkJoin3 extends SparkStreamlet {
 
   override def createLogic() = new SparkStreamletLogic {
     override def buildStreamingQueries = {
-      val dataset0                   = readStream(in0)
-      val dataset1                   = readStream(in1)
-      val dataset2                   = readStream(in2)
+      val dataset0 = readStream(in0)
+      val dataset1 = readStream(in1)
+      val dataset2 = readStream(in2)
       val outStream: Dataset[Simple] = process(dataset0, dataset1, dataset2)
-      val query                      = writeStream(outStream, out, OutputMode.Append)
+      val query = writeStream(outStream, out, OutputMode.Append)
       StreamletQueryExecution(query)
     }
 

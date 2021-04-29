@@ -33,7 +33,8 @@ object AvroUtil {
       case Failure(_) => {
         Try(classTag[T].runtimeClass.getDeclaredField("SCHEMA$")) match {
           case Success(schema) => schema.get(null).asInstanceOf[Schema]
-          case Failure(ex)     => throw new RuntimeException(s"Error fetching avro schema for class ${classTag[T].runtimeClass}", ex)
+          case Failure(ex) =>
+            throw new RuntimeException(s"Error fetching avro schema for class ${classTag[T].runtimeClass}", ex)
         }
       }
     }
@@ -47,10 +48,10 @@ object AvroUtil {
       .encodeToString(parsingFingerprint("SHA-256", schema))
   }
 
-  def createSchemaDefinition(schema: Schema) = SchemaDefinition(
-    name = schema.getFullName,
-    schema = schema.toString(false),
-    fingerprint = fingerprintSha256(schema),
-    format = Format
-  )
+  def createSchemaDefinition(schema: Schema) =
+    SchemaDefinition(
+      name = schema.getFullName,
+      schema = schema.toString(false),
+      fingerprint = fingerprintSha256(schema),
+      format = Format)
 }

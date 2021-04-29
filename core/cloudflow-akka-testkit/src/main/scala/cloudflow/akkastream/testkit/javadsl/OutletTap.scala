@@ -29,14 +29,14 @@ import cloudflow.akkastream.testkit.PartitionedValue
 
 case class Failed(e: Throwable)
 
-case class SinkOutletTap[T](outlet: CodecOutlet[T], val snk: akka.stream.javadsl.Sink[Pair[String, T], NotUsed]) extends OutletTap[T] {
+case class SinkOutletTap[T](outlet: CodecOutlet[T], val snk: akka.stream.javadsl.Sink[Pair[String, T], NotUsed])
+    extends OutletTap[T] {
   private[testkit] val sink: Sink[PartitionedValue[T], Future[Done]] =
     Flow[PartitionedValue[T]]
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => Pair(pv.key, pv.value))
-          .to(snk)
-      )
+          .to(snk))
       .toMat(Sink.ignore)(Keep.right)
 }
 
@@ -50,7 +50,6 @@ case class ProbeOutletTap[T](outlet: CodecOutlet[T])(implicit system: ActorSyste
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => Pair(pv.key, pv.value))
-          .to(Sink.actorRef[Pair[String, T]](probe.getTestActor, Completed, Failed))
-      )
+          .to(Sink.actorRef[Pair[String, T]](probe.getTestActor, Completed, Failed)))
       .toMat(Sink.ignore)(Keep.right)
 }

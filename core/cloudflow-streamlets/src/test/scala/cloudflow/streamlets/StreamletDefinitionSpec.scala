@@ -17,12 +17,14 @@
 package cloudflow.streamlets
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{ MustMatchers, OptionValues, TryValues, WordSpec }
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{ OptionValues, TryValues }
 
-class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues with OptionValues {
+class StreamletDefinitionSpec extends AnyWordSpec with Matchers with TryValues with OptionValues {
 
   "A valid StreamletConfig" should {
-    val config          = ConfigFactory.load("config-map-sample.json")
+    val config = ConfigFactory.load("config-map-sample.json")
     val streamletConfig = StreamletDefinition.read(config).get
 
     "the loaded instances must contain class, instance and port information" in {
@@ -33,10 +35,7 @@ class StreamletDefinitionSpec extends WordSpec with MustMatchers with TryValues 
 
     "a loaded instance must have port configuration" in {
       val ports = streamletConfig.portMappings
-      val expectedPorts = Map(
-        "accepted" -> Topic("accepted"),
-        "rejected" -> Topic("rejected")
-      )
+      val expectedPorts = Map("accepted" -> Topic("accepted"), "rejected" -> Topic("rejected"))
       ports.foreach(portMapping => expectedPorts(portMapping.port) must be(portMapping.topic))
     }
 

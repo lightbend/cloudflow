@@ -34,8 +34,7 @@ case class SinkOutletTap[T](outlet: CodecOutlet[T], val snk: Sink[(String, T), N
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => (pv.key, pv.value))
-          .to(snk)
-      )
+          .to(snk))
       .toMat(Sink.ignore)(Keep.right)
 }
 
@@ -49,7 +48,6 @@ case class ProbeOutletTap[T](outlet: CodecOutlet[T])(implicit system: ActorSyste
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => (pv.key, pv.value))
-          .to(Sink.actorRef[Tuple2[String, T]](probe.testActor, Completed, Failed))
-      )
+          .to(Sink.actorRef[Tuple2[String, T]](probe.testActor, Completed, Failed)))
       .toMat(Sink.ignore)(Keep.right)
 }

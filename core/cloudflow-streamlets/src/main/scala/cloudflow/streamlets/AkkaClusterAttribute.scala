@@ -18,5 +18,5 @@ package cloudflow.streamlets
 
 case object AkkaClusterAttribute extends StreamletAttribute {
   final val attributeName = "akka-cluster"
-  final val configKey     = "active"
+  final val configKey = "active"
 }

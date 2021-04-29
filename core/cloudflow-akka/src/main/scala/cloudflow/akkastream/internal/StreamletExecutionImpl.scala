@@ -26,16 +26,16 @@ import scala.util.Try
 
 @InternalApi
 final class StreamletExecutionImpl(owner: AkkaStreamletContext) extends StreamletExecution {
-  private val readyPromise                         = Promise[Dun]()
-  private[akkastream] val completionPromise        = Promise[Dun]()
-  private[akkastream] def signalReady()            = readyPromise.trySuccess(Dun)
+  private val readyPromise = Promise[Dun]()
+  private[akkastream] val completionPromise = Promise[Dun]()
+  private[akkastream] def signalReady() = readyPromise.trySuccess(Dun)
   private[akkastream] def complete(res: Try[Done]) = completionPromise.tryComplete(res.map(_ => Dun))
   private[akkastream] def complete(): Future[Dun] = {
     completionPromise.trySuccess(Dun)
     completed
   }
 
-  override val ready: Future[Dun]     = readyPromise.future
-  override def stop(): Future[Dun]    = owner.stop()
+  override val ready: Future[Dun] = readyPromise.future
+  override def stop(): Future[Dun] = owner.stop()
   override val completed: Future[Dun] = completionPromise.future
 }
