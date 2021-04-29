@@ -1,11 +1,9 @@
-name: Build and Test the Tools
+name: Build and Test the Native Cli
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
-    paths:
-      - 'tools/**'
 
 jobs:
   build:
@@ -31,19 +29,9 @@ jobs:
       - name: Cache Coursier cache
         uses: coursier/cache-action@v5
 
-      - name: Check Tools fmt
-        run: |
-          cd tools
-          sbt "scalafmtCheckAll; scalafmtSbtCheck"
-
-      - name: Test the Tools
-        run: |
-          cd tools
-          sbt +test
-
       - name: Build and run the binary
         run: |
-          cd tools
+          cd core
           gu install native-image
           sbt cloudflow-cli/graalvm-native-image:packageBin
           # Check that the binary runs at least

@@ -19,8 +19,6 @@ jobs:
       run: |
         cd core
         sbt "whitesourceCheckPolicies; whitesourceUpdate"
-        cd ../tools
-        sbt "whitesourceCheckPolicies; whitesourceUpdate"
     - name: Build documentation  
       run: |
         sudo snap install yq
@@ -34,7 +32,7 @@ jobs:
       run: |
         git clone https://${CFIO_USER}:${CFIO_TOKEN}@github.com/lightbend/cloudflow.io.git ./cloudflow.io
         cp -r docs/target/staging/* ./cloudflow.io
-        cp -r tools/get.sh ./cloudflow.io/docs/get.sh
+        cp -r core/get.sh ./cloudflow.io/docs/get.sh
         cd ./cloudflow.io
         git config  user.email "$CFIO_EMAIL"
         git config  user.name "$CFIO_USER"

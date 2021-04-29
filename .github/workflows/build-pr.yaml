@@ -21,8 +21,6 @@ jobs:
       run: |
         cd core
         sbt "scalafmtCheckAll; scalafmtSbtCheck"
-        cd ../tools
-        sbt "scalafmtCheckAll; scalafmtSbtCheck"
     - name: Build documentation
       run: |
         sudo snap install yq
@@ -33,6 +31,4 @@ jobs:
         git config --global user.email "cloudflow@lightbend.com"
         git config --global user.name "Cloudflow CI"
         cd core
-        sbt +publishLocal
-        cd ../tools
-        sbt +publishLocal cloudflow-sbt-plugin/scripted
+        sbt +publishLocal scripted
