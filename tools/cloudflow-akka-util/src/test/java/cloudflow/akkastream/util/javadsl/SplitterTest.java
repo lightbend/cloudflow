@@ -17,7 +17,7 @@
 package cloudflow.akkastream.util.javadsl;
 
 import org.junit.Test;
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 
 import akka.NotUsed;
 import akka.kafka.ConsumerMessage.Committable;

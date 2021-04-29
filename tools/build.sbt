@@ -312,55 +312,34 @@ lazy val cloudflowAkkastreamTestkit =
       scalafmtOnCompile := true,
       javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"))
 
-// lazy val akkastreamUtil =
-//   cloudflowModule("cloudflow-akka-util")
-//     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-//     .dependsOn(akkastream, akkastreamTestkit % Test)
-//     .settings(
-//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-//       scalafmtOnCompile := true,
-//       libraryDependencies ++= Vector(
-//             AkkaHttp,
-//             AkkaHttpJackson,
-//             AkkaHttp2Support,
-//             AkkaGrpcRuntime,
-//             AkkaStreamContrib,
-//             AkkaHttpTestkit,
-//             AkkaStreamTestkit,
-//             AkkaHttpSprayJsonTest,
-//             Junit,
-//             ScalaTest
-//           )
-//     )
-//     .settings(
-//       javacOptions += "-Xlint:deprecation",
-//       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
-//     )
+import sbt._
 
-// lazy val akkastreamTests =
-//   cloudflowModule("cloudflow-akka-tests")
-//     .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
-//     .dependsOn(akkastream, akkastreamTestkit % Test)
-//     .settings(
-//       crossScalaVersions := Vector(Version.Scala212, Version.Scala213),
-//       scalafmtOnCompile := true,
-//       libraryDependencies ++= Vector(
-//             AkkaHttpTestkit,
-//             AkkaHttpSprayJsonTest,
-//             TestcontainersKafka % Test,
-//             ScalaTest,
-//             Junit
-//           )
-//     )
-//     .settings(
-//       javacOptions += "-Xlint:deprecation",
-//       inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
-//       PB.targets in Compile := Seq(
-//             scalapb.gen() -> (sourceManaged in Compile).value / "sproto"
-//           ),
-//       PB.protoSources in Compile := Seq(baseDirectory.value / "src/test/protobuf"),
-//       (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
-//     )
+lazy val cloudflowAkkastreamUtil =
+  Project(id = "cloudflow-akka-util", base = file("cloudflow-akka-util"))
+    .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
+    .settings(Dependencies.cloudflowAkkaUtil)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true,
+      javacOptions += "-Xlint:deprecation",
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
+
+lazy val cloudflowAkkastreamTests =
+  Project(id = "cloudflow-akka-tests", base = file("cloudflow-akka-tests"))
+    .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
+    .settings(Dependencies.cloudflowAkkastreamTests)
+    .settings(
+      scalaVersion := Dependencies.Scala213,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true,
+      javacOptions += "-Xlint:deprecation",
+      inConfig(Test)(sbtprotoc.ProtocPlugin.protobufConfigSettings),
+      Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value / "sproto"),
+      Compile / PB.protoSources := Seq(baseDirectory.value / "src/test/protobuf"),
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
 
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
@@ -378,4 +357,9 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowOperator,
     cloudflowSbtPlugin,
     cloudflowRunnerConfig,
+    cloudflowStreamlets,
+    cloudflowAkkastream,
+    cloudflowAkkastreamTestkit,
+    cloudflowAkkastreamUtil,
+    cloudflowAkkastreamTests,
     tooling)

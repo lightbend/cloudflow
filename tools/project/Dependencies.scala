@@ -53,6 +53,8 @@ object Dependencies {
 
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
     val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % Versions.akkaHttp
+    val akkaHttpJackson = "com.typesafe.akka" %% "akka-http-jackson" % Versions.akkaHttp
+    val akkaHttp2Support = "com.typesafe.akka" %% "akka-http2-support" % Versions.akkaHttp
 
     val akkaStreamKafka = ("com.typesafe.akka" %% "akka-stream-kafka" % Versions.alpakkaKafka)
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
@@ -65,6 +67,8 @@ object Dependencies {
     val akkaClusterBootstrap =
       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % Versions.akkaMgmt
     val akkaDiscoveryK8 = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % Versions.akkaMgmt
+
+    val akkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Versions.akkaGrpc
 
     val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.10"
 
@@ -93,6 +97,8 @@ object Dependencies {
     val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
+
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
 
   }
 
@@ -202,5 +208,26 @@ object Dependencies {
         Compile.akkaStreamTestkit,
         Compile.akkaTestkit,
         Compile.scalatest,
+        TestDeps.scalatestJunit)
+
+  val cloudflowAkkaUtil =
+    libraryDependencies ++= Vector(
+        Compile.akkaHttp,
+        Compile.akkaHttpJackson,
+        Compile.akkaHttp2Support,
+        Compile.akkaGrpcRuntime,
+        Compile.akkaStreamContrib,
+        Compile.akkaStreamTestkit % Test,
+        TestDeps.akkaHttpTestkit,
+        Compile.scalatest % Test,
+        TestDeps.scalatestJunit)
+
+  val cloudflowAkkastreamTests =
+    libraryDependencies ++= Vector(
+        TestDeps.akkaHttpTestkit,
+        Compile.akkaHttpSprayJson % Test,
+        Compile.testcontainersKafka % Test,
+        Compile.testcontainersKafka % Test,
+        Compile.scalatest % Test,
         TestDeps.scalatestJunit)
 }

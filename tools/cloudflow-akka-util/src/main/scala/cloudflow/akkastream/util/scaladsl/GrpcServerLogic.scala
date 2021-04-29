@@ -32,11 +32,8 @@ abstract class GrpcServerLogic(server: Server)(implicit context: AkkaStreamletCo
   def handlers(): immutable.Seq[PartialFunction[HttpRequest, Future[HttpResponse]]]
 
   override def route(): Route =
-    concat(
-      pathEndOrSingleSlash {
-        complete(OK, "")
-      },
-      handle(ServiceHandler.concatOrNotFound(handlers(): _*))
-    )
+    concat(pathEndOrSingleSlash {
+      complete(OK, "")
+    }, handle(ServiceHandler.concatOrNotFound(handlers(): _*)))
 
 }

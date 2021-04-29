@@ -29,6 +29,8 @@ import akka.http.scaladsl.server._
 import akka.testkit._
 import com.typesafe.config._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import org.scalatest.concurrent._
 
 import spray.json._
@@ -42,7 +44,12 @@ import cloudflow.akkastream._
 import cloudflow.akkastream.testdata._
 import cloudflow.akkastream.testkit.scaladsl._
 
-class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+class HttpServerSpec
+    extends AnyWordSpec
+    with Matchers
+    with ScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("HttpServerSpec")
 
@@ -51,7 +58,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
   implicit val jsonformatData: RootJsonFormat[Data] = jsonFormat2(Data.apply)
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(10, Seconds), interval = Span(20, Millis))
-  val noMessageDuration                = 100 millis
+  val noMessageDuration = 100.millis
 
   "HttpServer" should {
     // CONNECT request is not allowed, possibly because of use of singleRequest, or absolute URI?
@@ -60,7 +67,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
     List(GET, DELETE, HEAD, OPTIONS, PATCH).foreach { method =>
       s"reject ${method.value} requests when using the default route" in {
         startIngress()
-        val request  = HttpRequest(method, Uri(s"http://127.0.0.1:$port"), Nil, HttpEntity.Empty)
+        val request = HttpRequest(method, Uri(s"http://127.0.0.1:$port"), Nil, HttpEntity.Empty)
         val response = Http().singleRequest(request).futureValue
         response.status mustEqual StatusCodes.MethodNotAllowed
         response.entity.discardBytes()
@@ -70,8 +77,8 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
     "accept marshallable data when using the default route" in {
       startIngress()
-      val data     = Data(1, "a")
-      val request  = Post(s"http://127.0.0.1:$port", data)
+      val data = Data(1, "a")
+      val request = Post(s"http://127.0.0.1:$port", data)
       val response = Http().singleRequest(request).futureValue
       response.status mustEqual StatusCodes.Accepted
       response.entity.discardBytes()
@@ -81,7 +88,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
     "reject POST requests without an entity when using the default route" in {
       startIngress()
-      val request  = Post(s"http://127.0.0.1:$port")
+      val request = Post(s"http://127.0.0.1:$port")
       val response = Http().singleRequest(request).futureValue
       response.status mustEqual StatusCodes.BadRequest
       response.entity.discardBytes()
@@ -89,16 +96,16 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
     "accept data using a custom route" in {
       startIngress(customIngress)
-      val data     = Data(42, "a")
-      val request  = Put(s"http://127.0.0.1:$port", data)
+      val data = Data(42, "a")
+      val request = Put(s"http://127.0.0.1:$port", data)
       val response = Http().singleRequest(request).futureValue
       response.entity.discardBytes()
       response.status mustEqual StatusCodes.OK
       out.probe.expectMsg(("42", data))
       out.probe.expectMsg(Completed)
 
-      val badData     = Data(1, "a")
-      val badRequest  = Put(s"http://127.0.0.1:$port", badData)
+      val badData = Data(1, "a")
+      val badRequest = Put(s"http://127.0.0.1:$port", badData)
       val badResponse = Http().singleRequest(badRequest).futureValue
       badResponse.status mustEqual StatusCodes.BadRequest
       badResponse.entity.discardBytes()
@@ -107,8 +114,8 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
     "reject wrong method in a custom route" in {
       startIngress(customIngress)
-      val data                = Data(42, "a")
-      val wrongMethod         = Post(s"http://127.0.0.1:$port", data)
+      val data = Data(42, "a")
+      val wrongMethod = Post(s"http://127.0.0.1:$port", data)
       val wrongMethodResponse = Http().singleRequest(wrongMethod).futureValue
       wrongMethodResponse.status mustEqual StatusCodes.MethodNotAllowed
       out.probe.expectNoMessage(noMessageDuration)
@@ -117,7 +124,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
   def customIngress = new AkkaServerStreamlet() {
     val outlet = AvroOutlet[Data]("out", _.id.toString)
-    val shape  = StreamletShape(outlet)
+    val shape = StreamletShape(outlet)
 
     override def createLogic = new HttpServerLogic(this) {
       val writer = sinkRef(outlet)
@@ -134,14 +141,14 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
     }
   }
 
-  var ref: StreamletExecution   = _
-  var port: Int                 = _
-  var ingress: AkkaStreamlet    = _
+  var ref: StreamletExecution = _
+  var port: Int = _
+  var ingress: AkkaStreamlet = _
   var out: ProbeOutletTap[Data] = _
 
   val outlet = AvroOutlet[Data]("out", _.id.toString)
   def createDefaultIngress = new AkkaServerStreamlet() {
-    val shape                = StreamletShape(outlet)
+    val shape = StreamletShape(outlet)
     override def createLogic = HttpServerLogic.default(this, outlet)
   }
 
@@ -167,7 +174,7 @@ class HttpServerSpec extends WordSpec with MustMatchers with ScalaFutures with B
 
   def getFreePort(): Int = {
     val socket = new java.net.ServerSocket(0)
-    val port   = socket.getLocalPort()
+    val port = socket.getLocalPort()
     socket.close()
     port
   }

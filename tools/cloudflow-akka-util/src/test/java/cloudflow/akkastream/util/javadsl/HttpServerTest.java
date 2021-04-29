@@ -25,7 +25,7 @@ import cloudflow.akkastream.testdata.Data;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.avro.AvroOutlet;
 import org.junit.Test;
-import org.scalatest.junit.JUnitSuite;
+import org.scalatestplus.junit.JUnitSuite;
 
 public class HttpServerTest extends JUnitSuite {
 
