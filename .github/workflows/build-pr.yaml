@@ -31,4 +31,5 @@ jobs:
         git config --global user.email "cloudflow@lightbend.com"
         git config --global user.name "Cloudflow CI"
         cd core
+        export SBT_OPTS="-Xss256M"
         sbt +publishLocal cloudflow-sbt-plugin/scripted
