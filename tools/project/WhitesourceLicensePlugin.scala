@@ -19,7 +19,7 @@ object Whitesource extends AutoPlugin {
     // do not change the value of whitesourceProduct
     whitesourceProduct := "cloudflow",
     whitesourceAggregateProjectName := {
-      "cloudflow-tools-" + (
+      "cloudflow-" + (
         if (isSnapshot.value)
           if (gitCurrentBranch.contains("master")) "master"
           else "adhoc"
