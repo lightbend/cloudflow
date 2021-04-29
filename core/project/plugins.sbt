@@ -2,8 +2,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.8.0")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.1.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.6.0")
-// Force Java formatter to use a more recent version oj java-format
-libraryDependencies ++= Seq("com.google.googlejavaformat" % "google-java-format" % "1.10.0")
 // discipline
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.2")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
