@@ -4,6 +4,7 @@ import sbt._
 import sbt.plugins.JvmPlugin
 import xerial.sbt.Sonatype.SonatypeKeys.sonatypePublishToBundle
 import com.jsuereth.sbtpgp.PgpKeys.useGpgAgent
+import com.lightbend.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
 import sbtunidoc.GenJavadocPlugin.autoImport.unidocGenjavadocVersion
 
 object Common extends AutoPlugin {
@@ -36,6 +37,8 @@ object Common extends AutoPlugin {
     publishTo := sonatypePublishToBundle.value,
     useGpgAgent := false,
     scalafmtOnCompile := true,
+    // TODO: disabled since there are problems in cross JVMs compilation re-enable me possibly
+    javafmtOnCompile := false,
     run / fork := false,
     unidocGenjavadocVersion := "0.17",
     // show full stack traces and test case durations
