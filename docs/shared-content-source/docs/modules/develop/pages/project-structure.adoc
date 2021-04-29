@@ -52,8 +52,6 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala
 ----
 <1> Adds the `sbt-cloudflow` plugin with a given version to the build definition.
 
-ifdef::review[REVIEWERS: where does cloudflow-plugins.sbt contain the "bintray" location for cloudflow? I removed the comment because I don't see it, but if it is there, I'll add it back. ]
-
 WARNING: The version of the `sbt-cloudflow` plugin defines which version of Cloudflow you are using.
 It must match with the version installed in your Kubernetes cluster.
 

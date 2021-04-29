@@ -441,25 +441,7 @@ def cloudflowModule(moduleID: String): Project =
     .settings(commonSettings)
     .enablePlugins(AutomateHeaderPlugin)
 
-// These settings are made active only when we use bintray for internal release
-// It is important that when we do final releases we need to invoke sbt as
-// `sbt -Dsbt.sbtbintray=false`
-lazy val bintraySettings =
-  if (BintrayPlugin.isEnabledViaProp) {
-    Seq(
-      bintrayOrganization := Some("lightbend"),
-      bintrayRepository := "cloudflow",
-      bintrayOmitLicense := true,
-      publishMavenStyle := false,
-      resolvers ++= Seq(
-            "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
-            "com-mvn".at("https://repo.lightbend.com/cloudflow"),
-            Resolver.url("com-ivy", url("https://repo.lightbend.com/cloudflow"))(Resolver.ivyStylePatterns)
-          )
-    )
-  } else Seq.empty
-
-lazy val commonSettings = bintraySettings ++ Seq(
+lazy val commonSettings = Seq(
         organization := "com.lightbend.cloudflow",
         headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2021", "Lightbend Inc. <https://www.lightbend.com>")),
         scalaVersion := Version.Scala212,
@@ -503,7 +485,6 @@ lazy val commonSettings = bintraySettings ++ Seq(
                   "-doc-canonical-base-url",
                   "https://cloudflow.io/docs/current/api/scaladoc/"
                 ),
-        resolvers += Resolver.url("cloudflow", url("https://lightbend.bintray.com/cloudflow"))(Resolver.ivyStylePatterns),
         resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
         scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
         scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
