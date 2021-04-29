@@ -350,7 +350,6 @@ lazy val cloudflowFlink =
     .dependsOn(cloudflowStreamlets)
     .settings(Dependencies.cloudflowFlinkStreamlet)
     .settings(
-      name := "contrib-flink",
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212),
       scalafmtOnCompile := true,
@@ -362,7 +361,6 @@ lazy val cloudflowFlinkTestkit =
     .enablePlugins(ScalafmtPlugin)
     .dependsOn(cloudflowFlink)
     .settings(
-      name := "contrib-flink-testkit",
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212),
       scalafmtOnCompile := true)
