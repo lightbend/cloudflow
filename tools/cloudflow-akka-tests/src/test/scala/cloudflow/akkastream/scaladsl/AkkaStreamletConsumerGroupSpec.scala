@@ -147,18 +147,18 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
       gen.run(context)
     }
 
-    def definition(outlet: String) = StreamletDefinition(
-      appId = appId,
-      appVersion = appVersion,
-      streamletRef = StreamletRef,
-      streamletClass = StreamletClass,
-      portMappings =
-        List(
+    def definition(outlet: String) =
+      StreamletDefinition(
+        appId = appId,
+        appVersion = appVersion,
+        streamletRef = StreamletRef,
+        streamletClass = StreamletClass,
+        portMappings = List(
           PortMapping(
             "out",
             Topic(outlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))),
-      volumeMounts = List.empty[VolumeMount],
-      config = config)
+        volumeMounts = List.empty[VolumeMount],
+        config = config)
   }
 
   class Generator(testData: List[Data]) extends AkkaStreamlet {
@@ -181,17 +181,18 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
       receiver.run(context)
     }
 
-    def definition(streamletRef: String, genOutlet: String) = StreamletDefinition(
-      appId = appId,
-      appVersion = appVersion,
-      streamletRef = streamletRef,
-      streamletClass = "TestReceiver",
-      portMappings = List(
-        PortMapping(
-          "in",
-          Topic(genOutlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))),
-      volumeMounts = List.empty[VolumeMount],
-      config = config)
+    def definition(streamletRef: String, genOutlet: String) =
+      StreamletDefinition(
+        appId = appId,
+        appVersion = appVersion,
+        streamletRef = streamletRef,
+        streamletClass = "TestReceiver",
+        portMappings = List(
+          PortMapping(
+            "in",
+            Topic(genOutlet, ConfigFactory.parseString(s"""bootstrap.servers = "localhost:$kafkaPort"""")))),
+        volumeMounts = List.empty[VolumeMount],
+        config = config)
   }
 
   class TestReceiver(sink: Sink[Data, NotUsed], instance: Int) extends AkkaStreamlet {

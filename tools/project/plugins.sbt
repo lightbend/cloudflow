@@ -1,7 +1,6 @@
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.8.0")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.1.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
-addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.6.0")
 // Force Java formatter to use a more recent version oj java-format
 libraryDependencies ++= Seq("com.google.googlejavaformat" % "google-java-format" % "1.10.0")
@@ -23,3 +22,5 @@ libraryDependencies ++= Seq(
 addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0-RC18")
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.31")
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.2"
+
+addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")

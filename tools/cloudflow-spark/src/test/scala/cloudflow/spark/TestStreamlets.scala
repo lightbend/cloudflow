@@ -49,9 +49,10 @@ trait TrivialSparklet extends SparkStreamlet {
     .noDefault()
     .endRecord()
 
-  override def shape() = StreamletShape(
-    TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
-    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
+  override def shape() =
+    StreamletShape(
+      TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
+      TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
 
   override def createLogic(): SparkStreamletLogic = new SparkStreamletLogic {
     override def buildStreamingQueries = StreamletQueryExecution(Nil)
@@ -126,9 +127,10 @@ class ASparkStreamlet extends SparkStreamlet {
     .noDefault()
     .endRecord()
 
-  override def shape() = StreamletShape(
-    TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
-    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
+  override def shape() =
+    StreamletShape(
+      TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
+      TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
 
   override def createLogic(): SparkStreamletLogic = new SparkStreamletLogic {
     override def buildStreamingQueries = StreamletQueryExecution(Nil)

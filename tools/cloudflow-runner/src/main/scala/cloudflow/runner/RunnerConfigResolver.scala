@@ -22,9 +22,9 @@ import scala.util.Try
 
 trait RunnerConfigResolver {
 
-  final val ConfigFile            = "application.conf"
+  final val ConfigFile = "application.conf"
   final val ConfigSecretMountPath = "/etc/cloudflow-runner-secret"
-  final val SecretConfigFile      = "secret.conf"
+  final val SecretConfigFile = "secret.conf"
 
   def backwardsCompatConfig(configPath: Path): Path =
     if (Files.exists(configPath)) {
@@ -35,9 +35,10 @@ trait RunnerConfigResolver {
     }
 
   def makeConfig: Try[Config] = Try {
-    val configFilePathString = Option(System.getProperty("config.file")).getOrElse(s"$ConfigSecretMountPath/$ConfigFile")
-    val configPath           = Paths.get(configFilePathString)
-    val secretPath           = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
+    val configFilePathString =
+      Option(System.getProperty("config.file")).getOrElse(s"$ConfigSecretMountPath/$ConfigFile")
+    val configPath = Paths.get(configFilePathString)
+    val secretPath = Paths.get(s"$ConfigSecretMountPath/$SecretConfigFile")
 
     val applicationConfig = backwardsCompatConfig(configPath)
 
