@@ -442,54 +442,54 @@ def cloudflowModule(moduleID: String): Project =
     .enablePlugins(AutomateHeaderPlugin)
 
 lazy val commonSettings = Seq(
-        organization := "com.lightbend.cloudflow",
-        headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2021", "Lightbend Inc. <https://www.lightbend.com>")),
-        scalaVersion := Version.Scala212,
-        autoAPIMappings := true,
-        useGpgAgent := false,
-        releaseProcess := Seq[ReleaseStep](
-              // TODO: re-introduce this command
-              // checkSnapshotDependencies,
-              runClean,
-              releaseStepCommand("+test"),
-              releaseStepCommandAndRemaining("+publishSigned"),
-              releaseStepCommand("sonatypeBundleRelease"),
-              pushChanges
-            ),
-        unidocGenjavadocVersion := "0.16",
-        scalacOptions ++= Seq(
-              "-encoding",
-              "UTF-8",
-              "-target:jvm-1.8",
-              "-Xlog-reflective-calls",
-              "-Xlint",
-              "-Ywarn-unused",
-              "-deprecation",
-              "-feature",
-              "-language:_",
-              "-unchecked"
-            ),
-        Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value ++ Seq(
-                  "-doc-title",
-                  "Cloudflow",
-                  "-doc-version",
-                  version.value,
-                  "-sourcepath",
-                  (baseDirectory in ThisBuild).value.toString,
-                  "-skip-packages",
-                  "akka.pattern:scala", // for some reason Scaladoc creates this
-                  "-doc-source-url", {
-                    val branch = if (isSnapshot.value) "master" else s"v${version.value}"
-                    s"https://github.com/lightbend/cloudflow/tree/${branch}€{FILE_PATH_EXT}#L€{FILE_LINE}"
-                  },
-                  "-doc-canonical-base-url",
-                  "https://cloudflow.io/docs/current/api/scaladoc/"
-                ),
-        resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
-        scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
-        scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
-        publishTo := sonatypePublishToBundle.value
-      )
+  organization := "com.lightbend.cloudflow",
+  headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2021", "Lightbend Inc. <https://www.lightbend.com>")),
+  scalaVersion := Version.Scala212,
+  autoAPIMappings := true,
+  useGpgAgent := false,
+  releaseProcess := Seq[ReleaseStep](
+        // TODO: re-introduce this command
+        // checkSnapshotDependencies,
+        runClean,
+        releaseStepCommand("+test"),
+        releaseStepCommandAndRemaining("+publishSigned"),
+        releaseStepCommand("sonatypeBundleRelease"),
+        pushChanges
+      ),
+  unidocGenjavadocVersion := "0.16",
+  scalacOptions ++= Seq(
+        "-encoding",
+        "UTF-8",
+        "-target:jvm-1.8",
+        "-Xlog-reflective-calls",
+        "-Xlint",
+        "-Ywarn-unused",
+        "-deprecation",
+        "-feature",
+        "-language:_",
+        "-unchecked"
+      ),
+  Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value ++ Seq(
+            "-doc-title",
+            "Cloudflow",
+            "-doc-version",
+            version.value,
+            "-sourcepath",
+            (baseDirectory in ThisBuild).value.toString,
+            "-skip-packages",
+            "akka.pattern:scala", // for some reason Scaladoc creates this
+            "-doc-source-url", {
+              val branch = if (isSnapshot.value) "master" else s"v${version.value}"
+              s"https://github.com/lightbend/cloudflow/tree/${branch}€{FILE_PATH_EXT}#L€{FILE_LINE}"
+            },
+            "-doc-canonical-base-url",
+            "https://cloudflow.io/docs/current/api/scaladoc/"
+          ),
+  resolvers += "Akka Snapshots".at("https://repo.akka.io/snapshots/"),
+  scalacOptions in (Compile, console) := (scalacOptions in (Global)).value.filter(_ == "-Ywarn-unused-import"),
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+  publishTo := sonatypePublishToBundle.value
+)
 
 releaseIgnoreUntrackedFiles := true
 // https://github.com/dwijnand/sbt-dynver#portable-version-strings
