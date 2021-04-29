@@ -24,14 +24,16 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 
 import com.typesafe.config.{ Config, ConfigFactory }
 
-import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpecLike }
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec._
+import org.scalatest.matchers.should._
 
-class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
+class FlinkStreamletConfigSpec extends AnyWordSpecLike with Matchers with BeforeAndAfterAll {
 
   "FlinkStreamlet" should {
 
     object FlinkIngress extends FlinkStreamlet {
-      val out   = AvroOutlet[Data]("out", _.id.toString())
+      val out = AvroOutlet[Data]("out", _.id.toString())
       val shape = StreamletShape(out)
 
       override def createLogic() = new FlinkStreamletLogic {
@@ -57,7 +59,8 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
     }
 
     "find checkpointing is disabled by streamlet" in {
-      val config = ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = off")
+      val config =
+        ConfigFactory.parseString("cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = off")
       FlinkIngress.isDefaultCheckpointingEnabled(config, "my-streamlet") shouldBe false
     }
 
@@ -67,7 +70,8 @@ class FlinkStreamletConfigSpec extends WordSpecLike with Matchers with BeforeAnd
     }
 
     "find checkpointing is disabled for streamlet overriding runtimes being enabled" in {
-      val config = ConfigFactory.parseString("""
+      val config =
+        ConfigFactory.parseString("""
         cloudflow.runtimes.flink.config.cloudflow.checkpointing.default = on
         cloudflow.streamlet.my-streamlet.config.cloudflow.checkpointing.default = off
         """)

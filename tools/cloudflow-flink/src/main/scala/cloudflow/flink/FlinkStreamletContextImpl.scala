@@ -35,8 +35,8 @@ import scala.util._
 class FlinkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     @transient env: StreamExecutionEnvironment,
-    override val config: Config
-) extends FlinkStreamletContext(streamletDefinition, env) {
+    override val config: Config)
+    extends FlinkStreamletContext(streamletDefinition, env) {
 
   /**
    * Returns a `DataStream[In]` from the `inlet` to be added as the data source
@@ -46,21 +46,18 @@ class FlinkStreamletContextImpl(
    * @return the data read as `DataStream[In]`
    */
   override def readStream[In: TypeInformation](inlet: CodecInlet[In]): DataStream[In] = {
-    val topic            = findTopicForPort(inlet)
-    val srcTopic         = topic.name
-    val groupId          = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val topic = findTopicForPort(inlet)
+    val srcTopic = topic.name
+    val groupId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val bootstrapServers = runtimeBootstrapServers(topic)
-    val propsMap = Map("bootstrap.servers" -> bootstrapServers, "group.id" -> groupId, "auto.offset.reset" -> "earliest") ++
-          topic.kafkaConsumerProperties
+    val propsMap =
+      Map("bootstrap.servers" -> bootstrapServers, "group.id" -> groupId, "auto.offset.reset" -> "earliest") ++
+      topic.kafkaConsumerProperties
 
     val properties = new ju.Properties()
     propsMap.foreach { case (k, v) => properties.put(k, v) }
 
-    val consumer = new FlinkKafkaConsumer[Array[Byte]](
-      srcTopic,
-      new FlinkKafkaCodecDeserializationSchema(),
-      properties
-    )
+    val consumer = new FlinkKafkaConsumer[Array[Byte]](srcTopic, new FlinkKafkaCodecDeserializationSchema(), properties)
 
     // whether consumer should commit offsets back to Kafka on checkpoints
     // this is true by default: still making it explicit here. As such, Flink manages offsets
@@ -91,14 +88,16 @@ class FlinkStreamletContextImpl(
    *
    * @return the `DataStream` used to write to sink
    */
-  override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] = {
+  override def writeStream[Out: TypeInformation](
+      outlet: CodecOutlet[Out],
+      stream: DataStream[Out]): DataStreamSink[Out] = {
 
-    val topic            = findTopicForPort(outlet)
-    val destTopic        = topic.name
+    val topic = findTopicForPort(outlet)
+    val destTopic = topic.name
     val bootstrapServers = runtimeBootstrapServers(topic)
 
     val propsMap = Map("bootstrap.servers" -> bootstrapServers, "batch.size" -> "0") ++
-          topic.kafkaProducerProperties
+      topic.kafkaProducerProperties
 
     val properties = new ju.Properties()
     propsMap.foreach { case (k, v) => properties.put(k, v) }
@@ -108,8 +107,6 @@ class FlinkStreamletContextImpl(
         destTopic,
         new FlinkKafkaCodecSerializationSchema[Out](outlet, destTopic),
         properties,
-        FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
-      )
-    )
+        FlinkKafkaProducer.Semantic.AT_LEAST_ONCE))
   }
 }

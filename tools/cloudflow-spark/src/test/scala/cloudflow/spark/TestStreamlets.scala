@@ -23,7 +23,7 @@ import cloudflow.streamlets.avro.AvroUtil
 
 case class TestData(name: String, description: String)
 case class TestResult(result: String)
-case class TestInlet(name: String, schemaDefinition: SchemaDefinition)  extends Inlet
+case class TestInlet(name: String, schemaDefinition: SchemaDefinition) extends Inlet
 case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
 
 trait TrivialSparklet extends SparkStreamlet {
@@ -51,8 +51,7 @@ trait TrivialSparklet extends SparkStreamlet {
 
   override def shape() = StreamletShape(
     TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
-    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema))
-  )
+    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
 
   override def createLogic(): SparkStreamletLogic = new SparkStreamletLogic {
     override def buildStreamingQueries = StreamletQueryExecution(Nil)
@@ -82,7 +81,7 @@ object SparkStreamletWithCompanionObject {
 // This Spark Streamlet should NOT load
 class SparkStreamletWithArgsAndCompanionObject(arg: Int) extends TrivialSparklet {
   import SparkStreamletWithArgsAndCompanionObject._
-  def args   = arg
+  def args = arg
   val x: Int = bar.length
 }
 
@@ -94,7 +93,7 @@ object SparkStreamletWithArgsAndCompanionObject {
 // This Spark Streamlet should load
 class SparkStreamletAsCompanionObject(arg: Int) {
   import SparkStreamletWithArgsAndCompanionObject._
-  def args   = arg
+  def args = arg
   val x: Int = bar.length
 }
 
@@ -129,8 +128,7 @@ class ASparkStreamlet extends SparkStreamlet {
 
   override def shape() = StreamletShape(
     TestInlet("in", AvroUtil.createSchemaDefinition(inSchema)),
-    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema))
-  )
+    TestOutlet("out", AvroUtil.createSchemaDefinition(outSchema)))
 
   override def createLogic(): SparkStreamletLogic = new SparkStreamletLogic {
     override def buildStreamingQueries = StreamletQueryExecution(Nil)

@@ -17,9 +17,11 @@
 package cloudflow.spark.testkit
 
 import org.apache.spark.sql.SparkSession
-import org.scalatest._
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 
-trait SparkScalaTestSupport extends WordSpec with MustMatchers with BeforeAndAfterAll {
+trait SparkScalaTestSupport extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   val session: SparkSession = SparkSession
     .builder()

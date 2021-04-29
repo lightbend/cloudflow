@@ -286,7 +286,7 @@ lazy val cloudflowStreamlets =
     .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
     .settings(Dependencies.cloudflowStreamlet)
     .settings(
-      scalaVersion := Dependencies.Scala213,
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true)
 
@@ -296,7 +296,7 @@ lazy val cloudflowAkkastream =
     .dependsOn(cloudflowStreamlets)
     .settings(Dependencies.cloudflowAkkastream)
     .settings(
-      scalaVersion := Dependencies.Scala213,
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true)
@@ -307,12 +307,10 @@ lazy val cloudflowAkkastreamTestkit =
     .dependsOn(cloudflowAkkastream)
     .settings(Dependencies.cloudflowAkkastreamTestkit)
     .settings(
-      scalaVersion := Dependencies.Scala213,
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"))
-
-import sbt._
 
 lazy val cloudflowAkkastreamUtil =
   Project(id = "cloudflow-akka-util", base = file("cloudflow-akka-util"))
@@ -320,7 +318,7 @@ lazy val cloudflowAkkastreamUtil =
     .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaUtil)
     .settings(
-      scalaVersion := Dependencies.Scala213,
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       javacOptions += "-Xlint:deprecation",
@@ -332,7 +330,7 @@ lazy val cloudflowAkkastreamTests =
     .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkastreamTests)
     .settings(
-      scalaVersion := Dependencies.Scala213,
+      scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       javacOptions += "-Xlint:deprecation",
@@ -340,6 +338,110 @@ lazy val cloudflowAkkastreamTests =
       Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value / "sproto"),
       Compile / PB.protoSources := Seq(baseDirectory.value / "src/test/protobuf"),
       (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
+
+lazy val cloudflowFlink =
+  Project(id = "cloudflow-flink", base = file("cloudflow-flink"))
+    .enablePlugins(ScalafmtPlugin)
+    .dependsOn(cloudflowStreamlets)
+    .settings(Dependencies.cloudflowFlinkStreamlet)
+    .settings(
+      name := "contrib-flink",
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true,
+      libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) },
+      Test / sourceGenerators += (Test / avroScalaGenerateSpecific).taskValue)
+
+lazy val cloudflowFlinkTestkit =
+  Project(id = "cloudflow-flink-testkit", base = file("cloudflow-flink-testkit"))
+    .enablePlugins(ScalafmtPlugin)
+    .dependsOn(cloudflowFlink)
+    .settings(
+      name := "contrib-flink-testkit",
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true)
+
+lazy val cloudflowFlinkTests =
+  Project(id = "cloudflow-flink-tests", base = file("cloudflow-flink-tests"))
+    .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowFlinkTestkit)
+    .settings(Dependencies.cloudflowFlinkTests)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true,
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue,
+      Test / parallelExecution := false)
+
+lazy val cloudflowSpark =
+  Project(id = "cloudflow-spark", base = file("cloudflow-spark"))
+    .enablePlugins(ScalafmtPlugin)
+    .dependsOn(cloudflowStreamlets)
+    .settings(Dependencies.cloudflowSparkStreamlet)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true,
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
+
+lazy val cloudflowSparkTestkit =
+  Project(id = "cloudflow-spark-testkit", base = file("cloudflow-spark-testkit"))
+    .dependsOn(cloudflowSpark)
+    .enablePlugins(ScalafmtPlugin)
+    .settings(Dependencies.cloudflowSparkTestkit)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true)
+
+lazy val cloudflowSparkTests =
+  Project(id = "cloudflow-spark-tests", base = file("cloudflow-spark-tests"))
+    .dependsOn(cloudflowSparkTestkit)
+    .enablePlugins(ScalafmtPlugin)
+    .settings(Dependencies.cloudflowSparkTests)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true,
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue,
+      Test / parallelExecution := false)
+
+lazy val cloudflowRunner =
+  Project(id = "cloudflow-runner", base = file("cloudflow-runner"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowStreamlets, cloudflowBlueprint)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true,
+      artifactName in (Compile, packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+        "runner" + "." + artifact.extension
+      },
+      buildInfoKeys := Seq[BuildInfoKey](
+            name,
+            version,
+            scalaVersion,
+            sbtVersion,
+            BuildInfoKey.action("buildTime") {
+              java.time.Instant.now().toString
+            },
+            BuildInfoKey.action("buildUser") {
+              sys.props.getOrElse("user.name", "unknown")
+            }
+          ),
+      buildInfoPackage := "cloudflow.runner"
+    ).cross
+
+lazy val cloudflowLocalRunner =
+  Project(id = "cloudflow-localrunner", base = file("cloudflow-localrunner"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowStreamlets, cloudflowBlueprint, cloudflowRunnerConfig)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true
+    )
 
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
@@ -362,4 +464,10 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowAkkastreamTestkit,
     cloudflowAkkastreamUtil,
     cloudflowAkkastreamTests,
+    cloudflowFlink,
+    cloudflowFlinkTestkit,
+    cloudflowFlinkTests,
+    cloudflowSpark,
+    cloudflowSparkTestkit,
+    cloudflowSparkTests,
     tooling)

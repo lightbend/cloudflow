@@ -39,26 +39,31 @@ import org.apache.spark.sql.catalyst.InternalRow
  *              a `MemorySink`.
  *
  */
-class TestSparkStreamletContext(override val streamletRef: String,
-                                session: SparkSession,
-                                inletTaps: Seq[SparkInletTap[_]],
-                                outletTaps: Seq[SparkOutletTap[_]],
-                                override val config: Config = ConfigFactory.empty)
-    extends SparkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
-                                  session) {
+class TestSparkStreamletContext(
+    override val streamletRef: String,
+    session: SparkSession,
+    inletTaps: Seq[SparkInletTap[_]],
+    outletTaps: Seq[SparkOutletTap[_]],
+    override val config: Config = ConfigFactory.empty)
+    extends SparkStreamletContext(
+      StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
+      session) {
   val ProcessingTimeInterval = 1500.milliseconds
-  override def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
+  override def readStream[In](
+      inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] =
     inletTaps
       .find(_.portName == inPort.name)
       .map(_.instream.asInstanceOf[MemoryStream[In]].toDF.as[In])
-      .getOrElse(throw TestContextException(inPort.name, s"Bad test context, could not find source for inlet ${inPort.name}"))
+      .getOrElse(
+        throw TestContextException(inPort.name, s"Bad test context, could not find source for inlet ${inPort.name}"))
 
   override def writeStream[Out](
       stream: Dataset[Out],
       outPort: CodecOutlet[Out],
       outputMode: OutputMode,
-      optionalTrigger: Option[Trigger] = None
-  )(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery = {
+      optionalTrigger: Option[Trigger] = None)(
+      implicit encoder: Encoder[Out],
+      typeTag: TypeTag[Out]): StreamingQuery = {
     // RateSource can only work with a microBatch query because it contains no data at time zero.
     // Trigger.Once requires data at start to work.
     val trigger = optionalTrigger.getOrElse {
@@ -78,21 +83,24 @@ class TestSparkStreamletContext(override val streamletRef: String,
           .queryName(outletTap.queryName)
           .start()
       }
-      .getOrElse(throw TestContextException(outPort.name, s"Bad test context, could not find destination for outlet ${outPort.name}"))
+      .getOrElse(throw TestContextException(
+        outPort.name,
+        s"Bad test context, could not find destination for outlet ${outPort.name}"))
     streamingQuery
   }
 
   override def checkpointDir(dirName: String): String = {
     val fileAttibutes: Array[FileAttribute[_]] = Array()
-    val tmpDir                                 = java.nio.file.Files.createTempDirectory("spark-test", fileAttibutes: _*)
+    val tmpDir = java.nio.file.Files.createTempDirectory("spark-test", fileAttibutes: _*)
     tmpDir.toFile.getAbsolutePath
   }
 
   private def isRateSource(stream: Dataset[_]): Boolean = {
     import org.apache.spark.sql.execution.command.ExplainCommand
     val explain = ExplainCommand(stream.queryExecution.logical, true)
-    val res     = session.sessionState.executePlan(explain).executedPlan.executeCollect()
-    res.exists((row: InternalRow) => row.getString(0).contains("org.apache.spark.sql.execution.streaming.sources.RateStreamProvider"))
+    val res = session.sessionState.executePlan(explain).executedPlan.executeCollect()
+    res.exists((row: InternalRow) =>
+      row.getString(0).contains("org.apache.spark.sql.execution.streaming.sources.RateStreamProvider"))
   }
 
 }

@@ -24,8 +24,8 @@ import cloudflow.streamlets._
 
 abstract case class SparkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
-    session: SparkSession
-) extends StreamletContext {
+    session: SparkSession)
+    extends StreamletContext {
 
   /**
    * Returns the absolute path to a mounted shared storage that can be used to store reliable checkpoints.
@@ -56,9 +56,10 @@ abstract case class SparkStreamletContext(
    *
    * @return the `StreamingQuery` that starts executing
    */
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, trigger: Option[Trigger])(
-      implicit encoder: Encoder[Out],
-      typeTag: TypeTag[Out]
-  ): StreamingQuery
+  def writeStream[Out](
+      stream: Dataset[Out],
+      outPort: CodecOutlet[Out],
+      outputMode: OutputMode,
+      trigger: Option[Trigger])(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery
 
 }

@@ -56,7 +56,7 @@ class SparkEgressSpec extends SparkScalaTestSupport {
 }
 
 class MySparkEgress extends SparkStreamlet {
-  val in    = AvroInlet[Data]("in")
+  val in = AvroInlet[Data]("in")
   val shape = StreamletShape(in)
   override def createLogic() = new SparkStreamletLogic {
     override def buildStreamingQueries =

@@ -31,7 +31,7 @@ class SparkIngressSpec extends SparkScalaTestSupport {
   "SparkIngress" should {
     "produce elements to its outlet" in {
 
-      val testKit  = SparkStreamletTestkit(session)
+      val testKit = SparkStreamletTestkit(session)
       val instance = new MySparkIngress()
 
       // setup outlet tap on outlet port
@@ -52,14 +52,14 @@ class SparkIngressSpec extends SparkScalaTestSupport {
 }
 // create sparkStreamlet
 class MySparkIngress extends SparkStreamlet {
-  val out   = AvroOutlet[Data]("out", d => d.id.toString)
+  val out = AvroOutlet[Data]("out", d => d.id.toString)
   val shape = StreamletShape(out)
 
   override def createLogic() = new SparkStreamletLogic {
     private def process: Dataset[Data] = {
       implicit val sqlCtx = session.sqlContext
-      val data            = (1 to 10).map(i => Data(i, s"name$i"))
-      val m               = MemoryStream[Data]
+      val data = (1 to 10).map(i => Data(i, s"name$i"))
+      val m = MemoryStream[Data]
       m.addData(data)
       m.toDF.as[Data]
     }
