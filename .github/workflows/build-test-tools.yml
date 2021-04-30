@@ -33,7 +33,6 @@ jobs:
         run: |
           cd core
           gu install native-image
-          export SBT_OPTS="-Xss256M"
           sbt cloudflow-cli/graalvm-native-image:packageBin
           # Check that the binary runs at least
           cloudflow-cli/target/graalvm-native-image/kubectl-cloudflow version --log-level=trace
