@@ -51,7 +51,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
   val crSummary = CRSummary("swiss-knife", "swiss-knife", "2.0.11", "2020-10-26T17:26:18Z")
 
-  "The Fabric8KubeClient" should "list applications from the CR" in {
+  "The Fabric8KubeClient" should "list applications from the CR" ignore {
     // Arrange
     setupCr()
 
@@ -65,7 +65,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
     apps.get.head shouldBe crSummary
   }
 
-  it should "show the status of an application from the CR" in {
+  it should "show the status of an application from the CR" ignore {
     // Arrange
     setupCr()
 
@@ -81,7 +81,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
     status.get.streamletsStatuses.size shouldBe 10
   }
 
-  it should "create a namespace" in {
+  it should "create a namespace" ignore {
     // Arrange
     val client = new KubeClientFabric8(None, (_) => server.getClient)
 
@@ -103,7 +103,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
     res.isSuccess shouldBe true
   }
 
-  it should "create docker credentials" in {
+  it should "create docker credentials" ignore {
     // Arrange
     val client = new KubeClientFabric8(None, (_) => server.getClient)
 
