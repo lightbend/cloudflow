@@ -41,6 +41,8 @@ object Common extends AutoPlugin {
     javafmtOnCompile := false,
     run / fork := false,
     unidocGenjavadocVersion := "0.17",
+    Test / parallelExecution := false,
+    Test / concurrentRestrictions += Tags.limit(Tags.Test, 1),
     // show full stack traces and test case durations
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     // -a Show stack traces and exception class name for AssertionErrors.
