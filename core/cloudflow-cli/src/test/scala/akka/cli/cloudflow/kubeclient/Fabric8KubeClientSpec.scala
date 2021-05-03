@@ -20,7 +20,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
   implicit val testingLogger = new CliLogger(None)
 
-  val server = new KubernetesServer(false, false, InetAddress.getLoopbackAddress(), 35238, Collections.emptyList())
+  val server = new KubernetesServer(false)
   def setupCr() = {
     server.expect.get
       .withPath("/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions")
