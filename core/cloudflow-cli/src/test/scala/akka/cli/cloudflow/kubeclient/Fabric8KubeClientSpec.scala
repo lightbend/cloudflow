@@ -4,7 +4,8 @@
 
 package akka.cli.cloudflow.kubeclient
 
-import java.net.HttpURLConnection
+import java.net.{ HttpURLConnection, InetAddress }
+import java.util.Collections
 
 import scala.io.Source
 import akka.cli.cloudflow.{ CliLogger, Setup }
@@ -19,7 +20,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
   implicit val testingLogger = new CliLogger(None)
 
-  val server = new KubernetesServer()
+  val server = new KubernetesServer(true, false, InetAddress.getLoopbackAddress(), 35238, Collections.emptyList())
   def setupCr() = {
     server.expect.get
       .withPath("/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions")
