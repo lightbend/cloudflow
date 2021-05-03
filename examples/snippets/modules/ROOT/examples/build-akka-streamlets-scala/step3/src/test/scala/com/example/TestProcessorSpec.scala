@@ -7,6 +7,8 @@ import akka.stream.scaladsl._
 import akka.testkit._
 
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import org.scalatest.concurrent._
 
 import cloudflow.streamlets._
@@ -18,7 +20,7 @@ import cloudflow.akkastream.testkit.scaladsl._
 //end::imports[]
 
 //tag::test[]
-class TestProcessorSpec extends WordSpec with MustMatchers with BeforeAndAfterAll {
+class TestProcessorSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
   private implicit val mat = ActorMaterializer()
