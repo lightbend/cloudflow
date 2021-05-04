@@ -27,8 +27,8 @@ import cloudflow.streamlets._
  */
 abstract case class FlinkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
-    @transient env: StreamExecutionEnvironment
-) extends StreamletContext {
+    @transient env: StreamExecutionEnvironment)
+    extends StreamletContext {
 
   /**
    * Read from the underlying external storage through the inlet `inPort` and return a DataStream

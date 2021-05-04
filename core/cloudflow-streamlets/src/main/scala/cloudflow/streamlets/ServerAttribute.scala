@@ -23,7 +23,7 @@ import com.typesafe.config.Config
  */
 case object ServerAttribute extends StreamletAttribute {
   final val attributeName = "server"
-  final val configKey     = "container-port"
+  final val configKey = "container-port"
 
   /** Returns the configured container port that the server should listen on */
   final def containerPort(config: Config): Int =

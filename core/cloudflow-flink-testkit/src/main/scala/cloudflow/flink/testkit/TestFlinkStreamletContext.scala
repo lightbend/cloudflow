@@ -28,12 +28,15 @@ import cloudflow.streamlets._
 /**
  * An implementation of `FlinkStreamletContext` for unit testing.
  */
-class TestFlinkStreamletContext(override val streamletRef: String,
-                                env: StreamExecutionEnvironment,
-                                inletTaps: Seq[FlinkInletTap[_]],
-                                outletTaps: Seq[FlinkOutletTap[_]],
-                                override val config: Config = ConfigFactory.empty)
-    extends FlinkStreamletContext(StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config), env) {
+class TestFlinkStreamletContext(
+    override val streamletRef: String,
+    env: StreamExecutionEnvironment,
+    inletTaps: Seq[FlinkInletTap[_]],
+    outletTaps: Seq[FlinkOutletTap[_]],
+    override val config: Config = ConfigFactory.empty)
+    extends FlinkStreamletContext(
+      StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), List(), config),
+      env) {
 
   TestFlinkStreamletContext.result.clear()
 
@@ -45,13 +48,16 @@ class TestFlinkStreamletContext(override val streamletRef: String,
     inletTaps
       .find(_.portName == inlet.name)
       .map(_.inStream.asInstanceOf[DataStream[In]])
-      .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
+      .getOrElse(
+        throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
   /**
    * Adds a sink to the `stream`. In the current implementation the sink just adds
    * the data to a concurrent collection for testing
    */
-  override def writeStream[Out: TypeInformation](outlet: CodecOutlet[Out], stream: DataStream[Out]): DataStreamSink[Out] =
+  override def writeStream[Out: TypeInformation](
+      outlet: CodecOutlet[Out],
+      stream: DataStream[Out]): DataStreamSink[Out] =
     outletTaps
       .find(_.portName == outlet.name)
       .map { _ =>
@@ -60,7 +66,9 @@ class TestFlinkStreamletContext(override val streamletRef: String,
             TestFlinkStreamletContext.result.add(out.toString())
         })
       }
-      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find destination for outlet ${outlet.name}"))
+      .getOrElse(throw TestContextException(
+        outlet.name,
+        s"Bad test context, could not find destination for outlet ${outlet.name}"))
 }
 
 object TestFlinkStreamletContext {

@@ -6,6 +6,8 @@ import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import org.scalatest.concurrent._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
@@ -18,7 +20,7 @@ import connectedcar.streamlets.ConnectedCarCluster
 import connectedcar.streamlets.RawCarDataGenerator.generateCarERecord
 import akka.actor.typed.scaladsl.adapter._
 
-class ConnectedCarClusterTest extends WordSpec with MustMatchers with BeforeAndAfterAll {
+class ConnectedCarClusterTest extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
   private val cluster = Cluster(system.toTyped)

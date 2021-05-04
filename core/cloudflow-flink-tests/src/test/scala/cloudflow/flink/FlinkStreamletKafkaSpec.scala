@@ -25,12 +25,14 @@ import cloudflow.streamlets.avro.AvroOutlet
 import cloudflow.flink.avro._
 import cloudflow.flink.testkit._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 
 /**
  * This test needs a local running Kafka to run. Will be useful to do some testing on an
  * actual running Kafka with streamlets.
  */
-class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matchers with BeforeAndAfterAll {
+class FlinkStreamletKafkaSpec extends FlinkTestkit with AnyWordSpecLike with Matchers with BeforeAndAfterAll {
 
   "FlinkIngress" ignore {
     "write streaming data from a source" in {
@@ -38,20 +40,27 @@ class FlinkStreamletKafkaSpec extends FlinkTestkit with WordSpecLike with Matche
       configureCheckpoint(env)
 
       object FlinkIngress extends FlinkStreamlet {
-        val out   = AvroOutlet[Data]("out", _.id.toString())
+        val out = AvroOutlet[Data]("out", _.id.toString())
         val shape = StreamletShape(out)
 
         override def createLogic() = new FlinkStreamletLogic {
           override def buildExecutionGraph = {
-            val data                  = (1 to 10).map(i => new Data(i, s"name$i"))
+            val data = (1 to 10).map(i => new Data(i, s"name$i"))
             val ins: DataStream[Data] = env.addSource(FlinkSource.CollectionSourceFunction(data))
             writeStream(out, ins)
           }
         }
       }
 
-      val streamletDef = StreamletDefinition("appId", "appVersion", "FlinkIngress", "streamletClass", List(), List(), ConfigFactory.empty)
-      val ctx          = new FlinkStreamletContextImpl(streamletDef, env, ConfigFactory.empty)
+      val streamletDef = StreamletDefinition(
+        "appId",
+        "appVersion",
+        "FlinkIngress",
+        "streamletClass",
+        List(),
+        List(),
+        ConfigFactory.empty)
+      val ctx = new FlinkStreamletContextImpl(streamletDef, env, ConfigFactory.empty)
       FlinkIngress.setContext(ctx)
       FlinkIngress.run(ctx.config)
     }

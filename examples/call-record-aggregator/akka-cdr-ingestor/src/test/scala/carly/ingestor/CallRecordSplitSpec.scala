@@ -23,12 +23,14 @@ import akka.actor._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.should._
 import org.scalatest.concurrent._
 
 import cloudflow.akkastream.testkit.scaladsl._
 import carly.data._
 
-class CallRecordSplitSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
+class CallRecordSplitSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("CallRecordSplitSpec")
 

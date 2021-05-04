@@ -21,13 +21,15 @@ import cloudflow.streamlets._
 final case class ExternalInlet(
     name: String,
     hasUniqueGroupId: Boolean = false,
-    errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] = CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable)
-) extends CodecInlet[Array[Byte]] {
-  val codec                                                                                              = ByteArrayCodec
-  def schemaDefinition                                                                                   = ByteArrayUtil.createSchemaDefinition()
-  def schemaAsString                                                                                     = ByteArrayUtil.schemaName
-  def withUniqueGroupId: ExternalInlet                                                                   = copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ExternalInlet = copy(errorHandler = handler)
+    errorHandler: (Array[Byte], Throwable) => Option[Array[Byte]] =
+      CodecInlet.logAndSkip[Array[Byte]](_: Array[Byte], _: Throwable))
+    extends CodecInlet[Array[Byte]] {
+  val codec = ByteArrayCodec
+  def schemaDefinition = ByteArrayUtil.createSchemaDefinition()
+  def schemaAsString = ByteArrayUtil.schemaName
+  def withUniqueGroupId: ExternalInlet = copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[Array[Byte]]): ExternalInlet =
+    copy(errorHandler = handler)
 }
 
 object ExternalInlet {

@@ -36,5 +36,5 @@ object TaxiData {
 
   val rideFare1 = new TaxiRideFare(ride1.rideId, fare1.totalFare)
   val rideFare2 = new TaxiRideFare(ride2.rideId, fare2.totalFare)
-  val expected  = Seq(rideFare1.toString(), rideFare2.toString()).asJava
+  val expected = Seq(rideFare1.toString(), rideFare2.toString()).asJava
 }

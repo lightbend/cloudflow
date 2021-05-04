@@ -31,8 +31,6 @@ echo "========================================================================="
 echo "Runs 'sbt $TARGET' for core and examples"
 echo "========================================================================="
 
-cd $DIR/../tools
-sbt -mem 2048 --supershell=false "+publishLocal"
 cd $DIR/../core
 sbt -mem 2048 --supershell=false "; scalafmtCheck ; $TARGET  ; +publishLocal"
 RETVAL=$?

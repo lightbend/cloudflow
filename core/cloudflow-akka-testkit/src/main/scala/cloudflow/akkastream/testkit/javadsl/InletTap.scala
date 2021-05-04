@@ -27,7 +27,9 @@ import cloudflow.akkastream.testkit._
 
 // The use of Tuple here is OK since the creation of the tuple is handled
 // internally by the AkkaStreamletTestKit when creating instances of this class
-case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.stream.javadsl.Source[(T, Committable), NotUsed])
+case class SourceInletTap[T] private[testkit] (
+    inlet: CodecInlet[T],
+    src: akka.stream.javadsl.Source[(T, Committable), NotUsed])
     extends InletTap[T] {
   val portName = inlet.name
 
@@ -36,7 +38,7 @@ case class SourceInletTap[T] private[testkit] (inlet: CodecInlet[T], src: akka.s
 
 case class QueueInletTap[T](inlet: CodecInlet[T])(implicit system: ActorSystem) extends InletTap[T] {
   private val bufferSize = 1024
-  private val hub        = BroadcastHub.sink[T](bufferSize)
+  private val hub = BroadcastHub.sink[T](bufferSize)
 
   // Here we map the materialized value of the Scala queue source to materialize
   // to the Javadsl version of `SourceQueueWithComplete` so Java users can use
@@ -69,7 +71,7 @@ private[testkit] final class SourceQueueAdapter[T](delegate: SourceQueueWithComp
   import akka.Done
 
   def offer(elem: T): CompletionStage[QueueOfferResult] = delegate.offer(elem).toJava
-  def watchCompletion(): CompletionStage[Done]          = delegate.watchCompletion().toJava
-  def complete(): Unit                                  = delegate.complete()
-  def fail(ex: Throwable): Unit                         = delegate.fail(ex)
+  def watchCompletion(): CompletionStage[Done] = delegate.watchCompletion().toJava
+  def complete(): Unit = delegate.complete()
+  def fail(ex: Throwable): Unit = delegate.fail(ex)
 }

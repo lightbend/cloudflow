@@ -40,8 +40,7 @@ object BootstrapInfo {
         ConfigRenderOptions
           .concise()
           .setFormatted(true)
-          .setJson(false)
-      )
+          .setJson(false))
 
   private def getJVMRuntimeParameters: String = {
     val runtime = Runtime.getRuntime
@@ -56,10 +55,11 @@ object BootstrapInfo {
   }
 
   // TODO move this, this is Akka specific?
-  def startRunnerMessage(blockingIODispatcherConfig: Config,
-                         dispatcherConfig: Config,
-                         deploymentConfig: Config,
-                         streamletConfig: Config): String =
+  def startRunnerMessage(
+      blockingIODispatcherConfig: Config,
+      dispatcherConfig: Config,
+      deploymentConfig: Config,
+      streamletConfig: Config): String =
     s"""
       |\n${box("JVM Resources")}
       |${getJVMRuntimeParameters}

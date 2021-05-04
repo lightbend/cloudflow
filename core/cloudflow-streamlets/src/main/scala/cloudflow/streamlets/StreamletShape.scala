@@ -32,8 +32,8 @@ trait StreamletShape {
 
 private[streamlets] final case class StreamletShapeImpl(
     inlets: immutable.IndexedSeq[Inlet],
-    outlets: immutable.IndexedSeq[Outlet]
-) extends StreamletShape {
+    outlets: immutable.IndexedSeq[Outlet])
+    extends StreamletShape {
 
   @varargs
   def withInlets(inlet: Inlet, inlets: Inlet*) = copy(inlets = inlet +: inlets.toIndexedSeq)

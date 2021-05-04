@@ -57,13 +57,10 @@ object HttpServerLogic {
    *      .result()
    *  }}}
    */
-  final def default[Out](
-      server: Server,
-      outlet: CodecOutlet[Out],
-      rejectionHandler: Option[RejectionHandler] = None
-  )(implicit
-    context: AkkaStreamletContext,
-    fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
+  final def default[Out](server: Server, outlet: CodecOutlet[Out], rejectionHandler: Option[RejectionHandler] = None)(
+      implicit
+      context: AkkaStreamletContext,
+      fbu: FromByteStringUnmarshaller[Out]): HttpServerLogic = {
     implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
       PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
         .andThen(implicitly[FromByteStringUnmarshaller[Out]])
@@ -73,20 +70,17 @@ object HttpServerLogic {
     }
   }
 
-  final def defaultStreaming[Out](
-      server: Server,
-      outlet: CodecOutlet[Out]
-  )(
+  final def defaultStreaming[Out](server: Server, outlet: CodecOutlet[Out])(
       implicit
       context: AkkaStreamletContext,
       fbs: FromByteStringUnmarshaller[Out],
-      ess: EntityStreamingSupport
-  ): HttpServerLogic =
+      ess: EntityStreamingSupport): HttpServerLogic =
     new HttpServerLogic(server) {
       final override def route(): Route = defaultStreamingRoute(sinkRef(outlet))
     }
 
-  final def defaultRoute[Out](handler: Option[RejectionHandler], writer: WritableSinkRef[Out])(implicit fru: FromRequestUnmarshaller[Out]) =
+  final def defaultRoute[Out](handler: Option[RejectionHandler], writer: WritableSinkRef[Out])(
+      implicit fru: FromRequestUnmarshaller[Out]) =
     logRequest("defaultRoute") {
       logResult("defaultRoute") {
         handler
@@ -108,9 +102,11 @@ object HttpServerLogic {
       }
     }
 
-  final def defaultStreamingRoute[Out](
-      writer: WritableSinkRef[Out]
-  )(implicit mat: Materializer, ec: ExecutionContext, fbs: FromByteStringUnmarshaller[Out], ess: EntityStreamingSupport): Route =
+  final def defaultStreamingRoute[Out](writer: WritableSinkRef[Out])(
+      implicit mat: Materializer,
+      ec: ExecutionContext,
+      fbs: FromByteStringUnmarshaller[Out],
+      ess: EntityStreamingSupport): Route =
     entity(asSourceOf[Out]) { elements =>
       val written: Future[_] =
         elements
@@ -157,9 +153,7 @@ object HttpServerLogic {
  *  }
  * }}}
  */
-abstract class HttpServerLogic(
-    server: Server
-)(implicit context: AkkaStreamletContext)
+abstract class HttpServerLogic(server: Server)(implicit context: AkkaStreamletContext)
     extends ServerStreamletLogic(server) {
 
   /**
@@ -169,25 +163,16 @@ abstract class HttpServerLogic(
   def route(): Route
 
   def run() =
-    startServer(
-      context,
-      route(),
-      containerPort
-    )
+    startServer(context, route(), containerPort)
 
-  protected def startServer(
-      context: AkkaStreamletContext,
-      route: Route,
-      port: Int
-  ): Unit =
+  protected def startServer(context: AkkaStreamletContext, route: Route, port: Int): Unit =
     Http()
       .newServerAt("0.0.0.0", port)
       .bind(route)
       .map { binding =>
         context.signalReady()
         system.log.info(
-          s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} for the streamlet ${context.streamletRef}"
-        )
+          s"Bound to ${binding.localAddress.getHostName}:${binding.localAddress.getPort} for the streamlet ${context.streamletRef}")
         // this only completes when StreamletRef executes cleanup.
         context.onStop { () =>
           system.log.info(s"Unbinding from ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")

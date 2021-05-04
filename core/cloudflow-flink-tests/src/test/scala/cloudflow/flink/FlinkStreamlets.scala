@@ -31,7 +31,7 @@ object FlinkConnectedProcessor extends FlinkStreamlet {
   //         the partitioner function explicitly
   val inTaxiRide = AvroInlet[TaxiRide]("in-taxiride")
   val inTaxiFare = AvroInlet[TaxiFare]("in-taxifare")
-  val out        = AvroOutlet[TaxiRideFare]("out", _.rideId.toString)
+  val out = AvroOutlet[TaxiRideFare]("out", _.rideId.toString)
 
   // Step 2: Define the shape of the streamlet. In this example the streamlet
   //         has 2 inlets and 1 outlet

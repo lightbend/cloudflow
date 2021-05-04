@@ -24,17 +24,18 @@ final case class ProtoInlet[T <: GeneratedMessageV3](
     name: String,
     clazz: Class[T],
     hasUniqueGroupId: Boolean = false,
-    errorHandler: (Array[Byte], Throwable) => Option[T] = CodecInlet.logAndSkip[T](_: Array[Byte], _: Throwable)
-) extends CodecInlet[T] {
+    errorHandler: (Array[Byte], Throwable) => Option[T] = CodecInlet.logAndSkip[T](_: Array[Byte], _: Throwable))
+    extends CodecInlet[T] {
   // We know we can do this because of 'GeneratedMessageV3'
   val descriptor = clazz.getMethod("getDescriptor").invoke(null).asInstanceOf[Descriptor]
 
-  val codec            = new ProtoCodec[T](clazz)
-  def schemaAsString   = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
+  val codec = new ProtoCodec[T](clazz)
+  def schemaAsString = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto)
   def schemaDefinition = ProtoUtil.createSchemaDefinition(descriptor)
 
-  def withUniqueGroupId: ProtoInlet[T]                                                         = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
-  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] = copy(errorHandler = handler)
+  def withUniqueGroupId: ProtoInlet[T] = if (hasUniqueGroupId) this else copy(hasUniqueGroupId = true)
+  override def withErrorHandler(handler: (Array[Byte], Throwable) => Option[T]): CodecInlet[T] =
+    copy(errorHandler = handler)
 }
 
 object ProtoInlet {

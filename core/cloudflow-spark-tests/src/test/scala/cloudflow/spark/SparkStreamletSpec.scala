@@ -39,10 +39,10 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
     "automatically stop the streamlet execution when a managed query stops" in {
       val instance = new LeakySparkProcessor()
       // setup outlet tap on outlet port
-      val testKit                      = SparkStreamletTestkit(session)
+      val testKit = SparkStreamletTestkit(session)
       val out1: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out1)
       val out2: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out2)
-      val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
+      val ctx = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
 
       val stopActiveQuery = Future {
         def attemptStopQuery(): Unit = {
@@ -59,7 +59,7 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
         }
         attemptStopQuery()
       }
-      val execution       = instance.setContext(ctx).run(ctx)
+      val execution = instance.setContext(ctx).run(ctx)
       val completedStatus = execution.completed
       // sanity check
       Await.result(stopActiveQuery, 30.seconds)
@@ -72,10 +72,10 @@ class SparkStreamletSpec extends SparkScalaTestSupport with OptionValues {
     "automatically stop the streamlet execution when a managed query fails" in {
       val instance = new LeakySparkProcessor()
       // setup outlet tap on outlet port
-      val testKit                      = SparkStreamletTestkit(session)
+      val testKit = SparkStreamletTestkit(session)
       val out1: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out1)
       val out2: SparkOutletTap[Simple] = testKit.outletAsTap[Simple](instance.out2)
-      val ctx                          = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
+      val ctx = new TestSparkStreamletContext("test-streamlet", session, Nil, Seq(out1, out2), ConfigFactory.empty())
 
       val execution = instance.setContext(ctx).run(ctx)
 
@@ -103,12 +103,12 @@ trait QueryAccess {
   def mustFail(fail: Boolean)
 }
 class LeakySparkProcessor extends SparkStreamlet with QueryAccess {
-  val out1                                   = AvroOutlet[Simple]("out1")
-  val out2                                   = AvroOutlet[Simple]("out2")
-  val shape                                  = StreamletShape.withOutlets(out1, out2)
+  val out1 = AvroOutlet[Simple]("out1")
+  val out2 = AvroOutlet[Simple]("out2")
+  val shape = StreamletShape.withOutlets(out1, out2)
   @volatile var queries: Seq[StreamingQuery] = Seq()
-  @volatile var shouldFail                   = false
-  override def mustFail(fail: Boolean)       = shouldFail = fail
+  @volatile var shouldFail = false
+  override def mustFail(fail: Boolean) = shouldFail = fail
 
   override def createLogic() = new SparkStreamletLogic {
 

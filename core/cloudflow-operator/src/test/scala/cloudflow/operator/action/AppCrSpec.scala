@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{ EitherValues, GivenWhenThen, Inspectors, OptionValues }
+import org.scalatest.{ BeforeAndAfterAll, EitherValues, GivenWhenThen, Inspectors, OptionValues }
 
 import scala.jdk.CollectionConverters._
 
@@ -36,6 +36,7 @@ class AppCrSpec
     with EitherValues
     with OptionValues
     with Inspectors
+    with BeforeAndAfterAll
     with TestDeploymentContext {
 
   case class Foo(name: String)
@@ -46,7 +47,10 @@ class AppCrSpec
   val image = "image-1"
   val agentPaths = Map("prometheus" -> "/app/prometheus/prometheus.jar")
 
-  Serialization.jsonMapper().registerModule(DefaultScalaModule)
+  override def beforeAll() = {
+    Serialization.jsonMapper().registerModule(DefaultScalaModule)
+    super.beforeAll()
+  }
 
   "CloudflowApplication.CR" should {
     "convert to Json and back" in {

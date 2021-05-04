@@ -39,7 +39,8 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
  * as part of a running cloudflow application.
  * See `RunnableGraphStreamletLogic` if you just want to create a RunnableGraph.
  */
-abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) extends StreamletLogic[AkkaStreamletContext] {
+abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext)
+    extends StreamletLogic[AkkaStreamletContext] {
 
   override def getContext(): AkkaStreamletContext = super.getContext()
 
@@ -106,7 +107,8 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
-  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): SourceWithOffsetContext[T] = context.sourceWithOffsetContext(inlet)
+  def sourceWithOffsetContext[T](inlet: CodecInlet[T]): SourceWithOffsetContext[T] =
+    context.sourceWithOffsetContext(inlet)
 
   /**
    * This source emits `T` records together with the committable context, thus makes it possible
@@ -127,14 +129,16 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   @deprecated("Use getSourceWithCommittableContext", "1.3.4")
-  def getSourceWithOffsetContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, CommittableOffset, _] =
+  def getSourceWithOffsetContext[T](
+      inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, CommittableOffset, _] =
     sourceWithOffsetContext(inlet).asJava
 
   /**
    * Java API
    * @see [[sourceWithCommittableContext]]
    */
-  def getSourceWithCommittableContext[T](inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
+  def getSourceWithCommittableContext[T](
+      inlet: CodecInlet[T]): akka.stream.javadsl.SourceWithContext[T, Committable, _] =
     context.sourceWithCommittableContext(inlet).asJava
 
   /**
@@ -156,8 +160,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+      kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout)
 
   /**
@@ -168,8 +171,8 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   def getShardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
+      kafkaTimeout: FiniteDuration = 10.seconds)
+      : akka.stream.javadsl.SourceWithContext[T, Committable, Future[NotUsed]] =
     context.shardedSourceWithCommittableContext(inlet, shardEntity, kafkaTimeout).asJava
 
   /**
@@ -178,7 +181,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * It has no support for committing offsets to Kafka.
    * The `inlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to deserialize the records read from Kafka.
    */
-  def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
+  def plainSource[T](
+      inlet: CodecInlet[T],
+      resetPosition: ResetPosition = Latest): akka.stream.scaladsl.Source[T, NotUsed] =
     context.plainSource(inlet, resetPosition)
 
   /**
@@ -209,29 +214,32 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * @param kafkaTimeout is used to specify the amount of time the message extractor will wait for a response from kafka
    **/
   @ApiMayChange
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
+  def shardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] =
     context.shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout)
 
   /**
    * Java API
    */
   @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                     shardEntity: Entity[M, E],
-                                     kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+  def getShardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      kafkaTimeout: FiniteDuration): akka.stream.javadsl.Source[T, Future[NotUsed]] =
     shardedPlainSource(inlet, shardEntity, Latest, kafkaTimeout).asJava
 
   /**
    * Java API
    */
   @ApiMayChange
-  def getShardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                     shardEntity: Entity[M, E],
-                                     resetPosition: ResetPosition = Latest,
-                                     kafkaTimeout: FiniteDuration = 10.seconds): akka.stream.javadsl.Source[T, Future[NotUsed]] =
+  def getShardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds): akka.stream.javadsl.Source[T, Future[NotUsed]] =
     shardedPlainSource(inlet, shardEntity, resetPosition, kafkaTimeout).asJava
 
   /**
@@ -262,8 +270,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Batches offsets from the contexts that accompany the records, and commits these to Kafka.
    * The `outlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to serialize the records that are written to Kafka.
    */
-  def committableSink[T](outlet: CodecOutlet[T],
-                         committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, Committable), NotUsed] =
+  def committableSink[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, Committable), NotUsed] =
     context.committableSink(outlet, committerSettings)
 
   /**
@@ -288,8 +297,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * The `outlet` specifies a [[cloudflow.streamlets.Codec]] that will be used to serialize the records that are written to Kafka.
    */
   @deprecated("Use `committableSink` instead.", "1.3.1")
-  def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
-                               committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+  def sinkWithOffsetContext[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings = defaultCommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     context.sinkWithOffsetContext(outlet, committerSettings)
 
   /**
@@ -311,8 +321,9 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   /**
    * Java API
    */
-  def getCommittableSink[T](outlet: CodecOutlet[T],
-                            committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+  def getCommittableSink[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
     committableSink[T](outlet, committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
@@ -324,7 +335,8 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   /**
    * Java API
    */
-  def getCommittableSink[T](committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
+  def getCommittableSink[T](
+      committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, Committable], NotUsed] =
     committableSink[T](committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
@@ -337,7 +349,8 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    * Java API
    */
   @deprecated("Use `getCommittableSink` instead.", "1.3.1")
-  def getSinkWithOffsetContext[T](outlet: CodecOutlet[T]): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
+  def getSinkWithOffsetContext[T](
+      outlet: CodecOutlet[T]): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
     getSinkWithOffsetContext(outlet, defaultCommitterSettings)
 
   /**
@@ -346,8 +359,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
   @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](
       outlet: CodecOutlet[T],
-      committerSettings: CommitterSettings
-  ): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
+      committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
     committableSink[T](outlet, committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**
@@ -355,8 +367,7 @@ abstract class AkkaStreamletLogic(implicit val context: AkkaStreamletContext) ex
    */
   @deprecated("Use `getCommittableSink` instead.", "1.3.1")
   def getSinkWithOffsetContext[T](
-      committerSettings: CommitterSettings
-  ): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
+      committerSettings: CommitterSettings): akka.stream.javadsl.Sink[akka.japi.Pair[T, CommittableOffset], NotUsed] =
     committableSink[T](committerSettings).asJava.contramap { case pair => (pair.first, pair.second) }
 
   /**

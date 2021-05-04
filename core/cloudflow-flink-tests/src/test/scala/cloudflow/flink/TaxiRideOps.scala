@@ -60,8 +60,7 @@ object TaxiRideOps {
           parseFloat(tokens(6)),
           parseFloat(tokens(7)),
           startTime.getMillis(),
-          endTime.getMillis()
-        )
+          endTime.getMillis())
       }.transform(s => Success(s), e => Failure(new RuntimeException(s"Invalid record: $ride", e)))
   }
 

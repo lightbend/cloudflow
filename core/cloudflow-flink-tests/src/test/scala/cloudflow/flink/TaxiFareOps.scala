@@ -51,8 +51,7 @@ object TaxiFareOps {
           parseDateTime(tokens(3)).getMillis(),
           parseFloat(tokens(5)),
           parseFloat(tokens(6)),
-          parseFloat(tokens(7))
-        )
+          parseFloat(tokens(7)))
       }.transform(s => Success(s), e => Failure(new RuntimeException(s"Invalid record: $fare", e)))
   }
 

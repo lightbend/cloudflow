@@ -36,6 +36,6 @@ private[flink] class FlinkKafkaCodecSerializationSchema[T: TypeInformation](outl
 
 private[flink] class FlinkKafkaCodecDeserializationSchema() extends KafkaDeserializationSchema[Array[Byte]] {
   override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = record.value
-  override def isEndOfStream(value: Array[Byte]): Boolean                                 = false
-  override def getProducedType: TypeInformation[Array[Byte]]                              = TypeExtractor.getForClass(classOf[Array[Byte]])
+  override def isEndOfStream(value: Array[Byte]): Boolean = false
+  override def getProducedType: TypeInformation[Array[Byte]] = TypeExtractor.getForClass(classOf[Array[Byte]])
 }

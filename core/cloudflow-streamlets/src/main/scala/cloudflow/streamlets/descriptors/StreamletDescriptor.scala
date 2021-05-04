@@ -31,12 +31,20 @@ final case class ConfigParameterDescriptor private (
     description: String,
     validationType: String,
     validationPattern: Option[String],
-    defaultValue: Option[String]
-)
+    defaultValue: Option[String])
 
 object ConfigParameterDescriptor {
-  def apply[T](key: String, description: String, validationType: ValidationType, defaultValue: Option[T]): ConfigParameterDescriptor =
-    ConfigParameterDescriptor(key, description, validationType.`type`, validationType.pattern, defaultValue.map(_.toString()))
+  def apply[T](
+      key: String,
+      description: String,
+      validationType: ValidationType,
+      defaultValue: Option[T]): ConfigParameterDescriptor =
+    ConfigParameterDescriptor(
+      key,
+      description,
+      validationType.`type`,
+      validationType.pattern,
+      defaultValue.map(_.toString()))
   // Java API
   def create(key: String, description: String, validationType: ValidationType) =
     ConfigParameterDescriptor(key, description, validationType.`type`, validationType.pattern, Some(""))
@@ -58,16 +66,23 @@ object StreamletDescriptor extends DefaultJsonProtocol {
   }
 
   implicit val configParameterDescriptorFormat: RootJsonFormat[ConfigParameterDescriptor] =
-    jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
+    jsonFormat(
+      ConfigParameterDescriptor.apply,
+      "key",
+      "description",
+      "validation_type",
+      "validation_pattern",
+      "default_value")
 
-  implicit final class ConfigParameterDescriptorToDescriptor(val configParameterDescriptor: ConfigParameterDescriptor) extends AnyVal {
-    def toDescriptor = ConfigParameterDescriptor(
-      configParameterDescriptor.key,
-      configParameterDescriptor.description,
-      configParameterDescriptor.validationType,
-      configParameterDescriptor.validationPattern,
-      configParameterDescriptor.defaultValue
-    )
+  implicit final class ConfigParameterDescriptorToDescriptor(val configParameterDescriptor: ConfigParameterDescriptor)
+      extends AnyVal {
+    def toDescriptor =
+      ConfigParameterDescriptor(
+        configParameterDescriptor.key,
+        configParameterDescriptor.description,
+        configParameterDescriptor.validationType,
+        configParameterDescriptor.validationPattern,
+        configParameterDescriptor.defaultValue)
   }
 
   final case class StreamletAttributeDescriptor(attributeName: String, configPath: String)
@@ -78,19 +93,14 @@ object StreamletDescriptor extends DefaultJsonProtocol {
     implicit val attributeFormat = jsonFormat(StreamletAttributeDescriptor.apply, "attribute_name", "config_path")
   }
 
-  final case class SchemaDescriptor(
-      name: String,
-      schema: String,
-      fingerprint: String,
-      format: String
-  )
+  final case class SchemaDescriptor(name: String, schema: String, fingerprint: String, format: String)
 
   final case class StreamletPortDescriptor(name: String, schemaDefinition: SchemaDescriptor)
 
   object StreamletPortDescriptor {
     implicit final class StreamletPortToDescriptor(val streamletPort: StreamletPort) extends AnyVal {
       def toDescriptor: StreamletPortDescriptor = {
-        val sd               = streamletPort.schemaDefinition
+        val sd = streamletPort.schemaDefinition
         val schemaDescriptor = SchemaDescriptor(sd.name, sd.schema, sd.fingerprint, sd.format)
         StreamletPortDescriptor(streamletPort.name, schemaDescriptor)
       }
@@ -102,12 +112,10 @@ object StreamletDescriptor extends DefaultJsonProtocol {
           JsObject(
             "name" -> JsString(port.name),
             "schema" -> JsObject(
-                  "name"        -> JsString(port.schemaDefinition.name),
-                  "schema"      -> JsString(port.schemaDefinition.schema),
-                  "fingerprint" -> JsString(port.schemaDefinition.fingerprint),
-                  "format"      -> JsString(port.schemaDefinition.format)
-                )
-          )
+              "name" -> JsString(port.schemaDefinition.name),
+              "schema" -> JsString(port.schemaDefinition.schema),
+              "fingerprint" -> JsString(port.schemaDefinition.fingerprint),
+              "format" -> JsString(port.schemaDefinition.format)))
       })
   }
 
@@ -120,16 +128,16 @@ object StreamletDescriptor extends DefaultJsonProtocol {
         require(canonicalName != null, s"The Streamlet class ${streamlet.getClass} cannot be an anonymous class")
 
         JsObject(
-          "class_name"        -> JsString(streamlet.getClass.getCanonicalName),
-          "runtime"           -> JsString(streamlet.runtime.name),
-          "labels"            -> JsArray(streamlet.labels.sorted.map(_.toJson).toVector),
-          "description"       -> JsString(streamlet.description),
-          "inlets"            -> JsArray(streamlet.inlets.map(_.toDescriptor).sortBy(_.name).map(_.toJson).toVector),
-          "outlets"           -> JsArray(streamlet.outlets.map(_.toDescriptor).sortBy(_.name).map(_.toJson).toVector),
-          "config_parameters" -> JsArray(streamlet.configParameters.map(_.toDescriptor).sortBy(_.key).map(_.toJson).toVector),
-          "volume_mounts"     -> JsArray(streamlet.volumeMounts.map(_.toDescriptor).map(_.toJson).toVector),
-          "attributes"        -> JsArray(streamlet.attributes.map(_.toDescriptor).map(_.toJson).toVector)
-        )
+          "class_name" -> JsString(streamlet.getClass.getCanonicalName),
+          "runtime" -> JsString(streamlet.runtime.name),
+          "labels" -> JsArray(streamlet.labels.sorted.map(_.toJson).toVector),
+          "description" -> JsString(streamlet.description),
+          "inlets" -> JsArray(streamlet.inlets.map(_.toDescriptor).sortBy(_.name).map(_.toJson).toVector),
+          "outlets" -> JsArray(streamlet.outlets.map(_.toDescriptor).sortBy(_.name).map(_.toJson).toVector),
+          "config_parameters" -> JsArray(
+            streamlet.configParameters.map(_.toDescriptor).sortBy(_.key).map(_.toJson).toVector),
+          "volume_mounts" -> JsArray(streamlet.volumeMounts.map(_.toDescriptor).map(_.toJson).toVector),
+          "attributes" -> JsArray(streamlet.attributes.map(_.toDescriptor).map(_.toJson).toVector))
       }
     })
 
