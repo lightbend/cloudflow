@@ -460,8 +460,7 @@ lazy val root = Project(id = "root", base = file("."))
         cloudflowSparkTestkit),
     JavaUnidoc / unidoc / unidocProjectFilter := (ScalaUnidoc / unidoc / unidocProjectFilter).value)
   .aggregate(
-    cloudflowBlueprint212,
-    cloudflowBlueprint213,
+    cloudflowBlueprint,
     cloudflowCli,
     cloudflowConfig,
     cloudflowCrd,
@@ -471,8 +470,7 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowNewItLibrary,
     cloudflowOperator,
     cloudflowSbtPlugin,
-    cloudflowRunnerConfig212,
-    cloudflowRunnerConfig213,
+    cloudflowRunnerConfig,
     cloudflowStreamlets,
     cloudflowAkkastream,
     cloudflowAkkastreamTestkit,
