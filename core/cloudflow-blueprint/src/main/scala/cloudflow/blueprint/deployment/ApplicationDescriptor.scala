@@ -54,6 +54,16 @@ object ApplicationDescriptor {
       blueprint: VerifiedBlueprint,
       agentPaths: Map[String, String],
       libraryVersion: String): ApplicationDescriptor = {
+    apply(appId, appVersion, (_: String) => image, blueprint, agentPaths, libraryVersion)
+  }
+
+  def apply(
+      appId: String,
+      appVersion: String,
+      images: String => String,
+      blueprint: VerifiedBlueprint,
+      agentPaths: Map[String, String],
+      libraryVersion: String): ApplicationDescriptor = {
 
     val sanitizedApplicationId = Dns1123Formatter.transformToDNS1123Label(appId)
     val namedStreamletDescriptors = blueprint.streamlets.map(streamletToNamedStreamletDescriptor)
@@ -61,7 +71,11 @@ object ApplicationDescriptor {
       namedStreamletDescriptors
         .map {
           case (streamlet, instance) =>
-            StreamletDeployment(sanitizedApplicationId, instance, image, portMappingsForStreamlet(streamlet, blueprint))
+            StreamletDeployment(
+              sanitizedApplicationId,
+              instance,
+              images(streamlet.name),
+              portMappingsForStreamlet(streamlet, blueprint))
         }
 
     ApplicationDescriptor(sanitizedApplicationId, appVersion, namedStreamletDescriptors.map {

@@ -290,4 +290,6 @@ object Dependencies {
   val cloudflowSparkTests =
     dependencyOverrides ++= Seq(Compile.jacksonCore, Compile.jacksonDatabind, Compile.jacksonScala)
 
+  val cloudflowCrGenerator =
+    libraryDependencies += Compile.scopt
 }

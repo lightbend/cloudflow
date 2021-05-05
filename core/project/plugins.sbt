@@ -22,3 +22,4 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.31")
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.2"
 
 addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")
