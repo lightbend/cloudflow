@@ -443,6 +443,18 @@ lazy val cloudflowLocalRunner =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true)
 
+lazy val cloudflowCrGenerator =
+  Project(id = "cloudflow-cr-generator", base = file("cloudflow-cr-generator"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowExtractor, cloudflowBlueprint)
+    .settings(Dependencies.cloudflowCrGenerator)
+    .settings(scalaVersion := Dependencies.Scala212, scalafmtOnCompile := true, assembly / assemblyMergeStrategy := {
+      case PathList("buildinfo", xs @ _*) => MergeStrategy.first
+      case x =>
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
+        oldStrategy(x)
+    })
+
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
