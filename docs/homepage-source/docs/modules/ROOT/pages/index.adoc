@@ -28,7 +28,6 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 * A CLI, in the form of a `kubectl plugin`, that facilitates manual, scripted, and automated (CI/CD) management of the application.
 
 == Where To Go Next?
-* https://console.cloud.google.com/marketplace/details/lightbend-public/cloudflow[Get Cloudflow on Google Cloud Marketplace]
 * link:./docs/current/index.html[Introducing Cloudflow]
 * link:./docs/current/app-development-process.html[The Cloudflow development process]
 * link:./docs/current/get-started/index.html[Getting started with Cloudflow]
