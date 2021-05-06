@@ -41,7 +41,7 @@ object Generator {
       version: String,
       blueprintStr: String,
       classpath: List[String],
-      dockerImages: String => String): String = {
+      dockerImages: Map[String, String]): String = {
     val scanConfig =
       DescriptorExtractor.ScanConfiguration(projectId = projectId, classpathUrls = classpath.map(new URL(_)).toArray)
 
@@ -127,7 +127,7 @@ object Generator {
             version = config.version,
             blueprintStr = Source.fromFile(config.blueprint).mkString,
             classpath = Source.fromFile(config.classpath).getLines.toList,
-            dockerImages = config.images(_))
+            dockerImages = config.images)
         } match {
           case Success(result) =>
             Console.out.println(result)
