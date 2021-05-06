@@ -10,6 +10,7 @@ import java.io.File
 import java.net.URL
 import scala.collection.JavaConverters._
 import scala.io.Source
+import scala.util.{ Failure, Success, Try }
 
 import scopt.OParser
 import spray.json._
@@ -81,7 +82,7 @@ object Generator {
     }
   }
 
-  case class Config(
+  final case class Config(
       name: String = null,
       version: String = null,
       blueprint: File = null,
@@ -120,15 +121,21 @@ object Generator {
 
     OParser.parse(parser, args, Config()) match {
       case Some(config) =>
-        val result = generate(
-          projectId = config.name,
-          version = config.version,
-          blueprintStr = Source.fromFile(config.blueprint).mkString,
-          classpath = Source.fromFile(config.classpath).getLines.toList,
-          dockerImages = config.images(_))
-
-        Console.out.println(result)
-        System.exit(0)
+        Try {
+          generate(
+            projectId = config.name,
+            version = config.version,
+            blueprintStr = Source.fromFile(config.blueprint).mkString,
+            classpath = Source.fromFile(config.classpath).getLines.toList,
+            dockerImages = config.images(_))
+        } match {
+          case Success(result) =>
+            Console.out.println(result)
+            System.exit(0)
+          case Failure(ex) =>
+            Console.err.println(ex.getMessage)
+            System.exit(1)
+        }
       case _ =>
         System.exit(1)
     }
