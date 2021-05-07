@@ -265,7 +265,6 @@ $ kubectl cloudflow deploy /cloudflow/examples/call-record-aggregator/target/cal
 
 This method is not only dev-friendly, but is also compatible with the typical CI/CD deployments. 
 This allows you to take the application from dev to production in a controlled way.
-
 The deployment procedure will be a bit different with the _cloudflow contrib_ approach where Flink and Spark applications are supported through external plugins. Akka applications will be fully depoyed using `kubectl cloudflow` as above. However for Spark and Flink applications, you need to use an extra plugin and carry out a few extra steps to make them known to the cloudflow engine. For details please have a look at xref:develop:cloudflow-contrib-change-me.adoc[Cloudflow Contrib] documentation.  
 
 == Conclusion
