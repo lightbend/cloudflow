@@ -208,12 +208,15 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
     val localClasspath = classpath.files.map(_.toURI.toURL).toArray
     val logLibs = Seq(toURLSegment(Log4J), toURLSegment(Slf4jLog4jBridge))
     // forced `get` b/c these libraries are added to the classpath.
-    logLibs.map(lib => lib -> localClasspath.find(_.toString.contains(lib)).get)
+    logLibs.map(lib => lib -> localClasspath.find(path => dotToSlash(path.toString).contains(lib)).get)
   }
+
+  def dotToSlash(name: String): String =
+    name.replaceAll("\\.", "/")
 
   // transforms the organization and name of a module into the URL format used by the classpath resolution
   def toURLSegment(dep: ModuleID): String = {
-    val org = dep.organization
+    val org = dotToSlash(dep.organization)
     val name = dep.name
     s"$org/$name"
   }
