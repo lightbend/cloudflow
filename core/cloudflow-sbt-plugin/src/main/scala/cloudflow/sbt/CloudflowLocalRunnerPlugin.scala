@@ -213,7 +213,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
 
   // transforms the organization and name of a module into the URL format used by the classpath resolution
   def toURLSegment(dep: ModuleID): String = {
-    val org = dep.organization.replaceAll("\\.", "/")
+    val org = dep.organization
     val name = dep.name
     s"$org/$name"
   }
