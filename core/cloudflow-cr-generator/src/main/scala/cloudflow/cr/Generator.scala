@@ -36,18 +36,21 @@ object Generator {
         name = appDescriptor.appId),
       appDescriptor)
 
+  def scanProject(projectId: String, classpath: List[String]): Map[String, com.typesafe.config.Config] = {
+    val scanConfig =
+      DescriptorExtractor.ScanConfiguration(projectId = projectId, classpathUrls = classpath.map(new URL(_)).toArray)
+
+    DescriptorExtractor.scan(scanConfig)
+  }
+
   def generate(
       projectId: String,
       version: String,
       blueprintStr: String,
-      classpath: List[String],
+      streamlets: Map[String, com.typesafe.config.Config],
       dockerImages: Map[String, String]): String = {
-    val scanConfig =
-      DescriptorExtractor.ScanConfiguration(projectId = projectId, classpathUrls = classpath.map(new URL(_)).toArray)
 
-    val extractedStreamlets = DescriptorExtractor.scan(scanConfig)
-
-    val streamletDescriptors = extractedStreamlets.map {
+    val streamletDescriptors = streamlets.map {
       case (_, configDescriptor) =>
         configDescriptor
           .root()
@@ -122,11 +125,13 @@ object Generator {
     OParser.parse(parser, args, Config()) match {
       case Some(config) =>
         Try {
+          val streamlets =
+            scanProject(projectId = config.name, classpath = Source.fromFile(config.classpath).getLines.toList)
           generate(
             projectId = config.name,
             version = config.version,
             blueprintStr = Source.fromFile(config.blueprint).mkString,
-            classpath = Source.fromFile(config.classpath).getLines.toList,
+            streamlets,
             dockerImages = config.images)
         } match {
           case Success(result) =>

@@ -18,6 +18,7 @@ object Dependencies {
     val jackson = "2.11.4" // same major.minor as used in fabric8
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
+    val maven = "3.8.1"
   }
 
   object Compile {
@@ -107,6 +108,14 @@ object Dependencies {
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
     val testcontainersKafka = "org.testcontainers" % "kafka" % "1.15.2"
     val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
+
+    val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
+    val mavenCore = "org.apache.maven" % "maven-core" % Versions.maven
+    val mavenEmbedder = "org.apache.maven" % "maven-embedder" % Versions.maven
+    val dockerMaven = "io.fabric8" % "docker-maven-plugin" % "0.35.0"
+    val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.6.1"
+    val mavenProject = "org.apache.maven" % "maven-project" % "2.2.1"
+    val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.3.1"
   }
 
   object TestDeps {
@@ -292,4 +301,15 @@ object Dependencies {
 
   val cloudflowCrGenerator =
     libraryDependencies += Compile.scopt
+
+  val cloudflowMavenPlugin =
+    libraryDependencies ++= Seq(
+    Compile.mavenCore,
+      Compile.mavenEmbedder,
+      Compile.dockerMaven,
+    Compile.mavenProject,
+    Compile.mavenPluginApi,
+      Compile.mojoExecutor,
+    Compile.mavenPluginAnnotations
+  )
 }

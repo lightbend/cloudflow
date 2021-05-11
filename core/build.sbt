@@ -455,6 +455,17 @@ lazy val cloudflowCrGenerator =
         oldStrategy(x)
     })
 
+lazy val cloudflowMavenPlugin =
+  Project(id = "cloudflow-maven-plugin", base = file("cloudflow-maven-plugin"))
+     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtMavenPlugin)
+    .dependsOn(cloudflowCrGenerator)
+    .settings(Dependencies.cloudflowMavenPlugin)
+    .settings(
+      crossPaths := false,
+      crossVersion := CrossVersion.disabled,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalaVersion := Dependencies.Scala212)
+
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
