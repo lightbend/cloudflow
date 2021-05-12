@@ -4,10 +4,8 @@ import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
 import org.apache.maven.project.MavenProject
-import org.codehaus.plexus.util.StringOutputStream
-import org.fusesource.jansi.AnsiConsole
 
-import java.io.{ ByteArrayOutputStream, File }
+import java.io.File
 
 @Mojo(
   name = "push-images",

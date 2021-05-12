@@ -1,13 +1,12 @@
 package com.lightbend.cloudflow.maven
 
+import cloudflow.blueprint.deployment._
 import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
 import org.apache.maven.project.MavenProject
-
-import cloudflow.blueprint.deployment._
 
 import scala.collection.JavaConverters._
 
@@ -28,7 +27,7 @@ class AppLayoutMojo extends AbstractMojo {
   @Component
   var pluginManager: BuildPluginManager = _
 
-  def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
+  private def resolveConnections(appDescriptor: ApplicationDescriptor): List[(String, String)] = {
     def topicFormat(topic: String): String =
       s"[$topic]"
     val streamletIOResolver = appDescriptor.streamlets.map { st =>
@@ -57,7 +56,7 @@ class AppLayoutMojo extends AbstractMojo {
     }.toList
   }
 
-  def getAppLayout(connections: List[(String, String)]): String = {
+  private def getAppLayout(connections: List[(String, String)]): String = {
     val vertices = connections.flatMap { case (a, b) => Seq(a, b) }.toSet
     val graph = Graph(vertices = vertices, edges = connections)
     GraphLayout.renderGraph(graph)
@@ -66,20 +65,20 @@ class AppLayoutMojo extends AbstractMojo {
   def execute(): Unit = {
     val topLevel = mavenSession.getTopLevelProject
     val projectId = topLevel.getName
+    val version = topLevel.getVersion
 
     val allProjects = mavenSession.getAllProjects.asScala
 
     if (allProjects.last == mavenProject) {
 
-      CloudflowAggregator.getCR(topLevel) match {
-        case Some(c) =>
-          val res = getAppLayout(resolveConnections(c.spec))
+      val cr = CloudflowAggregator.getCR(
+        CloudflowAggregator
+          .generateLocalCR(projectId = projectId, version = version, allProjects = allProjects, log = getLog()))
 
-          getLog.info("App Layout:")
-          getLog.info(res)
-        case None =>
-          getLog.error("Cannot find the application CR, run cloudflow:build-app first.")
-      }
+      val res = getAppLayout(resolveConnections(cr.spec))
+
+      getLog.info("App Layout:")
+      getLog.info(res)
     }
   }
 

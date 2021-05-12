@@ -1,7 +1,7 @@
 package com.lightbend.cloudflow.maven
 
 import cloudflow.cr.Generator
-import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
+import com.typesafe.config.ConfigRenderOptions
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
@@ -9,8 +9,6 @@ import org.apache.maven.project.MavenProject
 
 import java.io.File
 import java.net.URLEncoder
-import java.nio.file.{ Files, Paths }
-import java.util.stream.Collectors
 import scala.collection.JavaConverters._
 import scala.util.Try
 
@@ -53,36 +51,7 @@ class ExtractStreamletsMojo extends AbstractMojo {
 
     createDependencyListFile(mavenProject)
 
-    // Try to include all the folders / jars needed
-    val deps: List[String] = FileUtil
-      .readLines(new File(mavenProject.getBuild.getDirectory, "classpath.txt"))
-      .mkString
-      .split(pathSeparator)
-      .map(d => new File(d).getAbsoluteFile.toURI.toURL.toString)
-      .toList
-
-    val artifacts: List[String] = mavenProject.getArtifacts.asScala.map { a =>
-      a.getFile.toURI.toURL.toString
-    }.toList
-
-    val outputDirs: List[String] = Try {
-      Files
-        .walk(new File(mavenProject.getBuild.getOutputDirectory).toPath)
-        .distinct()
-        .filter(p => Files.isDirectory(p))
-        .collect(Collectors.toList())
-        .asScala
-        .map(p => new File(p.toFile, "*").toURI.toURL.toString)
-        .toList
-    }.toOption.getOrElse(List.empty[String])
-
-    val mainArtifact = Try {
-      List(mavenProject.getArtifact.getFile.toURI.toURL.toString)
-    }.toOption.getOrElse(List.empty[String])
-
-    val allDeps = (
-      deps ++ artifacts ++ outputDirs ++ mainArtifact
-    ).distinct.filterNot(_.isEmpty)
+    val allDeps = CloudflowAggregator.classpathByProject(mavenProject).map(_.toString).distinct.filterNot(_.isEmpty)
 
     val streamlets = Generator.scanProject(projectId = projectId, classpath = allDeps)
 

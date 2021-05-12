@@ -5,16 +5,15 @@ import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
 import org.apache.maven.project.MavenProject
 
-import java.io.File
 import scala.collection.JavaConverters._
 
 @Mojo(
-  name = "build-app",
+  name = "verify-blueprint",
   aggregator = false,
   requiresDependencyResolution = ResolutionScope.COMPILE,
   requiresDependencyCollection = ResolutionScope.COMPILE,
   defaultPhase = LifecyclePhase.PACKAGE)
-class BuildAppMojo extends AbstractMojo {
+class VerifyBlueprintMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${project}", required = true, readonly = true)
   var mavenProject: MavenProject = _
@@ -33,18 +32,12 @@ class BuildAppMojo extends AbstractMojo {
     val allProjects = mavenSession.getAllProjects.asScala
 
     if (allProjects.last == mavenProject) {
-
       try {
-        val cr = CloudflowAggregator.generateCR(
-          projectId = projectId,
-          version = version,
-          allProjects = allProjects,
-          log = getLog())
+        CloudflowAggregator.getCR(
+          CloudflowAggregator
+            .generateLocalCR(projectId = projectId, version = version, allProjects = allProjects, log = getLog()))
 
-        val destFile = new File(topLevel.getBuild.getDirectory, projectId + ".json")
-        FileUtil.writeFile(destFile, cr)
-        getLog().info("Deploy your Cloudflow Application with:")
-        getLog().info(s"kubectl cloudflow deploy ${destFile.getAbsolutePath}")
+        getLog().info("Blueprint validated!")
       } catch {
         case ex: Throwable =>
           getLog().error(ex.getMessage)
