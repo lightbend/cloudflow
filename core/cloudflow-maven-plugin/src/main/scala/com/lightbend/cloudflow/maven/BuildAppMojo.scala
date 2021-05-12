@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 
 @Mojo(
   name = "build-app",
-  aggregator = true,
+  aggregator = false,
   requiresDependencyResolution = ResolutionScope.COMPILE,
   requiresDependencyCollection = ResolutionScope.COMPILE,
   defaultPhase = LifecyclePhase.PACKAGE)
@@ -30,55 +30,22 @@ class BuildAppMojo extends AbstractMojo {
   @Component
   var pluginManager: BuildPluginManager = _
 
-  def getBlueprint(project: MavenProject) = {
-    val blueprintFile =
-      Paths.get(project.getBasedir.getAbsolutePath, "src", "main", "blueprint", "blueprint.conf").toFile
-    if (blueprintFile.exists()) {
-      Some(blueprintFile)
-    } else {
-      None
-    }
-  }
-
   def execute(): Unit = {
     val topLevel = mavenSession.getTopLevelProject
     val projectId = topLevel.getName
     val version = topLevel.getVersion
 
-    val allProjects = mavenSession.getAllProjects.asScala.sortBy(_.getName)
+    val allProjects = mavenSession.getAllProjects.asScala
 
     if (allProjects.last == mavenProject) {
 
-      val (streamlets, images, blueprintFile) = {
-        allProjects.foldLeft(Map.empty[String, Config], Map.empty[String, String], Option.empty[File]) {
-          case (acc, project) =>
-            try {
+      val streamletsPerProject = CloudflowAggregator.getStreamlets(allProjects, getLog())
+      val imagesPerProject = CloudflowAggregator.getImages(allProjects, getLog())
+      val blueprintFile = CloudflowAggregator.getBlueprint(allProjects, getLog())
 
-              getLog.info(s"BuildApp is analyzing $project")
-
-              val rawStreamlets =
-                FileUtil.readLines(new File(project.getBuild.getDirectory, Constants.STREAMLETS_FILE))
-
-              val streamlets: Map[String, Config] = rawStreamlets.map { k =>
-                val file = new File(project.getBuild.getDirectory, URLEncoder.encode(k, "UTF-8"))
-                val config = ConfigFactory
-                  .parseFile(file)
-                  .resolve()
-                k -> config
-              }.toMap
-
-              val image =
-                FileUtil.readLines(new File(project.getBuild.getDirectory, Constants.DOCKER_IMAGE_FILE)).mkString.trim
-
-              val images = streamlets.keys.map(streamlet => streamlet -> image)
-
-              ((acc._1 ++ streamlets), (acc._2 ++ images), getBlueprint(project).orElse(acc._3))
-            } catch {
-              case ex: Throwable =>
-                getLog().warn(s"No streamlets found in project $project")
-                (acc._1, acc._2, getBlueprint(project).orElse(acc._3))
-            }
-        }
+      val streamlets = streamletsPerProject.foldLeft(Map.empty[String, Config]) { case (acc, (_, v)) => acc ++ v }
+      val images = streamletsPerProject.foldLeft(Map.empty[String, String]) {
+        case (acc, (k, v)) => acc ++ v.keys.map { s => s -> imagesPerProject(k) }
       }
 
       getLog.info(s"Last project(${mavenProject.getName}) building the actual CR")
@@ -96,17 +63,22 @@ class BuildAppMojo extends AbstractMojo {
             ._1 -> v
       }
 
-      val cr = Generator.generate(
-        projectId = projectId,
-        version = version,
-        blueprintStr = blueprintStr,
-        streamlets = streamlets,
-        dockerImages = finalImages)
+      try {
+        val cr = Generator.generate(
+          projectId = projectId,
+          version = version,
+          blueprintStr = blueprintStr,
+          streamlets = streamlets,
+          dockerImages = finalImages)
 
-      val destFile = new File(topLevel.getBuild.getDirectory, projectId + ".json")
-      FileUtil.writeFile(destFile, cr)
-      getLog().info("Deploy your Cloudflow Application with:")
-      getLog().info(s"kubectl cloudflow ${destFile.getAbsolutePath}")
+        val destFile = new File(topLevel.getBuild.getDirectory, projectId + ".json")
+        FileUtil.writeFile(destFile, cr)
+        getLog().info("Deploy your Cloudflow Application with:")
+        getLog().info(s"kubectl cloudflow deploy ${destFile.getAbsolutePath}")
+      } catch {
+        case ex: Throwable =>
+          getLog().error(ex.getMessage)
+      }
     }
   }
 

@@ -81,7 +81,12 @@ object Generator {
       val cloudflowCr = makeCR(appDescriptor, version)
       cloudflowCr.toJson.compactPrint
     } else {
-      throw new Exception(s"Found errors: ${blueprint.problems.mkString}")
+      val problemsMsg = blueprint.problems
+        .map { p =>
+          BlueprintProblem.toMessage(p)
+        }
+        .mkString("\n")
+      throw new Exception(s"Found problems in the blueprint:\n${problemsMsg}")
     }
   }
 

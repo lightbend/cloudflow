@@ -125,5 +125,45 @@
         </requirement>
       </requirements>
     </mojo>
+    <mojo>
+      <goal>app-layout</goal>
+      <description>Print the Cloudflow Application graph</description>
+      <implementation>com.lightbend.cloudflow.maven.AppLayoutMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+      <aggregator>false</aggregator>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
   </mojos>
 </plugin>
