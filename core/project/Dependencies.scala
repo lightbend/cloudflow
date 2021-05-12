@@ -304,15 +304,14 @@ object Dependencies {
 
   val cloudflowMavenPlugin =
     libraryDependencies ++= Seq(
-      Compile.asciigraphs,
-              Compile.testcontainersKafka,
+        Compile.asciigraphs,
+        Compile.testcontainersKafka,
         Compile.kafkaClient,
-    Compile.mavenCore,
-      Compile.mavenEmbedder,
-      Compile.dockerMaven,
-    Compile.mavenProject,
-    Compile.mavenPluginApi,
-      Compile.mojoExecutor,
-    Compile.mavenPluginAnnotations
-  )
+        Compile.mavenCore,
+        Compile.mavenEmbedder,
+        Compile.dockerMaven,
+        Compile.mavenProject,
+        Compile.mavenPluginApi,
+        Compile.mojoExecutor,
+        Compile.mavenPluginAnnotations)
 }

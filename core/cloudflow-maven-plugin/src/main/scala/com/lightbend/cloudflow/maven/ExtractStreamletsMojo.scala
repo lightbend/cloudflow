@@ -30,7 +30,6 @@ class ExtractStreamletsMojo extends AbstractMojo {
   var pluginManager: BuildPluginManager = _
 
   val dependencyFile = "${project.build.directory}/classpath.txt"
-  val pathSeparator = "@"
 
   private def createDependencyListFile(project: MavenProject) = {
     import org.twdata.maven.mojoexecutor.MojoExecutor._
@@ -39,7 +38,7 @@ class ExtractStreamletsMojo extends AbstractMojo {
       goal("build-classpath"),
       configuration(
         element(name("outputFile"), dependencyFile),
-        element(name("pathSeparator"), pathSeparator),
+        element(name("pathSeparator"), Constants.PATH_SEPARATOR),
         element(name("regenerateFile"), "true"),
         element(name("outputAbsoluteArtifactFilename"), "true")),
       executionEnvironment(project, mavenSession, pluginManager))

@@ -457,7 +457,7 @@ lazy val cloudflowCrGenerator =
 
 lazy val cloudflowMavenPlugin =
   Project(id = "cloudflow-maven-plugin", base = file("cloudflow-maven-plugin"))
-     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtMavenPlugin)
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtMavenPlugin)
     .dependsOn(cloudflowCrGenerator)
     .settings(Dependencies.cloudflowMavenPlugin)
     .settings(
