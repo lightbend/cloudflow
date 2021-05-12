@@ -63,9 +63,8 @@ final class Fork(val commandName: String, val runnerClass: Option[String]) {
     outputStrategy.getOrElse(StdoutOutput: OutputStrategy) match {
       case StdoutOutput        => process.run(connectInput = false)
       case out: BufferedOutput => { process.run(ProcessLogger((s) => out.logger.info(s)), connectInput = false) }
-      case out: LoggedOutput =>
-        process.run(ProcessLogger((s) => out.logger.info(s)), connectInput = false) // FIXME -> log to file?
-      case out: CustomOutput => (process #> out.output).run(connectInput = false)
+      case out: LoggedOutput   => process.run(ProcessLogger(out.file), connectInput = false)
+      case out: CustomOutput   => (process #> out.output).run(connectInput = false)
     }
   }
   private[this] def makeOptions(
@@ -280,26 +279,26 @@ object OutputStrategy {
    * Logs the forked standard output at the `info` level and the forked standard error at
    * the `error` level.
    */
-  final class LoggedOutput private (val logger: Log) extends OutputStrategy with Serializable {
+  final class LoggedOutput private (val file: File) extends OutputStrategy with Serializable {
     override def equals(o: Any): Boolean = o match {
-      case x: LoggedOutput => (this.logger == x.logger)
+      case x: LoggedOutput => (this.file == x.file)
       case _               => false
     }
     override def hashCode: Int = {
-      37 * (17 + logger.##) + "LoggedOutput".##
+      37 * (17 + file.##) + "LoggedOutput".##
     }
     override def toString: String = {
-      "LoggedOutput(" + logger + ")"
+      "LoggedOutput(" + file + ")"
     }
-    private[this] def copy(logger: Log = logger): LoggedOutput = {
-      new LoggedOutput(logger)
+    private[this] def copy(file: File = file): LoggedOutput = {
+      new LoggedOutput(file)
     }
-    def withLogger(logger: Log): LoggedOutput = {
-      copy(logger = logger)
+    def withFile(file: File): LoggedOutput = {
+      copy(file = file)
     }
   }
   object LoggedOutput {
-    def apply(logger: Log): LoggedOutput = new LoggedOutput(logger)
+    def apply(file: File): LoggedOutput = new LoggedOutput(file)
   }
 
   /**

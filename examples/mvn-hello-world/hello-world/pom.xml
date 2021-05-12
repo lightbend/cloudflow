@@ -92,5 +92,15 @@
       <artifactId>cloudflow-runner_2.12</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-localrunner_2.12</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
+    </dependency>
   </dependencies>
 </project>

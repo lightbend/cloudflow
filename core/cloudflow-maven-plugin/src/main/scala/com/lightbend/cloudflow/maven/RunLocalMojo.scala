@@ -16,9 +16,12 @@ import spray.json._
 import java.io.{ File, FileInputStream, InputStream }
 import java.net.URL
 import java.nio.file.{ Files, Path, StandardCopyOption }
+import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.DurationInt
 import scala.io.StdIn
 import scala.sys.SystemProperties
 import scala.util.{ Failure, Success, Try }
@@ -36,6 +39,18 @@ class RunLocalMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${session}", required = true, readonly = true)
   var mavenSession: MavenSession = _
+
+  @Parameter(name = "localConfig")
+  var localConfig: String = _
+
+  @Parameter(name = "log4jConfigFile")
+  var log4jConfig: String = _
+
+  @Parameter(name = "baseDebugPort")
+  var baseDebugPort: Int = _
+
+  @Parameter(name = "remoteDebug")
+  var remoteDebug: Boolean = _
 
   @Component
   var pluginManager: BuildPluginManager = _
@@ -86,28 +101,43 @@ class RunLocalMojo extends AbstractMojo {
     descriptors.collect { case (p, Success(runtimeDescriptor)) => (p, runtimeDescriptor) }
   }
 
+  val log4jDefaultContent =
+    """
+      |# Root logger option
+      |log4j.rootLogger=INFO, stdout
+      |
+      |# Direct log messages to stdout
+      |log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+      |log4j.appender.stdout.Target=System.out
+      |log4j.appender.stdout.layout=org.apache.log4j.EnhancedPatternLayout
+      |log4j.appender.stdout.layout.ConversionPattern=[%p] [%d{HH:mm:ss.SSS}] %c{2.}:%L %m%n
+      |
+      |log4j.logger.cloudflow=INFO
+      |
+      |# Noisy Exclusions
+      |log4j.logger.org.apache.spark=ERROR
+      |log4j.logger.org.spark_project=ERROR
+      |log4j.logger.kafka=ERROR
+      |log4j.logger.org.apache.flink=ERROR
+      |""".stripMargin
+
   def prepareLog4JFile(tempDir: Path, log4jConfigPath: Option[String]): Try[Path] =
     Try {
       val log4jClassResource = "local-run-log4j.properties"
 
-      if (this.getClass.getClassLoader.getResource(log4jClassResource) == null) {
-        throw new Exception("Default log4j configuration could not be found on classpath of sbt-cloudflow.")
-      }
       // keeping the filename since log4j uses the prefix to load it as XML or properties.
-      val (log4JSrc: InputStream, filename: String) = log4jConfigPath
+      val (log4JSrc: String, filename: String) = log4jConfigPath
         .map { log4jPath =>
           val log4jFile = new File(log4jPath)
-          if (log4jFile.exists && log4jFile.isFile) new FileInputStream(log4jFile) -> log4jFile.getName
+          if (log4jFile.exists && log4jFile.isFile) {
+            FileUtil.readLines(log4jFile).mkString("\n") -> log4jFile.getName
+          }
         }
-        .getOrElse(this.getClass.getClassLoader.getResourceAsStream(log4jClassResource) -> log4jClassResource)
+        .getOrElse(log4jDefaultContent -> log4jClassResource)
 
-      try {
-        val stagedLog4jFile = tempDir.resolve(filename)
-        Files.copy(log4JSrc, stagedLog4jFile, StandardCopyOption.REPLACE_EXISTING)
-        stagedLog4jFile
-      } finally {
-        log4JSrc.close
-      }
+      val stagedLog4jFile = tempDir.resolve(filename)
+      FileUtil.writeFile(stagedLog4jFile.toFile, log4JSrc)
+      stagedLog4jFile
     }.recoverWith {
       case ex: Throwable => Failure(new Exception("Failed to prepare the log4j file.", ex))
     }
@@ -228,15 +258,19 @@ class RunLocalMojo extends AbstractMojo {
     import scala.collection.JavaConverters._
 
     var retry = 5
+    var adminClient: AdminClient = null
 
     while (retry > 0) {
-      val adminClient = AdminClient.create(
-        Map[String, Object](
-          AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> kafkaHost,
-          AdminClientConfig.CLIENT_ID_CONFIG -> UUID.randomUUID().toString).asJava)
       try {
         topics.foreach { topic =>
           log.debug(s"Kafka Setup: creating topic: $topic")
+
+          if (adminClient == null) {
+            adminClient = AdminClient.create(
+              Map[String, Object](
+                AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG -> kafkaHost,
+                AdminClientConfig.CLIENT_ID_CONFIG -> UUID.randomUUID().toString).asJava)
+          }
 
           val newTopic = new NewTopic(topic, 1, 1.toShort)
 
@@ -249,9 +283,12 @@ class RunLocalMojo extends AbstractMojo {
         retry = 0
       } catch {
         case _: Throwable =>
+          log.warn(s"Exception occurred while provisioning Kafka retrying ($retry)")
           retry -= 1
       } finally {
-        adminClient.close()
+        if (adminClient != null) {
+          adminClient.close(Duration.ofSeconds(30))
+        }
       }
     }
   }
@@ -259,6 +296,76 @@ class RunLocalMojo extends AbstractMojo {
   def stopKafka() = Try {
     kafka.get().stop()
     kafka.set(null)
+  }
+
+  // Needs to match StreamletAttribute
+  final val configPrefix = "cloudflow.internal"
+  final def configSection: String = s"$configPrefix.$attributeName"
+  final def configPath = s"$configSection.$configKey"
+  final val attributeName = "server"
+  final val configKey = "container-port"
+
+  def streamletInfo(descriptor: ApplicationDescriptor): Seq[String] = {
+    val streamletInstances: Seq[StreamletInstance] = descriptor.streamlets.sortBy(_.name)
+
+    streamletInstances.map { streamlet =>
+      val streamletDeployment = descriptor.deployments.find(_.streamletName == streamlet.name)
+      val serverPort: Option[Int] = streamletDeployment.flatMap { sd =>
+        if (sd.config.hasPath(configPath)) {
+          Some(sd.config.getInt(configPath))
+        } else {
+          None
+        }
+      }
+
+      def newLineIfNotEmpty(s: String): String = if (s.nonEmpty) s"\n$s" else s
+
+      val volumeMounts = streamlet.descriptor.volumeMounts
+        .map { mount =>
+          s"\t- mount [${mount.name}] available at [${mount.path}]"
+        }
+        .mkString("\n")
+
+      val endpointMessage = serverPort.map(port => s"\t- HTTP port [$port]").getOrElse("")
+      s"${streamlet.name} [${streamlet.descriptor.className}]" +
+      newLineIfNotEmpty(endpointMessage) +
+      newLineIfNotEmpty(volumeMounts)
+    }
+  }
+
+  val infoBanner = banner('-') _
+  val warningBanner = banner('!') _
+
+  def banner(bannerChar: Char)(name: String)(message: Any): Unit = {
+    val title = s" $name "
+    val bannerLength = 80
+    val sideLength = (bannerLength - title.size) / 2
+    val side = List.fill(sideLength)(bannerChar).mkString("")
+    val bottom = List.fill(bannerLength)(bannerChar).mkString("")
+
+    println(side + title + side)
+    println(message.toString)
+    println(bottom + "\n")
+  }
+
+  def printInfo(
+      descriptors: Iterable[(String, RuntimeDescriptor)],
+      outputFolder: File,
+      topics: Seq[String],
+      localConfMsg: String): Unit = {
+    val streamletInfoPerProject = descriptors.map {
+      case (pid, rd) => (pid, rd.outputFile, streamletInfo(rd.appDescriptor))
+    }
+    val streamletReport = streamletInfoPerProject.map {
+      case (pid, outputFile, streamletInfo) =>
+        s"$pid - output file: ${outputFile.toURI.toString}\n\n" + streamletInfo.foldLeft("") {
+          case (agg, str) => s"$agg\t$str\n"
+        }
+    }
+    infoBanner("Streamlets per project")(streamletReport.mkString("\n"))
+    infoBanner("Topics")(topics.map(t => s"[$t]").mkString("\n"))
+    infoBanner("Local Configuration")(localConfMsg)
+    infoBanner("Output")(s"Pipeline log output available in folder: " + outputFolder)
   }
 
   def execute(): Unit = {
@@ -277,11 +384,7 @@ class RunLocalMojo extends AbstractMojo {
       val appDescriptor = cr.spec
 
       // load local config
-      // TODO: use a specific confg file if provided via property
-      val localConfig = LocalConfig.load(None)
-
-      // TODO make configurable
-      val baseDebugPort = 5000
+      val loadedLocalConfig = LocalConfig.load(Option(localConfig))
 
       val (tempDir, configDir) = createDirs("cloudflow-local-run")
 
@@ -289,22 +392,17 @@ class RunLocalMojo extends AbstractMojo {
 
       val descriptorByProject = allProjects.map { project =>
         val streamletClasses = streamletDescriptorsByProject(project.getName).keys.toSet
-        project -> streamletFilterByClass(appDescriptor, streamletClasses)
-      }
+        if (streamletClasses.size > 0) {
+          Some(project -> streamletFilterByClass(appDescriptor, streamletClasses))
+        } else {
+          None
+        }
+      }.flatten
 
-      val runtimeDescriptorByProject = getDescriptorsOrFail(
-        descriptorByProject.map {
-          case (p, projectDescriptor) =>
-            p -> scaffoldRuntime(
-              p.getName,
-              projectDescriptor,
-              localConfig,
-              tempDir,
-              configDir,
-              None // TODO: restore local log4j file
-            )
-        },
-        getLog())
+      val runtimeDescriptorByProject = getDescriptorsOrFail(descriptorByProject.map {
+        case (p, projectDescriptor) =>
+          p -> scaffoldRuntime(p.getName, projectDescriptor, loadedLocalConfig, tempDir, configDir, Option(log4jConfig))
+      }, getLog())
 
       val topics = appDescriptor.deployments
         .flatMap { deployment =>
@@ -318,9 +416,20 @@ class RunLocalMojo extends AbstractMojo {
         host
       }
 
+      printInfo(
+        runtimeDescriptorByProject.map { case (k, v) => k.getName -> v },
+        tempDir.toFile,
+        topics,
+        loadedLocalConfig.message)
+
       val processes = runtimeDescriptorByProject.zipWithIndex.map {
         case ((p, rd), debugPortOffset) =>
-          val classpath = CloudflowAggregator.classpathByProject(p)
+          val classpath = FileUtil
+            .readLines(new File(p.getBuild.getDirectory, Constants.FULL_CLASSPATH))
+            .mkString("")
+            .split(Constants.PATH_SEPARATOR)
+            .map(s => new URL(s))
+
           runPipelineJVM(
             p.getName,
             rd.appDescriptorFile,
@@ -329,13 +438,13 @@ class RunLocalMojo extends AbstractMojo {
             rd.logConfig,
             rd.localConfPath,
             kafkaHost,
-            false,
+            remoteDebug,
             baseDebugPort + debugPortOffset,
             None,
             getLog)
       }
 
-      getLog.info(s"Running ${appDescriptor.appId}  \nTo terminate, press [ENTER]\n")
+      getLog.info(s"Running ${appDescriptor.appId}. To terminate, press [ENTER]")
 
       try {
         StdIn.readLine()
@@ -387,7 +496,7 @@ class RunLocalMojo extends AbstractMojo {
     // Using file://localhost/path instead of file:///path or even file://path (as it was originally)
     // appears to be necessary for runLocal to work on both Windows and real systems.
     val forkOptions = ForkOptions()
-      .withOutputStrategy(OutputStrategy.LoggedOutput(logger))
+      .withOutputStrategy(OutputStrategy.StdoutOutput) //.LoggedOutput(outputFile))
       .withConnectInput(false)
       .withRunJVMOptions(jvmOptions)
 

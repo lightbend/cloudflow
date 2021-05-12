@@ -53,6 +53,10 @@ class ExtractStreamletsMojo extends AbstractMojo {
 
     val allDeps = CloudflowAggregator.classpathByProject(mavenProject).map(_.toString).distinct.filterNot(_.isEmpty)
 
+    FileUtil.writeFile(
+      new File(mavenProject.getBuild.getDirectory, Constants.FULL_CLASSPATH),
+      allDeps.map(_.toString).mkString(Constants.PATH_SEPARATOR))
+
     val streamlets = Generator.scanProject(projectId = projectId, classpath = allDeps)
 
     getLog().info(s"streamlets found: ${streamlets.mkString(",")}")

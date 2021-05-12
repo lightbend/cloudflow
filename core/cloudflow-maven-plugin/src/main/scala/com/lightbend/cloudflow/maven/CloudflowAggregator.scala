@@ -13,6 +13,7 @@ import java.io.File
 import java.net.{ URL, URLEncoder }
 import java.nio.file.Paths
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 object CloudflowAggregator {
 
@@ -159,8 +160,10 @@ object CloudflowAggregator {
       .toList
 
     val artifacts = project.getArtifacts.asScala.map { a: Artifact =>
-      a.getFile.toURI.toURL
-    }.toList
+        a.getFile.toURI.toURL
+      }.toList ++ Try {
+        project.getArtifact.getFile.toURI.toURL
+      }.toOption.toList
 
     (deps ++ artifacts)
   }
