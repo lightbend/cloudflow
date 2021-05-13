@@ -59,6 +59,7 @@ binaries
 .cache/
 docs-source/test-ui-site.yml
 output/
+!examples/mvn-call-record-aggregator/akka-java-aggregation-output/src/main/java/carly/output
 build/
 docs/docs-source/docs/modules/ROOT/examples/
 ##

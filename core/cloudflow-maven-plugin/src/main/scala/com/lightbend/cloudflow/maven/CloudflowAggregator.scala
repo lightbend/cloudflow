@@ -135,16 +135,11 @@ object CloudflowAggregator {
     }
     val (blueprintStr, blueprint) = readBlueprint(CloudflowAggregator.getBlueprint(allProjects, log))
 
-    val finalImages = images
+    val finalImages = blueprint
       .map {
         case (k, v) =>
-          blueprint
-            .find { b => b._2.unwrapped() == k }
-            .headOption
-            .map(_._1 -> v)
+          k -> images.get(v.unwrapped().toString).getOrElse(throw new Exception(s"docker image missing for $k"))
       }
-      .flatten
-      .toMap
 
     Generator.generate(
       projectId = projectId,
