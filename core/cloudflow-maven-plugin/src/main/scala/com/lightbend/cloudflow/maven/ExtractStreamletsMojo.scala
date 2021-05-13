@@ -1,7 +1,7 @@
 package com.lightbend.cloudflow.maven
 
 import cloudflow.cr.Generator
-import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.{ Config, ConfigRenderOptions }
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
@@ -44,6 +44,10 @@ class ExtractStreamletsMojo extends AbstractMojo {
       executionEnvironment(project, mavenSession, pluginManager))
   }
 
+  def showStreamlet(s: (String, Config)): String = {
+    s"[name: ${s._1}, config: ${s._2.root().render(ConfigRenderOptions.concise())}]"
+  }
+
   def execute(): Unit = {
     val topLevel = mavenSession.getTopLevelProject
     val projectId = topLevel.getName
@@ -58,7 +62,7 @@ class ExtractStreamletsMojo extends AbstractMojo {
 
     val streamlets = Generator.scanProject(projectId = projectId, classpath = allDeps)
 
-    getLog().info(s"streamlets found: ${streamlets.mkString(",")}")
+    getLog().info(s"streamlets found: ${streamlets.map(showStreamlet).mkString(",")}")
 
     val res = streamlets
       .map {

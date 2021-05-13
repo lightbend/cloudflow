@@ -55,17 +55,32 @@
               <registry>docker.io/${docker.username}</registry>
               <build>
                 <from>flink:1.10.3-scala_2.12</from>
+
                 <assemblies>
                   <assembly>
                     <name>deps-release</name>
                     <descriptorRef>release-dependencies</descriptorRef>
-                    <targetDir>/opt/flink/usrlib</targetDir>
+                    <targetDir>/opt/flink/lib</targetDir>
+                    <user>flink</user>
                   </assembly>
                   <assembly>
                     <descriptorRef>artifact</descriptorRef>
-                    <targetDir>/opt/flink/usrlib</targetDir>
+                    <targetDir>/opt/flink/lib</targetDir>
+                    <user>flink</user>
                   </assembly>
                 </assemblies>
+
+                <runCmds>
+                  <run>echo "taskmanager.memory.flink.size: 1024mb" >> "/opt/flink/conf/flink-conf.yaml"</run>
+                  <run>echo "web.upload.dir: /opt/flink/" >> "/opt/flink/conf/flink-conf.yaml"</run>
+                  <run>echo "jobmanager.web.upload.dir: /opt/flink/" >> "/opt/flink/conf/flink-conf.yaml"</run>
+                  <run>cp /opt/flink/opt/flink-queryable-state-runtime_2.12-1.10.3.jar /opt/flink/lib/</run>
+                  <run>mkdir -p /opt/flink/flink-web-upload</run>
+                  <run>cp /opt/flink/lib/cloudflow-runner_${scala.binary.version}-${cloudflow.version}.jar /opt/flink/flink-web-upload/cloudflow-runner.jar</run>
+                  <run>chown -R flink:flink /opt/flink/lib</run>
+                  <run>chown -R flink:flink /opt/flink/flink-web-upload</run>
+                  <run>chmod -R 777 /opt/flink</run>
+                </runCmds>
               </build>
             </image>
           </images>

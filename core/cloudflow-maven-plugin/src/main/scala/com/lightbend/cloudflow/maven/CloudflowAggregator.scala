@@ -135,13 +135,16 @@ object CloudflowAggregator {
     }
     val (blueprintStr, blueprint) = readBlueprint(CloudflowAggregator.getBlueprint(allProjects, log))
 
-    val finalImages = images.map {
-      case (k, v) =>
-        blueprint
-          .find { b => b._2.unwrapped() == k }
-          .head
-          ._1 -> v
-    }
+    val finalImages = images
+      .map {
+        case (k, v) =>
+          blueprint
+            .find { b => b._2.unwrapped() == k }
+            .headOption
+            .map(_._1 -> v)
+      }
+      .flatten
+      .toMap
 
     Generator.generate(
       projectId = projectId,
