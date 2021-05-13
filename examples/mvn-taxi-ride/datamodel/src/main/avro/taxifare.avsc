@@ -1,0 +1,31 @@
+{
+    "namespace": "taxiride.datamodel",
+    "type": "record",
+    "name": "TaxiFare",
+    "fields":[
+         {
+            "name": "rideId", "type": "long"
+         },
+         {
+            "name": "taxiId", "type": "long"
+         },
+         {
+            "name": "paymentType", "type": "string"
+         },
+         {
+            "name": "driverId", "type": "long"
+         },
+         {
+            "name": "startTime", "type": "long"
+         },
+         {
+            "name": "tip", "type": "float"
+         },
+         {
+            "name": "tolls", "type": "float"
+         },
+         {
+            "name": "totalFare", "type": "float"
+         }
+    ]
+}

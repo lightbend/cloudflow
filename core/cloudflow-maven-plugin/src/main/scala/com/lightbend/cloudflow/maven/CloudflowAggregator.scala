@@ -103,9 +103,9 @@ object CloudflowAggregator {
   }
 
   private def readBlueprint(blueprintFile: Option[File]) = {
-    val blueprintStr = FileUtil.readLines(blueprintFile.get).mkString("")
+    val blueprintStr = FileUtil.readLines(blueprintFile.get).mkString("\n")
 
-    (blueprintStr, ConfigFactory.parseString(blueprintStr).getObject("blueprint.streamlets").asScala.toMap)
+    (blueprintStr, ConfigFactory.parseFile(blueprintFile.get).getObject("blueprint.streamlets").asScala.toMap)
   }
 
   def generateLocalCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log) = {

@@ -1,0 +1,40 @@
+{
+    "namespace": "taxiride.datamodel",
+    "type": "record",
+    "name": "TaxiRide",
+    "fields":[
+         {
+            "name": "rideId", "type": "long"
+         },
+         {
+            "name": "isStart", "type": "boolean"
+         },
+         {
+            "name": "taxiId", "type": "long"
+         },
+         {
+            "name": "passengerCnt", "type": "int"
+         },
+         {
+            "name": "driverId", "type": "long"
+         },
+         {
+            "name": "startLon", "type": "float"
+         },
+         {
+            "name": "startLat", "type": "float"
+         },
+         {
+            "name": "endLon", "type": "float"
+         },
+         {
+            "name": "endLat", "type": "float"
+         },
+         {
+            "name": "startTime", "type": "long"
+         },
+         {
+            "name": "endTime", "type": "long"
+         }
+    ]
+}

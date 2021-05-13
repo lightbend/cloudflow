@@ -6,13 +6,13 @@
 
   <parent>
     <groupId>com.lightbend.cloudflow</groupId>
-    <artifactId>mvn-hello-world</artifactId>
+    <artifactId>taxi-ride-fare</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
 
   <groupId>com.lightbend.cloudflow</groupId>
-  <artifactId>hello-world</artifactId>
+  <artifactId>ingestor</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -23,14 +23,31 @@
   </properties>
 
   <build>
-    <finalName>hello-world</finalName>
+    <finalName>ingestor</finalName>
     <sourceDirectory>src/main/scala</sourceDirectory>
     <testSourceDirectory>src/test/scala</testSourceDirectory>
 
     <plugins>
       <plugin>
+        <groupId>at.makubi.maven.plugin</groupId>
+        <artifactId>avrohugger-maven-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>generate-scala-sources</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${project.basedir}/../datamodel/src/main/avro/</sourceDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker.maven.plugin.version}</version>
         <configuration>
           <images>
             <image>
@@ -68,6 +85,16 @@
         <version>4.5.1</version>
         <executions>
           <execution>
+            <id>add-generated-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sourceDir>${project.build.directory}/generated-sources/avro</sourceDir>
+            </configuration>
+          </execution>
+          <execution>
             <goals>
               <goal>compile</goal>
               <goal>testCompile</goal>
@@ -83,23 +110,38 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-akka_2.12</artifactId>
+      <artifactId>cloudflow-akka_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-runner_2.12</artifactId>
+      <artifactId>cloudflow-akka-util_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-localrunner_2.12</artifactId>
+      <artifactId>cloudflow-runner_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-localrunner_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <version>1.7.16</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
       <version>1.7.16</version>
     </dependency>
     <dependency>

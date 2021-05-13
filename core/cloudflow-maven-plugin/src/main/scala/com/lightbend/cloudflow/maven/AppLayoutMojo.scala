@@ -78,7 +78,7 @@ class AppLayoutMojo extends AbstractMojo {
       val res = getAppLayout(resolveConnections(cr.spec))
 
       getLog.info("App Layout:")
-      getLog.info(res)
+      println(res)
     }
   }
 
