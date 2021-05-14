@@ -54,20 +54,78 @@
               <name>%a:%v</name>
               <registry>docker.io/${docker.username}</registry>
               <build>
-                <from>gcr.io/spark-operator/spark:v2.4.5</from>
+                <from>adoptopenjdk/openjdk8:alpine</from>
 
                 <assemblies>
                   <assembly>
                     <name>deps-release</name>
                     <descriptorRef>release-dependencies</descriptorRef>
-                    <targetDir>/work/lib</targetDir>
+                    <targetDir>/opt/cloudflow</targetDir>
                   </assembly>
                   <assembly>
                     <descriptorRef>artifact</descriptorRef>
-                    <targetDir>/work</targetDir>
+                    <targetDir>/opt/cloudflow</targetDir>
+                  </assembly>
+
+                  <assembly>
+                    <name>additional-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/opt</targetDir>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/spark-entrypoint.sh</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+
+                  <assembly>
+                    <name>prometheus-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/etc/metrics/conf</targetDir>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/prometheus.yaml</source>
+                        </file>
+                        <file>
+                          <source>${basedir}/src/main/resources/metrics.properties</source>
+                        </file>
+                      </files>
+                    </inline>
                   </assembly>
                 </assemblies>
 
+                <env>
+                  <SPARK_HOME>/opt/spark</SPARK_HOME>
+                </env>
+
+                <runCmds>
+                  <run>apk add bash curl</run>
+                  <run>mkdir -p /opt/spark/work-dir /prometheus /opt/spark</run>
+                  <run>chmod -R 777 /opt/spark</run>
+                  <run>wget "https://github.com/lightbend/spark/releases/download/2.4.5-lightbend/spark-2.4.5-bin-cloudflow-2.12.tgz"</run>
+                  <run>tar -xvzf spark-2.4.5-bin-cloudflow-2.12.tgz</run>
+                  <run>cp -r spark-2.4.5-bin-cloudflow-2.12/* /opt/spark</run>
+                  <run>rm -rf spark-2.4.5-bin-cloudflow-2.12</run>
+                  <run>rm -rf spark-2.4.5-bin-cloudflow-2.12.tgz</run>
+                  <run>rm /opt/spark/jars/slf4j-log4j12-1.7.16.jar</run>
+                  <run>rm /opt/spark/jars/log4j-1.2.17.jar</run>
+                  <run>curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar</run>
+                  <run>cp /etc/metrics/conf/prometheus.yaml /prometheus/prometheus.yaml</run>
+                  <run>curl -L https://github.com/krallin/tini/releases/download/v0.18.0/tini -o /sbin/tini</run>
+                  <run>chmod +x /sbin/tini</run>
+                </runCmds>
+
+                <workdir>/opt/spark/work-dir</workdir>
+
+                <entryPoint>
+                  <exec>
+                    <arg>bash</arg>
+                    <arg>/opt/spark-entrypoint.sh</arg>
+                  </exec>
+                </entryPoint>
 
               </build>
             </image>

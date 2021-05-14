@@ -23,8 +23,8 @@
       <plugins>
         <plugin>
           <groupId>com.lightbend.cloudflow</groupId>
-            <artifactId>cloudflow-maven-plugin</artifactId>
-            <version>${cloudflow.plugin.version}</version>
+          <artifactId>cloudflow-maven-plugin</artifactId>
+          <version>${cloudflow.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>io.fabric8</groupId>
