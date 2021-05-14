@@ -314,4 +314,11 @@ object Dependencies {
         Compile.mavenPluginApi,
         Compile.mojoExecutor,
         Compile.mavenPluginAnnotations)
+
+  val cloudflowBuildSupport =
+    libraryDependencies ++= Seq(
+        Compile.typesafeConfig,
+        Compile.asciigraphs,
+        Compile.testcontainersKafka,
+        Compile.kafkaClient)
 }

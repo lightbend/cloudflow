@@ -250,7 +250,7 @@ lazy val cloudflowExtractor =
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
     .settings(name := "sbt-cloudflow")
-    .dependsOn(cloudflowBlueprint, cloudflowExtractor)
+    .dependsOn(cloudflowBlueprint, cloudflowExtractor, cloudflowBuildSupport)
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtPlugin)
     .settings(Dependencies.cloudflowSbtPlugin)
     .settings(
@@ -455,16 +455,27 @@ lazy val cloudflowCrGenerator =
         oldStrategy(x)
     })
 
+lazy val cloudflowBuildSupport =
+  Project(id = "cloudflow-build-support", base = file("cloudflow-build-support"))
+    .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
+    .dependsOn(cloudflowBlueprint)
+    .settings(Dependencies.cloudflowBuildSupport)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212),
+      scalafmtOnCompile := true)
+
 lazy val cloudflowMavenPlugin =
   Project(id = "cloudflow-maven-plugin", base = file("cloudflow-maven-plugin"))
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin, SbtMavenPlugin)
-    .dependsOn(cloudflowCrGenerator)
+    .dependsOn(cloudflowCrGenerator, cloudflowBuildSupport)
     .settings(Dependencies.cloudflowMavenPlugin)
     .settings(
       crossPaths := false,
       crossVersion := CrossVersion.disabled,
       crossScalaVersions := Vector(Dependencies.Scala212),
-      scalaVersion := Dependencies.Scala212)
+      scalaVersion := Dependencies.Scala212,
+      scalafmtOnCompile := true)
 
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
@@ -507,4 +518,7 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowSparkTests,
     cloudflowRunner,
     cloudflowLocalRunner,
+    cloudflowCrGenerator,
+    cloudflowBuildSupport,
+    cloudflowMavenPlugin,
     tooling)

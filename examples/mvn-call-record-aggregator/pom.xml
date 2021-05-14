@@ -12,7 +12,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <scala.version>2.12.12</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
-    <cloudflow.version>2.0.26-RC42</cloudflow.version>
+    <cloudflow.version>${env.CLOUDFLOW_VERSION}</cloudflow.version>
     <cloudflow.plugin.version>2.1.0-SNAPSHOT</cloudflow.plugin.version>
     <docker.maven.plugin.version>0.35-SNAPSHOT</docker.maven.plugin.version>
     <avro.version>1.8.2</avro.version>
