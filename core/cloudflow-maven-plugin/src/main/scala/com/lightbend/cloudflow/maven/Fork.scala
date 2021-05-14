@@ -1,5 +1,9 @@
-// Starting point from sbt
+/*
+ * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
+ */
 
+// Extracted from sbt:
+// https://github.com/sbt/sbt
 /*
  * sbt
  * Copyright 2011 - 2018, Lightbend, Inc.
