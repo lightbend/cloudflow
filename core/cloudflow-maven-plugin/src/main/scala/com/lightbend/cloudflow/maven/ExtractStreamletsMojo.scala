@@ -13,8 +13,6 @@ import org.apache.maven.project.MavenProject
 
 import java.io.File
 import java.net.URLEncoder
-import scala.collection.JavaConverters._
-import scala.util.Try
 
 @Mojo(
   name = "extract-streamlets",

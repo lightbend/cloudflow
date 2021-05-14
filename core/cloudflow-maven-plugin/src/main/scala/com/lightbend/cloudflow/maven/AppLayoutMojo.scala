@@ -4,7 +4,6 @@
 
 package com.lightbend.cloudflow.maven
 
-import cloudflow.blueprint.deployment._
 import com.lightbend.cloudflow.buildtool.AppLayout
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }

@@ -18,19 +18,13 @@ package cloudflow.sbt
 
 import java.nio.file._
 import java.io._
-import java.util.concurrent.atomic.AtomicReference
-import java.util.UUID
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 
-import com.typesafe.config.{ Config, ConfigFactory }
 import sbt._
 import sbt.Keys._
-import spray.json._
-import cloudflow.blueprint.deployment.{ ApplicationDescriptor, StreamletInstance }
-import cloudflow.blueprint.deployment.ApplicationDescriptorJsonFormat._
 import com.lightbend.cloudflow.buildtool._
 import cloudflow.sbt.CloudflowKeys._
 
