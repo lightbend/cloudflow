@@ -40,7 +40,7 @@ object CloudflowAggregator {
     }
   }
 
-  def getStreamlets(allProjects: Seq[MavenProject], log: Log) = {
+  def getStreamlets(allProjects: Seq[MavenProject], log: Log): Map[String, Map[String, Config]] = {
     allProjects.foldLeft(Map.empty[String, Map[String, Config]]) {
       case (acc, project) =>
         try {
@@ -67,7 +67,7 @@ object CloudflowAggregator {
     }
   }
 
-  def getImages(allProjects: Seq[MavenProject], log: Log) = {
+  def getImages(allProjects: Seq[MavenProject], log: Log): Map[String, String] = {
     allProjects.foldLeft(Map.empty[String, String]) {
       case (acc, project) =>
         try {
@@ -112,7 +112,7 @@ object CloudflowAggregator {
     (blueprintStr, ConfigFactory.parseFile(blueprintFile.get).getObject("blueprint.streamlets").asScala.toMap)
   }
 
-  def generateLocalCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log) = {
+  def generateLocalCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log): String = {
     val streamletsPerProject = CloudflowAggregator.getStreamlets(allProjects, log)
 
     val streamlets = streamletsPerProject.foldLeft(Map.empty[String, Config]) { case (acc, (_, v)) => acc ++ v }
@@ -129,7 +129,7 @@ object CloudflowAggregator {
       dockerImages = placeholderImages)
   }
 
-  def generateCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log) = {
+  def generateCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log): String = {
     val streamletsPerProject = CloudflowAggregator.getStreamlets(allProjects, log)
     val imagesPerProject = CloudflowAggregator.getImages(allProjects, log)
 

@@ -18,11 +18,10 @@ object LocalConfig {
   val configFound: String => String = file => "Using Sandbox local configuration file: " + file
   val noConfigProvided: String =
     """No configuration file provided for the local runner.
-      |Set `localConfig` property to point to the location of your local config file""".stripMargin
+      |Set the localConfig property to point to the location of your local config file""".stripMargin
   val invalidConfig: String => String => String = file =>
     error => s"Invalid or corrupt configuration in file [$file]. Reason: [$error]"
-  val configNotFound: String => String = file => s"""The provided configuration at [$file] does not exist.
-                                                    | Check the value of `localConfig` property """.stripMargin
+  val configNotFound: String => String = file => s"""The provided configuration at [$file] does not exist."""
 
   def load(location: Option[String]): LocalConfig =
     location

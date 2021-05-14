@@ -4,7 +4,7 @@
 
 package cloudflow.cr
 
-import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigRenderOptions }
 
 import java.io.File
 import java.net.URL
@@ -36,7 +36,7 @@ object Generator {
         name = appDescriptor.appId),
       appDescriptor)
 
-  def scanProject(projectId: String, classpath: List[String]): Map[String, com.typesafe.config.Config] = {
+  def scanProject(projectId: String, classpath: List[String]): Map[String, Config] = {
     val scanConfig =
       DescriptorExtractor.ScanConfiguration(projectId = projectId, classpathUrls = classpath.map(new URL(_)).toArray)
 
@@ -47,7 +47,7 @@ object Generator {
       projectId: String,
       version: String,
       blueprintStr: String,
-      streamlets: Map[String, com.typesafe.config.Config],
+      streamlets: Map[String, Config],
       dockerImages: Map[String, String]): String = {
 
     val streamletDescriptors = streamlets.map {
@@ -90,14 +90,14 @@ object Generator {
     }
   }
 
-  final case class Config(
+  final case class GeneratorConfig(
       name: String = null,
       version: String = null,
       blueprint: File = null,
       classpath: File = null,
       images: Map[String, String] = Map())
 
-  private lazy val builder = OParser.builder[Config]
+  private lazy val builder = OParser.builder[GeneratorConfig]
   private lazy val parser = {
     import builder._
     OParser.sequence(
@@ -127,7 +127,7 @@ object Generator {
 
   def main(args: Array[String]): Unit = {
 
-    OParser.parse(parser, args, Config()) match {
+    OParser.parse(parser, args, GeneratorConfig()) match {
       case Some(config) =>
         Try {
           val streamlets =
