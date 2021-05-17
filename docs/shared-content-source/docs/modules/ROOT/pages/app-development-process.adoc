@@ -27,9 +27,9 @@ The Streamlet model offers an abstraction to:
 
 In the current version, Cloudflow includes backend `Streamlet` implementations for Akka, Apache Spark - Structured Streaming, and Apache Flink. 
 Using these implementations you can write business logic in the native API of the backend.
-Along with the currently supported built-in integration of Flink and Spark streamlets via the Cloudflow operator, Cloudflow also supports external integrations for these streaming platforms through additional plugins. The current version introduces Flink and Spark integrations with more controls in the hands of the users. Users now have more control on deployment and management of Flink and Spark streamlets while still using the same Cloudflow streamlet API for developing their business logic. However, Akka will continue to be supported natively as in earlier versions.
+Along with the currently supported built-in integration of Flink and Spark streamlets via the Cloudflow operator, Cloudflow also supports external integrations for these streaming platforms through additional plugins. Using this new integration, users now have more control on deployment and management of Flink and Spark streamlets while still using the same Cloudflow streamlet API for developing their business logic. However, Akka will continue to be supported natively as in earlier versions.
 Integration support for Flink and Spark, thus being externalized, makes Cloudflow easily extensible with new streaming backends. The new externalized integration has been marked _Experimental_ in the current version.
-For more details on externalized Flink and Spark integrations, please have a look at https://lightbend.github.io/cloudflow-contrib/docs/0.0.4/index.html[Cloudflow Contrib] documentation.
+For more details on externalized Flink and Spark integrations, please have a look at https://lightbend.github.io/cloudflow-contrib/[Cloudflow Contrib] documentation.
 
 The following table shows the current support for Java and Scala implementations for each runtime.
 
@@ -265,7 +265,7 @@ $ kubectl cloudflow deploy /cloudflow/examples/call-record-aggregator/target/cal
 
 This method is not only dev-friendly, but is also compatible with the typical CI/CD deployments. 
 This allows you to take the application from dev to production in a controlled way.
-The deployment procedure will be a bit different with the _cloudflow contrib_ approach where Flink and Spark applications are supported through external plugins. Akka applications will be fully deployed using `kubectl cloudflow` as above. However for Spark and Flink applications, you need to use an extra plugin and carry out a few extra steps to make them known to the Cloudflow engine. For details please have a look at https://lightbend.github.io/cloudflow-contrib/docs/0.0.4/index.html[Cloudflow Contrib] documentation.  
+The deployment procedure will be different with the _cloudflow contrib_ approach where Flink and Spark applications are supported through external plugins. Akka applications will be fully deployed using `kubectl cloudflow` as above. However, for Spark and Flink applications, you need to use an extra plugin and carry out a few extra steps to make them known to the Cloudflow engine. For details please have a look at https://lightbend.github.io/cloudflow-contrib/[Cloudflow Contrib] documentation.  
 
 == Conclusion
 
