@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: cloudflow-strimzi
@@ -14,8 +14,14 @@ spec:
       transaction.state.log.min.isr: 2
       transaction.state.log.replication.factor: 3
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
     livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -28,7 +34,7 @@ spec:
       deleteClaim: false
       size: 1Gi
       type: persistent-claim
-    version: 2.5.1
+    version: 2.6.1
   zookeeper:
     livenessProbe:
       initialDelaySeconds: 15
