@@ -50,37 +50,116 @@
         <version>${docker.maven.plugin.version}</version>
         <configuration>
           <images>
-            <image>
+                        <image>
               <name>%a:%v</name>
               <registry>docker.io/${docker.username}</registry>
               <build>
-                <from>flink:1.10.3-scala_2.12</from>
+                <from>adoptopenjdk/openjdk8:alpine</from>
+
+                <env>
+                  <FLINK_VERSION>1.10.3</FLINK_VERSION>
+                  <SCALA_VERSION>2.12</SCALA_VERSION>
+                  <FLINK_HOME>/opt/flink</FLINK_HOME>
+                  <FLINK_ENV_JAVA_OPTS>-Dlogback.configurationFile=/opt/logging/logback.xml</FLINK_ENV_JAVA_OPTS>
+                </env>
+
+                <runCmds>
+                  <run>apk add curl wget bash snappy-dev gettext-dev</run>
+                  <run>wget https://archive.apache.org/dist/flink/flink-1.10.3/flink-1.10.3-bin-scala_2.12.tgz</run>
+                  <run>tar -xvzf flink-1.10.3-bin-scala_2.12.tgz</run>
+                  <run>mv flink-1.10.3 /opt/flink</run>
+                  <run>rm flink-1.10.3-bin-scala_2.12.tgz</run>
+                  <run>addgroup -S -g 9999 flink</run>
+                  <run>adduser -S -h /opt/flink -u 9999 flink flink</run>
+                  <run>addgroup -S -g 185 cloudflow</run>
+                  <run>adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow root</run>
+                  <run>adduser cloudflow cloudflow</run>
+                  <run>rm -rf /var/lib/apt/lists/*</run>
+                  <run>chown -R flink:flink /var</run>
+                  <run>chown -R flink:root /usr/local</run>
+                  <run>chmod 775 /usr/local</run>
+                  <run>mkdir /opt/flink/flink-web-upload</run>
+                  <run>cp /tmp/config.sh /opt/flink/bin</run>
+                  <run>cp /tmp/flink-console.sh /opt/flink/bin</run>
+                  <run>cp /opt/flink/opt/flink-queryable-state-runtime_2.12-1.10.3.jar /opt/flink/lib</run>
+                  <run>mkdir -p /prometheus</run>
+                  <run>curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar</run>
+                  <run>cp /opt/cloudflow/cloudflow-runner_${scala.binary.version}-${cloudflow.version}.jar /opt/flink/lib/cloudflow-runner.jar</run>
+                  <run>cp /opt/cloudflow/cloudflow-runner_${scala.binary.version}-${cloudflow.version}.jar /opt/flink/flink-web-upload/cloudflow-runner.jar</run>
+                  <run>chmod -R 777 /opt/flink</run>
+                  <run>chmod a+x /opt/flink/bin/config.sh</run>
+                  <run>chmod 777 /opt/flink/bin/flink-console.sh</run>
+                  <run>chown 501:dialout /opt/flink/bin/flink-console.sh</run>
+                  <run>chmod a+x /opt/flink-entrypoint.sh</run>
+                </runCmds>
 
                 <assemblies>
                   <assembly>
                     <name>deps-release</name>
                     <descriptorRef>release-dependencies</descriptorRef>
-                    <targetDir>/opt/flink/lib</targetDir>
-                    <user>flink</user>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
                   </assembly>
                   <assembly>
                     <descriptorRef>artifact</descriptorRef>
-                    <targetDir>/opt/flink/lib</targetDir>
-                    <user>flink</user>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
+                  </assembly>
+
+                  <assembly>
+                    <name>additional-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/opt</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/flink-entrypoint.sh</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+
+                  <assembly>
+                    <name>flink-config-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/tmp</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/config.sh</source>
+                        </file>
+                        <file>
+                          <source>${basedir}/src/main/resources/flink-console.sh</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+
+                  <assembly>
+                    <name>prometheus-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/etc/metrics/conf</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/prometheus.yaml</source>
+                        </file>
+                      </files>
+                    </inline>
                   </assembly>
                 </assemblies>
 
-                <runCmds>
-                  <run>echo "taskmanager.memory.flink.size: 1024mb" >> "/opt/flink/conf/flink-conf.yaml"</run>
-                  <run>echo "web.upload.dir: /opt/flink/" >> "/opt/flink/conf/flink-conf.yaml"</run>
-                  <run>echo "jobmanager.web.upload.dir: /opt/flink/" >> "/opt/flink/conf/flink-conf.yaml"</run>
-                  <run>cp /opt/flink/opt/flink-queryable-state-runtime_2.12-1.10.3.jar /opt/flink/lib/</run>
-                  <run>mkdir -p /opt/flink/flink-web-upload</run>
-                  <run>cp /opt/flink/lib/cloudflow-runner_${scala.binary.version}-${cloudflow.version}.jar /opt/flink/flink-web-upload/cloudflow-runner.jar</run>
-                  <run>chown -R flink:flink /opt/flink/lib</run>
-                  <run>chown -R flink:flink /opt/flink/flink-web-upload</run>
-                  <run>chmod -R 777 /opt/flink</run>
-                </runCmds>
+                <user>185</user>
+
+                <entryPoint>
+                  <exec>
+                    <arg>bash</arg>
+                    <arg>/opt/flink-entrypoint.sh</arg>
+                  </exec>
+                </entryPoint>
               </build>
             </image>
           </images>
