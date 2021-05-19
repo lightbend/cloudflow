@@ -13,7 +13,7 @@
     <scala.version>2.12.12</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
     <cloudflow.version>${env.CLOUDFLOW_VERSION}</cloudflow.version>
-    <cloudflow.plugin.version>2.1.0-SNAPSHOT</cloudflow.plugin.version>
+    <cloudflow.plugin.version>${env.CLOUDFLOW_VERSION}</cloudflow.plugin.version>
     <docker.maven.plugin.version>0.35-SNAPSHOT</docker.maven.plugin.version>
     <avro.version>1.8.2</avro.version>
   </properties>

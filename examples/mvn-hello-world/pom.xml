@@ -15,7 +15,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <scala.version>2.12.12</scala.version>
     <cloudflow.version>${env.CLOUDFLOW_VERSION}</cloudflow.version>
-    <cloudflow.plugin.version>2.1.0-SNAPSHOT</cloudflow.plugin.version>
+    <cloudflow.plugin.version>${env.CLOUDFLOW_VERSION}</cloudflow.plugin.version>
   </properties>
 
   <build>
