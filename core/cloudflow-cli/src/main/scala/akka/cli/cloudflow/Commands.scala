@@ -197,6 +197,9 @@ object OptionsParser {
           c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
           .optional()
           .text("The runtimes that should not be checked"),
+        commandParse[commands.Deploy, Boolean](opt("skip-checks"))((c, sc) => c.copy(skipChecks = sc))
+          .optional()
+          .text("Skip all the checks"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -453,6 +456,7 @@ object commands {
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
       unmanagedRuntimes: Seq[String] = Seq(),
+      skipChecks: Boolean = false,
       output: format.Format = format.Default)
       extends Command[DeployResult]
       with WithConfiguration {

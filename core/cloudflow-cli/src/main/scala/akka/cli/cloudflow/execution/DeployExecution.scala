@@ -7,6 +7,7 @@ package akka.cli.cloudflow.execution
 import java.io.File
 
 import scala.util.{ Failure, Success, Try }
+import com.typesafe.config.ConfigFactory
 import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution, Json }
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.datap.crd.App
@@ -143,7 +144,13 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      version <- validateProtocolVersion(client)
+      _ <- {
+        if (d.skipChecks) {
+          Success("")
+        } else {
+          validateProtocolVersion(client)
+        }
+      }
 
       // prepare the data
       localApplicationCr <- loadCrFile(d.crFile)
@@ -182,7 +189,13 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       streamletsConfigs <- streamletsConfigs(
         applicationCr,
         cloudflowConfig,
-        () => client.getKafkaClusters(None).map(parseValues))
+        () => {
+          if (d.skipChecks) {
+            Success(Map("default" -> ConfigFactory.parseString("""{ bootstrap.servers = "default:9092" }""")))
+          } else {
+            client.getKafkaClusters(None).map(parseValues)
+          }
+        })
 
       // Operations on the cluster
       name = applicationCr.spec.appId
@@ -197,14 +210,16 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             dockerPassword = d.dockerPassword)
         }
       }
-      uid <- client.createCloudflowApp(applicationCr.spec)
-      _ <- client.configureCloudflowApp(
-        name,
-        uid,
-        configStr,
-        logbackContent,
-        version == Cli.ProtocolVersion,
-        streamletsConfigs)
+      uid <- {
+        if (d.skipChecks) {
+          // TODO: This should not be called skipChecks
+          // TODO: do not create the service account
+          Success("00000")
+        } else {
+          client.createCloudflowApp(applicationCr.spec)
+        }
+      }
+      _ <- client.configureCloudflowApp(name, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")
       DeployResult()

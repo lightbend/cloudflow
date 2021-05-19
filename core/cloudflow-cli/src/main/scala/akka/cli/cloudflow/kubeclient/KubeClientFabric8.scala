@@ -555,18 +555,11 @@ class KubeClientFabric8(
       appUid: String,
       appConfig: String,
       loggingContent: Option[String],
-      createSecrets: Boolean,
       configs: Map[App.Deployment, Map[String, String]]) = {
     val ownerReference = getOwnerReference(appName, appUid)
     for {
       _ <- handleLoggingSecret(appName, loggingContent, ownerReference)
-      _ <- {
-        if (createSecrets) {
-          createStreamletsConfigSecrets(appName, configs, ownerReference)
-        } else {
-          Success(())
-        }
-      }
+      _ <- createStreamletsConfigSecrets(appName, configs, ownerReference)
       _ <- createAppInputSecret(appName, appConfig, ownerReference)
     } yield { () }
   }

@@ -53,7 +53,6 @@ trait KubeClient {
       uid: String,
       appConfig: String,
       loggingContent: Option[String],
-      createSecrets: Boolean,
       configs: Map[App.Deployment, Map[String, String]]): Try[Unit]
 
   // R
