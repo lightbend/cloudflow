@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
 import cloudflow.blueprint.deployment.CloudflowCRFormat._
 import cloudflow.blueprint.deployment._
@@ -19,7 +19,7 @@ import java.nio.file.Paths
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-object CloudflowAggregator {
+object CloudflowProjectAggregator {
 
   private def findBlueprint(project: MavenProject) = {
     val blueprintFile =
@@ -113,11 +113,11 @@ object CloudflowAggregator {
   }
 
   def generateLocalCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log): String = {
-    val streamletsPerProject = CloudflowAggregator.getStreamlets(allProjects, log)
+    val streamletsPerProject = CloudflowProjectAggregator.getStreamlets(allProjects, log)
 
     val streamlets = streamletsPerProject.foldLeft(Map.empty[String, Config]) { case (acc, (_, v)) => acc ++ v }
 
-    val (blueprintStr, blueprint) = readBlueprint(CloudflowAggregator.getBlueprint(allProjects, log))
+    val (blueprintStr, blueprint) = readBlueprint(CloudflowProjectAggregator.getBlueprint(allProjects, log))
 
     val placeholderImages = blueprint.map { case (k, _) => k -> "placeholder" }
 
@@ -130,14 +130,14 @@ object CloudflowAggregator {
   }
 
   def generateCR(projectId: String, version: String, allProjects: Seq[MavenProject], log: Log): String = {
-    val streamletsPerProject = CloudflowAggregator.getStreamlets(allProjects, log)
-    val imagesPerProject = CloudflowAggregator.getImages(allProjects, log)
+    val streamletsPerProject = CloudflowProjectAggregator.getStreamlets(allProjects, log)
+    val imagesPerProject = CloudflowProjectAggregator.getImages(allProjects, log)
 
     val streamlets = streamletsPerProject.foldLeft(Map.empty[String, Config]) { case (acc, (_, v)) => acc ++ v }
     val images = streamletsPerProject.foldLeft(Map.empty[String, String]) {
       case (acc, (k, v)) => acc ++ v.keys.map { s => s -> imagesPerProject(k) }
     }
-    val (blueprintStr, blueprint) = readBlueprint(CloudflowAggregator.getBlueprint(allProjects, log))
+    val (blueprintStr, blueprint) = readBlueprint(CloudflowProjectAggregator.getBlueprint(allProjects, log))
 
     val finalImages = blueprint
       .map {

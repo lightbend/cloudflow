@@ -25,7 +25,7 @@ import scala.util.{ Failure, Try }
 
 import sbt._
 import sbt.Keys._
-import com.lightbend.cloudflow.buildtool._
+import cloudflow.buildtool._
 import cloudflow.sbt.CloudflowKeys._
 
 /**

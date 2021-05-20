@@ -16,9 +16,9 @@ class Logger extends AkkaStreamlet {
 
     def flow =
       FlowWithCommittableContext[Data]
-        .map { taxiRideFare ⇒
-          log(taxiRideFare)
-          taxiRideFare
+        .map { data ⇒
+          log(data)
+          data
         }
 
     def runnableGraph =

@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
@@ -37,8 +37,8 @@ class VerifyBlueprintMojo extends AbstractMojo {
 
     if (allProjects.last == mavenProject) {
       try {
-        CloudflowAggregator.getCR(
-          CloudflowAggregator
+        CloudflowProjectAggregator.getCR(
+          CloudflowProjectAggregator
             .generateLocalCR(projectId = projectId, version = version, allProjects = allProjects, log = getLog()))
 
         getLog().info("Blueprint validated!")

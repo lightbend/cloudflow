@@ -2,23 +2,23 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
+import cloudflow.buildtool.AppLayout
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
 import org.apache.maven.plugins.annotations._
 import org.apache.maven.project.MavenProject
 
-import java.io.File
 import scala.collection.JavaConverters._
 
 @Mojo(
-  name = "build-app",
+  name = "app-layout",
   aggregator = false,
   requiresDependencyResolution = ResolutionScope.COMPILE,
   requiresDependencyCollection = ResolutionScope.COMPILE,
   defaultPhase = LifecyclePhase.PACKAGE)
-class BuildAppMojo extends AbstractMojo {
+class AppLayoutMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${project}", required = true, readonly = true)
   var mavenProject: MavenProject = _
@@ -38,22 +38,14 @@ class BuildAppMojo extends AbstractMojo {
 
     if (allProjects.last == mavenProject) {
 
-      try {
-        val cr = CloudflowAggregator.generateCR(
-          projectId = projectId,
-          version = version,
-          allProjects = allProjects,
-          log = getLog())
+      val cr = CloudflowProjectAggregator.getCR(
+        CloudflowProjectAggregator
+          .generateLocalCR(projectId = projectId, version = version, allProjects = allProjects, log = getLog()))
 
-        val destFile = new File(topLevel.getBuild.getDirectory, projectId + ".json")
-        FileUtil.writeFile(destFile, cr)
-        getLog().info("Deploy your Cloudflow Application with:")
-        getLog().info(s"kubectl cloudflow deploy ${destFile.getAbsolutePath}")
-      } catch {
-        case ex: Throwable =>
-          getLog().error(ex.getMessage)
-          throw ex
-      }
+      val res = AppLayout.getAppLayout(AppLayout.resolveConnections(cr.spec))
+
+      getLog.info("App Layout:")
+      println(res)
     }
   }
 

@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }

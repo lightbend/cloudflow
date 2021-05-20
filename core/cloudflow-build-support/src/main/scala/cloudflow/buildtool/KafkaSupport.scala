@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.buildtool
+package cloudflow.buildtool
 
 import java.time.Duration
 import java.util.UUID

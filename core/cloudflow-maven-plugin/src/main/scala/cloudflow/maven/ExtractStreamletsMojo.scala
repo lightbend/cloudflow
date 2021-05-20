@@ -2,7 +2,7 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
 import cloudflow.cr.Generator
 import com.typesafe.config.{ Config, ConfigRenderOptions }
@@ -56,7 +56,8 @@ class ExtractStreamletsMojo extends AbstractMojo {
 
     createDependencyListFile(mavenProject)
 
-    val allDeps = CloudflowAggregator.classpathByProject(mavenProject).map(_.toString).distinct.filterNot(_.isEmpty)
+    val allDeps =
+      CloudflowProjectAggregator.classpathByProject(mavenProject).map(_.toString).distinct.filterNot(_.isEmpty)
 
     FileUtil.writeFile(
       new File(mavenProject.getBuild.getDirectory, Constants.FULL_CLASSPATH),

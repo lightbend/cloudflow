@@ -11,7 +11,7 @@
  * Licensed under Apache License 2.0 (see LICENSE)
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
 import java.io.File
 import java.lang.ProcessBuilder.Redirect

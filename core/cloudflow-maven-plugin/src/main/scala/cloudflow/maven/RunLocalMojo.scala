@@ -2,9 +2,9 @@
  * Copyright (C) 2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.lightbend.cloudflow.maven
+package cloudflow.maven
 
-import com.lightbend.cloudflow.buildtool._
+import cloudflow.buildtool._
 import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.logging.Log
 import org.apache.maven.plugin.{ AbstractMojo, BuildPluginManager }
@@ -100,8 +100,8 @@ class RunLocalMojo extends AbstractMojo {
 
     if (allProjects.last == mavenProject) {
 
-      val cr = CloudflowAggregator.getCR(
-        CloudflowAggregator
+      val cr = CloudflowProjectAggregator.getCR(
+        CloudflowProjectAggregator
           .generateLocalCR(projectId = projectId, version = version, allProjects = allProjects, log = getLog()))
 
       val appDescriptor = cr.spec
@@ -111,7 +111,7 @@ class RunLocalMojo extends AbstractMojo {
 
       val (tempDir, configDir) = Scaffold.createDirs("cloudflow-local-run")
 
-      val streamletDescriptorsByProject = CloudflowAggregator.getStreamlets(allProjects, getLog)
+      val streamletDescriptorsByProject = CloudflowProjectAggregator.getStreamlets(allProjects, getLog)
 
       val descriptorByProject = allProjects.map { project =>
         val streamletClasses = streamletDescriptorsByProject(project.getName).keys.toSet

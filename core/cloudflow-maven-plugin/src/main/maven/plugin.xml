@@ -10,7 +10,7 @@
     <mojo>
       <goal>extract-streamlets</goal>
       <description>Extract Cloudflow Streamlets</description>
-      <implementation>com.lightbend.cloudflow.maven.ExtractStreamletsMojo</implementation>
+      <implementation>cloudflow.maven.ExtractStreamletsMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
@@ -49,7 +49,7 @@
     <mojo>
       <goal>push-images</goal>
       <description>Push Cloudflow Docker Images</description>
-      <implementation>com.lightbend.cloudflow.maven.PushImagesMojo</implementation>
+      <implementation>cloudflow.maven.PushImagesMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
@@ -88,7 +88,7 @@
     <mojo>
       <goal>build-app</goal>
       <description>Build Cloudflow Application</description>
-      <implementation>com.lightbend.cloudflow.maven.BuildAppMojo</implementation>
+      <implementation>cloudflow.maven.BuildAppMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
@@ -128,7 +128,7 @@
     <mojo>
       <goal>app-layout</goal>
       <description>Print the Cloudflow Application graph</description>
-      <implementation>com.lightbend.cloudflow.maven.AppLayoutMojo</implementation>
+      <implementation>cloudflow.maven.AppLayoutMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
@@ -168,7 +168,7 @@
     <mojo>
       <goal>verify-blueprint</goal>
       <description>Verify the Cloudflow blueprint</description>
-      <implementation>com.lightbend.cloudflow.maven.VerifyBlueprintMojo</implementation>
+      <implementation>cloudflow.maven.VerifyBlueprintMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
@@ -208,7 +208,7 @@
     <mojo>
       <goal>run-local</goal>
       <description>Run Locally the Cloudflow application</description>
-      <implementation>com.lightbend.cloudflow.maven.RunLocalMojo</implementation>
+      <implementation>cloudflow.maven.RunLocalMojo</implementation>
       <instantiationStrategy>singleton</instantiationStrategy>
       <phase>package</phase>
 
