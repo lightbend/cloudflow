@@ -477,6 +477,14 @@ lazy val cloudflowMavenPlugin =
       scalaVersion := Dependencies.Scala212,
       scalafmtOnCompile := true)
 
+lazy val cloudflowMavenArchetype =
+  Project(id = "cloudflow-maven-archetype", base = file("cloudflow-maven-archetype"))
+    .settings(
+      crossPaths := false,
+      crossVersion := CrossVersion.disabled,
+      autoScalaLibrary := false,
+      scalafmtOnCompile := true)
+
 lazy val root = Project(id = "root", base = file("."))
   .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
@@ -521,4 +529,5 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowCrGenerator,
     cloudflowBuildSupport,
     cloudflowMavenPlugin,
+    cloudflowMavenArchetype,
     tooling)
