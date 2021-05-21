@@ -193,22 +193,10 @@ trait WithConfiguration {
     }
   }
 
-  def render(config: Config, hocon: Boolean = false): String = {
-    if (!hocon) {
-      config
-        .root()
-        .render(ConfigRenderOptions.concise())
-    } else {
-      config
-        .root()
-        .entrySet()
-        .asScala
-        .map { v =>
-          v.getKey + " = " + v.getValue.render(
-            ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
-        }
-        .mkString("\n")
-    }
+  def render(config: Config): String = {
+    config
+      .root()
+      .render(ConfigRenderOptions.concise())
   }
 
   def parseValues(in: Map[String, String]): Map[String, Config] = {
