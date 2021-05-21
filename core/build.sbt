@@ -196,7 +196,8 @@ lazy val akkastreamTestkit =
     )
     .settings(
       javacOptions += "-Xlint:deprecation",
-      javacOptions += "-Xlint:unchecked"
+      javacOptions += "-Xlint:unchecked",
+      (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue
     )
 
 lazy val akkastreamTests =
