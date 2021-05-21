@@ -5,13 +5,14 @@
 package akka.cli.cloudflow.execution
 
 import java.io.File
-
 import scala.util.{ Failure, Success, Try }
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
 import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution, Json }
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.datap.crd.App
 import akka.cli.cloudflow.commands.Deploy
+
+import scala.jdk.CollectionConverters._
 
 object DeployExecution {
 
@@ -145,7 +146,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     for {
       // Default protocol validation
       _ <- {
-        if (d.skipChecks) {
+        if (d.microservices) {
           Success("")
         } else {
           validateProtocolVersion(client)
@@ -186,16 +187,9 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         () => client.getKafkaClusters(namespace = Some(applicationCr.spec.appId)).map(_.keys.toList))
 
       // streamlets configurations
-      streamletsConfigs <- streamletsConfigs(
-        applicationCr,
-        cloudflowConfig,
-        () => {
-          if (d.skipChecks) {
-            Success(Map("default" -> ConfigFactory.parseString("""{ bootstrap.servers = "default:9092" }""")))
-          } else {
-            client.getKafkaClusters(None).map(parseValues)
-          }
-        })
+      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, d.microservices, () => {
+        client.getKafkaClusters(None).map(parseValues)
+      })
 
       // Operations on the cluster
       name = applicationCr.spec.appId
@@ -211,10 +205,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         }
       }
       uid <- {
-        if (d.skipChecks) {
-          // TODO: This should not be called skipChecks
-          // TODO: do not create the service account
-          Success("00000")
+        if (d.microservices) {
+          client.createMicroservicesApp(
+            applicationCr.spec,
+            CloudflowToMicroservicesCR
+              .convert(applicationCr.spec, logbackContent.map(_ => KubeClient.LoggingSecretName)))
         } else {
           client.createCloudflowApp(applicationCr.spec)
         }

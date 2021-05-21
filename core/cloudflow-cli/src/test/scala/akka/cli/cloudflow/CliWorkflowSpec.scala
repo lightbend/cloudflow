@@ -5,12 +5,12 @@
 package akka.cli.cloudflow
 
 import java.io.File
-
 import scala.annotation.nowarn
 import scala.util.{ Success, Try }
 import akka.datap.crd.App
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.cli.cloudflow.models.ApplicationStatus
+import akka.cli.microservice.AkkaMicroserviceSpec
 import buildinfo.BuildInfo
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest._
@@ -53,12 +53,13 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       def getOperatorProtocolVersion(): Try[String] = Success(protocolVersion)
       def createCloudflowApp(spec: App.Spec) = Success("1")
       def uidCloudflowApp(name: String) = Success("1")
+      def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
+        Success("1")
       def configureCloudflowApp(
           name: String,
           appUid: String,
           appConfig: String,
           loggingContent: Option[String],
-          createSecrets: Boolean,
           configs: Map[App.Deployment, Map[String, String]]): Try[Unit] = Success(())
       def deleteCloudflowApp(app: String) = Success(())
       def getPvcs(namespace: String) = Success(providedPvcs)

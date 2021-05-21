@@ -193,10 +193,22 @@ trait WithConfiguration {
     }
   }
 
-  def render(config: Config): String = {
-    config
-      .root()
-      .render(ConfigRenderOptions.concise())
+  def render(config: Config, hocon: Boolean = false): String = {
+    if (!hocon) {
+      config
+        .root()
+        .render(ConfigRenderOptions.concise())
+    } else {
+      config
+        .root()
+        .entrySet()
+        .asScala
+        .map { v =>
+          v.getKey + " = " + v.getValue.render(
+            ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
+        }
+        .mkString("\n")
+    }
   }
 
   def parseValues(in: Map[String, String]): Map[String, Config] = {
@@ -323,6 +335,7 @@ trait WithConfiguration {
   def streamletsConfigs(
       appCr: App.Cr,
       appConfig: CloudflowConfig.CloudflowRoot,
+      microservices: Boolean,
       clusterSecretConfigs: () => Try[Map[String, Config]]): Try[Map[App.Deployment, Map[String, String]]] = {
 
     val allReferencedClusters = {
@@ -332,7 +345,13 @@ trait WithConfiguration {
     }
 
     for {
-      clusterSecrets <- clusterSecretConfigs()
+      clusterSecrets <- {
+        if (!microservices) {
+          clusterSecretConfigs()
+        } else {
+          Success(Map("default" -> ConfigFactory.parseString("""bootstrap.servers = "not-provided-kafka-host"""")))
+        }
+      }
       clustersConfig <- Try {
         allReferencedClusters.flatMap { name =>
           clusterSecrets.find { case (k, _) => k == name } match {

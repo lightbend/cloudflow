@@ -8,6 +8,7 @@ import akka.datap.crd.App
 
 import scala.util.Try
 import akka.cli.cloudflow.models
+import akka.cli.microservice.AkkaMicroserviceSpec
 
 object KubeClient {
 
@@ -22,6 +23,8 @@ object KubeClient {
   val FlinkResource = "flinkapplications.flink.k8s.io"
 
   val ImagePullSecretName = "cloudflow-image-pull-secret"
+
+  val LoggingSecretName = "logging"
 
   val CloudflowAppServiceAccountName = "cloudflow-app-serviceaccount"
 
@@ -45,6 +48,8 @@ trait KubeClient {
 
   // C
   def createCloudflowApp(spec: App.Spec): Try[String]
+
+  def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String]
 
   def uidCloudflowApp(name: String): Try[String]
 

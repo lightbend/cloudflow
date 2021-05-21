@@ -197,9 +197,9 @@ object OptionsParser {
           c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
           .optional()
           .text("The runtimes that should not be checked"),
-        commandParse[commands.Deploy, Boolean](opt("skip-checks"))((c, sc) => c.copy(skipChecks = sc))
+        commandParse[commands.Deploy, Unit](opt("microservices"))((c, sc) => c.copy(microservices = true))
           .optional()
-          .text("Skip all the checks"),
+          .text("EXPERIMENTAL: Deploy on Akka Cloud Platform"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -327,6 +327,9 @@ object OptionsParser {
         commandParse[commands.Configure, File](opt("logback-config"))((c, f) => c.copy(logbackConfig = Some(f)))
           .optional()
           .text("the logback configuration to be applied"),
+        commandParse[commands.Configure, Unit](opt("microservices"))((c, sc) => c.copy(microservices = true))
+          .optional()
+          .text("EXPERIMENTAL: Deploy on Akka Cloud Platform"),
         commandCheck[commands.Configure](c => {
           if (c.logbackConfig.isDefined && !c.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -456,7 +459,7 @@ object commands {
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
       unmanagedRuntimes: Seq[String] = Seq(),
-      skipChecks: Boolean = false,
+      microservices: Boolean = false,
       output: format.Format = format.Default)
       extends Command[DeployResult]
       with WithConfiguration {
@@ -492,6 +495,7 @@ object commands {
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
+      microservices: Boolean = false,
       output: format.Format = format.Default)
       extends Command[ConfigureResult]
       with WithConfiguration {
