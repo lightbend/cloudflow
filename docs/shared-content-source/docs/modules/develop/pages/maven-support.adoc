@@ -24,24 +24,24 @@ For Docker we support and integrate the workflow with http://dmp.fabric8.io/[fab
 Using a Cloudflow Maven project you can use the following Maven goals:
 
 . `package` your application in a `.jar`
-. `cloudflow:extract-streamlets` to make available the `Streamlets` implementation for the next steps
+. `cloudflow:extract-streamlets` to make the `Streamlets` implementation available for the next steps
 
-Now you can already perform a few interesting commands to analyze and develop your application locally:
+After using the goals mentioned above, you can perform a few interesting commands to analyze and develop your application locally:
 
 * `cloudflow:verify-blueprint` will verify that the provided `blueprint.conf` is valid
 * `cloudflow:app-layout` will print the graph of interconnections of the streamlets
-* `cloudflow:run-local` run the application on forked JVMs locally
+* `cloudflow:run-local` will run the application on forked JVMs locally
 
 To deploy your application to a cluster you instead need the following steps:
 
 [start=3]
-. `docker:build` to use the http://dmp.fabric8.io/[fabric8 docker-maven-plugin] and build the docker images
-. `cloudflow:push-images` to push the images to a Docker registry but returning information about the published image `sha`
-. `cloudflow:build-app` to, finally, produce the deployable CR file in the `topLevel` project `target` directory
+. `docker:build` to build the docker images
+. `cloudflow:push-images` to push the images to a Docker registry, returning information about the published image digests
+. `cloudflow:build-app` to produce the deployable CR file in the `topLevel` project `target` directory
 
 == Full example
 
-A full example of Maven commands is like:
+A full example of Maven commands is shown below:
 
 [source,bash]
 ----
@@ -57,7 +57,7 @@ mvn \
 mvn cloudflow:build-app
 ----
 
-And you are ready to deploy your application to a cluster using:
+After executing the above maven commands, you are ready to deploy your application to a cluster using:
 
 [source,bash]
 ----
