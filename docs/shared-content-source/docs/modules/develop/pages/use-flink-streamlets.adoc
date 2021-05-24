@@ -87,6 +87,8 @@ In <<flink-streamlet-deployment-model>>, we can visualize the chain of delegatio
 - The Flink Job Manager then requests task manager resources from Kubernetes to deploy the distributed processing.
 - Finally, if and when resources are available, the Flink-bound task managers start as Kubernetes pods. The task managers are the components tasked with the actual data processing, while the Job Manager serves as coordinator of the (stream) data process.
 
+In case you are using the cloudflow-contrib model of integration, you need to go through some additional steps to complete the deployment of your Flink streamlets. This https://lightbend.github.io/cloudflow-contrib/docs/0.0.4/get-started/flink-native.html[section] on cloudflow-contrib has more details.
+
 If you make any changes to the streamlet and deploy the application again, the existing Flink application will be stopped, and the new version will be started to reflect the changes.
 It could be that Flink streamlets are restarted in other ways, for instance, by administrators.
 

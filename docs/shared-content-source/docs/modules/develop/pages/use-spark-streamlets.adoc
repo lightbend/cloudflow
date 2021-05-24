@@ -118,6 +118,8 @@ In the Spark streamlet deployment model shown above, we can visualize the chain 
 In this architecture, the Spark driver runs the Cloudflow-specific logic that connects the streamlet to our managed data streams, at which point the streamlet starts consuming from inlets.
 The streamlet advances through the data streams that are provided on inlets and writes data to outlets.
 
+In case you are using the cloudflow-contrib model of integration, you need to go through some additional steps to complete the deployment of your Spark streamlets. This https://lightbend.github.io/cloudflow-contrib/docs/0.0.4/get-started/spark-native.html[section] on cloudflow-contrib has more details.
+
 If you make any changes to the streamlet and deploy the application again, the existing Spark applications will be stopped, and the new version will be started to reflect the changes.
 It could be that Spark streamlets are restarted in other ways, for instance by administrators.
 
