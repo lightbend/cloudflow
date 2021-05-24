@@ -37,7 +37,7 @@ class PushImagesMojo extends AbstractMojo {
       config.addChild(element(name("outputFile"), "${project.build.directory}/docker-push-output.log").toDom)
 
       executeMojo(
-        plugin(groupId("io.fabric8"), artifactId("docker-maven-plugin"), version("0.35-SNAPSHOT")),
+        plugin(groupId("io.fabric8"), artifactId("docker-maven-plugin"), version("0.36.0")),
         goal("push"),
         config,
         executionEnvironment(project, mavenSession, pluginManager))

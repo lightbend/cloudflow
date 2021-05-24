@@ -84,7 +84,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val projects = streamletDescriptorsByProject.keys
 
             // load local config
-            val localConfig = LocalConfig.load(configFile)
+            val localConfig = cloudflow.buildtool.LocalConfig.load(configFile)
             val baseDebugPort = initialDebugPort.value
 
             val (tempDir, configDir) = Scaffold.createDirs("cloudflow-local-run")

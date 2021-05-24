@@ -10,7 +10,7 @@
   <url>http://cloudflow.io</url>
 
   <properties>
-    <docker.maven.plugin.version>0.35-SNAPSHOT</docker.maven.plugin.version>
+    <docker.maven.plugin.version>0.36.0</docker.maven.plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <scala.version>2.12.12</scala.version>
