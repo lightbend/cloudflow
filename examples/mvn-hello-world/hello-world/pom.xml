@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.lightbend.cloudflow</groupId>
+    <artifactId>mvn-hello-world</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+
+  <groupId>com.lightbend.cloudflow</groupId>
+  <artifactId>hello-world</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <jar_file>${project.build.directory}/${project.build.finalName}.jar</jar_file>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <build>
+    <finalName>hello-world</finalName>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+
+    <plugins>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <configuration>
+          <images>
+            <image>
+              <name>%a:%v</name>
+              <registry>docker.io/${docker.username}</registry>
+              <build>
+                <from>adoptopenjdk/openjdk8:alpine</from>
+
+                <env>
+                  <LOGBACK_CONFIG>-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers.0=akka.event.slf4j.Slf4jLogger -Dakka.loglevel=DEBUG -Dakka.logging-filter=akka.event.slf4j.Slf4jLoggingFilter</LOGBACK_CONFIG>
+                </env>
+
+                <runCmds>
+                  <run>apk add bash curl</run>
+                  <run>mkdir -p /home/cloudflow /opt /prometheus</run>
+                  <run>addgroup -g 185 -S cloudflow</run>
+                  <run>adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow cloudflow</run>
+                  <run>curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar</run>
+                  <run>chmod a+x /opt/akka-entrypoint.sh</run>
+                </runCmds>
+
+                <assemblies>
+                  <assembly>
+                    <name>deps-release</name>
+                    <descriptorRef>release-dependencies</descriptorRef>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
+                  </assembly>
+                  <assembly>
+                    <descriptorRef>artifact</descriptorRef>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
+                  </assembly>
+
+                  <assembly>
+                    <name>additional-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/opt</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/akka-entrypoint.sh</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+
+                  <assembly>
+                    <name>prometheus-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/etc/metrics/conf</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/prometheus.yaml</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+                </assemblies>
+
+                <user>185</user>
+
+                <entryPoint>
+                  <exec>
+                    <arg>bash</arg>
+                    <arg>/opt/akka-entrypoint.sh</arg>
+                  </exec>
+                </entryPoint>
+              </build>
+            </image>
+          </images>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.5.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-akka_2.12</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-runner_2.12</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-localrunner_2.12</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.16</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
+    </dependency>
+  </dependencies>
+</project>

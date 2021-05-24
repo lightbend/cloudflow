@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.lightbend.cloudflow</groupId>
+    <artifactId>call-record-aggregator</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+
+  <groupId>com.lightbend.cloudflow</groupId>
+  <artifactId>egress</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <jar_file>${project.build.directory}/${project.build.finalName}.jar</jar_file>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <build>
+    <finalName>egress</finalName>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
+
+    <plugins>
+      <plugin>
+        <groupId>at.makubi.maven.plugin</groupId>
+        <artifactId>avrohugger-maven-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>generate-scala-sources</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${project.basedir}/../datamodel/src/main/avro/</sourceDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker.maven.plugin.version}</version>
+        <configuration>
+          <images>
+            <image>
+              <name>%a:%v</name>
+              <registry>docker.io/${docker.username}</registry>
+              <build>
+                <from>adoptopenjdk/openjdk8:alpine</from>
+
+                <env>
+                  <LOGBACK_CONFIG>-Dlogback.configurationFile=/opt/logging/logback.xml -Dakka.loggers.0=akka.event.slf4j.Slf4jLogger -Dakka.loglevel=DEBUG -Dakka.logging-filter=akka.event.slf4j.Slf4jLoggingFilter</LOGBACK_CONFIG>
+                </env>
+
+                <runCmds>
+                  <run>apk add bash curl</run>
+                  <run>mkdir -p /home/cloudflow /opt /prometheus</run>
+                  <run>addgroup -g 185 -S cloudflow</run>
+                  <run>adduser -u 185 -S -h /home/cloudflow -s /sbin/nologin cloudflow cloudflow</run>
+                  <run>curl https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar -o /prometheus/jmx_prometheus_javaagent.jar</run>
+                  <run>chmod a+x /opt/akka-entrypoint.sh</run>
+                </runCmds>
+
+                <assemblies>
+                  <assembly>
+                    <name>deps-release</name>
+                    <descriptorRef>release-dependencies</descriptorRef>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
+                  </assembly>
+                  <assembly>
+                    <descriptorRef>artifact</descriptorRef>
+                    <targetDir>/opt/cloudflow</targetDir>
+                    <user>185</user>
+                  </assembly>
+
+                  <assembly>
+                    <name>additional-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/opt</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/akka-entrypoint.sh</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+
+                  <assembly>
+                    <name>prometheus-resources</name>
+                    <mode>dir</mode>
+                    <targetDir>/etc/metrics/conf</targetDir>
+                    <user>185</user>
+                    <inline>
+                      <files>
+                        <file>
+                          <source>${basedir}/src/main/resources/prometheus.yaml</source>
+                        </file>
+                      </files>
+                    </inline>
+                  </assembly>
+                </assemblies>
+
+                <user>185</user>
+
+                <entryPoint>
+                  <exec>
+                    <arg>bash</arg>
+                    <arg>/opt/akka-entrypoint.sh</arg>
+                  </exec>
+                </entryPoint>
+              </build>
+            </image>
+          </images>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.5.1</version>
+        <executions>
+          <execution>
+            <id>add-generated-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sourceDir>${project.build.directory}/generated-sources/avro</sourceDir>
+            </configuration>
+          </execution>
+          <execution>
+            <id>compile</id>
+            <goals>
+                <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <goals>
+                <goal>testCompile</goal>
+            </goals>
+            <phase>test-compile</phase>
+          </execution>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+                <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-akka_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-akka-util_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-runner_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-localrunner_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.16</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.16</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.3</version>
+    </dependency>
+  </dependencies>
+</project>

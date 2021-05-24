@@ -1,0 +1,33 @@
+# This is useful for when you want to see all non-filtered, non-formatted JMX metrics.
+# Must be defined for the appropriate runner (in place of any other rules files) in `Settings.scala`
+lowercaseOutputName: true
+attrNameSnakeCase: true
+rules:
+  # Kafka Consumer lag and throughput, Kafka Producer throughput metrics
+  # regex testing: https://regex101.com/r/ihtmzH/2
+  - pattern: kafka\.consumer<type=consumer-fetch-manager-metrics,\s*client-id=(\S+),\s*topic=(\S+),\s*partition=([0-9]+).*><>records-lag-max
+    name: kafka_consumer_consumer_fetch_manager_metrics_records_lag_max
+    type: GAUGE
+    labels:
+      client_id: "$1"
+      topic: "$2"
+      partition: "$3"
+  - pattern: kafka\.consumer<type=consumer-fetch-manager-metrics,\s*client-id=(\S+),\s*topic=(\S+),\s*partition=([0-9]+).*><>records-lag
+    name: kafka_consumer_consumer_fetch_manager_metrics_records_lag
+    type: GAUGE
+    labels:
+      client_id: "$1"
+      topic: "$2"
+      partition: "$3"
+  - pattern: kafka\.consumer<type=consumer-fetch-manager-metrics,\s*client-id=(\S+),\s*topic=(\S+).*><>records-consumed-rate
+    name: kafka_consumer_consumer_fetch_manager_metrics_records_consumed_rate
+    type: GAUGE
+    labels:
+      client_id: "$1"
+      topic: "$2"
+  - pattern: kafka\.producer<type=producer-topic-metrics,\s*client-id=(\S+),\s*topic=(\S+).*><>record-send-rate
+    name: kafka_producer_producer_metrics_record_send_rate
+    type: GAUGE
+    labels:
+      client_id: "$1"
+      topic: "$2"

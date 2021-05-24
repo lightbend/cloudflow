@@ -1,0 +1,283 @@
+<!-- Post-processed by SbtMavenPlugin -->
+<plugin xmlns="http://maven.apache.org/PLUGIN/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/PLUGIN/1.0.0 http://maven.apache.org/xsd/plugin-1.0.0.xsd">
+  <name>Cloudflow</name>
+  <description>Cloudflow Maven Plugin</description>
+  <groupId>com.lightbend.cloudflow</groupId>
+  <artifactId>cloudflow-maven-plugin</artifactId>
+  <goalPrefix>cloudflow</goalPrefix>
+  <mojos>
+    <mojo>
+      <goal>extract-streamlets</goal>
+      <description>Extract Cloudflow Streamlets</description>
+      <implementation>cloudflow.maven.ExtractStreamletsMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+    <mojo>
+      <goal>push-images</goal>
+      <description>Push Cloudflow Docker Images</description>
+      <implementation>cloudflow.maven.PushImagesMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+    <mojo>
+      <goal>build-app</goal>
+      <description>Build Cloudflow Application</description>
+      <implementation>cloudflow.maven.BuildAppMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+      <aggregator>false</aggregator>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+    <mojo>
+      <goal>app-layout</goal>
+      <description>Print the Cloudflow Application graph</description>
+      <implementation>cloudflow.maven.AppLayoutMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+      <aggregator>false</aggregator>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+    <mojo>
+      <goal>verify-blueprint</goal>
+      <description>Verify the Cloudflow blueprint</description>
+      <implementation>cloudflow.maven.VerifyBlueprintMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+      <aggregator>false</aggregator>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+    <mojo>
+      <goal>run-local</goal>
+      <description>Run Locally the Cloudflow application</description>
+      <implementation>cloudflow.maven.RunLocalMojo</implementation>
+      <instantiationStrategy>singleton</instantiationStrategy>
+      <phase>package</phase>
+
+      <requiresProject>true</requiresProject>
+      <requiresReports>true</requiresReports>
+      <requiresDependencyResolution>compile</requiresDependencyResolution>
+      <requiresDependencyCollection>compile</requiresDependencyCollection>
+      <aggregator>false</aggregator>
+
+      <parameters>
+        <parameter>
+          <name>mavenProject</name>
+          <type>org.apache.maven.project.MavenProject</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+        <parameter>
+          <name>mavenSession</name>
+          <type>org.apache.maven.execution.MavenSession</type>
+          <required>true</required>
+          <editable>false</editable>
+          <description></description>
+        </parameter>
+
+        <parameter>
+          <name>localConfig</name>
+          <type>string</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>A local config file to be used</description>
+        </parameter>
+        <parameter>
+          <name>log4jConfig</name>
+          <type>string</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>A local log4j config file to be used for logging</description>
+        </parameter>
+        <parameter>
+          <name>baseDebugPort</name>
+          <type>int</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>The port to start with for debugging</description>
+        </parameter>
+        <parameter>
+          <name>remoteDebug</name>
+          <type>boolean</type>
+          <required>false</required>
+          <editable>true</editable>
+          <description>Enable remote debug</description>
+        </parameter>
+      </parameters>
+      <configuration>
+        <mavenProject implementation="org.apache.maven.project.MavenProject" default-value="${project}"/>
+        <mavenSession implementation="org.apache.maven.execution.MavenSession" default-value="${session}"/>
+
+        <localConfig implementation="java.lang.String"></localConfig>
+        <log4jConfig implementation="java.lang.String"></log4jConfig>
+        <baseDebugPort implementation="int" default-value="5000"></baseDebugPort>
+        <remoteDebug implementation="boolean" default-value="true"></remoteDebug>
+      </configuration>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.plugin.BuildPluginManager</role>
+          <field-name>pluginManager</field-name>
+        </requirement>
+      </requirements>
+    </mojo>
+  </mojos>
+</plugin>

@@ -74,6 +74,7 @@ object StreamletScanner {
   private def getDescriptor(streamletClass: Class[_]): Try[Config] =
     getInstance(streamletClass)
       .flatMap { streamletInstance =>
+
         val descriptorMethod = streamletClass.getMethod(StreamletDescriptorMethod, EmptyParameterTypes: _*)
         if (descriptorMethod == null) {
           // This should be impossible since any class that matches the Streamlet trait should have this method...
@@ -86,15 +87,17 @@ object StreamletScanner {
             ConfigFactory.parseString(descriptor.toString)
           }.recoverWith {
             // This should be either impossible or extremely rare since it is our own method we are calling
-            case error => Failure(DescriptorMethodFailure(streamletClass, error))
+            case error =>
+              Failure(DescriptorMethodFailure(streamletClass, error))
           }
         }
       }
 
-  private def getInstance(clazz: Class[_]): Try[Any] =
+  private def getInstance(clazz: Class[_]): Try[Any] = {
     getInstanceFromScalaObject(clazz).recoverWith {
       case _ => getInstanceFromDefaultConstructor(clazz)
     }
+  }
 
   private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] = {
     getNoArgConstructor(streamletClass) match {
@@ -116,6 +119,7 @@ object StreamletScanner {
 
   private def loadClass(className: String, classLoader: ClassLoader): Try[Class[_]] =
     Try(Class.forName(className, true, classLoader))
+
 }
 
 /**

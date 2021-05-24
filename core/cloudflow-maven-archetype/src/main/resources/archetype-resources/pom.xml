@@ -1,0 +1,47 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>${groupId}</groupId>
+  <artifactId>${artifactId}</artifactId>
+  <version>${version}</version>
+  <packaging>pom</packaging>
+
+  <name>${artifactId}</name>
+  <url>http://cloudflow.io</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <scala.version>2.12.12</scala.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <avro.version>1.8.2</avro.version>
+    <docker.maven.plugin.version>0.36.0</docker.maven.plugin.version>
+    <cloudflow.version>${env.CLOUDFLOW_VERSION}</cloudflow.version>
+    <cloudflow.plugin.version>${env.CLOUDFLOW_VERSION}</cloudflow.plugin.version>
+  </properties>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>${docker.maven.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.lightbend.cloudflow</groupId>
+            <artifactId>cloudflow-maven-plugin</artifactId>
+            <version>${cloudflow.plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <modules>
+    <module>akka</module>
+    <module>flink</module>
+    <module>spark</module>
+    <module>pipeline</module>
+  </modules>
+</project>
