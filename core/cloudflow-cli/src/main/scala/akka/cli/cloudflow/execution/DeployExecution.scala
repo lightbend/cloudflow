@@ -5,12 +5,14 @@
 package akka.cli.cloudflow.execution
 
 import java.io.File
-
 import scala.util.{ Failure, Success, Try }
+import com.typesafe.config.{ ConfigFactory, ConfigRenderOptions }
 import akka.cli.cloudflow.{ Cli, CliException, CliLogger, DeployResult, Execution, Json }
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.datap.crd.App
 import akka.cli.cloudflow.commands.Deploy
+
+import scala.jdk.CollectionConverters._
 
 object DeployExecution {
 
@@ -143,7 +145,13 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      version <- validateProtocolVersion(client)
+      _ <- {
+        if (d.microservices) {
+          Success("")
+        } else {
+          validateProtocolVersion(client)
+        }
+      }
 
       // prepare the data
       localApplicationCr <- loadCrFile(d.crFile)
@@ -179,10 +187,9 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         () => client.getKafkaClusters(namespace = Some(applicationCr.spec.appId)).map(_.keys.toList))
 
       // streamlets configurations
-      streamletsConfigs <- streamletsConfigs(
-        applicationCr,
-        cloudflowConfig,
-        () => client.getKafkaClusters(None).map(parseValues))
+      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, d.microservices, () => {
+        client.getKafkaClusters(None).map(parseValues)
+      })
 
       // Operations on the cluster
       name = applicationCr.spec.appId
@@ -197,14 +204,17 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             dockerPassword = d.dockerPassword)
         }
       }
-      uid <- client.createCloudflowApp(applicationCr.spec)
-      _ <- client.configureCloudflowApp(
-        name,
-        uid,
-        configStr,
-        logbackContent,
-        version == Cli.ProtocolVersion,
-        streamletsConfigs)
+      uid <- {
+        if (d.microservices) {
+          client.createMicroservicesApp(
+            applicationCr.spec,
+            CloudflowToMicroservicesCR
+              .convert(applicationCr.spec, logbackContent.map(_ => KubeClient.LoggingSecretName)))
+        } else {
+          client.createCloudflowApp(applicationCr.spec)
+        }
+      }
+      _ <- client.configureCloudflowApp(name, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")
       DeployResult()

@@ -124,6 +124,78 @@
   "fields":[{"name":"MODULE$"}]
 },
 {
+  "name":"akka.cli.microservice.AkkaClusterStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.AkkaClusterStatus$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroservice",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroservice$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroserviceSpec",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroserviceSpec$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroserviceStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.AkkaMicroserviceStatus$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.microservice.LogbackSecret",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.LogbackSecret$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
+  "name":"akka.cli.microservice.SecretVolume",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"akka.cli.microservice.SecretVolume$",
+  "allPublicMethods":true,
+  "fields":[{"name":"MODULE$"}]
+},
+{
   "name":"akka.datap.crd.App$AppStatus",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -521,6 +593,20 @@
   "allPublicConstructors":true
 },
 {
+  "name":"io.fabric8.kubernetes.api.model.DownwardAPIVolumeFile",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.DownwardAPIVolumeSource",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
   "name":"io.fabric8.kubernetes.api.model.EndpointAddress",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -550,6 +636,13 @@
 },
 {
   "name":"io.fabric8.kubernetes.api.model.EndpointsList",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.ExecAction",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
@@ -686,6 +779,13 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"io.fabric8.kubernetes.api.model.ObjectFieldSelector",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
   "name":"io.fabric8.kubernetes.api.model.ObjectMeta",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -742,10 +842,31 @@
   "allPublicConstructors":true
 },
 {
+  "name":"io.fabric8.kubernetes.api.model.PodSpec",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.PodTemplateSpec",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
   "name":"io.fabric8.kubernetes.api.model.Preferences",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.Probe",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
 },
 {
   "name":"io.fabric8.kubernetes.api.model.Quantity$Deserializer",
@@ -806,6 +927,20 @@
 },
 {
   "name":"io.fabric8.kubernetes.api.model.TypedLocalObjectReference",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.Volume",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.VolumeMount",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
@@ -1003,6 +1138,9 @@
 {
   "name":"scala.Product",
   "allDeclaredMethods":true
+},
+{
+  "name":"scala.Symbol"
 },
 {
   "name":"scala.Tuple2[]"

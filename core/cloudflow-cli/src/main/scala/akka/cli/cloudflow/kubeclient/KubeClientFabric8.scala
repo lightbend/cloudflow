@@ -11,6 +11,7 @@ import akka.cli.cloudflow.kubeclient.KubeClient._
 import akka.datap.crd.App
 import akka.cli.cloudflow.{ models, CliException, CliLogger }
 import akka.cli.common.Base64Helper
+import akka.cli.microservice.{ AkkaMicroservice, AkkaMicroserviceList, AkkaMicroserviceSpec }
 import buildinfo.BuildInfo
 import com.fasterxml.jackson.annotation.{ JsonCreator, JsonProperty }
 import com.fasterxml.jackson.databind.JsonDeserializer
@@ -307,7 +308,7 @@ class KubeClientFabric8(
             .getData()
             .asScala
             .get(dockerConfigSecret)
-            .getOrElse(throw CliException("Failed to deserialize existing docker image pill secret"))
+            .getOrElse(throw CliException("Failed to deserialize existing docker image pull secret"))
           val prevConfig =
             Serialization.jsonMapper().readValue(Base64Helper.decode(data), classOf[DockerConfig])
 
@@ -325,7 +326,6 @@ class KubeClientFabric8(
   private def appInputSecretName(name: String) = s"config-${name}"
 
   private val loggingSecretConfKey = "logback.xml"
-  private def loggingSecretName = "logging"
 
   private def getOwnerReference(name: String, uid: String) = {
     new OwnerReferenceBuilder()
@@ -433,20 +433,20 @@ class KubeClientFabric8(
             val current = client
               .secrets()
               .inNamespace(name)
-              .withName(loggingSecretName)
+              .withName(LoggingSecretName)
               .get()
 
             if (current != null) {
               client
                 .secrets()
                 .inNamespace(name)
-                .withName(loggingSecretName)
+                .withName(LoggingSecretName)
                 .delete()
             }
           case Some(v) =>
             lazy val secret =
               new SecretBuilder().withNewMetadata
-                .withName(loggingSecretName)
+                .withName(LoggingSecretName)
                 .withLabels(
                   (cloudflowLabels(name).asScala ++
                   Map(
@@ -460,7 +460,7 @@ class KubeClientFabric8(
             client
               .secrets()
               .inNamespace(name)
-              .withName(loggingSecretName)
+              .withName(LoggingSecretName)
               .createOrReplace(secret)
         }
       }
@@ -495,32 +495,30 @@ class KubeClientFabric8(
     }
   }
 
-  def createCloudflowApp(spec: App.Spec): Try[String] =
+  private def getFullCloudflowApp(spec: App.Spec): App.Cr = {
+    val metadata = new ObjectMetaBuilder()
+      .withName(spec.appId)
+      .withLabels(cloudflowLabels(spec.appId))
+      .withAnnotations(CreatedByCliAnnotation)
+      .build()
+
+    val status = App.AppStatus(
+      appId = spec.appId,
+      appVersion = spec.appVersion,
+      appMessage = "",
+      appStatus = "",
+      endpointStatuses = Seq(),
+      streamletStatuses = Seq())
+
+    App.Cr(spec = spec, metadata = metadata, status = status)
+  }
+
+  private def createCFApp(spec: App.Spec): Try[String] =
     withApplicationClient { cloudflowApps =>
       for {
         uid <- Try {
-          val metadata = new ObjectMetaBuilder()
-            .withName(spec.appId)
-            .withLabels(cloudflowLabels(spec.appId))
-            .withAnnotations(CreatedByCliAnnotation)
-            .build()
+          val app = getFullCloudflowApp(spec)
 
-          val status = App.AppStatus(
-            appId = spec.appId,
-            appVersion = spec.appVersion,
-            appMessage = "",
-            appStatus = "",
-            endpointStatuses = Seq(),
-            streamletStatuses = Seq())
-
-          val app = App.Cr(spec = spec, metadata = metadata, status = status)
-
-          // We don't need to "manually" preserve the status
-          // https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#status-subresource
-          // PUT/POST/PATCH requests to the custom resource ignore changes to the status stanza
-          // createOrReplace uses a PUT:
-          // https://github.com/fabric8io/kubernetes-client/blob/2403476df81e65b5f063175b1d72e00c328beafe/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/base/OperationSupport.java#L283-L287
-          // everything should work as expected.
           val crd =
             cloudflowApps
               .inNamespace(spec.appId)
@@ -529,9 +527,58 @@ class KubeClientFabric8(
 
           crd.getMetadata.getUid
         }
-        _ <- createCloudflowServiceAccount(spec.appId, getOwnerReference(spec.appId, uid))
-      } yield { uid }
+      } yield {
+        uid
+      }
     }
+
+  def createCloudflowApp(spec: App.Spec): Try[String] =
+    for {
+      uid <- createCFApp(spec)
+      _ <- createCloudflowServiceAccount(spec.appId, getOwnerReference(spec.appId, uid))
+    } yield { uid }
+
+  def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] = {
+    for {
+      uid <- createCFApp(cfSpec)
+      _ <- {
+        withClient { client =>
+          val microservices = client.customResources(
+            AkkaMicroservice.customResourceDefinitionContext,
+            classOf[AkkaMicroservice],
+            classOf[AkkaMicroserviceList])
+
+          specs.foldLeft(Success(Map.empty[String, String]): Try[Map[String, String]]) {
+            case (last, (name, spec)) =>
+              last match {
+                case f: Failure[Map[String, String]] => f
+                case Success(l) =>
+                  spec match {
+                    case None => Success(l + (name -> uid))
+                    case Some(s) =>
+                      val metadata = new ObjectMetaBuilder()
+                        .withName(name)
+                        .withLabels(cloudflowLabels(name))
+                        .withAnnotations(CreatedByCliAnnotation)
+                        .withOwnerReferences(getOwnerReference(cfSpec.appId, uid))
+                        .build()
+
+                      val app = AkkaMicroservice(spec = s, metadata = metadata, status = None)
+
+                      val crd =
+                        microservices
+                          .inNamespace(cfSpec.appId)
+                          .withName(name)
+                          .createOrReplace(app)
+
+                      Success(l + (name -> crd.getMetadata.getUid))
+                  }
+              }
+          }
+        }
+      }
+    } yield { uid }
+  }
 
   def uidCloudflowApp(name: String): Try[String] = {
     withApplicationClient { cloudflowApps =>
@@ -555,18 +602,11 @@ class KubeClientFabric8(
       appUid: String,
       appConfig: String,
       loggingContent: Option[String],
-      createSecrets: Boolean,
       configs: Map[App.Deployment, Map[String, String]]) = {
     val ownerReference = getOwnerReference(appName, appUid)
     for {
       _ <- handleLoggingSecret(appName, loggingContent, ownerReference)
-      _ <- {
-        if (createSecrets) {
-          createStreamletsConfigSecrets(appName, configs, ownerReference)
-        } else {
-          Success(())
-        }
-      }
+      _ <- createStreamletsConfigSecrets(appName, configs, ownerReference)
       _ <- createAppInputSecret(appName, appConfig, ownerReference)
     } yield { () }
   }

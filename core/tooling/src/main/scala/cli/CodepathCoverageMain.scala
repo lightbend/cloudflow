@@ -65,7 +65,7 @@ object CodepathCoverageMain extends App {
 
   cli.run(
     commands
-      .Deploy(crFile = new File("../cloudflow-cli/src/test/resources/swiss-knife.json"), noRegistryCredentials = true))
+      .Deploy(crFile = new File("../cloudflow-it/swiss-knife/target/swiss-knife.json"), noRegistryCredentials = true))
 
   val list = commands.List()
   def exists() = {
@@ -130,6 +130,19 @@ object CodepathCoverageMain extends App {
   conf.get.render(format.Classic)
   conf.get.render(format.Json)
   conf.get.render(format.Yaml)
+
+  cli.run(commands.Undeploy(cloudflowApp = "swiss-knife"))
+
+  Thread.sleep(5000)
+
+  cli.run(
+    commands
+      .Deploy(
+        crFile = new File("../cloudflow-it/swiss-knife/target/swiss-knife.json"),
+        noRegistryCredentials = true,
+        microservices = true))
+
+  Thread.sleep(1000)
 
   cli.run(commands.Undeploy(cloudflowApp = "swiss-knife"))
 
