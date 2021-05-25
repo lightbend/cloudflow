@@ -115,6 +115,7 @@ object Dependencies {
     val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.6.1"
     val mavenProject = "org.apache.maven" % "maven-project" % "2.2.1"
     val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.3.1"
+    val junit = "junit" % "junit" % "4.13"
   }
 
   object TestDeps {
@@ -303,6 +304,7 @@ object Dependencies {
 
   val cloudflowMavenPlugin =
     libraryDependencies ++= Seq(
+        Compile.junit,
         Compile.mavenCore,
         Compile.mavenEmbedder,
         Compile.mavenProject,
