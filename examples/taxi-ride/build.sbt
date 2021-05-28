@@ -7,7 +7,7 @@ lazy val root =
     .enablePlugins(ScalafmtPlugin)
     .settings(
       name := "root",
-      skip in publish := true,
+      publish / skip := true,
       scalafmtOnCompile := true,
     )
     .withId("root")
@@ -58,7 +58,7 @@ lazy val processor = appModule("processor")
     )
   )
   .settings(
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
   .dependsOn(datamodel)
 
@@ -99,8 +99,8 @@ lazy val commonSettings = Seq(
     "-unchecked"
   ),
 
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+  Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value,
 )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

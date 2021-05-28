@@ -37,8 +37,8 @@ lazy val sensorData =  (project in file("."))
       // TODO: Remove this when runLocalConfiguration uses logback.xml
       excludeDependencies += "org.slf4j" % "log4j-over-slf4j",
       runLocalConfigFile := Some("src/main/resources/local.conf"),
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

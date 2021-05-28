@@ -38,8 +38,8 @@ lazy val sensorData =  (project in file("."))
         "-unchecked"
       ),
 
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused"),
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

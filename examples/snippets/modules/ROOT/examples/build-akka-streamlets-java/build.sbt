@@ -93,8 +93,8 @@ lazy val commonSettings = Seq(
     "-unchecked"
   ),
 
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+  Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value,
 
   libraryDependencies ++= Seq(
         "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
@@ -104,4 +104,4 @@ lazy val commonSettings = Seq(
   javacOptions ++= Seq("-Xlint:deprecation")
 )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

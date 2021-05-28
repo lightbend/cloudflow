@@ -14,4 +14,4 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http2-support" % "10.2.0",
 )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

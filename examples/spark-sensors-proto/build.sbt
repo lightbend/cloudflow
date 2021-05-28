@@ -28,8 +28,8 @@ lazy val sparkSensors = Project(id = "spark-sensors-proto", base = file("."))
         "-unchecked"
       ),
 
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value,
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"
