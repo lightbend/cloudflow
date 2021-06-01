@@ -5,6 +5,7 @@ import akka.stream.javadsl.RunnableGraph;
 import cloudflow.akkastream.AkkaStreamlet;
 import cloudflow.akkastream.AkkaStreamletLogic;
 import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
+import cloudflow.streamlets.CodecInlet;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.proto.javadsl.ProtoInlet;
 
