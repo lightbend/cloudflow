@@ -1,3 +1,5 @@
+name: Build and Test
+
 on:
   # Trigger the workflow on push or pull request,
   # push only for the main branch
@@ -7,13 +9,11 @@ on:
       - main
   pull_request:
 
-
-name: Build and Test
 jobs:
   build-and-test-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.3.3
+    - uses: actions/checkout@v2
       with:
         fetch-depth: 0
     - name: Build documentation
@@ -23,23 +23,32 @@ jobs:
         cd docs
         make html-author-mode
         grep -r "page unresolved" target/staging/docs/ && exit 1 || echo 'ok'
+  
   build-and-test-scala:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '8', '11', '13' ]
     steps:
+    
     - uses: actions/checkout@v2
-
-    - name: Setup environment
-      run: |
-        make -C .github/workflows/setup setup-local-all
+      with:
+        fetch-depth: 0
 
     - name: Cache SBT and Coursier cache
       uses: coursier/cache-action@v3
 
+    - name: Scalafmt check
+      run: cd core && sbt "scalafmtCheckAll; scalafmtSbtCheck"
+
     - name: build-and-test
       env:
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
-      run: |
-        export PATH="$HOME/opt/sbt/bin:$PATH"
-        export SBT_OPTS="-Xss256M"
-        cd scripts
-        ./build-all.sh +test
+      run: ./scripts/build-core.sh +test
+
+    - name: test-sbt-examples
+      run: ./scripts/build-sbt-examples.sh test
+
+    - name: test-maven-examples
+      run: ./scripts/build-mvn-examples.sh test
