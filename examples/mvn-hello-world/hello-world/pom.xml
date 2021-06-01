@@ -129,17 +129,17 @@
   <dependencies>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-akka_2.12</artifactId>
+      <artifactId>cloudflow-akka_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-runner_2.12</artifactId>
+      <artifactId>cloudflow-runner_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
-      <artifactId>cloudflow-localrunner_2.12</artifactId>
+      <artifactId>cloudflow-localrunner_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
     <dependency>
