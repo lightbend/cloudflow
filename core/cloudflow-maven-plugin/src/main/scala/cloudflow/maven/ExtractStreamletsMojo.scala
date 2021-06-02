@@ -63,9 +63,13 @@ class ExtractStreamletsMojo extends AbstractMojo {
       new File(mavenProject.getBuild.getDirectory, Constants.FULL_CLASSPATH),
       allDeps.map(_.toString).mkString(Constants.PATH_SEPARATOR))
 
-    val streamlets = Generator.scanProject(projectId = projectId, classpath = allDeps)
+    val extractResult = Generator
+      .scanProject(projectId = projectId, classpath = allDeps)
 
-    getLog().info(s"streamlets found: ${streamlets.map(showStreamlet).mkString(",")}")
+    getLog().info(s"streamlets found: ${extractResult.descriptors.map(showStreamlet).mkString(",")}")
+
+    val streamlets = extractResult.toTry
+      .fold(e => throw e, identity)
 
     val res = streamlets
       .map {

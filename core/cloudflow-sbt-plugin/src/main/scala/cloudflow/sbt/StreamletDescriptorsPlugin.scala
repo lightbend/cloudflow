@@ -16,6 +16,7 @@
 
 package cloudflow.sbt
 
+import scala.util.Try
 import com.typesafe.config._
 import sbt._
 import sbt.Keys._
@@ -23,6 +24,7 @@ import spray.json._
 import cloudflow.sbt.CloudflowKeys._
 import cloudflow.blueprint.StreamletDescriptorFormat._
 import cloudflow.blueprint.StreamletDescriptor
+import cloudflow.extractor.ExtractResult
 
 /**
  * Plugin that generates a json containing a Map of class name and `StreamletDescriptor`
@@ -48,12 +50,15 @@ object StreamletDescriptorsPlugin extends AutoPlugin {
       }.value)
 
   private[sbt] def buildStreamletDescriptors(
-      detectedStreamlets: Map[String, Config]): Def.Initialize[Task[Map[String, StreamletDescriptor]]] =
+      extractResult: ExtractResult): Def.Initialize[Task[Try[Map[String, StreamletDescriptor]]]] =
     Def.task {
-      val detectedStreamletDescriptors = detectedStreamlets.mapValues { configDescriptor =>
-        val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
-        jsonString.parseJson
-          .convertTo[cloudflow.blueprint.StreamletDescriptor]
+      val detectedStreamletDescriptors = extractResult.toTry.map {
+        _.map {
+          case (str, configDescriptor) =>
+            val jsonString = configDescriptor.root().render(ConfigRenderOptions.concise())
+            str -> jsonString.parseJson
+              .convertTo[cloudflow.blueprint.StreamletDescriptor]
+        }
       }
       detectedStreamletDescriptors
     }

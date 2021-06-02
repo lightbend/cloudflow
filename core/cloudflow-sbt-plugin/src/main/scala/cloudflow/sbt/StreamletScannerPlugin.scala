@@ -23,6 +23,7 @@ import sbt._
 import sbt.Keys._
 import com.typesafe.config._
 
+import cloudflow.extractor.ExtractResult
 import cloudflow.sbt.CloudflowKeys._
 
 object StreamletScannerPlugin extends AutoPlugin {
@@ -42,12 +43,12 @@ object StreamletScannerPlugin extends AutoPlugin {
     toClasspathUrls((ThisProject / Compile / fullClasspath).value)
   }
 
-  private def streamletsByProject: Def.Initialize[Task[(String, Map[String, Config])]] = Def.task {
+  private def streamletsByProject: Def.Initialize[Task[(String, ExtractResult)]] = Def.task {
     val descriptors = cloudflowStreamletDescriptors.value
     (ThisProject / name).value -> descriptors
   }
 
-  private def scanForStreamlets: Def.Initialize[Task[Map[String, Config]]] = Def.task {
+  private def scanForStreamlets: Def.Initialize[Task[ExtractResult]] = Def.task {
     val log = streams.value.log
 
     DescriptorExtractor.scan(
@@ -62,7 +63,6 @@ object StreamletScannerPlugin extends AutoPlugin {
       DescriptorExtractor.ResolveConfiguration(dockerImageName =
         (ThisProject / cloudflowDockerImageName).value.map(_.asTaggedName).getOrElse("placeholder")),
       scanForStreamlets.value)
-
     IO.write(file, config.root().render(ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)))
     file
   }

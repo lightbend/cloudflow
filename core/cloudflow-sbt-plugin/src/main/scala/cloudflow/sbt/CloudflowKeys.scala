@@ -16,11 +16,13 @@
 
 package cloudflow.sbt
 
+import scala.util.Try
 import sbt._
 import com.typesafe.config._
 
 import cloudflow.blueprint.deployment.ApplicationDescriptor
 import cloudflow.blueprint.StreamletDescriptor
+import cloudflow.extractor.ExtractResult
 
 case class DockerImageName(name: String, tag: String) {
   def asTaggedName: String = s"$name:$tag"
@@ -103,10 +105,10 @@ trait CloudflowTaskKeys {
     taskKey[Seq[ProjectReference]]("All projects that use the CloudflowBasePlugin.")
 
   private[sbt] val allCloudflowStreamletDescriptors =
-    taskKey[Map[String, Config]]("Streamlets found in sub projects by scanning the application classpath.")
+    taskKey[ExtractResult]("Streamlets found in sub projects by scanning the application classpath.")
 
   private[sbt] val cloudflowStreamletDescriptors =
-    taskKey[Map[String, Config]]("Streamlets found by scanning the application classpath.")
+    taskKey[ExtractResult]("Streamlets found by scanning the application classpath.")
   private[sbt] val cloudflowStreamletDescriptorsByProject =
     taskKey[Map[String, Map[String, Config]]](
       "Streamlets found by scanning the application classpath, organized by project id.")
@@ -123,12 +125,12 @@ trait CloudflowTaskKeys {
     "The deployment descriptor for the current application. Available if the project has a valid blueprint.")
 
   private[sbt] val streamletDescriptorsInProject =
-    taskKey[Map[String, StreamletDescriptor]]("The class name to streamlet descriptor mapping.")
+    taskKey[Try[Map[String, StreamletDescriptor]]]("The class name to streamlet descriptor mapping.")
   private[sbt] val imageNamesByProject = taskKey[Map[String, DockerImageName]]("The list of all image names.")
   private[sbt] val streamletDescriptorsByProject =
-    taskKey[(String, Map[String, Config])]("streamlet descriptors per project.")
+    taskKey[(String, ExtractResult)]("streamlet descriptors per project.")
   val allStreamletDescriptorsByProject =
-    taskKey[Map[String, Map[String, Config]]](
+    taskKey[Map[String, ExtractResult]](
       "Streamlets found by scanning the application classpath, organized by project id.")
   private[sbt] val allApplicationClasspathByProject =
     taskKey[Map[String, Array[URL]]]("classpath of the user projects per project")

@@ -31,15 +31,18 @@ object StreamletScanner {
   val EmptyParameterTypes: Array[Class[_]] = Array.empty
   val EmptyParameterValues: Array[AnyRef] = Array.empty
 
-  def scanForStreamletDescriptors(classLoader: ClassLoader, projectId: String): Map[String, Try[Config]] =
+  def scanForStreamletDescriptors(
+      classLoader: ClassLoader,
+      projectId: String): Map[String, Either[ExtractProblem, Config]] =
     scan(classLoader)
       .map { case (s, c) => s -> enrichDescriptorWithProjectId(projectId)(c) }
 
-  def enrichDescriptorWithProjectId(projectId: String): Try[Config] => Try[Config] = { rawStreamlet =>
+  def enrichDescriptorWithProjectId(
+      projectId: String): Either[ExtractProblem, Config] => Either[ExtractProblem, Config] = { rawStreamlet =>
     rawStreamlet.map(_.withValue("project_id", ConfigValueFactory.fromAnyRef(projectId)))
   }
 
-  def scan(classLoader: ClassLoader): Map[String, Try[Config]] = {
+  def scan(classLoader: ClassLoader): Map[String, Either[ExtractProblem, Config]] = {
     val scanResult: List[String] = new ClassGraph()
       .enableClassInfo()
       .addClassLoader(classLoader)
@@ -71,42 +74,43 @@ object StreamletScanner {
       !Modifier.isAbstract(clazz.getModifiers)
     }
 
-  private def getDescriptor(streamletClass: Class[_]): Try[Config] =
+  private def getDescriptor(streamletClass: Class[_]): Either[ExtractProblem, Config] =
     getInstance(streamletClass)
       .flatMap { streamletInstance =>
 
         val descriptorMethod = streamletClass.getMethod(StreamletDescriptorMethod, EmptyParameterTypes: _*)
         if (descriptorMethod == null) {
           // This should be impossible since any class that matches the Streamlet trait should have this method...
-          Failure(DescriptorMethodMissing(streamletClass))
+          Left(DescriptorMethodMissing(streamletClass))
         } else {
           Try {
             val emptyParameterValues: Array[AnyRef] = Array.empty
             val descriptor = descriptorMethod.invoke(streamletInstance, emptyParameterValues: _*)
 
             ConfigFactory.parseString(descriptor.toString)
-          }.recoverWith {
+          }.toEither.left.map {
             // This should be either impossible or extremely rare since it is our own method we are calling
             case error =>
-              Failure(DescriptorMethodFailure(streamletClass, error))
+              DescriptorMethodFailure(streamletClass, error)
           }
         }
       }
 
-  private def getInstance(clazz: Class[_]): Try[Any] = {
-    getInstanceFromScalaObject(clazz).recoverWith {
+  private def getInstance(clazz: Class[_]): Either[ExtractProblem, Any] = {
+    getInstanceFromScalaObject(clazz).toEither.left.flatMap {
       case _ => getInstanceFromDefaultConstructor(clazz)
     }
   }
 
-  private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Try[Any] = {
+  private def getInstanceFromDefaultConstructor(streamletClass: Class[_]): Either[ExtractProblem, Any] = {
     getNoArgConstructor(streamletClass) match {
       case Some(constructor) =>
-        Try(constructor.newInstance()).recoverWith {
-          case error => Failure(ConstructorFailure(streamletClass, error))
+        Try(constructor.newInstance()).toEither.left.flatMap {
+          case error =>
+            Left(ConstructorFailure(streamletClass, error))
         }
       case None =>
-        Failure(ConstructorMissing(streamletClass))
+        Left(ConstructorMissing(streamletClass))
     }
   }
 
@@ -121,35 +125,3 @@ object StreamletScanner {
     Try(Class.forName(className, true, classLoader))
 
 }
-
-/**
- * An exception hierarchy to provide feedback to the user that there is an issue with how the Streamlet
- * is defined.
- */
-sealed abstract class StreamletScannerException(msg: String) extends RuntimeException(msg) with NoStackTrace
-
-object StreamletScannerException {
-  def errorMsg(error: Throwable): String = {
-    val cause = error match {
-      case e: java.lang.reflect.InvocationTargetException =>
-        Option(e.getCause).getOrElse(e)
-      case _ => error
-    }
-
-    s"""an ${cause.getClass.getSimpleName}${Option(cause.getMessage).map(": " + _).getOrElse("")}"""
-  }
-}
-import StreamletScannerException._
-
-final case class ConstructorMissing(streamletClass: Class[_])
-    extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. It has no default constructor.")
-final case class ConstructorFailure(streamletClass: Class[_], error: Throwable)
-    extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' could not be instantiated for introspection. Its constructor threw ${errorMsg(error)}")
-final case class DescriptorMethodMissing(streamletClass: Class[_])
-    extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' is not usable. It has no descriptor method to call.")
-final case class DescriptorMethodFailure(streamletClass: Class[_], error: Throwable)
-    extends StreamletScannerException(
-      s"Streamlet '${streamletClass.getName}' could not be introspected. Its descriptor method threw ${errorMsg(error)}")

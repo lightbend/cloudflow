@@ -21,12 +21,14 @@ import java.io._
 
 import scala.sys.process.Process
 import scala.sys.SystemProperties
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 
+import com.typesafe.config.Config
 import sbt._
 import sbt.Keys._
 import cloudflow.buildtool._
 import cloudflow.sbt.CloudflowKeys._
+import cloudflow.extractor.ExtractResult
 
 /**
  * SBT Plugin for running Cloudflow applications locally
@@ -70,9 +72,11 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
             val _ = verifyBlueprint.value // force evaluation of the blueprint with side-effect feedback
             val cpByProject = allApplicationClasspathByProject.value
             val configFile = runLocalConfigFile.value
-            val streamletDescriptorsByProject = allStreamletDescriptorsByProject.value.filter {
-              case (_, streamletMap) => streamletMap.nonEmpty
-            }
+            val streamletDescriptorsByProject: Map[String, Map[String, Config]] =
+              allStreamletDescriptorsByProject.value.collect {
+                case (str, ExtractResult(streamletMap, problems)) if streamletMap.nonEmpty && problems.isEmpty =>
+                  str -> streamletMap
+              }
             val _appDescriptor = applicationDescriptor.value
             val appDescriptor = _appDescriptor.getOrElse {
               logger.error("LocalRunner: ApplicationDescriptor is not present. This is a bug. Please report it.")

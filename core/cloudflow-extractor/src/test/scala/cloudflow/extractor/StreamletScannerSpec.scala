@@ -16,7 +16,7 @@
 
 package cloudflow.extractor
 
-import org.scalatest.{ OptionValues, TryValues }
+import org.scalatest.{ EitherValues, OptionValues, TryValues }
 
 import scala.util.Success
 import org.scalatest.matchers.must.Matchers
@@ -24,15 +24,15 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.collection.JavaConverters._
 
-final class StreamletScannerSpec extends AnyWordSpec with TryValues with OptionValues with Matchers {
+final class StreamletScannerSpec extends AnyWordSpec with TryValues with EitherValues with OptionValues with Matchers {
 
   "StreamletScanner.scan" should {
     val classLoader = this.getClass.getClassLoader
     val results = StreamletScanner.scan(classLoader)
     val (valid, invalid) = results.partition {
-      case (_, triedDiscoveredStreamlet) => triedDiscoveredStreamlet.isSuccess
+      case (_, triedDiscoveredStreamlet) => triedDiscoveredStreamlet.isRight
     }
-    val validStreamlets = valid.collect { case (k, Success(discovered)) => (k, discovered) }
+    val validStreamlets = valid.collect { case (k, Right(discovered)) => (k, discovered) }
     val invalidStreamlets = invalid.toMap
 
     // These are all valid streamlets defined in TestStreamlets.scala
@@ -73,13 +73,13 @@ final class StreamletScannerSpec extends AnyWordSpec with TryValues with OptionV
 
     "produce failures for classes with no default constructor" in {
       val noConstructorFailure = invalidStreamlets.get("cloudflow.extractor.NoDefaultConstructorStreamlet").value
-      noConstructorFailure.failure.exception mustBe a[ConstructorMissing]
+      noConstructorFailure.left.value mustBe a[ConstructorMissing]
     }
 
     "produce failures for classes with constructors that throw exceptions" in {
       val noConstructorFailure =
         invalidStreamlets.get("cloudflow.extractor.StreamletThatThrowsAnExceptionInItsConstructor").value
-      noConstructorFailure.failure.exception mustBe a[ConstructorFailure]
+      noConstructorFailure.left.value mustBe a[ConstructorFailure]
     }
 
     "produce no failures for abstract Streamlet classes" in {
