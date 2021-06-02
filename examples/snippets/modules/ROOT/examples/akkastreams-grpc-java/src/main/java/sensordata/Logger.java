@@ -8,7 +8,6 @@ import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.proto.javadsl.ProtoInlet;
 
-import scala.None;
 import sensordata.grpc.SensorData;
 
 public class Logger extends AkkaStreamlet {
