@@ -12,7 +12,11 @@ public class ReportPrinter extends FlinkStreamlet {
   @Override public StreamletShape shape() {
     return StreamletShape.createWithInlets(in);
   }
-
   // 3. TODO Override createLogic to provide StreamletLogic
-  public FlinkStreamletLogic createLogic() { throw new UnsupportedOperationException("Not Implemented"); }
+  public FlinkStreamletLogic createLogic() { 
+    return new FlinkStreamletLogic(getContext()) {
+      public void buildExecutionGraph() {
+      }
+    };
+  }
 }
