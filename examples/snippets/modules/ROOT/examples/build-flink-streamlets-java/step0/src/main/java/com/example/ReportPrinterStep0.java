@@ -3,7 +3,8 @@ package com.example;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.flink.*;
 
-public class ReportPrinter extends FlinkStreamlet {
+// TODO rename to ReportPrinter
+public class ReportPrinterStep0 extends FlinkStreamlet {
   // 1. TODO Create inlets and outlets
   // 2. TODO Define the shape of the streamlet
   public StreamletShape shape() { return StreamletShape.empty(); }
