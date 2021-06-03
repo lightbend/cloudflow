@@ -17,5 +17,5 @@ object ReportPrinter extends AkkaStreamlet {
   val shape = StreamletShape.withInlets(inlet)
 
   // 3. TODO Override createLogic to provide StreamletLogic
-  def createLogic = new AkkaStreamletLogic(){def run = ()}
+  def createLogic = new AkkaStreamletLogic() { def run = () }
 }

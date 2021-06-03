@@ -23,12 +23,11 @@ import cloudflow.akkastream.testkit.scaladsl._
 class TestProcessorSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
-  private implicit val mat = ActorMaterializer()
+  private implicit val mat    = ActorMaterializer()
 
   //tag::afterAll[]
-  override def afterAll: Unit = {
+  override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
-  }
   //end::afterAll[]
 
   "A TestProcessor" should {
@@ -36,16 +35,14 @@ class TestProcessorSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll
     val testkit = AkkaStreamletTestKit(system)
 
     "Allow for creating a 'flow processor'" in {
-      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val data         = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
       val expectedData = Vector(Data(2, "b"))
-      val source = Source(data)
-      val proc = new TestProcessor
-      val in = testkit.inletFromSource(proc.in, source)
-      val out = testkit.outletAsTap(proc.out)
+      val source       = Source(data)
+      val proc         = new TestProcessor
+      val in           = testkit.inletFromSource(proc.in, source)
+      val out          = testkit.outletAsTap(proc.out)
 
-      testkit.run(proc, in, out, () ⇒ {
-        out.probe.receiveN(1) mustBe expectedData.map(d ⇒ proc.out.partitioner(d) -> d)
-      })
+      testkit.run(proc, in, out, () ⇒ out.probe.receiveN(1) mustBe expectedData.map(d ⇒ proc.out.partitioner(d) -> d))
 
       out.probe.expectMsg(Completed)
     }
