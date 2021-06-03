@@ -17,21 +17,30 @@ def appModule(moduleID: String): Project = {
 }
 
 lazy val step0 = appModule("step0")
-    .enablePlugins(CloudflowAkkaPlugin)
+    // NOTE: Since the example is not complete here, it would fail verification of the blueprint
+    // NOTE: The CloudflowLibraryPlugin is used instead of CloudflowAkkaPlugin purely to make the code compile
+    // NOTE: In a normal project it is required to enable to CloudflowAkkaPlugin instead, see step3.
+    .enablePlugins(CloudflowLibraryPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
     )
 
 lazy val step1 = appModule("step1")
-    .enablePlugins(CloudflowAkkaPlugin)
+    // NOTE: Since the example is not complete here, it would fail verification of the blueprint
+    // NOTE: The CloudflowLibraryPlugin is used instead of CloudflowAkkaPlugin purely to make the code compile
+    // NOTE: In a normal project it is required to enable to CloudflowAkkaPlugin instead, see step3.
+    .enablePlugins(CloudflowLibraryPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
     )
 
 lazy val step2 = appModule("step2")
-    .enablePlugins(CloudflowAkkaPlugin)
+    // NOTE: Since the example is not complete here, it would fail verification of the blueprint
+    // NOTE: The CloudflowLibraryPlugin is used instead of CloudflowAkkaPlugin purely to make the code compile
+    // NOTE: In a normal project it is required to enable to CloudflowAkkaPlugin instead, see step3.
+    .enablePlugins(CloudflowLibraryPlugin)
     .settings(
       Test / parallelExecution := false,
       Test / fork := true
