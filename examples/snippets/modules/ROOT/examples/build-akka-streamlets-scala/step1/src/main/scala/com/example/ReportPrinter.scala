@@ -9,7 +9,8 @@ import cloudflow.streamlets.StreamletShape
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 
-object ReportPrinter extends AkkaStreamlet {
+//TODO rename to ReportPrinter
+object ReportPrinterStep1 extends AkkaStreamlet {
   // 1. Create inlets and outlets
   val inlet = AvroInlet[Report]("report-in")
 
