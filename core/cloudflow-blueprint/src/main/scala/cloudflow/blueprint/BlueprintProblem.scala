@@ -70,6 +70,7 @@ object BlueprintProblem {
         s"Invalid streamlet name '$streamletRef'. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case InvalidStreamletClassName(streamletRef, className) =>
         s"Class name '$className' for streamlet '$streamletRef' is invalid. Class names must be valid Java/Scala class names."
+      case extractProblem: ExtractProblem => extractProblem.message
       case InvalidVolumeMountName(className, name) =>
         s"Volume mount `$name` in streamlet `$className` is invalid. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case NonAbsoluteVolumeMountPath(className, name, path) =>
@@ -125,6 +126,8 @@ final case class PortBoundToManyTopics(path: String, topics: immutable.IndexedSe
 final case class InvalidKafkaClusterName(name: String) extends BlueprintProblem
 
 final case class InvalidStreamletClassName(streamletRef: String, streamletClassName: String) extends BlueprintProblem
+final case class ExtractProblem(message: String) extends BlueprintProblem
+
 final case class InvalidStreamletName(streamletRef: String) extends BlueprintProblem
 
 final case class InvalidConfigParameterKeyName(className: String, keyName: String) extends BlueprintProblem

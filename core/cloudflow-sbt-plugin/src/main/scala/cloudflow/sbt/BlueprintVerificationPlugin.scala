@@ -16,6 +16,7 @@
 
 package cloudflow.sbt
 
+import scala.util.{ Failure, Success, Try }
 import scala.util.control.NoStackTrace
 import com.typesafe.config._
 import sbt._
@@ -26,6 +27,7 @@ import cloudflow.sbt.CloudflowKeys.{ blueprintFile, _ }
 import cloudflow.blueprint._
 import cloudflow.blueprint.deployment._
 import cloudflow.blueprint.StreamletDescriptorFormat._
+import cloudflow.extractor.ExtractResult
 
 object BlueprintVerificationPlugin extends AutoPlugin {
 
@@ -62,17 +64,13 @@ object BlueprintVerificationPlugin extends AutoPlugin {
             projectWithStreamletScannerPlugin.all(ScopeFilter(inAnyProject)).value.flatten
           }
         }.value,
-      allCloudflowStreamletDescriptors := Def
-          .taskDyn {
-            val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
-            Def.task {
-              val allValues = cloudflowStreamletDescriptors.all(filter).value
-              allValues
-            }
+      allCloudflowStreamletDescriptors := composeExtractResults(Def.taskDyn {
+          val filter = ScopeFilter(inProjects(allProjectsWithStreamletScannerPlugin.value: _*))
+          Def.task {
+            val allValues = cloudflowStreamletDescriptors.all(filter).value
+            allValues
           }
-          .value
-          .flatten
-          .toMap,
+        }.value),
       verificationResult := Def.taskDyn {
           val bpFile = blueprintFile.value
           val detectedStreamlets = allCloudflowStreamletDescriptors.value
@@ -108,39 +106,50 @@ object BlueprintVerificationPlugin extends AutoPlugin {
       },
       fork in Compile := true)
 
-  private def blueprintConf(base: File): File = base / "src" / "main" / "blueprint" / "blueprint.conf"
-
-  private def verifiedBlueprints(bpFile: sbt.File, detectedStreamlets: Map[String, Config])
-      : Def.Initialize[Task[Either[BlueprintVerificationFailed, BlueprintVerified]]] = Def.task {
-
-    val detectedStreamletDescriptors = detectedStreamlets.map {
-      case (_, configDescriptor) =>
-        configDescriptor
-          .root()
-          .render(ConfigRenderOptions.concise())
-          .parseJson
-          .addField("image", "placeholder")
-          .convertTo[cloudflow.blueprint.StreamletDescriptor]
+  private def composeExtractResults(results: Seq[ExtractResult]): ExtractResult =
+    results.foldLeft(ExtractResult()) { (acc, el) =>
+      acc.copy(descriptors = acc.descriptors ++ el.descriptors, problems = acc.problems ++ el.problems)
     }
 
-    val streamletDescriptors = detectedStreamletDescriptors
+  private def blueprintConf(base: File): File = base / "src" / "main" / "blueprint" / "blueprint.conf"
 
-    //TODO cleanup: separate into a 'BlueprintConfigFormat.parse'
-    bpFile.allPaths
-      .get()
-      .headOption
-      .map { bpFile =>
-        val blueprint = Blueprint.parseString(IO.read(bpFile), streamletDescriptors.toVector)
-        if (blueprint.problems.isEmpty) {
-          Right(BlueprintVerified(blueprint, bpFile))
-        } else {
-          Left(BlueprintRuleViolations(blueprint, bpFile))
+  private def verifiedBlueprints(
+      bpFile: sbt.File,
+      extractResult: ExtractResult): Def.Initialize[Task[Either[BlueprintVerificationFailed, BlueprintVerified]]] =
+    Def.task {
+      val streamletDescriptors = extractResult.descriptors.map {
+        case (_, configDescriptor) =>
+          configDescriptor
+            .root()
+            .render(ConfigRenderOptions.concise())
+            .parseJson
+            .addField("image", "placeholder")
+            .convertTo[cloudflow.blueprint.StreamletDescriptor]
+      }
+
+      bpFile.allPaths
+        .get()
+        .headOption
+        .map { bpFile =>
+          val blueprint = Blueprint
+            .parseString(IO.read(bpFile), streamletDescriptors.toVector)
+
+          val blueprintWithExtractProblems =
+            blueprint.copy(globalProblems = blueprint.globalProblems ++ extractResult.problems.map {
+                case extractProblem: cloudflow.extractor.ExtractProblem =>
+                  cloudflow.blueprint.ExtractProblem(extractProblem.message)
+              })
+          if (blueprintWithExtractProblems.problems.isEmpty) {
+            Right(BlueprintVerified(blueprintWithExtractProblems, bpFile))
+          } else {
+            Left(BlueprintRuleViolations(blueprintWithExtractProblems, bpFile))
+          }
         }
-      }
-      .getOrElse {
-        Left(BlueprintDoesNotExist(bpFile))
-      }
-  }
+        .getOrElse {
+          Left(BlueprintDoesNotExist(bpFile))
+        }
+
+    }
 
   private def writeVerifiedBlueprintFile(
       results: Either[BlueprintVerificationFailed, BlueprintVerified]): Def.Initialize[Task[Option[File]]] = Def.task {

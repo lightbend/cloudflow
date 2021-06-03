@@ -15,6 +15,7 @@
  */
 
 package cloudflow.sbt
+import scala.util.Try
 
 import sbt._
 import sbt.Keys._
@@ -90,9 +91,8 @@ object CloudflowBasePlugin extends AutoPlugin {
             log.info(imageRef.fullReference)
           }
 
+          val streamletDescriptors = streamletDescriptorsInProject.value.fold(e => throw e, identity)
           if (cloudflowDockerRegistry.value.isEmpty) Def.task {
-            val streamletDescriptors = streamletDescriptorsInProject.value
-
             val _ = docker.value
             val dockerImage = verifyDockerImage.value
 
@@ -111,7 +111,6 @@ object CloudflowBasePlugin extends AutoPlugin {
           }
           else
             Def.task {
-              val streamletDescriptors = streamletDescriptorsInProject.value
               val imageNameToDigest: Map[ImageName, ImageDigest] =
                 dockerBuildAndPush.value.map {
                   case (k, v) =>
