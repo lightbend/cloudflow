@@ -17,6 +17,8 @@ First, make sure that you have the following installed:
 * https://helm.sh/docs/intro/install/[Helm,window=_blank], {supported-helm-v}. We recommend version 3 to avoid dealing with tiller.
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl,window=_blank]
 
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well.
+
 == Download and install the Cloudflow CLI
 
 Install the Cloudflow CLI using the official installer:

@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The default build tool for Cloudflow applications is `sbt` but there is support for Maven builds as well.
+The default build tool for Cloudflow applications is `sbt` but there is support for using Maven to build as well.
 
 In the `examples` directory you can find some reference projects compiled with Maven. Folders are marked with a `mvn-` prefix.
 
