@@ -73,6 +73,8 @@ nfs                  cloudflow-nfs          29s
 standard (default)   kubernetes.io/gce-pd   2m57s
 ----
 
-NOTE:: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
+NOTE: The documented NFS storage class is very portable and has been verified to work on GKE, EKS, AKS and Openshift.
 
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well. If you are going to use Maven, make sure to have it
+https://maven.apache.org/[installed] as well.
 

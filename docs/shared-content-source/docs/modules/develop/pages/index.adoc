@@ -9,3 +9,8 @@ We start with concepts the apply across all Streamlet runtimes, such as xref:sch
 Then, in the xref:developing-streamlets.adoc[Developing Streamlets] section, you find detailed explanations about the development of Streamlets in each of the runtimes: xref:use-akka-streamlets.adoc[akka], xref:use-spark-streamlets.adoc[spark], and xref:use-flink-streamlets.adoc[flink]
 
 Once you have developed your first application, take it for a quick spin in your development machine, using the  xref:cloudflow-local-sandbox.adoc[local sandbox]
+
+
+
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:maven-support.adoc[Maven] to build as well.
+

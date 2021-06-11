@@ -62,6 +62,9 @@ Cloudflow dramatically accelerates your application development efforts, reducin
 
 ifdef::todo[TODO: add the following back in once the commercial versions are ready. Text might need editing.]
 
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well.
+
+
 // Lightbend's commercial version of Cloudflow, https://developer.lightbend.com/docs/cloudflow/current/index.html[Akka Data Pipelines], includes support along with https://developer.lightbend.com/docs/telemetry/current/home.html[Telemetry] and https://developer.lightbend.com/docs/cloudflow/current/console/index.html[Lightbend Console], which provide visibility into your running Cloudflow apps.
 
 // You can also use https://developer.lightbend.com/docs/cloudflow/current/gcp/index.html[Akka Data Pipelines on Google Cloud Platform]. 

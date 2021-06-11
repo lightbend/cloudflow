@@ -4,6 +4,9 @@ include::ROOT:partial$include.adoc[]
 
 NOTE: The sources for the example described below can be found in the application called
 https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
+
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well.
+
 Full sources for all Cloudflow example applications can be found in the
 https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
