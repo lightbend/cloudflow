@@ -83,7 +83,6 @@ class HttpServerSpec
       response.status mustEqual StatusCodes.Accepted
       response.entity.discardBytes()
       out.probe.expectMsg(("1", data))
-      out.probe.expectMsg(Completed)
     }
 
     "reject POST requests without an entity when using the default route" in {
@@ -102,7 +101,6 @@ class HttpServerSpec
       response.entity.discardBytes()
       response.status mustEqual StatusCodes.OK
       out.probe.expectMsg(("42", data))
-      out.probe.expectMsg(Completed)
 
       val badData = Data(1, "a")
       val badRequest = Put(s"http://127.0.0.1:$port", badData)
