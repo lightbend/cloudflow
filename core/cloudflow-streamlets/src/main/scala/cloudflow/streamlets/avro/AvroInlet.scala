@@ -16,10 +16,11 @@
 
 package cloudflow.streamlets.avro
 
-import cloudflow.streamlets._
+import java.util.Optional
+import scala.reflect.ClassTag
 import org.apache.avro.specific.SpecificRecordBase
 
-import scala.reflect.ClassTag
+import cloudflow.streamlets._
 import AvroUtil._
 
 case class AvroInlet[T <: SpecificRecordBase: ClassTag](
@@ -40,6 +41,18 @@ object AvroInlet {
   def create[T <: SpecificRecordBase](name: String, clazz: Class[T]): AvroInlet[T] =
     AvroInlet[T](name)(ClassTag.apply(clazz))
 
+  // Java API
   def create[T <: SpecificRecordBase](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): AvroInlet[T] =
     AvroInlet[T](name, hasUniqueGroupId)(ClassTag.apply(clazz))
+
+  // Java API
+  def create[T <: SpecificRecordBase](
+      name: String,
+      clazz: Class[T],
+      hasUniqueGroupId: Boolean,
+      errorHandler: (Array[Byte], Throwable) => Optional[T]): AvroInlet[T] =
+    AvroInlet[T](name, hasUniqueGroupId, (a, t) => {
+      val opt = errorHandler(a, t)
+      if (opt.isPresent) Some(opt.get()) else None
+    })(ClassTag.apply(clazz))
 }

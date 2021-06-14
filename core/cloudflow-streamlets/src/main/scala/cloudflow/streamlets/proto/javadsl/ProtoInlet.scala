@@ -15,7 +15,7 @@
  */
 
 package cloudflow.streamlets.proto.javadsl
-
+import java.util.Optional
 import cloudflow.streamlets._
 import com.google.protobuf.Descriptors.Descriptor
 import com.google.protobuf.{ GeneratedMessageV3, TextFormat }
@@ -39,10 +39,19 @@ final case class ProtoInlet[T <: GeneratedMessageV3](
 }
 
 object ProtoInlet {
-  // Java API
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoInlet[T] =
     ProtoInlet[T](name, clazz)
 
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): ProtoInlet[T] =
     ProtoInlet[T](name, clazz, hasUniqueGroupId)
+
+  def create[T <: GeneratedMessageV3](
+      name: String,
+      clazz: Class[T],
+      hasUniqueGroupId: Boolean,
+      errorHandler: (Array[Byte], Throwable) => Optional[T]): ProtoInlet[T] =
+    ProtoInlet[T](name, clazz, hasUniqueGroupId, (a, t) => {
+      val opt = errorHandler(a, t)
+      if (opt.isPresent) Some(opt.get()) else None
+    })
 }
