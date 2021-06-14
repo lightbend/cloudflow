@@ -174,7 +174,7 @@ private[testkit] case class TestContext(
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] =
     new WritableSinkRef[T] {
       lazy val sink = writeSink.contramap[(T, Committable)] {
-        case (t, c) => (t, Promise[T]().success(t), TestCommittableOffset())
+        case (t, c) => (t, Promise.successful(t), TestCommittableOffset())
       }
       val writeSink: Sink[(T, Promise[T], Committable), NotUsed] = {
         val flow = Flow[(T, Promise[T], Committable)]

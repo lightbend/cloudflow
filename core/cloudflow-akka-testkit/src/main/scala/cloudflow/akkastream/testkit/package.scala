@@ -39,7 +39,7 @@ package testkit {
     private[testkit] def sink: Sink[PartitionedValue[T], Future[Done]]
 
     private[testkit] def toPartitionedValue(element: T): PartitionedValue[T] = {
-      PartitionedValue(outlet.partitioner(element), element, Promise[T]().complete(Try(element)))
+      PartitionedValue(outlet.partitioner(element), element, Promise.successful(element))
     }
 
     private[testkit] def toPartitionedValue(element: T, promise: Promise[T]): PartitionedValue[T] =
