@@ -21,7 +21,7 @@ object Whitesource extends AutoPlugin {
     whitesourceAggregateProjectName := {
       "cloudflow-" + (
         if (isSnapshot.value)
-          if (gitCurrentBranch.contains("master")) "master"
+          if (gitCurrentBranch.contains("main")) "main"
           else "adhoc"
         else majorMinor((LocalRootProject / version).value).map(_ + "-stable").getOrElse("adhoc")
       )

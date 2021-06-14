@@ -1,9 +1,9 @@
 name: Build and Publish Docs
 on:
-  # Trigger the workflow on push only for the master branch
+  # Trigger the workflow on push only for the main branch
   push:
     branches:  
-      - master
+      - main
 jobs:
   build-docs:
     runs-on: ubuntu-latest

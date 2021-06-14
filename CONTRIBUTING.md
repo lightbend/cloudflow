@@ -14,7 +14,7 @@ We encourage changes that make it easier to achieve our goals in an efficient wa
 
 ## General workflow
 
-The steps below describe how to get a patch into a main development branch (e.g. `master`). 
+The steps below describe how to get a patch into a main development branch (e.g. `main`). 
 The steps are exactly the same for everyone involved in the project (be it core team, or first time contributor).
 
 1. To avoid duplicated effort, it might be good to check the [issue tracker](https://github.com/lightbend/cloudflow/issues) and [existing pull requests](https://github.com/lightbend/cloudflow/pulls) for existing work.
@@ -24,7 +24,7 @@ The steps are exactly the same for everyone involved in the project (be it core 
    - Please make sure to follow the general quality guidelines (specified below) when developing your patch.
    - Please write additional tests covering your feature and adjust existing ones if needed before submitting your pull request.
 1. Once your feature is complete, prepare the commit following our [Creating Commits And Writing Commit Messages](#creating-commits-and-writing-commit-messages). For example, a good commit message would be: `Adding compression support for Manifests #22222` (note the reference to the ticket it aimed to resolve).
-1. If it's a new feature, or a change of behavior, document it on the [cloudflow-docs](https://github.com/lightbend/cloudflow/tree/master/cloudflow-docs), remember, an undocumented feature is not a feature. If the feature was touching Scala or Java DSL, make sure to document both the Scala and Java APIs.
+1. If it's a new feature, or a change of behavior, document it on the [cloudflow-docs](https://github.com/lightbend/cloudflow/tree/main/cloudflow-docs), remember, an undocumented feature is not a feature. If the feature was touching Scala or Java DSL, make sure to document both the Scala and Java APIs.
 1. Now it's finally time to [submit the pull request](https://help.github.com/articles/using-pull-requests)!
     - Please make sure to include a reference to the issue you're solving *in the comment* for the Pull Request, this will cause the PR to be linked properly with the Issue. Examples of good phrases for this are: "Resolves #1234" or "Refs #1234".
 1. If you have not already done so, you will be asked by our CLA bot to [sign the Lightbend CLA](http://www.lightbend.com/contribute/cla) online. CLA stands for Contributor License Agreement and is a way of protecting intellectual property disputes from harming the project.
@@ -73,7 +73,7 @@ Some additional guidelines regarding source code are:
 - Do not use ``@author`` tags since it does not encourage [Collective Code Ownership](http://www.extremeprogramming.org/rules/collective.html).
   - Contributors , each project should make sure that the contributors gets the credit they deserve—in a text file or page on the project website and in the release notes etc.
 
-If these requirements are not met then the code should **not** be merged into master, or even reviewed - regardless of how good or important it is. No exceptions.
+If these requirements are not met then the code should **not** be merged into main, or even reviewed - regardless of how good or important it is. No exceptions.
 
 Whether or not a pull request (or parts of it) shall be back- or forward-ported will be discussed on the pull request discussion page, it shall therefore not be part of the commit messages. If desired the intent can be expressed in the pull request description.
 

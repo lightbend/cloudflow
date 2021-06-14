@@ -18,7 +18,7 @@ An example of a blueprint is shown below:
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/blueprint/blueprint.conf[tag=all]
 ----
 
-NOTE: Blueprint files are specified in the https://github.com/lightbend/config/blob/master/HOCON.md[HOCON,window=_blank] format, a superset of JSON.
+NOTE: Blueprint files are specified in the https://github.com/lightbend/config/blob/main/HOCON.md[HOCON,window=_blank] format, a superset of JSON.
 
 The above example shows four streamlets, `sensor-data`, `metrics`, `validation`, and `reporter`.
 The `streamlets` section declares the streamlets used in the application and gives them a short name.

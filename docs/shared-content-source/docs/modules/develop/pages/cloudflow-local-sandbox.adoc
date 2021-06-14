@@ -41,7 +41,7 @@ $sbt
 
 The Sandbox runs the application in the background and provides a summary of the application characteristics, ports (if any), mount-volumes (if any), and the set of files where we can inspect the output of the different streamlets.
 
-In the example below, we see the summary output of `call-record-aggregator`, one of the Cloudflow examples available at https://github.com/lightbend/cloudflow/blob/master/examples/call-record-aggregator/[examples/call-record-aggregator]:
+In the example below, we see the summary output of `call-record-aggregator`, one of the Cloudflow examples available at https://github.com/lightbend/cloudflow/blob/main/examples/call-record-aggregator/[examples/call-record-aggregator]:
 
 [source,bash]
 ----

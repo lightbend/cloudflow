@@ -1,6 +1,6 @@
 [![Join the chat at https://cloudflow.zulipchat.com/](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://cloudflow.zulipchat.com/)
 &nbsp;
-![Build status](https://github.com/lightbend/cloudflow/workflows/Build%20and%20Test/badge.svg?branch=master)
+![Build status](https://github.com/lightbend/cloudflow/workflows/Build%20and%20Test/badge.svg?branch=main)
 
 <p>
 <img src="logo.svg" width="300">

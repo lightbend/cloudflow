@@ -1,10 +1,10 @@
 on:
   # Trigger the workflow on push or pull request,
-  # push only for the master branch
+  # push only for the main branch
   # PR for all branches
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 
