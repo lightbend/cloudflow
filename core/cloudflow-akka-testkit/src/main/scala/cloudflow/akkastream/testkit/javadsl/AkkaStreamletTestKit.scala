@@ -36,7 +36,7 @@ object AkkaStreamletTestKit {
 }
 
 /**
- * Java testkit for testing akkastreams streamlets.
+ * Java testkit for testing akka streamlets.
  *
  * API:
  *
