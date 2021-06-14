@@ -34,7 +34,7 @@ In general, the versions produced by our documentation process follow the curren
 .Versions: Names x Branch
 |===
 |git branch | name in URL | name in docs   |
-| master    | dev         | x.y.z-SNAPSHOT |
+| main    | dev         | x.y.z-SNAPSHOT |
 | x.y.z-docs for the most recent x.y.z release | current | x.y.z |
 | x.y.z-docs for older releases | x.y.z | x.y.z |
 |=== 
@@ -74,21 +74,21 @@ NOTE: All internal versions should already match this version.
 ==== Adding the new branch to the Antora build list
 
 At this point, we should have a new `x.y.z-docs` branch that corresponds to `current` and an updated `x.w.v` branch with the renamed `current` version to its explicit `x.w.v` version.
-At this point, in the `master` branch, we must add the new branch to the Antora `site.yaml` which informs the branches used when building and publishing the documentation.
+At this point, in the `main` branch, we must add the new branch to the Antora `site.yaml` which informs the branches used when building and publishing the documentation.
 
 In `docs/docs-source/site.yml`, find the line that list the branches included in the build. 
 It looks like this:
 ```
- branches: [master, vx.w.v-docs]  # versioned content - add branches here
+ branches: [main, vx.w.v-docs]  # versioned content - add branches here
 ```
 Then follow the advice in the comment and add the new `vx.y.z-docs` branch to the list :-)
 
 The updated version would look like:
 
 ```
- branches: [master, vx.y.z-docs, vx.w.v-docs]  # versioned content - add branches here
+ branches: [main, vx.y.z-docs, vx.w.v-docs]  # versioned content - add branches here
 ```
-After merging this update to `master`, the CI script will pick up the new branch, generate the corresponding docs, and publish it to the external site. 
+After merging this update to `main`, the CI script will pick up the new branch, generate the corresponding docs, and publish it to the external site. 
 
 
 == Building the guide locally

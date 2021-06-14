@@ -17,10 +17,10 @@ During the build process, the Cloudflow plugin system processes the schemas.
 For each of these schema files, Cloudflow will generate Scala case classes that can be directly used from within the application.
 
 NOTE: Full sources for all Cloudflow example applications can be found in the
-https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
+https://github.com/lightbend/cloudflow/tree/main/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
 The sources for the example described below can be found in the application called
-https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
+https://github.com/lightbend/cloudflow/tree/main/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
 
 
 == Creating the schema files

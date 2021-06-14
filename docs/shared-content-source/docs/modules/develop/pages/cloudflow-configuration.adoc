@@ -29,7 +29,7 @@ Using this model, you can configure the following settings:
     - Kubernetes pod and container configuration
     - Streamlet Configuration Parameters for a particular instance
 
-Cloudflow uses https://github.com/lightbend/config/blob/master/HOCON.md[HOCON] as the syntax to specify the configuration.
+Cloudflow uses https://github.com/lightbend/config/blob/main/HOCON.md[HOCON] as the syntax to specify the configuration.
 Using HOCON, the scopes are defined using a hierarchical structure for the configuration keys.
 
 === Streamlet Config Params

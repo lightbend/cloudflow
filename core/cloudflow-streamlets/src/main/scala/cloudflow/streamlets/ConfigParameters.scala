@@ -267,7 +267,7 @@ final case class RegExpConfigParameter(
 }
 
 /**
- * Describes a time duration as defined by [[https://github.com/lightbend/config/blob/master/HOCON.md#duration-format]]
+ * Describes a time duration as defined by [[https://github.com/lightbend/config/blob/main/HOCON.md#duration-format]]
  *
  * The following units can be used with [[DurationConfigParameter]]
  *
@@ -310,7 +310,7 @@ case class DurationConfigParameter(val key: String, description: String = "", de
 }
 
 /**
- * Describes a memory quantity as defined by [[https://github.com/lightbend/config/blob/master/HOCON.md#size-in-bytes-format]]
+ * Describes a memory quantity as defined by [[https://github.com/lightbend/config/blob/main/HOCON.md#size-in-bytes-format]]
  *
  * The following units can be used with [[MemorySizeConfigParameter]]
  *
