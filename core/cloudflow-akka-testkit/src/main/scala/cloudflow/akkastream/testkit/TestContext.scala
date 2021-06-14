@@ -173,29 +173,48 @@ private[testkit] case class TestContext(
   }
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] =
     new WritableSinkRef[T] {
-      def sink = {
-        val flow = Flow[(T, Committable)]
+      lazy val sink = writeSink.contramap[(T, Committable)] {
+        case (t, c) => (t, Promise[T]().success(t), TestCommittableOffset())
+      }
+      val writeSink: Sink[(T, Promise[T], Committable), NotUsed] = {
+        val flow = Flow[(T, Promise[T], Committable)]
         outletTaps
           .find(_.portName == outlet.name)
           .map { tap =>
             val outletTap = tap.asInstanceOf[OutletTap[T]]
             flow
-              .map { case (t, _) => outletTap.toPartitionedValue(t) }
+              .map { case (t, p, _) => outletTap.toPartitionedValue(t, p) }
               .via(killSwitch.flow)
               .mapError {
                 case cause: Throwable =>
                   execution.complete(Failure(cause))
                   cause
               }
-              .to(outletTap.sink)
+              .via(outletTap.flow)
+              .map { pv =>
+                pv.promise.trySuccess(pv.getValue)
+                pv
+              }
+              .to(Sink.ignore)
           }
           .getOrElse(
             throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
       }
 
+      val valueSink: Sink[(T, Promise[T]), NotUsed] = writeSink.contramap[(T, Promise[T])] {
+        case (t, p) => (t, p, TestCommittableOffset())
+      }
+
+      val runnableGraph: RunnableGraph[Sink[(T, Promise[T]), NotUsed]] =
+        MergeHub.source[(T, Promise[T])].to(valueSink)
+      val hubSink = runnableGraph.run()
+      implicit val ec = system.dispatcher
       def write(value: T): Future[T] = {
-        Source.single(value).runWith(sink.contramap[T](t => (t, TestCommittableOffset())))
-        Future.successful(value)
+        val p = Promise[T]
+        Source
+          .single((value, p))
+          .runWith(hubSink)
+        p.future
       }
     }
 
