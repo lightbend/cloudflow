@@ -31,25 +31,28 @@ case class Failed(e: Throwable)
 
 case class SinkOutletTap[T](outlet: CodecOutlet[T], val snk: akka.stream.javadsl.Sink[Pair[String, T], NotUsed])
     extends OutletTap[T] {
-  private[testkit] val sink: Sink[PartitionedValue[T], Future[Done]] =
+  private[testkit] val flow: Flow[PartitionedValue[T], PartitionedValue[T], NotUsed] =
     Flow[PartitionedValue[T]]
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => Pair(pv.key, pv.value))
           .to(snk))
-      .toMat(Sink.ignore)(Keep.right)
+
+  private[testkit] val sink: Sink[PartitionedValue[T], Future[Done]] =
+    flow.toMat(Sink.ignore)(Keep.right)
 }
 
 case class ProbeOutletTap[T](outlet: CodecOutlet[T])(implicit system: ActorSystem) extends OutletTap[T] {
   val probe = new JTestKit(system)
-
-  // This will emit akka.japi.Pair elements to the test actor (partitioning key -> data)
-  // for easy usage in Java-based tests
-  private[cloudflow] val sink: Sink[PartitionedValue[T], Future[Done]] =
+  private[testkit] val flow: Flow[PartitionedValue[T], PartitionedValue[T], NotUsed] =
     Flow[PartitionedValue[T]]
       .alsoTo(
         Flow[PartitionedValue[T]]
           .map(pv => Pair(pv.key, pv.value))
           .to(Sink.actorRef[Pair[String, T]](probe.getTestActor, Completed, Failed)))
-      .toMat(Sink.ignore)(Keep.right)
+
+  // This will emit akka.japi.Pair elements to the test actor (partitioning key -> data)
+  // for easy usage in Java-based tests
+  private[cloudflow] val sink: Sink[PartitionedValue[T], Future[Done]] =
+    flow.toMat(Sink.ignore)(Keep.right)
 }

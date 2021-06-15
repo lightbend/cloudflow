@@ -295,32 +295,33 @@ lazy val cloudflowStreamlets =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true)
 
-lazy val cloudflowAkkastream =
+lazy val cloudflowAkka =
   Project(id = "cloudflow-akka", base = file("cloudflow-akka"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
     .dependsOn(cloudflowStreamlets)
-    .settings(Dependencies.cloudflowAkkastream)
+    .settings(Dependencies.cloudflowAkka)
     .settings(
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       javacOptions += "-Xlint:deprecation",
       scalafmtOnCompile := true)
 
-lazy val cloudflowAkkastreamTestkit =
+lazy val cloudflowAkkaTestkit =
   Project(id = "cloudflow-akka-testkit", base = file("cloudflow-akka-testkit"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowAkkastream)
-    .settings(Dependencies.cloudflowAkkastreamTestkit)
+    .dependsOn(cloudflowAkka)
+    .settings(Dependencies.cloudflowAkkaTestkit)
     .settings(
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
-      javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"))
+      javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"),
+      (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue)
 
-lazy val cloudflowAkkastreamUtil =
+lazy val cloudflowAkkaUtil =
   Project(id = "cloudflow-akka-util", base = file("cloudflow-akka-util"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
+    .dependsOn(cloudflowAkka, (cloudflowAkkaTestkit % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaUtil)
     .settings(
       scalaVersion := Dependencies.Scala212,
@@ -329,11 +330,11 @@ lazy val cloudflowAkkastreamUtil =
       javacOptions += "-Xlint:deprecation",
       (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
 
-lazy val cloudflowAkkastreamTests =
+lazy val cloudflowAkkaTests =
   Project(id = "cloudflow-akka-tests", base = file("cloudflow-akka-tests"))
     .enablePlugins(JavaFormatterPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowAkkastream, (cloudflowAkkastreamTestkit % "test->test").classpathDependency)
-    .settings(Dependencies.cloudflowAkkastreamTests)
+    .dependsOn(cloudflowAkka, (cloudflowAkkaTestkit % "test->test").classpathDependency)
+    .settings(Dependencies.cloudflowAkkaTests)
     .settings(
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
@@ -495,9 +496,9 @@ lazy val root = Project(id = "root", base = file("."))
     },
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
         cloudflowStreamlets,
-        cloudflowAkkastream,
-        cloudflowAkkastreamUtil,
-        cloudflowAkkastreamTestkit,
+        cloudflowAkka,
+        cloudflowAkkaUtil,
+        cloudflowAkkaTestkit,
         cloudflowSpark,
         cloudflowSparkTestkit),
     JavaUnidoc / unidoc / unidocProjectFilter := (ScalaUnidoc / unidoc / unidocProjectFilter).value)
@@ -514,10 +515,10 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowSbtPlugin,
     cloudflowRunnerConfig,
     cloudflowStreamlets,
-    cloudflowAkkastream,
-    cloudflowAkkastreamTestkit,
-    cloudflowAkkastreamUtil,
-    cloudflowAkkastreamTests,
+    cloudflowAkka,
+    cloudflowAkkaTestkit,
+    cloudflowAkkaUtil,
+    cloudflowAkkaTests,
     cloudflowFlink,
     cloudflowFlinkTestkit,
     cloudflowFlinkTests,

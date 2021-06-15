@@ -34,7 +34,7 @@ object Dependencies {
     val log4jOverSlf4j = "org.slf4j" % "log4j-over-slf4j" % "1.7.30"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest
-
+    val scalatestMustMatchers = "org.scalatest" %% "scalatest-mustmatchers" % Versions.scalaTest
     // These two dependencies are required to be present at runtime by fabric8, specifically its pod file read methods.
     // Reference:
     // https://github.com/fabric8io/kubernetes-client/blob/0c4513ff30ac9229426f1481a46fde2eb54933d9/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/internal/core/v1/PodOperationsImpl.java#L451
@@ -208,7 +208,7 @@ object Dependencies {
         Compile.ficus,
         Compile.scalatest % Test)
 
-  val cloudflowAkkastream =
+  val cloudflowAkka =
     libraryDependencies ++= Seq(
         Compile.akkaActor,
         Compile.akkaStream,
@@ -228,7 +228,7 @@ object Dependencies {
         Compile.sprayJson,
         Compile.ficus)
 
-  val cloudflowAkkastreamTestkit =
+  val cloudflowAkkaTestkit =
     libraryDependencies ++= Seq(
         Compile.akkaSlf4j,
         Compile.akkaStream,
@@ -238,6 +238,8 @@ object Dependencies {
         Compile.akkaStreamTestkit,
         Compile.akkaTestkit,
         Compile.scalatest,
+        Compile.scalatestMustMatchers % "test",
+        Compile.scalatest % Test,
         TestDeps.scalatestJunit)
 
   val cloudflowAkkaUtil =
@@ -252,7 +254,7 @@ object Dependencies {
         Compile.scalatest % Test,
         TestDeps.scalatestJunit)
 
-  val cloudflowAkkastreamTests =
+  val cloudflowAkkaTests =
     libraryDependencies ++= Vector(
         TestDeps.akkaHttpTestkit,
         Compile.akkaHttpSprayJson % Test,
