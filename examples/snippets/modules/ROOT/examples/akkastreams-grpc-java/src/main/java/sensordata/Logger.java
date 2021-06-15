@@ -15,7 +15,10 @@ public class Logger extends AkkaStreamlet {
             "in",
             SensorData.class,
             true,
-            (inBytes, throwable) -> null
+            (inBytes, throwable) -> {
+                context().system().log().error(String.format("an exception occurred on inlet: %s -> (hex string) %x", throwable.getMessage(), inBytes));
+                return null; // skip the element
+            });
     );
 
     @Override
