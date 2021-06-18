@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage
 import java.util.{ List => JList }
 
 import akka.annotation.ApiMayChange
-import akka.japi.Function
+import akka.japi.function.Function
 import akka.grpc.javadsl.ServiceHandler
 import akka.http.javadsl.model.{ HttpRequest, HttpResponse }
 import akka.http.javadsl.model.StatusCodes.OK
