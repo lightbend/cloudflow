@@ -37,22 +37,6 @@ lazy val step2 = appModule("step2")
       Test / fork := true
     )
 
-// [info] * org.scala-lang:scala-library:2.12.11
-// [info] * org.apache.avro:avro:1.8.2
-// [info] * com.google.protobuf:protobuf-java:3.11.4
-// [info] * com.lightbend.akka.grpc:akka-grpc-runtime_2.12:1.0.2
-// [info] * com.lightbend.akka.grpc:akka-grpc-runtime_2.12:1.0.2
-// [info] * io.grpc:grpc-stub:1.32.1
-// [info] * com.lightbend.akka.grpc:akka-grpc-runtime_2.12:1.0.2
-// [info] * com.twitter:bijection-avro_2.12:0.9.7
-// [info] * org.apache.avro:avro:1.8.2
-// [info] * com.lightbend.cloudflow:cloudflow-runner_2.12:2.1.2
-// [info] * com.lightbend.cloudflow:cloudflow-localrunner_2.12:2.1.2
-// [info] * com.lightbend.cloudflow:cloudflow-flink_2.12:2.1.2
-// [info] * com.lightbend.cloudflow:cloudflow-flink-testkit_2.12:2.1.2:test
-// [info] * org.scalatest:scalatest:3.0.8:test
-// [info] * junit:junit:4.12:test
-
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowFlinkPlugin)
     .settings(
