@@ -77,3 +77,47 @@ mvn archetype:generate -DarchetypeGroupId=com.lightbend.cloudflow \
   -DartifactId=<appId> \
   -Dversion=<version>
 ----
+
+== Configuration
+
+The Maven plugin exposes some configuration keys that can be used to tweak the behavior.
+You can apply those by adding a `configuration` section such as:
+
+[source,xml,subs="+quotes"]
+----
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.lightbend.cloudflow</groupId>
+            <artifactId>cloudflow-maven-plugin</artifactId>
+            <version>${cloudflow.plugin.version}</version>
+            *<configuration>
+              ...
+            </configuration>*
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+----
+
+The available configurations for the goal `cloudflow:run-local` are:
+
+[cols="1,1,5"]
+|===
+|localConfig
+|String
+|Specify an alternative configuration file to be used in `run-local`
+
+|log4jConfigFile
+|String
+|Specify an alternative log4j configuration file to be used in `run-local`
+
+|baseDebugPort
+|Int
+|The initial port to be used for exposing JMX debugging
+
+|remoteDebug
+|Boolean
+|Enable JMX debugging during `run-local`
+|===
