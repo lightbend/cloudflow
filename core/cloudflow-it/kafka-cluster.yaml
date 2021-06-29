@@ -34,7 +34,7 @@ spec:
       deleteClaim: false
       size: 1Gi
       type: persistent-claim
-    version: 2.6.2
+    version: 2.7.1
   zookeeper:
     livenessProbe:
       initialDelaySeconds: 15
