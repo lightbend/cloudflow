@@ -7,9 +7,9 @@ object Dependencies {
   val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
-    val akka = "2.6.13"
+    val akka = "2.6.15"
     val akkaHttp = "10.2.4"
-    val akkaGrpc = "1.0.2"
+    val akkaGrpc = "2.0.0"
     val alpakkaKafka = "2.0.5"
     val akkaMgmt = "1.0.8"
     val flink = "1.10.3"
