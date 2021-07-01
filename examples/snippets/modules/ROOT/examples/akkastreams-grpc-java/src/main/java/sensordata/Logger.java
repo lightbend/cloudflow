@@ -5,16 +5,18 @@ import akka.stream.javadsl.RunnableGraph;
 import cloudflow.akkastream.AkkaStreamlet;
 import cloudflow.akkastream.AkkaStreamletLogic;
 import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
+import cloudflow.streamlets.CodecInlet;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.proto.javadsl.ProtoInlet;
 
 import sensordata.grpc.SensorData;
 
 public class Logger extends AkkaStreamlet {
-    private final ProtoInlet<SensorData> inlet = new ProtoInlet<SensorData>(
+    private final ProtoInlet<SensorData> inlet = new ProtoInlet<>(
             "in",
             SensorData.class,
-            true
+            true,
+            CodecInlet::logAndSkip
     );
 
     @Override

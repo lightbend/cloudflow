@@ -51,7 +51,7 @@ class CallRecordSplitSpec extends AnyWordSpec with Matchers with ScalaFutures wi
 
       val source = Source(Vector(cr1, cr2, cr3))
 
-      val in   = testkit.inletFromSource(streamlet.in, source)
+      val in    = testkit.inletFromSource(streamlet.in, source)
       val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 

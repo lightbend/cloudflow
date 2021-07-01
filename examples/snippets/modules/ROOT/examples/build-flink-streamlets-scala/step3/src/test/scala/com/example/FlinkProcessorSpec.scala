@@ -11,15 +11,12 @@ import org.scalatest._
 
 //tag::test[]
 // 1. Extend from the abstract class FlinkTestkit
-class FlinkProcessorSpec extends FlinkTestkit 
-  with WordSpecLike 
-  with Matchers 
-  with BeforeAndAfterAll {
+class FlinkProcessorSpec extends FlinkTestkit with WordSpecLike with Matchers with BeforeAndAfterAll {
 
   "FlinkProcessor" should {
     "process streaming data" in {
       @transient lazy val env = StreamExecutionEnvironment.getExecutionEnvironment
-      
+
       // 2. Create the FlinkStreamlet to test
       val processor = new FlinkProcessor
 
@@ -27,9 +24,7 @@ class FlinkProcessorSpec extends FlinkTestkit
       val data = (1 to 10).map(i ⇒ new Data(i, s"name$i"))
 
       // 4. Setup inlet taps that tap the inlet ports of the streamlet
-      val in: FlinkInletTap[Data] = inletAsTap[Data](
-        processor.in,
-        env.addSource(FlinkSource.CollectionSourceFunction(data)))
+      val in: FlinkInletTap[Data] = inletAsTap[Data](processor.in, env.addSource(FlinkSource.CollectionSourceFunction(data)))
 
       // 5. Setup outlet taps for outlet ports
       val out: FlinkOutletTap[Data] = outletAsTap[Data](processor.out)
