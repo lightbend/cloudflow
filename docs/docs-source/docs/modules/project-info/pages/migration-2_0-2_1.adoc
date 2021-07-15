@@ -4,9 +4,9 @@ include::ROOT:partial$include.adoc[]
 
 The most notable new feature in version 2.1.x is the native Flink and Spark integration support. 
 
-Migrating from 2.0.x to 2.1.x, it is required to update the Cloudflow operator, update the `kubectl-cloudflow` plugin, update the `sbt-cloudflow` plugin and rebuild your application.
+When migrating from 2.0.x to 2.1.x, it is required to update the Cloudflow operator, update the `kubectl-cloudflow` plugin, update the `sbt-cloudflow` plugin and rebuild your application.
 
-If you want to take advantage of the native integration feature, you will need to take the following steps:
+To take advantage of the native integration feature, you will need to take the following steps:
 
 - Undeploy the existing application from your cluster with `kubectl cloudflow undeploy`
 - Update the cloudflow operator to 2.1.x using the helm chart, as described in xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow] 
@@ -25,4 +25,4 @@ helm uninstall --namespace cloudflow flink-operator
 helm uninstall --namespace cloudflow spark-operator
 ----
 
-Note: From version 2.0.20 and onward, Docker images are built on top of the standard `adoptopenjdk/openjdk8` image. Runtime specific base images usage has been deprecated (e.g. `cloudflowFlinkBaseImage`), if you are still using those, and need to customize the image, simply add additional instructions to `extraDockerInstructions`. Please note that, from version 2.0.20 and up, Cloudflow ships with a new kubectl-cloudflow plugin. From the utilization perspective, nothing changes, apart from the need for an = sign in between the streamlet name and the number of replicas in the `scale` subcommand.
+Note: From version 2.0.20 and onward, Docker images will be built on top of the standard `adoptopenjdk/openjdk8` image. Runtime specific base images usage has been deprecated (for example, `cloudflowFlinkBaseImage`). If you are still using this type of image, and need to customize the image, simply add additional instructions to `extraDockerInstructions`. Please note that, from version 2.0.20 and up, Cloudflow ships with a new kubectl-cloudflow plugin. From the utilization perspective, nothing changes, apart from the need for an = sign in between the streamlet name and the number of replicas in the `scale` subcommand.
