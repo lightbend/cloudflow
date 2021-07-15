@@ -59,6 +59,7 @@ include::partial$include.adoc[]
 
 * xref:project-info:index.adoc[Release notes and upgrading]
 ** xref:project-info:migration-1_3-2_0.adoc[Migration Guide 1.3.x to 2.0.x]
+** xref:project-info:migration-2_0-2_1.adoc[Migration Guide 2.0.x to 2.1.x]
 ** xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow]
 
 * xref:api:index.adoc[Streamlet API Reference]
