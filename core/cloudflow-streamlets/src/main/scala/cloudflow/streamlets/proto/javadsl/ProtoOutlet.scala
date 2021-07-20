@@ -34,3 +34,12 @@ final case class ProtoOutlet[T <: GeneratedMessageV3](name: String, partitioner:
    */
   override def withPartitioner(partitioner: T => String): ProtoOutlet[T] = copy(partitioner = partitioner)
 }
+
+object ProtoOutlet {
+
+  def create[T <: GeneratedMessageV3](name: String, partitioner: T => String, clazz: Class[T]): ProtoOutlet[T] =
+    ProtoOutlet[T](name, partitioner, clazz)
+
+  def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoOutlet[T] =
+    ProtoOutlet[T](name, RoundRobinPartitioner, clazz)
+}
