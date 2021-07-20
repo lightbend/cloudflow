@@ -8,14 +8,16 @@ import cloudflow.akkastream.javadsl.RunnableGraphStreamletLogic;
 import cloudflow.streamlets.StreamletShape;
 import cloudflow.streamlets.proto.javadsl.ProtoInlet;
 
+import scala.Option;
 import sensordata.grpc.SensorData;
 
 public class Logger extends AkkaStreamlet {
-    private final ProtoInlet<SensorData> inlet = new ProtoInlet<SensorData>(
-            "in",
-            SensorData.class,
-            true
-    );
+    private final ProtoInlet<SensorData> inlet = (ProtoInlet<SensorData>) ProtoInlet.create("in", SensorData.class)
+            .withErrorHandler((inBytes, throwable) -> {
+                        context().system().log().error(String.format("an exception occurred on inlet: %s -> (hex string) %h", throwable.getMessage(), inBytes));
+                        return Option.apply(null); // skip the element
+                    }
+            );    
 
     @Override
     public StreamletShape shape() {

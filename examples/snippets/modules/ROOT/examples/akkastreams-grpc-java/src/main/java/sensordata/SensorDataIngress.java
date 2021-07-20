@@ -21,6 +21,7 @@ import sensordata.grpc.SensorDataServiceHandlerFactory;
 
 //end::logic[]
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
@@ -40,9 +41,9 @@ public class SensorDataIngress extends AkkaServerStreamlet {
     public AkkaStreamletLogic createLogic() {
         return new GrpcServerLogic(this, getContext()) {
             public List<Function<HttpRequest, CompletionStage<HttpResponse>>> handlers() {
-                return List.of(
+                return Arrays.asList(
                         SensorDataServiceHandlerFactory.partial(new SensorDataServiceImpl(sinkRef(out)), SensorDataService.name, system()),
-                        ServerReflection.create(List.of(SensorDataService.description), system()));
+                        ServerReflection.create(Arrays.asList(SensorDataService.description), system()));
             }
         };
     }
