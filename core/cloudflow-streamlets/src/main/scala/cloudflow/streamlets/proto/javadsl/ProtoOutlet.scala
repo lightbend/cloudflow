@@ -37,9 +37,21 @@ final case class ProtoOutlet[T <: GeneratedMessageV3](name: String, partitioner:
 
 object ProtoOutlet {
 
+  /**
+   * Creates a ProtoOutlet.
+   * @param name The name of the outlet
+   * @param partitioner The partitioner function for the outlet. The String result of the partitioner is used as a key for partitioning.
+   * @param clazz The type of message that can be produced to this outlet
+   */
   def create[T <: GeneratedMessageV3](name: String, partitioner: T => String, clazz: Class[T]): ProtoOutlet[T] =
     ProtoOutlet[T](name, partitioner, clazz)
 
+  /**
+   * Creates a ProtoOutlet. 
+   * Messages produced to the outlet are distributed in round-robin fashion to topic partitions.
+   * @param name The name of the outlet
+   * @param clazz The type of message that can be produced to this outlet
+   */
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoOutlet[T] =
     ProtoOutlet[T](name, RoundRobinPartitioner, clazz)
 }

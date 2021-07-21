@@ -42,8 +42,8 @@ object ProtoInlet {
 
   /**
    * Creates a ProtoInlet.
-   * @param name the name of the inlet
-   * @param clazz the type of message that can be consumed from this inlet
+   * @param name The name of the inlet
+   * @param clazz The type of message that can be consumed from this inlet
    */
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoInlet[T] =
     ProtoInlet[T](name, clazz)
