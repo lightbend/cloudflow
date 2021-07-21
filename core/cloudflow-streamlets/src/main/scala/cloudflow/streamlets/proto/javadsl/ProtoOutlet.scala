@@ -47,7 +47,7 @@ object ProtoOutlet {
     ProtoOutlet[T](name, partitioner, clazz)
 
   /**
-   * Creates a ProtoOutlet. 
+   * Creates a ProtoOutlet.
    * Messages produced to the outlet are distributed in round-robin fashion to topic partitions.
    * @param name The name of the outlet
    * @param clazz The type of message that can be produced to this outlet
