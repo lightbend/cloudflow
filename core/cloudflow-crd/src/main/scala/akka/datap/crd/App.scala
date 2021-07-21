@@ -230,9 +230,9 @@ object App {
       @JsonProperty("name")
       name: String,
       @JsonProperty("port_mappings")
-      portMappings: Map[String, PortMapping],
+      portMappings: Map[String, PortMapping] = Map(),
       @JsonProperty("volume_mounts")
-      volumeMounts: immutable.Seq[VolumeMountDescriptor],
+      volumeMounts: immutable.Seq[VolumeMountDescriptor] = Seq(),
       @JsonProperty("runtime")
       runtime: String,
       @JsonProperty("streamlet_name")

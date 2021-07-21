@@ -23,7 +23,7 @@ trait WithUpdateVolumeMounts {
             case (streamletVolumeNamePath, pvcName) =>
               if (!existingPvcs.contains(pvcName)) {
                 throw new CliException(
-                  s"Cannot find persistent volume claim $pvcName specified via --volume-mount argument.")
+                  s"Cannot find persistent volume claim '$pvcName' specified via --volume-mount argument.")
               }
               // volumeMounts Map is "<streamlet-name>.<volume-mount-name>" -> pvc-name
               val parts = streamletVolumeNamePath.split("\\.").toList
@@ -36,13 +36,14 @@ trait WithUpdateVolumeMounts {
               if (crApp.spec.deployments.find(_.streamletName == streamletName).isEmpty) {
                 throw new CliException(s"Cannot find streamlet '$streamletName' in --volume-mount argument")
               }
+
               if (crApp.spec.deployments
                     .filter(_.streamletName == streamletName)
                     .flatMap(_.volumeMounts)
                     .find(_.name == volumeMountName)
                     .isEmpty) {
                 throw new CliException(
-                  s"Cannot find volume mount name $volumeMountName for streamlet '$streamletName' in --volume-mount argument")
+                  s"Cannot find volume mount name '$volumeMountName' for streamlet '$streamletName' in --volume-mount argument")
               }
               (streamletName, volumeMountName) -> pvcName
           }.toMap
