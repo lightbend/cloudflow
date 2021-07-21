@@ -230,9 +230,9 @@ object App {
       @JsonProperty("name")
       name: String,
       @JsonProperty("port_mappings")
-      portMappings: Map[String, PortMapping],
+      portMappings: Map[String, PortMapping] = Map(),
       @JsonProperty("volume_mounts")
-      volumeMounts: immutable.Seq[VolumeMountDescriptor],
+      volumeMounts: immutable.Seq[VolumeMountDescriptor] = immutable.Seq(),
       @JsonProperty("runtime")
       runtime: String,
       @JsonProperty("streamlet_name")
@@ -314,6 +314,7 @@ object App {
       appStatus: String,
       @JsonProperty("app_message")
       appMessage: String,
+      // FIXME not updated anymore, remove in a next CRD version.
       @JsonProperty("endpoint_statuses")
       endpointStatuses: immutable.Seq[EndpointStatus],
       @JsonProperty("streamlet_statuses")

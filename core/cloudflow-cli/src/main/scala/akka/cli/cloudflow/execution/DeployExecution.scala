@@ -24,6 +24,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     extends Execution[DeployResult]
     with WithProtocolVersion
     with WithUpdateReplicas
+    with WithUpdateVolumeMounts
     with WithConfiguration {
   import DeployExecution._
 
@@ -105,7 +106,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       .flatten
 
     if (!res.isEmpty) {
-      val ex: Throwable = res.map(_._2).flatten.headOption.getOrElse(null)
+      val ex: Throwable = res.flatMap(_._2).headOption.getOrElse(null)
       Failure(CliException(res.map(_._1).mkString("\n"), ex))
     } else {
       Success(())
@@ -113,7 +114,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
   }
 
   private def referencedKafkaSecretExists(appCr: App.Cr, kafkaClusters: () => Try[List[String]]): Try[Unit] = {
-    val expectedClusters = appCr.spec.deployments.map(_.portMappings.values.map(_.cluster)).flatten.flatten.distinct
+    val expectedClusters = appCr.spec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
 
     if (expectedClusters.nonEmpty) {
       (for {
@@ -160,7 +161,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId)
       clusterReplicas = getStreamletsReplicas(currentAppCr)
       clusterApplicationCr <- updateReplicas(localApplicationCr, clusterReplicas)
-      applicationCr <- updateReplicas(clusterApplicationCr, d.scales)
+      applicationCrReplicas <- updateReplicas(clusterApplicationCr, d.scales)
+      applicationCr <- updateVolumeMounts(
+        applicationCrReplicas,
+        d.volumeMounts,
+        () => client.getPvcs(namespace = applicationCrReplicas.spec.appId))
 
       image <- getImageReference(applicationCr)
 

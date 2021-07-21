@@ -99,7 +99,7 @@ trait WithConfiguration {
 
   private def validateTopicIds(crApp: App.Cr, cloudflowConfig: CloudflowConfig.CloudflowRoot): Try[Unit] = {
     val configTopics = cloudflowConfig.cloudflow.topics.keys.toSeq.distinct
-    val crTopics = crApp.spec.deployments.map(_.portMappings.values.map(_.id)).flatten.distinct
+    val crTopics = crApp.spec.deployments.flatMap(_.portMappings.values.map(_.id)).distinct
 
     configTopics.diff(crTopics) match {
       case Nil => Success(())
