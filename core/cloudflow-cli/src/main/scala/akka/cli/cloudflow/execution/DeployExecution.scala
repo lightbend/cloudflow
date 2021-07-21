@@ -24,6 +24,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     extends Execution[DeployResult]
     with WithProtocolVersion
     with WithUpdateReplicas
+    with WithUpdateVolumeMounts
     with WithConfiguration {
   import DeployExecution._
 
@@ -160,7 +161,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId)
       clusterReplicas = getStreamletsReplicas(currentAppCr)
       clusterApplicationCr <- updateReplicas(localApplicationCr, clusterReplicas)
-      applicationCr <- updateReplicas(clusterApplicationCr, d.scales)
+      applicationCrReplicas <- updateReplicas(clusterApplicationCr, d.scales)
+      applicationCr <- updateVolumeMounts(
+        applicationCrReplicas,
+        d.volumeMounts,
+        () => client.getPvcs(namespace = applicationCrReplicas.spec.appId))
 
       image <- getImageReference(applicationCr)
 
