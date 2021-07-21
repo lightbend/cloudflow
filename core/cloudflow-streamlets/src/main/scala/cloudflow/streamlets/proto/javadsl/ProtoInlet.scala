@@ -39,12 +39,36 @@ final case class ProtoInlet[T <: GeneratedMessageV3](
 }
 
 object ProtoInlet {
+
+  /**
+   * Creates a ProtoInlet.
+   * @param name the name of the inlet
+   * @param clazz the type of message that can be consumed from this inlet
+   */
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T]): ProtoInlet[T] =
     ProtoInlet[T](name, clazz)
 
+  /**
+   * Creates a ProtoInlet.
+   * @param name The name of the inlet
+   * @param clazz The type of message that can be consumed from this inlet
+   * @param hasUniqueGroupId Specifies if the inlet should have a unique group Id across streamlet instances.
+   *        Setting hasUniqueGroupId to true, when a streamlet is scaled, will result in the inlet to receive all messsages of the topic (similar to a broadcast).
+   *        Setting hasUniqueGroupId to false, when a streamlet is scaled, will result in the inlet to receive only part of the messages of the topic (partitioned).
+   *
+   */
   def create[T <: GeneratedMessageV3](name: String, clazz: Class[T], hasUniqueGroupId: Boolean): ProtoInlet[T] =
     ProtoInlet[T](name, clazz, hasUniqueGroupId)
 
+  /**
+   * Creates a ProtoInlet.
+   * @param name The name of the inlet
+   * @param clazz The type of message that can be consumed from this inlet
+   * @param hasUniqueGroupId Specifies if the inlet should have a unique group Id across streamlet instances.
+   *        Setting hasUniqueGroupId to true, when a streamlet is scaled, will result in the inlet to receive all messsages of the topic (similar to a broadcast).
+   *        Setting hasUniqueGroupId to false, when a streamlet is scaled, will result in the inlet to receive only part of the messages of the topic (partitioned).
+   * @param errorHandler The errorHandler, which is invoked when a message could not be deserialized.
+   */
   def create[T <: GeneratedMessageV3](
       name: String,
       clazz: Class[T],
