@@ -40,6 +40,7 @@ lazy val step2 = appModule("step2")
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowFlinkPlugin)
     .settings(
+      dependencyOverrides += "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % "1.0.3",
       Test / parallelExecution := false,
       Test / fork := true
     )

@@ -71,8 +71,9 @@ class AppCrSpec
 
       val newApp = mkApp(verifiedBlueprint)
       val cr = App.Cr(spec = newApp, metadata = null)
-      val customResource =
-        Serialization.jsonMapper().readValue(Serialization.jsonMapper().writeValueAsString(cr), classOf[App.Cr])
+      val mapper = Serialization.jsonMapper()
+      val str = mapper.writeValueAsString(cr)
+      val customResource = mapper.readValue(str, classOf[App.Cr])
       customResource.spec mustBe cr.spec
     }
 
