@@ -25,29 +25,39 @@ spec:
             properties:
               app_id:
                 type: string
+                description: 'The ID of the application.'
               app_version:
                 type: string
+                description: 'The version of the application.'
               version:
                 type: string
+                description: 'The version of the application descriptor.'
               library_version:
                 type: string
+                description: 'The version of the Cloudflow library used.'
               agent_paths:
                 type: object
+                description: 'Not used anymore, kept for compatibility.'
                 additionalProperties:
                   type: string
               deployments:
                 type: array
+                description: 'The streamlet deployments in this application.'
                 items:
                   type: object
                   properties:
                     class_name: 
                       type: string  
+                      description: 'The Streamlet class.'
                     config:
                       type: object
+                      description: 'Configuration for the streamlet.'
                     image:
                       type: string
+                      description: 'The image that should be used to deploy the streamlet.'
                     name:
                       type: string
+                      description: 'The name of the streamlet inside the application, formatted as <application>.<streamlet-name>'
                     port_mappings:
                       type: object
                       additionalProperties:
@@ -55,10 +65,13 @@ spec:
                         properties:
                           id:
                             type: string
+                            description: 'The ID of the topic'
                           config:
                             type: object
+                            description: 'The topic configuration'
                           cluster:
                             type: string
+                            description: 'Optional, the named cluster that should be used to connect to the topic'
                         required:
                           - id
                           - config
@@ -69,12 +82,16 @@ spec:
                         properties:
                           name:
                             type: string
+                            description: 'The name of the volume.'
                           path:
                             type: string
+                            description: 'The path to mount.'
                           access_mode:
                             type: string
+                            description: 'The access mode, ReadWriteMany or ReadOnlyMany'
                           pvc_name:
                             type: string
+                            description: 'The name of the persistent volume claim.'
                         required:
                           - name
                           - path
@@ -83,20 +100,27 @@ spec:
                       nullable: true
                     runtime: 
                       type: string
+                      description: 'The runtime that should be used for the streamlet.'
                     streamlet_name:
                       type: string
+                      description: 'The name of the streamlet.'
                     secret_name:
                       type: string
+                      description: 'The name of the secret that contains configuration for the streamlet.'
                     endpoint:
                       type: object
                       properties:
                         app_id: 
                           type: string
+                          description: 'The ID of the app.'
                         streamlet: 
                           type: string
+                          description: 'The streamlet name.'
                         container_port:
                           type: integer
+                          description: 'The port that the container exposes through a service.'
                     replicas:
+                      description: 'The number of streamlet replicas to deploy.'
                       type: integer
                   required:
                   - class_name
@@ -106,6 +130,7 @@ spec:
                 default: []
               streamlets:
                 type: array
+                description: 'The types of streamlets used in this application.'
                 items:
                   type: object
                   properties:
@@ -116,6 +141,7 @@ spec:
                       properties:
                         attributes:
                           type: array
+                          description: 'Internal attributes that are used to enable runtime-features.'
                           items:
                             type: object
                             properties:
@@ -125,6 +151,7 @@ spec:
                                 type: string
                         class_name:
                           type: string
+                          description: 'The streamlet class.'
                         config_parameters:
                           type: array
                           items:
@@ -132,14 +159,19 @@ spec:
                             properties:
                               key:
                                 type: string
+                                description: 'The config parameter key.'
                               description:
                                 type: string
+                                description: 'The description of the config parameter.'
                               validation_type:
                                 type: string
+                                description: 'The type of validation that must take place in the CLI.'
                               validation_pattern:
                                 type: string
+                                description: 'The validation regex pattern.'
                               default_value:
                                 type: string
+                                description: 'The default value for the config parameter.'
                         volume_mounts:
                           type: array
                           items:
@@ -147,12 +179,16 @@ spec:
                             properties:
                               name:
                                 type: string
+                                description: 'The name of the streamlet volume.'
                               path:
                                 type: string
+                                description: 'The mount path.'
                               access_mode:
                                 type: string
+                                description: 'The access mode, ReadWriteMany or ReadOnlyMany'
                               pvc_name:
                                 type: string
+                                description: 'The name of the persistent volume claim.'
                             required:
                               - name
                               - path
@@ -169,12 +205,16 @@ spec:
                                 properties:
                                   fingerprint: 
                                     type: string
+                                    description: 'The schema fingerprint.'
                                   schema:
                                     type: string
+                                    description: 'The full schema, field is kept for backwards compatibility, is no longer provided.'
                                   name: 
                                     type: string
+                                    description: 'The name of the schema.'
                                   format:
                                     type: string
+                                    description: 'The schema format, for instance avro or proto.'
                         outlets:
                           type: array
                           items:
@@ -187,20 +227,27 @@ spec:
                                 properties:
                                   fingerprint: 
                                     type: string
+                                    description: 'The schema fingerprint.'
                                   schema:
                                     type: string
+                                    description: 'The full schema, field is kept for backwards compatibility, is no longer provided.'
                                   name: 
                                     type: string
+                                    description: 'The name of the schema.'
                                   format:
                                     type: string
+                                    description: 'The schema format, for instance avro or proto.'
                         labels:
                           type: array
                           items:
                             type: string
+                            description: 'labels describing the type of streamlet, not used anymore, kept for backwards compatibility.'
                         runtime: 
                           type: string
+                          description: 'The runtime that this streamlet type can run on.'
                         description:
                           type: string
+                          description: 'A description of the streamlet, not used anymore, kept for backwards compatibility.'
                       required:
                         - class_name
                         - runtime
@@ -208,10 +255,10 @@ spec:
             - app_id
             - deployments 
             - streamlets
-            # for compat?
             x-kubernetes-preserve-unknown-fields: true
           status:
             type: object
+            description: 'The status of the application.'
             properties:
               app_id:
                 type: string
@@ -221,7 +268,7 @@ spec:
                 type: string
               app_message:
                 type: string
-              # endpoint statuses are not used, but added for backwards compatibility.
+              # endpoint statuses are not updated, kept for backwards compatibility.
               endpoint_statuses:
                 type: array
                 items:
@@ -255,7 +302,6 @@ spec:
                             type: integer
                           status:
                             type: string
-            # for compat?
             x-kubernetes-preserve-unknown-fields: true
     subresources:
       status: {}      
