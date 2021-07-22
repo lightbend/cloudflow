@@ -1,0 +1,271 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: cloudflowapplications.cloudflow.lightbend.com
+spec:
+  group: cloudflow.lightbend.com
+  names:
+    kind: CloudflowApplication
+    listKind: CloudflowApplicationList
+    plural: cloudflowapplications
+    shortNames:
+    - cloudflowapp
+    singular: cloudflowapplication
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema: 
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              app_id:
+                type: string
+              app_version:
+                type: string
+              version:
+                type: string
+              library_version:
+                type: string
+              agent_paths:
+                type: object
+                additionalProperties:
+                  type: string
+              deployments:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    class_name: 
+                      type: string  
+                    config:
+                      type: object
+                    image:
+                      type: string
+                    name:
+                      type: string
+                    port_mappings:
+                      type: object
+                      additionalProperties:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          config:
+                            type: object
+                          cluster:
+                            type: string
+                        required:
+                          - id
+                          - config
+                    volume_mounts:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          path:
+                            type: string
+                          access_mode:
+                            type: string
+                          pvc_name:
+                            type: string
+                        required:
+                          - name
+                          - path
+                          - access_mode 
+                      # to keep compatibility with existing format.
+                      nullable: true
+                    runtime: 
+                      type: string
+                    streamlet_name:
+                      type: string
+                    secret_name:
+                      type: string
+                    endpoint:
+                      type: object
+                      properties:
+                        app_id: 
+                          type: string
+                        streamlet: 
+                          type: string
+                        container_port:
+                          type: integer
+                    replicas:
+                      type: integer
+                  required:
+                  - class_name
+                  - image
+                  - name
+                  - runtime
+                default: []
+              streamlets:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: 
+                      type: string
+                    descriptor:
+                      type: object
+                      properties:
+                        attributes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              attribute_name:
+                                type: string
+                              config_path:
+                                type: string
+                        class_name:
+                          type: string
+                        config_parameters:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              description:
+                                type: string
+                              validation_type:
+                                type: string
+                              validation_pattern:
+                                type: string
+                              default_value:
+                                type: string
+                        volume_mounts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              path:
+                                type: string
+                              access_mode:
+                                type: string
+                              pvc_name:
+                                type: string
+                            required:
+                              - name
+                              - path
+                              - access_mode 
+                        inlets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name: 
+                                type: string
+                              schema:
+                                type: object
+                                properties:
+                                  fingerprint: 
+                                    type: string
+                                  schema:
+                                    type: string
+                                  name: 
+                                    type: string
+                                  format:
+                                    type: string
+                        outlets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name: 
+                                type: string
+                              schema:
+                                type: object
+                                properties:
+                                  fingerprint: 
+                                    type: string
+                                  schema:
+                                    type: string
+                                  name: 
+                                    type: string
+                                  format:
+                                    type: string
+                        labels:
+                          type: array
+                          items:
+                            type: string
+                        runtime: 
+                          type: string
+                        description:
+                          type: string
+                      required:
+                        - class_name
+                        - runtime
+            required:
+            - app_id
+            - deployments 
+            - streamlets
+            # for compat?
+            x-kubernetes-preserve-unknown-fields: true
+          status:
+            type: object
+            properties:
+              app_id:
+                type: string
+              app_version:
+                type: string
+              app_status:
+                type: string
+              app_message:
+                type: string
+              # endpoint statuses are not used, but added for backwards compatibility.
+              endpoint_statuses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    streamlet_name:
+                      type: string
+                    url:
+                      type: string
+              streamlet_statuses:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    streamlet_name:
+                      type: string
+                    expected_pod_count:
+                      type: integer
+                    pod_statuses:
+                      type: array
+                      items: 
+                        type: object
+                        properties:
+                          name: 
+                            type: string  
+                          ready:
+                            type: string
+                          nr_of_containers_ready:
+                            type: integer
+                          restarts:
+                            type: integer
+                          status:
+                            type: string
+            # for compat?
+            x-kubernetes-preserve-unknown-fields: true
+    subresources:
+      status: {}      
+status:
+  acceptedNames:
+    kind: CloudflowApplication
+    listKind: CloudflowApplicationList
+    plural: cloudflowapplications
+    shortNames:
+    - cloudflowapp
+    singular: cloudflowapplication
+  storedVersions:
+  - v1alpha1
