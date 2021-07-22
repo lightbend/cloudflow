@@ -73,8 +73,8 @@ trait WithUpdateVolumeMounts {
       if (missing.nonEmpty) {
         def plural = s"""${if (missing.size > 1) "s" else ""}"""
         throw new CliException(
-          s"""Please provide persistent volume name$plural for volume mount$plural for streamlet$plural using --volume-mount argument$plural:\n
-          |${missing.mkString("\n")}
+          s"""Please provide persistent volume name$plural with --volume-mount argument$plural (replace 'pvc-name'$plural with correct value$plural):\n
+          |${missing.map(m => s"--volume-mount $m=pvc-name").mkString("\n")}
           """.stripMargin)
       }
       ()
