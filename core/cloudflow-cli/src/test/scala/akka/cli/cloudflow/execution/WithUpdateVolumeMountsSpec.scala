@@ -159,4 +159,19 @@ class WithUpdateVolumesMountsSpec extends AnyFlatSpec with WithUpdateVolumeMount
     // Assert
     updatedCr.isSuccess shouldBe false
   }
+
+  it should "fail if the --volume-mount does not specify the volume mount that the streamlet needs" in {
+    val volumeName = "volume"
+    // Arrange
+    val volumeMountFromApi = App.VolumeMountDescriptor(volumeName, "/mnt/data", "ReadWriteMany", Some(""))
+    val appCr = crWithVolumeMounts(Seq(volumeMountFromApi))
+
+    // Act
+    val updatedCr =
+      updateVolumeMounts(appCr, Map(), () => Try(List("my-pvc", "my-other-pvc")))
+
+    // Assert
+    updatedCr.isSuccess shouldBe false
+  }
+
 }
