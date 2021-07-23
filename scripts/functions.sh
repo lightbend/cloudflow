@@ -8,7 +8,7 @@ ROOT_DIR=$(dirname "$SCRIPTS_DIR")
 # code for all the samples, for example, when running format tools.
 function echo_cf_version() {
     cd "$ROOT_DIR/core"
-    sbt --supershell=false --warn writeVersionToFile
+    sbt --supershell=false --warn writeVersionToFile > /dev/null 2>&1
     VERSION=$(cat ./target/version.txt)
     echo "$VERSION"
 }

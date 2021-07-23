@@ -23,15 +23,16 @@ jobs:
         cd docs
         make html-author-mode
         grep -r "page unresolved" target/staging/docs/ && exit 1 || echo 'ok'
-  
-  build-and-test-scala:
+
+  build-and-test-core:
+    name: "Cloudflow Core"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         java: [ '8', '11', '13' ]
     steps:
-    
+
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
@@ -47,8 +48,40 @@ jobs:
         SBT_OPTS: -Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
       run: ./scripts/build-core.sh +test
 
+  build-and-test-sbt-examples:
+    name: "sbt samples"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '8', '11', '13' ]
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Cache SBT and Coursier cache
+      uses: coursier/cache-action@v3
+
     - name: test-sbt-examples
       run: ./scripts/build-sbt-examples.sh test
+
+  build-and-test-mvn-examples:
+    name: "mvn samples"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '8', '11', '13' ]
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Cache SBT and Coursier cache
+      uses: coursier/cache-action@v3
 
     - name: test-maven-examples
       run: ./scripts/build-mvn-examples.sh test
