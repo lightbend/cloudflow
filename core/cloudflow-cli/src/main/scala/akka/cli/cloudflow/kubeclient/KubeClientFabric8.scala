@@ -187,6 +187,7 @@ class KubeClientFabric8(
       val res = models.ApplicationStatus(
         summary = getCRSummary(app),
         status = appStatus,
+        // FIXME, remove in a breaking CRD change, the endpoint statuses are not updated anymore.
         endpointsStatuses = Try(app.status.endpointStatuses).toOption
           .filterNot(_ == null)
           .map(_.map(getEndpointStatus))
