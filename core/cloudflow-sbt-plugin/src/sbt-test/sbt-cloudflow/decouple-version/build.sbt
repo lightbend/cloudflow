@@ -5,6 +5,9 @@ lazy val helloWorld =  (project in file("."))
       cloudflowVersion := "2.0.19",
       name := "hello-world",
 
+      // sbt 1.5: Do not fail when mixing versions of Cloudflow and dependencies
+      evictionErrorLevel := Level.Info,
+
       libraryDependencies ++= Seq(
         "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
       )

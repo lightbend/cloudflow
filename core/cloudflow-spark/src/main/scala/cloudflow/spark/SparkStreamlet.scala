@@ -85,8 +85,8 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
     val completionFuture = completionPromise.future
 
     // these values are candidates to move to the configuration system
-    val InitialDelay = 2 seconds
-    val MonitorFrequency = 5 seconds
+    val InitialDelay = 2.seconds
+    val MonitorFrequency = 5.seconds
     implicit val system: ActorSystem = ActorSystem("spark_streamlet", context.config)
 
     val streamletQueryExecution = createLogic.buildStreamingQueries

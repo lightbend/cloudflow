@@ -316,7 +316,7 @@ lazy val cloudflowAkkaTestkit =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"),
-      (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue)
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
 
 lazy val cloudflowAkkaUtil =
   Project(id = "cloudflow-akka-util", base = file("cloudflow-akka-util"))
