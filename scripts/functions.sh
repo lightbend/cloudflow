@@ -5,10 +5,11 @@ ROOT_DIR=$(dirname "$SCRIPTS_DIR")
 
 # Generates a stable version that will be used instead of reading 
 # from dynver. This is useful when running tasks that can change the
-# code for all the samples
+# code for all the samples, for example, when running format tools.
 function echo_cf_version() {
     cd "$ROOT_DIR/core"
-    VERSION=$(sbt --supershell=false "show version" | tail -n 1 | cut -d' ' -f 2 | tr -d '[:space:]')
+    sbt --supershell=false --warn writeVersionToFile
+    VERSION=$(cat ./target/version.txt)
     echo "$VERSION"
 }
 
