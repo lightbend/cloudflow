@@ -21,6 +21,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.wordspec._
 import org.scalatest.matchers.must._
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 trait SparkScalaTestSupport extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   val session: SparkSession = SparkSession

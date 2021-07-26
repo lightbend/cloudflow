@@ -25,6 +25,7 @@ import cloudflow.streamlets._
 /**
  * Runtime context for [[FlinkStreamlet]]s
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract case class FlinkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     @transient env: StreamExecutionEnvironment)

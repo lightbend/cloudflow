@@ -28,6 +28,7 @@ import cloudflow.streamlets._
 import scala.reflect.runtime.universe._
 import scala.util.{ Failure, Success }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 class SparkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     session: SparkSession,
@@ -131,4 +132,5 @@ class SparkStreamletContextImpl(
   }
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class EncodedKV(key: Array[Byte], value: Array[Byte])
