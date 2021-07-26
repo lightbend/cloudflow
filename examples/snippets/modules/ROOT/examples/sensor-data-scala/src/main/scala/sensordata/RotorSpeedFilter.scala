@@ -16,18 +16,20 @@
 
 package sensordata
 
+import akka.stream.scaladsl.RunnableGraph
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
 class RotorSpeedFilter extends AkkaStreamlet {
-  val in    = AvroInlet[Metric]("in")
-  val out   = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
-  val shape = StreamletShape(in, out)
+  val in: CodecInlet[Metric]         = AvroInlet[Metric]("in")
+  val out: CodecOutlet[Metric]       = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
+  override val shape: StreamletShape = StreamletShape(in, out)
 
-  override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
-    def flow          = FlowWithCommittableContext[Metric].filter(_.name == "rotorSpeed")
+  override def createLogic(): AkkaStreamletLogic = new RunnableGraphStreamletLogic() {
+    def flow = FlowWithCommittableContext[Metric]().filter(_.name == "rotorSpeed")
+
+    override def runnableGraph(): RunnableGraph[_] = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
   }
 }

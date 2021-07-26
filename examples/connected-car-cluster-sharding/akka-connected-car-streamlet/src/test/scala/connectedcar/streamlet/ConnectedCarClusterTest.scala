@@ -2,20 +2,13 @@ package connectedcar.streamlet
 
 import akka.actor._
 import akka.cluster.typed.{ Cluster, Join }
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
 import org.scalatest.wordspec._
 import org.scalatest.matchers.must._
-import org.scalatest.concurrent._
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-import cloudflow.akkastream.testkit._
 import cloudflow.akkastream.testkit.scaladsl._
-import connectedcar.data.{ ConnectedCarAgg, ConnectedCarERecord }
+import connectedcar.data._
 import connectedcar.streamlets.ConnectedCarCluster
 import connectedcar.streamlets.RawCarDataGenerator.generateCarERecord
 import akka.actor.typed.scaladsl.adapter._
