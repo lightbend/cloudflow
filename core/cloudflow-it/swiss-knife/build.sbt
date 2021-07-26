@@ -54,7 +54,8 @@ lazy val flink = (project in file("./flink"))
   .enablePlugins(CloudflowFlinkPlugin)
   .settings(commonSettings)
   .settings(
-    name := "swiss-knife-flink"
+    name := "swiss-knife-flink",
+    dependencyOverrides += "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % "1.0.3"
   )
   .dependsOn(datamodel)
 
