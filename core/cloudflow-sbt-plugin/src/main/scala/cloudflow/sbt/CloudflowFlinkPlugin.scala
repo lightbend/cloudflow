@@ -26,6 +26,7 @@ import com.typesafe.sbt.packager.Keys._
 import cloudflow.sbt.CloudflowKeys._
 import CloudflowBasePlugin._
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object CloudflowFlinkPlugin extends AutoPlugin {
 
   override def requires = CloudflowBasePlugin

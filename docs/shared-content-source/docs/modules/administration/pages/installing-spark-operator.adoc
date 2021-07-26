@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: Integration with the Spark Operator has been deprecated since 2.2.0, and will be removed in version 3.x. Spark integration has moved to the https://github.com/lightbend/cloudflow-contrib[Cloudflow-contrib project]. Please see https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/index.html[the Cloudflow-contrib getting started guide] for instructions on how to use Spark Native Kubernetes integration. The documentation that follows describes the deprecated feature.
+
 NOTE: See xref:installation-prerequisites.adoc#_storage_requirements_for_use_with_spark_or_flink[Storage requirements (for use with Spark or Flink)] to setup Storage Requirements for Spark applications.
 
 If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application.

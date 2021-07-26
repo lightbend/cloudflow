@@ -39,6 +39,7 @@ import org.apache.spark.sql.catalyst.InternalRow
  *              a `MemorySink`.
  *
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 class TestSparkStreamletContext(
     override val streamletRef: String,
     session: SparkSession,
@@ -105,4 +106,5 @@ class TestSparkStreamletContext(
 
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)

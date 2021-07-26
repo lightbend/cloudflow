@@ -28,6 +28,7 @@ import cloudflow.streamlets._
 /**
  * An implementation of `FlinkStreamletContext` for unit testing.
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 class TestFlinkStreamletContext(
     override val streamletRef: String,
     env: StreamExecutionEnvironment,
@@ -71,8 +72,10 @@ class TestFlinkStreamletContext(
         s"Bad test context, could not find destination for outlet ${outlet.name}"))
 }
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object TestFlinkStreamletContext {
   val result = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 }
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class TestContextException(portName: String, msg: String) extends RuntimeException(msg)

@@ -21,6 +21,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import scala.collection.JavaConverters._
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object FlinkSource {
   case class CollectionSourceFunction[T](data: Seq[T]) extends SourceFunction[T] {
     def cancel(): Unit = {}

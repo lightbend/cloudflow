@@ -62,6 +62,7 @@ import cloudflow.streamlets._
  *  }
  * }}}
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
   val StopTimeout = 30.seconds
@@ -216,6 +217,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
  *  }
  * }}}
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext)
     extends StreamletLogic[SparkStreamletContext] {
 
@@ -266,15 +268,17 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext)
 
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case object SparkStreamletRuntime extends StreamletRuntime {
   override val name: String = "spark"
 }
 
-// Allows the management of an executing Streamlet instance
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class StreamletQueryExecution(queries: Vector[StreamingQuery]) {
   final def stop(): Unit = queries.foreach(_.stop)
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object StreamletQueryExecution {
   def apply(singleQuery: StreamingQuery): StreamletQueryExecution = StreamletQueryExecution(Vector(singleQuery))
   def apply(oneQuery: StreamingQuery, moreQueries: StreamingQuery*): StreamletQueryExecution =

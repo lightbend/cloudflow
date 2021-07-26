@@ -22,6 +22,7 @@ import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.streamlets.{ CodecInlet, CodecOutlet }
 import cloudflow.streamlets._
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract case class SparkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     session: SparkSession)

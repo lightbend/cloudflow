@@ -68,6 +68,7 @@ import org.apache.flink.core.fs.FileSystem
  *  }
  * }}}
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
@@ -426,6 +427,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext)
 
 }
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case object FlinkStreamletRuntime extends StreamletRuntime {
   override val name: String = "flink"
 }

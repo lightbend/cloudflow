@@ -88,6 +88,7 @@ import cloudflow.streamlets._
  * }
  * }}
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract class FlinkTestkit {
 
   val testTimeout = 10.seconds

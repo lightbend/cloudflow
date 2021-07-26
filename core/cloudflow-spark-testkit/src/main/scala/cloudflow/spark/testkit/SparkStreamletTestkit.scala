@@ -35,6 +35,7 @@ import org.apache.spark.sql.streaming.StreamingQueryListener.{
 
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object ConfigParameterValue {
   def apply(configParameter: ConfigParameter, value: String): ConfigParameterValue =
     ConfigParameterValue(configParameter.key, value)
@@ -43,6 +44,7 @@ object ConfigParameterValue {
   def create(configParameter: ConfigParameter, value: String): ConfigParameterValue =
     ConfigParameterValue(configParameter.key, value)
 }
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 final case class ConfigParameterValue private (configParameterKey: String, value: String)
 
 /**
@@ -102,6 +104,7 @@ final case class ConfigParameterValue private (configParameterKey: String, value
  * Note: Every test is executed against a `SparkSession` which gets created and removed as part of the test
  * lifecycle methods.
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 final case class SparkStreamletTestkit(
     session: SparkSession,
     config: Config = ConfigFactory.empty,
@@ -225,20 +228,24 @@ final case class SparkStreamletTestkit(
   }
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class SparkInletTap[T: Encoder](portName: String, instream: MemoryStream[T]) {
   // add data to memory stream
   def addData(data: Seq[T]) = instream.addData(data)
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class SparkOutletTap[T: Encoder](portName: String, queryName: String) {
   // get results from memory sink
   def asCollection(session: SparkSession): Seq[T] = session.sql(s"select * from $queryName").as[T].collect()
 }
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class ExecutionReport(totalRows: Long, totalQueries: Int, failures: Seq[String]) {
   override def toString: String =
     s"total rows: [$totalRows], total queries: [$totalQueries], failures: [${failures.mkString(",")}]"
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 class QueryExecutionMonitor() extends StreamingQueryListener {
   @volatile var status: Map[UUID, QueryState] = Map()
   @volatile var dataRows: Map[UUID, Long] = Map()

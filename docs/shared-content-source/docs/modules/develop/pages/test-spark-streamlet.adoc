@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: Integration with the Spark Operator has been deprecated since 2.2.0, and will be removed in version 3.x. Spark integration has moved to the https://github.com/lightbend/cloudflow-contrib[Cloudflow-contrib project]. Please see https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/index.html[the Cloudflow-contrib getting started guide] for instructions on how to use Spark Native Kubernetes integration. The documentation that follows describes the deprecated feature. The SparkStreamlet API has not changed in cloudflow-contrib, though you do need to use a different dependency and add the `CloudflowNativeSparkPlugin`, which is described in the https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/spark-native.html[Cloudflow contrib documentation for building Spark native streamlets].
+
 A `testkit` is provided to make it easier to write unit tests for Spark streamlets. The unit tests are meant to facilitate local testing of streamlets.
 
 == Basic flow of `testkit` APIs
