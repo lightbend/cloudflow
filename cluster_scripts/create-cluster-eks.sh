@@ -41,7 +41,7 @@ ZONE_3="$(aws ec2 describe-availability-zones \
 # https://docs.aws.amazon.com/eks/latest/userguide/create-cluster.html
 eksctl create cluster \
   --name "$CLUSTER_NAME" \
-  --version 1.14 \
+  --version 1.20 \
   --region "$AWS_DEFAULT_REGION" \
   --nodegroup-name standard-workers \
   --node-type t3.xlarge \

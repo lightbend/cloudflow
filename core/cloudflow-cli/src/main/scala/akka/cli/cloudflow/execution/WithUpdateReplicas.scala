@@ -15,7 +15,7 @@ trait WithUpdateReplicas {
     appCr
       .map { app =>
         (for {
-          streamlet <- app.spec.deployments
+          streamlet <- app.getSpec().deployments
         } yield {
           streamlet.replicas match {
             case Some(r) => Some(streamlet.streamletName -> r)
@@ -27,19 +27,19 @@ trait WithUpdateReplicas {
   }
 
   def updateReplicas(crApp: App.Cr, replicas: Map[String, Int]): Try[App.Cr] = {
-    val allStreamlets = crApp.spec.deployments.map { streamlet => streamlet.streamletName }.distinct
+    val allStreamlets = crApp.getSpec().deployments.map { streamlet => streamlet.streamletName }.distinct
 
     (replicas.keys.toList.distinct.diff(allStreamlets)) match {
       case Nil =>
-        val clusterDeployments = crApp.spec.deployments.map { streamlet =>
+        val clusterDeployments = crApp.getSpec().deployments.map { streamlet =>
           streamlet.streamletName match {
             case sname if replicas.contains(sname) =>
               streamlet.copy(replicas = Some(replicas(sname)))
             case _ => streamlet
           }
         }
-        val res = crApp.copy(spec = crApp.spec.copy(deployments = clusterDeployments))
-        Success(res)
+        crApp.setSpec(crApp.getSpec().copy(deployments = clusterDeployments))
+        Success(crApp)
       case missings =>
         Failure(
           CliException(s"Streamlets to scale: [${missings.mkString(", ")}] are not present in the application spec"))

@@ -88,12 +88,8 @@ object App {
   @Kind(Kind)
   @Plural(Plural)
   final case class Cr(
-      @JsonProperty("spec")
-      spec: Spec,
       @JsonProperty("metadata")
-      metadata: ObjectMeta,
-      @JsonProperty("status")
-      status: AppStatus = null)
+      metadata: ObjectMeta)
       extends CustomResource[Spec, AppStatus]
       with Namespaced {
     this.setMetadata(metadata)

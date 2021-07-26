@@ -49,10 +49,8 @@ object AkkaMicroservice {
 final case class AkkaMicroservice(
     kind: String = AkkaMicroservice.Kind,
     apiVersion: String = AkkaMicroservice.ApiVersion,
-    metadata: ObjectMeta,
-    spec: AkkaMicroserviceSpec,
-    status: Option[AkkaMicroserviceStatus])
-    extends CustomResource
+    metadata: ObjectMeta)
+    extends CustomResource[AkkaMicroserviceSpec, Option[AkkaMicroserviceStatus]]
     with Namespaced {
   setMetadata(metadata)
 }

@@ -29,7 +29,7 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
         c.aggregatedConfig,
         currentCr,
         logbackContent,
-        () => client.getPvcs(namespace = currentCr.spec.appId))
+        () => client.getPvcs(namespace = currentCr.getSpec().appId))
 
       // streamlets configurations
       streamletsConfigs <- streamletsConfigs(
@@ -38,8 +38,8 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
         c.microservices,
         () => client.getKafkaClusters(None).map(parseValues))
 
-      uid <- client.uidCloudflowApp(currentCr.spec.appId)
-      _ <- client.configureCloudflowApp(currentCr.spec.appId, uid, configStr, logbackContent, streamletsConfigs)
+      uid <- client.uidCloudflowApp(currentCr.getSpec().appId)
+      _ <- client.configureCloudflowApp(currentCr.getSpec().appId, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       ConfigureResult()
     }
