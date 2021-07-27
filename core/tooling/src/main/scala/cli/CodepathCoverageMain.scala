@@ -46,6 +46,10 @@ object CodepathCoverageMain extends App {
   }
   preparationClient.resourceList(sparkPvc).inNamespace("swiss-knife").createOrReplace()
 
+  val microservicesCRD =
+    preparationClient.load(new FileInputStream("./src/main/resources/akka-microservices-crd.yml")).get()
+  preparationClient.resourceList(microservicesCRD).createOrReplace()
+
   preparationClient.close()
 
   val cli = new Cli(None, (_, l) => Cli.defaultKubeClient(None, l))(logger) {
@@ -177,6 +181,17 @@ object CodepathCoverageMain extends App {
   Serialization
     .jsonMapper()
     .readValue("{}", classOf[cloudflow.runner.config.CloudflowRoot])
+
+  // EKS auth configuration
+  Serialization
+    .jsonMapper()
+    .readValue("{}", Class.forName("io.fabric8.kubernetes.client.Config$ExecCredential"))
+  Serialization
+    .jsonMapper()
+    .readValue("{}", Class.forName("io.fabric8.kubernetes.client.Config$ExecCredentialSpec"))
+  Serialization
+    .jsonMapper()
+    .readValue("{}", Class.forName("io.fabric8.kubernetes.client.Config$ExecCredentialStatus"))
 
   System.exit(0)
 }
