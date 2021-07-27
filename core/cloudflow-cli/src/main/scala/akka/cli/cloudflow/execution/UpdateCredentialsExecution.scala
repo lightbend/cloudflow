@@ -17,9 +17,10 @@ final case class UpdateCredentialsExecution(u: UpdateCredentials, client: KubeCl
     logger.info("Executing command UpdateCredentials")
     for {
       _ <- validateProtocolVersion(client)
-      _ <- client.createNamespace(u.cloudflowApp)
+      namespace = u.namespace.getOrElse(u.cloudflowApp)
+      _ <- client.createNamespace(namespace)
       _ <- client.createImagePullSecret(
-        namespace = u.cloudflowApp,
+        namespace = namespace,
         dockerRegistryURL = u.dockerRegistry,
         dockerUsername = u.username,
         dockerPassword = u.password)

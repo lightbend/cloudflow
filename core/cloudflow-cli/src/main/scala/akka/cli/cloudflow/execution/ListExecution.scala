@@ -17,7 +17,7 @@ final case class ListExecution(l: List, client: KubeClient, logger: CliLogger)
     logger.info("Executing command List")
     for {
       _ <- validateProtocolVersion(client)
-      res <- client.listCloudflowApps()
+      res <- client.listCloudflowApps(l.namespace)
     } yield {
       ListResult(res)
     }

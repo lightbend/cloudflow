@@ -38,9 +38,9 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       providedApplication: Option[App.Cr] = None,
       providedInputSecret: String = "")(config: Option[File], logger: CliLogger) = {
     new KubeClient {
-      def listCloudflowApps(): Try[List[models.CRSummary]] =
+      def listCloudflowApps(namespace: Option[String]): Try[List[models.CRSummary]] =
         Success(listResult)
-      def getCloudflowAppStatus(app: String) =
+      def getCloudflowAppStatus(app: String, namespace: String) =
         Success(statusResult)
       def createImagePullSecret(
           namespace: String,
@@ -51,22 +51,26 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       def sparkAppVersion(): Try[String] = Success(sparkVersion)
       def flinkAppVersion(): Try[String] = Success(flinkVersion)
       def getOperatorProtocolVersion(): Try[String] = Success(protocolVersion)
-      def createCloudflowApp(spec: App.Spec) = Success("1")
-      def uidCloudflowApp(name: String) = Success("1")
-      def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
+      def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
+      def uidCloudflowApp(name: String, namespace: String) = Success("1")
+      def createMicroservicesApp(
+          cfSpec: App.Spec,
+          namespace: String,
+          specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
         Success("1")
       def configureCloudflowApp(
           name: String,
+          namespace: String,
           appUid: String,
           appConfig: String,
           loggingContent: Option[String],
           configs: Map[App.Deployment, Map[String, String]]): Try[Unit] = Success(())
-      def deleteCloudflowApp(app: String) = Success(())
+      def deleteCloudflowApp(app: String, namespace: String) = Success(())
       def getPvcs(namespace: String) = Success(providedPvcs)
       def getKafkaClusters(namespace: Option[String]) = Success(providedKafkaClusters)
-      def readCloudflowApp(name: String): Try[Option[App.Cr]] = Success(providedApplication)
-      def updateCloudflowApp(app: App.Cr): Try[App.Cr] = Success(app)
-      def getAppInputSecret(name: String): Try[String] = Success(providedInputSecret)
+      def readCloudflowApp(name: String, namespace: String): Try[Option[App.Cr]] = Success(providedApplication)
+      def updateCloudflowApp(app: App.Cr, namespace: String): Try[App.Cr] = Success(app)
+      def getAppInputSecret(name: String, namespace: String): Try[String] = Success(providedInputSecret)
     }
   }
 
@@ -309,7 +313,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
 
     // Act
     val res =
-      cli.run(commands.Scale("skiss-knife", Map("non-existent" -> 5)))
+      cli.run(commands.Scale("skiss-knife", scales = Map("non-existent" -> 5)))
 
     // Assert
     res.isFailure shouldBe true
@@ -323,7 +327,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
 
     // Act
     val res =
-      cli.run(commands.Scale("skiss-knife", Map("akka-process" -> 5)))
+      cli.run(commands.Scale("skiss-knife", scales = Map("akka-process" -> 5)))
 
     // Assert
     res.isSuccess shouldBe true

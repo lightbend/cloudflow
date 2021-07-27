@@ -22,6 +22,11 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
   val server = new KubernetesServer(false)
   def setupCr() = {
+    val swissKnifeCr = Source
+      .fromResource("swiss-knife-cr.json")
+      .getLines()
+      .mkString("\n")
+
     server.expect.get
       .withPath("/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions")
       .andReturn(
@@ -34,12 +39,17 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
     server.expect.get
       .withPath("/apis/cloudflow.lightbend.com/v1alpha1/cloudflowapplications")
-      .andReturn(
-        HttpURLConnection.HTTP_OK,
-        Source
-          .fromResource("swiss-knife-cr.json")
-          .getLines()
-          .mkString("\n"))
+      .andReturn(HttpURLConnection.HTTP_OK, swissKnifeCr)
+      .once
+
+    server.expect.get
+      .withPath("/apis/cloudflow.lightbend.com/v1alpha1/namespaces/my-ns/cloudflowapplications")
+      .andReturn(HttpURLConnection.HTTP_OK, "{}")
+      .once
+
+    server.expect.get
+      .withPath("/apis/cloudflow.lightbend.com/v1alpha1/namespaces/swiss-knife/cloudflowapplications")
+      .andReturn(HttpURLConnection.HTTP_OK, swissKnifeCr)
       .once
   }
 
@@ -57,12 +67,25 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
     // Act
     val apps =
-      new KubeClientFabric8(None, (_) => server.getClient).listCloudflowApps()
+      new KubeClientFabric8(None, (_) => server.getClient).listCloudflowApps(None)
 
     // Assert
     apps.isSuccess shouldBe true
     apps.get.size shouldBe 1
     apps.get.head shouldBe crSummary
+  }
+
+  it should "not list applications in a different namespace" in {
+    // Arrange
+    setupCr()
+
+    // Act
+    val apps =
+      new KubeClientFabric8(None, (_) => server.getClient).listCloudflowApps(Some("my-ns"))
+
+    // Assert
+    apps.isSuccess shouldBe true
+    apps.get.size shouldBe 0
   }
 
   it should "show the status of an application from the CR" in {
@@ -71,7 +94,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
     // Act
     val status =
-      new KubeClientFabric8(None, (_) => server.getClient).getCloudflowAppStatus("swiss-knife")
+      new KubeClientFabric8(None, (_) => server.getClient).getCloudflowAppStatus("swiss-knife", "swiss-knife")
 
     // Assert
     status.isSuccess shouldBe true

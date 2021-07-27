@@ -18,8 +18,9 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
     logger.info("Executing command Configure")
     for {
       _ <- validateProtocolVersion(client)
+      namespace = c.namespace.getOrElse(c.cloudflowApp)
 
-      currentCr <- client.readCloudflowApp(c.cloudflowApp).map {
+      currentCr <- client.readCloudflowApp(c.cloudflowApp, namespace).map {
         _.getOrElse(throw CliException(s"Cloudflow application ${c.cloudflowApp} not found in the cluster"))
       }
 
@@ -38,8 +39,14 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
         c.microservices,
         () => client.getKafkaClusters(None).map(parseValues))
 
-      uid <- client.uidCloudflowApp(currentCr.spec.appId)
-      _ <- client.configureCloudflowApp(currentCr.spec.appId, uid, configStr, logbackContent, streamletsConfigs)
+      uid <- client.uidCloudflowApp(currentCr.spec.appId, namespace)
+      _ <- client.configureCloudflowApp(
+        currentCr.spec.appId,
+        namespace,
+        uid,
+        configStr,
+        logbackContent,
+        streamletsConfigs)
     } yield {
       ConfigureResult()
     }

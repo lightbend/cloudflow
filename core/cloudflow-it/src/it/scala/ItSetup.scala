@@ -88,10 +88,10 @@ trait ItSetup {
         k8s.namespaces().create(resource.namespace)
       }
       eventually {
-        loadResource(k8s, resource.pvcResourceSpark)
+        loadResource(k8s, appName, resource.pvcResourceSpark)
       }
       eventually {
-        loadResource(k8s, resource.pvcResourceFlink)
+        loadResource(k8s, appName, resource.pvcResourceFlink)
       }
     }
     val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
@@ -136,36 +136,36 @@ trait ItSetup {
     }
   }
 
-  def undeployApp(failIfNotPresent: Boolean = true): Unit = {
-    logger.debug(s"Undeploying $appName")
-    val exists = !cli.run(commands.List()).get.summaries.isEmpty
+  def undeployApp(failIfNotPresent: Boolean = true, namespace: String): Unit = {
+    logger.debug(s"Undeploying $appName in $namespace")
+    val exists = !cli.run(commands.List(namespace = Some(namespace))).get.summaries.isEmpty
     if (!exists && failIfNotPresent) {
       fail(s"$appName doesn't exists.")
     } else if (!exists) {
       logger.debug("App already undeployed, cleaning up")
       withK8s { k8s =>
         eventually {
-          k8s.pods().inNamespace(appName).list().getItems().isEmpty() shouldBe true
+          k8s.pods().inNamespace(namespace).list().getItems().isEmpty() shouldBe true
         }
       }
       // Already undeployed
-      safeCleanup(appName)
+      safeCleanup(namespace)
     } else {
       logger.debug(s"Undeploying app $appName")
-      cli.run(commands.Undeploy(appName))
+      cli.run(commands.Undeploy(appName, namespace = Some(namespace)))
       eventually {
-        val list = cli.run(commands.List()).get
+        val list = cli.run(commands.List(namespace = Some(namespace))).get
         if (!list.summaries.isEmpty) {
           fail(s"$appName not undeployed.")
         }
       }
       withK8s { k8s =>
         eventually {
-          k8s.pods().inNamespace(appName).list().getItems().isEmpty() shouldBe true
+          k8s.pods().inNamespace(namespace).list().getItems().isEmpty() shouldBe true
         }
       }
       logger.debug("cleaning up")
-      safeCleanup(appName)
+      safeCleanup(namespace)
     }
   }
 
@@ -215,14 +215,14 @@ trait ItSetup {
   def withK8s[A](action: KubernetesClient => A): A =
     Using(client)(action).get
 
-  def loadResource(k8s: KubernetesClient, file: File) = {
+  def loadResource(k8s: KubernetesClient, namespace: String, file: File) = {
     val list = k8s.load(new FileInputStream(file)).get()
     try {
-      k8s.resourceList(list).inNamespace(appName).delete()
+      k8s.resourceList(list).inNamespace(namespace).delete()
     } catch {
       case _: Throwable =>
     }
-    k8s.resourceList(list).inNamespace(appName).createOrReplace()
+    k8s.resourceList(list).inNamespace(namespace).createOrReplace()
   }
 
   def withStreamletPod[A](status: ApplicationStatus, streamletName: String)(action: PodResource[Pod] => A): A = {

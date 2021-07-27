@@ -17,7 +17,7 @@ final case class StatusExecution(s: Status, client: KubeClient, logger: CliLogge
     logger.info("Executing command Status")
     for {
       _ <- validateProtocolVersion(client)
-      res <- client.getCloudflowAppStatus(s.cloudflowApp)
+      res <- client.getCloudflowAppStatus(s.cloudflowApp, s.namespace.getOrElse(s.cloudflowApp))
     } yield {
       StatusResult(res)
     }
