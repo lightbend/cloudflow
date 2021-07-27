@@ -28,7 +28,6 @@ jobs:
     name: "Cloudflow Core"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         java: [ '8', '11', '13' ]
     steps:
@@ -52,7 +51,6 @@ jobs:
     name: "sbt samples"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         java: [ '8', '11', '13' ]
     steps:
@@ -71,7 +69,6 @@ jobs:
     name: "mvn samples"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         java: [ '8', '11', '13' ]
     steps:
