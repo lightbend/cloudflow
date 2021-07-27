@@ -86,6 +86,10 @@ class KubeClientFabric8(
     }
 
     client
+  }.recover {
+    case ex: Throwable =>
+      logger.error("Failed to create the kubernetes client", ex)
+      throw ex
   }.flatten
 
   private def withClient[T](fn: KubernetesClient => Try[T]): Try[T] = {

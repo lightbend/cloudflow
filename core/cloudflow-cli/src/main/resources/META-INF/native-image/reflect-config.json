@@ -947,6 +947,149 @@
   "allPublicConstructors":true
 },
 {
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceColumnDefinition",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceConversion",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder",
+  "methods":[{"name":"<init>","parameterTypes":["io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition"] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionCondition",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionNames",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresourceScale",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresourceStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresources",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceValidation",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.ExternalDocumentation",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaProps",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaPropsOrArraySerDe$Deserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaPropsOrArraySerDe$Serializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaPropsOrBoolSerDe$Deserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaPropsOrBoolSerDe$Serializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.JSONSchemaPropsOrStringArraySerDe$Deserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.ServiceReference",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.WebhookClientConfig",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.api.model.apiextensions.v1.WebhookConversion",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
   "name":"io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceColumnDefinition",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -1078,6 +1221,26 @@
   "allPublicConstructors":true
 },
 {
+  "name":"io.fabric8.kubernetes.client.Config$ExecCredential",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.client.Config$ExecCredentialSpec",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"io.fabric8.kubernetes.client.Config$ExecCredentialStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
   "name":"io.fabric8.kubernetes.client.CustomResource",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -1099,6 +1262,23 @@
 },
 {
   "name":"java.io.Serializable",
+  "allDeclaredMethods":true
+},
+{
+  "name":"java.lang.Comparable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"java.lang.Double",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"java.lang.Number",
+  "allDeclaredFields":true,
   "allDeclaredMethods":true
 },
 {
