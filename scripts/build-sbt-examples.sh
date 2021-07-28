@@ -43,18 +43,10 @@ for prj in $PROJECTS; do
     blueprintTask="verifyBlueprint"
   fi
 
-  case "$prj" in
-    *-java)
-      if ! sbt -mem 4096 --supershell=false "; $TARGET; $blueprintTask"; then
-        show_message "Failed to run $TARGET and other checks for $prj"
-        exit 1
-      fi
-      ;;
-    *)
-      if ! sbt -mem 4096 --supershell=false "; scalafmtCheckAll ; $TARGET; $blueprintTask"; then
-        show_message "Failed to run $TARGET and other checks for $prj"
-        exit 1
-      fi
-      ;;
-  esac
+  scalafmtTask=""
+  if [[ -n $(find . -name ".scalafmt.conf") ]]; then
+    scalafmtTask="scalafmtCheckAll"
+  fi
+
+  sbt -mem 4096 --supershell=false "; ${scalafmtTask} ; $TARGET; $blueprintTask"
 done
