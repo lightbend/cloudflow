@@ -176,11 +176,6 @@ setVersionFromTag := {
     .getOrElse("0.0.0-SNAPSHOT")}"""")
 }
 
-lazy val writeVersionToFile = taskKey[Unit]("Write project version to file")
-writeVersionToFile := {
-  IO.write(target.value / "version.txt", version.value)
-}
-
 // makePom fails, often with: java.lang.StringIndexOutOfBoundsException: String index out of range: 0
 addCommandAlias(
   "winGraalBuild",

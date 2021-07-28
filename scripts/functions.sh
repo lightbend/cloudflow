@@ -3,14 +3,10 @@
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 ROOT_DIR=$(dirname "$SCRIPTS_DIR")
 
-# Generates a stable version that will be used instead of reading 
-# from dynver. This is useful when running tasks that can change the
-# code for all the samples, for example, when running format tools.
 function echo_cf_version() {
     cd "$ROOT_DIR/core"
-    sbt --supershell=false --warn writeVersionToFile > /dev/null 2>&1
-    VERSION=$(cat ./target/version.txt)
-    echo "$VERSION"
+    # scoping to cloudflow-akka because we only want to get the version once.
+    sbt --supershell=false --no-colors --error "print cloudflow-akka/version"
 }
 
 function show_message() {
