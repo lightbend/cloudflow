@@ -38,11 +38,12 @@ class ItGlobalSpec
     logger.debug("Init done")
     assumeClusterExists()
     logger.debug("Cluster exists, going to cleanup")
-    undeployApp(failIfNotPresent = false)
+    undeployApp(failIfNotPresent = false, namespace = appName)
+    undeployApp(failIfNotPresent = false, namespace = "my-ns")
   }
 
   override def afterAll() = {
-    undeployApp()
+    undeployApp(namespace = appName)
   }
 }
 
@@ -61,17 +62,26 @@ trait ItDeploySpec extends ItSpec {
       withK8s { k8s =>
         noException should be thrownBy k8s.namespaces().create(resource.namespace)
       }
+      withK8s { k8s =>
+        noException should be thrownBy k8s.namespaces().create(resource.alternativeNamespace)
+      }
     }
 
     "should deploy a pvc for spark" in {
       withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, resource.pvcResourceSpark)
+        noException should be thrownBy loadResource(k8s, appName, resource.pvcResourceSpark)
+      }
+      withK8s { k8s =>
+        noException should be thrownBy loadResource(k8s, "my-ns", resource.pvcResourceSpark)
       }
     }
 
     "should deploy a pvc for flink" in {
       withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, resource.pvcResourceFlink)
+        noException should be thrownBy loadResource(k8s, appName, resource.pvcResourceFlink)
+      }
+      withK8s { k8s =>
+        noException should be thrownBy loadResource(k8s, "my-ns", resource.pvcResourceFlink)
       }
     }
   }
@@ -114,6 +124,45 @@ trait ItDeploySpec extends ItSpec {
       }
     }
 
+    "should deploy in a different namespace" in {
+      val res =
+        cli.run(
+          commands.Deploy(crFile = resource.cr, namespace = Some("my-ns"), confs = Seq(resource.defaultConfiguration)))
+      assertSuccess(res)
+    }
+
+    "should be listed in a different namespace" in {
+      eventually {
+        val res = cli.run(commands.List(namespace = Some("my-ns")))
+        assertSuccess(res).withClue("List command failed.")
+        (res.get.summaries.size shouldBe 1).withClue("Expected only 1 app.")
+        (res.get.summaries.head.name shouldBe appName).withClue("Wrong app name.")
+      }
+    }
+
+    "should eventually be 'Running' in a different namespace" in {
+      eventually {
+        val res = cli.run(commands.Status(appName, namespace = Some("my-ns")))
+        assertSuccess(res).withClue("Status command failed.")
+        (res.get.status.summary.name shouldBe appName).withClue("Wrong app name.")
+        (res.get.status.status shouldBe "Running").withClue("App not running.")
+      }
+    }
+
+    "should undeploy in a different namespace" in {
+      val res = cli.run(commands.Undeploy(appName, namespace = Some("my-ns")))
+      assertSuccess(res).withClue("Application undeploy failed.")
+      eventually {
+        val res = cli.run(commands.List(Some("my-ns")))
+        assertSuccess(res).withClue("List command failed.")
+        (res.get.summaries.size shouldBe 0).withClue("App still listed.")
+        withK8s { k8s =>
+          (k8s.pods().inNamespace("my-ns").list().getItems().isEmpty() shouldBe true)
+            .withClue(s"Pods for app ($appName) still exist.")
+        }
+      }
+    }
+
     "should re-deploy to continue testing" in {
       val deploy = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
       assertSuccess(deploy)
@@ -148,7 +197,7 @@ trait ItBaseSpec extends ItSpec {
   "is configurable" - {
     "reconfiguration should succeed" in {
       configureApp() { _ =>
-        cli.run(commands.Configure(appName, Seq(resource.updateConfig, resource.defaultConfiguration)))
+        cli.run(commands.Configure(appName, confs = Seq(resource.updateConfig, resource.defaultConfiguration)))
       }
     }
     "reconfiguration should affect these streamlets:" - {
@@ -169,14 +218,14 @@ trait ItSecretsSpec extends ItSpec {
   "should deploy a secret" in {
     withRunningApp { _ =>
       withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, resource.secret)
+        noException should be thrownBy loadResource(k8s, appName, resource.secret)
       }
     }
   }
 
   "should reconfigure akka streamlets to add a secret as mounting file" in {
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateMountingSecret, resource.defaultConfiguration)))
+      cli.run(commands.Configure(appName, confs = Seq(resource.updateMountingSecret, resource.defaultConfiguration)))
     }
   }
 
@@ -198,21 +247,21 @@ trait ItSecretsSpec extends ItSpec {
 trait ItPvcSpec extends ItSpec {
   "should try to reconfigure spark streamlets to add a pvc, but find there is no pvc in the cluster" in {
     configureAppExpectFail() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateMountingPvc, resource.defaultConfiguration)))
+      cli.run(commands.Configure(appName, confs = Seq(resource.updateMountingPvc, resource.defaultConfiguration)))
     }
   }
 
   "should deploy a pvc" in {
     withRunningApp { _ =>
       withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, resource.pvc)
+        noException should be thrownBy loadResource(k8s, appName, resource.pvc)
       }
     }
   }
 
   "should reconfigure streamlets to add a pvc and mount it" in {
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateMountingPvc, resource.defaultConfiguration)))
+      cli.run(commands.Configure(appName, confs = Seq(resource.updateMountingPvc, resource.defaultConfiguration)))
     }
   }
 
@@ -265,7 +314,8 @@ trait ItCliConfigSpec extends ItSpec {
 
     note("reconfigure a single akka streamlet")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaProcessResources, resource.defaultConfiguration)))
+      cli.run(
+        commands.Configure(appName, confs = Seq(resource.updateAkkaProcessResources, resource.defaultConfiguration)))
     }
 
     note("get new resource configuration")
@@ -289,7 +339,8 @@ trait ItCliConfigSpec extends ItSpec {
 
     note("reconfigure akka kubernetes runtime")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaRuntimeResources, resource.defaultConfiguration)))
+      cli.run(
+        commands.Configure(appName, confs = Seq(resource.updateAkkaRuntimeResources, resource.defaultConfiguration)))
     }
 
     note("get new resource configuration")
@@ -312,7 +363,8 @@ trait ItFrameworkConfigSpec extends ItSpec {
   "should reconfigure a spark application" in {
     note("reconfigure spark-specific configuration")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateSparkConfiguration, resource.defaultConfiguration)))
+      cli.run(
+        commands.Configure(appName, confs = Seq(resource.updateSparkConfiguration, resource.defaultConfiguration)))
     }
 
     note("verifying configuration update")
@@ -326,7 +378,7 @@ trait ItFrameworkConfigSpec extends ItSpec {
   "should reconfigure an akka application" in {
     note("reconfigure akka-specific configuration")
     configureApp() { _ =>
-      cli.run(commands.Configure(appName, Seq(resource.updateAkkaConfiguration, resource.defaultConfiguration)))
+      cli.run(commands.Configure(appName, confs = Seq(resource.updateAkkaConfiguration, resource.defaultConfiguration)))
     }
 
     note("verifying configuration update")
@@ -354,7 +406,7 @@ trait ItStreamletScaleSpec extends ItSpec {
     val newScale = initialScale + 1
     val expectedPodCount = initialPodCount + 1
     configureApp() { _ =>
-      cli.run(commands.Scale(appName, Map(streamletName -> newScale)))
+      cli.run(commands.Scale(appName, scales = Map(streamletName -> newScale)))
     }
     eventually {
       podCount(streamletName) shouldBe expectedPodCount
@@ -362,7 +414,7 @@ trait ItStreamletScaleSpec extends ItSpec {
 
     note("issuing a scale back to the original value")
     configureApp() { _ =>
-      cli.run(commands.Scale(appName, Map(streamletName -> initialScale)))
+      cli.run(commands.Scale(appName, scales = Map(streamletName -> initialScale)))
     }
     eventually {
       podCount(streamletName) shouldBe initialPodCount

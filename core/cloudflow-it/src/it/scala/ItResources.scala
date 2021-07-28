@@ -42,4 +42,6 @@ trait ItResources {
   val interval = (2 * mult).seconds
   val appName = "swiss-knife"
   val namespace = new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(appName).build()).build()
+  val alternativeNamespace =
+    new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName("my-ns").build()).build()
 }

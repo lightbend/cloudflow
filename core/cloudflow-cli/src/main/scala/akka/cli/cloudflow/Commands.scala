@@ -63,6 +63,19 @@ object OptionsParser {
       })
   }
 
+  private val namespace = {
+    import scala.language.existentials
+    opt[String]('n', "namespace")
+      .text(s"the namespace to be used")
+      .action((ns, o) => {
+        val cmd = o.command match {
+          case Some(v: commands.Command[_]) => Some(v.withNamespace(ns))
+          case _                            => None
+        }
+        o.copy(command = cmd)
+      })
+  }
+
   private def detailedHelp(command: String)(msg: String) = {
     // this is hackish, scopt doesn't support short/long helps and here we are simulating the long option
     opt[Unit]("help")
@@ -107,7 +120,7 @@ object OptionsParser {
     cmd("list")
       .action((_, o) => o.copy(command = Some(commands.List())))
       .text("list available cloudflow applications")
-      .children(outputFmt)
+      .children(namespace, outputFmt)
   }
 
   private def commandParse[C <: commands.Command[_]: ClassTag, T: Read](parser: OParser[T, Options])(f: (C, T) => C) = {
@@ -135,6 +148,7 @@ object OptionsParser {
         commandParse[commands.Status, String](arg("<cloudflowApp>"))((c, v) => c.copy(cloudflowApp = v))
           .required()
           .text("the name of the cloudflow application"),
+        namespace,
         outputFmt)
   }
 
@@ -146,6 +160,7 @@ object OptionsParser {
         commandParse[commands.Configuration, String](arg("<cloudflowApp>"))((c, v) => c.copy(cloudflowApp = v))
           .required()
           .text("the name of the cloudflow application"),
+        namespace,
         outputFmt)
   }
 
@@ -236,6 +251,7 @@ object OptionsParser {
             success
           }
         }),
+        namespace,
         outputFmt)
   }
 
@@ -247,6 +263,9 @@ object OptionsParser {
         commandParse[commands.UpdateCredentials, String](arg("<cloudflowApp>"))((u, v) => u.copy(cloudflowApp = v))
           .required()
           .text("the name of the cloudflow application"),
+        commandParse[commands.UpdateCredentials, String](opt('n', "namespace"))((c, v) => c.copy(namespace = Some(v)))
+          .optional()
+          .text("the namespace to be used"),
         commandParse[commands.UpdateCredentials, String](arg("<dockerRegistry>"))((u, v) => u.copy(dockerRegistry = v))
           .required()
           .text("the name of the docker registry"),
@@ -269,6 +288,7 @@ object OptionsParser {
             success
           }
         }),
+        namespace,
         outputFmt)
   }
 
@@ -280,6 +300,7 @@ object OptionsParser {
         commandParse[commands.Undeploy, String](arg("<cloudflowApp>"))((c, v) => c.copy(cloudflowApp = v))
           .required()
           .text("the name of the cloudflow application"),
+        namespace,
         outputFmt)
   }
 
@@ -303,6 +324,7 @@ object OptionsParser {
             success
           }
         }),
+        namespace,
         outputFmt)
   }
 
@@ -340,6 +362,7 @@ object OptionsParser {
             failure("a configuration file doesn't exists")
           } else success
         }),
+        namespace,
         outputFmt)
   }
 
@@ -386,15 +409,19 @@ object commands {
 
   sealed trait Command[T] {
     val output: format.Format
+    val namespace: Option[String]
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[T]
 
     def render(result: T): String
 
     def withOutput(fmt: format.Format): Command[T]
+
+    def withNamespace(namespace: String): Command[T]
   }
 
-  case class Version(output: format.Format = format.Default) extends Command[VersionResult] {
+  case class Version(namespace: Option[String] = None, output: format.Format = format.Default)
+      extends Command[VersionResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[VersionResult] = {
       VersionExecution(this)
@@ -405,9 +432,12 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
-  case class List(output: format.Format = format.Default) extends Command[ListResult] {
+  case class List(namespace: Option[String] = None, output: format.Format = format.Default)
+      extends Command[ListResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[ListResult] = {
       ListExecution(this, kubeClient, logger)
@@ -418,9 +448,12 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
-  case class Status(cloudflowApp: String = "", output: format.Format = format.Default) extends Command[StatusResult] {
+  case class Status(cloudflowApp: String = "", namespace: Option[String] = None, output: format.Format = format.Default)
+      extends Command[StatusResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[StatusResult] = {
       StatusExecution(this, kubeClient, logger)
@@ -431,9 +464,14 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
-  case class Configuration(cloudflowApp: String = "", output: format.Format = format.Default)
+  case class Configuration(
+      cloudflowApp: String = "",
+      namespace: Option[String] = None,
+      output: format.Format = format.Default)
       extends Command[ConfigurationResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[ConfigurationResult] = {
@@ -445,10 +483,13 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
   case class Deploy(
       crFile: File = new File(""),
+      namespace: Option[String] = None,
       dockerUsername: String = "",
       dockerPassword: String = "",
       noRegistryCredentials: Boolean = false,
@@ -474,9 +515,13 @@ object commands {
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
-  case class Undeploy(cloudflowApp: String = "", output: format.Format = format.Default)
+  case class Undeploy(
+      cloudflowApp: String = "",
+      namespace: Option[String] = None,
+      output: format.Format = format.Default)
       extends Command[UndeployResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[UndeployResult] = {
@@ -488,10 +533,13 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
   case class Configure(
       cloudflowApp: String = "",
+      namespace: Option[String] = None,
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
@@ -509,6 +557,8 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
   trait WithConfiguration {
@@ -553,6 +603,7 @@ object commands {
 
   case class UpdateCredentials(
       cloudflowApp: String = "",
+      namespace: Option[String] = None,
       dockerRegistry: String = "",
       username: String = "",
       password: String = "",
@@ -569,9 +620,15 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
-  case class Scale(cloudflowApp: String = "", scales: Map[String, Int] = Map(), output: format.Format = format.Default)
+  case class Scale(
+      cloudflowApp: String = "",
+      namespace: Option[String] = None,
+      scales: Map[String, Int] = Map(),
+      output: format.Format = format.Default)
       extends Command[ScaleResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[ScaleResult] = {
@@ -583,6 +640,8 @@ object commands {
     }
 
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
+
+    def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
   }
 
 }

@@ -156,9 +156,10 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
 
       // prepare the data
       localApplicationCr <- loadCrFile(d.crFile)
+      namespace = d.namespace.getOrElse(localApplicationCr.spec.appId)
 
       // update the replicas
-      currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId)
+      currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId, namespace)
       clusterReplicas = getStreamletsReplicas(currentAppCr)
       clusterApplicationCr <- updateReplicas(localApplicationCr, clusterReplicas)
       applicationCrReplicas <- updateReplicas(clusterApplicationCr, d.scales)
@@ -198,7 +199,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
 
       // Operations on the cluster
       name = applicationCr.spec.appId
-      _ <- client.createNamespace(name)
+      _ <- client.createNamespace(namespace)
       _ <- {
         if (d.noRegistryCredentials) Success(())
         else {
@@ -213,13 +214,14 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         if (d.microservices) {
           client.createMicroservicesApp(
             applicationCr.spec,
+            namespace,
             CloudflowToMicroservicesCR
               .convert(applicationCr.spec, logbackContent.map(_ => KubeClient.LoggingSecretName)))
         } else {
-          client.createCloudflowApp(applicationCr.spec)
+          client.createCloudflowApp(applicationCr.spec, namespace)
         }
       }
-      _ <- client.configureCloudflowApp(name, uid, configStr, logbackContent, streamletsConfigs)
+      _ <- client.configureCloudflowApp(name, namespace, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")
       DeployResult()

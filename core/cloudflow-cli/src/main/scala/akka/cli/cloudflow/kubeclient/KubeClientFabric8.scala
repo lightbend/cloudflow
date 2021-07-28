@@ -161,11 +161,15 @@ class KubeClientFabric8(
 
   import ModelConversions._
 
-  def listCloudflowApps() = withApplicationClient { cloudflowApps =>
+  def listCloudflowApps(namespace: Option[String]) = withApplicationClient { cloudflowApps =>
     logger.trace("Running the Fabric8 list command")
     Try {
-      val res = cloudflowApps
-        .inAnyNamespace()
+      val apps =
+        namespace match {
+          case Some(ns) => cloudflowApps.inNamespace(ns)
+          case _        => cloudflowApps.inAnyNamespace()
+        }
+      val res = apps
         .list()
         .getItems
         .asScala
@@ -176,33 +180,34 @@ class KubeClientFabric8(
     }
   }
 
-  def getCloudflowAppStatus(appName: String): Try[models.ApplicationStatus] = withApplicationClient { cloudflowApps =>
-    Try {
-      val app = cloudflowApps
-        .inAnyNamespace()
-        .list()
-        .getItems()
-        .asScala
-        .find(_.getMetadata.getName == appName)
-        .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
+  def getCloudflowAppStatus(appName: String, namespace: String): Try[models.ApplicationStatus] = withApplicationClient {
+    cloudflowApps =>
+      Try {
+        val app = cloudflowApps
+          .inNamespace(namespace)
+          .list()
+          .getItems()
+          .asScala
+          .find(_.getMetadata.getName == appName)
+          .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
 
-      val appStatus: String = Try(app.status.appStatus).toOption.getOrElse("Unknown")
+        val appStatus: String = Try(app.status.appStatus).toOption.getOrElse("Unknown")
 
-      val res = models.ApplicationStatus(
-        summary = getCRSummary(app),
-        status = appStatus,
-        // FIXME, remove in a breaking CRD change, the endpoint statuses are not updated anymore.
-        endpointsStatuses = Try(app.status.endpointStatuses).toOption
-          .filterNot(_ == null)
-          .map(_.map(getEndpointStatus))
-          .getOrElse(Seq.empty),
-        streamletsStatuses = Try(app.status.streamletStatuses).toOption
-          .filterNot(_ == null)
-          .map(_.map(getStreamletStatus))
-          .getOrElse(Seq.empty))
-      logger.trace(s"Fabric8 status command successful")
-      res
-    }
+        val res = models.ApplicationStatus(
+          summary = getCRSummary(app),
+          status = appStatus,
+          // FIXME, remove in a breaking CRD change, the endpoint statuses are not updated anymore.
+          endpointsStatuses = Try(app.status.endpointStatuses).toOption
+            .filterNot(_ == null)
+            .map(_.map(getEndpointStatus))
+            .getOrElse(Seq.empty),
+          streamletsStatuses = Try(app.status.streamletStatuses).toOption
+            .filterNot(_ == null)
+            .map(_.map(getStreamletStatus))
+            .getOrElse(Seq.empty))
+        logger.trace(s"Fabric8 status command successful")
+        res
+      }
   }
 
   def getOperatorProtocolVersion(): Try[String] = withClient { client =>
@@ -286,6 +291,7 @@ class KubeClientFabric8(
       def secret(config: String) =
         new SecretBuilder().withNewMetadata
           .withName(KubeClient.ImagePullSecretName)
+          .withNamespace(namespace)
           .withLabels(cloudflowLabels(namespace))
           .endMetadata
           .withType("kubernetes.io/dockerconfigjson")
@@ -343,11 +349,11 @@ class KubeClientFabric8(
       .build()
   }
 
-  def getAppInputSecret(name: String): Try[String] = withClient { client =>
+  def getAppInputSecret(name: String, namespace: String): Try[String] = withClient { client =>
     Try {
       val data =
         client.secrets
-          .inNamespace(name)
+          .inNamespace(namespace)
           .list()
           .getItems
           .asScala
@@ -360,31 +366,34 @@ class KubeClientFabric8(
     }
   }
 
-  def createAppInputSecret(name: String, appConfig: String, ownerReference: OwnerReference) = withClient { client =>
-    Try {
-      lazy val secret =
-        new SecretBuilder().withNewMetadata
-          .withName(appInputSecretName(name))
-          .withLabels(
-            (cloudflowLabels(name).asScala ++
-            Map(
-              "com.lightbend.cloudflow/created-at" -> System.currentTimeMillis().toString,
-              "com.lightbend.cloudflow/config-format" -> "input")).asJava)
-          .withOwnerReferences(ownerReference)
-          .endMetadata
-          .addToStringData(appInputSecretConfKey, appConfig)
-          .build()
+  def createAppInputSecret(name: String, namespace: String, appConfig: String, ownerReference: OwnerReference) =
+    withClient { client =>
+      Try {
+        lazy val secret =
+          new SecretBuilder().withNewMetadata
+            .withName(appInputSecretName(name))
+            .withNamespace(namespace)
+            .withLabels(
+              (cloudflowLabels(name).asScala ++
+              Map(
+                "com.lightbend.cloudflow/created-at" -> System.currentTimeMillis().toString,
+                "com.lightbend.cloudflow/config-format" -> "input")).asJava)
+            .withOwnerReferences(ownerReference)
+            .endMetadata
+            .addToStringData(appInputSecretConfKey, appConfig)
+            .build()
 
-      client.secrets
-        .inNamespace(name)
-        .withName(appInputSecretName(name))
-        .createOrReplace(secret)
+        client.secrets
+          .inNamespace(namespace)
+          .withName(appInputSecretName(name))
+          .createOrReplace(secret)
+      }
     }
-  }
 
   private def createStreamletSecret(
       ownerReference: OwnerReference,
       name: String,
+      namespace: String,
       secretName: String,
       streamletName: String,
       configs: Map[String, String]): Try[Unit] = {
@@ -393,6 +402,7 @@ class KubeClientFabric8(
         lazy val secret =
           new SecretBuilder().withNewMetadata
             .withName(secretName)
+            .withNamespace(namespace)
             .withLabels((cloudflowLabels(name).asScala ++
             Map(
               "com.lightbend.cloudflow/created-at" -> System.currentTimeMillis().toString,
@@ -404,7 +414,7 @@ class KubeClientFabric8(
             .build()
 
         client.secrets
-          .inNamespace(name)
+          .inNamespace(namespace)
           .withName(secretName)
           .createOrReplace(secret)
       }
@@ -413,6 +423,7 @@ class KubeClientFabric8(
 
   private def createStreamletsConfigSecrets(
       name: String,
+      namespace: String,
       secrets: Map[App.Deployment, Map[String, String]],
       ownerReference: OwnerReference): Try[Unit] = {
     secrets.foldLeft[Try[Unit]](Success(())) {
@@ -423,6 +434,7 @@ class KubeClientFabric8(
             createStreamletSecret(
               ownerReference = ownerReference,
               name = name,
+              namespace = namespace,
               secretName = deployment.secretName,
               streamletName = deployment.streamletName,
               configs = configs)
@@ -430,21 +442,21 @@ class KubeClientFabric8(
     }
   }
 
-  def handleLoggingSecret(name: String, content: Option[String], ownerReference: OwnerReference) = withClient {
-    client =>
+  def handleLoggingSecret(name: String, namespace: String, content: Option[String], ownerReference: OwnerReference) =
+    withClient { client =>
       Try {
         content match {
           case None =>
             val current = client
               .secrets()
-              .inNamespace(name)
+              .inNamespace(namespace)
               .withName(LoggingSecretName)
               .get()
 
             if (current != null) {
               client
                 .secrets()
-                .inNamespace(name)
+                .inNamespace(namespace)
                 .withName(LoggingSecretName)
                 .delete()
             }
@@ -452,6 +464,7 @@ class KubeClientFabric8(
             lazy val secret =
               new SecretBuilder().withNewMetadata
                 .withName(LoggingSecretName)
+                .withNamespace(namespace)
                 .withLabels(
                   (cloudflowLabels(name).asScala ++
                   Map(
@@ -464,45 +477,47 @@ class KubeClientFabric8(
 
             client
               .secrets()
-              .inNamespace(name)
+              .inNamespace(namespace)
               .withName(LoggingSecretName)
               .createOrReplace(secret)
         }
       }
-  }
+    }
 
   private val CreatedByCliAnnotation = {
     Map("com.lightbend.cloudflow/created-by-cli-version" -> BuildInfo.version).asJava
   }
 
-  private def createCloudflowServiceAccount(appId: String, ownerReference: OwnerReference) = withClient { client =>
-    Try {
+  private def createCloudflowServiceAccount(appId: String, namespace: String, ownerReference: OwnerReference) =
+    withClient { client =>
+      Try {
 
-      val imagePullSecret = new LocalObjectReferenceBuilder()
-        .withName(ImagePullSecretName)
-        .build()
+        val imagePullSecret = new LocalObjectReferenceBuilder()
+          .withName(ImagePullSecretName)
+          .build()
 
-      val serviceAccount = new ServiceAccountBuilder()
-        .withNewMetadata()
-        .withName(CloudflowAppServiceAccountName)
-        .withNamespace(appId)
-        .withLabels(cloudflowLabels(appId))
-        .withOwnerReferences(ownerReference)
-        .endMetadata()
-        .withImagePullSecrets(imagePullSecret)
-        .withAutomountServiceAccountToken(true)
-        .build()
+        val serviceAccount = new ServiceAccountBuilder()
+          .withNewMetadata()
+          .withName(CloudflowAppServiceAccountName)
+          .withNamespace(namespace)
+          .withLabels(cloudflowLabels(appId))
+          .withOwnerReferences(ownerReference)
+          .endMetadata()
+          .withImagePullSecrets(imagePullSecret)
+          .withAutomountServiceAccountToken(true)
+          .build()
 
-      client
-        .serviceAccounts()
-        .inNamespace(appId)
-        .createOrReplace(serviceAccount)
+        client
+          .serviceAccounts()
+          .inNamespace(namespace)
+          .createOrReplace(serviceAccount)
+      }
     }
-  }
 
-  private def getFullCloudflowApp(spec: App.Spec): App.Cr = {
+  private def getFullCloudflowApp(spec: App.Spec, namespace: String): App.Cr = {
     val metadata = new ObjectMetaBuilder()
       .withName(spec.appId)
+      .withNamespace(namespace)
       .withLabels(cloudflowLabels(spec.appId))
       .withAnnotations(CreatedByCliAnnotation)
       .build()
@@ -518,15 +533,15 @@ class KubeClientFabric8(
     App.Cr(spec = spec, metadata = metadata, status = status)
   }
 
-  private def createCFApp(spec: App.Spec): Try[String] =
+  private def createCFApp(spec: App.Spec, namespace: String): Try[String] =
     withApplicationClient { cloudflowApps =>
       for {
         uid <- Try {
-          val app = getFullCloudflowApp(spec)
+          val app = getFullCloudflowApp(spec, namespace)
 
           val crd =
             cloudflowApps
-              .inNamespace(spec.appId)
+              .inNamespace(namespace)
               .withName(spec.appId)
               .createOrReplace(app)
 
@@ -537,15 +552,18 @@ class KubeClientFabric8(
       }
     }
 
-  def createCloudflowApp(spec: App.Spec): Try[String] =
+  def createCloudflowApp(spec: App.Spec, namespace: String): Try[String] =
     for {
-      uid <- createCFApp(spec)
-      _ <- createCloudflowServiceAccount(spec.appId, getOwnerReference(spec.appId, uid))
+      uid <- createCFApp(spec, namespace)
+      _ <- createCloudflowServiceAccount(spec.appId, namespace, getOwnerReference(spec.appId, uid))
     } yield { uid }
 
-  def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] = {
+  def createMicroservicesApp(
+      cfSpec: App.Spec,
+      namespace: String,
+      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] = {
     for {
-      uid <- createCFApp(cfSpec)
+      uid <- createCFApp(cfSpec, namespace)
       _ <- {
         withClient { client =>
           val microservices = client.customResources(
@@ -563,6 +581,7 @@ class KubeClientFabric8(
                     case Some(s) =>
                       val metadata = new ObjectMetaBuilder()
                         .withName(name)
+                        .withNamespace(namespace)
                         .withLabels(cloudflowLabels(name))
                         .withAnnotations(CreatedByCliAnnotation)
                         .withOwnerReferences(getOwnerReference(cfSpec.appId, uid))
@@ -572,7 +591,7 @@ class KubeClientFabric8(
 
                       val crd =
                         microservices
-                          .inNamespace(cfSpec.appId)
+                          .inNamespace(namespace)
                           .withName(name)
                           .createOrReplace(app)
 
@@ -585,11 +604,11 @@ class KubeClientFabric8(
     } yield { uid }
   }
 
-  def uidCloudflowApp(name: String): Try[String] = {
+  def uidCloudflowApp(name: String, namespace: String): Try[String] = {
     withApplicationClient { cloudflowApps =>
       Try {
         val current = cloudflowApps
-          .inNamespace(name)
+          .inNamespace(namespace)
           .withName(name)
           .get()
 
@@ -604,22 +623,23 @@ class KubeClientFabric8(
 
   def configureCloudflowApp(
       appName: String,
+      namespace: String,
       appUid: String,
       appConfig: String,
       loggingContent: Option[String],
       configs: Map[App.Deployment, Map[String, String]]) = {
     val ownerReference = getOwnerReference(appName, appUid)
     for {
-      _ <- handleLoggingSecret(appName, loggingContent, ownerReference)
-      _ <- createStreamletsConfigSecrets(appName, configs, ownerReference)
-      _ <- createAppInputSecret(appName, appConfig, ownerReference)
+      _ <- handleLoggingSecret(appName, namespace, loggingContent, ownerReference)
+      _ <- createStreamletsConfigSecrets(appName, namespace, configs, ownerReference)
+      _ <- createAppInputSecret(appName, namespace, appConfig, ownerReference)
     } yield { () }
   }
 
-  def updateCloudflowApp(app: App.Cr): Try[App.Cr] = withApplicationClient { cloudflowApps =>
+  def updateCloudflowApp(app: App.Cr, namespace: String): Try[App.Cr] = withApplicationClient { cloudflowApps =>
     Try {
       cloudflowApps
-        .inNamespace(app.spec.appId)
+        .inNamespace(namespace)
         .withName(app.spec.appId)
         // NOTE: Patch doesn't work
         //.patch(app)
@@ -627,10 +647,10 @@ class KubeClientFabric8(
     }
   }
 
-  def deleteCloudflowApp(appName: String): Try[Unit] = withApplicationClient { cloudflowApps =>
+  def deleteCloudflowApp(appName: String, namespace: String): Try[Unit] = withApplicationClient { cloudflowApps =>
     Try {
       val app = cloudflowApps
-        .inAnyNamespace()
+        .inNamespace(namespace)
         .list()
         .getItems()
         .asScala
@@ -638,7 +658,7 @@ class KubeClientFabric8(
         .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
 
       cloudflowApps
-        .inAnyNamespace()
+        .inNamespace(namespace)
         .delete(app)
     }
   }
@@ -686,11 +706,11 @@ class KubeClientFabric8(
     }
   }
 
-  def readCloudflowApp(name: String): Try[Option[App.Cr]] = withApplicationClient { cloudflowApps =>
+  def readCloudflowApp(name: String, namespace: String): Try[Option[App.Cr]] = withApplicationClient { cloudflowApps =>
     Try {
       Option(
         cloudflowApps
-          .inNamespace(name)
+          .inNamespace(namespace)
           .withName(name)
           .get())
     }

@@ -42,36 +42,40 @@ trait KubeClient {
       dockerUsername: String,
       dockerPassword: String): Try[Unit]
 
-  def getAppInputSecret(name: String): Try[String]
+  def getAppInputSecret(name: String, namespace: String): Try[String]
 
   def getOperatorProtocolVersion(): Try[String]
 
   // C
-  def createCloudflowApp(spec: App.Spec): Try[String]
+  def createCloudflowApp(spec: App.Spec, namespace: String): Try[String]
 
-  def createMicroservicesApp(cfSpec: App.Spec, specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String]
+  def createMicroservicesApp(
+      cfSpec: App.Spec,
+      namespace: String,
+      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String]
 
-  def uidCloudflowApp(name: String): Try[String]
+  def uidCloudflowApp(name: String, namespace: String): Try[String]
 
   def configureCloudflowApp(
       name: String,
+      namespace: String,
       uid: String,
       appConfig: String,
       loggingContent: Option[String],
       configs: Map[App.Deployment, Map[String, String]]): Try[Unit]
 
   // R
-  def readCloudflowApp(name: String): Try[Option[App.Cr]]
+  def readCloudflowApp(name: String, namespace: String): Try[Option[App.Cr]]
 
   // U
-  def updateCloudflowApp(app: App.Cr): Try[App.Cr]
+  def updateCloudflowApp(app: App.Cr, namespace: String): Try[App.Cr]
 
   // D
-  def deleteCloudflowApp(app: String): Try[Unit]
+  def deleteCloudflowApp(app: String, namespace: String): Try[Unit]
 
-  def listCloudflowApps(): Try[List[models.CRSummary]]
+  def listCloudflowApps(namespace: Option[String]): Try[List[models.CRSummary]]
 
-  def getCloudflowAppStatus(app: String): Try[models.ApplicationStatus]
+  def getCloudflowAppStatus(app: String, namespace: String): Try[models.ApplicationStatus]
 
   def getPvcs(namespace: String): Try[List[String]]
 

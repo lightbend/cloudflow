@@ -27,12 +27,13 @@ class OptionsParserSpec extends AnyFlatSpec with Matchers {
     res.isDefined shouldBe true
     res.get.command.isDefined shouldBe true
     res.get.command.get shouldBe a[Version]
+    res.get.command.get.namespace shouldBe None
     res.get.logLevel shouldBe Some("info")
   }
 
   it should "parse command options" in {
     // Arrange
-    val input = Array("list", "-o", "c")
+    val input = Array("list", "-o", "c", "-n", "my-ns")
 
     // Act
     val res = OptionsParser(input)
@@ -41,6 +42,7 @@ class OptionsParserSpec extends AnyFlatSpec with Matchers {
     res.isDefined shouldBe true
     res.get.command.isDefined shouldBe true
     res.get.command.get shouldBe a[List]
+    res.get.command.get.namespace shouldBe Some("my-ns")
     res.get.command.get.output shouldBe format.Classic
   }
 
