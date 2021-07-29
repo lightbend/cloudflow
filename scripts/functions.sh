@@ -5,7 +5,9 @@ ROOT_DIR=$(dirname "$SCRIPTS_DIR")
 
 function echo_cf_version() {
     cd "$ROOT_DIR/core"
-    # scoping to cloudflow-akka because we only want to get the version once.
+    # Get all sbt dependencies and jars ready if they aren't arlready.
+    sbt exit > /dev/null 2>&1
+    # Scoping to cloudflow-akka because we only want to get the version once.
     sbt --supershell=false --no-colors --error "print cloudflow-akka/version"
 }
 

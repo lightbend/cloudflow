@@ -37,16 +37,17 @@ for prj in $PROJECTS; do
   show_message "sbt ${TARGET}: $prj"
   cd "$prj"
 
+  # Only run `scalafmtCheckAll` task if there is a scalafmt config file in the project
+  scalafmtTask=""
+  if [[ -n $(find . -name ".scalafmt.conf") ]]; then
+    scalafmtTask="; scalafmtCheckAll"
+  fi
+
   # Only run `verifyBlueprint` task if there are blueprint files in the project
   blueprintTask=""
   if [[ -n $(find . -name "blueprint.conf") ]]; then
-    blueprintTask="verifyBlueprint"
+    blueprintTask="; verifyBlueprint"
   fi
 
-  scalafmtTask=""
-  if [[ -n $(find . -name ".scalafmt.conf") ]]; then
-    scalafmtTask="scalafmtCheckAll"
-  fi
-
-  sbt -mem 4096 --supershell=false "; ${scalafmtTask} ; $TARGET; $blueprintTask"
+  sbt -mem 4096 --supershell=false "${scalafmtTask} $blueprintTask ; $TARGET"
 done
