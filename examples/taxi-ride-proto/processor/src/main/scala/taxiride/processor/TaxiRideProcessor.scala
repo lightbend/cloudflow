@@ -35,7 +35,7 @@ package taxiride.processor
 import cloudflow.flink._
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.functions.co._
-import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.state.{ ValueState, ValueStateDescriptor }
 import org.apache.flink.util.Collector
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.proto._

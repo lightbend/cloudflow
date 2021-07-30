@@ -2,20 +2,13 @@ package com.example
 
 //tag::imports[]
 import akka.actor._
-import akka.stream._
 import akka.stream.scaladsl._
 import akka.testkit._
 
 import org.scalatest._
 import org.scalatest.wordspec._
 import org.scalatest.matchers.must._
-import org.scalatest.concurrent._
 
-import cloudflow.streamlets._
-import cloudflow.streamlets.avro._
-import cloudflow.akkastream._
-import cloudflow.akkastream.scaladsl._
-import cloudflow.akkastream.testkit._
 import cloudflow.akkastream.testkit.scaladsl._
 //end::imports[]
 
@@ -23,7 +16,6 @@ import cloudflow.akkastream.testkit.scaladsl._
 class TestProcessorSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
-  private implicit val mat    = ActorMaterializer()
 
   //tag::afterAll[]
   override def afterAll: Unit =

@@ -6,14 +6,13 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-18.04
+  build-binary:
+    runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
 
-      - name: Fetch tags
-        run: git fetch --depth=100 origin +refs/tags/*:refs/tags/*
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Checkout GitHub merge
         if: github.event.pull_request

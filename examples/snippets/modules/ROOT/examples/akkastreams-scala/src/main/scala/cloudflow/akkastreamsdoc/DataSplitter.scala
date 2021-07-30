@@ -10,7 +10,7 @@ import cloudflow.streamlets.avro._
 
 class DataSplitter extends AkkaStreamlet {
   val in      = AvroInlet[Data]("in")
-  val invalid = AvroOutlet[DataInvalid]("invalid").withPartitioner(data ⇒ data.key)
+  val invalid = AvroOutlet[DataInvalid]("invalid").withPartitioner(data => data.key)
   val valid   = AvroOutlet[Data]("valid").withPartitioner(RoundRobinPartitioner)
   val shape   = StreamletShape(in).withOutlets(invalid, valid)
 
@@ -18,7 +18,7 @@ class DataSplitter extends AkkaStreamlet {
     def runnableGraph = sourceWithCommittableContext(in).to(Splitter.sink(flow, invalid, valid))
     def flow =
       FlowWithCommittableContext[Data]
-        .map { data ⇒
+        .map { data =>
           if (data.value < 0) Left(DataInvalid(data.key, data.value, "All data must be positive numbers!"))
           else Right(data)
         }

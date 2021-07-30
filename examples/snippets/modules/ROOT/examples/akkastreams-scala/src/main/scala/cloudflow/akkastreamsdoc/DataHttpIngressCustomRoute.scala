@@ -21,8 +21,8 @@ class DataHttpIngressCustomRoute extends AkkaServerStreamlet {
     val writer = sinkRef(out)
     override def route(): Route =
       put {
-        entity(as[Data]) { data ⇒
-          onSuccess(writer.write(data)) { _ ⇒
+        entity(as[Data]) { data =>
+          onSuccess(writer.write(data)) { _ =>
             complete(StatusCodes.OK)
           }
         }

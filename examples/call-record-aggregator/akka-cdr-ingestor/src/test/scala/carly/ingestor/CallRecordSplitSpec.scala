@@ -43,7 +43,6 @@ class CallRecordSplitSpec extends AnyWordSpec with Matchers with ScalaFutures wi
       val streamlet = new CallRecordSplit
 
       val instant = Instant.now.toEpochMilli / 1000
-      val past    = Instant.now.minus(5000, ChronoUnit.DAYS).toEpochMilli / 1000
 
       val cr1 = CallRecord("user-1", "user-2", "f", 10L, instant)
       val cr2 = CallRecord("user-1", "user-2", "f", 15L, instant)
@@ -51,7 +50,7 @@ class CallRecordSplitSpec extends AnyWordSpec with Matchers with ScalaFutures wi
 
       val source = Source(Vector(cr1, cr2, cr3))
 
-      val in   = testkit.inletFromSource(streamlet.in, source)
+      val in    = testkit.inletFromSource(streamlet.in, source)
       val left  = testkit.outletAsTap(streamlet.left)
       val right = testkit.outletAsTap(streamlet.right)
 
