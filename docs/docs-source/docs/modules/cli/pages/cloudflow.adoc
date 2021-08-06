@@ -31,6 +31,7 @@ list [options]
 === Synopsis
 list available cloudflow applications
 
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: status
@@ -43,6 +44,7 @@ status [options] <cloudflowApp>
 show the status of a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: deploy
@@ -70,6 +72,7 @@ deploy a cloudflow applications from a cr file
  * ``  --unmanaged-runtimes <value>
                            ``The runtimes that should not be checked
  * ``  --microservices          ``EXPERIMENTAL: Deploy on Akka Cloud Platform
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: undeploy
@@ -82,6 +85,7 @@ undeploy [options] <cloudflowApp>
 undeploy a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: update-docker-credentials
@@ -94,10 +98,12 @@ update-docker-credentials [options] <cloudflowApp> <dockerRegistry>
 updates docker registry credentials that are used to pull Cloudflow application images.
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  <dockerRegistry>         ``the name of the docker registry
  * ``  -u, --username <value>   ``the docker registry username
  * ``  -p, --password <value>   ``the docker registry password
  * ``  --password-stdin         ``Take the docker registry password from std-in
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: scale
@@ -111,6 +117,7 @@ scales a streamlet of a deployed Cloudflow application to the specified number o
 
  * ``  <cloudflowApp>           ``the cloudflow application
  * ``  <streamlet>=<replicas>   ``Key/value pairs of streamlets replicas
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: configure
@@ -129,6 +136,7 @@ configures a deployed cloudflow application
  * ``  --logback-config <value>
                            ``the logback configuration to be applied
  * ``  --microservices          ``EXPERIMENTAL: Deploy on Akka Cloud Platform
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: configuration
@@ -141,4 +149,5 @@ configuration [options] <cloudflowApp>
 show the current configuration of a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
+ * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
