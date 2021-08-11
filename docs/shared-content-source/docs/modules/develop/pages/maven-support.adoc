@@ -37,6 +37,10 @@ To deploy your application to a cluster you instead need the following steps:
 [start=3]
 . `docker:build` to build the docker images
 . `cloudflow:push-images` to push the images to a Docker registry, returning information about the published image digests
+
+NOTE: If not specifically configured in your POM, the default image registry used by the http://dmp.fabric8.io/[fabric8 docker-maven-plugin] is *_docker.io_*. To use a different registry, you’ll need to provide a proper <registry> subelement to your configuration. For more information, please see https://dmp.fabric8.io/#registry[Registry handling].
+
+[start=5]
 . `cloudflow:build-app` to produce the deployable CR file in the `topLevel` project `target` directory
 
 == Full example
