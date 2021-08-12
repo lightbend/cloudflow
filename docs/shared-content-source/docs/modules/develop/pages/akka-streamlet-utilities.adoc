@@ -6,7 +6,7 @@ include::ROOT:partial$include.adoc[]
 The `cloudflow.akka.util` library contains some predefined `StreamletLogic`{empty}s:
 
 - <<akka-http-streamlet.adoc#,HttpServerLogic>>
-- <<akka-grpc-streamlet.adoc#,HttpServerLogic>>
+- <<akka-grpc-streamlet.adoc#,GrpcServerLogic>>
 - `Splitter`
 - `Merger`
 
