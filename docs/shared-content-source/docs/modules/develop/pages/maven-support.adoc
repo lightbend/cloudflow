@@ -48,7 +48,7 @@ A full example of using the Maven commands is shown below:
 
 . Set the $DOCKER_USERNAME and $DOCKER_PASSWORD environment variables to the username and password of your image registry.
 +
-To avoid storing your credentials in the shell’s history file, use the following commands to create an environment variable for username and password. The username/password are your credentials to the Lightbend docker repository - commercial-registry.lightbend.com). If you want to see the password, remove the -s (for silent) flag.
+IMPORTANT: To avoid storing your credentials in the shell’s history file, use the following commands to create an environment variable for username and password. The username/password are your credentials to the Lightbend docker repository - commercial-registry.lightbend.com). If you want to see the password, remove the -s (for silent) flag.
 +
 [source,bash]
 ----
