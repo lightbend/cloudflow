@@ -153,7 +153,7 @@ trait Runner[T <: HasMetadata] {
   }
 
   def prepareNamespaceActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]) =
-    appActions(app, labels, ownerReferences) ++ serviceAccountAction(app, labels, ownerReferences)
+    appActions(app, labels, ownerReferences)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action]
 
@@ -177,37 +177,8 @@ trait Runner[T <: HasMetadata] {
       streamletDeployment: App.Deployment,
       secret: Secret): Action
 
-  def serviceAccountAction(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] =
-    Seq(Action.createOrReplace(roleBinding(app.namespace, labels, ownerReferences)))
-
   def defaultReplicas: Int
   def expectedPodCount(deployment: App.Deployment): Int
-
-  val BasicUserRole = "system:basic-user"
-
-  def roleBinding(namespace: String, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): RoleBinding = {
-    new RoleBindingBuilder()
-      .withNewMetadata()
-      .withName(Name.ofRoleBinding)
-      .withNamespace(namespace)
-      .withLabels(labels(Name.ofRoleBinding).asJava)
-      .withOwnerReferences(ownerReferences: _*)
-      .endMetadata()
-      .withKind("RoleBinding")
-      .withRoleRef(
-        new RoleRefBuilder()
-          .withApiGroup("rbac.authorization.k8s.io")
-          .withKind("Role")
-          .withName(BasicUserRole)
-          .build())
-      .withSubjects(
-        new SubjectBuilder()
-          .withKind("ServiceAccount")
-          .withName(Name.ofServiceAccount)
-          .withNamespace(namespace)
-          .build())
-      .build()
-  }
 
   val createEventPolicyRule =
     new PolicyRuleBuilder()
