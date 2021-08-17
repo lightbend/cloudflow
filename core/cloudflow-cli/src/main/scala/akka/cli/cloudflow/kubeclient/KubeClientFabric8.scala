@@ -52,22 +52,25 @@ object KubeClientFabric8 {
 }
 
 class KubeClientFabric8(
-    val config: Option[File],
+    val configFile: Option[File],
     clientFactory: K8sConfig => KubernetesClient = new DefaultKubernetesClient(_))(implicit val logger: CliLogger)
     extends KubeClient {
   import KubeClientFabric8._
 
   private lazy val kubeClient = Try {
-    def getConfig() = {
-      config
-        .map { file =>
-          Config.fromKubeconfig(Source.fromFile(file).getLines().mkString("\n"))
+    val config: K8sConfig = {
+      configFile.fold(K8sConfig.autoConfigure(null)) { file =>
+        val source = Source.fromFile(file)
+        try {
+          K8sConfig.fromKubeconfig(source.getLines().mkString("\n"))
+        } finally {
+          source.close()
         }
-        .getOrElse(Config.autoConfigure(null))
+      }
     }
 
     val client = {
-      val _client = clientFactory(getConfig())
+      val _client = clientFactory(config)
       Try {
         _client.endpoints().list().getItems()
         _client
@@ -83,7 +86,7 @@ class KubeClientFabric8(
             Process(Seq("kubectl", "get", "pods")).run(processIo).exitValue()
             _client.close()
           }
-          clientFactory(getConfig())
+          clientFactory(config)
       }
     }
 
