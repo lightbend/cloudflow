@@ -262,17 +262,17 @@ class KubeClientFabric8(
       Failure(CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
   }
 
-  def sparkAppVersion() = withClient { client =>
   private def extractOperatorVersion(configMap: ConfigMap): Try[String] =
     Option(configMap.getData.get(KubeClient.ProtocolVersionKey)) match {
       case Some(version) => Success(version)
       case None          => Failure(CliException("Cannot find the protocol version in the config map"))
     }
 
+  def sparkAppVersion(): Try[String] = withClient { client =>
     getCrdAppVersion(SparkResource, client)
   }
 
-  def flinkAppVersion() = withClient { client =>
+  def flinkAppVersion(): Try[String] = withClient { client =>
     getCrdAppVersion(FlinkResource, client)
   }
 
@@ -350,8 +350,9 @@ class KubeClientFabric8(
           val data = prev
             .getData()
             .asScala
-            .get(dockerConfigSecret)
-            .getOrElse(throw CliException("Failed to deserialize existing docker image pull secret"))
+            .getOrElse(
+              dockerConfigSecret,
+              throw CliException("Failed to deserialize existing docker image pull secret"))
           val prevConfig =
             Serialization.jsonMapper().readValue(Base64Helper.decode(data), classOf[DockerConfig])
 
@@ -398,7 +399,7 @@ class KubeClientFabric8(
     }
   }
 
-  def createAppInputSecret(name: String, namespace: String, appConfig: String, ownerReference: OwnerReference) =
+  private def createAppInputSecret(name: String, namespace: String, appConfig: String, ownerReference: OwnerReference) =
     withClient { client =>
       Try {
         lazy val secret =
@@ -474,7 +475,11 @@ class KubeClientFabric8(
     }
   }
 
-  def handleLoggingSecret(name: String, namespace: String, content: Option[String], ownerReference: OwnerReference) =
+  private def handleLoggingSecret(
+      name: String,
+      namespace: String,
+      content: Option[String],
+      ownerReference: OwnerReference) =
     withClient { client =>
       Try {
         content match {
@@ -659,7 +664,7 @@ class KubeClientFabric8(
       appUid: String,
       appConfig: String,
       loggingContent: Option[String],
-      configs: Map[App.Deployment, Map[String, String]]) = {
+      configs: Map[App.Deployment, Map[String, String]]): Try[Unit] = {
     val ownerReference = getOwnerReference(appName, appUid)
     for {
       _ <- handleLoggingSecret(appName, namespace, loggingContent, ownerReference)
@@ -726,14 +731,13 @@ class KubeClientFabric8(
         .list()
         .getItems
         .asScala
-        .map { secret =>
+        .flatMap { secret =>
           (Option(secret.getMetadata.getLabels), secret.getData.asScala.get(SecretDataKey)) match {
             case (Some(labels), Some(config)) =>
               Some(labels.asScala(KafkaClusterNameLabel) -> Base64Helper.decode(config))
             case _ => None
           }
         }
-        .flatten
         .toMap
     }
   }

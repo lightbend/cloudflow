@@ -20,10 +20,10 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
 
   val crFile = new File("./cloudflow-cli/src/test/resources/swiss-knife.json")
   val crFileWithKafkaCluster = new File("./cloudflow-cli/src/test/resources/swiss-knife-with-kafka-cluster.json")
-  val testingCRSummary = models.CRSummary("foo", "bar", "0.0.1", "now")
+  val testingCRSummary: models.CRSummary = models.CRSummary("foo", "bar", "0.0.1", "now")
 
   val listResult = List(testingCRSummary)
-  val statusResult = ApplicationStatus(testingCRSummary, "MOCK", List(), List())
+  val statusResult: ApplicationStatus = ApplicationStatus(testingCRSummary, "MOCK", List(), List())
 
   val defaultPvcMounts = List("cloudflow-spark", "cloudflow-flink")
 
@@ -36,41 +36,42 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       providedPvcs: List[String] = defaultPvcMounts,
       providedKafkaClusters: Map[String, String] = defaultProvidedKafkaClusters,
       providedApplication: Option[App.Cr] = None,
-      providedInputSecret: String = "")(config: Option[File], logger: CliLogger) = {
+      providedInputSecret: String = "")(config: Option[File], logger: CliLogger): KubeClient = {
     new KubeClient {
-      def listCloudflowApps(namespace: Option[String]): Try[List[models.CRSummary]] =
+      override def listCloudflowApps(namespace: Option[String]): Try[List[models.CRSummary]] =
         Success(listResult)
-      def getCloudflowAppStatus(app: String, namespace: String) =
+      override def getCloudflowAppStatus(app: String, namespace: String): Try[ApplicationStatus] =
         Success(statusResult)
-      def createImagePullSecret(
+      override def createImagePullSecret(
           namespace: String,
           dockerRegistryURL: String,
           dockerUsername: String,
           dockerPassword: String): Try[Unit] = Success(())
-      def createNamespace(name: String): Try[Unit] = Success(())
-      def sparkAppVersion(): Try[String] = Success(sparkVersion)
-      def flinkAppVersion(): Try[String] = Success(flinkVersion)
-      def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
-      def uidCloudflowApp(name: String, namespace: String) = Success("1")
-      def createMicroservicesApp(
+      override def createNamespace(name: String): Try[Unit] = Success(())
+      override def sparkAppVersion(): Try[String] = Success(sparkVersion)
+      override def flinkAppVersion(): Try[String] = Success(flinkVersion)
       override def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = Success(protocolVersion)
+      override def createCloudflowApp(spec: App.Spec, namespace: String): Try[String] = Success("1")
+      override def uidCloudflowApp(name: String, namespace: String): Try[String] = Success("1")
+      override def createMicroservicesApp(
           cfSpec: App.Spec,
           namespace: String,
           specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
         Success("1")
-      def configureCloudflowApp(
+      override def configureCloudflowApp(
           name: String,
           namespace: String,
           appUid: String,
           appConfig: String,
           loggingContent: Option[String],
           configs: Map[App.Deployment, Map[String, String]]): Try[Unit] = Success(())
-      def deleteCloudflowApp(app: String, namespace: String) = Success(())
-      def getPvcs(namespace: String) = Success(providedPvcs)
-      def getKafkaClusters(namespace: Option[String]) = Success(providedKafkaClusters)
-      def readCloudflowApp(name: String, namespace: String): Try[Option[App.Cr]] = Success(providedApplication)
-      def updateCloudflowApp(app: App.Cr, namespace: String): Try[App.Cr] = Success(app)
-      def getAppInputSecret(name: String, namespace: String): Try[String] = Success(providedInputSecret)
+      override def deleteCloudflowApp(app: String, namespace: String): Try[Unit] = Success(())
+      override def getPvcs(namespace: String): Try[List[String]] = Success(providedPvcs)
+      override def getKafkaClusters(namespace: Option[String]): Try[Map[String, String]] =
+        Success(providedKafkaClusters)
+      override def readCloudflowApp(name: String, namespace: String): Try[Option[App.Cr]] = Success(providedApplication)
+      override def updateCloudflowApp(app: App.Cr, namespace: String): Try[App.Cr] = Success(app)
+      override def getAppInputSecret(name: String, namespace: String): Try[String] = Success(providedInputSecret)
     }
   }
 

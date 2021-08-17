@@ -98,15 +98,14 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     val res = crApp.spec.streamlets
       .map(_.descriptor.runtime)
       .distinct
-      .map { s =>
+      .flatMap { s =>
         streamletChecks.get(s).fold[Option[(String, Option[Throwable])]](None) { check =>
           validateStreamlet(s, check.required)(check.thunk)
         }
       }
-      .flatten
 
-    if (!res.isEmpty) {
-      val ex: Throwable = res.flatMap(_._2).headOption.getOrElse(null)
+    if (res.nonEmpty) {
+      val ex: Throwable = res.flatMap(_._2).headOption.orNull
       Failure(CliException(res.map(_._1).mkString("\n"), ex))
     } else {
       Success(())
@@ -136,7 +135,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       Failure(CliException("The application specification doesn't contains deployments"))
     } else {
       // Get the first available image, all images must be present in the same repository.
-      val imageRef = crApp.spec.deployments(0).image
+      val imageRef = crApp.spec.deployments.head.image
 
       Image(imageRef)
     }

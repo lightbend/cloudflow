@@ -64,8 +64,7 @@ object TopicActions {
         // since topics are defined once, deployments refer to the topics by port mappings.
         // So it is ok to just take the first one found, that uses the topic.
         val appConfigSecretName = newApp.spec.deployments
-          .filter(deploymentOf(topic.id))
-          .headOption
+          .find(deploymentOf(topic.id))
           .map(_.secretName)
 
         action(appConfigSecretName, runners, labels, topic, newApp, namedClustersNamespace)
@@ -96,14 +95,12 @@ object TopicActions {
     def useClusterConfiguration(providedTopic: TopicInfo): Action = {
       providedTopic.cluster
         .map { cluster =>
-          Action.get[Secret](String.format(KafkaClusterNameFormat, cluster), namedClustersNamespace) { res =>
-            res match {
-              case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, runners, labels, providedTopic)
-              case None =>
-                val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
-                log.error(msg)
-                CloudflowStatus.errorAction(newApp, runners, msg)
-            }
+          Action.get[Secret](String.format(KafkaClusterNameFormat, cluster), namedClustersNamespace) {
+            case Some(secret) => createActionFromKafkaConfigSecret(secret, newApp, runners, labels, providedTopic)
+            case None =>
+              val msg = s"Could not find Kafka configuration for topic [${providedTopic.name}] cluster [$cluster]"
+              log.error(msg)
+              CloudflowStatus.errorAction(newApp, runners, msg)
           }
         }
         .getOrElse {
