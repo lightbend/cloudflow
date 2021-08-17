@@ -33,7 +33,7 @@ Java::
 --
 [source,java]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step0/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step0/src/main/java/com/example/ReportPrinterStep0.java[]
 ----
 --
 
@@ -61,7 +61,7 @@ Java::
 --
 [source,java]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step1/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step1/src/main/java/com/example/ReportPrinterStep1.java[]
 ----
 --
 
@@ -110,7 +110,7 @@ Java::
 --
 [source,java]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step2/src/main/java/com/example/ReportPrinter.java[]
+include::{cloudflow-examples-version}@docsnippets:ROOT:example$build-flink-streamlets-java/step2/src/main/java/com/example/ReportPrinterStep2.java[]
 ----
 --
 

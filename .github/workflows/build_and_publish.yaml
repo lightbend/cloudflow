@@ -21,6 +21,7 @@ jobs:
     - name: Build documentation  
       run: |
         sudo snap install yq
+        yq --version
         cd docs
         make all
     - name: Publish to cloudflow.io  

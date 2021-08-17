@@ -114,7 +114,7 @@ list-todos: html
 # Generate the ScalaDoc and the JavaDoc, for the old versions
 all_javascaladocs:
 	@echo "Building old java and scala docs"
-	(yq e '.content.sources[0].branches.*' docs-source/site.yml | xargs -n1 ./build-javascaladocs.sh)
+	./build-javascaladocs.sh
 
 print-site:
 	# The result directory with the contents of this build:

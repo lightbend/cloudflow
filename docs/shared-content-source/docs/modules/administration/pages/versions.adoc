@@ -7,18 +7,18 @@ See https://developer.lightbend.com/docs/introduction/getting-help/support-termi
 
 ifdef::review[REVIEWERS: I've moved the version numbers into modules/ROOT/partials/include.adoc because that file's purpose is to keep all of these in one place.]
 
-=== Supported Technologies
+== Supported Technologies
 
 * https://github.com/akka/akka[Akka]: {supported-akka-v}
 
-=== Certified Integrations
+== Certified Integrations
 
 * https://github.com/apache/spark[Apache Spark]: {supported-apache-spark-v}
 * https://github.com/apache/flink[Apache Flink]: {supported-apache-flink-v}
 * https://github.com/apache/kafka[Apache Kafka]: {supported-apache-kafka-v}
 * https://github.com/strimzi/strimzi-kafka-operator[Strimzi Kafka Operator]: {supported-strimzi-kafka-v}
 
-=== Incubating
+== Incubating
 
 * https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/[Google Spark Kubernetes Operator]: {supported-gcp-spark-v}
 * https://github.com/helm/charts/tree/master/incubator/sparkoperator[Google Spark Kubernetes Operator Helm chart]: {supported-helm-spark-v}
