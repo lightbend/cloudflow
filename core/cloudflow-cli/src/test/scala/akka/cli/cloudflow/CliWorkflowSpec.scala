@@ -50,10 +50,10 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       def createNamespace(name: String): Try[Unit] = Success(())
       def sparkAppVersion(): Try[String] = Success(sparkVersion)
       def flinkAppVersion(): Try[String] = Success(flinkVersion)
-      def getOperatorProtocolVersion(): Try[String] = Success(protocolVersion)
       def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
       def uidCloudflowApp(name: String, namespace: String) = Success("1")
       def createMicroservicesApp(
+      override def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = Success(protocolVersion)
           cfSpec: App.Spec,
           namespace: String,
           specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =

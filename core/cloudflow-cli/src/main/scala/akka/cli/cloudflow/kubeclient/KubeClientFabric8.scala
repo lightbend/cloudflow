@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.{ JsonCreator, JsonProperty }
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.fabric8.kubernetes.api.model.{
+  ConfigMap,
   LocalObjectReferenceBuilder,
   NamespaceBuilder,
   ObjectMetaBuilder,
@@ -27,8 +28,9 @@ import io.fabric8.kubernetes.api.model.{
 }
 import io.fabric8.kubernetes.client.dsl.{ MixedOperation, Resource }
 import io.fabric8.kubernetes.client.utils.Serialization
-import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, KubernetesClient }
+import io.fabric8.kubernetes.client.{ DefaultKubernetesClient, KubernetesClient, Config => K8sConfig }
 
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.sys.process.{ Process, ProcessIO }
 
@@ -51,7 +53,7 @@ object KubeClientFabric8 {
 
 class KubeClientFabric8(
     val config: Option[File],
-    clientFactory: Config => KubernetesClient = new DefaultKubernetesClient(_))(implicit val logger: CliLogger)
+    clientFactory: K8sConfig => KubernetesClient = new DefaultKubernetesClient(_))(implicit val logger: CliLogger)
     extends KubeClient {
   import KubeClientFabric8._
 
@@ -161,23 +163,24 @@ class KubeClientFabric8(
 
   import ModelConversions._
 
-  def listCloudflowApps(namespace: Option[String]) = withApplicationClient { cloudflowApps =>
-    logger.trace("Running the Fabric8 list command")
-    Try {
-      val apps =
-        namespace match {
-          case Some(ns) => cloudflowApps.inNamespace(ns)
-          case _        => cloudflowApps.inAnyNamespace()
-        }
-      val res = apps
-        .list()
-        .getItems
-        .asScala
-        .map(getCRSummary)
-        .toList
-      logger.trace(s"Fabric8 list command successful")
-      res
-    }
+  def listCloudflowApps(namespace: Option[String]): Try[List[models.CRSummary]] = withApplicationClient {
+    cloudflowApps =>
+      logger.trace("Running the Fabric8 list command")
+      Try {
+        val apps =
+          namespace match {
+            case Some(ns) => cloudflowApps.inNamespace(ns)
+            case _        => cloudflowApps.inAnyNamespace()
+          }
+        val res = apps
+          .list()
+          .getItems
+          .asScala
+          .map(getCRSummary)
+          .toList
+        logger.trace(s"Fabric8 list command successful")
+        res
+      }
   }
 
   def getCloudflowAppStatus(appName: String, namespace: String): Try[models.ApplicationStatus] = withApplicationClient {
@@ -210,33 +213,59 @@ class KubeClientFabric8(
       }
   }
 
-  def getOperatorProtocolVersion(): Try[String] = withClient { client =>
+  def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = withClient { client =>
     for {
-      protocolVersionCM <- Try {
-        client
-          .configMaps()
-          .inAnyNamespace()
-          .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
-          .list()
-          .getItems()
-      }
-      protocolVersion <- {
-        protocolVersionCM.size() match {
-          case 1 => Success(protocolVersionCM.get(0))
-          case x if x > 1 =>
-            Failure(
-              CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
-          case x if x < 1 => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
-        }
-      }
-      version <- Option(protocolVersion.getData.get(KubeClient.ProtocolVersionKey))
-        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the config map")))(Success(_))
+      protocolVersionConfigMaps <- listProtocolVersionConfigMaps(client, namespace)
+      protocolVersion <- getProtocolVersionConfigMap(protocolVersionConfigMaps.asScala.toList)
+      version <- extractOperatorVersion(protocolVersion)
     } yield {
       version
     }
   }
 
+  @tailrec
+  private def listProtocolVersionConfigMaps(
+      client: KubernetesClient,
+      namespace: Option[String]): Try[java.util.List[ConfigMap]] =
+    namespace match {
+      case Some(ns) =>
+        val configMaps = client
+          .configMaps()
+          .inNamespace(ns)
+          .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
+          .list()
+          .getItems
+        if (configMaps.isEmpty) {
+          // Fallback to the "classic" behavior that is trying to find
+          // the operator running in any namespace
+          listProtocolVersionConfigMaps(client, None)
+        } else {
+          Success(configMaps)
+        }
+      case None =>
+        Try(
+          client
+            .configMaps()
+            .inAnyNamespace()
+            .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
+            .list()
+            .getItems)
+    }
+
+  private def getProtocolVersionConfigMap(configMaps: List[ConfigMap]): Try[ConfigMap] = configMaps match {
+    case head :: Nil => Success(head)
+    case Nil         => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
+    case _ =>
+      Failure(CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
+  }
+
   def sparkAppVersion() = withClient { client =>
+  private def extractOperatorVersion(configMap: ConfigMap): Try[String] =
+    Option(configMap.getData.get(KubeClient.ProtocolVersionKey)) match {
+      case Some(version) => Success(version)
+      case None          => Failure(CliException("Cannot find the protocol version in the config map"))
+    }
+
     getCrdAppVersion(SparkResource, client)
   }
 

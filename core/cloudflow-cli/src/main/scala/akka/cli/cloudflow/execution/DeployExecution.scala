@@ -150,7 +150,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         if (d.microservices) {
           Success("")
         } else {
-          validateProtocolVersion(client)
+          validateProtocolVersion(client, d.namespace)
         }
       }
 
