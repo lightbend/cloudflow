@@ -1,0 +1,136 @@
+
+include::ROOT:partial$include.adoc[]
+
+This guide shows how to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
+It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
+
+== Installing Cloudflow
+
+In this guide, we will use Helm to install Cloudflow.
+Please see xref:get-started:prepare-development-environment.adoc#_download_and_install_the_cloudflow_cli[Preparing a development environment] for how to download and install the Cloudflow CLI. 
+
+The first step is to create the namespace, if it does not exist yet, to install Cloudflow into:
+
+  kubectl create ns cloudflow
+
+IMPORTANT: Many subsequent commands will assume that the namespace is `cloudflow`.
+
+First, we add the Cloudflow Helm repository and update the local index:
+
+  helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/
+  helm repo update
+
+=== Installing
+
+The `kafkaClusters.default.bootstrapServers` parameter sets the address and port of the default Kafka cluster that Cloudflow will use. In this example, we have used the address of a Strimzi created Kafka cluster located in the `cloudflow` namespace.
+
+  kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
+
+The following command installs Cloudflow using the Helm chart:
+
+[subs="attributes+"]
+  helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
+    --version "{cloudflow-version}" \
+    --set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092
+
+=== Default and named Kafka clusters
+
+At least one Kafka cluster is required to connect streamlets together in a blueprint.
+If you install Cloudflow and provide a `kafkaClusters.default.bootstrapServers` parameter then this cluster will be used by default for all streamlet connections.
+
+You can optionally customize the number of partitions and replicas that Cloudflow will use as parameters when creating Cloudflow managed topics on the Kafka cluster.
+To override the default settings you can define the number of partitions with `kafkaClusters.default.partitions` and the number of replicas with `kafkaClusters.default.replicas`.
+
+You can optionally provide default properties for Kafka Producers, Consumers, and shared connection properties that can be used for both clients used in streamlets.
+To provide the properties it's recommended to create a custom YAML file that includes the list of connection properties to include, and then pass the YAML file to Helm using the `-f` flag during a Helm install or upgrade.
+
+To customize everything for the `default` Kafka cluster create a YAML file with your all your configuration values.
+For example:
+
+.`kafka-clusters.conf`
+[source, YAML]
+----
+kafkaClusters:
+  default:
+    bootstrapServers: "cloudflow-strimzi-kafka-bootstrap.cloudflow:9092"
+    partitions: 3
+    replicas: 2
+    connectionConfig:
+        bootstrap.servers: "my-server.europe-west1.gcp.cloud:9092"
+        security.protocol: "SASL_SSL"
+        sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule   required username=\"MYAPIKEY\"   password=\"MyPassWord\";"
+        ssl.endpoint.identification.algorithm: "https"
+        sasl.mechanism: "PLAIN"
+    producerConfig:
+      batch.size: "1024"
+    consumerConfig:
+      fetch.max.bytes: "52428800"
+----
+
+Then use these values when you install or upgrade Cloudflow:
+
+[subs="attributes+"]
+  helm install cloudflow cloudflow-helm-charts/cloudflow --namespace cloudflow \
+    --version "{cloudflow-version}" \
+    -f ./kafka-clusters.yaml
+
+You can provide as many additional named Kafka clusters as you like that can be referenced within the topic configuration of a blueprint (see the xref:develop:blueprints.adoc[Named Kafka Clusters] section of the Using Blueprint docs for more details).
+To add additional clusters define a new property for each under the `kafkaClusters` Helm value and provide the same configuration information as can be done for the `default` cluster.
+The property name will be the name that is referenced by blueprints.
+For example:
+
+.`kafka-clusters.conf`
+[source, YAML]
+----
+  kafkaClusters:
+    default:
+      ...
+    us-east:
+      bootstrapServers: "us-east-0.kafka.xyzcorp:9092,us-east-1.kafka.xyzcorp:9092,us-east-2.kafka.xyzcorp:9092"
+      partitions: 10
+      replicas: 3
+      connectionConfig: {}
+      producerConfig: {}
+      consumerConfig: {}
+----
+
+Can be referenced within a blueprint:
+
+[source, HOCON]
+----
+my-topic-name {
+  producers = [streamlet-a1.out, streamlet-a2.out]
+  consumers = [streamlet-b.in]
+  cluster = us-east
+}
+----
+
+All named Kafka clusters (including the `default`) are created as Kubernetes `Secrets` within the Cloudflow installation namespace.
+
+Named Kafka clusters can be defined at install or upgrade time.
+
+=== Verifying the installation
+
+Check the status of the installation process using `kubectl`. When the Cloudflow operator pod is in `Running` status, the installation is complete.
+
+----
+$ kubectl get pods -n cloudflow
+NAME                                                READY   STATUS    RESTARTS   AGE
+cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running   0          10s
+----
+
+You can now deploy an Akka-based Cloudflow application into the cluster as it only requires Kafka to be set up. More on this in the development section of the documentation.
+
+== Adding Spark support
+
+If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application.
+
+Continue with xref:installing-spark-operator.adoc[Adding Spark Support].
+
+== Adding Flink support
+
+If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
+
+Continue with xref:installing-flink-operator.adoc[Adding Flink Support].
+
+

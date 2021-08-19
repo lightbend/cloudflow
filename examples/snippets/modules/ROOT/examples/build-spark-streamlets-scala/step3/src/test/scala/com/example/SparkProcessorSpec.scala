@@ -39,7 +39,7 @@ class SparkProcessorSpec extends SparkScalaTestSupport { // 1. Extend SparkScala
       // 8. Assert that actual matches expectation
       results must contain(Data(2, "name2"))
       results.size must be(5)
-      run.totalRows must be (10)
+      run.totalRows must be(10)
     }
   }
 }

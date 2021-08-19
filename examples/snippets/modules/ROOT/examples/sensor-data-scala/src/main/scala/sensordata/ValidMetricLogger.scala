@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 //tag::all[]
 package sensordata
 
+import akka.stream.scaladsl._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
@@ -25,8 +26,8 @@ import cloudflow.streamlets.avro._
 class ValidMetricLogger extends AkkaStreamlet {
 //end::config-parameter1[]
 
-  val inlet = AvroInlet[Metric]("in")
-  val shape = StreamletShape.withInlets(inlet)
+  val inlet: CodecInlet[Metric]      = AvroInlet[Metric]("in")
+  override val shape: StreamletShape = StreamletShape.withInlets(inlet)
 
   val LogLevel = RegExpConfigParameter(
     "log-level",
@@ -41,27 +42,27 @@ class ValidMetricLogger extends AkkaStreamlet {
 
   override def configParameters = Vector(LogLevel, MsgPrefix)
 
-  override def createLogic = new RunnableGraphStreamletLogic() {
-    val logF: String ⇒ Unit = LogLevel.value.toLowerCase match {
-      case "debug"   ⇒ system.log.debug _
-      case "info"    ⇒ system.log.info _
-      case "warning" ⇒ system.log.warning _
-      case "error"   ⇒ system.log.error _
+  override def createLogic(): AkkaStreamletLogic = new RunnableGraphStreamletLogic() {
+    val logF: String => Unit = LogLevel.value.toLowerCase match {
+      case "debug"   => system.log.debug _
+      case "info"    => system.log.info _
+      case "warning" => system.log.warning _
+      case "error"   => system.log.error _
     }
 
     val msgPrefix = MsgPrefix.value
 
-    def log(metric: Metric) =
+    def log(metric: Metric): Unit =
       logF(s"$msgPrefix $metric")
 
     def flow =
-      FlowWithCommittableContext[Metric]
-        .map { validMetric ⇒
+      FlowWithCommittableContext[Metric]()
+        .map { validMetric =>
           log(validMetric)
           validMetric
         }
 
-    def runnableGraph =
+    override def runnableGraph(): RunnableGraph[_] =
       sourceWithCommittableContext(inlet).via(flow).to(committableSink)
   }
 }

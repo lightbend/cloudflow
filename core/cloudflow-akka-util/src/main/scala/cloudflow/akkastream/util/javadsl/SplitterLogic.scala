@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,14 +44,12 @@ object Splitter {
   def sink[I, L, R](
       flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       left: Sink[Pair[L, Committable], NotUsed],
-      right: Sink[Pair[R, Committable], NotUsed]
-  ): Sink[Pair[I, Committable], NotUsed] =
+      right: Sink[Pair[R, Committable], NotUsed]): Sink[Pair[I, Committable], NotUsed] =
     akkastream.util.scaladsl.Splitter
       .sink[I, L, R](
         flow.via(toEitherFlow).asScala,
         left.contramap[Tuple2[L, Committable]] { case (t, c)  => new Pair(t, c) }.asScala,
-        right.contramap[Tuple2[R, Committable]] { case (t, c) => new Pair(t, c) }.asScala
-      )
+        right.contramap[Tuple2[R, Committable]] { case (t, c) => new Pair(t, c) }.asScala)
       .contramap[Pair[I, Committable]] { pair =>
         (pair.first, pair.second)
       }
@@ -67,20 +65,12 @@ object Splitter {
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
       committerSettings: CommitterSettings,
-      context: AkkaStreamletContext
-  ): Sink[Pair[I, Committable], NotUsed] =
+      context: AkkaStreamletContext): Sink[Pair[I, Committable], NotUsed] =
     akka.stream.javadsl.Flow
       .create[Pair[I, Committable]]()
       .map(_.toScala)
-      .to(
-        akkastream.util.scaladsl.Splitter
-          .sink[I, L, R](
-            flow.via(toEitherFlow).asScala,
-            leftOutlet,
-            rightOutlet,
-            committerSettings
-          )(context)
-      )
+      .to(akkastream.util.scaladsl.Splitter
+        .sink[I, L, R](flow.via(toEitherFlow).asScala, leftOutlet, rightOutlet, committerSettings)(context))
 
   /**
    * Java API
@@ -91,8 +81,7 @@ object Splitter {
       flow: FlowWithContext[I, Committable, JEither[L, R], Committable, NotUsed],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
-      context: AkkaStreamletContext
-  ): Sink[Pair[I, Committable], NotUsed] =
+      context: AkkaStreamletContext): Sink[Pair[I, Committable], NotUsed] =
     sink[I, L, R](flow, leftOutlet, rightOutlet, CommitterSettings(context.system), context)
 
   private def toEitherFlow[L, R] =
@@ -106,8 +95,8 @@ abstract class SplitterLogic[I, L, R](
     in: CodecInlet[I],
     left: CodecOutlet[L],
     right: CodecOutlet[R],
-    context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.SplitterLogic(in, left, right)(context) {
+    context: AkkaStreamletContext)
+    extends akkastream.util.scaladsl.SplitterLogic(in, left, right)(context) {
 
   def createFlow(): FlowWithContext[I, Committable, JEither[L, R], CommittableOffset, NotUsed]
   def flow: cloudflow.akkastream.scaladsl.FlowWithOffsetContext[I, Either[L, R]] =

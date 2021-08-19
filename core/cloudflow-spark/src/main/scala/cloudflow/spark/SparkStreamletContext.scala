@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import org.apache.spark.sql.streaming.{ OutputMode, StreamingQuery, Trigger }
 import cloudflow.streamlets.{ CodecInlet, CodecOutlet }
 import cloudflow.streamlets._
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract case class SparkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
-    session: SparkSession
-) extends StreamletContext {
+    session: SparkSession)
+    extends StreamletContext {
 
   /**
    * Returns the absolute path to a mounted shared storage that can be used to store reliable checkpoints.
@@ -56,9 +57,10 @@ abstract case class SparkStreamletContext(
    *
    * @return the `StreamingQuery` that starts executing
    */
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, trigger: Option[Trigger])(
-      implicit encoder: Encoder[Out],
-      typeTag: TypeTag[Out]
-  ): StreamingQuery
+  def writeStream[Out](
+      stream: Dataset[Out],
+      outPort: CodecOutlet[Out],
+      outputMode: OutputMode,
+      trigger: Option[Trigger])(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery
 
 }

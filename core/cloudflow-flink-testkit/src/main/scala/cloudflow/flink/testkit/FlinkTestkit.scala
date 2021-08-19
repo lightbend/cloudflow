@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ import cloudflow.streamlets._
  * }
  * }}
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract class FlinkTestkit {
 
   val testTimeout = 10.seconds
@@ -103,7 +104,8 @@ abstract class FlinkTestkit {
   }
 
   // tap inlet port to take a source function directly
-  def inletAsTap[In: TypeInformation](in: CodecInlet[In], inStream: DataStream[In]): FlinkInletTap[In] = in.inletAsTap(inStream)
+  def inletAsTap[In: TypeInformation](in: CodecInlet[In], inStream: DataStream[In]): FlinkInletTap[In] =
+    in.inletAsTap(inStream)
 
   // Java API
   def getInletAsTap[In](in: CodecInlet[In], inStream: JDataStream[In], clazz: Class[In]): FlinkInletTap[In] =
@@ -113,7 +115,8 @@ abstract class FlinkTestkit {
   def outletAsTap[Out: TypeInformation](out: CodecOutlet[Out]): FlinkOutletTap[Out] = out.outletAsTap
 
   // Java API
-  def getOutletAsTap[Out](out: CodecOutlet[Out], clazz: Class[Out]): FlinkOutletTap[Out] = outletAsTap(out)(TypeInformation.of[Out](clazz))
+  def getOutletAsTap[Out](out: CodecOutlet[Out], clazz: Class[Out]): FlinkOutletTap[Out] =
+    outletAsTap(out)(TypeInformation.of[Out](clazz))
 
   /**
    * Runs the `flinkStreamlet` using `inletTaps` as the sources and `outletTaps` as the sinks. Based on the port name
@@ -131,8 +134,7 @@ abstract class FlinkTestkit {
       flinkStreamlet: FlinkStreamlet,
       inletTaps: Seq[FlinkInletTap[_]],
       outletTaps: Seq[FlinkOutletTap[_]],
-      env: StreamExecutionEnvironment
-  ): Unit = {
+      env: StreamExecutionEnvironment): Unit = {
     val ctx = new TestFlinkStreamletContext("testFlinkStreamlet", env, inletTaps, outletTaps, config)
     doRun(ctx, flinkStreamlet)
   }
@@ -155,22 +157,17 @@ abstract class FlinkTestkit {
       flinkStreamlet: FlinkStreamlet,
       inletTaps: java.util.List[FlinkInletTap[_]],
       outletTaps: java.util.List[FlinkOutletTap[_]],
-      env: JStreamExecutionEnvironment
-  ): Unit = {
+      env: JStreamExecutionEnvironment): Unit = {
     val ctx = new TestFlinkStreamletContext(
       "testFlinkStreamlet",
       new StreamExecutionEnvironment(env),
       inletTaps.asScala,
       outletTaps.asScala,
-      config
-    )
+      config)
     doRun(ctx, flinkStreamlet)
   }
 
-  private[testkit] def doRun(
-      ctx: TestFlinkStreamletContext,
-      flinkStreamlet: FlinkStreamlet
-  ): Unit = {
+  private[testkit] def doRun(ctx: TestFlinkStreamletContext, flinkStreamlet: FlinkStreamlet): Unit = {
     flinkStreamlet.setContext(ctx)
     val res = flinkStreamlet.run(ctx.config)
     Await.ready(res.completed, testTimeout)
@@ -178,11 +175,6 @@ abstract class FlinkTestkit {
   }
 }
 
-case class FlinkInletTap[T: TypeInformation](
-    portName: String,
-    inStream: DataStream[T]
-)
+case class FlinkInletTap[T: TypeInformation](portName: String, inStream: DataStream[T])
 
-case class FlinkOutletTap[T: TypeInformation](
-    portName: String
-)
+case class FlinkOutletTap[T: TypeInformation](portName: String)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,7 @@ object Splitter {
   def graph[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
-      right: Sink[(R, Committable), NotUsed]
-  ): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
+      right: Sink[(R, Committable), NotUsed]): Graph[akka.stream.SinkShape[(I, Committable)], NotUsed] =
     GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] => (il, ir) =>
       import GraphDSL.Implicits._
 
@@ -70,8 +69,8 @@ object Splitter {
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       left: Sink[(L, Committable), NotUsed],
-      right: Sink[(R, Committable), NotUsed]
-  ): Sink[(I, Committable), NotUsed] = Sink.fromGraph(graph(flow, left, right))
+      right: Sink[(R, Committable), NotUsed]): Sink[(I, Committable), NotUsed] =
+    Sink.fromGraph(graph(flow, left, right))
 
   /**
    * A Sink that splits elements based on a flow of type `FlowWithCommittableContext[I, Either[L, R]]`.
@@ -80,8 +79,7 @@ object Splitter {
   def sink[I, L, R](
       flow: FlowWithCommittableContext[I, Either[L, R]],
       leftOutlet: CodecOutlet[L],
-      rightOutlet: CodecOutlet[R]
-  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
+      rightOutlet: CodecOutlet[R])(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] = {
     val defaultSettings = CommitterSettings(context.system)
     sink[I, L, R](flow, leftOutlet, rightOutlet, defaultSettings)
   }
@@ -94,8 +92,7 @@ object Splitter {
       flow: FlowWithCommittableContext[I, Either[L, R]],
       leftOutlet: CodecOutlet[L],
       rightOutlet: CodecOutlet[R],
-      committerSettings: CommitterSettings
-  )(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] =
+      committerSettings: CommitterSettings)(implicit context: AkkaStreamletContext): Sink[(I, Committable), NotUsed] =
     flow
       .map(MultiData2.fromEither(_))
       .asFlow
@@ -106,11 +103,8 @@ object Splitter {
  * A StreamletLogic that splits elements based on a flow of type `FlowWithOffsetContext[I, Either[L, R]]`.
  */
 @deprecated("Use `Splitter.sink` instead.", "1.3.1")
-abstract class SplitterLogic[I, L, R](
-    inlet: CodecInlet[I],
-    leftOutlet: CodecOutlet[L],
-    rightOutlet: CodecOutlet[R]
-)(implicit context: AkkaStreamletContext)
+abstract class SplitterLogic[I, L, R](inlet: CodecInlet[I], leftOutlet: CodecOutlet[L], rightOutlet: CodecOutlet[R])(
+    implicit context: AkkaStreamletContext)
     extends RunnableGraphStreamletLogic()(context) {
 
   /**
@@ -128,12 +122,12 @@ abstract class SplitterLogic[I, L, R](
    * writing to the outlet
    */
   override def runnableGraph() = {
-    val in    = sourceWithOffsetContext[I](inlet)
-    val left  = committableSink[L](leftOutlet)
+    val in = sourceWithOffsetContext[I](inlet)
+    val left = committableSink[L](leftOutlet)
     val right = committableSink[R](rightOutlet)
 
-    val splitterGraph = RunnableGraph.fromGraph(
-      GraphDSL.create(left, right)(Keep.left) { implicit builder: GraphDSL.Builder[NotUsed] => (il, ir) =>
+    val splitterGraph = RunnableGraph.fromGraph(GraphDSL.create(left, right)(Keep.left) {
+      implicit builder: GraphDSL.Builder[NotUsed] => (il, ir) =>
         import GraphDSL.Implicits._
 
         val toEitherFlow = builder.add(flow.asFlow)
@@ -150,8 +144,7 @@ abstract class SplitterLogic[I, L, R](
         // format: ON
 
         ClosedShape
-      }
-    )
+    })
     splitterGraph
   }
 }

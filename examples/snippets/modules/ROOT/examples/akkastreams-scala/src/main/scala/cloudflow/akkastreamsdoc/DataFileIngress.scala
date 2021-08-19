@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,13 +53,13 @@ class DataFileIngress extends AkkaStreamlet {
   // *) Note that reading and deserializing the file content is done in separate steps for readability only, in production they should be merged into one step for performance reasons.
 
   override def createLogic = new RunnableGraphStreamletLogic() {
-    val listFiles: NotUsed ⇒ Source[file.Path, NotUsed] = { _ ⇒
+    val listFiles: NotUsed => Source[file.Path, NotUsed] = { _ =>
       Directory.ls(getMountedPath(sourceData))
     }
-    val readFile: Path ⇒ Source[ByteString, Future[IOResult]] = { path: Path ⇒
+    val readFile: Path => Source[ByteString, Future[IOResult]] = { path: Path =>
       FileIO.fromPath(path).via(JsonFraming.objectScanner(Int.MaxValue))
     }
-    val parseFile: ByteString ⇒ Data = { jsonByteString ⇒
+    val parseFile: ByteString => Data = { jsonByteString =>
       JsonParser(jsonByteString.utf8String).convertTo[Data]
     }
 

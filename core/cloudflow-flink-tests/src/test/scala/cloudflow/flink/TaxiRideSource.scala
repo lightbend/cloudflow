@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,18 +32,15 @@ import SourceFunction.SourceContext
 import cloudflow.flink.avro._
 import org.apache.flink.streaming.api.watermark.Watermark
 
-case class TaxiRideSource(
-    dataFilePath: String,
-    maxEventDelaySecs: Int,
-    servingSpeedFactor: Int
-) extends SourceFunction[TaxiRide] {
+case class TaxiRideSource(dataFilePath: String, maxEventDelaySecs: Int, servingSpeedFactor: Int)
+    extends SourceFunction[TaxiRide] {
 
-  val maxDelayMsecs       = maxEventDelaySecs * 1000
+  val maxDelayMsecs = maxEventDelaySecs * 1000
   val watermarkDelayMSecs = if (maxDelayMsecs < 10000) 10000 else maxDelayMsecs
-  val servingSpeed        = servingSpeedFactor
+  val servingSpeed = servingSpeedFactor
 
   @transient private var gzipStream: InputStream = _
-  @transient private var reader: BufferedReader  = _
+  @transient private var reader: BufferedReader = _
 
   override def run(sourceContext: SourceContext[TaxiRide]): Unit = {
     gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath))
@@ -67,14 +64,11 @@ case class TaxiRideSource(
 
   private def generateUnorderedStream(sourceContext: SourceContext[TaxiRide]): Unit = {
 
-    val rand                = new Random(7452)
-    val servingStartTime    = Calendar.getInstance().getTimeInMillis()
+    val rand = new Random(7452)
+    val servingStartTime = Calendar.getInstance().getTimeInMillis()
     var dataStartTime: Long = 0L
 
-    val emitSchedule: PriorityQueue[(Long, Any)] = new PriorityQueue(
-      32,
-      (o1, o2) => o1._1.compare(o2._1)
-    )
+    val emitSchedule: PriorityQueue[(Long, Any)] = new PriorityQueue(32, (o1, o2) => o1._1.compare(o2._1))
 
     def readFirstRideAndUpdateEmitSchedule(emitSchedule: PriorityQueue[(Long, Any)], rand: Random): Unit =
       getNextRide() match {
@@ -106,9 +100,9 @@ case class TaxiRideSource(
 
           // insert all events into schedule that might be emitted next
           val curNextDelayedEventTime = if (!emitSchedule.isEmpty()) emitSchedule.peek()._1 else -1
-          var rideEventTime           = if (ride != null) getEventTime(ride) else -1
+          var rideEventTime = if (ride != null) getEventTime(ride) else -1
           while (ride != null && (// while there is a ride AND
-                 emitSchedule.isEmpty() ||                                // and no ride in schedule OR
+                 emitSchedule.isEmpty() || // and no ride in schedule OR
                  rideEventTime < curNextDelayedEventTime + maxDelayMsecs) // not enough rides in schedule
                  ) {
             // insert event into emit schedule
@@ -128,12 +122,12 @@ case class TaxiRideSource(
           }
 
           // emit schedule is updated, emit next element in schedule
-          val head             = emitSchedule.poll()
+          val head = emitSchedule.poll()
           val delayedEventTime = head._1
 
-          val now         = Calendar.getInstance().getTimeInMillis()
+          val now = Calendar.getInstance().getTimeInMillis()
           val servingTime = toServingTime(servingStartTime, dataStartTime, delayedEventTime)
-          val waitTime    = servingTime - now
+          val waitTime = servingTime - now
 
           Thread.sleep(if (waitTime > 0) waitTime else 0)
 
@@ -163,7 +157,7 @@ case class TaxiRideSource(
   def getEventTime(ride: TaxiRide): Long = TaxiRideOps.getEventTime(ride)
 
   def getNormalDelayMsecs(rand: Random): Long = {
-    var delay   = -1L
+    var delay = -1L
     val x: Long = maxDelayMsecs / 2
 
     while (delay < 0 || delay > maxDelayMsecs) {
@@ -176,10 +170,6 @@ case class TaxiRideSource(
     Try {
       if (reader != null) reader.close()
       if (gzipStream != null) gzipStream.close()
-    }.transform(
-        s => Success(s),
-        ioe => Failure(new RuntimeException("Could not cancel SourceFunction", ioe))
-      )
-      .get
+    }.transform(s => Success(s), ioe => Failure(new RuntimeException("Could not cancel SourceFunction", ioe))).get
 
 }

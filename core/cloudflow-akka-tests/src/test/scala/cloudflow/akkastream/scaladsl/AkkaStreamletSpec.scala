@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import akka.stream.scaladsl._
 import akka.testkit._
 
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
@@ -37,10 +39,10 @@ import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testdata._
 import cloudflow.akkastream.testkit.scaladsl._
 
-class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAll {
+class AkkaStreamletSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   private implicit val system = ActorSystem("AkkaStreamletSpec")
-  val timeout                 = 10.seconds.dilated
+  val timeout = 10.seconds.dilated
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
 
@@ -49,18 +51,21 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
     "Allow for querying of configuration parameters" in {
       object ConfigTestProcessor extends AkkaStreamlet {
-        val in                   = AvroInlet[Data]("in")
-        val out                  = AvroOutlet[Data]("out")
+        val in = AvroInlet[Data]("in")
+        val out = AvroOutlet[Data]("out")
         final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
         val NameFilter =
-          StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this string.", Some("a"))
+          StringConfigParameter(
+            "name-filter-value",
+            "Filters out the data in the stream that matches this string.",
+            Some("a"))
 
         override def configParameters = Vector(NameFilter)
 
         override final def createLogic = new RunnableGraphStreamletLogic() {
-          val nameFilter    = streamletConfig.getString(NameFilter.key)
-          val flow          = Flow[Data].filter(data => data.name == nameFilter)
+          val nameFilter = streamletConfig.getString(NameFilter.key)
+          val flow = Flow[Data].filter(data => data.name == nameFilter)
           def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
         }
       }
@@ -69,22 +74,23 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
         AkkaStreamletTestKit(system)
           .withConfigParameterValues(ConfigParameterValue(ConfigTestProcessor.NameFilter, "b"))
 
-      val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
       val source = Source(data)
-      val in     = testkit.inletFromSource(ConfigTestProcessor.in, source)
-      val out    = testkit.outletAsTap(ConfigTestProcessor.out)
+      val in = testkit.inletFromSource(ConfigTestProcessor.in, source)
+      val out = testkit.outletAsTap(ConfigTestProcessor.out)
 
-      configTestKit.run(ConfigTestProcessor,
-                        in,
-                        out,
-                        () => out.probe.receiveN(1) mustBe Vector(Data(2, "b")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
+      configTestKit.run(
+        ConfigTestProcessor,
+        in,
+        out,
+        () => out.probe.receiveN(1) mustBe Vector(Data(2, "b")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
     }
 
     "Verify that a call to `streamletContext` in a streamlet with no configuration parameters yields an empty config" in {
 
       object ConfigTestProcessor extends AkkaStreamlet {
-        val in                   = AvroInlet[Data]("in")
-        val out                  = AvroOutlet[Data]("out")
+        val in = AvroInlet[Data]("in")
+        val out = AvroOutlet[Data]("out")
         final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
         override final def createLogic = new RunnableGraphStreamletLogic() {
@@ -97,22 +103,23 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
 
       val configTestKit = AkkaStreamletTestKit(system)
 
-      val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
       val source = Source(data)
-      val in     = testkit.inletFromSource(ConfigTestProcessor.in, source)
-      val out    = testkit.outletAsTap(ConfigTestProcessor.out)
+      val in = testkit.inletFromSource(ConfigTestProcessor.in, source)
+      val out = testkit.outletAsTap(ConfigTestProcessor.out)
 
-      configTestKit.run(ConfigTestProcessor,
-                        in,
-                        out,
-                        () => out.probe.receiveN(1) mustBe Vector(Data(1, "a")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
+      configTestKit.run(
+        ConfigTestProcessor,
+        in,
+        out,
+        () => out.probe.receiveN(1) mustBe Vector(Data(1, "a")).map(d => ConfigTestProcessor.out.partitioner(d) -> d))
     }
 
     "Be able to access VolumeMounts" in {
 
       val volumeMountName = "data-mount"
       object VolumeMountTestProcessor extends AkkaStreamlet {
-        val out                  = AvroOutlet[Data]("out")
+        val out = AvroOutlet[Data]("out")
         final override val shape = StreamletShape(out)
 
         override def volumeMounts = Vector(VolumeMount(volumeMountName, "path", ReadOnlyMany))
@@ -130,24 +137,26 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
       }
 
       val expectedDataOut = Data(1, "VolumeMount test")
-      val filePath        = Files.createTempFile("test-", UUID.randomUUID().toString)
+      val filePath = Files.createTempFile("test-", UUID.randomUUID().toString)
       Files.write(filePath, expectedDataOut.name.getBytes())
 
       val volumeMountTestKit =
-        AkkaStreamletTestKit(system).withVolumeMounts(VolumeMount(volumeMountName, filePath.toAbsolutePath.toString, ReadOnlyMany))
+        AkkaStreamletTestKit(system).withVolumeMounts(
+          VolumeMount(volumeMountName, filePath.toAbsolutePath.toString, ReadOnlyMany))
       val out = volumeMountTestKit.outletAsTap(VolumeMountTestProcessor.out)
 
       volumeMountTestKit.run(
         VolumeMountTestProcessor,
         out,
-        () => out.probe.receiveN(1) mustBe Vector(expectedDataOut).map(d => VolumeMountTestProcessor.out.partitioner(d) -> d)
-      )
+        () =>
+          out.probe.receiveN(1) mustBe Vector(expectedDataOut).map(d =>
+            VolumeMountTestProcessor.out.partitioner(d) -> d))
 
     }
 
     "Allow for creating an 'ingress'" in {
-      val data    = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
-      val source  = Source(data)
+      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val source = Source(data)
       val ingress = new TestIngress(source)
 
       val out = testkit.outletAsTap(ingress.out)
@@ -158,9 +167,9 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     }
 
     "Allow for creating an 'egress'" in {
-      val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
       val source = Source(data)
-      val sink   = Sink.seq[Data]
+      val sink = Sink.seq[Data]
       val egress = new TestEgress(sink)
 
       val in = testkit.inletFromSource(egress.in, source)
@@ -168,12 +177,12 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
     }
 
     "Allow for several formats" in {
-      val data   = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
-      val pdata  = data.map(d => PData(d.name))
+      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
+      val pdata = data.map(d => PData(d.name))
       val source = Source(data)
-      val proc   = new TestMix
-      val in     = testkit.inletFromSource(proc.in, source)
-      val out    = testkit.outletAsTap(proc.out)
+      val proc = new TestMix
+      val in = testkit.inletFromSource(proc.in, source)
+      val out = testkit.outletAsTap(proc.out)
 
       testkit.run(proc, in, out, () => out.probe.receiveN(3) mustBe pdata.map(d => proc.out.partitioner(d) -> d))
 
@@ -182,8 +191,8 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
 
   class TestProcessorWithParameters extends AkkaStreamlet {
-    val in                   = AvroInlet[Data]("in")
-    val out                  = AvroOutlet[Data]("out", _.id.toString)
+    val in = AvroInlet[Data]("in")
+    val out = AvroOutlet[Data]("out", _.id.toString)
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
     val flow = Flow[Data]
@@ -193,8 +202,8 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
 
   class TestProcessor extends AkkaStreamlet {
-    val in                   = AvroInlet[Data]("in")
-    val out                  = AvroOutlet[Data]("out", _.id.toString)
+    val in = AvroInlet[Data]("in")
+    val out = AvroOutlet[Data]("out", _.id.toString)
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
     val flow = Flow[Data]
@@ -204,7 +213,7 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
 
   class TestIngress(source: Source[Data, NotUsed]) extends AkkaStreamlet {
-    val out                  = AvroOutlet[Data]("out", _.id.toString)
+    val out = AvroOutlet[Data]("out", _.id.toString)
     final override val shape = StreamletShape.withOutlets(out)
 
     override final def createLogic = new RunnableGraphStreamletLogic() {
@@ -213,8 +222,8 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
 
   class TestEgress[Mat](sink: Sink[Data, Future[Seq[Data]]]) extends AkkaStreamlet {
-    val in                   = AvroInlet[Data]("in")
-    var result: Seq[Data]    = _
+    val in = AvroInlet[Data]("in")
+    var result: Seq[Data] = _
     final override val shape = StreamletShape.withInlets(in)
 
     override final def createLogic = new AkkaStreamletLogic() {
@@ -224,8 +233,8 @@ class AkkaStreamletSpec extends WordSpec with MustMatchers with BeforeAndAfterAl
   }
 
   class TestMix extends AkkaStreamlet {
-    val in                   = AvroInlet[Data]("in")
-    val out                  = ProtoOutlet[PData]("out", _.name.toString)
+    val in = AvroInlet[Data]("in")
+    val out = ProtoOutlet[PData]("out", _.name.toString)
     final override val shape = StreamletShape.withInlets(in).withOutlets(out)
 
     val flow = Flow[Data].map(d => PData(d.name))

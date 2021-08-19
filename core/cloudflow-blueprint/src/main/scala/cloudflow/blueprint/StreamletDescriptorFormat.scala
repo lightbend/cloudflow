@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,19 @@ object StreamletDescriptorFormat extends StreamletDescriptorFormat
 
 trait StreamletDescriptorFormat extends DefaultJsonProtocol {
   implicit val attributeFormat = jsonFormat(StreamletAttributeDescriptor.apply, "attribute_name", "config_path")
-  implicit val schemaFormat    = jsonFormat4(SchemaDescriptor.apply)
-  implicit val inletFormat     = jsonFormat2(InletDescriptor.apply)
-  implicit val outletFormat    = jsonFormat2(OutletDescriptor.apply)
+  implicit val schemaFormat = jsonFormat4(SchemaDescriptor.apply)
+  implicit val inletFormat = jsonFormat2(InletDescriptor.apply)
+  implicit val outletFormat = jsonFormat2(OutletDescriptor.apply)
   implicit val configParameterDescriptorFormat =
-    jsonFormat(ConfigParameterDescriptor.apply, "key", "description", "validation_type", "validation_pattern", "default_value")
-  implicit val volumeMountDescriptorFormat = jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
+    jsonFormat(
+      ConfigParameterDescriptor.apply,
+      "key",
+      "description",
+      "validation_type",
+      "validation_pattern",
+      "default_value")
+  implicit val volumeMountDescriptorFormat =
+    jsonFormat(VolumeMountDescriptor.apply, "name", "path", "access_mode", "pvc_name")
 
   implicit val streamletRuntimeFormat = new JsonFormat[StreamletRuntimeDescriptor] {
     def write(runtime: StreamletRuntimeDescriptor) = JsString(runtime.name)
@@ -48,6 +55,5 @@ trait StreamletDescriptorFormat extends DefaultJsonProtocol {
     "outlets",
     "config_parameters",
     "attributes",
-    "volume_mounts"
-  )
+    "volume_mounts")
 }

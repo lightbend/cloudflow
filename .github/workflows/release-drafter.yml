@@ -4,11 +4,11 @@ on:
   push:
     # branches to consider in the event; optional, defaults to all
     branches:
-      - master
+      - main
 
 jobs:
   update_release_draft:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       # Drafts your next Release notes as Pull Requests are merged
       # https://github.com/raboof/release-drafter/releases

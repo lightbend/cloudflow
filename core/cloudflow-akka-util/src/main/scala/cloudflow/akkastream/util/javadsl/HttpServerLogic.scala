@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,7 @@ object HttpServerLogic {
       server: Server,
       outlet: CodecOutlet[Out],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
-      context: AkkaStreamletContext
-  ): HttpServerLogic =
+      context: AkkaStreamletContext): HttpServerLogic =
     createDefault(server, outlet, None, fromByteStringUnmarshaller, context)
 
   /**
@@ -55,8 +54,7 @@ object HttpServerLogic {
       outlet: CodecOutlet[Out],
       rejectionHandler: akka.http.javadsl.server.RejectionHandler,
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
-      context: AkkaStreamletContext
-  ): HttpServerLogic =
+      context: AkkaStreamletContext): HttpServerLogic =
     createDefault(server, outlet, Some(rejectionHandler.asScala), fromByteStringUnmarshaller, context)
 
   private def createDefault[Out](
@@ -64,8 +62,7 @@ object HttpServerLogic {
       outlet: CodecOutlet[Out],
       rejectionHandler: Option[RejectionHandler],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
-      context: AkkaStreamletContext
-  ): HttpServerLogic =
+      context: AkkaStreamletContext): HttpServerLogic =
     new HttpServerLogic(server, context) {
       implicit def fromEntityUnmarshaller: FromEntityUnmarshaller[Out] =
         PredefinedFromEntityUnmarshallers.byteStringUnmarshaller
@@ -73,8 +70,7 @@ object HttpServerLogic {
       final override def createRoute(): akka.http.javadsl.server.Route =
         RouteAdapter.asJava(
           akkastream.util.scaladsl.HttpServerLogic
-            .defaultRoute(rejectionHandler, sinkRef(outlet))
-        )
+            .defaultRoute(rejectionHandler, sinkRef(outlet)))
     }
 
   /**
@@ -86,30 +82,36 @@ object HttpServerLogic {
       outlet: CodecOutlet[Out],
       fromByteStringUnmarshaller: Unmarshaller[ByteString, Out],
       ess: EntityStreamingSupport,
-      context: AkkaStreamletContext
-  ): HttpServerLogic = new HttpServerLogic(server, context) {
-    implicit val fbu         = fromByteStringUnmarshaller.asScala
+      context: AkkaStreamletContext): HttpServerLogic = new HttpServerLogic(server, context) {
+    implicit val fbu = fromByteStringUnmarshaller.asScala
     implicit val essDelegate = EntityStreamingSupportDelegate(ess)
     final override def createRoute(): akka.http.javadsl.server.Route =
       RouteAdapter.asJava(akkastream.util.scaladsl.HttpServerLogic.defaultStreamingRoute(sinkRef(outlet)))
   }
 
-  final case class EntityStreamingSupportDelegate(entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
+  final case class EntityStreamingSupportDelegate(
+      entityStreamingSupport: akka.http.javadsl.common.EntityStreamingSupport)
       extends akka.http.scaladsl.common.EntityStreamingSupport {
     def supported: akka.http.scaladsl.model.ContentTypeRange =
       entityStreamingSupport.supported.asInstanceOf[akka.http.scaladsl.model.ContentTypeRange]
     def contentType: akka.http.scaladsl.model.ContentType =
       entityStreamingSupport.contentType.asInstanceOf[akka.http.scaladsl.model.ContentType]
-    def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed]  = entityStreamingSupport.getFramingDecoder.asScala
-    def framingRenderer: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] = entityStreamingSupport.getFramingRenderer.asScala
-    override def withSupported(range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport =
+    def framingDecoder: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] =
+      entityStreamingSupport.getFramingDecoder.asScala
+    def framingRenderer: akka.stream.scaladsl.Flow[ByteString, ByteString, NotUsed] =
+      entityStreamingSupport.getFramingRenderer.asScala
+    override def withSupported(
+        range: akka.http.javadsl.model.ContentTypeRange): akka.http.scaladsl.common.EntityStreamingSupport =
       EntityStreamingSupportDelegate(entityStreamingSupport.withSupported(range))
-    override def withContentType(contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport =
+    override def withContentType(
+        contentType: akka.http.javadsl.model.ContentType): akka.http.scaladsl.common.EntityStreamingSupport =
       EntityStreamingSupportDelegate(entityStreamingSupport.withContentType(contentType))
 
-    def parallelism: Int   = entityStreamingSupport.parallelism
+    def parallelism: Int = entityStreamingSupport.parallelism
     def unordered: Boolean = entityStreamingSupport.unordered
-    def withParallelMarshalling(parallelism: Int, unordered: Boolean): akka.http.scaladsl.common.EntityStreamingSupport =
+    def withParallelMarshalling(
+        parallelism: Int,
+        unordered: Boolean): akka.http.scaladsl.common.EntityStreamingSupport =
       EntityStreamingSupportDelegate(entityStreamingSupport.withParallelMarshalling(parallelism, unordered))
   }
 }
@@ -143,10 +145,8 @@ object HttpServerLogic {
  * }}}
  *
  */
-abstract class HttpServerLogic(
-    server: Server,
-    context: AkkaStreamletContext
-) extends akkastream.util.scaladsl.HttpServerLogic(server)(context) {
+abstract class HttpServerLogic(server: Server, context: AkkaStreamletContext)
+    extends akkastream.util.scaladsl.HttpServerLogic(server)(context) {
 
   /**
    * Override this method to define the HTTP route that this HttpServerLogic will use.

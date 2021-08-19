@@ -58,7 +58,6 @@ kubectl-pipelines
 binaries
 .cache/
 docs-source/test-ui-site.yml
-output/
 build/
 docs/docs-source/docs/modules/ROOT/examples/
 ##

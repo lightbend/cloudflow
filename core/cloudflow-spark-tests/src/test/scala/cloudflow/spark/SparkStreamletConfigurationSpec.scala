@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,12 +82,15 @@ class SparkStreamletConfigurationSpec extends SparkScalaTestSupport with OptionV
 }
 
 class TestSparkConfigProcessor extends SparkStreamlet {
-  val in    = AvroInlet[Data]("in")
-  val out   = AvroOutlet[Simple]("out", _.name)
+  val in = AvroInlet[Data]("in")
+  val out = AvroOutlet[Simple]("out", _.name)
   val shape = StreamletShape(in, out)
 
   val NameFilter =
-    StringConfigParameter("name-filter-value", "Filters out the data in the stream that matches this name.", Some("initial"))
+    StringConfigParameter(
+      "name-filter-value",
+      "Filters out the data in the stream that matches this name.",
+      Some("initial"))
 
   override def configParameters = Vector(NameFilter)
 
@@ -96,7 +99,7 @@ class TestSparkConfigProcessor extends SparkStreamlet {
 
     override def buildStreamingQueries = {
       val outStream = readStream(in).select($"name").filter($"name" === nameFilter).as[Simple]
-      val query     = writeStream(outStream, out, OutputMode.Append)
+      val query = writeStream(outStream, out, OutputMode.Append)
       query.toQueryExecution
     }
   }

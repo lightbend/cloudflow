@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ object BlueprintProblem {
         s"Invalid streamlet name '$streamletRef'. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case InvalidStreamletClassName(streamletRef, className) =>
         s"Class name '$className' for streamlet '$streamletRef' is invalid. Class names must be valid Java/Scala class names."
+      case extractProblem: ExtractProblem => extractProblem.message
       case InvalidVolumeMountName(className, name) =>
         s"Volume mount `$name` in streamlet `$className` is invalid. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
       case NonAbsoluteVolumeMountPath(className, name, path) =>
@@ -77,7 +78,8 @@ object BlueprintProblem {
       case PortBoundToManyTopics(path, topics) =>
         s"'$path' is bound to more than one topic: ${topics.mkString(",")}."
       case PortPathNotFound(path, suggestions) =>
-        val end = if (suggestions.nonEmpty) s""", please try ${suggestions.map(_.toString).mkString(" or ")}.""" else "."
+        val end =
+          if (suggestions.nonEmpty) s""", please try ${suggestions.map(_.toString).mkString(" or ")}.""" else "."
         s"'$path' does not point to a known streamlet inlet or outlet$end"
       case InvalidKafkaClusterName(name) =>
         s"Invalid Kafka cluster name '$name'. Names must consist of lower case alphanumeric characters and may contain '-' except for at the start or end."
@@ -96,12 +98,12 @@ object BlueprintProblem {
     }
 }
 
-final case class AmbiguousStreamletRef(streamletRef: String, streamletClassName: String)      extends BlueprintProblem
+final case class AmbiguousStreamletRef(streamletRef: String, streamletClassName: String) extends BlueprintProblem
 final case class DuplicateStreamletNamesFound(streamlets: immutable.IndexedSeq[StreamletRef]) extends BlueprintProblem
-case object EmptyStreamlets                                                                   extends BlueprintProblem
-case object EmptyStreamletDescriptors                                                         extends BlueprintProblem
-case object MissingStreamletsSection                                                          extends BlueprintProblem
-case class BlueprintFormatError(reason: String)                                               extends BlueprintProblem
+case object EmptyStreamlets extends BlueprintProblem
+case object EmptyStreamletDescriptors extends BlueprintProblem
+case object MissingStreamletsSection extends BlueprintProblem
+case class BlueprintFormatError(reason: String) extends BlueprintProblem
 
 sealed trait PortProblem extends BlueprintProblem {
   def path: VerifiedPortPath
@@ -111,25 +113,30 @@ final case class IncompatibleSchema(path: VerifiedPortPath, otherPath: VerifiedP
 
 final case class InvalidTopicName(topicName: String) extends BlueprintProblem
 
-sealed trait PortPathError                                            extends BlueprintProblem
-final case class InvalidPortPath(path: String)                        extends BlueprintProblem with PortPathError
+sealed trait PortPathError extends BlueprintProblem
+final case class InvalidPortPath(path: String) extends BlueprintProblem with PortPathError
 final case class InvalidProducerPortPath(topic: String, path: String) extends BlueprintProblem with PortPathError
 final case class InvalidConsumerPortPath(topic: String, path: String) extends BlueprintProblem with PortPathError
-final case class PortPathNotFound(path: String, suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
+final case class PortPathNotFound(
+    path: String,
+    suggestions: immutable.IndexedSeq[VerifiedPortPath] = immutable.IndexedSeq.empty)
     extends PortPathError
 final case class PortBoundToManyTopics(path: String, topics: immutable.IndexedSeq[String]) extends PortPathError
 
 final case class InvalidKafkaClusterName(name: String) extends BlueprintProblem
 
 final case class InvalidStreamletClassName(streamletRef: String, streamletClassName: String) extends BlueprintProblem
-final case class InvalidStreamletName(streamletRef: String)                                  extends BlueprintProblem
+final case class ExtractProblem(message: String) extends BlueprintProblem
+
+final case class InvalidStreamletName(streamletRef: String) extends BlueprintProblem
 
 final case class InvalidConfigParameterKeyName(className: String, keyName: String) extends BlueprintProblem
 final case class InvalidValidationPatternConfigParameter(className: String, keyName: String, validationPattern: String)
     extends BlueprintProblem
-final case class DuplicateConfigParameterKeyFound(className: String, keyName: String)                           extends BlueprintProblem
-final case class InvalidDefaultValueInConfigParameter(className: String, keyName: String, defaultValue: String) extends BlueprintProblem
-final case class StreamletDescriptorNotFound(streamletRef: String, streamletClassName: String)                  extends BlueprintProblem
+final case class DuplicateConfigParameterKeyFound(className: String, keyName: String) extends BlueprintProblem
+final case class InvalidDefaultValueInConfigParameter(className: String, keyName: String, defaultValue: String)
+    extends BlueprintProblem
+final case class StreamletDescriptorNotFound(streamletRef: String, streamletClassName: String) extends BlueprintProblem
 
 sealed trait UnconnectedPorts extends BlueprintProblem {
   def nonEmpty: Boolean
@@ -138,16 +145,17 @@ final case class UnconnectedInlets(unconnectedInlets: immutable.IndexedSeq[Uncon
   def nonEmpty: Boolean = unconnectedInlets.nonEmpty
 }
 final case class UnconnectedPort(streamletRef: String, port: PortDescriptor)
-final case class UnconnectedOutlets(unconnectedOutlets: immutable.IndexedSeq[UnconnectedPort]) extends UnconnectedPorts {
+final case class UnconnectedOutlets(unconnectedOutlets: immutable.IndexedSeq[UnconnectedPort])
+    extends UnconnectedPorts {
   def nonEmpty: Boolean = unconnectedOutlets.nonEmpty
 }
 
 final case class BacktrackingVolumeMounthPath(className: String, name: String, path: String) extends BlueprintProblem
-final case class NonAbsoluteVolumeMountPath(className: String, name: String, path: String)   extends BlueprintProblem
-final case class EmptyVolumeMountPath(className: String, name: String)                       extends BlueprintProblem
-final case class DuplicateVolumeMountPath(className: String, path: String)                   extends BlueprintProblem
-final case class InvalidVolumeMountName(className: String, name: String)                     extends BlueprintProblem
-final case class DuplicateVolumeMountName(className: String, name: String)                   extends BlueprintProblem
+final case class NonAbsoluteVolumeMountPath(className: String, name: String, path: String) extends BlueprintProblem
+final case class EmptyVolumeMountPath(className: String, name: String) extends BlueprintProblem
+final case class DuplicateVolumeMountPath(className: String, path: String) extends BlueprintProblem
+final case class InvalidVolumeMountName(className: String, name: String) extends BlueprintProblem
+final case class DuplicateVolumeMountName(className: String, name: String) extends BlueprintProblem
 
-final case class InvalidInletName(className: String, name: String)  extends BlueprintProblem
+final case class InvalidInletName(className: String, name: String) extends BlueprintProblem
 final case class InvalidOutletName(className: String, name: String) extends BlueprintProblem

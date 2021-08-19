@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ trait UUIDJsonSupport extends DefaultJsonProtocol {
     def write(uuid: UUID) = JsString(uuid.toString)
 
     def read(json: JsValue): UUID = json match {
-      case JsString(uuid) ⇒ Try(UUID.fromString(uuid)).getOrElse(deserializationError(s"Expected valid UUID but got '$uuid'."))
-      case other          ⇒ deserializationError(s"Expected UUID as JsString, but got: $other")
+      case JsString(uuid) => Try(UUID.fromString(uuid)).getOrElse(deserializationError(s"Expected valid UUID but got '$uuid'."))
+      case other          => deserializationError(s"Expected UUID as JsString, but got: $other")
     }
   }
 }
@@ -39,8 +39,8 @@ trait InstantJsonSupport extends DefaultJsonProtocol {
     def write(instant: Instant) = JsNumber(instant.toEpochMilli)
 
     def read(json: JsValue): Instant = json match {
-      case JsNumber(value) ⇒ Instant.ofEpochMilli(value.toLong)
-      case other           ⇒ deserializationError(s"Expected Instant as JsNumber, but got: $other")
+      case JsNumber(value) => Instant.ofEpochMilli(value.toLong)
+      case other           => deserializationError(s"Expected Instant as JsNumber, but got: $other")
     }
   }
 }

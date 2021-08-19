@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,27 @@ package cloudflow.streamlets.descriptors
 
 import org.scalatest._
 import spray.json._
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 import cloudflow.streamlets.StreamletJsonOps._
 
-class StreamletDescriptorSpec extends WordSpec with MustMatchers {
+class StreamletDescriptorSpec extends AnyWordSpec with Matchers {
 
   "StreamletDescriptor" must {
     "produce a descriptor for a valid Streamlet" in {
       val testStreamlet = new CoffeeIngress
-      val jsonStr       = StreamletDescriptor.jsonDescriptor(testStreamlet)
-      val json          = JsonParser(jsonStr)
+      val jsonStr = StreamletDescriptor.jsonDescriptor(testStreamlet)
+      val json = JsonParser(jsonStr)
+      json mustBeAStreamletDescriptorFor (testStreamlet)
+    }
+  }
+
+  "StreamletByteArrayDescriptor" must {
+    "produce a descriptor for a valid Streamlet" in {
+      val testStreamlet = new CoffeeByteArrayIngress
+      val jsonStr = StreamletDescriptor.jsonDescriptor(testStreamlet)
+      val json = JsonParser(jsonStr)
       json mustBeAStreamletDescriptorFor (testStreamlet)
     }
   }

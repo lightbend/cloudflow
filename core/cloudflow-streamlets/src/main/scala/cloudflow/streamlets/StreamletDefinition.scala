@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers._
 import spray.json._
 
-case class StreamletDefinition(appId: String,
-                               appVersion: String,
-                               streamletRef: String,
-                               streamletClass: String,
-                               portMappings: List[PortMapping],
-                               volumeMounts: List[VolumeMount],
-                               config: Config) {
+case class StreamletDefinition(
+    appId: String,
+    appVersion: String,
+    streamletRef: String,
+    streamletClass: String,
+    portMappings: List[PortMapping],
+    volumeMounts: List[VolumeMount],
+    config: Config) {
 
   private val portNameToTopicMap: Map[String, Topic] = {
     portMappings.map {
@@ -41,7 +42,7 @@ case class StreamletDefinition(appId: String,
   }
 
   def resolveTopic(port: StreamletPort): Option[Topic] = resolveTopic(port.name)
-  def resolveTopic(port: String): Option[Topic]        = portNameToTopicMap.get(port)
+  def resolveTopic(port: String): Option[Topic] = portNameToTopicMap.get(port)
 
 }
 
@@ -61,11 +62,8 @@ object Topic {
   }
 }
 
-final case class Topic(
-    id: String,
-    config: Config
-) {
-  def name             = Try(config.getString("topic.name")).toOption.getOrElse(id)
+final case class Topic(id: String, config: Config) {
+  def name = Try(config.getString("topic.name")).toOption.getOrElse(id)
   def bootstrapServers = Try(config.getString("bootstrap.servers")).toOption
   def groupId[T](appId: String, readingStreamletRef: String, inlet: CodecInlet[T]) = {
     val base = s"$appId.$readingStreamletRef.${inlet.name}"
@@ -102,7 +100,7 @@ object StreamletDefinition {
         .get
     }
   implicit val configReader: ValueReader[StreamletDefinition] = ValueReader.relative { config =>
-    val streamletRef         = config.as[String]("streamlet_ref")
+    val streamletRef = config.as[String]("streamlet_ref")
     val streamletContextData = config.as[StreamletContextData]("context")
     StreamletDefinition(
       appId = streamletContextData.appId,
@@ -111,8 +109,7 @@ object StreamletDefinition {
       streamletClass = config.as[String]("class_name"),
       streamletContextData.portMappings.map { case (port, topic) => PortMapping(port, topic) }.toList,
       streamletContextData.volumeMounts.getOrElse(List()),
-      streamletContextData.config
-    )
+      streamletContextData.config)
   }
 
   val StreamletRootPath = "cloudflow.runner.streamlet"
@@ -134,8 +131,7 @@ case class StreamletContextData(
     appVersion: String,
     portMappings: Map[String, Topic],
     volumeMounts: Option[List[VolumeMount]] = None,
-    config: Config
-)
+    config: Config)
 
 /**
  * Helper object for creating an instance of StreamletContextData from JSON.
@@ -144,12 +140,12 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
 
   protected implicit val configFormat = new JsonFormat[Config] {
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
-    def read(json: JsValue): Config    = ConfigFactory.parseString(json.toString)
+    def read(json: JsValue): Config = ConfigFactory.parseString(json.toString)
   }
   implicit val topicFormat = jsonFormat(Topic.apply, "id", "config")
   protected implicit val accessModeFormat = new JsonFormat[AccessMode] {
     val jsReadWriteMany = JsString("ReadWriteMany")
-    val jsReadOnlyMany  = JsString("ReadOnlyMany")
+    val jsReadOnlyMany = JsString("ReadOnlyMany")
     def write(accessMode: AccessMode): JsValue = accessMode match {
       case ReadWriteMany => jsReadWriteMany
       case ReadOnlyMany  => jsReadOnlyMany
@@ -161,7 +157,7 @@ object StreamletContextDataJsonSupport extends DefaultJsonProtocol {
     }
   }
 
-  protected implicit val volumeMountFormat  = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
+  protected implicit val volumeMountFormat = jsonFormat(VolumeMount.apply _, "name", "path", "access_mode")
   protected implicit val portMappingsFormat = jsonFormat(PortMapping, "port", "topic")
   protected implicit val contextDataFormat =
     jsonFormat(StreamletContextData, "app_id", "app_version", "port_mappings", "volume_mounts", "config")

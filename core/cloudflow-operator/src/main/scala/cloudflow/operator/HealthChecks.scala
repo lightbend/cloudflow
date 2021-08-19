@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,33 @@
 
 package cloudflow.operator
 
-import scala.concurrent._
-import scala.util._
 import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 
+import scala.concurrent._
+import scala.util._
+
 object HealthChecks {
-  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) =
-    Http()
-      .bindAndHandle(
-        route,
-        settings.api.bindInterface,
-        settings.api.bindPort
-      )
-      .onComplete {
-        case Success(serverBinding) =>
-          system.log.info(s"Bound to ${serverBinding.localAddress}.")
-        case Failure(e) =>
-          system.log.error(e, s"Failed to bind.")
-          system.terminate().foreach { _ =>
-            println("Exiting, could not bind http.")
-            sys.exit(-1)
-          }
-      }
+  def serve(settings: Settings)(implicit system: ActorSystem, ec: ExecutionContext) = {
+    val bind = Http()
+      .bindAndHandle(route, settings.api.bindInterface, settings.api.bindPort)
+
+    bind.onComplete {
+      case Success(serverBinding) =>
+        system.log.info(s"Bound to ${serverBinding.localAddress}.")
+      case Failure(e) =>
+        system.log.error(e, s"Failed to bind.")
+        system.terminate().foreach { _ =>
+          println("Exiting, could not bind http.")
+          sys.exit(-1)
+        }
+    }
+
+    bind
+  }
+
   def route =
     // format: OFF
     path("robots.txt") {

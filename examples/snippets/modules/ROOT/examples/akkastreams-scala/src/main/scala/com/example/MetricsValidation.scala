@@ -1,23 +1,21 @@
 package com.example
 
+import akka.stream.scaladsl.RunnableGraph
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
-
 import cloudflow.akkastreamsdoc._
 
 object MetricsValidation extends AkkaStreamlet {
-  val in                   = AvroInlet[Data]("in")
-  val out                  = AvroOutlet[Data]("out-0")
-  final override val shape = StreamletShape.withInlets(in).withOutlets(out)
+  val in: CodecInlet[Data]           = AvroInlet[Data]("in")
+  val out: CodecOutlet[Data]         = AvroOutlet[Data]("out-0")
+  override val shape: StreamletShape = StreamletShape.withInlets(in).withOutlets(out)
 
-  final override def createLogic = new RunnableGraphStreamletLogic {
-    override final def runnableGraph =
-      sourceWithOffsetContext(in)
-        .map { i ⇒
-          i
-        }
+  override def createLogic(): AkkaStreamletLogic = new RunnableGraphStreamletLogic {
+    override final def runnableGraph(): RunnableGraph[_] =
+      sourceWithCommittableContext(in)
+        .map(i => i)
         .to(committableSink(out))
   }
 }

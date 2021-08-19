@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 //tag::code[]
 package sensordata
 
+import akka.stream.scaladsl._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
-import cloudflow.streamlets.{ RoundRobinPartitioner, StreamletShape }
+import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
 class SensorDataToMetrics extends AkkaStreamlet {
-  val in    = AvroInlet[SensorData]("in")
-  val out   = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
-  val shape = StreamletShape(in, out)
+  val in: CodecInlet[SensorData]     = AvroInlet[SensorData]("in")
+  val out: CodecOutlet[Metric]       = AvroOutlet[Metric]("out").withPartitioner(RoundRobinPartitioner)
+  override val shape: StreamletShape = StreamletShape(in, out)
   def flow =
-    FlowWithCommittableContext[SensorData]
-      .mapConcat { data ⇒
+    FlowWithCommittableContext[SensorData]()
+      .mapConcat { data =>
         List(
           Metric(data.deviceId, data.timestamp, "power", data.measurements.power),
           Metric(data.deviceId, data.timestamp, "rotorSpeed", data.measurements.rotorSpeed),
           Metric(data.deviceId, data.timestamp, "windSpeed", data.measurements.windSpeed)
         )
       }
-  override def createLogic = new RunnableGraphStreamletLogic() {
-    def runnableGraph = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
+  override def createLogic(): AkkaStreamletLogic = new RunnableGraphStreamletLogic() {
+    override def runnableGraph(): RunnableGraph[_] = sourceWithCommittableContext(in).via(flow).to(committableSink(out))
   }
 }
 //end::code[]

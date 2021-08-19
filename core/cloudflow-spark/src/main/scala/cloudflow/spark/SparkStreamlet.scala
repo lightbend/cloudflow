@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,14 +62,15 @@ import cloudflow.streamlets._
  *  }
  * }}}
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable {
   final override val runtime = SparkStreamletRuntime
-  val StopTimeout            = 30.seconds
+  val StopTimeout = 30.seconds
 
   override protected final def createContext(config: Config): SparkStreamletContext =
     (for {
       streamletConfig <- StreamletDefinition.read(config)
-      session         <- makeSparkSession(makeSparkConfig).map(updateSparkSession)
+      session <- makeSparkSession(makeSparkConfig).map(updateSparkSession)
     } yield {
       val updatedConfig = streamletConfig.config.withFallback(config)
       new kafka.SparkStreamletContextImpl(streamletConfig, session, updatedConfig)
@@ -81,11 +82,11 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
 
   override final def run(context: SparkStreamletContext): StreamletExecution = {
     val completionPromise = Promise[Dun]()
-    val completionFuture  = completionPromise.future
+    val completionFuture = completionPromise.future
 
     // these values are candidates to move to the configuration system
-    val InitialDelay                 = 2 seconds
-    val MonitorFrequency             = 5 seconds
+    val InitialDelay = 2 seconds
+    val MonitorFrequency = 5 seconds
     implicit val system: ActorSystem = ActorSystem("spark_streamlet", context.config)
 
     val streamletQueryExecution = createLogic.buildStreamingQueries
@@ -116,7 +117,8 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           .recoverWith {
             case ex: TimeoutException =>
               val hangingQueries = streamletQueryExecution.queries.map(_.name).mkString(",")
-              Future.failed(new TimeoutException(s"Could not terminate queries [$hangingQueries]. Reason: ${ex.getMessage}"))
+              Future.failed(
+                new TimeoutException(s"Could not terminate queries [$hangingQueries]. Reason: ${ex.getMessage}"))
           }
           .map { _ =>
             val exceptions = streamletQueryExecution.queries.flatMap(_.exception.map(_.cause))
@@ -129,7 +131,11 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
           }
       }
 
-      private def poll(predicate: => Boolean, frequency: FiniteDuration, deadline: FiniteDuration, s: Scheduler): Future[Unit] = {
+      private def poll(
+          predicate: => Boolean,
+          frequency: FiniteDuration,
+          deadline: FiniteDuration,
+          s: Scheduler): Future[Unit] = {
         val times = Math.ceil(deadline / frequency).toInt
         def _poll(count: Int): Future[Unit] = (predicate, count <= 0) match {
           case (true, _) => Future.successful(())
@@ -155,7 +161,7 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
     context.streamletConfig.getString(configKey)
 
   private def makeSparkConfig(): SparkConf = {
-    val conf   = new SparkConf()
+    val conf = new SparkConf()
     val master = conf.getOption("spark.master").getOrElse("local[2]")
     conf
       .setMaster(master)
@@ -211,7 +217,9 @@ trait SparkStreamlet extends Streamlet[SparkStreamletContext] with Serializable 
  *  }
  * }}}
  */
-abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) extends StreamletLogic[SparkStreamletContext] {
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
+abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext)
+    extends StreamletLogic[SparkStreamletContext] {
 
   override def getContext(): SparkStreamletContext = super.getContext()
 
@@ -228,13 +236,12 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
   /**
    * Write a `StreamingQuery` into outlet using the specified `OutputMode`
    */
-  final def writeStream[Out](stream: Dataset[Out],
-                             outPort: CodecOutlet[Out],
-                             outputMode: OutputMode,
-                             optionalTrigger: Option[Trigger] = None)(
-      implicit encoder: Encoder[Out],
-      typeTag: TypeTag[Out]
-  ): StreamingQuery = context.writeStream(stream, outPort, outputMode, optionalTrigger)
+  final def writeStream[Out](
+      stream: Dataset[Out],
+      outPort: CodecOutlet[Out],
+      outputMode: OutputMode,
+      optionalTrigger: Option[Trigger] = None)(implicit encoder: Encoder[Out], typeTag: TypeTag[Out]): StreamingQuery =
+    context.writeStream(stream, outPort, outputMode, optionalTrigger)
 
   final def config: Config = context.config
 
@@ -261,18 +268,21 @@ abstract class SparkStreamletLogic(implicit val context: SparkStreamletContext) 
 
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case object SparkStreamletRuntime extends StreamletRuntime {
   override val name: String = "spark"
 }
 
-// Allows the management of an executing Streamlet instance
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class StreamletQueryExecution(queries: Vector[StreamingQuery]) {
   final def stop(): Unit = queries.foreach(_.stop)
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object StreamletQueryExecution {
   def apply(singleQuery: StreamingQuery): StreamletQueryExecution = StreamletQueryExecution(Vector(singleQuery))
   def apply(oneQuery: StreamingQuery, moreQueries: StreamingQuery*): StreamletQueryExecution =
     StreamletQueryExecution(oneQuery +: moreQueries.toVector)
-  def apply(querySeq: scala.collection.Seq[StreamingQuery]): StreamletQueryExecution = StreamletQueryExecution(querySeq.toVector)
+  def apply(querySeq: scala.collection.Seq[StreamingQuery]): StreamletQueryExecution =
+    StreamletQueryExecution(querySeq.toVector)
 }

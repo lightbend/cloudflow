@@ -1,7 +1,5 @@
-= Building Akka streamlets
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+= Building Akka Streamlets
+
 :page-supergroup-scala-java: Language
 
 include::ROOT:partial$include.adoc[]

@@ -11,7 +11,7 @@ else
     rm -rf cloudflow && \
     git clone --depth=100 --branch "$VERSION" https://github.com/lightbend/cloudflow.git && \
     cd cloudflow && \
-    export DIR=$(yq r docs/docs-source/docs/antora.yml 'version') && \
+    export DIR=$(yq e '.version' docs/docs-source/docs/antora.yml) && \
     echo $DIR && \
     cd core && \
     (sbt -mem 2048 clean unidoc || true) && \

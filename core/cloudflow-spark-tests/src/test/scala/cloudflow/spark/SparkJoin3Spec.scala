@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,11 +73,11 @@ class MySparkJoin3 extends SparkStreamlet {
 
   override def createLogic() = new SparkStreamletLogic {
     override def buildStreamingQueries = {
-      val dataset0                   = readStream(in0)
-      val dataset1                   = readStream(in1)
-      val dataset2                   = readStream(in2)
+      val dataset0 = readStream(in0)
+      val dataset1 = readStream(in1)
+      val dataset2 = readStream(in2)
       val outStream: Dataset[Simple] = process(dataset0, dataset1, dataset2)
-      val query                      = writeStream(outStream, out, OutputMode.Append)
+      val query = writeStream(outStream, out, OutputMode.Append)
       StreamletQueryExecution(query)
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import AvroUtil._
 
 case class AvroOutlet[T <: SpecificRecordBase: ClassTag](name: String, partitioner: T => String = RoundRobinPartitioner)
     extends CodecOutlet[T] {
-  def codec            = new AvroCodec[T](makeSchema)
+  def codec = new AvroCodec[T](makeSchema)
   def schemaDefinition = createSchemaDefinition(makeSchema)
-  def schemaAsString   = makeSchema.toString(false)
+  def schemaAsString = makeSchema.toString(false)
 
   /**
    * Returns a CodecOutlet with the partitioner set.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,15 +57,15 @@ class SparkProcessorSpec extends SparkScalaTestSupport {
 }
 // Test sparkStreamlet
 class TestSparkProcessor extends SparkStreamlet {
-  val in    = AvroInlet[Data]("in")
-  val out   = AvroOutlet[Simple]("out", _.name)
+  val in = AvroInlet[Data]("in")
+  val out = AvroOutlet[Simple]("out", _.name)
   val shape = StreamletShape(in, out)
 
   override def createLogic() = new SparkStreamletLogic {
     override def buildStreamingQueries = {
-      val dataset   = readStream(in)
+      val dataset = readStream(in)
       val outStream = dataset.select($"name").as[Simple]
-      val query     = writeStream(outStream, out, OutputMode.Append)
+      val query = writeStream(outStream, out, OutputMode.Append)
       StreamletQueryExecution(query)
     }
   }

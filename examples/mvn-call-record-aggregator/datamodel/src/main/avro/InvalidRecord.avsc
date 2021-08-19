@@ -1,0 +1,16 @@
+{
+    "namespace": "carly.data",
+    "type": "record",
+    "name": "InvalidRecord",
+    "fields":[
+         {
+            "name": "record",
+            "type": "string"
+         },
+         {
+             "name": "error",
+             "type": "string"
+         }
+    ]
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package cloudflow.streamlets.avro
 
-import scala.util.{ Failure, Try }
+import scala.util._
 
 import com.twitter.bijection.Injection
 import org.apache.avro.Schema
@@ -28,11 +28,11 @@ import cloudflow.streamlets._
 class AvroCodec[T <: SpecificRecordBase](avroSchema: Schema) extends Codec[T] {
 
   val recordInjection: Injection[T, Array[Byte]] = SpecificAvroCodecs.toBinary(avroSchema)
-  val avroSerde                                  = new AvroSerde(recordInjection)
+  val avroSerde = new AvroSerde(recordInjection)
 
   def encode(value: T): Array[Byte] = avroSerde.encode(value)
-  def decode(bytes: Array[Byte]): T = avroSerde.decode(bytes)
-  def schema: Schema                = avroSchema
+  def decode(bytes: Array[Byte]): Try[T] = avroSerde.decode(bytes)
+  def schema: Schema = avroSchema
 }
 
 private[avro] class AvroSerde[T <: SpecificRecordBase](injection: Injection[T, Array[Byte]]) extends Serializable {
@@ -41,9 +41,5 @@ private[avro] class AvroSerde[T <: SpecificRecordBase](injection: Injection[T, A
   def encode(value: T): Array[Byte] = injection(value)
 
   // TODO fix up the exception, maybe pas through input
-  def decode(bytes: Array[Byte]): T =
-    Try(inverted(bytes).get).recoverWith {
-      case t =>
-        Failure(DecodeException("Could not decode.", t))
-    }.get
+  def decode(bytes: Array[Byte]): Try[T] = inverted(bytes)
 }

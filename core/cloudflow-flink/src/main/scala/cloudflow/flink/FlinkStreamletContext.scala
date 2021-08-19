@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ import cloudflow.streamlets._
 /**
  * Runtime context for [[FlinkStreamlet]]s
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract case class FlinkStreamletContext(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
-    @transient env: StreamExecutionEnvironment
-) extends StreamletContext {
+    @transient env: StreamExecutionEnvironment)
+    extends StreamletContext {
 
   /**
    * Read from the underlying external storage through the inlet `inPort` and return a DataStream

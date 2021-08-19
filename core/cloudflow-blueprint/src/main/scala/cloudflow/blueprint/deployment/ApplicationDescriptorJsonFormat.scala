@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import cloudflow.blueprint.StreamletDescriptorFormat
 
 trait ConfigJsonFormat extends DefaultJsonProtocol {
   implicit val configFormat = new RootJsonFormat[Config] {
-    def read(json: JsValue)            = ConfigFactory.parseString(json.compactPrint)
+    def read(json: JsValue) = ConfigFactory.parseString(json.compactPrint)
     def write(config: Config): JsValue = config.root().render(ConfigRenderOptions.concise()).parseJson
   }
 }
@@ -35,7 +35,7 @@ trait ConfigJsonFormat extends DefaultJsonProtocol {
 trait ApplicationDescriptorJsonFormat extends StreamletDescriptorFormat with ConfigJsonFormat {
   implicit val streamletFormat = jsonFormat(StreamletInstance.apply, "name", "descriptor")
 
-  implicit val topicFormat    = jsonFormat(Topic.apply, "id", "cluster", "config")
+  implicit val topicFormat = jsonFormat(Topic.apply, "id", "cluster", "config")
   implicit val endpointFormat = jsonFormat(Endpoint.apply, "app_id", "streamlet", "container_port")
 
   implicit val streamletDeploymentFormat = jsonFormat(
@@ -50,8 +50,7 @@ trait ApplicationDescriptorJsonFormat extends StreamletDescriptorFormat with Con
     "config",
     "port_mappings",
     "volume_mounts",
-    "replicas"
-  )
+    "replicas")
 
   implicit val applicationDescriptorFormat = jsonFormat(
     ApplicationDescriptor.apply,
@@ -61,8 +60,7 @@ trait ApplicationDescriptorJsonFormat extends StreamletDescriptorFormat with Con
     "deployments",
     "agent_paths",
     "version",
-    "library_version"
-  )
+    "library_version")
 }
 
 object ApplicationDescriptorJsonFormat extends ApplicationDescriptorJsonFormat

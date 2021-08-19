@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package cloudflow.operator
 package event
 
-import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
+import akka.datap.crd.App
+import akka.kube.actions.Action
 import akka.stream.scaladsl._
-
-import skuber._
-import skuber.api.client._
-
-import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
+import io.fabric8.kubernetes.api.model.Secret
+
+import java.util.concurrent.atomic.AtomicReference
 
 object StreamletChangeEventFlow {
 
@@ -33,14 +32,10 @@ object StreamletChangeEventFlow {
 
   val secretsRef = new AtomicReference(Map[String, WatchEvent[Secret]]())
 
-  /**
-   * Transforms [[skuber.api.client.WatchEvent]]s into [[StreamletChangeEvent]]s.
-   * Only watch events that have changed for resources that have been created by the cloudflow operator are turned into [[StreamletChangeEvent]]s.
-   */
   def fromWatchEvent(): Flow[WatchEvent[Secret], StreamletChangeEvent[Secret], NotUsed] =
     Flow[WatchEvent[Secret]]
       .mapConcat { watchEvent =>
-        val currentObjects           = secretsRef.get
+        val currentObjects = secretsRef.get
         val (updatedObjects, events) = toStreamletChangeEvent(currentObjects, watchEvent)
         secretsRef.set(updatedObjects)
         events
@@ -48,9 +43,8 @@ object StreamletChangeEventFlow {
 
   def toConfigUpdateAction(
       runners: Map[String, Runner[_]],
-      podName: String
-  ): Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret]), Action, NotUsed] =
-    Flow[(Option[CloudflowApplication.CR], StreamletChangeEvent[Secret])]
+      podName: String): Flow[(Option[App.Cr], StreamletChangeEvent[Secret]), Action, NotUsed] =
+    Flow[(Option[App.Cr], StreamletChangeEvent[Secret])]
       .mapConcat {
         case (mappedApp, event) => toActionList(mappedApp, event, runners, podName)
       }

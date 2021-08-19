@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,9 @@ final case class StreamletDescriptor(
     outlets: immutable.IndexedSeq[OutletDescriptor],
     configParameters: immutable.IndexedSeq[ConfigParameterDescriptor],
     attributes: immutable.IndexedSeq[StreamletAttributeDescriptor] = Vector.empty,
-    volumeMounts: immutable.IndexedSeq[VolumeMountDescriptor]
-) {
+    volumeMounts: immutable.IndexedSeq[VolumeMountDescriptor]) {
   def isIngress: Boolean = inlets.isEmpty && outlets.nonEmpty
-  def isServer: Boolean  = attributes.exists(_.attributeName == StreamletDescriptor.Server)
+  def isServer: Boolean = attributes.exists(_.attributeName == StreamletDescriptor.Server)
   def getAttribute(name: String): Option[StreamletAttributeDescriptor] = attributes.find { attrib =>
     attrib.attributeName == name
   }
@@ -49,39 +48,24 @@ sealed trait PortDescriptor {
   def isOutlet: Boolean
 }
 
-final case class InletDescriptor(
-    name: String,
-    schema: SchemaDescriptor
-) extends PortDescriptor {
+final case class InletDescriptor(name: String, schema: SchemaDescriptor) extends PortDescriptor {
   def isOutlet = false
 }
 
-final case class OutletDescriptor(
-    name: String,
-    schema: SchemaDescriptor
-) extends PortDescriptor {
+final case class OutletDescriptor(name: String, schema: SchemaDescriptor) extends PortDescriptor {
   def isOutlet = true
 }
 
-final case class SchemaDescriptor(
-    name: String,
-    schema: String,
-    fingerprint: String,
-    format: String
-)
+final case class SchemaDescriptor(name: String, schema: String, fingerprint: String, format: String)
 
-final case class StreamletAttributeDescriptor(
-    attributeName: String,
-    configPath: String
-)
+final case class StreamletAttributeDescriptor(attributeName: String, configPath: String)
 
 final case class ConfigParameterDescriptor(
     key: String,
     description: String,
     validationType: String,
     validationPattern: Option[String],
-    defaultValue: Option[String]
-)
+    defaultValue: Option[String])
 
 final case class VolumeMountDescriptor(
     name: String,

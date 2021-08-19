@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package cloudflow.blueprint
 
 private[blueprint] object NameUtils {
-  private final val DNSLabelPattern       = """^[a-z0-9]([-a-z0-9]*[a-z0-9])?$""".r
+  private final val DNSLabelPattern = """^[a-z0-9]([-a-z0-9]*[a-z0-9])?$""".r
   private final val DNS1123LabelMaxLength = 63
 
   final def isDnsLabelCompatible(name: String): Boolean =

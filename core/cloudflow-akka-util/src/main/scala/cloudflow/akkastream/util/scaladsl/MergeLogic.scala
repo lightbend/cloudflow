@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,7 @@ object Merger {
    * Elements from all sources will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all sources.
    */
-  def graph[T](
-      sources: Seq[SourceWithContext[T, Committable, _]]
-  ): Graph[SourceShape[(T, Committable)], NotUsed] =
+  def graph[T](sources: Seq[SourceWithContext[T, Committable, _]]): Graph[SourceShape[(T, Committable)], NotUsed] =
     GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
       import GraphDSL.Implicits._
       val merge = builder.add(Merge[(T, Committable)](sources.size))
@@ -54,9 +52,7 @@ object Merger {
    * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all sources.
    */
-  def source[T](
-      sources: Seq[SourceWithContext[T, Committable, _]]
-  ): SourceWithContext[T, Committable, _] =
+  def source[T](sources: Seq[SourceWithContext[T, Committable, _]]): SourceWithContext[T, Committable, _] =
     Source.fromGraph(graph(sources)).asSourceWithContext { case (_, offset) => offset }.map { case (t, _) => t }
 
   /**
@@ -64,16 +60,16 @@ object Merger {
    * Elements from all inlets will be processed with at-least-once semantics. The elements will be processed
    * in semi-random order and with equal priority for all inlets.
    */
-  def source[T](
-      inlets: Seq[CodecInlet[T]]
-  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
-    Source.fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_)))).asSourceWithContext { case (_, offset) => offset }.map {
-      case (t, _) => t
-    }
-  def source[T](
-      inlet: CodecInlet[T],
-      inlets: CodecInlet[T]*
-  )(implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
+  def source[T](inlets: Seq[CodecInlet[T]])(
+      implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
+    Source
+      .fromGraph(graph(inlets.map(context.sourceWithCommittableContext(_))))
+      .asSourceWithContext { case (_, offset) => offset }
+      .map {
+        case (t, _) => t
+      }
+  def source[T](inlet: CodecInlet[T], inlets: CodecInlet[T]*)(
+      implicit context: AkkaStreamletContext): SourceWithContext[T, Committable, _] =
     Source
       .fromGraph(graph((inlet +: inlets.toList).map(context.sourceWithCommittableContext(_))))
       .asSourceWithContext { case (_, offset) => offset }
@@ -86,10 +82,8 @@ object Merger {
  * in semi-random order and with equal priority for all inlets.
  */
 @deprecated("Use `Merger.source` instead.", "1.3.1")
-class MergeLogic[T](
-    inletPorts: immutable.IndexedSeq[CodecInlet[T]],
-    outlet: CodecOutlet[T]
-)(implicit context: AkkaStreamletContext)
+class MergeLogic[T](inletPorts: immutable.IndexedSeq[CodecInlet[T]], outlet: CodecOutlet[T])(
+    implicit context: AkkaStreamletContext)
     extends RunnableGraphStreamletLogic {
   require(inletPorts.size >= 2)
 
@@ -99,7 +93,7 @@ class MergeLogic[T](
   override def runnableGraph() = {
 
     val inlets = inletPorts.map(inlet => sourceWithCommittableContext[T](inlet)).toList
-    val out    = committableSink[T](outlet)
+    val out = committableSink[T](outlet)
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
       import GraphDSL.Implicits._

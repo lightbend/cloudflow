@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import scala.collection.JavaConverters._
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object FlinkSource {
   case class CollectionSourceFunction[T](data: Seq[T]) extends SourceFunction[T] {
     def cancel(): Unit = {}

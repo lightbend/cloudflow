@@ -1,0 +1,373 @@
+
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+== Available Kubernetes Settings 
+
+In this section we are covering the Kubernetes settings that you can configure in Cloudflow. 
+
+Several Kubernetes settings for a streamlet can be set under `cloudflow.streamlets.[streamlet-name].kubernetes`.
+In the following examples we show configurations under a specific streamlet, `my-streamlet`, its complete path is `cloudflow.streamlets.my-streamlet`. It is also possible, as explained in xref:develop:cloudflow-configuration.adoc#_configuring_a_runtime_using_the_runtime_scope[Configuring a Runtime using the runtime Scope], to apply any configuration shown here to any `runtimes`. The complete path for a runtime is, for instance, `cloudflow.runtimes.akka`.
+
+=== Resource Requirements
+
+Container resource requirements can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
+The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    containers.container {
+      resources {
+        requests {
+          cpu = "500m"
+          memory = "512Mi"
+        }
+        limits {
+          memory = "4Gi"
+        }
+      }
+    }
+  }
+}
+----
+
+The above example shows that `500mcpu` and `512Mi` of memory is requested, while the memory limit is set to `4Gi`.   
+
+=== Environment Variables
+
+Container environment variables can be set in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
+The example below shows how resource requirements are set specifically for a `my-streamlet` streamlet:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    containers.container {
+      env = [ 
+            { name = "JAVA_OPTS" 
+              value = "-XX:MaxRAMPercentage=40.0"
+            },{
+              name = "FOO"
+              value = "BAR"
+            }
+          ]
+    }
+  }
+}
+----
+
+The above example shows how to set the environment variables `JAVA_OPTS=XX:MaxRAMPercentage=40.0` and `FOO=BAR` 
+
+===  Labels
+
+To set pod labels, add the `labels` section shown in the example below:
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    labels {
+      key1 = value1
+      key2 = value2
+    }
+  }
+}
+----
+
+The example above shows how to add the labels `key1 = value1` and `key2 = value2` to the pod for streamlet `my-streamlet`. 
+
+===  Annotations
+
+Similar to labels we can add annotations to any streamlet pod. The snippet below shows how:
+
+[source, hocon]
+----
+cloudflow {
+  streamlets {
+    my-streamlet {
+      kubernetes {
+        pods.pod {
+          annotations {
+            key1 = annotation1
+          }
+        }
+      }
+    }
+  }
+}
+----
+
+This configuration adds the annotation `key: annotation1` to the pod for streamlet `my-akka-streamlet`.
+
+Annotations, similar to labels, are defined by a key/value and can also be defined specifically for a streamlet or for all streamlets of a runtime, for instance under `cloudflow.runtimes.akka.kubernetes.pods.pod.annotations`. 
+
+===  Container Ports
+
+To add container ports we need to at least provide a `container-port` number. The snippet below shows how:
+
+[source, hocon]
+----
+cloudflow {
+  streamlets {
+    my-streamlet {
+      kubernetes {
+        pods.pod.containers.container {
+          ports = [
+            { container-port=9001},
+            { container-port=9002, host-ip="10.132.0.123", protocol = "SCTP", host-port=9999, name="user-datagram"}
+          ]
+        }
+      }
+    }
+  }
+}
+----
+
+It is possible, as we showed above, to also set host-ip, protocol, host-port and a name. 
+This configuration adds two container ports to every container where `my-akka-streamlet` is deployed. One in 9001 as TCP and the other in 9002 as UDP with `Host Ports:9999/UDP`, `name: user-datagram` and `hostIp: 10.132.0.123`
+
+For more info see container ports in the Kubernetes API https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#containerport-v1-core[container port]
+
+Note:
+It is only possible to add container ports to Akka Streamlets, the Flink and Spark operator do not support this.
+
+=== Volumes and Volume-Mounts
+==== **Mounting Secrets**
+
+It possible to add a `volume` that contains a secret, and mount it into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
+
+Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+   volumes {
+      foo {
+        secret {
+          name = mysecret1
+        }
+      }
+      bar {
+        secret {
+          name = mysecret2
+        }
+      }
+    }
+    containers.container {
+      volume-mounts {
+        foo {
+          mount-path = "/mnt/folderA"
+          read-only = true
+        }
+        bar {
+          mount-path = "/mnt/folderB"
+          read-only = true
+        }
+      }
+    }
+  } 
+}
+----
+
+This configuration will mount `mysecret1` into each `my-streamlet` container on to the path `/mnt/folderA/mysecret1` as read-only, while `mysecret2` will be mounted on path `/mnt/folderB/mysecret2`. Inside these folders, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted.
+As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
+
+.Configuration available to mount secrets
+[%autowidth]
+|===
+| resource  | key
+| `volumes` | `kubernetes.pods.pod.volumes.[name].secret.name = [secret-name]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
+|===
+
+
+==== **Mounting Persistent Volume Claims**
+
+You can also mount `volumes` on Persistent Volume Claims (PVC) that already exist in the Kubernetes cluster. They are also mounted into the container with `volume-mounts`. If the PVC doesn't not exist in the cluster, an error is shown and the deployment or configuration is stopped.
+
+Here's a sample, and further explanation, of how to configure two PVC's to be mounted on all the deployed containers of `my-streamlet`. 
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+   volumes {
+      foo {
+        pvc {
+          name = myclaim1
+          read-only = true
+        }
+      }
+      bar {
+        pvc {
+          name = myclaim2
+          read-only = false
+        }
+      }
+    }
+    containers.container {
+      volume-mounts {
+        foo {
+          mount-path = "/mnt/folderA"
+          read-only = true
+        }
+        bar {
+          mount-path = "/mnt/folderB"
+          read-only = false
+        }
+      }
+    }
+  } 
+}
+----
+
+This configuration will mount an existing Persistent Volume Claim `myclaim1` into each `my-streamlet` container on to the path `/mnt/folderA` as read-only, while `myclaim2` will be mounted on path `/mnt/folderB` as writable. As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
+
+
+
+.Configuration available to choose pvc and mount it
+[%autowidth]
+|===
+| resource  | key
+| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.name = [pvc-name]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].pvc.read-only = [true or false]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
+|===
+
+
+=== Pod differences among Akka, Flink and Spark Streamlets.
+
+Akka runtimes only deploy one type of pod per streamlet. Spark creates Driver and Executor pods, while Flink creates JobManager and TaskManager pods.
+
+When we are setting Kubernetes configuration via `kubernetes.pods.pod` or `kubernetes.pods.pod.containers.container`, it applies the same settings to all types of pod for the runtime used.
+
+In the case of Spark we can be more specific by using the following paths:
+  
+- For the Driver pods: `kubernetes.pods.driver` and `kubernetes.pods.driver.containers.container`     
+- For the Executor pods: `kubernetes.pods.executor` and `kubernetes.pods.executor.containers.container`   
+
+Using the path to the `pod` (driver or executor) settings will only applied to that specific type of pod. 
+
+Flink configuration works similarly as we can set the following paths:
+  
+- For the JobManager pods: `kubernetes.pods.job-manager` and `kubernetes.pods.job-manager.containers.container`       
+- For the TaskManager pods: `kubernetes.pods.task-manager` and `kubernetes.pods.task-manager.containers.container`  
+
+Let's go over a per pod specific configuration of a Spark application. The following snippet adds three volumes, available to both pods, and some volume-mounts specific to each pod.
+
+The sample below shows how to.
+
+[source, hocon]
+----
+cloudflow.runtime.spark {
+  kubernetes.pods {
+    pod {
+     volumes {
+        foo {
+          secret {
+            name = mysecret1
+          }
+        }
+        bar {
+          secret {
+            name = mysecret2
+          }
+        }
+        baz {
+          pvc {
+            name = myclaim1
+            read-only = false
+          }
+        }
+      }
+    }
+    driver {
+      containers.container {
+        volume-mounts {
+          foo {
+            mount-path = "/mnt/folderA/mysecret1"
+            read-only = true
+          }
+          baz {
+            mount-path = "/mnt/folderB"
+            read-only = false
+          }
+        }
+      }
+    } 
+    executor {
+      containers.container {
+        volume-mounts {
+          foo {
+            mount-path = "/mnt/folderA/mysecret1"
+            read-only = true
+          }
+          bar {
+            mount-path = "/mnt/folderC/mysecret2"
+            read-only = true
+          }
+        }
+      }
+    } 
+  }
+}
+---- 
+
+This configuration will mount `mysecret1` into any `driver` pod on path `/mnt/folderA/mysecret1` as read-only and into any `executor. It will mount `myclaim` into any `driver` pod on path `/mnt/folderB` as writable and `mysecret2` will be mounted into any `executor` pod on path `/mnt/folderC/mysecret2`. Inside folders `A` and `C`, you'll find as many files as values are under the https://kubernetes.io/docs/concepts/configuration/secret/#decoding-a-secret[`data`] tag in the Kubernetes Secret mounted. While the mounted `myclaim1` into the `driver` pods will allow to share the contents of folder `/mnt/folderB` among all of them. 
+
+## Exceptions
+
+Is important to bear in mind that Flink configuration will not be able to set specific labels per type of pod (`task-manager` and `job-manager` pods). Only `cloudflow.runtimes.flink.kubernetes.pods.pod.labels` is allowed, cloudflow.runtimes.flink.kubernetes.pods.[pod type].labels is not. It has the same limitation when defining `volumes` and `volume-mounts`. Only `cloudflow.runtimes.flink.kubernetes.pods.pod.volumes` and `cloudflow.runtimes.flink.kubernetes.pods.pod.containers.container.volume-mounts` are allowed.
+ 
+In the example below we show how a Spark driver and executor can be configured individually.
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods {
+    driver {
+      labels {
+        key1 = value1
+        key2 = value2
+      }
+      containers.container {
+        resources {
+          requests {
+            cpu = "1"
+            memory = "1Gi"
+          }
+          limits {
+            memory = "2Gi"
+          }
+        }
+      }
+    }
+
+    executor {
+      labels {
+        key3 = value3
+      }
+      containers.container {
+        resources {
+          requests {
+            cpu = "2"
+            memory = "2Gi"
+          }
+          limits {
+            memory = "6Gi"
+          }
+        }
+      }
+    }
+  }
+}
+----
+
+The above example shows specific container settings for the Spark driver and executor pods. In this case, the driver pods will request `1` cpu and `1Gi` of memory, limited to `2Gi` of memory, and will be labeled with `key1 : value1` and 
+`key2 : value2`. The executors will be requesting `2` cpus, `2Gi` of memory, limited to `6Gi` and will be labeled with `key3 : value3`.

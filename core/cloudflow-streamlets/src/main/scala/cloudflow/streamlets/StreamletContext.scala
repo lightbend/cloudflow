@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,8 +110,7 @@ trait StreamletContext {
 
 case class TopicForPortNotFoundException(port: StreamletPort, streamletDefinition: StreamletDefinition)
     extends Exception(
-      s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'"
-    )
+      s"Topic for Streamlet port '${port.name}' not found for application '${streamletDefinition.appId}' and streamlet '${streamletDefinition.streamletRef}'")
 
 case class BootstrapServersForTopicNotFound(topic: Topic) extends Exception(s"""
   |Runtime Kafka bootstrap.servers is not set for topic ${topic.id}

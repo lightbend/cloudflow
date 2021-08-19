@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,11 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 @InternalApi
 final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
-    sys: ActorSystem
-) extends AkkaStreamletContext {
-  private val log                            = LoggerFactory.getLogger(classOf[AkkaStreamletContextImpl])
-  private val streamletDefinitionMsg: String = s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
+    sys: ActorSystem)
+    extends AkkaStreamletContext {
+  private val log = LoggerFactory.getLogger(classOf[AkkaStreamletContextImpl])
+  private val streamletDefinitionMsg: String =
+    s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
 
   implicit val system: ActorSystem = sys
 
@@ -62,7 +63,7 @@ final class AkkaStreamletContextImpl(
   private val consumerStopTimeout: FiniteDuration =
     FiniteDuration(sys.settings.config.getDuration(StopTimeoutSetting).toMillis, TimeUnit.MILLISECONDS).toCoarsest
 
-  private val execution                               = new StreamletExecutionImpl(this)
+  private val execution = new StreamletExecutionImpl(this)
   override val streamletExecution: StreamletExecution = execution
 
   /**
@@ -107,13 +108,11 @@ final class AkkaStreamletContextImpl(
     def shutdownConsumers()(implicit ec: ExecutionContext) = {
       log.debug("Shutting down consumers of {}", streamletDefinitionMsg)
       Future
-        .sequence(
-          controls.get.map(_.shutdown().recover {
-            case cause =>
-              log.error("shutting down the consumer source failed.", cause)
-              Done
-          })
-        )
+        .sequence(controls.get.map(_.shutdown().recover {
+          case cause =>
+            log.error("shutting down the consumer source failed.", cause)
+            Done
+        }))
         .map(_ => Done)
     }
   }
@@ -121,7 +120,7 @@ final class AkkaStreamletContextImpl(
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
@@ -137,20 +136,25 @@ final class AkkaStreamletContextImpl(
         KafkaControls.add(c)
         NotUsed
       }
-      .map(record => inlet.codec.decode(record.value))
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
+        })
+      .collect { case Some(v) => v }
       .via(handleTermination)
   }
 
-  override def sourceWithCommittableContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
+  override def sourceWithCommittableContext[T](
+      inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T] =
     sourceWithContext[T](inlet)
 
   private[akkastream] def shardedSourceWithContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+      kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
@@ -172,20 +176,16 @@ final class AkkaStreamletContextImpl(
       KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
         timeout = kafkaTimeout,
-        settings = consumerSettings
-      )
+        settings = consumerSettings)
 
     Source
       .futureSource {
         messageExtractor.map { m =>
           ClusterSharding(system.toTyped).init(
             shardEntity
-              .withAllocationStrategy(
-                shardEntity.allocationStrategy
-                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
-              )
-              .withMessageExtractor(m)
-          )
+              .withAllocationStrategy(shardEntity.allocationStrategy
+                .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name)))
+              .withMessageExtractor(m))
 
           Consumer
             .sourceWithOffsetContext(consumerSettings, subscription)
@@ -193,7 +193,12 @@ final class AkkaStreamletContextImpl(
               KafkaControls.add(c)
               NotUsed
             }
-            .map(record => inlet.codec.decode(record.value))
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
+              })
+            .collect { case Some(v) => v }
             .via(handleTermination)
             .asSource
         }(system.dispatcher)
@@ -205,15 +210,17 @@ final class AkkaStreamletContextImpl(
   override def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
+      kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] =
     shardedSourceWithContext(inlet, shardEntity)
 
   @deprecated("Use sourceWithCommittableContext", "1.3.4")
-  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+  override def sourceWithOffsetContext[T](
+      inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext[T](inlet)
 
-  def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
+  def committableSink[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
@@ -222,8 +229,8 @@ final class AkkaStreamletContextImpl(
     Flow[(T, Committable)]
       .map {
         case (value, committable) =>
-          val key        = outlet.partitioner(value)
-          val bytesKey   = keyBytes(key)
+          val key = outlet.partitioner(value)
+          val bytesKey = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
           ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
       }
@@ -235,8 +242,7 @@ final class AkkaStreamletContextImpl(
     Flow[(T, Committable)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   override def flexiFlow[T](
-      outlet: CodecOutlet[T]
-  ): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
+      outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
@@ -253,14 +259,15 @@ final class AkkaStreamletContextImpl(
   }
 
   private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
-    val key        = outlet.partitioner(value)
-    val bytesKey   = keyBytes(key)
+    val key = outlet.partitioner(value)
+    val bytesKey = keyBytes(key)
     val bytesValue = outlet.codec.encode(value)
     new ProducerRecord(topic.name, bytesKey, bytesValue)
   }
 
-  private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
-                                                   committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
+  private[akkastream] def sinkWithOffsetContext[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
     val topic = findTopicForPort(outlet)
     val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
@@ -269,21 +276,22 @@ final class AkkaStreamletContextImpl(
     Flow[(T, CommittableOffset)]
       .map {
         case (value, committable) =>
-          val key        = outlet.partitioner(value)
-          val bytesKey   = keyBytes(key)
+          val key = outlet.partitioner(value)
+          val bytesKey = keyBytes(key)
           val bytesValue = outlet.codec.encode(value)
           ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
       }
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
   }
 
-  private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+  private[akkastream] def sinkWithOffsetContext[T](
+      committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
     // TODO clean this up, lot of copying code, refactor.
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
@@ -297,17 +305,21 @@ final class AkkaStreamletContextImpl(
         NotUsed
       }
       .via(handleTermination)
-      .map { record =>
-        inlet.codec.decode(record.value)
-      }
+      .map(record =>
+        inlet.codec.decode(record.value) match {
+          case Success(value) => Some(value)
+          case Failure(t)     => inlet.errorHandler(record.value, t)
+        })
+      .collect { case Some(v) => v }
   }
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
+  def shardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
     val topic = findTopicForPort(inlet)
-    val gId   = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
     val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
       .withBootstrapServers(runtimeBootstrapServers(topic))
       .withGroupId(gId)
@@ -328,20 +340,16 @@ final class AkkaStreamletContextImpl(
       KafkaClusterSharding(system).messageExtractor(
         topic = topic.name,
         timeout = kafkaTimeout,
-        settings = consumerSettings
-      )
+        settings = consumerSettings)
 
     Source
       .futureSource {
         messageExtractor.map { m =>
           ClusterSharding(system.toTyped).init(
             shardEntity
-              .withAllocationStrategy(
-                shardEntity.allocationStrategy
-                  .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name))
-              )
-              .withMessageExtractor(m)
-          )
+              .withAllocationStrategy(shardEntity.allocationStrategy
+                .getOrElse(new ExternalShardAllocationStrategy(system, shardEntity.typeKey.name)))
+              .withMessageExtractor(m))
 
           Consumer
             .plainSource(consumerSettings, subscription)
@@ -350,9 +358,12 @@ final class AkkaStreamletContextImpl(
               NotUsed
             }
             .via(handleTermination)
-            .map { record =>
-              inlet.codec.decode(record.value)
-            }
+            .map(record =>
+              inlet.codec.decode(record.value) match {
+                case Success(value) => Some(value)
+                case Failure(t)     => inlet.errorHandler(record.value, t)
+              })
+            .collect { case Some(v) => v }
         }(system.dispatcher)
       }
   }
@@ -365,8 +376,8 @@ final class AkkaStreamletContextImpl(
 
     Flow[T]
       .map { value =>
-        val key        = outlet.partitioner(value)
-        val bytesKey   = keyBytes(key)
+        val key = outlet.partitioner(value)
+        val bytesKey = keyBytes(key)
         val bytesValue = outlet.codec.encode(value)
         new ProducerRecord(topic.name, bytesKey, bytesValue)
       }
@@ -378,14 +389,7 @@ final class AkkaStreamletContextImpl(
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] = {
     val topic = findTopicForPort(outlet)
 
-    new KafkaSinkRef(
-      system,
-      outlet,
-      runtimeBootstrapServers(topic),
-      topic,
-      killSwitch,
-      execution.completionPromise
-    )
+    new KafkaSinkRef(system, outlet, runtimeBootstrapServers(topic), topic, killSwitch, execution.completionPromise)
   }
 
   private def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
@@ -393,17 +397,15 @@ final class AkkaStreamletContextImpl(
   private def handleTermination[T]: Flow[T, T, NotUsed] =
     Flow[T]
       .via(killSwitch.flow)
-      .alsoTo(
-        Sink.onComplete { res =>
-          execution.complete(res)
-          res match {
-            case Success(_) =>
-              log.info("Stream has completed. Shutting down streamlet {}.", streamletDefinitionMsg)
-            case Failure(e) =>
-              log.error(s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.", e)
-          }
+      .alsoTo(Sink.onComplete { res =>
+        execution.complete(res)
+        res match {
+          case Success(_) =>
+            log.info("Stream has completed. Shutting down streamlet {}.", streamletDefinitionMsg)
+          case Failure(e) =>
+            log.error(s"Stream has failed. Shutting down streamlet $streamletDefinitionMsg.", e)
         }
-      )
+      })
 
   def signalReady(): Boolean = execution.signalReady()
 
@@ -414,18 +416,21 @@ final class AkkaStreamletContextImpl(
     if (!localMode) HealthCheckFiles.createReady(streamletRef)
 
     import system.dispatcher
-    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, s"akka-streamlet-${streamletRef}-unbind") { () =>
-      serviceUnbind()
-    }
-    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeClusterShutdown, s"akka-streamlet-${streamletRef}-stop") { () =>
-      stop().map(_ => Done)
-    }
-    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseActorSystemTerminate, s"akka-streamlet-${streamletRef}-terminate") { () =>
-      Future {
-        HealthCheckFiles.deleteAlive(streamletRef)
-        Done
+    CoordinatedShutdown(system)
+      .addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, s"akka-streamlet-${streamletRef}-unbind") { () =>
+        serviceUnbind()
       }
-    }
+    CoordinatedShutdown(system)
+      .addTask(CoordinatedShutdown.PhaseBeforeClusterShutdown, s"akka-streamlet-${streamletRef}-stop") { () =>
+        stop().map(_ => Done)
+      }
+    CoordinatedShutdown(system)
+      .addTask(CoordinatedShutdown.PhaseActorSystemTerminate, s"akka-streamlet-${streamletRef}-terminate") { () =>
+        Future {
+          HealthCheckFiles.deleteAlive(streamletRef)
+          Done
+        }
+      }
   }
 
   override def alive(localMode: Boolean): Unit =
@@ -446,9 +451,10 @@ final class AkkaStreamletContextImpl(
     KafkaControls
       .stopInflow()
       .flatMap { _ =>
-        log.debug(s"Waiting {} ($StopTimeoutSetting) until {} consumers are shut down",
-                  consumerStopTimeout: Any,
-                  streamletDefinitionMsg: Any)
+        log.debug(
+          s"Waiting {} ($StopTimeoutSetting) until {} consumers are shut down",
+          consumerStopTimeout: Any,
+          streamletDefinitionMsg: Any)
         akka.pattern.after(consumerStopTimeout)(Future.successful(Done))
       }
       .flatMap { _ =>
@@ -469,8 +475,7 @@ final class AkkaStreamletContextImpl(
 
   override def metricTags(): Map[String, String] =
     Map(
-      "app-id"        -> streamletDefinition.appId,
-      "app-version"   -> streamletDefinition.appVersion,
-      "streamlet-ref" -> streamletRef
-    )
+      "app-id" -> streamletDefinition.appId,
+      "app-version" -> streamletDefinition.appVersion,
+      "streamlet-ref" -> streamletRef)
 }

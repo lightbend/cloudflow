@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage
 import java.util.{ List => JList }
 
 import akka.annotation.ApiMayChange
-import akka.japi.Function
+import akka.japi.function.Function
 import akka.grpc.javadsl.ServiceHandler
 import akka.http.javadsl.model.{ HttpRequest, HttpResponse }
 import akka.http.javadsl.model.StatusCodes.OK
@@ -36,10 +36,7 @@ abstract class GrpcServerLogic(server: Server, context: AkkaStreamletContext) ex
     import scala.jdk.CollectionConverters._
     val handler = ServiceHandler.concatOrNotFound(handlers().asScala.toSeq: _*)
 
-    concat(
-      pathEndOrSingleSlash(() => complete(OK, "")),
-      handle(request => handler(request))
-    )
+    concat(pathEndOrSingleSlash(() => complete(OK, "")), handle(request => handler(request)))
 
   }
 }

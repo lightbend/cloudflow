@@ -18,4 +18,4 @@ _Effectively Exactly Once_:: is a variant of _exactly once_ delivery semantics t
 That is, producing the same record more than once is the same as producing it only once.
 In practical terms, this translates to writing the data to a system that can preserve the uniqueness of keys or use a deduplication process to prevent duplicate records from being produced to an external system.
 
-In the xref:developing-streamlets.adoc[Developing Streamlets] section corresponding to each supported runtime, you find specific information about message delivery semantics for each of them.
+In the xref:developing-streamlets.adoc[Developing Streamlets] section corresponding to each runtime, you find specific information about message delivery semantics for each of them.

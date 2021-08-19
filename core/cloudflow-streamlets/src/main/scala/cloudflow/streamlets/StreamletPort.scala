@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package cloudflow.streamlets
 
+import org.slf4j.LoggerFactory
+
 /**
  * A named port handle handle to read or write data according to a schema.
  */
@@ -31,12 +33,7 @@ trait StreamletPort {
  * The `format` specifies the format of the schema. Unique names should be used for different formats.
  * (In the case of Avro, format is "avro")
  */
-final case class SchemaDefinition(
-    name: String,
-    schema: String,
-    fingerprint: String,
-    format: String
-)
+final case class SchemaDefinition(name: String, schema: String, fingerprint: String, format: String)
 
 /**
  * A handle to read data according to a schema.
@@ -47,6 +44,20 @@ trait Inlet extends StreamletPort
  * A handle to write data according to a schema.
  */
 trait Outlet extends StreamletPort
+
+object CodecInlet {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
+
+  /**
+   * A default error handler. This error handler just logs bad message and skips them.
+   */
+  def logAndSkip[T](message: Array[Byte], cause: Throwable): Option[T] = {
+    logger.error("Data decoding error, skipping message", cause)
+    None
+  }
+
+}
 
 /**
  * A handle to read and deserialize data into elements of type `T`.
@@ -76,6 +87,17 @@ trait CodecInlet[T] extends Inlet {
    * If no unique group Id is set (which is the default), streamlet instances will each receive part of the data (on this inlet).
    */
   def withUniqueGroupId: CodecInlet[T]
+
+  /**
+   * Sets a value for error handler for potential data unmarshalling errors
+   * If no error handler is specified, defaults to logging error and skipping record.
+   */
+  def withErrorHandler(f: (Array[Byte], Throwable) => Option[T]): CodecInlet[T]
+
+  /**
+   * handle marshalling errors
+   */
+  val errorHandler: (Array[Byte], Throwable) => Option[T]
 }
 
 /**

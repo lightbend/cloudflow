@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package cloudflow.blueprint
 import cloudflow.blueprint.deployment.ApplicationDescriptor
 import org.apache.kafka.common.config.TopicConfig
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 
-class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues with OptionValues {
+class BlueprintParserSpec extends AnyWordSpec with Matchers with EitherValues with OptionValues {
   case class Foo(name: String)
   case class Bar(name: String)
 
@@ -30,13 +32,17 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
 
   "A blueprint" should {
     "fail verification if streamlets and streamlet descriptors are empty" in {
-      val blueprint = Blueprint.parseString("""blueprint {
+      val blueprint = Blueprint
+        .parseString(
+          """blueprint {
           |  streamlets {
           |  }
           |  topics {
           |  }
           |}
-          |""".stripMargin, Vector.empty).verify
+          |""".stripMargin,
+          Vector.empty)
+        .verify
 
       blueprint.problems must contain theSameElementsAs Vector(EmptyStreamlets, EmptyStreamletDescriptors)
     }
@@ -58,8 +64,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
           |  }
           |}
           |""".stripMargin,
-          Vector.empty
-        )
+          Vector.empty)
         .verify
 
       val metricsTopic = blueprint.topics.head
@@ -85,8 +90,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
           |  }
           |}
           |""".stripMargin,
-          Vector.empty
-        )
+          Vector.empty)
         .verify
 
       val metricsTopic = blueprint.topics.head
@@ -112,8 +116,7 @@ class BlueprintParserSpec extends WordSpec with MustMatchers with EitherValues w
           |  }
           |}
           |""".stripMargin,
-          Vector.empty
-        )
+          Vector.empty)
         .verify
 
       val metricsTopic = blueprint.topics.head

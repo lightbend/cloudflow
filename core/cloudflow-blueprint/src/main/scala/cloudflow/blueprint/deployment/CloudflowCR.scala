@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,10 @@ import spray.json._
 import ApplicationDescriptorJsonFormat._
 
 case class Metadata(annotations: Map[String, String], labels: Map[String, String], name: String)
-case class CloudflowCR(
-    apiVersion: String,
-    kind: String,
-    metadata: Metadata,
-    spec: ApplicationDescriptor
-)
+case class CloudflowCR(apiVersion: String, kind: String, metadata: Metadata, spec: ApplicationDescriptor)
 
 object CloudflowCRFormat extends CloudflowCRFormat
 trait CloudflowCRFormat extends DefaultJsonProtocol {
-  implicit val metadataFormat    = jsonFormat3(Metadata.apply)
+  implicit val metadataFormat = jsonFormat3(Metadata.apply)
   implicit val cloudflowCRFormat = jsonFormat4(CloudflowCR.apply)
 }

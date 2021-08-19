@@ -11,7 +11,7 @@ class DataMerge extends AkkaStreamlet {
 
   val in0 = AvroInlet[Data]("in-0")
   val in1 = AvroInlet[Data]("in-1")
-  val out = AvroOutlet[Data]("out", d ⇒ d.key)
+  val out = AvroOutlet[Data]("out", d => d.key)
 
   final override val shape = StreamletShape.withInlets(in0, in1).withOutlets(out)
 

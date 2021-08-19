@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
 package cloudflow.streamlets.proto
 
 import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
-
 import cloudflow.streamlets._
 
+import scala.util.Try
+
 class ProtoCodec[T <: GeneratedMessage: GeneratedMessageCompanion] extends Codec[T] {
-  val cmp                           = implicitly[GeneratedMessageCompanion[T]]
+  val cmp = implicitly[GeneratedMessageCompanion[T]]
   def encode(value: T): Array[Byte] = cmp.toByteArray(value)
-  def decode(bytes: Array[Byte]): T = cmp.parseFrom(bytes)
+  def decode(bytes: Array[Byte]): Try[T] = Try { cmp.parseFrom(bytes) }
 }

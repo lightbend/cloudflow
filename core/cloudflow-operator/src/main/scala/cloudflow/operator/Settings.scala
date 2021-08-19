@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 
 package cloudflow.operator
 
-import scala.io.{ BufferedSource, Source }
 import akka.actor._
-import com.typesafe.config._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import skuber.Resource.Quantity
-
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner._
+import com.typesafe.config._
+import io.fabric8.kubernetes.api.model.Quantity
+
+import scala.io.{ BufferedSource, Source }
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
-  override def lookup                                       = Settings
+  override def lookup = Settings
   override def createExtension(system: ExtendedActorSystem) = new Settings(system.settings.config)
 
   override def apply(system: ActorSystem) =
@@ -41,6 +39,14 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     else throw new ConfigException.BadValue(key, s"Should be a non-empty String")
   }
 
+  private def getOptionalString(config: Config, key: String) = {
+    try {
+      Some(config.getString(key).trim())
+    } catch {
+      case _: ConfigException.Missing => None
+    }
+  }
+
   private def getPort(config: Config, key: String) =
     validatePortnumber(config.getInt(key), key)
 
@@ -48,82 +54,52 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
     if (port >= 0 && port <= 65535) port
     else throw new ConfigException.BadValue(key, s"Not a valid port number: $port")
 
-  private def getResourceConstraints(config: Config): ResourceConstraints = ResourceConstraints(
-    getNonEmptyString(config, "requests-cpu"),
-    getNonEmptyString(config, "requests-memory"),
-    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
-    config.as[Option[String]]("limits-memory").map(v => Quantity(v))
-  )
-  private def getSparkPodDefaults(config: Config): SparkPodDefaults = SparkPodDefaults(
-    config.as[Option[String]]("requests-cpu").map(v => Quantity(v)),
-    config.as[Option[String]]("requests-memory").map(v => Quantity(v)),
-    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
-    config.as[Option[String]]("memory-overhead").map(v => Quantity(v)),
-    config.as[Option[String]]("java-opts")
-  )
-  private def getFlinkPodResourceDefaults(config: Config): FlinkPodResourceDefaults = FlinkPodResourceDefaults(
-    config.as[Option[String]]("requests-cpu").map(v => Quantity(v)),
-    config.as[Option[String]]("requests-memory").map(v => Quantity(v)),
-    config.as[Option[String]]("limits-cpu").map(v => Quantity(v)),
-    config.as[Option[String]]("limits-memory").map(v => Quantity(v))
-  )
+  private def getResourceConstraints(config: Config): ResourceConstraints =
+    ResourceConstraints(
+      Quantity.parse(getNonEmptyString(config, "requests-cpu")),
+      Quantity.parse(getNonEmptyString(config, "requests-memory")),
+      getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
+      getOptionalString(config, "limits-memory").map(v => Quantity.parse(v)))
+  private def getSparkPodDefaults(config: Config): SparkPodDefaults =
+    SparkPodDefaults(
+      getOptionalString(config, "requests-cpu").map(v => Quantity.parse(v)),
+      getOptionalString(config, "requests-memory").map(v => Quantity.parse(v)),
+      getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
+      getOptionalString(config, "memory-overhead").map(v => Quantity.parse(v)),
+      getOptionalString(config, "java-opts"))
+  private def getFlinkPodResourceDefaults(config: Config): FlinkPodResourceDefaults =
+    FlinkPodResourceDefaults(
+      getOptionalString(config, "requests-cpu").map(v => Quantity.parse(v)),
+      getOptionalString(config, "requests-memory").map(v => Quantity.parse(v)),
+      getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
+      getOptionalString(config, "limits-memory").map(v => Quantity.parse(v)))
 
   private def getAkkaRunnerDefaults(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerDefaults = {
     val runnerConfig = config.getConfig(runnerPath)
-    AkkaRunnerDefaults(
-      getResourceConstraints(runnerConfig),
-      getNonEmptyString(runnerConfig, "java-opts"),
-      getPrometheusRules(runnerStr)
-    )
+    AkkaRunnerDefaults(getResourceConstraints(runnerConfig), getNonEmptyString(runnerConfig, "java-opts"))
   }
 
   private def getSparkRunnerDefaults(config: Config, root: String, runnerStr: String): SparkRunnerDefaults = {
-    val driverPath   = s"$root.deployment.spark-runner-driver"
+    val driverPath = s"$root.deployment.spark-runner-driver"
     val executorPath = s"$root.deployment.spark-runner-executor"
 
-    val driverConfig   = config.getConfig(driverPath)
+    val driverConfig = config.getConfig(driverPath)
     val executorConfig = config.getConfig(executorPath)
 
-    SparkRunnerDefaults(
-      getSparkPodDefaults(driverConfig),
-      getSparkPodDefaults(executorConfig),
-      getPrometheusRules(runnerStr)
-    )
+    SparkRunnerDefaults(getSparkPodDefaults(driverConfig), getSparkPodDefaults(executorConfig))
   }
 
   private def getFlinkRunnerDefaults(config: Config, root: String, runnerStr: String): FlinkRunnerDefaults = {
     val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
 
-    val jobManagerConfig  = flinkRunnerConfig.getConfig("jobmanager")
+    val jobManagerConfig = flinkRunnerConfig.getConfig("jobmanager")
     val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
-    val parallelism       = flinkRunnerConfig.as[Int]("parallelism")
+    val parallelism = flinkRunnerConfig.getInt("parallelism")
 
     FlinkRunnerDefaults(
       parallelism,
-      FlinkJobManagerDefaults(jobManagerConfig.as[Int]("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
-      FlinkTaskManagerDefaults(taskManagerConfig.as[Int]("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)),
-      getPrometheusRules(runnerStr)
-    )
-  }
-
-  def getPrometheusRules(runnerStr: String): String = runnerStr match {
-    case AkkaRunner.Runtime =>
-      appendResourcesToString(
-        "prometheus-rules/base.yaml",
-        "prometheus-rules/kafka-client.yaml"
-      )
-    case SparkRunner.Runtime =>
-      appendResourcesToString(
-        "prometheus-rules/base.yaml",
-        "prometheus-rules/spark.yaml",
-        "prometheus-rules/kafka-client.yaml"
-      )
-    case FlinkRunner.Runtime =>
-      appendResourcesToString(
-        "prometheus-rules/base.yaml",
-        "prometheus-rules/flink.yaml",
-        "prometheus-rules/kafka-client.yaml"
-      )
+      FlinkJobManagerDefaults(jobManagerConfig.getInt("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
+      FlinkTaskManagerDefaults(taskManagerConfig.getInt("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)))
   }
 
   private def appendResourcesToString(paths: String*): String =
@@ -132,7 +108,7 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
         var source: BufferedSource = null
         try {
           source = Source.fromResource(path)
-          acc + source.getLines.mkString("\n") + "\n"
+          acc + source.getLines().mkString("\n") + "\n"
         } catch {
           case t: Throwable => throw new Exception(s"Could not load file from resources with path $path", t)
         } finally {
@@ -145,26 +121,20 @@ final case class Settings(config: Config) extends Extension {
   import Settings._
 
   val releaseVersion = getNonEmptyString(config, s"$root.release-version")
-  val podName        = getNonEmptyString(config, s"$root.pod-name")
-  val podNamespace   = getNonEmptyString(config, s"$root.pod-namespace")
+  val podName = getNonEmptyString(config, s"$root.pod-name")
+  val podNamespace = getNonEmptyString(config, s"$root.pod-namespace")
 
-  val akkaRunnerSettings  = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
+  val akkaRunnerSettings = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
   val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
   val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
-  val api = ApiSettings(
-    getNonEmptyString(config, s"$root.api.bind-interface"),
-    getPort(config, s"$root.api.bind-port")
-  )
+  val flinkEnabled = config.getBoolean(s"$root.flink-enabled")
+  val sparkEnabled = config.getBoolean(s"$root.spark-enabled")
+
+  val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
 
   val deploymentContext = {
-    DeploymentContext(
-      akkaRunnerSettings,
-      sparkRunnerSettings,
-      flinkRunnerSettings,
-      podName,
-      podNamespace
-    )
+    DeploymentContext(akkaRunnerSettings, sparkRunnerSettings, flinkRunnerSettings, podName, podNamespace)
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import cloudflow.streamlets.avro._
 import SensorDataJsonSupport._
 
 class SensorDataHttpIngress extends AkkaServerStreamlet {
-  val out                  = AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
-  def shape                = StreamletShape.withOutlets(out)
-  override def createLogic = HttpServerLogic.default(this, out)
+  val out: CodecOutlet[SensorData]               = AvroOutlet[SensorData]("out").withPartitioner(RoundRobinPartitioner)
+  override def shape(): StreamletShape           = StreamletShape.withOutlets(out)
+  override def createLogic(): AkkaStreamletLogic = HttpServerLogic.default(this, out)
 }
 //end::code[]

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package cloudflow.akkastream
 
 package testkit {
-  import scala.concurrent.Future
+  import scala.util.Try
+  import scala.concurrent.{ Future, Promise }
   import akka.{ Done, NotUsed }
   import akka.stream.scaladsl._
   import cloudflow.streamlets.CodecOutlet
@@ -33,20 +34,24 @@ package testkit {
   trait OutletTap[T] {
     def outlet: CodecOutlet[T]
     def portName: String = outlet.name
-
+    private[testkit] def flow: Flow[PartitionedValue[T], PartitionedValue[T], NotUsed]
     // This is for internal usage so using a scaladsl Source is no problem
     private[testkit] def sink: Sink[PartitionedValue[T], Future[Done]]
 
-    private[testkit] def toPartitionedValue(element: T): PartitionedValue[T] =
-      PartitionedValue(outlet.partitioner(element), element)
+    private[testkit] def toPartitionedValue(element: T): PartitionedValue[T] = {
+      PartitionedValue(outlet.partitioner(element), element, Promise.successful(element))
+    }
+
+    private[testkit] def toPartitionedValue(element: T, promise: Promise[T]): PartitionedValue[T] =
+      PartitionedValue(outlet.partitioner(element), element, promise)
   }
 
   /**
    * A representation of a key-value pair that is not bound to the Scala or Java DSLs
    */
-  case class PartitionedValue[T](key: String, value: T) {
+  private[testkit] case class PartitionedValue[T](key: String, value: T, promise: Promise[T]) {
     def getKey(): String = key
-    def getValue(): T    = value
+    def getValue(): T = value
   }
 
   trait ConfigParameterValue {

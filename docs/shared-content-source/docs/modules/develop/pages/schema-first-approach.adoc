@@ -65,6 +65,68 @@ Cloudflow ensures the following compile time guarantees through this type defini
 +
 For example, when implementing `createLogic` if you do `readStream(in)` where `in` is an inlet parameterized by a type other than `CallRecord`, the compiler will complain.
 
+== Dealing with "bad" messages
+
+Despite data integrity guarantee through schemas provided by Cloudflow, there is still
+cases of "bad" messages coming into inlet. This can be a result of different schema versions
+or the case when inlet is listening on the topic produced by non Cloudflow applications.
+
+There are two distict flavors of "bad" data:
+
+* Syntactically bad data - the data that does not adhere to inlet's schema and as a result can't
+be unmarshalled properly
+* Semantically bad data is the data that is syntactically correct, but its content does not
+adhere to business requirements for streamlet processing.
+
+Dealing with Semantically bad data has to be implemented directly by Streamlet's logic, while
+support for dealing with semantically bad data is provided by Cloudflow.
+
+There are several possible strategies for dealing with semantically bad data:
+
+* You can skip bad data records.
+
+NOTE: If the bad record is skipped, its offset is not committed. This is ok, if the occurance of
+of the "bad" records is rare. The next record's offset will be committed. If all the records are
+"bad", then the offset will be never committed.
+
+* You can replace bad message with the predefined ones.
+
+In addition there several possible approaches to reporting "bad" records, for example:
+
+* Logging
+* Writing to the dead-leter queue/topic
+* etc.
+
+By default, cloudflow will log "bad" records and skip them. This behavior can be overwritten (on an Inlet level)
+by adding a custom error handler to inlet:
+
+[source,scala]
+----
+val in = AvroInlet[CallRecord]("in").withErrorHandler(CustomHandler)
+----
+Here `CustomHandler` is any function adhering to the following interface
+
+[source,scala]
+----
+errorHandler: (Array[Byte], Throwable) => Option[T]
+----
+
+== External Inlets and outlets
+
+As mentioned earlier, Cloudflow uses a schema-first approach for building streaming data pipelines.
+This works great for intra streamlet communications, but often falls short for integration
+with existing applications which might use proprietary encoding for messages.
+To accommodate these use cases Cloudflow introduces `ExternalInlet` and `ExternalOutlet`,
+which implement Kafka communications in `ByteArray` format, allowing user to explicitly
+marshal/unmarshal data as part of the application code.
+
+When using `ExternalInlet` each data record is read by streamlet as an array of bytes.
+When using `ExternalOutlet` each data record should be converted to an array of bytes before
+writing it into an outlet.
+
+NOTE: `ExternalInlet` and `ExternalOutlet` are not intended for intra-streamlet communications. They should only
+be used for Kafka-based integration with existing applications supporting proprietary message formats.
+
 == Outlets and the partitioning function
 
 Similar to inlets, the user can define an outlet as: 

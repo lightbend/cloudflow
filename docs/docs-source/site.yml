@@ -8,14 +8,16 @@ content:
         - docs/docs-source/docs
         - docs/shared-content-source/docs
         - examples/snippets
-      branches: [master, v1.3.3-docs, v2.0.0-docs, v2.0.5-docs, v2.0.7-docs, v2.0.8-docs, v2.0.10-docs, v2.0.11-docs, v2.0.12-docs, v2.0.13-docs, v2.0.14-docs, v2.0.16-docs, v2.0.18-docs] # versioned content - add branches here
+      branches: [v1.3.3-docs, v2.0.0-docs, v2.0.25-docs, v2.1.0-docs, v2.1.2-docs, v2.2.0-docs, v2.2.2-docs] # versioned content - add branches here
     - url: git@github.com:lightbend/cloudflow.git
       start-path: docs/homepage-source/docs
-      branches: [master] # should always remain as master
+      branches: [main] # should always remain as main
 ui:
   bundle:
-    url: https://github.com/lightbend/antora-ui-lightbend-cloud-theme/raw/master/build/ui-bundle.zip
+    url: https://lightbend.github.io/antora-supplemental-ui-lightbend-theme/default_ui/ui-bundle-756539289.zip
     snapshot: true
+  default_layout: default
+  supplemental_files: ./supplemental_ui
 runtime:
   fetch: true
 asciidoc:
@@ -24,6 +26,7 @@ asciidoc:
     # review: ''
     # todo: ''
     doc-title: 'Cloudflow Guide'
+    oss: ''
 output:
   dir: ./../target/staging
   clean: true

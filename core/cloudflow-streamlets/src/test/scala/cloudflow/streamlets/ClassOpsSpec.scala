@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package cloudflow.streamlets
 
-import org.scalatest.{ MustMatchers, TryValues, WordSpec }
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.TryValues
 
 // Definitions for test purposes
 class Foo
@@ -37,7 +39,7 @@ class ClassWithArgsAndCompanionObject(arg: Int) {
 }
 object ClassWithArgsAndCompanionObject
 
-class ClassOpsSpec extends WordSpec with MustMatchers with TryValues {
+class ClassOpsSpec extends AnyWordSpec with Matchers with TryValues {
 
   import ClassOps._
 

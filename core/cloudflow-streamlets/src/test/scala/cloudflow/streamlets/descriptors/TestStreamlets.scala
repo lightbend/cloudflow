@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package cloudflow.streamlets.descriptors
 
 import scala.collection.immutable
-
 import org.apache.avro.SchemaBuilder
-
 import com.typesafe.config.Config
-
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro.AvroUtil
+import cloudflow.streamlets.bytearray.{ ExternalInlet, ExternalOutlet }
 
 case class Coffee(espressos: Int)
 
@@ -45,16 +43,24 @@ case object TestRuntime extends StreamletRuntime {
 }
 
 trait TestStreamlet extends Streamlet[StreamletContext] {
-  override def runtime: StreamletRuntime                                 = TestRuntime
-  def logStartRunnerMessage(buildInfo: String): Unit                     = ???
+  override def runtime: StreamletRuntime = TestRuntime
+  def logStartRunnerMessage(buildInfo: String): Unit = ???
   override protected def createContext(config: Config): StreamletContext = ???
-  override def run(context: StreamletContext): StreamletExecution        = ???
+  override def run(context: StreamletContext): StreamletExecution = ???
 
 }
 
 class CoffeeIngress extends Streamlet[StreamletContext] with TestStreamlet {
   case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
-  override val shape                                = StreamletShape(TestOutlet("out", AvroUtil.createSchemaDefinition(Schemas.coffeeSchema)))
+  override val shape = StreamletShape(TestOutlet("out", AvroUtil.createSchemaDefinition(Schemas.coffeeSchema)))
   override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
-  override val description: String                  = "Coffee Ingress Test"
+  override val description: String = "Coffee Ingress Test"
+}
+
+class CoffeeByteArrayIngress extends Streamlet[StreamletContext] with TestStreamlet {
+  val outlet = ExternalOutlet("out")
+  val inlet = ExternalInlet("in")
+  override def shape = StreamletShape(inlet, outlet)
+  override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
+  override val description: String = "Coffee ByteArray Ingress Test"
 }

@@ -1,0 +1,13 @@
+{
+   "namespace": "datamodel",
+   "type": "record",
+   "name": "Data",
+   "fields":[
+      {
+         "name": "id", "type": "long"
+      },
+      {
+         "name": "msg", "type": "string"
+      }
+   ]
+}

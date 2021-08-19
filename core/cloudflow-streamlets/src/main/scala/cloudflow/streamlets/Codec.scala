@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package cloudflow.streamlets
 
 import scala.annotation._
-import scala.util.control._
+import scala.util.Try
 
 @implicitNotFound(msg = "Cannot find Codec typeclass for ${T}")
 trait Codec[T] extends Serializable {
   def encode(value: T): Array[Byte]
   // TODO, docs that it throws DecodeException
-  def decode(value: Array[Byte]): T
+  def decode(value: Array[Byte]): Try[T]
 }
-
-case class DecodeException(msg: String, cause: Throwable) extends RuntimeException(msg, cause) with NoStackTrace

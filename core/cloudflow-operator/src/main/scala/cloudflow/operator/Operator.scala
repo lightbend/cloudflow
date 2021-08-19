@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,60 +16,57 @@
 
 package cloudflow.operator
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.reflect._
-import scala.util._
-import scala.util.control.NonFatal
-
 import akka.NotUsed
 import akka.actor._
-import akka.pattern._
+import akka.datap.crd.App
+import akka.kube.actions.{ Action, ActionExecutor, Fabric8ActionExecutor }
 import akka.stream._
 import akka.stream.scaladsl._
-import org.slf4j.LoggerFactory
-import play.api.libs.json.Format
-import skuber._
-import skuber.api.client._
-import skuber.json.format._
-
 import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 import cloudflow.operator.flow._
+import io.fabric8.kubernetes.api.model.{ WatchEvent => _, _ }
+import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.dsl.base.OperationContext
+import io.fabric8.kubernetes.client.informers.{
+  EventType,
+  ResourceEventHandler,
+  SharedIndexInformer,
+  SharedInformerFactory
+}
+import org.slf4j.LoggerFactory
+
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
+import scala.util._
 
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")
 
-  val ProtocolVersion              = "4"
-  val ProtocolVersionKey           = "protocol-version"
+  val ProtocolVersion = "6"
+  val ProtocolVersionKey = "protocol-version"
   val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
-  def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = ConfigMap(
-    metadata = ObjectMeta(name = ProtocolVersionConfigMapName,
-                          labels = Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName),
-                          ownerReferences = ownerReferences),
-    data = Map(ProtocolVersionKey -> ProtocolVersion)
-  )
+  def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = {
+    new ConfigMapBuilder()
+      .withNewMetadata()
+      .withName(ProtocolVersionConfigMapName)
+      .withLabels((Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName)).asJava)
+      .withOwnerReferences(ownerReferences: _*)
+      .endMetadata()
+      .withData(Map(ProtocolVersionKey -> ProtocolVersion).asJava)
+      .build()
+  }
 
-  val AppIdLabel         = "com.lightbend.cloudflow/app-id"
-  val ConfigFormatLabel  = "com.lightbend.cloudflow/config-format"
+  val AppIdLabel = "com.lightbend.cloudflow/app-id"
+  val ConfigFormatLabel = "com.lightbend.cloudflow/config-format"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
-  val ConfigUpdateLabel  = "com.lightbend.cloudflow/config-update"
+  val ConfigUpdateLabel = "com.lightbend.cloudflow/config-update"
 
-  val DefaultWatchOptions = ListOptions(
-    labelSelector = Some(LabelSelector(LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow))),
-    resourceVersion = None
-  )
-
-  val EventWatchOptions = ListOptions()
-
-  val MaxObjectBufSize = 8 * 1024 * 1024
-
-  val restartSettings = RestartSettings(
-    minBackoff = 3.seconds,
-    maxBackoff = 30.seconds,
-    randomFactor = 0.2
-  )
+  val DefaultWatchOptions = Map(CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow)
 
   val decider: Supervision.Decider = {
     case _ => Supervision.Stop
@@ -77,17 +74,21 @@ object Operator {
 
   val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
 
-  def handleAppEvents(
-      client: KubernetesClient,
-      runners: Map[String, Runner[_]],
-      podName: String,
-      podNamespace: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = new SkuberActionExecutor()
+  private lazy val fabric8ExecutionContext = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+
+  def handleEvents(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String, podNamespace: String)(
+      implicit system: ActorSystem,
+      mat: Materializer,
+      ec: ExecutionContext) = {
+
+    // handleAppEvents
+    val logAttributes = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
+    val actionExecutor = new Fabric8ActionExecutor(client, fabric8ExecutionContext)
+
+    val sharedInformerFactory = client.informers()
 
     runStream(
-      watch[CloudflowApplication.CR](client, DefaultWatchOptions)
+      watchCr(sharedInformerFactory, DefaultWatchOptions)
         .via(AppEventFlow.fromWatchEvent(logAttributes))
         .via(AppEventFlow.toAction(runners, podName, podNamespace))
         .via(executeActions(actionExecutor, logAttributes))
@@ -101,79 +102,27 @@ object Operator {
           }
         },
       "The actions stream completed unexpectedly, terminating.",
-      "The actions stream failed, terminating."
-    )
-  }
+      "The actions stream failed, terminating.")
 
-  def handleConfigurationInput(
-      client: KubernetesClient,
-      podNamespace: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = new SkuberActionExecutor()
-    // only watch secrets that contain input config
-    val watchOptions = ListOptions(
-      labelSelector = Some(
-        LabelSelector(
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.InputConfig)
-        )
-      ),
-      resourceVersion = None
-    )
-    // watch only Input secrets, transform the application input secret
-    // into Output secret create actions.
-    runStream(
-      watch[Secret](client, watchOptions)
-        .via(ConfigInputChangeEventFlow.fromWatchEvent())
-        .log("config-input-change-event", ConfigInputChangeEvent.detected)
-        .via(mapToAppInSameNamespace[Secret, ConfigInputChangeEvent](client))
-        .via(ConfigInputChangeEventFlow.toInputConfigUpdateAction(podNamespace))
-        .via(executeActions(actionExecutor, logAttributes))
-        .toMat(Sink.ignore)(Keep.right),
-      "The configuration input stream completed unexpectedly, terminating.",
-      "The configuration input stream failed, terminating."
-    )
-  }
-
-  def handleConfigurationUpdates(
-      client: KubernetesClient,
-      runners: Map[String, Runner[_]],
-      podName: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Info)
-    val actionExecutor = new SkuberActionExecutor()
+    // handleConfigurationUpdates
     // only watch secrets that contain output config
-    val watchOptions = ListOptions(
-      labelSelector = Some(
-        LabelSelector(
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ManagedBy, CloudflowLabels.ManagedByCloudflow),
-          LabelSelector.IsEqualRequirement(CloudflowLabels.ConfigFormat, CloudflowLabels.StreamletDeploymentConfigFormat)
-        )
-      ),
-      resourceVersion = None
-    )
+    val watchOptions = Map(
+      CloudflowLabels.ManagedBy -> CloudflowLabels.ManagedByCloudflow,
+      CloudflowLabels.ConfigFormat -> CloudflowLabels.StreamletDeploymentConfigFormat)
 
     runStream(
-      watch[Secret](client, watchOptions)
+      watchSecret(sharedInformerFactory, watchOptions)
         .via(StreamletChangeEventFlow.fromWatchEvent())
         .via(mapToAppInSameNamespace(client))
         .via(StreamletChangeEventFlow.toConfigUpdateAction(runners, podName))
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The config updates stream completed unexpectedly, terminating.",
-      "The config updates stream failed, terminating."
-    )
-  }
+      "The config updates stream failed, terminating.")
 
-  def handleStatusUpdates(
-      client: KubernetesClient,
-      runners: Map[String, Runner[_]]
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) = {
-    val logAttributes  = Attributes.logLevels(onElement = Attributes.LogLevels.Debug)
-    val actionExecutor = new SkuberActionExecutor()
+    // handleStatusUpdates
     runStream(
-      watch[Pod](client, DefaultWatchOptions)
+      watchPod(sharedInformerFactory, DefaultWatchOptions)
         .via(StatusChangeEventFlow.fromWatchEvent())
         .log("status-change-event", StatusChangeEvent.detected)
         .via(mapToAppInSameNamespace(client))
@@ -181,13 +130,14 @@ object Operator {
         .via(executeActions(actionExecutor, logAttributes))
         .toMat(Sink.ignore)(Keep.right),
       "The status changes stream completed unexpectedly, terminating.",
-      "The status changes stream failed, terminating."
-    )
+      "The status changes stream failed, terminating.")
+
+    sharedInformerFactory.startAllRegisteredInformers()
   }
+
   private def executeActions(actionExecutor: ActionExecutor, logAttributes: Attributes): Flow[Action, Action, NotUsed] =
     Flow[Action]
       .mapAsync(1)(action => actionExecutor.execute(action))
-      .log("action", Action.executed)
       .withAttributes(logAttributes)
 
   /**
@@ -195,93 +145,137 @@ object Operator {
    * Finds the associated [[CloudflowApplication.CR]]s for [[AppChangeEvent]]s.
    * The resulting flow outputs tuples of the app and the streamlet change event.
    */
-  def mapToAppInSameNamespace[O <: ObjectResource, E <: AppChangeEvent[_]](
-      client: KubernetesClient
-  )(implicit ec: ExecutionContext): Flow[E, (Option[CloudflowApplication.CR], E), NotUsed] =
+  def mapToAppInSameNamespace[E <: AppChangeEvent[_]](client: KubernetesClient)(
+      implicit ec: ExecutionContext): Flow[E, (Option[App.Cr], E), NotUsed] =
     Flow[E].mapAsync(1) { changeEvent =>
       val ns = changeEvent.namespace
-      client.usingNamespace(ns).getOption[CloudflowApplication.CR](changeEvent.appId).map { cr =>
-        cr -> changeEvent
+
+      Future {
+        Option(
+          client
+            .customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
+            .inNamespace(ns)
+            .withName(changeEvent.appId)
+            .get())
+      }.map { cr => cr -> changeEvent }
+    }
+
+  private def getEventHandler[T <: HasMetadata](fn: WatchEvent[T] => Unit) = {
+
+    new ResourceEventHandler[T]() {
+      override def onAdd(elem: T): Unit = {
+        fn(WatchEvent[T](elem, EventType.ADDITION))
+      }
+
+      override def onUpdate(oldElem: T, newElem: T): Unit = {
+        fn(WatchEvent[T](newElem, EventType.UPDATION))
+      }
+
+      override def onDelete(elem: T, deletedFinalStateUnknown: Boolean): Unit = {
+        fn(WatchEvent[T](elem, EventType.DELETION))
       }
     }
+  }
 
-  // NOTE: This watch can produce duplicate ADD events on startup, since it turns current resources into watch events,
-  // and concatenates results of a subsequent watch. This can be improved.
-  private def watch[O <: ObjectResource](
-      client: KubernetesClient,
-      options: ListOptions
-  )(implicit system: ActorSystem,
-    fmt: Format[O],
-    lfmt: Format[ListResource[O]],
-    rd: ResourceDefinition[O],
-    lc: LoggingContext,
-    ec: ExecutionContext,
-    ct: ClassTag[O]): Source[WatchEvent[O], NotUsed] =
-    /* =================================================
-     * Workaround for issue found on openshift:
-     * After 10-15 minutes, K8s API server responds with 410 Gone status to a watch request, which skuber does not expect while processing the watch response stream.
-     * The resourceVersion of the watch is reported as too old by the K8s API server.
-     *
-     * listing resources and starting from that resourceVersion does not solve the issue.
-     * This could be related to this issue:
-     *
-     * https://github.com/openshift/origin/issues/21636
-     *
-     * In the issue it states that openshift 3.11 runs with a default watch cache size set to 0.
-     * Workaround: because of this issue, any K8SException during the watch here is ignored and the Source is replaced with recoverWithRetries
-     * which restarts the process of first listing resources, turning current resources into watch events,
-     * and concatenating results of a subsequent watch.
-     * On failing watches this code becomes a polling loop of listing resources which are turned into events.
-     * Events that have already been processed are discarded in AppEvents.fromWatchEvent.
-     * ==================================================*/
+  private val crInformer = new AtomicReference[SharedIndexInformer[App.Cr]]()
 
-    RestartSource.withBackoff(restartSettings) { () =>
-      log.info(s"Starting watch for ${classTag[O].runtimeClass.getName}")
-      Source
-        .future(getCurrentEvents[O](client, options, 0, 3.seconds))
-        .mapConcat(identity _)
-        .concat(
-          client
-            .watchWithOptions[O](options = options, bufsize = MaxObjectBufSize)
-            .map { o =>
-              log.debug(s"""WatchEvent for ${classTag[O].runtimeClass.getName}, object uid: ${o._object.metadata.uid}""")
-              o
-            }
-            .mapMaterializedValue(_ => NotUsed)
-        )
-    }
-
-  private def getCurrentEvents[O <: ObjectResource](
-      client: KubernetesClient,
-      options: ListOptions,
-      attempt: Int,
-      delay: FiniteDuration
-  )(implicit lfmt: Format[ListResource[O]],
-    rd: ResourceDefinition[O],
-    lc: LoggingContext,
-    system: ActorSystem,
-    ec: ExecutionContext,
-    ct: ClassTag[O]): Future[List[WatchEvent[O]]] = {
-    log.info(s"Getting current events for ${classTag[O].runtimeClass.getName}")
-
-    (for {
-      namespaces <- client.getNamespaceNames
-      lists      <- Future.sequence(namespaces.map(ns => client.usingNamespace(ns).listWithOptions[ListResource[O]](options)))
-      items       = lists.flatMap(_.items)
-      watchEvents = items.map(item => WatchEvent(EventType.ADDED, item))
-      itemUids    = items.map(_.metadata.uid)
-      _           = log.debug(s"""Current ${classTag[O].runtimeClass.getName} objects: ${itemUids.mkString(",")}""")
-    } yield watchEvents).recoverWith {
-      case NonFatal(e) =>
-        log.warn(s"Could not get current events, attempt number $attempt", e)
-        after(delay, system.scheduler)(getCurrentEvents(client, options, attempt + 1, delay))
+  private def setOnceAndGet[T](ar: AtomicReference[T], elem: () => T): T = {
+    lazy val newValue = elem()
+    if (ar.compareAndSet(null.asInstanceOf[T], newValue)) {
+      newValue
+    } else {
+      ar.get()
     }
   }
-  private def runStream(
-      graph: RunnableGraph[Future[_]],
-      unexpectedCompletionMsg: String,
-      errorMsg: String
-  )(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) =
+
+  private def enqueueTask[T <: HasMetadata](msgType: String, sourceMat: SourceQueueWithComplete[WatchEvent[T]])(
+      event: WatchEvent[T]): Unit = {
+    log.info("Enqueue {} with type [{}]", msgType, event.eventType)
+
+    sourceMat.offer(event)
+  }
+
+  private def watchCr(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
+      implicit system: ActorSystem): Source[WatchEvent[App.Cr], NotUsed] = {
+
+    val informer = setOnceAndGet(
+      crInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerForCustomResource(
+            App.customResourceDefinitionContext,
+            classOf[App.Cr],
+            classOf[App.List],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
+
+    val (sourceMat, source) = {
+      Source
+        .queue[WatchEvent[App.Cr]](1000, overflowStrategy = OverflowStrategy.dropHead)
+        .preMaterialize()
+    }
+
+    informer.addEventHandler(getEventHandler[App.Cr](enqueueTask("App.Cr Watch Event", sourceMat)))
+
+    source
+  }
+
+  private val secretInformer = new AtomicReference[SharedIndexInformer[Secret]]()
+
+  private def watchSecret(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
+      implicit system: ActorSystem): Source[WatchEvent[Secret], NotUsed] = {
+
+    val informer = setOnceAndGet(
+      secretInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerFor(
+            classOf[Secret],
+            classOf[SecretList],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
+
+    val (sourceMat, source) = {
+      Source
+        .queue[WatchEvent[Secret]](1000, overflowStrategy = OverflowStrategy.dropHead)
+        .preMaterialize()
+    }
+
+    informer.addEventHandler(getEventHandler[Secret](enqueueTask[Secret]("Secret Watch Event", sourceMat)))
+
+    source
+  }
+
+  private val podInformer = new AtomicReference[SharedIndexInformer[Pod]]()
+
+  private def watchPod(sharedInformerFactory: SharedInformerFactory, options: Map[String, String])(
+      implicit system: ActorSystem): Source[WatchEvent[Pod], NotUsed] = {
+
+    val informer = setOnceAndGet(
+      podInformer,
+      () =>
+        sharedInformerFactory
+          .sharedIndexInformerFor(
+            classOf[Pod],
+            classOf[PodList],
+            new OperationContext().withLabels(options.asJava),
+            1000L * 60L * 10L))
+
+    val (sourceMat, source) = {
+      Source
+        .queue[WatchEvent[Pod]](1000, overflowStrategy = OverflowStrategy.dropHead)
+        .preMaterialize()
+    }
+
+    informer.addEventHandler(getEventHandler[Pod](enqueueTask("Pod Watch Event", sourceMat)))
+
+    source
+  }
+
+  private def runStream(graph: RunnableGraph[Future[_]], unexpectedCompletionMsg: String, errorMsg: String)(
+      implicit system: ActorSystem,
+      mat: Materializer,
+      ec: ExecutionContext) =
     graph.withAttributes(StreamAttributes).run().onComplete {
       case Success(_) =>
         log.warn(unexpectedCompletionMsg)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,15 +42,16 @@ private[testkit] case class TestContext(
     inletTaps: List[InletTap[_]],
     outletTaps: List[OutletTap[_]],
     volumeMounts: List[VolumeMount],
-    override val config: Config = ConfigFactory.empty()
-) extends AkkaStreamletContext {
+    override val config: Config = ConfigFactory.empty())
+    extends AkkaStreamletContext {
   implicit val sys = system
 
   override def streamletDefinition: StreamletDefinition =
     StreamletDefinition("appId", "appVersion", streamletRef, "streamletClass", List(), volumeMounts, config)
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
-  override def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
+  override def sourceWithOffsetContext[T](
+      inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T] =
     sourceWithContext(inlet)
 
   override def sourceWithCommittableContext[T](inlet: CodecInlet[T]) = sourceWithContext(inlet)
@@ -68,30 +69,28 @@ private[testkit] case class TestContext(
               cause
           }
           .asSourceWithContext(_._2)
-          .map(_._1)
-      )
-      .getOrElse(throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
+          .map(_._1))
+      .getOrElse(
+        throw TestContextException(inlet.name, s"Bad test context, could not find source for inlet ${inlet.name}"))
 
   def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
+      kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
 
     Source
-      .futureSource(
-        Future {
-          sourceWithContext(inlet).asSource
-            .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
-        }(system.dispatcher)
-      )
+      .futureSource(Future {
+        sourceWithContext(inlet).asSource
+          .asInstanceOf[Source[(T, CommittableOffset), NotUsed]]
+      }(system.dispatcher))
       .asSourceWithContext { case (_, committableOffset) => committableOffset }
       .map { case (record, _) => record }
 
   }
 
-  private def flowWithCommittableContext[T](outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
+  private def flowWithCommittableContext[T](
+      outlet: CodecOutlet[T]): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[T, T] = {
     val flow = Flow[T]
 
     outletTaps
@@ -105,17 +104,15 @@ private[testkit] case class TestContext(
               execution.complete(Failure(cause))
               cause
           }
-          .alsoTo(
-            Flow[T].map(t => tout.toPartitionedValue(t)).to(tout.sink)
-          )
+          .alsoTo(Flow[T].map(t => tout.toPartitionedValue(t)).to(tout.sink))
           .asFlowWithContext[T, Committable, Committable]((el, _) => el)(_ => TestCommittableOffset())
       }
-      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+      .getOrElse(
+        throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
 
-  private def seqFlowWithCommittableContext[T](
-      outlet: CodecOutlet[T]
-  ): cloudflow.akkastream.scaladsl.FlowWithCommittableContext[immutable.Seq[T], immutable.Seq[T]] = {
+  private def seqFlowWithCommittableContext[T](outlet: CodecOutlet[T])
+      : cloudflow.akkastream.scaladsl.FlowWithCommittableContext[immutable.Seq[T], immutable.Seq[T]] = {
     val flow = Flow[immutable.Seq[T]]
 
     outletTaps
@@ -129,20 +126,22 @@ private[testkit] case class TestContext(
               execution.complete(Failure(cause))
               cause
           }
-          .alsoTo(
-            Flow[immutable.Seq[T]].mapConcat(identity).map(t => tout.toPartitionedValue(t)).to(tout.sink)
-          )
+          .alsoTo(Flow[immutable.Seq[T]].mapConcat(identity).map(t => tout.toPartitionedValue(t)).to(tout.sink))
           .asFlowWithContext[immutable.Seq[T], Committable, Committable]((el, _) => el)(_ => TestCommittableOffset())
       }
-      .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+      .getOrElse(
+        throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
   }
 
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     Flow[(T, Committable)].toMat(Sink.ignore)(Keep.left)
-  def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
+  def committableSink[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
-  private[akkastream] def flexiFlow[T](outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] =
+  private[akkastream] def flexiFlow[T](
+      outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] =
     seqFlowWithCommittableContext[T](outlet).map(_ => ()).asFlow
 
   @deprecated("Use `committableSink` instead.", "1.3.1")
@@ -150,22 +149,23 @@ private[testkit] case class TestContext(
     Flow[(T, Committable)].toMat(Sink.ignore)(Keep.left)
 
   @deprecated("Use `committableSink` instead.", "1.3.1")
-  def sinkWithOffsetContext[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
+  def sinkWithOffsetContext[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] =
     flowWithCommittableContext[T](outlet).asFlow.toMat(Sink.ignore)(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed] =
     sourceWithCommittableContext[T](inlet).asSource.map(_._1).mapMaterializedValue(_ => NotUsed)
 
-  def shardedPlainSource[T, M, E](inlet: CodecInlet[T],
-                                  shardEntity: Entity[M, E],
-                                  resetPosition: ResetPosition = Latest,
-                                  kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
+  def shardedPlainSource[T, M, E](
+      inlet: CodecInlet[T],
+      shardEntity: Entity[M, E],
+      resetPosition: ResetPosition = Latest,
+      kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
     ClusterSharding(system.toTyped).init(shardEntity)
-    Source.futureSource(
-      Future {
-        plainSource(inlet, resetPosition)
-      }(system.dispatcher)
-    )
+    Source.futureSource(Future {
+      plainSource(inlet, resetPosition)
+    }(system.dispatcher))
   }
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = sinkRef[T](outlet).sink.contramap { el =>
@@ -173,32 +173,52 @@ private[testkit] case class TestContext(
   }
   def sinkRef[T](outlet: CodecOutlet[T]): WritableSinkRef[T] =
     new WritableSinkRef[T] {
-      def sink = {
-        val flow = Flow[(T, Committable)]
+      lazy val sink = writeSink.contramap[(T, Committable)] {
+        case (t, c) => (t, Promise.successful(t), TestCommittableOffset())
+      }
+      val writeSink: Sink[(T, Promise[T], Committable), NotUsed] = {
+        val flow = Flow[(T, Promise[T], Committable)]
         outletTaps
           .find(_.portName == outlet.name)
           .map { tap =>
             val outletTap = tap.asInstanceOf[OutletTap[T]]
             flow
-              .map { case (t, _) => outletTap.toPartitionedValue(t) }
+              .map { case (t, p, _) => outletTap.toPartitionedValue(t, p) }
               .via(killSwitch.flow)
               .mapError {
                 case cause: Throwable =>
                   execution.complete(Failure(cause))
                   cause
               }
-              .to(outletTap.sink)
+              .via(outletTap.flow)
+              .map { pv =>
+                pv.promise.trySuccess(pv.getValue)
+                pv
+              }
+              .to(Sink.ignore)
           }
-          .getOrElse(throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
+          .getOrElse(
+            throw TestContextException(outlet.name, s"Bad test context, could not find sink for outlet ${outlet.name}"))
       }
 
+      val valueSink: Sink[(T, Promise[T]), NotUsed] = writeSink.contramap[(T, Promise[T])] {
+        case (t, p) => (t, p, TestCommittableOffset())
+      }
+
+      val runnableGraph: RunnableGraph[Sink[(T, Promise[T]), NotUsed]] =
+        MergeHub.source[(T, Promise[T])].to(valueSink)
+      val hubSink = runnableGraph.run()
+      implicit val ec = system.dispatcher
       def write(value: T): Future[T] = {
-        Source.single(value).runWith(sink.contramap[T](t => (t, TestCommittableOffset())))
-        Future.successful(value)
+        val p = Promise[T]
+        Source
+          .single((value, p))
+          .runWith(hubSink)
+        p.future
       }
     }
 
-  private val execution                               = new StreamletExecutionImpl(this)
+  private val execution = new StreamletExecutionImpl(this)
   override val streamletExecution: StreamletExecution = execution
 
   override def ready(localMode: Boolean): Unit = {}

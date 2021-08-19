@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import cloudflow.akkastream.testkit._
 import scala.annotation.varargs
 
 object AkkaStreamletTestKit {
-  def create(sys: ActorSystem): AkkaStreamletTestKit                 = AkkaStreamletTestKit(sys)
+  def create(sys: ActorSystem): AkkaStreamletTestKit = AkkaStreamletTestKit(sys)
   def create(sys: ActorSystem, config: Config): AkkaStreamletTestKit = AkkaStreamletTestKit(sys, config)
 }
 
 /**
- * Java testkit for testing akkastreams streamlets.
+ * Java testkit for testing akka streamlets.
  *
  * API:
  *
@@ -76,9 +76,10 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
-                                                        config: Config = ConfigFactory.empty(),
-                                                        volumeMounts: List[VolumeMount] = List.empty)
+final case class AkkaStreamletTestKit private[testkit] (
+    system: ActorSystem,
+    config: Config = ConfigFactory.empty(),
+    volumeMounts: List[VolumeMount] = List.empty)
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)
@@ -144,20 +145,32 @@ final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
    * Runs the `streamlet` using a list of `inletTaps` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTaps: JList[OutletTap[_]], assertions: () => Any): Unit =
+  def run[T](
+      streamlet: AkkaStreamlet,
+      inletTaps: JList[InletTap[_]],
+      outletTaps: JList[OutletTap[_]],
+      assertions: () => Any): Unit =
     run(streamlet, inletTaps.asScala.toList, outletTaps.asScala.toList, assertions)
 
   /**
    * Runs the `streamlet` using a list of `inletTaps` as the source and an `outletTap` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTaps: JList[InletTap[_]], outletTap: OutletTap[T], assertions: () => Any): Unit =
+  def run[T](
+      streamlet: AkkaStreamlet,
+      inletTaps: JList[InletTap[_]],
+      outletTap: OutletTap[T],
+      assertions: () => Any): Unit =
     run(streamlet, inletTaps.asScala.toList, List(outletTap), assertions)
 
   /**
    * Runs the `streamlet` using an `inlettap` as the source and a list of `outletTaps` as the sink.
    * After running the streamlet it also runs the assertions.
    */
-  def run[T](streamlet: AkkaStreamlet, inletTap: InletTap[_], outletTaps: JList[OutletTap[_]], assertions: () => Any): Unit =
+  def run[T](
+      streamlet: AkkaStreamlet,
+      inletTap: InletTap[_],
+      outletTaps: JList[OutletTap[_]],
+      assertions: () => Any): Unit =
     run(streamlet, List(inletTap), outletTaps.asScala.toList, assertions)
 }

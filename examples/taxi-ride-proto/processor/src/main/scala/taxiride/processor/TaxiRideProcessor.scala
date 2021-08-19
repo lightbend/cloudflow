@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ package taxiride.processor
 import cloudflow.flink._
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.functions.co._
-import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.state.{ ValueState, ValueStateDescriptor }
 import org.apache.flink.util.Collector
 import cloudflow.streamlets.StreamletShape
 import cloudflow.streamlets.proto._

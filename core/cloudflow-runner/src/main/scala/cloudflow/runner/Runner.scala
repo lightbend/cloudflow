@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import cloudflow.blueprint.RunnerConfigUtils._
  */
 object Runner extends RunnerConfigResolver with StreamletLoader {
   lazy val log = LoggerFactory.getLogger(getClass.getName)
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   sys.props.get("os.name") match {
     case Some(os) if os.startsWith("Win") =>
@@ -40,7 +39,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     case None     => log.warn("""sys.props.get("os.name") returned None!""")
   }
 
-  val PVCMountPath: String               = "/mnt/spark/storage"
+  val PVCMountPath: String = "/mnt/spark/storage"
   val DownwardApiVolumeMountPath: String = "/mnt/downward-api-volume"
 
   def main(args: Array[String]): Unit = run()
@@ -48,13 +47,13 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
   private def run(): Unit = {
 
     val result: Try[(Config, LoadedStreamlet)] = for {
-      runnerConfig    <- makeConfig
+      runnerConfig <- makeConfig
       loadedStreamlet <- loadStreamlet(runnerConfig)
     } yield (runnerConfig, loadedStreamlet)
 
     result match {
       case Success((runnerConfig, loadedStreamlet)) =>
-        val withStorageConfig    = addStorageConfig(runnerConfig, PVCMountPath)
+        val withStorageConfig = addStorageConfig(runnerConfig, PVCMountPath)
         val withPodRuntimeConfig = addPodRuntimeConfig(withStorageConfig, DownwardApiVolumeMountPath)
 
         /*
@@ -86,9 +85,7 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
 
   private def shutdown(loadedStreamlet: LoadedStreamlet, maybeException: Option[Throwable] = None) = {
     // we created this file when the pod started running (see AkkaStreamlet#run)
-    Files.deleteIfExists(
-      Paths.get(s"/tmp/${loadedStreamlet.config.streamletRef}.txt")
-    )
+    Files.deleteIfExists(Paths.get(s"/tmp/${loadedStreamlet.config.streamletRef}.txt"))
     maybeException match {
       case Some(ex) =>
         log.error("A fatal error has occurred. The streamlet is going to shutdown", ex)

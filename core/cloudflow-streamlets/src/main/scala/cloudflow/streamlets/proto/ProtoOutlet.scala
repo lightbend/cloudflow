@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 final case class ProtoOutlet[T <: GeneratedMessage: GeneratedMessageCompanion](
     name: String,
-    partitioner: T => String = RoundRobinPartitioner
-) extends CodecOutlet[T] {
-  val cmp              = implicitly[GeneratedMessageCompanion[T]]
-  val codec            = new ProtoCodec[T]
-  def schemaAsString   = cmp.scalaDescriptor.asProto.toProtoString
+    partitioner: T => String = RoundRobinPartitioner)
+    extends CodecOutlet[T] {
+  val cmp = implicitly[GeneratedMessageCompanion[T]]
+  val codec = new ProtoCodec[T]
+  def schemaAsString = cmp.scalaDescriptor.asProto.toProtoString
   def schemaDefinition = ProtoUtil.createSchemaDefinition(cmp.scalaDescriptor)
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import akka.actor._
 import akka.stream.scaladsl._
 import akka.testkit._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import org.scalatest.concurrent._
 
 import cloudflow.streamlets._
@@ -29,15 +31,15 @@ import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testkit.scaladsl._
 import cloudflow.akkastream.testdata._
 
-class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with BeforeAndAfterAll {
+class SplitterSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
   private implicit val system = ActorSystem("SplitterSpec")
 
   override def afterAll: Unit =
     TestKit.shutdownActorSystem(system)
 
   object MyPartitioner extends AkkaStreamlet {
-    val in    = AvroInlet[Data]("in")
-    val left  = AvroOutlet[BadData]("out-0", _.name.toString)
+    val in = AvroInlet[Data]("in")
+    val left = AvroOutlet[BadData]("out-0", _.name.toString)
     val right = AvroOutlet[Data]("out-1", _.id.toString)
     val shape = StreamletShape(in).withOutlets(left, right)
 
@@ -54,10 +56,10 @@ class SplitterSpec extends WordSpec with MustMatchers with ScalaFutures with Bef
   "A Splitter" should {
     "split incoming data according to a splitter flow" in {
       val testkit = AkkaStreamletTestKit(system)
-      val source  = Source(Vector(Data(1, "a"), Data(2, "b")))
+      val source = Source(Vector(Data(1, "a"), Data(2, "b")))
 
-      val in    = testkit.inletFromSource(MyPartitioner.in, source)
-      val left  = testkit.outletAsTap(MyPartitioner.left)
+      val in = testkit.inletFromSource(MyPartitioner.in, source)
+      val left = testkit.outletAsTap(MyPartitioner.left)
       val right = testkit.outletAsTap(MyPartitioner.right)
 
       testkit.run(MyPartitioner, in, List(left, right), () => {

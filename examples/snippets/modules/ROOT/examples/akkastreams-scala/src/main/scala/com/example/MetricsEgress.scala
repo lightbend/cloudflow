@@ -14,7 +14,7 @@ object MetricsEgress extends AkkaStreamlet {
   final override def createLogic = new RunnableGraphStreamletLogic {
     override final def runnableGraph =
       sourceWithCommittableContext(in)
-        .map { i ⇒
+        .map { i =>
           println(s"Int: ${i.value}"); i
         }
         .to(committableSink(defaultCommitterSettings))

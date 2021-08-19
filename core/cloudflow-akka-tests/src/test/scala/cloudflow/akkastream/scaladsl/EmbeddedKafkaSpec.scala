@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import akka.testkit.TestKit
 import akka.kafka.testkit.internal.TestFrameworkInterface
 
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import org.scalatest.Suite
 import org.scalatest.concurrent._
 import org.testcontainers.{ utility => tcutility }
@@ -34,8 +36,8 @@ import org.testcontainers.containers.wait.strategy.Wait
 abstract class TestcontainersKafkaSpec(system: ActorSystem)
     extends TestKit(system)
     with Suite
-    with WordSpecLike
-    with MustMatchers
+    with AnyWordSpecLike
+    with Matchers
     with ScalaFutures
     with TestFrameworkInterface.Scalatest { this: Suite =>
 
@@ -52,9 +54,7 @@ abstract class TestcontainersKafkaSpec(system: ActorSystem)
       .withEnv("KAFKA_NUM_PARTITIONS", "53")
       .withEnv("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
       .withEnv("KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS", "3")
-      .waitingFor(
-        Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1)
-      )
+      .waitingFor(Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1))
     k.start()
     kafka.set(k)
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package cloudflow.streamlets
 
-import org.scalatest.matchers
-import org.scalatest.MustMatchers._
+import org.scalatest.matchers._
+import org.scalatest.matchers.must._
+import org.scalatest.matchers.must.Matchers._
 import org.scalatest.OptionValues._
 import spray.json._
 
@@ -54,7 +55,11 @@ object StreamletJsonOps {
 
       val fls1 = schema.fields.collect { case JsString(s) => s }.toList
       val fls2 =
-        List(port.schemaDefinition.fingerprint, port.schemaDefinition.format, port.schemaDefinition.name, port.schemaDefinition.schema)
+        List(
+          port.schemaDefinition.fingerprint,
+          port.schemaDefinition.format,
+          port.schemaDefinition.name,
+          port.schemaDefinition.schema)
       fls1 must equal(fls2)
     }
 
@@ -82,13 +87,13 @@ object StreamletJsonOps {
 
 trait DescriptorValidations {
 
-  import matchers._
   class HasField(name: String) extends Matcher[JsValue] {
     def apply(left: JsValue): MatchResult = {
       val jsObj = left.asJsObject("Expected a JSON Object")
-      MatchResult(jsObj.fields.contains(name),
-                  s"""Descriptor did not contain expected field "$name" """,
-                  s"""Descriptor contains field "$name" """)
+      MatchResult(
+        jsObj.fields.contains(name),
+        s"""Descriptor did not contain expected field "$name" """,
+        s"""Descriptor contains field "$name" """)
     }
   }
 
@@ -103,7 +108,8 @@ trait DescriptorValidations {
 
   def haveStringValue(value: String): Matcher[JsValue] = new HasValue(JsString(value))
 
-  def haveStringValues(values: Seq[String]): Matcher[Seq[JsValue]] = new HasValues(values.sorted.map(JsString(_)).toVector)
+  def haveStringValues(values: Seq[String]): Matcher[Seq[JsValue]] =
+    new HasValues(values.sorted.map(JsString(_)).toVector)
 
   def haveField(fieldName: String): Matcher[JsValue] = new HasField(fieldName)
 

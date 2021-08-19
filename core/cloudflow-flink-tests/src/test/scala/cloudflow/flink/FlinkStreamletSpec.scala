@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import cloudflow.flink.avro._
 import cloudflow.flink.testkit._
 import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.should._
 
-class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers with BeforeAndAfterAll {
+class FlinkStreamletSpec extends FlinkTestkit with AnyWordSpecLike with Matchers with BeforeAndAfterAll {
 
   "FlinkProcessor" should {
     "process streaming data" in {
@@ -35,7 +37,8 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       val data = (1 to 10).map(i => new Data(i, s"name$i"))
 
       // setup inlet tap on inlet port
-      val in: FlinkInletTap[Data] = inletAsTap[Data](FlinkProcessor.in, env.addSource(FlinkSource.CollectionSourceFunction(data)))
+      val in: FlinkInletTap[Data] =
+        inletAsTap[Data](FlinkProcessor.in, env.addSource(FlinkSource.CollectionSourceFunction(data)))
 
       // setup outlet tap on outlet port
       val out: FlinkOutletTap[Simple] = outletAsTap[Simple](FlinkProcessor.out)
@@ -59,10 +62,14 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       // setup inlet tap on inlet port
 
       val inRides: FlinkInletTap[TaxiRide] =
-        inletAsTap[TaxiRide](FlinkConnectedProcessor.inTaxiRide, env.addSource(FlinkSource.CollectionSourceFunction(Seq(ride1, ride2))))
+        inletAsTap[TaxiRide](
+          FlinkConnectedProcessor.inTaxiRide,
+          env.addSource(FlinkSource.CollectionSourceFunction(Seq(ride1, ride2))))
 
       val inFares: FlinkInletTap[TaxiFare] =
-        inletAsTap[TaxiFare](FlinkConnectedProcessor.inTaxiFare, env.addSource(FlinkSource.CollectionSourceFunction(Seq(fare1, fare2))))
+        inletAsTap[TaxiFare](
+          FlinkConnectedProcessor.inTaxiFare,
+          env.addSource(FlinkSource.CollectionSourceFunction(Seq(fare1, fare2))))
 
       // setup outlet tap on outlet port
       val out: FlinkOutletTap[TaxiRideFare] = outletAsTap[TaxiRideFare](FlinkConnectedProcessor.out)
@@ -84,10 +91,14 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       // setup inlet tap on inlet port
 
       val inRides: FlinkInletTap[TaxiRide] =
-        inletAsTap[TaxiRide](FlinkConnectedProcessor.inTaxiRide, env.addSource(FlinkSource.CollectionSourceFunction(Seq(ride1, ride2))))
+        inletAsTap[TaxiRide](
+          FlinkConnectedProcessor.inTaxiRide,
+          env.addSource(FlinkSource.CollectionSourceFunction(Seq(ride1, ride2))))
 
       val inFares: FlinkInletTap[TaxiFare] =
-        inletAsTap[TaxiFare](FlinkConnectedProcessor.inTaxiFare, env.addSource(FlinkSource.CollectionSourceFunction(Seq(fare2, fare1))))
+        inletAsTap[TaxiFare](
+          FlinkConnectedProcessor.inTaxiFare,
+          env.addSource(FlinkSource.CollectionSourceFunction(Seq(fare2, fare1))))
 
       // setup outlet tap on outlet port
       val out: FlinkOutletTap[TaxiRideFare] = outletAsTap[TaxiRideFare](FlinkConnectedProcessor.out)
@@ -107,16 +118,20 @@ class FlinkStreamletSpec extends FlinkTestkit with WordSpecLike with Matchers wi
       env.setParallelism(4)
 
       // setup inlet tap on inlet port
-      val delay              = 60;  // at most 60 seconds of delay
+      val delay = 60; // at most 60 seconds of delay
       val servingSpeedFactor = 1800 // 30 minutes worth of events are served every second
 
       val inRides: FlinkInletTap[TaxiRide] =
-        inletAsTap[TaxiRide](FlinkConnectedProcessor.inTaxiRide,
-                             env.addSource(TaxiRideSource("flink-tests/src/test/resources/nycTaxiRidesMini.gz", delay, servingSpeedFactor)))
+        inletAsTap[TaxiRide](
+          FlinkConnectedProcessor.inTaxiRide,
+          env.addSource(
+            TaxiRideSource("flink-tests/src/test/resources/nycTaxiRidesMini.gz", delay, servingSpeedFactor)))
 
       val inFares: FlinkInletTap[TaxiFare] =
-        inletAsTap[TaxiFare](FlinkConnectedProcessor.inTaxiFare,
-                             env.addSource(TaxiFareSource("flink-tests/src/test/resources/nycTaxiFaresMini.gz", delay, servingSpeedFactor)))
+        inletAsTap[TaxiFare](
+          FlinkConnectedProcessor.inTaxiFare,
+          env.addSource(
+            TaxiFareSource("flink-tests/src/test/resources/nycTaxiFaresMini.gz", delay, servingSpeedFactor)))
 
       // setup outlet tap on outlet port
       val out: FlinkOutletTap[TaxiRideFare] = outletAsTap[TaxiRideFare](FlinkConnectedProcessor.out)

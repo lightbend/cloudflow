@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,17 +47,15 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
     } yield {
 
       val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
-      val updatedStreamletDefinition = streamletDefinition.copy(
-        config = streamletDefinition.config
-          .withFallback(ConfigFactory.parseResourcesAnySyntax("akka.conf"))
-          .withFallback(config)
-      )
+      val updatedStreamletDefinition = streamletDefinition.copy(config = streamletDefinition.config
+        .withFallback(ConfigFactory.parseResourcesAnySyntax("akka.conf"))
+        .withFallback(config))
 
       if (activateCluster && localMode) {
         val clusterConfig = ConfigFactory.parseResourcesAnySyntax("akka-cluster-local.conf")
-        val fullConfig    = clusterConfig.withFallback(updatedStreamletDefinition.config)
+        val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
-        val system  = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
+        val system = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
         val cluster = Cluster(system)
         cluster.join(cluster.selfAddress)
 
@@ -65,8 +63,7 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
       } else if (activateCluster) {
         val clusterConfig = ConfigFactory
           .parseString(
-            s"""akka.discovery.kubernetes-api.pod-label-selector = "com.lightbend.cloudflow/streamlet-name=${streamletDefinition.streamletRef}""""
-          )
+            s"""akka.discovery.kubernetes-api.pod-label-selector = "com.lightbend.cloudflow/streamlet-name=${streamletDefinition.streamletRef}"""")
           .withFallback(ConfigFactory.parseResourcesAnySyntax("akka-cluster-k8.conf"))
 
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)

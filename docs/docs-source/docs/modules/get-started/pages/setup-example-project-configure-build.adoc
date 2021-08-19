@@ -1,14 +1,14 @@
 = Set Up Example Project and Configure Build
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
 
 include::ROOT:partial$include.adoc[]
 
 NOTE: The sources for the example described below can be found in the application called
-https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
+https://github.com/lightbend/cloudflow/tree/main/examples/snippets/modules/ROOT/examples/sensor-data-scala[sensor-data-scala].
+
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well.
+
 Full sources for all Cloudflow example applications can be found in the
-https://github.com/lightbend/cloudflow/tree/master/examples/snippets/modules/ROOT/examples[examples folder] of the
+https://github.com/lightbend/cloudflow/tree/main/examples/snippets/modules/ROOT/examples[examples folder] of the
 https://github.com/lightbend/cloudflow[`cloudflow` project on Github].
 To use the examples directly remember to run
 `export CLOUDFLOW_VERSION={cloudflow-version}` before invoking `sbt`.
@@ -41,7 +41,7 @@ As we move through the process, the leaf level directories of the above tree wil
 
 == The sbt build script
 
-Cloudflow provides sbt plugins for the supported runtimes, Akka, Spark and Flink. 
+Cloudflow provides sbt plugins for the Akka, Spark and Flink runtimes. 
 The plugins speed up development by adding the necessary dependencies and abstracting much of the boilerplate necessary to build a complete application. 
 You can use multiple runtimes in the same application, provided that each runtime is defined in its own sub-project.
 // TODO: Add here a link to the multi-project support
@@ -58,11 +58,11 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 +
 The script is a standard Scala sbt build file--with the addition of the Cloudflow plugin for Akka Streams, the Cloudflow application plugin, and also the Scalafmt plugin that we suggest to keep the style consistent in the application (optional).
 +
-. Create the file `project/cloudflow-plugins.sbt` and add the Cloudflow plugin dependency in it:
+. Create the file `project/cloudflow-plugins.sbt` and add the Cloudflow plugin dependency:
 +
-[source,scala]
+[source,scala,subs=attributes+]
 ----
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala/project/cloudflow-plugins.sbt[tag=get-started]
+addSbtPlugin("com.lightbend.cloudflow" % "sbt-cloudflow" % "{cloudflow-version}")
 ----
 
 == Local configuration

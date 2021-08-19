@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,13 +58,10 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
   @varargs
   def withConfigParameterValues(configParameterValues: ConfigParameterValue*): Repr = {
     val parameterValueConfig =
-      ConfigFactory.parseString(
-        configParameterValues
-          .map(parameterValue =>
-            s"cloudflow.streamlets.$defaultStreamletRefName.${parameterValue.configParameterKey} = ${parameterValue.value}"
-          )
-          .mkString("\n")
-      )
+      ConfigFactory.parseString(configParameterValues
+        .map(parameterValue =>
+          s"cloudflow.streamlets.$defaultStreamletRefName.${parameterValue.configParameterKey} = ${parameterValue.value}")
+        .mkString("\n"))
 
     withConfig(config.withFallback(parameterValueConfig).resolve)
   }
@@ -81,14 +78,20 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, op: OutletTap[T], assertions: () => Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List.empty, List(op), volumeMounts, config), streamlet, assertions)
+    doRun(
+      TestContext(defaultStreamletRefName, system, List.empty, List(op), volumeMounts, config),
+      streamlet,
+      assertions)
 
   /**
    * Runs the `streamlet` using `ip` as the source and an empty sink. After running the streamlet it also
    * runs the assertions.
    */
   def run[T](streamlet: AkkaStreamlet, ip: InletTap[T], assertions: () => Any): Unit =
-    doRun(TestContext(defaultStreamletRefName, system, List(ip), List.empty, volumeMounts, config), streamlet, assertions)
+    doRun(
+      TestContext(defaultStreamletRefName, system, List(ip), List.empty, volumeMounts, config),
+      streamlet,
+      assertions)
 
   /**
    * Runs the `streamlet` using a list of `ip` as the source and a list of `op` as the sink. After running the streamlet it also
@@ -122,7 +125,7 @@ private[testkit] abstract class BaseAkkaStreamletTestKit[Repr <: BaseAkkaStreaml
 
   private def doRun(context: TestContext, streamlet: AkkaStreamlet, assertions: () => Any): Unit = {
     val streamletExecution = streamlet.setContext(context).run(context.config)
-    val _                  = assertions()
-    Await.result(streamletExecution.stop(), 10 seconds)
+    val _ = assertions()
+    Await.result(streamletExecution.stop(), 10.seconds)
   }
 }

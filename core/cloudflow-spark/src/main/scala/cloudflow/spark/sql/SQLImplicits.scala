@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import scala.reflect.runtime.universe.TypeTag
  *
  * @since 1.6.0
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 object SQLImplicits extends LowPrioritySQLImplicits {
 
   /**
@@ -236,6 +237,7 @@ object SQLImplicits extends LowPrioritySQLImplicits {
  * Reasons for including specific implicits:
  * newProductEncoder - to disambiguate for `List`s which are both `Seq` and `Product`
  */
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 trait LowPrioritySQLImplicits {
 
   /** @since 1.6.0 */

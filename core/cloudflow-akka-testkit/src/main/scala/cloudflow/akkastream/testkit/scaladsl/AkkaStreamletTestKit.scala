@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import cloudflow.streamlets._
 import cloudflow.akkastream.testkit._
 
 object AkkaStreamletTestKit {
-  def apply(sys: ActorSystem): AkkaStreamletTestKit                 = new AkkaStreamletTestKit(sys)
+  def apply(sys: ActorSystem): AkkaStreamletTestKit = new AkkaStreamletTestKit(sys)
   def apply(sys: ActorSystem, config: Config): AkkaStreamletTestKit = new AkkaStreamletTestKit(sys, config)
 }
 
@@ -69,9 +69,10 @@ object AkkaStreamletTestKit {
  * TestKitExtension.Settings.TestTimeFactor settable via akka.conf entry "akka.test.timefactor".
  *
  */
-final case class AkkaStreamletTestKit private[testkit] (system: ActorSystem,
-                                                        config: Config = ConfigFactory.empty(),
-                                                        volumeMounts: List[VolumeMount] = List.empty)
+final case class AkkaStreamletTestKit private[testkit] (
+    system: ActorSystem,
+    config: Config = ConfigFactory.empty(),
+    volumeMounts: List[VolumeMount] = List.empty)
     extends BaseAkkaStreamletTestKit[AkkaStreamletTestKit] {
 
   def withConfig(c: Config): AkkaStreamletTestKit = this.copy(config = c)

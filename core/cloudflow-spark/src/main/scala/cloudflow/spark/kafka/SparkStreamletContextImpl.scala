@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +26,21 @@ import cloudflow.spark.sql.SQLImplicits._
 import cloudflow.streamlets._
 
 import scala.reflect.runtime.universe._
+import scala.util.{ Failure, Success }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 class SparkStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     session: SparkSession,
-    override val config: Config
-) extends SparkStreamletContext(streamletDefinition, session) {
+    override val config: Config)
+    extends SparkStreamletContext(streamletDefinition, session) {
 
-  val storageDir           = config.getString("storage.mountPath")
+  val storageDir = config.getString("storage.mountPath")
   val maxOffsetsPerTrigger = config.getLong("cloudflow.spark.read.options.max-offsets-per-trigger")
   def readStream[In](inPort: CodecInlet[In])(implicit encoder: Encoder[In], typeTag: TypeTag[In]): Dataset[In] = {
-    val topic    = findTopicForPort(inPort)
+    val topic = findTopicForPort(inPort)
     val srcTopic = topic.name
-    val brokers  = runtimeBootstrapServers(topic)
+    val brokers = runtimeBootstrapServers(topic)
     val src: DataFrame = session.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
@@ -52,21 +54,35 @@ class SparkStreamletContextImpl(
       .load()
 
     val rawDataset = src.select($"value").as[Array[Byte]]
-
-    rawDataset.map(inPort.codec.decode(_))
+    rawDataset
+      .map(raw =>
+        inPort.codec.decode(raw) match {
+          case Success(v) => v
+          case Failure(t) =>
+            inPort.errorHandler(raw, t) match {
+              case Some(r) => r
+              case _       => null.asInstanceOf[In]
+            }
+        })
+      .filter(validateNotNull[In](_))
   }
 
-  def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
+  private def kafkaConsumerMap(topic: Topic) = topic.kafkaConsumerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
-  def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
+  private def kafkaProducerMap(topic: Topic) = topic.kafkaProducerProperties.map {
     case (key, value) => s"kafka.$key" -> value
   }
 
-  def writeStream[Out](stream: Dataset[Out], outPort: CodecOutlet[Out], outputMode: OutputMode, optionalTrigger: Option[Trigger] = None)(
+  private def validateNotNull[T](message: T): Boolean = message != null
+
+  def writeStream[Out](
+      stream: Dataset[Out],
+      outPort: CodecOutlet[Out],
+      outputMode: OutputMode,
+      optionalTrigger: Option[Trigger] = None)(
       implicit encoder: Encoder[Out],
-      typeTag: TypeTag[Out]
-  ): StreamingQuery = {
+      typeTag: TypeTag[Out]): StreamingQuery = {
 
     val encodedStream = stream.map { value =>
       val key = outPort.partitioner match {
@@ -76,13 +92,13 @@ class SparkStreamletContextImpl(
       EncodedKV(key, outPort.codec.encode(value))
     }
 
-    val topic     = findTopicForPort(outPort)
+    val topic = findTopicForPort(outPort)
     val destTopic = topic.name
-    val brokers   = runtimeBootstrapServers(topic)
+    val brokers = runtimeBootstrapServers(topic)
 
     // metadata checkpoint directory on mount
     val checkpointLocation = checkpointDir(outPort.name)
-    val queryName          = s"$streamletRef.$outPort"
+    val queryName = s"$streamletRef.$outPort"
 
     val writeStreamWithOptions = encodedStream.writeStream
       .outputMode(outputMode)
@@ -107,7 +123,7 @@ class SparkStreamletContextImpl(
 
   def checkpointDir(dirName: String): String = {
     val baseCheckpointDir = new File(storageDir, streamletRef)
-    val dir               = new File(baseCheckpointDir, dirName)
+    val dir = new File(baseCheckpointDir, dirName)
     if (!dir.exists()) {
       val created = dir.mkdirs()
       require(created, s"Could not create checkpoint directory: $dir")
@@ -116,4 +132,5 @@ class SparkStreamletContextImpl(
   }
 }
 
+@deprecated("Use contrib-sbt-spark library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case class EncodedKV(key: Array[Byte], value: Array[Byte])

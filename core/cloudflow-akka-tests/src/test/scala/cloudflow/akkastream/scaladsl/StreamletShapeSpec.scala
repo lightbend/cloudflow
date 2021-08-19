@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 package cloudflow.akkastream.scaladsl
 
-import org.scalatest._
+import org.scalatest.wordspec._
+import org.scalatest.matchers.must._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 import cloudflow.akkastream._
 import cloudflow.akkastream.testdata._
 
-class StreamletShapeSpec extends WordSpec with MustMatchers {
+class StreamletShapeSpec extends AnyWordSpec with Matchers {
 
   "StreamletShape" must {
     "produce a valid shape for 1 inlet and multiple outlets" in {
       object Validation extends AkkaStreamlet {
-        val in      = AvroInlet[Data]("in")
+        val in = AvroInlet[Data]("in")
         val invalid = AvroOutlet[Data]("invalid", _.id.toString)
-        val valid   = AvroOutlet[Data]("valid", _.id.toString)
+        val valid = AvroOutlet[Data]("valid", _.id.toString)
 
-        val shape                = StreamletShape(in).withOutlets(invalid, valid)
+        val shape = StreamletShape(in).withOutlets(invalid, valid)
         override def createLogic = null
       }
       import Validation._
@@ -43,11 +44,11 @@ class StreamletShapeSpec extends WordSpec with MustMatchers {
 
     "produce a valid shape for multiple inlets and 1 outlet" in {
       object Validation extends AkkaStreamlet {
-        val in0   = AvroInlet[Data]("in-0")
-        val in1   = AvroInlet[Data]("in-1")
+        val in0 = AvroInlet[Data]("in-0")
+        val in1 = AvroInlet[Data]("in-1")
         val valid = AvroOutlet[Data]("valid", _.id.toString)
 
-        val shape                = StreamletShape(valid).withInlets(in0, in1)
+        val shape = StreamletShape(valid).withInlets(in0, in1)
         override def createLogic = null
       }
       import Validation._
@@ -59,12 +60,12 @@ class StreamletShapeSpec extends WordSpec with MustMatchers {
 
     "produce a valid shape for multiple inlets and multiple outlets" in {
       object Validation extends AkkaStreamlet {
-        val in0     = AvroInlet[Data]("in-0")
-        val in1     = AvroInlet[Data]("in-1")
-        val valid   = AvroOutlet[Data]("valid", _.id.toString)
+        val in0 = AvroInlet[Data]("in-0")
+        val in1 = AvroInlet[Data]("in-1")
+        val valid = AvroOutlet[Data]("valid", _.id.toString)
         val invalid = AvroOutlet[Data]("invalid", _.id.toString)
 
-        val shape                = StreamletShape.withOutlets(valid, invalid).withInlets(in0, in1)
+        val shape = StreamletShape.withOutlets(valid, invalid).withInlets(in0, in1)
         override def createLogic = null
       }
       import Validation._

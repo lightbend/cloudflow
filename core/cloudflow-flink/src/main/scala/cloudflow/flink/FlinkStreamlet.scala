@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,23 +68,24 @@ import org.apache.flink.core.fs.FileSystem
  *  }
  * }}}
  */
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Serializable {
   final override val runtime = FlinkStreamletRuntime
 
-  private val readyPromise      = Promise[Dun]()
+  private val readyPromise = Promise[Dun]()
   private val completionPromise = Promise[Dun]()
-  private val completionFuture  = completionPromise.future
+  private val completionFuture = completionPromise.future
 
   override protected final def createContext(config: Config): FlinkStreamletContext =
     (for {
       streamletDefinition <- StreamletDefinition.read(config)
     } yield {
       val updatedConfig = streamletDefinition.config.withFallback(config)
-      new FlinkStreamletContextImpl(streamletDefinition,
-                                    updateStreamExecutionEnvironment(
-                                      createStreamExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef)
-                                    ),
-                                    updatedConfig)
+      new FlinkStreamletContextImpl(
+        streamletDefinition,
+        updateStreamExecutionEnvironment(
+          createStreamExecutionEnvironment(updatedConfig, streamletDefinition.streamletRef)),
+        updatedConfig)
     }).recoverWith {
       case th => Failure(new Exception(s"Failed to create context from $config", th))
     }.get
@@ -103,7 +104,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
           entry =>
             val key = entry.getKey
             entry.getValue.valueType() match {
-              case ConfigValueType.BOOLEAN => configuration.setBoolean(key, entry.getValue.unwrapped.asInstanceOf[Boolean])
+              case ConfigValueType.BOOLEAN =>
+                configuration.setBoolean(key, entry.getValue.unwrapped.asInstanceOf[Boolean])
               case ConfigValueType.NUMBER =>
                 entry.getValue.unwrapped match {
                   case d: java.lang.Double  => configuration.setDouble(key, d.doubleValue)
@@ -131,15 +133,14 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
    */
   protected def createStreamExecutionEnvironment(config: Config, streamlet: String): StreamExecutionEnvironment = {
 
-    val localMode     = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
-    val runtimePath   = ClusterFlinkJobExecutor.flinkRuntime
+    val localMode = config.as[Option[Boolean]]("cloudflow.local").getOrElse(false)
+    val runtimePath = ClusterFlinkJobExecutor.flinkRuntime
     val streamletPath = ClusterFlinkJobExecutor.streamletRuntimeConfigPath(streamlet)
 
     val configuration = populateFlinkConfiguration(
       populateFlinkConfiguration(new Configuration(), config, runtimePath),
       config,
-      streamletPath
-    )
+      streamletPath)
     // Ensures that if file system back end is used, it is initialized with the right configuration
     if ("filesystem" == configuration.getString(ConfigOptions.key("state.backend").stringType().defaultValue("")))
       FileSystem.initialize(configuration, null)
@@ -167,15 +168,32 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
       StreamExecutionEnvironment.getExecutionEnvironment
     }
 
-    if (!env.getCheckpointConfig.isCheckpointingEnabled()) {
+    if (!env.getCheckpointConfig.isCheckpointingEnabled() && isDefaultCheckpointingEnabled(config, streamlet)) {
       setDefaultCheckpointing(env)
     }
     env
   }
 
+  /**
+   * This checks whether the user, through configuration, has disabled checkpointing
+   * by setting flink.execution.checkpointing.interval value to less then 0
+  **/
+  def isDefaultCheckpointingEnabled(config: Config, streamlet: String): Boolean = {
+    val runtimePath = "cloudflow.runtimes.flink.config.cloudflow.checkpointing.default"
+    val streamletPath = s"cloudflow.streamlet.${streamlet}.config.cloudflow.checkpointing.default"
+    val enabled = if (config.hasPath(streamletPath)) {
+      config.getBoolean(streamletPath)
+    } else if (config.hasPath(runtimePath)) {
+      config.getBoolean(runtimePath)
+    } else {
+      true
+    }
+    return enabled
+  }
+
   def setDefaultCheckpointing(env: StreamExecutionEnvironment): CheckpointConfig = {
-    val StartCheckpointIntervalInMillis       = 10000
-    val ProgressInMillisBetweenCheckpoints    = 500
+    val StartCheckpointIntervalInMillis = 10000
+    val ProgressInMillisBetweenCheckpoints = 500
     val CheckpointCompletionTimeLimitInMillis = 60000 // 1 minute
 
     env.enableCheckpointing(StartCheckpointIntervalInMillis)
@@ -194,7 +212,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
     checkpointConfig.setMaxConcurrentCheckpoints(1)
 
     // enable externalized checkpoints which are retained after job cancellation
-    checkpointConfig.enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+    checkpointConfig.enableExternalizedCheckpoints(
+      CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     checkpointConfig
   }
 
@@ -225,9 +244,9 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
    */
   sealed trait FlinkJobExecutor extends Serializable {
     // Is this a path that we want to use?
-    val flinkRuntime                                      = "cloudflow.runtimes.flink.config.flink"
+    val flinkRuntime = "cloudflow.runtimes.flink.config.flink"
     def streamletRuntimeConfigPath(streamletName: String) = s"cloudflow.streamlets.$streamletName.config"
-    val enableLocalWeb                                    = "local.web"
+    val enableLocalWeb = "local.web"
     def execute(): StreamletExecution
   }
 
@@ -249,7 +268,7 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
 
         def completed: Future[Dun] =
           jobResult.map(_ => Dun)
-        def ready: Future[Dun]  = readyFuture
+        def ready: Future[Dun] = readyFuture
         def stop(): Future[Dun] = ???
       }
     }
@@ -271,15 +290,14 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
             case pax: OptimizerPlanEnvironment.ProgramAbortException => throw pax
             case _: Throwable                                        => completionPromise.tryFailure(th)
           },
-        _ => completionPromise.trySuccess(Dun)
-      )
+        _ => completionPromise.trySuccess(Dun))
 
       new StreamletExecution {
         val readyFuture = readyPromise.future
 
         def completed: Future[Dun] = completionFuture
-        def ready: Future[Dun]     = readyFuture
-        def stop(): Future[Dun]    = ???
+        def ready: Future[Dun] = readyFuture
+        def stop(): Future[Dun] = ???
       }
     }
   }
@@ -293,13 +311,13 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
 
   private def getFlinkConfigInfo(env: StreamExecutionEnvironment): Map[String, String] =
     Map.empty[String, String] +
-        ("Parallelism"                  -> s"${env.getParallelism}") +
-        ("Max Parallelism"              -> s"${env.getMaxParallelism}") +
-        ("Checkpointing enabled"        -> s"${env.getJavaEnv.getCheckpointConfig.isCheckpointingEnabled}") +
-        ("Checkpointing Mode"           -> s"${env.getCheckpointingMode}") +
-        ("Checkpoint Interval (millis)" -> s"${env.getJavaEnv.getCheckpointInterval}") +
-        ("Checkpoint timeout"           -> s"${env.getJavaEnv.getCheckpointConfig.getCheckpointTimeout}") +
-        ("Restart Strategy"             -> s"${env.getRestartStrategy.getDescription}")
+    ("Parallelism" -> s"${env.getParallelism}") +
+    ("Max Parallelism" -> s"${env.getMaxParallelism}") +
+    ("Checkpointing enabled" -> s"${env.getJavaEnv.getCheckpointConfig.isCheckpointingEnabled}") +
+    ("Checkpointing Mode" -> s"${env.getCheckpointingMode}") +
+    ("Checkpoint Interval (millis)" -> s"${env.getJavaEnv.getCheckpointInterval}") +
+    ("Checkpoint timeout" -> s"${env.getJavaEnv.getCheckpointConfig.getCheckpointTimeout}") +
+    ("Restart Strategy" -> s"${env.getRestartStrategy.getDescription}")
 
   final def configuredValue(context: FlinkStreamletContext, configKey: String): String =
     context.streamletConfig.getString(configKey)
@@ -328,7 +346,8 @@ abstract class FlinkStreamlet extends Streamlet[FlinkStreamletContext] with Seri
  *  }
  * }}}
  */
-abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) extends StreamletLogic[FlinkStreamletContext] {
+abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext)
+    extends StreamletLogic[FlinkStreamletContext] {
   override def getContext(): FlinkStreamletContext = super.getContext()
 
   /**
@@ -374,7 +393,10 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
    *
    * @return the result `DataStreamSink[Out]`
    */
-  final def writeStream[Out](outlet: CodecOutlet[Out], stream: JDataStream[Out], clazz: Class[Out]): DataStreamSink[Out] =
+  final def writeStream[Out](
+      outlet: CodecOutlet[Out],
+      stream: JDataStream[Out],
+      clazz: Class[Out]): DataStreamSink[Out] =
     context.writeStream(outlet, new DataStream(stream))(TypeInformation.of[Out](clazz))
 
   final def config: Config = context.config
@@ -405,6 +427,7 @@ abstract class FlinkStreamletLogic(implicit val context: FlinkStreamletContext) 
 
 }
 
+@deprecated("Use contrib-sbt-flink library instead, see https://github.com/lightbend/cloudflow-contrib", "2.2.0")
 case object FlinkStreamletRuntime extends StreamletRuntime {
   override val name: String = "flink"
 }

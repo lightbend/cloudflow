@@ -1,0 +1,123 @@
+:page-partial:
+
+include::ROOT:partial$include.adoc[]
+
+The default build tool for Cloudflow applications is `sbt` but there is support for using Maven to build as well.
+
+In the `examples` directory you can find some reference projects compiled with Maven. Folders are marked with a `mvn-` prefix.
+
+The Cloudflow maven plugin can be included in the `plugins` section:
+
+[source,xml]
+----
+<plugin>
+  <groupId>com.lightbend.cloudflow</groupId>
+  <artifactId>cloudflow-maven-plugin</artifactId>
+  <version>${cloudflow.plugin.version}</version>
+</plugin>
+----
+
+For Docker we support and integrate the workflow with http://dmp.fabric8.io/[fabric8 docker-maven-plugin].
+
+== Maven Workflow
+
+Using a Cloudflow Maven project you can use the following Maven goals:
+
+. `package` your application in a `.jar`
+. `cloudflow:extract-streamlets` to make the `Streamlets` implementation available for the next steps
+
+After using the goals mentioned above, you can perform a few interesting commands to analyze and develop your application locally:
+
+* `cloudflow:verify-blueprint` will verify that the provided `blueprint.conf` is valid
+* `cloudflow:app-layout` will print the graph of interconnections of the streamlets
+* `cloudflow:run-local` will run the application on forked JVMs locally
+
+To deploy your application to a cluster you instead need the following steps:
+
+[start=3]
+. `docker:build` to build the docker images
+. `cloudflow:push-images` to push the images to a Docker registry, returning information about the published image digests
+. `cloudflow:build-app` to produce the deployable CR file in the `topLevel` project `target` directory
+
+== Full example
+
+A full example of Maven commands is shown below:
+
+[source,bash]
+----
+mvn clean
+mvn \
+  package \
+  cloudflow:extract-streamlets \
+  docker:build \
+  cloudflow:push-images \
+  -Ddocker.username=${DOCKER_USERNAME} \
+  -Ddocker.password=${DOCKER_PASSWORD} \
+  -DskipTests
+mvn cloudflow:build-app
+----
+
+After executing the above maven commands, you are ready to deploy your application to a cluster using:
+
+[source,bash]
+----
+kubectl cloudflow deploy ./target/<your-application-name>.json
+----
+
+== Archetype
+
+You can easily generate a full project with akka, spark and flink streamlets using the Cloudflow Maven Archetype:
+
+[source,bash,subs=attributes+]
+----
+mvn archetype:generate -DarchetypeGroupId=com.lightbend.cloudflow \
+  -DarchetypeArtifactId=cloudflow-archetype \
+  -DarchetypeVersion={cloudflow-version} \
+  -DgroupId=<groupId> \
+  -DartifactId=<appId> \
+  -Dversion=<version>
+----
+
+== Configuration
+
+The Maven plugin exposes some configuration keys that can be used to tweak the behavior.
+You can apply those by adding a `configuration` section such as:
+
+[source,xml,subs="+quotes"]
+----
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.lightbend.cloudflow</groupId>
+            <artifactId>cloudflow-maven-plugin</artifactId>
+            <version>${cloudflow.plugin.version}</version>
+            *<configuration>
+              ...
+            </configuration>*
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+----
+
+The available configurations for the goal `cloudflow:run-local` are:
+
+[cols="1,1,5"]
+|===
+|localConfig
+|String
+|Specify an alternative configuration file to be used in `run-local`
+
+|log4jConfigFile
+|String
+|Specify an alternative log4j configuration file to be used in `run-local`
+
+|baseDebugPort
+|Int
+|The initial port to be used for exposing JMX debugging
+
+|remoteDebug
+|Boolean
+|Enable JMX debugging during `run-local`
+|===

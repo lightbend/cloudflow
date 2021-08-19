@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package cloudflow.streamlets
 
 sealed trait AccessMode
 case object ReadWriteMany extends AccessMode
-case object ReadOnlyMany  extends AccessMode
+case object ReadOnlyMany extends AccessMode
 
 case class VolumeMount(name: String, private[cloudflow] val path: String, accessMode: AccessMode)
 object VolumeMount {
   // Java Api
-  def createReadOnlyMany(name: String, path: String)  = VolumeMount(name, path, ReadOnlyMany)
+  def createReadOnlyMany(name: String, path: String) = VolumeMount(name, path, ReadOnlyMany)
   def createReadWriteMany(name: String, path: String) = VolumeMount(name, path, ReadWriteMany)
 }

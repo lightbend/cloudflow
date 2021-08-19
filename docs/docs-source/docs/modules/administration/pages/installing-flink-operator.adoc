@@ -1,33 +1,6 @@
 = Adding Flink Support
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 
 include::ROOT:partial$include.adoc[]
 
-NOTE: See xref:installation-prerequisites.adoc#_storage_requirements_for_use_with_spark_or_flink[Storage requirements (for use with Spark or Flink)] to setup Storage Requirements for Flink applications.
-
-If you plan to write applications that utilize Flink you will need to install the Lyft Flink operator before deploying your Cloudflow application.
-
-Install the Lyft Flink operator using the following Helm command:
-
-----
-helm install flink-operator \
-  https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
-  --namespace cloudflow \
-  --set operatorImageName="docker.io/lyft/flinkk8soperator" \
-  --set operatorVersion="v0.5.0"
-----
-
-NOTE: The above Helm command uses a Helm chart for the Lyft Flink operator that is hosted https://github.com/lightbend/flink-operator[here].
-
-This completes the installation of the Flink operator.
-
-----
-$ kubectl get pods -n cloudflow
-NAME                                                READY   STATUS      RESTARTS   AGE
-cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running     0          3m29s
-cloudflow-patch-spark-mutatingwebhookconfig-66xxb   0/1     Completed   0          21s
-spark-operator-sparkoperator-56d6ffc8cd-cln67       1/1     Running     0          2m29s
-flink-operator-7999fdd879-phqlg                     1/1     Running     0          1m29s
-----
+include::{cloudflow-version}@shared-content:administration:page$installing-flink-operator.adoc[]

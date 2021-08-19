@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ sealed trait ValidationType {
   def pattern: Option[String] = None
   def `type`: String
 }
-final case object BooleanValidationType    extends ValidationType { val `type` = "bool"       }
-final case object IntegerValidationType    extends ValidationType { val `type` = "int32"      }
-final case object DoubleValidationType     extends ValidationType { val `type` = "double"     }
-final case object DurationValidationType   extends ValidationType { val `type` = "duration"   }
+final case object BooleanValidationType extends ValidationType { val `type` = "bool" }
+final case object IntegerValidationType extends ValidationType { val `type` = "int32" }
+final case object DoubleValidationType extends ValidationType { val `type` = "double" }
+final case object DurationValidationType extends ValidationType { val `type` = "duration" }
 final case object MemorySizeValidationType extends ValidationType { val `type` = "memorysize" }
 final case class RegexpValidationType(regExpPattern: String) extends ValidationType {
   override val pattern = Some(regExpPattern)
-  override val `type`  = "string"
+  override val `type` = "string"
 }
 
 /**
@@ -114,8 +114,10 @@ object IntegerConfigParameter {
   def create(key: String, description: String) =
     IntegerConfigParameter(key, description)
 }
-final case class IntegerConfigParameter(key: String, description: String = "", defaultValue: Option[Int] = None) extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, IntegerValidationType, defaultValue)
+final case class IntegerConfigParameter(key: String, description: String = "", defaultValue: Option[Int] = None)
+    extends ConfigParameter {
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, IntegerValidationType, defaultValue)
 
   /**
    * Java API
@@ -141,7 +143,8 @@ object StringConfigParameter {
   def create(key: String, description: String) =
     StringConfigParameter(key, description)
 }
-final case class StringConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
+final case class StringConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None)
+    extends ConfigParameter {
   def toDescriptor: ConfigParameterDescriptor =
     ConfigParameterDescriptor(key, description, RegexpValidationType(".*"), defaultValue)
 
@@ -171,8 +174,10 @@ object DoubleConfigParameter {
   def create(key: String, description: String) =
     DoubleConfigParameter(key, description)
 }
-final case class DoubleConfigParameter(key: String, description: String = "", defaultValue: Option[Double] = None) extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DoubleValidationType, defaultValue)
+final case class DoubleConfigParameter(key: String, description: String = "", defaultValue: Option[Double] = None)
+    extends ConfigParameter {
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, DoubleValidationType, defaultValue)
 
   /**
    * Java API
@@ -200,7 +205,8 @@ object BooleanConfigParameter {
 }
 final case class BooleanConfigParameter(key: String, description: String = "", defaultValue: Option[Boolean] = None)
     extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, BooleanValidationType, defaultValue)
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, BooleanValidationType, defaultValue)
 
   /**
    * Java API
@@ -239,9 +245,14 @@ object RegExpConfigParameter {
   def create(key: String, description: String, pattern: String) =
     RegExpConfigParameter(key, description, pattern)
 }
-final case class RegExpConfigParameter(key: String, description: String, pattern: String, defaultValue: Option[String] = None)
+final case class RegExpConfigParameter(
+    key: String,
+    description: String,
+    pattern: String,
+    defaultValue: Option[String] = None)
     extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, RegexpValidationType(pattern), defaultValue)
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, RegexpValidationType(pattern), defaultValue)
 
   /**
    * Java API
@@ -256,7 +267,7 @@ final case class RegExpConfigParameter(key: String, description: String, pattern
 }
 
 /**
- * Describes a time duration as defined by [[https://github.com/lightbend/config/blob/master/HOCON.md#duration-format]]
+ * Describes a time duration as defined by [[https://github.com/lightbend/config/blob/main/HOCON.md#duration-format]]
  *
  * The following units can be used with [[DurationConfigParameter]]
  *
@@ -281,8 +292,10 @@ object DurationConfigParameter {
   def create(key: String, description: String): DurationConfigParameter =
     DurationConfigParameter(key, description, None)
 }
-case class DurationConfigParameter(val key: String, description: String = "", defaultValue: Option[String] = None) extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, DurationValidationType, defaultValue)
+case class DurationConfigParameter(val key: String, description: String = "", defaultValue: Option[String] = None)
+    extends ConfigParameter {
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, DurationValidationType, defaultValue)
 
   /**
    * Java API
@@ -297,7 +310,7 @@ case class DurationConfigParameter(val key: String, description: String = "", de
 }
 
 /**
- * Describes a memory quantity as defined by [[https://github.com/lightbend/config/blob/master/HOCON.md#size-in-bytes-format]]
+ * Describes a memory quantity as defined by [[https://github.com/lightbend/config/blob/main/HOCON.md#size-in-bytes-format]]
  *
  * The following units can be used with [[MemorySizeConfigParameter]]
  *
@@ -333,7 +346,8 @@ object MemorySizeConfigParameter {
 }
 final case class MemorySizeConfigParameter(key: String, description: String = "", defaultValue: Option[String] = None)
     extends ConfigParameter {
-  def toDescriptor: ConfigParameterDescriptor = ConfigParameterDescriptor(key, description, MemorySizeValidationType, defaultValue)
+  def toDescriptor: ConfigParameterDescriptor =
+    ConfigParameterDescriptor(key, description, MemorySizeValidationType, defaultValue)
 
   /**
    * Java API

@@ -1,0 +1,28 @@
+= Migration Guide 2.0.x to 2.1.x
+
+include::ROOT:partial$include.adoc[]
+
+The most notable new feature in version 2.1.x is the native Flink and Spark integration support. 
+
+When migrating from 2.0.x to 2.1.x, it is required to update the Cloudflow operator, update the `kubectl-cloudflow` plugin, update the `sbt-cloudflow` plugin and rebuild your application.
+
+To take advantage of the native integration feature, you will need to take the following steps:
+
+- Undeploy the existing application from your cluster with `kubectl cloudflow undeploy`
+- Update the cloudflow operator to 2.1.x using the helm chart, as described in xref:administration:upgrading-cloudflow.adoc[Upgrading Cloudflow] 
+- Update kubectl-cloudflow plugin to 2.1.x, as described in xref:get-started:prepare-development-environment.adoc#_download_and_install_the_cloudflow_cli
+- Rebuild your project with `sbt buildApp`, use version 2.1.x of the sbt-cloudflow plugin, use the native plugin(s) from the https://github.com/lightbend/cloudflow-contrib[cloudflow-contrib project], as documented in https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/index.html[Cloudflow contrib]
+
+The https://github.com/lightbend/cloudflow-contrib[cloudflow-contrib project] describes the steps you need to take next, in summary:
+- Deploy your application with `kubectl cloudflow deploy`, with the `--unmanaged-runtimes` option, for instance using `--unmanaged-runtimes=flink`
+- Setup RBAC for a service account that will be used for native integration, this has to be done once, per application.
+- Deploy Flink and Spark streamlets using the example `deploy-application.sh`, `undeploy-application.sh` and `redeploy-application.sh` scripts in `cloudflow-contrib/example-scripts/flink` and `cloudflow-contrib/example-scripts/spark-cli` directories. Please note that these scripts provide a good starting point for using native Flink integration, you can customize these to your specific environment and requirements. 
+
+Uninstall the Flink and Spark operators with the commands below:
+
+----
+helm uninstall --namespace cloudflow flink-operator
+helm uninstall --namespace cloudflow spark-operator
+----
+
+NOTE: From version 2.0.20 and onward, Docker images will be built on top of the standard `adoptopenjdk/openjdk8` image. Runtime specific base images usage has been deprecated (for example, `cloudflowFlinkBaseImage`). If you are still using this type of image, and need to customize the image, simply add additional instructions to `extraDockerInstructions`. Please note that, from version 2.0.20 and up, Cloudflow ships with a new kubectl-cloudflow plugin. From the utilization perspective, nothing changes, apart from the need for an = sign in between the streamlet name and the number of replicas in the `scale` subcommand.

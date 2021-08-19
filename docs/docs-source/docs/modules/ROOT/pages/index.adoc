@@ -1,7 +1,5 @@
 = Introducing Cloudflow
-:toc:
-:toc-title: ON THIS PAGE
-:toclevels: 2
+
 :description: Quickly develop distributed streaming applications to deploy on Kubernetes
 
 include::ROOT:partial$include.adoc[]
@@ -50,7 +48,7 @@ image::apps-1.png[]
 
 == Feature set
 
-Cloudflow includes tools for developing and deploying streaming applications:
+Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. Cloudflow includes tools for developing and deploying streaming applications:
 
 * The Cloudflow application development toolkit includes:
 ** An SDK definition for `Streamlet`, the core abstraction in Cloudflow.
@@ -62,8 +60,14 @@ Cloudflow includes tools for developing and deploying streaming applications:
 
 * For deploying to Kubernetes clusters, the Cloudflow operator takes care of orchestrating the deployment of the different parts of a streaming pipeline as an end-to-end application.
 
-Cloudflow dramatically accelerates your application development efforts, reducing the time required to create, package, and deploy an application from weeks--to hours. 
-Lightbend also offers support with a https://www.lightbend.com/lightbend-platform-subscription[Lightbend Subscription].
+ifdef::todo[TODO: add the following back in once the commercial versions are ready. Text might need editing.]
+
+NOTE: The default build tool for Cloudflow applications is `sbt` but there is support for using xref:docs:develop:maven-support.adoc[Maven] to build as well.
+
+
+// Lightbend's commercial version of Cloudflow, https://developer.lightbend.com/docs/cloudflow/current/index.html[Akka Data Pipelines], includes support along with https://developer.lightbend.com/docs/telemetry/current/home.html[Telemetry] and https://developer.lightbend.com/docs/cloudflow/current/console/index.html[Lightbend Console], which provide visibility into your running Cloudflow apps.
+
+// You can also use https://developer.lightbend.com/docs/cloudflow/current/gcp/index.html[Akka Data Pipelines on Google Cloud Platform]. 
 
 == What's next
 

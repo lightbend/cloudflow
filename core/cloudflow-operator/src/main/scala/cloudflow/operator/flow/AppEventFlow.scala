@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,23 @@
 package cloudflow.operator
 package flow
 
-import java.util.concurrent.atomic.AtomicReference
+import akka.datap.crd.App
+import akka.kube.actions.Action
 import akka.stream._
 import akka.stream.scaladsl._
-import skuber.api.client._
-import cloudflow.operator.action._
 import cloudflow.operator.action.runner.Runner
 import cloudflow.operator.event._
 
+import java.util.concurrent.atomic.AtomicReference
+
 object AppEventFlow {
   // keeps state of apps across stream restarts
-  val appsRef = new AtomicReference(Map[String, WatchEvent[CloudflowApplication.CR]]())
+  val appsRef = new AtomicReference(Map[String, WatchEvent[App.Cr]]())
 
-  /**
-   * Transforms [[skuber.api.client.WatchEvent]]s into [[AppEvent]]s.
-   */
   def fromWatchEvent(logAttributes: Attributes) =
-    Flow[WatchEvent[CloudflowApplication.CR]]
+    Flow[WatchEvent[App.Cr]]
       .mapConcat { watchEvent =>
-        val currentApps           = appsRef.get
+        val currentApps = appsRef.get
         val (updatedApps, events) = AppEvent.toDeployEvent(currentApps, watchEvent)
         appsRef.set(updatedApps)
         events

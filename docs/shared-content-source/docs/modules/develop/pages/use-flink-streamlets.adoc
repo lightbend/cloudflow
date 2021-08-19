@@ -2,6 +2,9 @@
 
 include::ROOT:partial$include.adoc[]
 
+NOTE: Integration with the Lyft Flink Operator has been deprecated since 2.2.0, and will be removed in version 3.x. Flink integration has moved to the https://github.com/lightbend/cloudflow-contrib[Cloudflow-contrib project]. Please see https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/index.html[the Cloudflow-contrib getting started guide] for instructions on how to use Flink Native Kubernetes integration. The documentation that follows describes the deprecated feature. The FlinkStreamlet API has not changed in cloudflow-contrib, though you do need to use a different dependency and add the `CloudflowNativeFlinkPlugin`, which is described in the https://lightbend.github.io/cloudflow-contrib/docs/0.1.1/get-started/flink-native.html#_building_flink_native_streamlets[Cloudflow contrib documentation for building Flink native streamlets].
+
+
 A Flink streamlet has the following responsibilities:
 
 * It needs to capture your stream processing logic.
@@ -87,6 +90,8 @@ In <<flink-streamlet-deployment-model>>, we can visualize the chain of delegatio
 - The Flink Job Manager then requests task manager resources from Kubernetes to deploy the distributed processing.
 - Finally, if and when resources are available, the Flink-bound task managers start as Kubernetes pods. The task managers are the components tasked with the actual data processing, while the Job Manager serves as coordinator of the (stream) data process.
 
+In case you are using the cloudflow-contrib model of integration, you need to go through some additional steps to complete the deployment of your Flink streamlets. This https://lightbend.github.io/cloudflow-contrib/docs/0.0.4/get-started/flink-native.html[section] on cloudflow-contrib has more details.
+
 If you make any changes to the streamlet and deploy the application again, the existing Flink application will be stopped, and the new version will be started to reflect the changes.
 It could be that Flink streamlets are restarted in other ways, for instance, by administrators.
 
@@ -98,7 +103,7 @@ The next section about message delivery semantics explains the options that are 
 
 The message processing semantics provided by Flink streamlets are determined by the guarantees provided by the underlying sources, sinks and connectors. Flink offers _at-least-once_ or _exactly_once_ semantics depending on whether checkpointing is enabled. 
 
-If checkpointing is enabled, Flink guarantees end to end exactly-once processing with supported sources, sinks and connectors.
+If checkpointing is enabled, Flink guarantees end to end exactly-once processing with sources, sinks and connectors.
 Checkpointing is enabled by default in Cloudflow, using `exactly_once` checkpointing mode. You can override this using the Configuration system by specific `execution.checkpointing` settings, as shown https://ci.apache.org/projects/flink/flink-docs-release-1.10/ops/config.html#checkpointing[here]. 
 
 When we say “exactly-once semantics”, what we mean is that each incoming event affects the final results exactly once. Even in case of a machine or software failure, there’s no duplicate data and no data that goes unprocessed. This  https://flink.apache.org/features/2018/03/01/end-to-end-exactly-once-apache-flink.html[post] explains in detail how `TwoPhaseCommitSinkFunction` implements the two-phase commit protocol and makes it possible to build end-to-end exactly-once applications with Flink and a selection of data sources and sinks, including Apache Kafka versions 0.11 and beyond.
@@ -109,7 +114,7 @@ In Cloudflow, streamlets communicate with each other through Kafka - hence the s
 
 == Reliable restart of stateful processes
 
-A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators are fully supported within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
+A Pipeline application can be stateful and use the full capabilities of _keyed state_ and _operator state_ in Flink. Stateful operators can be used within a Flink streamlet. All states are stored in state stores deployed on Kubernetes using _Persistent Volume Claims_ (PVCs) backed by a storage class that allows for _access mode_ `ReadWriteMany`.
 
 To deploy a Flink application it is necessary that a PVC already exists in the namespace for the application. Cloudflow will automatically mount this PVC in the streamlets themselves to allow state storage, as long as it has a `/mnt/flink/storage` mount path. Cloudflow will look for a PVC named `cloudflow-flink` by default that mounts this path. It is also possible to create a differently named PVC, that mounts `/mnt/flink/storage` and mount it using a configuration file, as described in xref:develop:cloudflow-configuration.adoc[The Configuration Model]. The access mode for the PVC has to be `ReadWriteMany`.
 
@@ -207,3 +212,24 @@ Flink needs `flink-azure-fs-hadoop` support to be built into your Streamlet in o
 ----
 libraryDependencies += "org.apache.flink" % "flink-azure-fs-hadoop" % cloudflow.sbt.CloudflowFlinkPlugin.FlinkVersion
 ----
+
+== Default Cloudflow Checkpointing
+
+By default Cloudflow sets checkpointing with the values below.
+
+[source,hocon]
+----
+execution.checkpointing.interval = 10000 millis
+execution.checkpointing.min-pause = 500 millis
+execution.checkpointing.timeout = 10 mins
+execution.checkpointing.max-concurrent-checkpoints = 1
+execution.checkpointing.externalized-checkpoint-retention = RETAIN_ON_CANCELLATION
+----
+
+This parameters can be invalidated by passing at least `execution.checkpointing.interval` setting when xref:develop:cloudflow-configuration.adoc#_runtime_specific_settings[configuring streamlets]. The interval must be changed to any other change take effect.
+
+It is also possible to disable the settings shown above, and therefore fallback in Flink https://ci.apache.org/projects/flink/flink-docs-release-1.10/ops/config.html#checkpointing[defaults], by configuring the Streamlet or Flink runtimes with `config.cloudflow.checkpointing.default = off`.
+You can learn how in xref:develop:cloudflow-configuration.adoc#_runtime_specific_settings[Configuring Streamlets] 
+
+
+

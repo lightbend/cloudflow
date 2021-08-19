@@ -1,0 +1,37 @@
+name: Build and Test the Native Cli
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-binary:
+    runs-on: ubuntu-20.04
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up GraalVM JDK 11
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: graalvm-ce-java11@20.1.0
+
+      - name: Cache Coursier cache
+        uses: coursier/cache-action@v5
+
+      - name: Build and run the binary
+        run: |
+          cd core
+          gu install native-image
+          sbt cloudflow-cli/graalvm-native-image:packageBin
+          # Check that the binary runs at least
+          cloudflow-cli/target/graalvm-native-image/kubectl-cloudflow version --log-level=trace

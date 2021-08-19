@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,8 @@ abstract class GrpcServerLogic(server: Server)(implicit context: AkkaStreamletCo
   def handlers(): immutable.Seq[PartialFunction[HttpRequest, Future[HttpResponse]]]
 
   override def route(): Route =
-    concat(
-      pathEndOrSingleSlash {
-        complete(OK, "")
-      },
-      handle(ServiceHandler.concatOrNotFound(handlers(): _*))
-    )
+    concat(pathEndOrSingleSlash {
+      complete(OK, "")
+    }, handle(ServiceHandler.concatOrNotFound(handlers(): _*)))
 
 }

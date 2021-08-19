@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,17 +42,16 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 trait AkkaStreamletContext extends StreamletContext {
 
   private[akkastream] def sourceWithCommittableContext[T](
-      inlet: CodecInlet[T]
-  ): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T]
+      inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithCommittableContext[T]
 
   private[akkastream] def shardedSourceWithCommittableContext[T, M, E](
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
+      kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]]
 
   @deprecated("Use `sourceWithCommittableContext` instead.", "1.3.4")
-  private[akkastream] def sourceWithOffsetContext[T](inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
+  private[akkastream] def sourceWithOffsetContext[T](
+      inlet: CodecInlet[T]): cloudflow.akkastream.scaladsl.SourceWithOffsetContext[T]
 
   private[akkastream] def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition): Source[T, NotUsed]
   private[akkastream] def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed]
@@ -60,21 +59,23 @@ trait AkkaStreamletContext extends StreamletContext {
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest,
-      kafkaTimeout: FiniteDuration = 10.seconds
-  ): Source[T, Future[NotUsed]]
+      kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]]
 
-  private[akkastream] def committableSink[T](outlet: CodecOutlet[T], committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
+  private[akkastream] def committableSink[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
   private[akkastream] def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed]
 
   private[akkastream] def flexiFlow[T](
-      outlet: CodecOutlet[T]
-  ): Flow[(immutable.Seq[_ <: T], _ <: Committable), (Unit, Committable), NotUsed]
+      outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], _ <: Committable), (Unit, Committable), NotUsed]
 
   @deprecated("Use `committableSink` instead.", "1.3.4")
-  private[akkastream] def sinkWithOffsetContext[T](outlet: CodecOutlet[T],
-                                                   committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
+  private[akkastream] def sinkWithOffsetContext[T](
+      outlet: CodecOutlet[T],
+      committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
   @deprecated("Use `committableSink` instead.", "1.3.4")
-  private[akkastream] def sinkWithOffsetContext[T](committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
+  private[akkastream] def sinkWithOffsetContext[T](
+      committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed]
 
   /**
    * Creates a [[akka.stream.SinkRef SinkRef]] to write to, for the specified [[cloudflow.streamlets.CodecOutlet CodecOutlet]]
@@ -102,15 +103,13 @@ trait AkkaStreamletContext extends StreamletContext {
     def stop(): Future[Done] = {
       implicit val ec: ExecutionContext = system.dispatcher
       Future
-        .sequence(
-          stoppers.get.map { f =>
-            f().recover {
-              case cause =>
-                system.log.error(cause, "onStop callback failed.")
-                Dun
-            }
+        .sequence(stoppers.get.map { f =>
+          f().recover {
+            case cause =>
+              system.log.error(cause, "onStop callback failed.")
+              Dun
           }
-        )
+        })
         .map(_ => Done)
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,7 @@ object TaxiRideOps {
           parseFloat(tokens(6)),
           parseFloat(tokens(7)),
           startTime.getMillis(),
-          endTime.getMillis()
-        )
+          endTime.getMillis())
       }.transform(s => Success(s), e => Failure(new RuntimeException(s"Invalid record: $ride", e)))
   }
 

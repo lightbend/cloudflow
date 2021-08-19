@@ -2,29 +2,29 @@ name: Build PRs
 on:
   pull_request:
 jobs:
-  build-all:
-    runs-on: ubuntu-latest
+  run-scripted-tests:
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         java: [ '8', '11', '13' ]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    
     - name: Setup java
       uses: joschi/setup-jdk@v2
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
+    
     - name: Cache SBT and Coursier cache
       uses: coursier/cache-action@v3
-    - name: Build documentation
-      run: |
-        sudo snap install yq
-        cd docs
-        make html-author-mode
-    - name: Run integration tests of the sbt plugin
+    
+    - name: Run scripted tests
       run: |
         git config --global user.email "cloudflow@lightbend.com"
         git config --global user.name "Cloudflow CI"
         cd core
-        sbt +publishLocal scripted
+        sbt -mem 2048 +publishLocal cloudflow-sbt-plugin/scripted

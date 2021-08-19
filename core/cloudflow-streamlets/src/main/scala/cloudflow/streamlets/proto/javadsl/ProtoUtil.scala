@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2020 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2016-2021 Lightbend Inc. <https://www.lightbend.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,18 @@ import com.google.protobuf.TextFormat
 object ProtoUtil {
   val Format = "proto"
 
-  def createSchemaDefinition(descriptor: Descriptor) = SchemaDefinition(
-    name = descriptor.getFullName,
-    schema = TextFormat.printToUnicodeString(descriptor.toProto),
-    fingerprint = fingerprintSha256(descriptor),
-    format = Format
-  )
+  def createSchemaDefinition(descriptor: Descriptor) =
+    SchemaDefinition(
+      name = descriptor.getFullName,
+      schema = TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto),
+      fingerprint = fingerprintSha256(descriptor),
+      format = Format)
 
   private def fingerprintSha256(descriptor: Descriptor): String =
     Base64
       .getEncoder()
-      .encodeToString(MessageDigest.getInstance("SHA-256").digest(TextFormat.printToUnicodeString(descriptor.toProto).getBytes("UTF-8")))
+      .encodeToString(
+        MessageDigest
+          .getInstance("SHA-256")
+          .digest(TextFormat.printer.escapingNonAscii(false).printToString(descriptor.toProto).getBytes("UTF-8")))
 }

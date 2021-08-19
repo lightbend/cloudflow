@@ -1,0 +1,713 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "cloudflow.lightbend.com/v1alpha1",
+            "kind": "CloudflowApplication",
+            "metadata": {
+                "annotations": {
+                    "com.lightbend.cloudflow/created-by-cli-version": "SNAPSHOT (local build)"
+                },
+                "creationTimestamp": "2020-10-26T17:26:18Z",
+                "generation": 1,
+                "labels": {
+                    "app.kubernetes.io/managed-by": "cloudflow",
+                    "app.kubernetes.io/part-of": "swiss-knife",
+                    "com.lightbend.cloudflow/app-id": "swiss-knife"
+                },
+                "name": "swiss-knife",
+                "namespace": "swiss-knife",
+                "resourceVersion": "89745",
+                "selfLink": "/apis/cloudflow.lightbend.com/v1alpha1/namespaces/swiss-knife/cloudflowapplications/swiss-knife",
+                "uid": "8d2b095b-155f-4b48-bae0-43bf2b8e62b0"
+            },
+            "spec": {
+                "agent_paths": {
+                    "prometheus": "/prometheus/jmx_prometheus_javaagent.jar"
+                },
+                "app_id": "swiss-knife",
+                "app_version": "2.0.11",
+                "deployments": [
+                    {
+                        "class_name": "swissknife.spark.SparkCounter",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-spark@sha256:7e4373e65c9241539ff275fe0bd086120b3906d4793a2d414960b50ed0bbfeed",
+                        "name": "swiss-knife.spark-process",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            },
+                            "out": {
+                                "config": {},
+                                "id": "spark-pipe"
+                            }
+                        },
+                        "runtime": "spark",
+                        "secret_name": "spark-process",
+                        "streamlet_name": "spark-process",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaLogger",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.flink-egress",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "flink-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "flink-egress",
+                        "streamlet_name": "flink-egress",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.spark.SparkDataGenerator",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-spark@sha256:7e4373e65c9241539ff275fe0bd086120b3906d4793a2d414960b50ed0bbfeed",
+                        "name": "swiss-knife.ingress",
+                        "port_mappings": {
+                            "out": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            }
+                        },
+                        "runtime": "spark",
+                        "secret_name": "ingress",
+                        "streamlet_name": "ingress",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.flink.FlinkCounter",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-flink@sha256:695814a697923a9520fafd943ab6617e24592523ec3ab89f2b55dd32a4632036",
+                        "name": "swiss-knife.flink-process",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            },
+                            "out": {
+                                "config": {},
+                                "id": "flink-pipe"
+                            }
+                        },
+                        "runtime": "flink",
+                        "secret_name": "flink-process",
+                        "streamlet_name": "flink-process",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaLogger",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.spark-egress",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "spark-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "spark-egress",
+                        "streamlet_name": "spark-egress",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaTransformation",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.akka-process",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            },
+                            "out": {
+                                "config": {},
+                                "id": "akka-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "akka-process",
+                        "streamlet_name": "akka-process",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.spark.SparkOutput",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-spark@sha256:7e4373e65c9241539ff275fe0bd086120b3906d4793a2d414960b50ed0bbfeed",
+                        "name": "swiss-knife.spark-config-output",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            }
+                        },
+                        "runtime": "spark",
+                        "secret_name": "spark-config-output",
+                        "streamlet_name": "spark-config-output",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaLogger",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.raw-egress",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "raw-egress",
+                        "streamlet_name": "raw-egress",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaConfigLogger",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.akka-config-output",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "source-data-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "akka-config-output",
+                        "streamlet_name": "akka-config-output",
+                        "volume_mounts": null
+                    },
+                    {
+                        "class_name": "swissknife.akka.AkkaLogger",
+                        "config": {},
+                        "image": "docker.io/lightbend/swiss-knife-akka@sha256:69800cf60af99143bd0a4b34466aa96943a98554e62c5d9b0078c4e117fd86d2",
+                        "name": "swiss-knife.akka-egress",
+                        "port_mappings": {
+                            "in": {
+                                "config": {},
+                                "id": "akka-pipe"
+                            }
+                        },
+                        "runtime": "akka",
+                        "secret_name": "akka-egress",
+                        "streamlet_name": "akka-egress",
+                        "volume_mounts": null
+                    }
+                ],
+                "library_version": "2.0.11",
+                "streamlets": [
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.spark.SparkCounter",
+                            "config_parameters": [
+                                {
+                                    "default_value": "spark-original",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [
+                                {
+                                    "name": "out",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "runtime": "spark",
+                            "volume_mounts": []
+                        },
+                        "name": "spark-process"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaLogger",
+                            "config_parameters": [
+                                {
+                                    "default_value": "test-case",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "flink-egress"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.spark.SparkDataGenerator",
+                            "config_parameters": [
+                                {
+                                    "default_value": "1",
+                                    "description": "Records per second to produce.",
+                                    "key": "records-per-second",
+                                    "validation_pattern": "",
+                                    "validation_type": "int32"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [],
+                            "labels": [],
+                            "outlets": [
+                                {
+                                    "name": "out",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "runtime": "spark",
+                            "volume_mounts": []
+                        },
+                        "name": "ingress"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.flink.FlinkCounter",
+                            "config_parameters": [
+                                {
+                                    "default_value": "flink-original",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [
+                                {
+                                    "name": "out",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "runtime": "flink",
+                            "volume_mounts": []
+                        },
+                        "name": "flink-process"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaLogger",
+                            "config_parameters": [
+                                {
+                                    "default_value": "test-case",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "spark-egress"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaTransformation",
+                            "config_parameters": [
+                                {
+                                    "default_value": "akka-original",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [
+                                {
+                                    "name": "out",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "akka-process"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.spark.SparkOutput",
+                            "config_parameters": [],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "spark",
+                            "volume_mounts": []
+                        },
+                        "name": "spark-config-output"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaLogger",
+                            "config_parameters": [
+                                {
+                                    "default_value": "test-case",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "raw-egress"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaConfigLogger",
+                            "config_parameters": [],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "akka-config-output"
+                    },
+                    {
+                        "descriptor": {
+                            "attributes": [],
+                            "class_name": "swissknife.akka.AkkaLogger",
+                            "config_parameters": [
+                                {
+                                    "default_value": "test-case",
+                                    "description": "Configurable message.",
+                                    "key": "configurable-message",
+                                    "validation_pattern": ".*",
+                                    "validation_type": "string"
+                                }
+                            ],
+                            "description": "",
+                            "inlets": [
+                                {
+                                    "name": "in",
+                                    "schema": {
+                                        "fingerprint": "V6a7UgrWyxrVF+U5yJsKLnUrpV/9y0FQe/OI5XO6eaY=",
+                                        "format": "avro",
+                                        "name": "swissknife.data.Data",
+                                        "schema": "{\"type\":\"record\",\"name\":\"Data\",\"namespace\":\"swissknife.data\",\"fields\":[{\"name\":\"src\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"count\",\"type\":\"long\"},{\"name\":\"payload\",\"type\":\"string\",\"default\":\"\"}]}"
+                                    }
+                                }
+                            ],
+                            "labels": [],
+                            "outlets": [],
+                            "runtime": "akka",
+                            "volume_mounts": []
+                        },
+                        "name": "akka-egress"
+                    }
+                ],
+                "version": "4"
+            },
+            "status": {
+                "app_id": "swiss-knife",
+                "app_status": "Pending",
+                "app_version": "2.0.11",
+                "streamlet_statuses": [
+                    {
+                        "expected_pod_count": 2,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-spark-process-driver",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 0,
+                                "ready": "False",
+                                "restarts": 0,
+                                "status": "Failed"
+                            }
+                        ],
+                        "streamlet_name": "spark-process"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-flink-egress-5678b487c4-rqt9v",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "flink-egress"
+                    },
+                    {
+                        "expected_pod_count": 2,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-ingress-driver",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 0,
+                                "ready": "False",
+                                "restarts": 0,
+                                "status": "Failed"
+                            }
+                        ],
+                        "streamlet_name": "ingress"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-spark-egress-6596b4677b-vj545",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "spark-egress"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-akka-process-58548fb68b-b79hg",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "akka-process"
+                    },
+                    {
+                        "expected_pod_count": 2,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-spark-config-output-driver",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 0,
+                                "ready": "False",
+                                "restarts": 0,
+                                "status": "Failed"
+                            }
+                        ],
+                        "streamlet_name": "spark-config-output"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-raw-egress-776c69c78b-dfwdc",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "raw-egress"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-akka-config-output-54645cdc8d-nh6sk",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "akka-config-output"
+                    },
+                    {
+                        "expected_pod_count": 1,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-akka-egress-dd88c9688-mc9xt",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "akka-egress"
+                    },
+                    {
+                        "expected_pod_count": 3,
+                        "pod_statuses": [
+                            {
+                                "name": "swiss-knife-flink-process-f893657d-jm-744cc96fb9-cmvft",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            },
+                            {
+                                "name": "swiss-knife-flink-process-f893657d-tm-6f6cd9bbf9-9tz6f",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            },
+                            {
+                                "name": "swiss-knife-flink-process-f893657d-tm-6f6cd9bbf9-khvbd",
+                                "nr_of_containers": 1,
+                                "nr_of_containers_ready": 1,
+                                "ready": "True",
+                                "restarts": 0,
+                                "status": "Running"
+                            }
+                        ],
+                        "streamlet_name": "flink-process"
+                    }
+                ]
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": "",
+        "selfLink": ""
+    }
+}
