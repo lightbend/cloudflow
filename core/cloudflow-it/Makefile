@@ -46,6 +46,8 @@ prepare-cluster:
 		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
 		--set operatorVersion="v0.5.0" \
 		--namespace cloudflow)
+	@echo '****** Installing Cloudflow CRD'
+	kubectl apply -f ../cloudflow-crd/kubernetes/cloudflow-crd.yaml
 	@echo '****** Installing Cloudflow Operator'
 	helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/ | true
 	helm repo update

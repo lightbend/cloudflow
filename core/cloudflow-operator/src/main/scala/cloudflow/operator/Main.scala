@@ -144,13 +144,9 @@ object Main extends {
       case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
         system.log.info(s"CRD found at version ${App.GroupVersion}")
       case _ =>
-        client
-          .apiextensions()
-          .v1beta1()
-          .customResourceDefinitions()
-          .inNamespace(settings.podNamespace)
-          .withName(App.ResourceName)
-          .create(App.Crd)
+        system.log.error(
+          s"Cloudflow CRD not found, please install it: 'kubectl apply -f https://raw.githubusercontent.com/lightbend/cloudflow/v${BuildInfo.version}/core/cloudflow-crd/kubernetes/cloudflow-crd.yaml'")
+        throw new Exception("Cloudflow CRD not found")
     }
   }
 
