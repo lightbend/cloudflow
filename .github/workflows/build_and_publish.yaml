@@ -12,12 +12,6 @@ jobs:
     - run: |
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-    - name: Whitesource
-      env:
-        WHITESOURCE_PASSWORD: ${{ secrets.WHITESOURCE_PASSWORD }}
-      run: |
-        cd core
-        sbt "whitesourceCheckPolicies; whitesourceUpdate"
     - name: Build documentation  
       run: |
         sudo snap install yq
