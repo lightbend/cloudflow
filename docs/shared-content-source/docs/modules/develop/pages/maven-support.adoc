@@ -37,12 +37,27 @@ To deploy your application to a cluster you instead need the following steps:
 [start=3]
 . `docker:build` to build the docker images
 . `cloudflow:push-images` to push the images to a Docker registry, returning information about the published image digests
+
+NOTE: If not specifically configured in your POM, the default image registry used by the http://dmp.fabric8.io/[fabric8 docker-maven-plugin] is *_docker.io_*. To use a different registry, you’ll need to provide a proper <registry> subelement to your configuration. For more information, please see https://dmp.fabric8.io/#registry[Registry handling].
+
+[start=5]
 . `cloudflow:build-app` to produce the deployable CR file in the `topLevel` project `target` directory
 
 == Full example
+A full example of using the Maven commands is shown below:
 
-A full example of Maven commands is shown below:
+. Set the $DOCKER_USERNAME and $DOCKER_PASSWORD environment variables to the username and password of your image registry.
++
+IMPORTANT: To avoid storing your credentials in the shell’s history file, use the following commands to create an environment variable for username and password. The username/password are your credentials to the Lightbend docker repository - commercial-registry.lightbend.com). If you want to see the password, remove the -s (for silent) flag.
++
+[source,bash]
+----
+  read DOCKER_USERNAME
+  read -s DOCKER_PASSWORD
+----
 
+. Then execute the following:
++
 [source,bash]
 ----
 mvn clean
@@ -57,8 +72,8 @@ mvn \
 mvn cloudflow:build-app
 ----
 
-After executing the above maven commands, you are ready to deploy your application to a cluster using:
-
+. After executing the above maven commands, you are ready to deploy your application to a cluster using:
++
 [source,bash]
 ----
 kubectl cloudflow deploy ./target/<your-application-name>.json

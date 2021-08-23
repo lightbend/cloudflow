@@ -52,6 +52,10 @@
             <image>
               <name>%a:%v</name>
               <registry>docker.io/${docker.username}</registry>
+              <!--
+                To use a different image registry, you can make the desired changes to the
+                <registry> subelement above. For more information, please see https://dmp.fabric8.io/#registry.
+              -->
               <build>
                 <from>adoptopenjdk/openjdk8:alpine</from>
 
