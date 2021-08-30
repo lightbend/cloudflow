@@ -40,6 +40,7 @@ class WithUpdateVolumesMountsSpec extends AnyFlatSpec with WithUpdateVolumeMount
         agentPaths = Map(),
         version = None,
         libraryVersion = None,
+        serviceAccount = None,
         streamlets = Seq(
           App.Streamlet(
             name = streamletName,

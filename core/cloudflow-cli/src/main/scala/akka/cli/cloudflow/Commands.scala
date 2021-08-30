@@ -212,6 +212,9 @@ object OptionsParser {
           c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
           .optional()
           .text("The runtimes that should not be checked"),
+        commandParse[commands.Deploy, String](opt("serviceaccount"))((c, sa) => c.copy(serviceAccount = Some(sa)))
+          .optional()
+          .text("the serviceaccount to be used"),
         commandParse[commands.Deploy, Unit](opt("microservices"))((c, sc) => c.copy(microservices = true))
           .optional()
           .text("EXPERIMENTAL: Deploy on Akka Cloud Platform"),
@@ -500,6 +503,7 @@ object commands {
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
       unmanagedRuntimes: Seq[String] = Seq(),
+      serviceAccount: Option[String] = None,
       microservices: Boolean = false,
       output: format.Format = format.Default)
       extends Command[DeployResult]

@@ -61,10 +61,14 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
   val parallelism = new AtomicReference(Map[String, Int]()) //flinkRunnerDefaults.parallelism
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleFlink = flinkRole(app.namespace, labels, ownerReferences)
-    Vector(
-      Action.createOrReplace(roleFlink),
-      Action.createOrReplace(flinkRoleBinding(app.namespace, roleFlink, labels, ownerReferences)))
+    app.spec.serviceAccount match {
+      case Some(_) => Seq()
+      case _ =>
+        val roleFlink = flinkRole(app.namespace, labels, ownerReferences)
+        Vector(
+          Action.createOrReplace(roleFlink),
+          Action.createOrReplace(flinkRoleBinding(app.namespace, roleFlink, labels, ownerReferences)))
+    }
   }
 
   def streamletChangeAction(
@@ -207,7 +211,8 @@ final class FlinkRunner(flinkRunnerDefaults: FlinkRunnerDefaults) extends Runner
       volumeMounts = volumeMounts,
       flinkConfig = flinkConfig,
       jobManagerConfig = jobManagerConfig,
-      taskManagerConfig = taskManagerConfig)
+      taskManagerConfig = taskManagerConfig,
+      serviceAccountName = app.spec.serviceAccount.getOrElse(Name.ofServiceAccount))
 
     val name = resourceName(deployment)
     val appLabels = CloudflowLabels(app)

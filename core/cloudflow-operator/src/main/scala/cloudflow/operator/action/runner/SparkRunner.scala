@@ -55,11 +55,14 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
   val ExecutorPod = "executor"
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleSpark = sparkRole(app.namespace, labels, ownerReferences)
-
-    Seq(
-      Action.createOrReplace(roleSpark),
-      Action.createOrReplace(sparkRoleBinding(app.namespace, roleSpark, labels, ownerReferences)))
+    app.spec.serviceAccount match {
+      case Some(_) => Seq()
+      case _ =>
+        val roleSpark = sparkRole(app.namespace, labels, ownerReferences)
+        Seq(
+          Action.createOrReplace(roleSpark),
+          Action.createOrReplace(sparkRoleBinding(app.namespace, roleSpark, labels, ownerReferences)))
+    }
   }
 
   def streamletChangeAction(
@@ -241,7 +244,8 @@ final class SparkRunner(sparkRunnerDefaults: SparkRunnerDefaults) extends Runner
         volumeMounts = volumeMounts ++ getVolumeMounts(podsConfig, DriverPod),
         secrets = secrets,
         env = getEnvironmentVariables(podsConfig, DriverPod),
-        securityContext = securityContext),
+        securityContext = securityContext,
+        serviceAccount = Some(app.spec.serviceAccount.getOrElse(Name.ofServiceAccount))),
       podsConfig,
       deployment)
     val executor = addExecutorResourceRequirements(

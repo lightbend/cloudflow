@@ -58,10 +58,14 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     Action.delete[Deployment](name, namespace)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
-    Seq(
-      Action.createOrReplace(roleAkka),
-      Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
+    app.spec.serviceAccount match {
+      case Some(_) => Seq()
+      case _ =>
+        val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
+        Seq(
+          Action.createOrReplace(roleAkka),
+          Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
+    }
   }
 
   case class PatchDeploymentAction(deployment: Deployment)(
@@ -301,7 +305,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         configSecretVolumes
 
       val podSpecBuilder = new PodSpecBuilder()
-        .withServiceAccount(Name.ofServiceAccount)
+        .withServiceAccount(app.spec.serviceAccount.getOrElse(Name.ofServiceAccount))
         .withVolumes(allVolumes.asJava)
         .withContainers(container)
 

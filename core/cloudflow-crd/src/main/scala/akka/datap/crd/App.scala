@@ -263,7 +263,9 @@ object App {
       @JsonProperty("version")
       version: Option[String],
       @JsonProperty("library_version")
-      libraryVersion: Option[String])
+      libraryVersion: Option[String],
+      @JsonProperty("service_account")
+      serviceAccount: Option[String])
       extends KubernetesResource {}
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])
