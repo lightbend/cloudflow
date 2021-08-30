@@ -30,7 +30,7 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
         c.aggregatedConfig,
         currentCr,
         logbackContent,
-        () => client.getPvcs(namespace = currentCr.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       // streamlets configurations
       streamletsConfigs <- streamletsConfigs(
