@@ -10,7 +10,6 @@ import scala.util.{ Success, Try }
 import akka.datap.crd.App
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.cli.cloudflow.models.ApplicationStatus
-import akka.cli.microservice.AkkaMicroserviceSpec
 import buildinfo.BuildInfo
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest._
@@ -53,10 +52,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
       def getOperatorProtocolVersion(): Try[String] = Success(protocolVersion)
       def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
       def uidCloudflowApp(name: String, namespace: String) = Success("1")
-      def createMicroservicesApp(
-          cfSpec: App.Spec,
-          namespace: String,
-          specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
+      def createMicroservicesApp(cfSpec: App.Spec, namespace: String): Try[String] =
         Success("1")
       def configureCloudflowApp(
           name: String,

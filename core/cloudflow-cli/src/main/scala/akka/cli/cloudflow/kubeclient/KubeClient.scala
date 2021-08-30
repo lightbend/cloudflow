@@ -8,7 +8,6 @@ import akka.datap.crd.App
 
 import scala.util.Try
 import akka.cli.cloudflow.models
-import akka.cli.microservice.AkkaMicroserviceSpec
 
 object KubeClient {
 
@@ -48,11 +47,6 @@ trait KubeClient {
 
   // C
   def createCloudflowApp(spec: App.Spec, namespace: String): Try[String]
-
-  def createMicroservicesApp(
-      cfSpec: App.Spec,
-      namespace: String,
-      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String]
 
   def uidCloudflowApp(name: String, namespace: String): Try[String]
 
