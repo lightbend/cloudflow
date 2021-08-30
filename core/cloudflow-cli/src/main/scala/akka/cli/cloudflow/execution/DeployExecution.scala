@@ -146,13 +146,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      _ <- {
-        if (d.microservices) {
-          Success("")
-        } else {
-          validateProtocolVersion(client)
-        }
-      }
+      _ <- validateProtocolVersion(client)
 
       // prepare the data
       baseApplicationCr <- loadCrFile(d.crFile)
@@ -199,7 +193,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         () => client.getKafkaClusters(namespace = Some(applicationCr.spec.appId)).map(_.keys.toList))
 
       // streamlets configurations
-      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, d.microservices, () => {
+      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, () => {
         client.getKafkaClusters(None).map(parseValues)
       })
 
@@ -216,17 +210,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             dockerPassword = d.dockerPassword)
         }
       }
-      uid <- {
-        if (d.microservices) {
-          client.createMicroservicesApp(
-            applicationCr.spec,
-            namespace,
-            CloudflowToMicroservicesCR
-              .convert(applicationCr.spec, logbackContent.map(_ => KubeClient.LoggingSecretName)))
-        } else {
-          client.createCloudflowApp(applicationCr.spec, namespace)
-        }
-      }
+      uid <- client.createCloudflowApp(applicationCr.spec, namespace)
       _ <- client.configureCloudflowApp(name, namespace, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")

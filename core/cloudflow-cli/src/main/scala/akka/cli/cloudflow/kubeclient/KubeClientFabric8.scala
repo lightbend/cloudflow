@@ -11,7 +11,6 @@ import akka.cli.cloudflow.kubeclient.KubeClient._
 import akka.datap.crd.App
 import akka.cli.cloudflow.{ models, CliException, CliLogger }
 import akka.cli.common.Base64Helper
-import akka.cli.microservice.{ AkkaMicroservice, AkkaMicroserviceList, AkkaMicroserviceSpec }
 import buildinfo.BuildInfo
 import com.fasterxml.jackson.annotation.{ JsonCreator, JsonProperty }
 import com.fasterxml.jackson.databind.JsonDeserializer
@@ -561,52 +560,6 @@ class KubeClientFabric8(
         else Success(())
       }
     } yield { uid }
-
-  def createMicroservicesApp(
-      cfSpec: App.Spec,
-      namespace: String,
-      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] = {
-    for {
-      uid <- createCFApp(cfSpec, namespace)
-      _ <- {
-        withClient { client =>
-          val microservices = client.customResources(
-            AkkaMicroservice.customResourceDefinitionContext,
-            classOf[AkkaMicroservice],
-            classOf[AkkaMicroserviceList])
-
-          specs.foldLeft(Success(Map.empty[String, String]): Try[Map[String, String]]) {
-            case (last, (name, spec)) =>
-              last match {
-                case f: Failure[Map[String, String]] => f
-                case Success(l) =>
-                  spec match {
-                    case None => Success(l + (name -> uid))
-                    case Some(s) =>
-                      val metadata = new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(cloudflowLabels(name))
-                        .withAnnotations(CreatedByCliAnnotation)
-                        .withOwnerReferences(getOwnerReference(cfSpec.appId, uid))
-                        .build()
-
-                      val app = AkkaMicroservice(spec = s, metadata = metadata, status = None)
-
-                      val crd =
-                        microservices
-                          .inNamespace(namespace)
-                          .withName(name)
-                          .createOrReplace(app)
-
-                      Success(l + (name -> crd.getMetadata.getUid))
-                  }
-              }
-          }
-        }
-      }
-    } yield { uid }
-  }
 
   def uidCloudflowApp(name: String, namespace: String): Try[String] = {
     withApplicationClient { cloudflowApps =>

@@ -139,17 +139,6 @@ object CodepathCoverageMain extends App {
 
   Thread.sleep(5000)
 
-  cli.run(
-    commands
-      .Deploy(
-        crFile = new File("../cloudflow-it/swiss-knife/target/swiss-knife.json"),
-        noRegistryCredentials = true,
-        microservices = true))
-
-  Thread.sleep(1000)
-
-  cli.run(commands.Undeploy(cloudflowApp = "swiss-knife"))
-
   // Manually targeting exceptions:
 
   Serialization

@@ -215,9 +215,6 @@ object OptionsParser {
         commandParse[commands.Deploy, String](opt("serviceaccount"))((c, sa) => c.copy(serviceAccount = Some(sa)))
           .optional()
           .text("the serviceaccount to be used"),
-        commandParse[commands.Deploy, Unit](opt("microservices"))((c, sc) => c.copy(microservices = true))
-          .optional()
-          .text("EXPERIMENTAL: Deploy on Akka Cloud Platform"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -352,9 +349,6 @@ object OptionsParser {
         commandParse[commands.Configure, File](opt("logback-config"))((c, f) => c.copy(logbackConfig = Some(f)))
           .optional()
           .text("the logback configuration to be applied"),
-        commandParse[commands.Configure, Unit](opt("microservices"))((c, sc) => c.copy(microservices = true))
-          .optional()
-          .text("EXPERIMENTAL: Deploy on Akka Cloud Platform"),
         commandCheck[commands.Configure](c => {
           if (c.logbackConfig.isDefined && !c.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -504,7 +498,6 @@ object commands {
       logbackConfig: Option[File] = None,
       unmanagedRuntimes: Seq[String] = Seq(),
       serviceAccount: Option[String] = None,
-      microservices: Boolean = false,
       output: format.Format = format.Default)
       extends Command[DeployResult]
       with WithConfiguration {
@@ -547,7 +540,6 @@ object commands {
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
-      microservices: Boolean = false,
       output: format.Format = format.Default)
       extends Command[ConfigureResult]
       with WithConfiguration {

@@ -323,7 +323,6 @@ trait WithConfiguration {
   def streamletsConfigs(
       appCr: App.Cr,
       appConfig: CloudflowConfig.CloudflowRoot,
-      microservices: Boolean,
       clusterSecretConfigs: () => Try[Map[String, Config]]): Try[Map[App.Deployment, Map[String, String]]] = {
 
     val allReferencedClusters = {
@@ -333,13 +332,7 @@ trait WithConfiguration {
     }
 
     for {
-      clusterSecrets <- {
-        if (!microservices) {
-          clusterSecretConfigs()
-        } else {
-          Success(Map("default" -> ConfigFactory.parseString("""bootstrap.servers = "not-provided-kafka-host"""")))
-        }
-      }
+      clusterSecrets <- clusterSecretConfigs()
       clustersConfig <- Try {
         allReferencedClusters.flatMap { name =>
           clusterSecrets.find { case (k, _) => k == name } match {
