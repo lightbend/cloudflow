@@ -29,7 +29,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
   val defaultProvidedKafkaClusters = Map("default" -> """bootstrap.servers = "localhost:9092"""")
 
   @nowarn def testingKubeClientFactory(
-      protocolVersion: String = Cli.ProtocolVersion,
+      protocolVersion: String = App.ProtocolVersion,
       sparkVersion: String = Cli.RequiredSparkVersion,
       flinkVersion: String = Cli.RequiredFlinkVersion,
       providedPvcs: List[String] = defaultPvcMounts,

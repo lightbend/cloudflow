@@ -53,10 +53,10 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
           lazy val lvMsg = s"built with sbt-cloudflow version ${libraryVersion},"
 
           version match {
-            case v if Cli.SupportedApplicationDescriptorVersion > v =>
+            case v if Cli.ApplicationDescriptorVersion > v =>
               Failure(CliException(
                 s"Application ${lvMsg} is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again"))
-            case v if Cli.SupportedApplicationDescriptorVersion < v =>
+            case v if Cli.ApplicationDescriptorVersion < v =>
               Failure(CliException(
                 s"Application ${lvMsg} is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'"))
             case _ => Success(())
@@ -146,7 +146,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      _ <- validateProtocolVersion(client)
+      _ <- validateProtocolVersion(client, logger)
 
       // prepare the data
       baseApplicationCr <- loadCrFile(d.crFile)

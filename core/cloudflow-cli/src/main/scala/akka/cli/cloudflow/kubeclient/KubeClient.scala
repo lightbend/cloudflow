@@ -13,10 +13,6 @@ object KubeClient {
 
   val CloudflowResource = App.ResourceName
 
-  val CloudflowProtocolVersionConfigMap = "cloudflow-protocol-version"
-
-  val ProtocolVersionKey = "protocol-version"
-
   val SparkResource = "sparkapplications.sparkoperator.k8s.io"
 
   val FlinkResource = "flinkapplications.flink.k8s.io"

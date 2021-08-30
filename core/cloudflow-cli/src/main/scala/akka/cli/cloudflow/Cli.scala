@@ -16,9 +16,7 @@ object Cli {
   def defaultKubeClient(config: Option[File], logger: CliLogger) =
     new KubeClientFabric8(config)(logger)
 
-  val ProtocolVersion = "6"
-
-  val SupportedApplicationDescriptorVersion = 6
+  val ApplicationDescriptorVersion = 6
 
   val RequiredSparkVersion = "v1beta2"
 
