@@ -182,7 +182,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         d.aggregatedConfig,
         applicationCr,
         logbackContent,
-        () => client.getPvcs(namespace = applicationCr.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       // validation of the CR
       _ <- applicationDescriptorValidation(applicationCr)
