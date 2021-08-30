@@ -211,25 +211,16 @@ class KubeClientFabric8(
 
   def getOperatorProtocolVersion(): Try[String] = withClient { client =>
     for {
-      protocolVersionCM <- Try {
+      crd <- Try {
         client
-          .configMaps()
-          .inAnyNamespace()
-          .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
-          .list()
-          .getItems()
+          .apiextensions()
+          .v1beta1()
+          .customResourceDefinitions()
+          .withName(App.ResourceName)
+          .get()
       }
-      protocolVersion <- {
-        protocolVersionCM.size() match {
-          case 1 => Success(protocolVersionCM.get(0))
-          case x if x > 1 =>
-            Failure(
-              CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
-          case x if x < 1 => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
-        }
-      }
-      version <- Option(protocolVersion.getData.get(KubeClient.ProtocolVersionKey))
-        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the config map")))(Success(_))
+      version <- Option(crd.getMetadata.getLabels.get(App.ProtocolVersionKey))
+        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the CRD")))(Success(_))
     } yield {
       version
     }

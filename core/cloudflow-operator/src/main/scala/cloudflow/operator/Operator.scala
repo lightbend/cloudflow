@@ -47,20 +47,6 @@ import scala.util._
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")
 
-  val ProtocolVersion = "6"
-  val ProtocolVersionKey = "protocol-version"
-  val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
-  def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = {
-    new ConfigMapBuilder()
-      .withNewMetadata()
-      .withName(ProtocolVersionConfigMapName)
-      .withLabels((Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName)).asJava)
-      .withOwnerReferences(ownerReferences: _*)
-      .endMetadata()
-      .withData(Map(ProtocolVersionKey -> ProtocolVersion).asJava)
-      .build()
-  }
-
   val AppIdLabel = "com.lightbend.cloudflow/app-id"
   val ConfigFormatLabel = "com.lightbend.cloudflow/config-format"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
