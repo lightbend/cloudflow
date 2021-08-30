@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: cloudflowapplications.cloudflow.lightbend.com
   labels:
-    protocol-version: "6"
+    protocol-version: "7"
 spec:
   group: cloudflow.lightbend.com
   names:
