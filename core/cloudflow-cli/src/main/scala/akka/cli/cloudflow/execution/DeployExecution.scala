@@ -172,7 +172,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       applicationCr <- updateVolumeMounts(
         applicationCrReplicas,
         d.volumeMounts,
-        () => client.getPvcs(namespace = applicationCrReplicas.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       image <- getImageReference(applicationCr)
 
@@ -196,7 +196,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       // validate the Cr against the cluster
       _ <- referencedKafkaSecretExists(
         applicationCr,
-        () => client.getKafkaClusters(namespace = Some(applicationCr.spec.appId)).map(_.keys.toList))
+        () => client.getKafkaClusters(namespace = Some(namespace)).map(_.keys.toList))
 
       // streamlets configurations
       streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, d.microservices, () => {
