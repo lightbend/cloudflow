@@ -555,7 +555,11 @@ class KubeClientFabric8(
   def createCloudflowApp(spec: App.Spec, namespace: String): Try[String] =
     for {
       uid <- createCFApp(spec, namespace)
-      _ <- createCloudflowServiceAccount(spec.appId, namespace, getOwnerReference(spec.appId, uid))
+      _ <- {
+        if (spec.serviceAccount.isEmpty)
+          createCloudflowServiceAccount(spec.appId, namespace, getOwnerReference(spec.appId, uid))
+        else Success(())
+      }
     } yield { uid }
 
   def createMicroservicesApp(

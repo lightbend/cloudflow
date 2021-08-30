@@ -155,7 +155,13 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       }
 
       // prepare the data
-      localApplicationCr <- loadCrFile(d.crFile)
+      baseApplicationCr <- loadCrFile(d.crFile)
+      localApplicationCr = {
+        d.serviceAccount match {
+          case Some(sa) => baseApplicationCr.copy(spec = baseApplicationCr.spec.copy(serviceAccount = Some(sa)))
+          case _        => baseApplicationCr
+        }
+      }
       namespace = d.namespace.getOrElse(localApplicationCr.spec.appId)
 
       // update the replicas

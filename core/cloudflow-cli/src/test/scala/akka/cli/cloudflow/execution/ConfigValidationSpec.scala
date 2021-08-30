@@ -24,6 +24,7 @@ class ConfigValidationSpec extends AnyFlatSpec with Matchers with TryValues {
         agentPaths = Map(),
         version = None,
         libraryVersion = None,
+        serviceAccount = None,
         streamlets = Seq(
           App.Streamlet(
             name = "my-streamlet",

@@ -55,7 +55,8 @@ object CloudflowApplicationSpecBuilder {
       streamlets = streamlets,
       agentPaths = agentPaths,
       version = Some(BuildInfo.version),
-      libraryVersion = Some(BuildInfo.version))
+      libraryVersion = Some(BuildInfo.version),
+      serviceAccount = None)
   }
 
   private def toInOutletSchema(schema: SchemaDescriptor) = {
