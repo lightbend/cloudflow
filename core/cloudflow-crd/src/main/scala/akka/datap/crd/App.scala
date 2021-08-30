@@ -47,7 +47,7 @@ object App {
   final val Scope = "Namespaced"
 
   final val ProtocolVersionKey = "protocol-version"
-  final val ProtocolVersion = "6"
+  final val ProtocolVersion = "7"
 
   val customResourceDefinitionContext: CustomResourceDefinitionContext =
     new CustomResourceDefinitionContext.Builder()
