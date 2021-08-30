@@ -51,7 +51,7 @@ object Main extends {
       // TODO: Needed for Spark?
       Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
 
-      val client = connectToKubernetes()
+      val client = connectToKubernetes(settings)
 
       // this registers deserializer
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
@@ -122,9 +122,18 @@ object Main extends {
       .getOrElse(List())
   }
 
-  private def connectToKubernetes()(implicit system: ActorSystem): KubernetesClient = {
+  private def connectToKubernetes(settings: Settings)(implicit system: ActorSystem): KubernetesClient = {
     val conf = Config.autoConfigure(null)
-    val client = new DefaultKubernetesClient(conf).inAnyNamespace()
+    val client = {
+      settings.controlledNamespace match {
+        case Some(ns) =>
+          system.log.info(s"Connecting to namespace $ns")
+          new DefaultKubernetesClient(conf).inNamespace(ns)
+        case _ =>
+          system.log.info(s"Connecting to all namespaces")
+          new DefaultKubernetesClient(conf).inAnyNamespace()
+      }
+    }
     val cluster = Try { s": ${conf.getCurrentContext.getContext.getCluster}" }.getOrElse("")
     system.log.info(s"Connected to Kubernetes cluster $cluster")
     client

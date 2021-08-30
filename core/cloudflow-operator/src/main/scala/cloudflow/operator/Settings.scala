@@ -23,6 +23,7 @@ import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.Quantity
 
 import scala.io.{ BufferedSource, Source }
+import scala.util.{ Success, Try }
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   override def lookup = Settings
@@ -130,6 +131,11 @@ final case class Settings(config: Config) extends Extension {
 
   val flinkEnabled = config.getBoolean(s"$root.flink-enabled")
   val sparkEnabled = config.getBoolean(s"$root.spark-enabled")
+
+  lazy val controlledNamespace: Option[String] = Try(sys.env("CONTROLLED_NAMESPACE")) match {
+    case Success(str) if !str.trim.isEmpty => Some(str)
+    case _                                 => None
+  }
 
   val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
 
