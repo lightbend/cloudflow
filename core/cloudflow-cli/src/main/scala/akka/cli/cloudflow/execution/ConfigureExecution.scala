@@ -36,7 +36,7 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
       streamletsConfigs <- streamletsConfigs(
         currentCr,
         cloudflowConfig,
-        () => client.getKafkaClusters(None).map(parseValues))
+        () => client.getKafkaClusters(namespace = c.operatorNamespace).map(parseValues))
 
       uid <- client.uidCloudflowApp(currentCr.spec.appId, namespace)
       _ <- client.configureCloudflowApp(

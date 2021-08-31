@@ -190,11 +190,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       // validate the Cr against the cluster
       _ <- referencedKafkaSecretExists(
         applicationCr,
-        () => client.getKafkaClusters(namespace = Some(namespace)).map(_.keys.toList))
+        () => client.getKafkaClusters(namespace = d.operatorNamespace).map(_.keys.toList))
 
       // streamlets configurations
       streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, () => {
-        client.getKafkaClusters(None).map(parseValues)
+        client.getKafkaClusters(namespace = d.operatorNamespace).map(parseValues)
       })
 
       // Operations on the cluster
