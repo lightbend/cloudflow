@@ -215,6 +215,10 @@ object OptionsParser {
         commandParse[commands.Deploy, String](opt("serviceaccount"))((c, sa) => c.copy(serviceAccount = Some(sa)))
           .optional()
           .text("the serviceaccount to be used"),
+        commandParse[commands.Deploy, String](opt("operator-namespace"))((c, ons) =>
+          c.copy(operatorNamespace = Some(ons)))
+          .optional()
+          .text("the namespace where the operator is deployed"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -349,6 +353,10 @@ object OptionsParser {
         commandParse[commands.Configure, File](opt("logback-config"))((c, f) => c.copy(logbackConfig = Some(f)))
           .optional()
           .text("the logback configuration to be applied"),
+        commandParse[commands.Configure, String](opt("operator-namespace"))((c, ons) =>
+          c.copy(operatorNamespace = Some(ons)))
+          .optional()
+          .text("the namespace where the operator is deployed"),
         commandCheck[commands.Configure](c => {
           if (c.logbackConfig.isDefined && !c.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -487,6 +495,7 @@ object commands {
   case class Deploy(
       crFile: File = new File(""),
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       dockerUsername: String = "",
       dockerPassword: String = "",
       noRegistryCredentials: Boolean = false,
@@ -537,6 +546,7 @@ object commands {
   case class Configure(
       cloudflowApp: String = "",
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
