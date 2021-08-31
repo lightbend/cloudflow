@@ -1,0 +1,155 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cli-check-cr
+rules:
+  - apiGroups:
+    - "apiextensions.k8s.io"
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - "cloudflow.lightbend.com"
+    resources:
+      - cloudflowapplications
+      - cloudflowapplications/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - list
+      # If the target namespace already exists create is optional
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cli-check-r
+  namespace: my-namespace
+rules:
+  # The cloudflow-cli needs to manage cloudflow application secrets
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - list
+      - get
+      - create
+      - delete
+      - patch
+      - update
+  # The cloudflow-cli needs to check PVCs for spark and Flink apps
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - list
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cli-check-r-kafka
+  namespace: cloudflow
+rules:
+  # The cloudflow-cli needs to read the kafka secret in the operator namespace
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - list
+      - get
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cli-check-cr-bindings
+  namespace: my-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cli-check-cr
+subjects:
+  - kind: ServiceAccount
+    name: cli-check
+    namespace: my-namespace
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cli-check-r-bindings
+  namespace: my-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cli-check-r
+subjects:
+  - kind: ServiceAccount
+    name: cli-check
+    namespace: my-namespace
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cli-check-r-kafka-bindings
+  namespace: cloudflow
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cli-check-r-kafka
+subjects:
+  - kind: ServiceAccount
+    name: cli-check
+    namespace: my-namespace
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cli-check
+  namespace: my-namespace
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-node
+  namespace: my-namespace
+  labels:
+    app: multi-node-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      host: test-node
+  template:
+    metadata:
+      labels:
+        host: test-node
+    spec:
+      serviceAccountName: cli-check
+      automountServiceAccountToken: true
+      containers:
+      - image: andreatp/test-cloudflow-cli@sha256:bd0ada5d494a020adf45ef3492b79b15b9a43c0078ae670dc6cb66418b37a3fa
+        command: ["sleep", "infinity"]
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "2Gi"
+        imagePullPolicy: Always
+        name: test-node
+
