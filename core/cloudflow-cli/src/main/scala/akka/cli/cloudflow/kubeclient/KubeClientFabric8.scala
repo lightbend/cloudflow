@@ -66,7 +66,7 @@ class KubeClientFabric8(
     val client = {
       val _client = clientFactory(getConfig())
       Try {
-        _client.endpoints().list().getItems()
+        _client.secrets().list().getItems()
         _client
       }.recover {
         case ex: Throwable =>
