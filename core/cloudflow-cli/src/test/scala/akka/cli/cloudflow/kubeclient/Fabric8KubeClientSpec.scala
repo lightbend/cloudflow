@@ -75,88 +75,88 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
     apps.get.head shouldBe crSummary
   }
 
-  // it should "not list applications in a different namespace" in {
-  //   // Arrange
-  //   setupCr()
+  it should "not list applications in a different namespace" in {
+    // Arrange
+    setupCr()
 
-  //   // Act
-  //   val apps =
-  //     new KubeClientFabric8(None, (_) => server.getClient).listCloudflowApps(Some("my-ns"))
+    // Act
+    val apps =
+      new KubeClientFabric8(None, (_) => server.getClient).listCloudflowApps(Some("my-ns"))
 
-  //   // Assert
-  //   apps.isSuccess shouldBe true
-  //   apps.get.size shouldBe 0
-  // }
+    // Assert
+    apps.isSuccess shouldBe true
+    apps.get.size shouldBe 0
+  }
 
-  // it should "show the status of an application from the CR" in {
-  //   // Arrange
-  //   setupCr()
+  it should "show the status of an application from the CR" in {
+    // Arrange
+    setupCr()
 
-  //   // Act
-  //   val status =
-  //     new KubeClientFabric8(None, (_) => server.getClient).getCloudflowAppStatus("swiss-knife", "swiss-knife")
+    // Act
+    val status =
+      new KubeClientFabric8(None, (_) => server.getClient).getCloudflowAppStatus("swiss-knife", "swiss-knife")
 
-  //   // Assert
-  //   status.isSuccess shouldBe true
-  //   status.get.status shouldBe "Pending"
-  //   status.get.summary shouldBe crSummary
-  //   status.get.endpointsStatuses.size shouldBe 0
-  //   status.get.streamletsStatuses.size shouldBe 10
-  // }
+    // Assert
+    status.isSuccess shouldBe true
+    status.get.status shouldBe "Pending"
+    status.get.summary shouldBe crSummary
+    status.get.endpointsStatuses.size shouldBe 0
+    status.get.streamletsStatuses.size shouldBe 10
+  }
 
-  // it should "create a namespace" in {
-  //   // Arrange
-  //   val client = new KubeClientFabric8(None, (_) => server.getClient)
+  it should "create a namespace" in {
+    // Arrange
+    val client = new KubeClientFabric8(None, (_) => server.getClient)
 
-  //   val exampleNamespace = new NamespaceBuilder().withNewMetadata().withName("example").endMetadata().build()
-  //   server.expect.post
-  //     .withPath("/api/v1/namespaces")
-  //     .andReturn(HttpURLConnection.HTTP_CREATED, exampleNamespace)
-  //     .once
+    val exampleNamespace = new NamespaceBuilder().withNewMetadata().withName("example").endMetadata().build()
+    server.expect.post
+      .withPath("/api/v1/namespaces")
+      .andReturn(HttpURLConnection.HTTP_CREATED, exampleNamespace)
+      .once
 
-  //   server.expect.get
-  //     .withPath("/api/v1/namespaces")
-  //     .andReturn(HttpURLConnection.HTTP_OK, exampleNamespace)
-  //     .once
+    server.expect.get
+      .withPath("/api/v1/namespaces")
+      .andReturn(HttpURLConnection.HTTP_OK, exampleNamespace)
+      .once
 
-  //   // Act
-  //   val res = client.createNamespace("example")
+    // Act
+    val res = client.createNamespace("example")
 
-  //   // Assert
-  //   res.isSuccess shouldBe true
-  // }
+    // Assert
+    res.isSuccess shouldBe true
+  }
 
-  // it should "create docker credentials" in {
-  //   // Arrange
-  //   val client = new KubeClientFabric8(None, (_) => server.getClient)
+  it should "create docker credentials" in {
+    // Arrange
+    val client = new KubeClientFabric8(None, (_) => server.getClient)
 
-  //   val exampleNamespace = new NamespaceBuilder().withNewMetadata().withName("example").endMetadata().build()
-  //   server.expect.get
-  //     .withPath("/api/v1/namespaces")
-  //     .andReturn(HttpURLConnection.HTTP_OK, exampleNamespace)
-  //     .once
+    val exampleNamespace = new NamespaceBuilder().withNewMetadata().withName("example").endMetadata().build()
+    server.expect.get
+      .withPath("/api/v1/namespaces")
+      .andReturn(HttpURLConnection.HTTP_OK, exampleNamespace)
+      .once
 
-  //   // return an empty answer
-  //   val emptySecretBody = new SecretBuilder().build()
-  //   server.expect.get
-  //     .withPath("/api/v1/namespaces/example/secrets")
-  //     .andReturn(HttpURLConnection.HTTP_OK, emptySecretBody)
-  //     .once
+    // return an empty answer
+    val emptySecretBody = new SecretBuilder().build()
+    server.expect.get
+      .withPath("/api/v1/namespaces/example/secrets")
+      .andReturn(HttpURLConnection.HTTP_OK, emptySecretBody)
+      .once
 
-  //   server.expect.post
-  //     .withPath("/api/v1/namespaces/example/secrets")
-  //     .andReturn(HttpURLConnection.HTTP_OK, emptySecretBody)
-  //     .once
+    server.expect.post
+      .withPath("/api/v1/namespaces/example/secrets")
+      .andReturn(HttpURLConnection.HTTP_OK, emptySecretBody)
+      .once
 
-  //   // Act
-  //   val res = client.createImagePullSecret(
-  //     namespace = "example",
-  //     dockerRegistryURL = "registry.io",
-  //     dockerUsername = "test-username",
-  //     dockerPassword = "test-password")
+    // Act
+    val res = client.createImagePullSecret(
+      namespace = "example",
+      dockerRegistryURL = "registry.io",
+      dockerUsername = "test-username",
+      dockerPassword = "test-password")
 
-  //   // Assert
-  //   res.isSuccess shouldBe true
-  // }
+    // Assert
+    res.isSuccess shouldBe true
+  }
 
 }
