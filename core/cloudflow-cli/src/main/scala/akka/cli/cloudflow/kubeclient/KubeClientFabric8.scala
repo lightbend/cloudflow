@@ -227,7 +227,7 @@ class KubeClientFabric8(
           case 1 => Success(protocolVersionSecret.get(0))
           case x if x > 1 =>
             Failure(
-              CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
+              CliException("Multiple Cloudflow operators detected in the cluster. Specify an 'operator-namespace' to select the correct one. Exiting"))
           case x if x < 1 => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
         }
       }
