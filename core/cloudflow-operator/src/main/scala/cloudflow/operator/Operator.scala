@@ -62,6 +62,17 @@ object Operator {
 
   private lazy val fabric8ExecutionContext = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
 
+  def ProtocolVersionSecret(ownerReferences: List[OwnerReference]) = {
+    new SecretBuilder()
+      .withNewMetadata()
+      .withName(App.CloudflowProtocolVersion)
+      .withLabels((Map(App.CloudflowProtocolVersion -> App.CloudflowProtocolVersion)).asJava)
+      .withOwnerReferences(ownerReferences: _*)
+      .endMetadata()
+      .withStringData(Map(App.ProtocolVersionKey -> App.ProtocolVersion).asJava)
+      .build()
+  }
+
   def handleEvents(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String, podNamespace: String)(
       implicit system: ActorSystem,
       mat: Materializer,

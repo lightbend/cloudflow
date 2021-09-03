@@ -16,7 +16,7 @@ final case class UpdateCredentialsExecution(u: UpdateCredentials, client: KubeCl
   def run(): Try[UpdateCredentialsResult] = {
     logger.info("Executing command UpdateCredentials")
     for {
-      _ <- validateProtocolVersion(client, logger)
+      _ <- validateProtocolVersion(client, u.operatorNamespace, logger)
       namespace = u.namespace.getOrElse(u.cloudflowApp)
       _ <- client.createNamespace(namespace)
       _ <- client.createImagePullSecret(

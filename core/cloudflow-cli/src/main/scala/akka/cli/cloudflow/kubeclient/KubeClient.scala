@@ -39,7 +39,7 @@ trait KubeClient {
 
   def getAppInputSecret(name: String, namespace: String): Try[String]
 
-  def getOperatorProtocolVersion(): Try[String]
+  def getOperatorProtocolVersion(namespace: Option[String]): Try[String]
 
   // C
   def createCloudflowApp(spec: App.Spec, namespace: String): Try[String]

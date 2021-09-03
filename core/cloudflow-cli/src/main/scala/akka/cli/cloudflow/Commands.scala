@@ -76,6 +76,19 @@ object OptionsParser {
       })
   }
 
+  private val operatorNamespace = {
+    import scala.language.existentials
+    opt[String]('n', "operator-namespace")
+      .text(s"the namespace where the operator is deployed")
+      .action((ns, o) => {
+        val cmd = o.command match {
+          case Some(v: commands.Command[_]) => Some(v.withOperatorNamespace(ns))
+          case _                            => None
+        }
+        o.copy(command = cmd)
+      })
+  }
+
   private def detailedHelp(command: String)(msg: String) = {
     // this is hackish, scopt doesn't support short/long helps and here we are simulating the long option
     opt[Unit]("help")
@@ -120,7 +133,7 @@ object OptionsParser {
     cmd("list")
       .action((_, o) => o.copy(command = Some(commands.List())))
       .text("list available cloudflow applications")
-      .children(namespace, outputFmt)
+      .children(namespace, operatorNamespace, outputFmt)
   }
 
   private def commandParse[C <: commands.Command[_]: ClassTag, T: Read](parser: OParser[T, Options])(f: (C, T) => C) = {
@@ -149,6 +162,7 @@ object OptionsParser {
           .required()
           .text("the name of the cloudflow application"),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -161,6 +175,7 @@ object OptionsParser {
           .required()
           .text("the name of the cloudflow application"),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -215,10 +230,6 @@ object OptionsParser {
         commandParse[commands.Deploy, String](opt("serviceaccount"))((c, sa) => c.copy(serviceAccount = Some(sa)))
           .optional()
           .text("the serviceaccount to be used"),
-        commandParse[commands.Deploy, String](opt("operator-namespace"))((c, ons) =>
-          c.copy(operatorNamespace = Some(ons)))
-          .optional()
-          .text("the namespace where the operator is deployed"),
         commandCheck[commands.Deploy](d => {
           if (d.logbackConfig.isDefined && !d.logbackConfig.get.exists()) {
             failure("the provided logback configuration file doesn't exist")
@@ -256,6 +267,7 @@ object OptionsParser {
           }
         }),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -293,6 +305,7 @@ object OptionsParser {
           }
         }),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -305,6 +318,7 @@ object OptionsParser {
           .required()
           .text("the name of the cloudflow application"),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -329,6 +343,7 @@ object OptionsParser {
           }
         }),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -368,6 +383,7 @@ object OptionsParser {
           } else success
         }),
         namespace,
+        operatorNamespace,
         outputFmt)
   }
 
@@ -423,9 +439,14 @@ object commands {
     def withOutput(fmt: format.Format): Command[T]
 
     def withNamespace(namespace: String): Command[T]
+
+    def withOperatorNamespace(namespace: String): Command[T]
   }
 
-  case class Version(namespace: Option[String] = None, output: format.Format = format.Default)
+  case class Version(
+      namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
+      output: format.Format = format.Default)
       extends Command[VersionResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[VersionResult] = {
@@ -439,9 +460,14 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
-  case class List(namespace: Option[String] = None, output: format.Format = format.Default)
+  case class List(
+      namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
+      output: format.Format = format.Default)
       extends Command[ListResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[ListResult] = {
@@ -455,9 +481,15 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
-  case class Status(cloudflowApp: String = "", namespace: Option[String] = None, output: format.Format = format.Default)
+  case class Status(
+      cloudflowApp: String = "",
+      namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
+      output: format.Format = format.Default)
       extends Command[StatusResult] {
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[StatusResult] = {
@@ -471,11 +503,14 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   case class Configuration(
       cloudflowApp: String = "",
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       output: format.Format = format.Default)
       extends Command[ConfigurationResult] {
 
@@ -490,6 +525,8 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   case class Deploy(
@@ -522,11 +559,14 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   case class Undeploy(
       cloudflowApp: String = "",
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       output: format.Format = format.Default)
       extends Command[UndeployResult] {
 
@@ -541,6 +581,8 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   case class Configure(
@@ -565,6 +607,8 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   trait WithConfiguration {
@@ -610,6 +654,7 @@ object commands {
   case class UpdateCredentials(
       cloudflowApp: String = "",
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       dockerRegistry: String = "",
       username: String = "",
       password: String = "",
@@ -628,11 +673,14 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
   case class Scale(
       cloudflowApp: String = "",
       namespace: Option[String] = None,
+      operatorNamespace: Option[String] = None,
       scales: Map[String, Int] = Map(),
       output: format.Format = format.Default)
       extends Command[ScaleResult] {
@@ -648,6 +696,8 @@ object commands {
     def withOutput(fmt: format.Format) = this.copy(output = fmt)
 
     def withNamespace(namespace: String) = this.copy(namespace = Some(namespace))
+
+    def withOperatorNamespace(namespace: String) = this.copy(operatorNamespace = Some(namespace))
   }
 
 }

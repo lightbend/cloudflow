@@ -17,7 +17,7 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
   def run(): Try[ConfigureResult] = {
     logger.info("Executing command Configure")
     for {
-      _ <- validateProtocolVersion(client, logger)
+      _ <- validateProtocolVersion(client, c.operatorNamespace, logger)
       namespace = c.namespace.getOrElse(c.cloudflowApp)
 
       currentCr <- client.readCloudflowApp(c.cloudflowApp, namespace).map {

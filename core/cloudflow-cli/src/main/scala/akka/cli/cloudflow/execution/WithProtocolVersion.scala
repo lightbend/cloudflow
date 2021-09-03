@@ -13,9 +13,9 @@ import scala.util.{ Failure, Success, Try }
 
 trait WithProtocolVersion {
 
-  def validateProtocolVersion(client: KubeClient, logger: CliLogger): Try[String] = {
+  def validateProtocolVersion(client: KubeClient, namespace: Option[String], logger: CliLogger): Try[String] = {
     (for {
-      version <- client.getOperatorProtocolVersion()
+      version <- client.getOperatorProtocolVersion(namespace)
     } yield {
       logger.info(s"Protocol version found: $version")
       version match {

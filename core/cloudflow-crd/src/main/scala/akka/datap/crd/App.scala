@@ -46,6 +46,7 @@ object App {
 
   final val Scope = "Namespaced"
 
+  final val CloudflowProtocolVersion = "cloudflow-protocol-version"
   final val ProtocolVersionKey = "protocol-version"
   final val ProtocolVersion = "7"
 

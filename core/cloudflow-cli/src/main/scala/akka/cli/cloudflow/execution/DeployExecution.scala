@@ -146,7 +146,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      _ <- validateProtocolVersion(client, logger)
+      _ <- validateProtocolVersion(client, d.operatorNamespace, logger)
 
       // prepare the data
       baseApplicationCr <- loadCrFile(d.crFile)

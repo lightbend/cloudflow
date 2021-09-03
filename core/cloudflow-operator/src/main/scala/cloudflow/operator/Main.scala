@@ -61,6 +61,7 @@ object Main extends {
       checkCRD(settings, client)
 
       val ownerReferences = getDeploymentOwnerReferences(settings, client)
+      installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
       val flinkRunner = {
@@ -151,23 +152,22 @@ object Main extends {
         .get()) match {
       case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
         system.log.info(s"CRD found at version ${App.GroupVersion}")
-        Try(crd.getMetadata.getLabels.get(App.ProtocolVersionKey)) match {
-          case Success(protocolVersion) =>
-            if (protocolVersion != App.ProtocolVersion) {
-              system.log.error(
-                s"The CRD is incompatible the current version of the Cloudflow operator. (CRD protocol version: $protocolVersion), operator protocol version: ${App.ProtocolVersion}")
-              throw new Exception("Protocol version mismatch")
-            }
-          case _ =>
-            system.log.error(
-              "The installed CRD doesn't contain the protocol version label, please upgrade it to the same version as the operator")
-            throw new Exception("Protocol version not found")
-        }
       case _ =>
         system.log.error(
           s"Cloudflow CRD not found, please install it: 'kubectl apply -f https://raw.githubusercontent.com/lightbend/cloudflow/v${BuildInfo.version}/core/cloudflow-crd/kubernetes/cloudflow-crd.yaml'")
         throw new Exception("Cloudflow CRD not found")
     }
+  }
+
+  private def installProtocolVersion(
+      settings: Settings,
+      client: KubernetesClient,
+      ownerReferences: List[OwnerReference]): Unit = {
+    client
+      .secrets()
+      .inNamespace(settings.podNamespace)
+      .withName(App.CloudflowProtocolVersion)
+      .createOrReplace(Operator.ProtocolVersionSecret(ownerReferences))
   }
 
   private def getGCInfo: List[(String, javax.management.ObjectName)] = {
