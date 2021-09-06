@@ -209,18 +209,30 @@ class KubeClientFabric8(
       }
   }
 
-  def getOperatorProtocolVersion(): Try[String] = withClient { client =>
+  def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = withClient { client =>
+    val secrets = namespace match {
+      case Some(ns) => client.secrets().inNamespace(ns)
+      case _        => client.secrets().inAnyNamespace()
+    }
+
     for {
-      crd <- Try {
-        client
-          .apiextensions()
-          .v1beta1()
-          .customResourceDefinitions()
-          .withName(App.ResourceName)
-          .get()
+      protocolVersionSecret <- Try {
+        secrets
+          .withLabel(App.CloudflowProtocolVersion)
+          .list()
+          .getItems()
       }
-      version <- Option(crd.getMetadata.getLabels.get(App.ProtocolVersionKey))
-        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the CRD")))(Success(_))
+      protocolVersion <- {
+        protocolVersionSecret.size() match {
+          case 1 => Success(protocolVersionSecret.get(0))
+          case x if x > 1 =>
+            Failure(CliException(
+              "Multiple Cloudflow operators detected in the cluster. Specify an 'operator-namespace' to select the correct one. Exiting"))
+          case x if x < 1 => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
+        }
+      }
+      version <- Option(Base64Helper.decode(protocolVersion.getData.get(App.ProtocolVersionKey)))
+        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the secret")))(Success(_))
     } yield {
       version
     }
