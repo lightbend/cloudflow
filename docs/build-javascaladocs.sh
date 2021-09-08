@@ -21,7 +21,5 @@ else
     echo ${DIRECTORY} && \
     mkdir -p "./target/staging/docs/${DIRECTORY}/api" && \
     mv "./target/cloudflow/core/target/scala-2.12/unidoc" "./target/staging/docs/${DIRECTORY}/api/scaladoc" && \
-    ls -al "./target/staging/docs/${DIRECTORY}/api/scaladoc" && \
-    mv "./target/cloudflow/core/target/javaunidoc" "./target/staging/docs/${DIRECTORY}/api/javadoc") && \
-    ls -al "./target/staging/docs/${DIRECTORY}/api/javadoc"
+    mv "./target/cloudflow/core/target/javaunidoc" "./target/staging/docs/${DIRECTORY}/api/javadoc")
 fi
