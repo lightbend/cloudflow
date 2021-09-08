@@ -12,6 +12,11 @@ jobs:
     - run: |
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    - name: Setup java
+      uses: joschi/setup-jdk@v2
+      with:
+        java-version: 8
+        architecture: x64
     - name: Build documentation  
       run: |
         sudo snap install yq
