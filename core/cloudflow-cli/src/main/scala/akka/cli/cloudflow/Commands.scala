@@ -78,7 +78,7 @@ object OptionsParser {
 
   private val operatorNamespace = {
     import scala.language.existentials
-    opt[String]('n', "operator-namespace")
+    opt[String]("operator-namespace")
       .text(s"the namespace where the operator is deployed")
       .action((ns, o) => {
         val cmd = o.command match {
@@ -431,6 +431,7 @@ object commands {
   sealed trait Command[T] {
     val output: format.Format
     val namespace: Option[String]
+    val operatorNamespace: Option[String]
 
     def execution(kubeClient: => KubeClient, logger: CliLogger): Execution[T]
 
