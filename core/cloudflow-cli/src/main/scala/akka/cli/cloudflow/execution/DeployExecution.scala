@@ -204,7 +204,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         if (d.noRegistryCredentials) Success(())
         else {
           client.createImagePullSecret(
-            namespace = name,
+            namespace = namespace,
             dockerRegistryURL = image.registry.getOrElse(""),
             dockerUsername = d.dockerUsername,
             dockerPassword = d.dockerPassword)
