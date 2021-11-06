@@ -442,6 +442,21 @@ object PodsConfig {
                   .withReadOnly(pvc.readOnly)
                   .build())
               .build()
+          case cm: CloudflowConfig.ConfigMapVolume =>
+            new VolumeBuilder()
+              .withName(name)
+              .withConfigMap(
+                new ConfigMapVolumeSourceBuilder()
+                  .withName(cm.name)
+                  .withOptional(cm.optional)
+                  .withItems(cm.items
+                    .map {
+                      case (k, item) => new KeyToPathBuilder().withKey(k).withPath(item.path).build()
+                    }
+                    .toList
+                    .asJava)
+                  .build())
+              .build()
           case unknown =>
             logger.error(s"Found unknown $unknown volume type skipping")
             throw new Exception(s"Unknown volume $unknown")

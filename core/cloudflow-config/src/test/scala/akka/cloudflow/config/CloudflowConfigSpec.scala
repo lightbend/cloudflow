@@ -179,6 +179,27 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |              read-only = true
                    |            }
                    |          }
+                   |          mycm {
+                   |            config-map {
+                   |              name = myconfigmap
+                   |            }
+                   |          }
+                   |          yourcm {
+                   |            config-map {
+                   |              name = yourconfigmap
+                   |              optional = true
+                   |              items {
+                   |                cmkey1 {
+                   |                  path = cmpath1
+                   |                }
+                   |                cmkey2 {
+                   |                  path = cmpath2
+                   |                  # mode flag can be added/supported later here, eg:
+                   |                  # mode = 777
+                   |                }
+                   |              }
+                   |            }
+                   |          }
                    |        }
                    |      }
                    |    }
@@ -192,11 +213,19 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     // Assert
     val pod = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
     pod.volumes.nonEmpty shouldBe true
+
     pod.volumes("foo").isInstanceOf[SecretVolume] shouldBe true
     pod.volumes("foo").asInstanceOf[SecretVolume].name shouldBe "mysecret"
+
     pod.volumes("bar").isInstanceOf[PvcVolume] shouldBe true
     pod.volumes("bar").asInstanceOf[PvcVolume].name shouldBe "/etc/my/file"
     pod.volumes("bar").asInstanceOf[PvcVolume].readOnly shouldBe true
+
+    pod.volumes("mycm") shouldBe ConfigMapVolume("myconfigmap", optional = false, items = Map.empty)
+    pod.volumes("yourcm") shouldBe ConfigMapVolume(
+      "yourconfigmap",
+      optional = true,
+      items = Map("cmkey1" -> ConfigMapVolumeKeyToPath("cmpath1"), "cmkey2" -> ConfigMapVolumeKeyToPath("cmpath2")))
   }
 
   it should "parse properly the volume-mounts" in {
