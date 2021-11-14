@@ -222,8 +222,8 @@ class AkkaRunnerSpec
                                    |         name = yourconfigmap
                                    |         optional = true
                                    |         items {
-                                   |           barkey1 {
-                                   |            path = barpath1
+                                   |           "app.conf" {
+                                   |             path = my-app.conf
                                    |           }
                                    |           barkey2 {
                                    |             path = barpath2
@@ -264,7 +264,7 @@ class AkkaRunnerSpec
         .getItems
         .asScala
         .map(i => (i.getKey, i.getPath)) must contain allElementsOf List(
-        ("barkey1", "barpath1"),
+        ("app.conf", "my-app.conf"),
         ("barkey2", "barpath2"))
 
       crd.getSpec.getTemplate.getSpec.getContainers.asScala.head.getVolumeMounts.asScala.map(vm =>

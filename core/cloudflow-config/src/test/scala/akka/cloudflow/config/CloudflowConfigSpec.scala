@@ -9,9 +9,9 @@ import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
 import akka.datap.crd.App
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValueType}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigObject, ConfigValueType }
 import io.fabric8.kubernetes.client.utils.Serialization
-import org.scalatest.{Assertion, OptionValues, TryValues}
+import org.scalatest.{ Assertion, OptionValues, TryValues }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pureconfig.ConfigSource
@@ -189,8 +189,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |              name = yourconfigmap
                    |              optional = true
                    |              items {
-                   |                cmkey1 {
-                   |                  path = cmpath1
+                   |                "cmkey1.json" {
+                   |                  path = your-cmkey1.json
                    |                }
                    |                cmkey2 {
                    |                  path = cmpath2
@@ -225,7 +225,9 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     pod.volumes("yourcm") shouldBe ConfigMapVolume(
       "yourconfigmap",
       optional = true,
-      items = Map("cmkey1" -> ConfigMapVolumeKeyToPath("cmpath1"), "cmkey2" -> ConfigMapVolumeKeyToPath("cmpath2")))
+      items = Map(
+        "cmkey1.json" -> ConfigMapVolumeKeyToPath("your-cmkey1.json"),
+        "cmkey2" -> ConfigMapVolumeKeyToPath("cmpath2")))
   }
 
   it should "parse properly the volume-mounts" in {
@@ -940,8 +942,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                     |                name = yourconfigmap
                     |                optional = true
                     |                items {
-                    |                  barkey1 {
-                    |                   path = barpath1
+                    |                  "app.conf" {
+                    |                    path = my-app.conf
                     |                  }
                     |                  barkey2 {
                     |                    path = barpath2
@@ -959,17 +961,22 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     // Act
     val res = ConfigFactory.empty().withFallback(writeConfig(loadAndValidate(ConfigSource.string(config)).get))
 
-    def shouldBeConfigMap(configMapCfg: Config, name: String, optional: Boolean = false, items: Map[String, String] = Map.empty): Assertion = {
+    def shouldBeConfigMap(
+        configMapCfg: Config,
+        name: String,
+        optional: Boolean = false,
+        items: Map[String, String] = Map.empty): Assertion = {
       val configMap = configMapCfg.getConfig("config-map")
       configMap.getString("name") shouldBe name
       configMap.getBoolean("optional") shouldBe optional
 
       if (items.nonEmpty) {
         val cfgItems = configMap.getConfig("items")
-        cfgItems.entrySet().asScala should have size(items.size)
+        cfgItems.entrySet().asScala should have size (items.size)
 
-        items.foreach { case (key, value) =>
-          cfgItems.getConfig(key).getString("path") shouldBe value
+        items.foreach {
+          case (key, value) =>
+            cfgItems.getConfig(s""""$key"""").getString("path") shouldBe value
         }
       }
 
@@ -979,7 +986,11 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     // Assert
     val vols = res.getConfig(s"cloudflow.streamlets.akka.kubernetes.pods.pod.volumes")
     shouldBeConfigMap(vols.getConfig("foo"), "myconfigmap")
-    shouldBeConfigMap(vols.getConfig("bar"), "yourconfigmap", optional = true, Map("barkey1" -> "barpath1", "barkey2" -> "barpath2"))
+    shouldBeConfigMap(
+      vols.getConfig("bar"),
+      "yourconfigmap",
+      optional = true,
+      Map("app.conf" -> "my-app.conf", "barkey2" -> "barpath2"))
   }
 
   it should "generate proper default mounts" in {
