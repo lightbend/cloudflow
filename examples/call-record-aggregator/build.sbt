@@ -7,7 +7,7 @@ lazy val root =
     .settings(
       name := "root",
       scalafmtOnCompile := true,
-      skip in publish := true,
+      publish / skip := true,
     )
     .withId("root")
     .settings(commonSettings)
@@ -81,7 +81,7 @@ def appModule(moduleID: String): Project = {
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.12.15",
   javacOptions += "-Xlint:deprecation",
   scalacOptions ++= Seq(
     "-encoding", "UTF-8",
@@ -96,9 +96,9 @@ lazy val commonSettings = Seq(
     "-unchecked"
   ),
 
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+  Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value
 
 )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

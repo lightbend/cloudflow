@@ -17,8 +17,8 @@ libraryDependencies ++= Seq(
   "org.codehaus.plexus" % "plexus-archiver" % "4.2.3")
 
 addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0-RC18")
-addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.31")
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.10.2"
+addSbtPlugin("com.thesamet" % "sbt-protoc" % "0.99.34")
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.3"
 
 addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")

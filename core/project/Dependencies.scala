@@ -3,13 +3,13 @@ import sbt._
 
 object Dependencies {
 
-  val Scala212 = "2.12.12" // has to be the very same as sbt
-  val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
+  val Scala212 = "2.12.15" // has to be the very same as sbt
+  val Scala213 = "2.13.7" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
-    val akka = "2.6.15"
-    val akkaHttp = "10.2.4"
-    val akkaGrpc = "2.0.0"
+    val akka = "2.6.17"
+    val akkaHttp = "10.2.7"
+    val akkaGrpc = "2.1.1"
     val alpakkaKafka = "2.0.5"
     val akkaMgmt = "1.0.8"
     val flink = "1.10.3"
@@ -26,7 +26,7 @@ object Dependencies {
 
     val typesafeConfig = "com.typesafe" % "config" % "1.4.1"
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.14.0"
-    val scopt = "com.github.scopt" %% "scopt" % "4.0.0-RC2"
+    val scopt = "com.github.scopt" %% "scopt" % "4.0.1"
     val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.10.0"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
@@ -86,7 +86,7 @@ object Dependencies {
     val sparkSql = "org.apache.spark" %% "spark-sql" % Versions.spark
     val sparkSqlKafka = "org.apache.spark" %% "spark-sql-kafka-0-10" % Versions.spark
     val sparkStreaming = "org.apache.spark" %% "spark-streaming" % Versions.spark
-    val sparkProto = "com.thesamet.scalapb" %% "sparksql-scalapb" % "0.9.0"
+    val sparkProto = "com.thesamet.scalapb" %% "sparksql-scalapb" % "0.11.0"
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson

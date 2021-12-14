@@ -6,10 +6,10 @@ enablePlugins(
   CloudflowAkkaPlugin,
 )
 
-scalaVersion := "2.12.12"
+scalaVersion := "2.12.15"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http2-support" % "10.2.0",
 )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

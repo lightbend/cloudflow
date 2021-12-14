@@ -7,7 +7,7 @@ lazy val root =
     .enablePlugins(ScalafmtPlugin)
     .settings(
       name := "root",
-      skip in publish := true,
+      publish / skip := true,
       scalafmtOnCompile := true,
     )
     .withId("root")
@@ -55,7 +55,7 @@ lazy val ridesingestor = appModule("ridesingestor")
     )
   )
   .settings(
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
   .dependsOn(datamodel)
 
@@ -69,7 +69,7 @@ lazy val processor = appModule("processor")
     )
   )
   .settings(
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
   .dependsOn(datamodel)
 
@@ -96,7 +96,7 @@ def appModule(moduleID: String): Project = {
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.12.15",
   scalacOptions ++= Seq(
     "-encoding", "UTF-8",
     "-target:jvm-1.8",
@@ -110,6 +110,6 @@ lazy val commonSettings = Seq(
     "-unchecked"
   ),
 
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+  Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value,
 )

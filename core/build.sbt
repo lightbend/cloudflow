@@ -316,7 +316,7 @@ lazy val cloudflowAkkaTestkit =
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
       javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked"),
-      (sourceGenerators in Test) += (avroScalaGenerateSpecific in Test).taskValue)
+      (Test / sourceGenerators) += (Test / avroScalaGenerateSpecific).taskValue)
 
 lazy val cloudflowAkkaUtil =
   Project(id = "cloudflow-akka-util", base = file("cloudflow-akka-util"))
@@ -419,7 +419,7 @@ lazy val cloudflowRunner =
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
-      artifactName in (Compile, packageBin) := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
+      Compile / packageBin / artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
         "runner" + "." + artifact.extension
       },
       buildInfoKeys := Seq[BuildInfoKey](
@@ -487,11 +487,11 @@ lazy val cloudflowMavenArchetype =
       scalafmtOnCompile := true)
 
 lazy val root = Project(id = "root", base = file("."))
-  .settings(name := "root", skip in publish := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
+  .settings(name := "root", publish / skip := true, scalafmtOnCompile := true, crossScalaVersions := Seq())
   .withId("root")
   .enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin)
   .settings(
-    unidocAllSources in (JavaUnidoc, unidoc) ~= { v =>
+    JavaUnidoc / unidoc / unidocAllSources ~= { v =>
       v.map(_.filterNot(f => Common.javadocDisabledFor.exists(f.getAbsolutePath.endsWith(_))))
     },
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
