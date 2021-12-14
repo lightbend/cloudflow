@@ -3,8 +3,8 @@ import sbt._
 
 object Dependencies {
 
-  val Scala212 = "2.12.12" // has to be the very same as sbt
-  val Scala213 = "2.13.3" // Scala 2.13.4 breaks scopt when using "--help"
+  val Scala212 = "2.12.15" // has to be the very same as sbt
+  val Scala213 = "2.13.7" // Scala 2.13.4 breaks scopt when using "--help"
 
   object Versions {
     val akka = "2.6.15"
