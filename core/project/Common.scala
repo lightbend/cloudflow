@@ -40,7 +40,7 @@ object Common extends AutoPlugin {
     // TODO: disabled since there are problems in cross JVMs compilation re-enable me possibly
     javafmtOnCompile := false,
     run / fork := false,
-    unidocGenjavadocVersion := "0.17",
+    unidocGenjavadocVersion := "0.18",
     // show full stack traces and test case durations
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     // -a Show stack traces and exception class name for AssertionErrors.
