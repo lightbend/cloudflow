@@ -66,19 +66,28 @@ object CloudflowConfig {
   // Volumes
   sealed trait Volume
   final case class SecretVolume(name: String) extends Volume
+  final case class ConfigMapVolume(
+      name: String,
+      optional: Boolean = false,
+      items: Map[String, ConfigMapVolumeKeyToPath] = Map.empty)
+      extends Volume
+  final case class ConfigMapVolumeKeyToPath(path: String)
   final case class PvcVolume(name: String, readOnly: Boolean = true) extends Volume
 
   implicit val secretVolumeHint = ProductHint[SecretVolume](allowUnknownKeys = false)
   implicit val pvcVolumeHint = ProductHint[PvcVolume](allowUnknownKeys = false)
+  implicit val configMapVolumeHint = ProductHint[ConfigMapVolume](allowUnknownKeys = false)
 
   private val secretReader = exportReader[SecretVolume].instance
   private val pvcReader = exportReader[PvcVolume].instance
+  private val configMapReader = exportReader[ConfigMapVolume].instance
 
   private def extractByType(typ: String, objCur: ConfigObjectCursor): ConfigReader.Result[Volume] = typ match {
-    case "secret" => secretReader.from(objCur)
-    case "pvc"    => pvcReader.from(objCur)
+    case "secret"     => secretReader.from(objCur)
+    case "pvc"        => pvcReader.from(objCur)
+    case "config-map" => configMapReader.from(objCur)
     case t =>
-      objCur.failed(CannotConvert(t, "Volume", s"should be secret or pvc"))
+      objCur.failed(CannotConvert(t, "Volume", s"should be secret, pvc or config-map"))
   }
 
   implicit val volumeConfigReader: ConfigReader[Volume] = ConfigReader.fromCursor[Volume] { cur =>
@@ -105,6 +114,7 @@ object CloudflowConfig {
 
   private val pvcVolumeWriter = exportWriter[PvcVolume].instance
   private val secretVolumeWriter = exportWriter[SecretVolume].instance
+  private val configMapVolumeWriter = exportWriter[ConfigMapVolume].instance
 
   implicit val volumeConfigWriter: ConfigWriter[Volume] = ConfigWriter.fromFunction[Volume] { volume: Volume =>
     volume match {
@@ -112,6 +122,8 @@ object CloudflowConfig {
         ConfigFactory.parseMap(Map("pvc" -> pvcVolumeWriter.to(pvc)).asJava).root()
       case secret: SecretVolume =>
         ConfigFactory.parseMap(Map("secret" -> secretVolumeWriter.to(secret)).asJava).root()
+      case configMap: ConfigMapVolume =>
+        ConfigFactory.parseMap(Map("config-map" -> configMapVolumeWriter.to(configMap)).asJava).root()
     }
   }
 

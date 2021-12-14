@@ -137,7 +137,7 @@ It is only possible to add container ports to Akka Streamlets, the Flink and Spa
 === Volumes and Volume-Mounts
 ==== **Mounting Secrets**
 
-It possible to add a `volume` that contains a secret, and mount it into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config. 
+It's possible to add a `volume` that contains a secret, and mount it into the container with `volume-mounts`. Bear in mind that each `kubernetes.pods.pod.containers.container.volume-mounts` name must match a `kubernetes.pods.pod.volumes` name in the config.
 
 Here's a sample, and further explanation, of how to configure two secrets to be mounted on a container. 
 
@@ -181,6 +181,70 @@ As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` ma
 |===
 | resource  | key
 | `volumes` | `kubernetes.pods.pod.volumes.[name].secret.name = [secret-name]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
+| `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
+|===
+
+
+==== **Mounting Config Maps**
+
+Mounting a config map works similar to mounting a secret.
+
+Here's a sample, and further explanation, of how to configure two config map's to be mounted on all the deployed containers of `my-streamlet`.
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+   volumes {
+      foo {
+        config-map {
+          name = myconfigmap1
+        }
+      }
+      bar {
+        config-map {
+          name = myconfigmap2
+          optional = true
+          items {
+            "app.conf" = {
+              path = my-app.conf
+            }
+            key2 = {
+              path = mypath2
+            }
+          }
+        }
+      }
+    }
+    containers.container {
+      volume-mounts {
+        foo {
+          mount-path = "/mnt/folderA"
+          read-only = true
+        }
+        bar {
+          mount-path = "/mnt/folderB"
+          read-only = true
+        }
+      }
+    }
+  }
+}
+----
+
+This configuration will mount all entries of `myconfigmap1` into each `my-streamlet` container under the path `/mnt/folderA/myconfigmap1` as read-only, while for `myconfigmap2` only 2 items/files be mounted at the paths `/mnt/folderB/myconfigmap2/my-app.conf` and `/mnt/folderB/myconfigmap2/mypath2`.
+This configuration also specifies `myconfigmap2` to be an https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/[`optional`] volume by using `optional = true`, while `myconfigmap1`, as per default, is a required volume.
+
+As each `volume-mounts` name must match a `volumes` name, `volume-mounts.foo` matches `volumes.foo` and `volume-mounts.bar` matches `volumes.bar`.
+
+.Configuration available to mount config maps
+[%autowidth]
+|===
+| resource  | key
+| `volumes` | `kubernetes.pods.pod.volumes.[name].config-map.name = [pvc-name]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].config-map.optional = [true or false]`
+| `volumes` | `kubernetes.pods.pod.volumes.[name].config-map.items.[key].path = [some-path]`
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
 |===
