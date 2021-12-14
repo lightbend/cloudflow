@@ -47,7 +47,7 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
 lazy val commonSettings = Seq(
   organization := "com.lightbend.cloudflow",
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.12.15",
   scalacOptions ++= Seq(
     "-encoding", "UTF-8",
     "-target:jvm-1.8",

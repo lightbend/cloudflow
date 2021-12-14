@@ -6,7 +6,7 @@ enablePlugins(
   CloudflowAkkaPlugin,
 )
 
-scalaVersion := "2.12.12"
+scalaVersion := "2.12.15"
 
 schemaCodeGenerator := SchemaCodeGenerator.Java
 
