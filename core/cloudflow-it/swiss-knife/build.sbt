@@ -55,13 +55,13 @@ lazy val flink = (project in file("./flink"))
   .settings(commonSettings)
   .settings(
     name := "swiss-knife-flink",
-    dependencyOverrides += "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % "1.0.3"
+    dependencyOverrides += "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % "2.1.1"
   )
   .dependsOn(datamodel)
 
 lazy val commonSettings = Seq(
   headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.12.15",
   scalacOptions ++= Seq(
     "-encoding", "UTF-8",
     "-target:jvm-1.8",
