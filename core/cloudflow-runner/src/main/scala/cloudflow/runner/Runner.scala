@@ -56,14 +56,6 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
         val withStorageConfig = addStorageConfig(runnerConfig, PVCMountPath)
         val withPodRuntimeConfig = addPodRuntimeConfig(withStorageConfig, DownwardApiVolumeMountPath)
 
-        /*
-         * The following call to `run` must not be in the `Try` block. As part of job planning
-         * and execution, Flink uses `OptimizerPlanEnvironment.ProgramAbortException` for control flow.
-         * If we execute `run` within a `Try` block then this exception gets caught and the environment
-         * in Flink somehow gets messed up.
-         *
-         * Need to learn more on what exactly happens here with Flink.
-         */
         val streamletExecution = loadedStreamlet.streamlet.run(withPodRuntimeConfig)
         loadedStreamlet.streamlet.logStartRunnerMessage(formatBuildInfo)
 

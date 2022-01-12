@@ -141,7 +141,6 @@ abstract class Streamlet[Context <: StreamletContext] {
  * a streamlet, e.g. "akka", "spark", etc.
  *
  * Implementations will usually be provided by a runtime support library
- * such as cloudflow-akka, cloudflow-spark and cloudflow-flink.
  */
 trait StreamletRuntime {
   def name: String
