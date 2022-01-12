@@ -40,8 +40,6 @@
 
   <modules>
     <module>akka</module>
-    <module>flink</module>
-    <module>spark</module>
     <module>pipeline</module>
   </modules>
 </project>
