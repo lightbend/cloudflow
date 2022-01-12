@@ -157,7 +157,7 @@ class RunnerActionsSpec
         .use(egressRef)
         .connect(BTopic("foos"), ingressRef.out, egressRef.in)
 
-      val verifiedBlueprint = bp.verified.right.value
+      val verifiedBlueprint = bp.verified.value
 
       val appId = "thundercat-12345"
       val appVersion = "42-abcdef0"
@@ -171,8 +171,7 @@ class RunnerActionsSpec
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp = App.Cr(
-        spec =
-          CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths),
+        spec = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.value, agentPaths),
         metadata = CloudflowApplicationSpecBuilder.demoMetadata)
       val actions = akkaRunner.actions(newApp, Some(currentApp), runners)
 
@@ -191,7 +190,7 @@ class RunnerActionsSpec
         .define(Vector(ingress, egress))
         .use(ingressRef)
         .connect(BTopic("foos"), ingressRef.out)
-      val verifiedBlueprint = bp.verified.right.value
+      val verifiedBlueprint = bp.verified.value
 
       val appId = "lord-quas-12345"
       val appVersion = "42-abcdef0"
@@ -207,8 +206,7 @@ class RunnerActionsSpec
         .connect(BTopic("foos"), egressRef.in)
       val newAppVersion = appVersion // to compare configmap contents easier.
       val newApp = App.Cr(
-        spec =
-          CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths),
+        spec = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.value, agentPaths),
         metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       Then("create actions for runner resources should be created for the new endpoint")
