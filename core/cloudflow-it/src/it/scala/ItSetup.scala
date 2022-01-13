@@ -87,12 +87,6 @@ trait ItSetup {
       Try {
         k8s.namespaces().create(resource.namespace)
       }
-      eventually {
-        loadResource(k8s, appName, resource.pvcResourceSpark)
-      }
-      eventually {
-        loadResource(k8s, appName, resource.pvcResourceFlink)
-      }
     }
     val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
     assertSuccess(res).withClue("Deploy command failed")
