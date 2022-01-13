@@ -29,7 +29,7 @@ object Dependencies {
     val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.10.0"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
-    val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
+    val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
     val log4jOverSlf4j = "org.slf4j" % "log4j-over-slf4j" % "1.7.30"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest

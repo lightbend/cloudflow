@@ -8,6 +8,6 @@ lazy val helloWorld =  (project in file("."))
       cloudflowDockerBaseImage := "adoptopenjdk/openjdk11:alpine",
 
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.10"
       )
     )
