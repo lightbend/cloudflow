@@ -1,7 +1,7 @@
 lazy val helloWorld = (project in file("hello-world-logback"))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.12.15",
       name := "hello-world-logback",
       version := "0.0.1",
     )
@@ -18,7 +18,7 @@ val testLibraryVersion = {
 
 lazy val iTest = (project in file("it-test"))
     .settings(
-      scalaVersion := "2.13.4",
+      scalaVersion := "2.13.8",
       libraryDependencies ++= Seq(
         "com.lightbend.cloudflow" %% "cloudflow-new-it-library" % testLibraryVersion % Test,
         "com.lightbend.cloudflow" %% "kubectl-cloudflow" % testLibraryVersion % Test
