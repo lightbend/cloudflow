@@ -56,7 +56,6 @@ class EndpointActionsSpec
         .use(egressRef)
         .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val appId = "def-jux-12345"
@@ -99,7 +98,6 @@ class EndpointActionsSpec
         .use(egressRef)
         .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val appId = "def-jux-12345"
@@ -131,7 +129,7 @@ class EndpointActionsSpec
         .use(egressRef)
         .connect(Topic("foos"), ingressRef.out, egressRef.in)
 
-      val verifiedBlueprint = bp.verified.right.value
+      val verifiedBlueprint = bp.verified.value
 
       val appId = "killer-mike-12345"
       val appVersion = "42-abcdef0"
@@ -145,7 +143,7 @@ class EndpointActionsSpec
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.right.value, agentPaths),
+        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
         metadata = CloudflowApplicationSpecBuilder.demoMetadata)
       val actions = EndpointActions(newApp, Some(currentApp))
 
@@ -170,7 +168,7 @@ class EndpointActionsSpec
         .use(ingressRef)
         .connect(Topic("foos"), ingressRef.out)
 
-      val verifiedBlueprint = bp.verified.right.value
+      val verifiedBlueprint = bp.verified.value
 
       val appId = "odd-future-12345"
       val appVersion = "42-abcdef0"
@@ -186,7 +184,7 @@ class EndpointActionsSpec
         .connect(Topic("foos"), egressRef.in)
       val newAppVersion = "43-abcdef0"
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.right.value, agentPaths),
+        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
         metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       Then("create actions for service should be created for the new endpoint")

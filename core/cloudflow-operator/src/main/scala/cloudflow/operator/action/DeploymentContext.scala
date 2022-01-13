@@ -19,12 +19,7 @@ package cloudflow.operator.action
 /**
  * Provides defaults for deployment.
  */
-case class DeploymentContext(
-    akkaRunnerDefaults: AkkaRunnerDefaults,
-    sparkRunnerDefaults: SparkRunnerDefaults,
-    flinkRunnerDefaults: FlinkRunnerDefaults,
-    podName: String,
-    podNamespace: String) {
+case class DeploymentContext(akkaRunnerDefaults: AkkaRunnerDefaults, podName: String, podNamespace: String) {
   def infoMessage = s"""
    | pod-name:                         ${podName}
    | pod-namespace                     ${podNamespace}

@@ -102,28 +102,11 @@ object Name {
   def ofAkkaRole =
     "cloudflow-app-akka-role"
 
-  def ofSparkRoleBinding =
-    "cloudflow-app-spark-rolebinding"
-
-  def ofSparkRole =
-    "cloudflow-app-spark-role"
-
-  def ofFlinkRoleBinding =
-    "cloudflow-app-flink-rolebinding"
-
-  def ofFlinkRole =
-    "cloudflow-app-flink-role"
-
   def ofDockerRegistrySecret =
     "cloudflow-app-docker-registry"
 
   def ofRoleBinding =
     "cloudflow-app-rolebinding"
-
-  def ofSparkApplication(streamletDeploymentName: String) =
-    makeDNS1039Compatible(truncateTo63Characters(fixDots(streamletDeploymentName)))
-
-  def ofFlinkApplication(streamletDeploymentName: String) = ofSparkApplication(streamletDeploymentName)
 
   def ofPod(streamletDeploymentName: String) =
     makeDNS1039Compatible(fixDots(streamletDeploymentName))

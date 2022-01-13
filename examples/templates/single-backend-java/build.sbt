@@ -8,7 +8,7 @@ lazy val templateJavaProject = (project in file("."))
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
-	      "ch.qos.logback" % "logback-classic" % "1.2.3",
+	      "ch.qos.logback" % "logback-classic" % "1.2.10",
         "org.scalatest" %% "scalatest"       % "3.0.8" % "test"
       ),
 

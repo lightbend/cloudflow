@@ -8,7 +8,7 @@ lazy val helloWorld1 =  (project in file("helloworld1"))
       scalaVersion := "2.12.11",
       name := "hello-world-1",
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.10"
       )
     )
 
@@ -19,7 +19,7 @@ lazy val helloWorld2 =  (project in file("helloworld2"))
       scalaVersion := "2.12.11",
       name := "hello-world-2",
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.10"
       )
     )
 

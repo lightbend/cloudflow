@@ -90,13 +90,13 @@ object BlueprintBuilder extends StreamletDescriptorBuilder {
    * Forces verification of a blueprint. Fails with a scalatest value if the blueprint is not valid.
    */
   def verified(blueprint: Blueprint): VerifiedBlueprint =
-    blueprint.verified.right.value
+    blueprint.verified.value
 
   /**
    * Creates a connected [[VerifiedBlueprint]], see [[connectedBlueprint]].
    */
   def verifiedConnectedBlueprint(streamletDescriptors: StreamletDescriptor*): VerifiedBlueprint =
-    connectedBlueprint(streamletDescriptors: _*).verified.right.value
+    connectedBlueprint(streamletDescriptors: _*).verified.value
 
   /**
    * Adds methods to [[StreamletRef]] for ease of testing.

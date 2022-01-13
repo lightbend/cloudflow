@@ -271,7 +271,7 @@ class ApplicationDescriptorSpec
         .connect(BTopic("foos2"), ingress2Ref.out, mergeRef.in1)
         .connect(BTopic("merged-bars"), mergeRef.out)
         .verify
-      val verifiedBlueprint = blueprint.verified.right.value
+      val verifiedBlueprint = blueprint.verified.value
 
       When("I create a deployment descriptor from that blueprint")
       val appId = "funky-foofighter-9862"

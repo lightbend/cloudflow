@@ -63,7 +63,7 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
       val probe = akka.testkit.TestProbe()
       val sink = Sink.actorRef[Data](probe.ref, Completed)
 
-      val instanceIds = List.range(0, 4)
+      val instanceIds = List.range(0, 1)
       val executions = instanceIds.map { i =>
         val receiver = new TestReceiver(sink, i)
         // when streamlets are scaled in a cluster, they all run with the same streamlet reference.

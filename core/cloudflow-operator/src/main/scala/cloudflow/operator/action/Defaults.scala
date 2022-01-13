@@ -30,29 +30,3 @@ final case class ResourceConstraints(
     memoryRequests: Quantity,
     cpuLimits: Option[Quantity],
     memoryLimits: Option[Quantity])
-
-final case class SparkPodDefaults(
-    cores: Option[Quantity],
-    memory: Option[Quantity],
-    coreLimit: Option[Quantity],
-    memoryOverhead: Option[Quantity],
-    javaOptions: Option[String])
-
-final case class SparkRunnerDefaults(driverDefaults: SparkPodDefaults, executorDefaults: SparkPodDefaults)
-    extends RunnerDefaults
-
-final case class FlinkPodResourceDefaults(
-    cpuRequest: Option[Quantity] = None,
-    memoryRequest: Option[Quantity] = None,
-    cpuLimit: Option[Quantity] = None,
-    memoryLimit: Option[Quantity] = None)
-
-final case class FlinkJobManagerDefaults(replicas: Int, resources: FlinkPodResourceDefaults)
-
-final case class FlinkTaskManagerDefaults(taskSlots: Int, resources: FlinkPodResourceDefaults)
-
-final case class FlinkRunnerDefaults(
-    parallelism: Int,
-    jobManagerDefaults: FlinkJobManagerDefaults,
-    taskManagerDefaults: FlinkTaskManagerDefaults)
-    extends RunnerDefaults

@@ -37,7 +37,7 @@ lazy val akka = (project in file("./akka"))
   .settings(
     name := "swiss-knife-akka",
     libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "ch.qos.logback" % "logback-classic" % "1.2.10",
     )
   )
   .dependsOn(datamodel)

@@ -129,8 +129,7 @@ class TopicActionsSpec
       metadata.setNamespace("testing-app")
       val newApp =
         App.Cr(
-          spec =
-            CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.right.value, agentPaths),
+          spec = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.value, agentPaths),
           metadata = metadata)
       val in = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.in.name)
       val savepoint =
@@ -284,7 +283,6 @@ class TopicActionsSpec
       .connect(BTopic(id = "foos", cluster = cluster), ingressRef.out, processorRef.in)
       .connect(BTopic(id = "bars", cluster = cluster), processorRef.out, egressRef.in)
       .verified
-      .right
       .value
 
     val appId = "monstrous-mite-12345"

@@ -54,7 +54,6 @@ class EventActionsSpec
     .use(egressRef)
     .connect(Topic("foos"), ingressRef.out, egressRef.in)
     .verified
-    .right
     .value
 
   val appId = "def-jux-12345"
