@@ -19,8 +19,8 @@ prepare-swiss-knife:
 		CLOUDFLOW_VERSION=${version}  \
 			sbt \
 				'set version in ThisBuild := "${version}"' \
-				'set cloudflowDockerRegistry in ThisBuild := Some(${DOCKER_REGISTRY})' \
-				'set cloudflowDockerRepository in ThisBuild := Some(${DOCKER_REPOSITORY})' \
+				'set cloudflowDockerRegistry in ThisBuild := Some("${DOCKER_REGISTRY}")' \
+				'set cloudflowDockerRepository in ThisBuild := Some("${DOCKER_REPOSITORY}")' \
 				clean buildApp)
 	@echo '****** Copy the cr file to the itests relevant folder'
 	(cp swiss-knife/target/swiss-knife.json src/it/resources/)
