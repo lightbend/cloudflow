@@ -9,9 +9,9 @@ import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
 import akka.datap.crd.App
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory, ConfigObject, ConfigValueType }
 import io.fabric8.kubernetes.client.utils.Serialization
-import org.scalatest.{ OptionValues, TryValues }
+import org.scalatest.{ Assertion, OptionValues, TryValues }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pureconfig.ConfigSource
@@ -179,6 +179,27 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |              read-only = true
                    |            }
                    |          }
+                   |          mycm {
+                   |            config-map {
+                   |              name = myconfigmap
+                   |            }
+                   |          }
+                   |          yourcm {
+                   |            config-map {
+                   |              name = yourconfigmap
+                   |              optional = true
+                   |              items {
+                   |                "cmkey1.json" {
+                   |                  path = your-cmkey1.json
+                   |                }
+                   |                cmkey2 {
+                   |                  path = cmpath2
+                   |                  # mode flag can be added/supported later here, eg:
+                   |                  # mode = 777
+                   |                }
+                   |              }
+                   |            }
+                   |          }
                    |        }
                    |      }
                    |    }
@@ -192,11 +213,21 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     // Assert
     val pod = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
     pod.volumes.nonEmpty shouldBe true
+
     pod.volumes("foo").isInstanceOf[SecretVolume] shouldBe true
     pod.volumes("foo").asInstanceOf[SecretVolume].name shouldBe "mysecret"
+
     pod.volumes("bar").isInstanceOf[PvcVolume] shouldBe true
     pod.volumes("bar").asInstanceOf[PvcVolume].name shouldBe "/etc/my/file"
     pod.volumes("bar").asInstanceOf[PvcVolume].readOnly shouldBe true
+
+    pod.volumes("mycm") shouldBe ConfigMapVolume("myconfigmap", optional = false, items = Map.empty)
+    pod.volumes("yourcm") shouldBe ConfigMapVolume(
+      "yourconfigmap",
+      optional = true,
+      items = Map(
+        "cmkey1.json" -> ConfigMapVolumeKeyToPath("your-cmkey1.json"),
+        "cmkey2" -> ConfigMapVolumeKeyToPath("cmpath2")))
   }
 
   it should "parse properly the volume-mounts" in {
@@ -891,6 +922,75 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
     // Assert
     res.getString("cloudflow.streamlets.flink.kubernetes.pods.pod.labels.mykey") shouldBe "myvalue"
+  }
+
+  it should "write config map volumes" in {
+    // Arrange
+    val config = s"""cloudflow {
+                    |  streamlets {
+                    |    akka {
+                    |      kubernetes.pods {
+                    |        pod {
+                    |          volumes {
+                    |            foo {
+                    |              config-map {
+                    |                name = myconfigmap
+                    |              }
+                    |            },
+                    |            bar {
+                    |              config-map {
+                    |                name = yourconfigmap
+                    |                optional = true
+                    |                items {
+                    |                  "app.conf" {
+                    |                    path = my-app.conf
+                    |                  }
+                    |                  barkey2 {
+                    |                    path = barpath2
+                    |                  }
+                    |                }
+                    |              }
+                    |            }
+                    |          }
+                    |        }
+                    |      }
+                    |    }
+                    |  }
+                    |}""".stripMargin
+
+    // Act
+    val res = ConfigFactory.empty().withFallback(writeConfig(loadAndValidate(ConfigSource.string(config)).get))
+
+    def shouldBeConfigMap(
+        configMapCfg: Config,
+        name: String,
+        optional: Boolean = false,
+        items: Map[String, String] = Map.empty): Assertion = {
+      val configMap = configMapCfg.getConfig("config-map")
+      configMap.getString("name") shouldBe name
+      configMap.getBoolean("optional") shouldBe optional
+
+      if (items.nonEmpty) {
+        val cfgItems = configMap.getConfig("items")
+        cfgItems.entrySet().asScala should have size (items.size)
+
+        items.foreach {
+          case (key, value) =>
+            cfgItems.getConfig(s""""$key"""").getString("path") shouldBe value
+        }
+      }
+
+      succeed
+    }
+
+    // Assert
+    val vols = res.getConfig(s"cloudflow.streamlets.akka.kubernetes.pods.pod.volumes")
+    shouldBeConfigMap(vols.getConfig("foo"), "myconfigmap")
+    shouldBeConfigMap(
+      vols.getConfig("bar"),
+      "yourconfigmap",
+      optional = true,
+      Map("app.conf" -> "my-app.conf", "barkey2" -> "barpath2"))
   }
 
   it should "generate proper default mounts" in {

@@ -12,7 +12,7 @@ lazy val sensorData =  (project in file("."))
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
       )
@@ -38,8 +38,8 @@ lazy val sensorData =  (project in file("."))
         "-unchecked"
       ),
 
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused"),
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

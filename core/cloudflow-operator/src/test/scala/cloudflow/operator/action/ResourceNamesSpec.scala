@@ -72,7 +72,6 @@ class ResourceNamesSpec
       metadata = CloudflowApplicationSpecBuilder.demoMetadata)
   }
   val akkaRunner = new AkkaRunner(ctx.akkaRunnerDefaults)
-  val sparkRunner = new SparkRunner(ctx.sparkRunnerDefaults)
 
   // appId 80 characters.
   val testApp02 = {
@@ -147,15 +146,6 @@ class ResourceNamesSpec
       deployment.getSpec.getTemplate.getSpec.getContainers.asScala.head.getVolumeMounts.asScala.foreach { mount =>
         assert(mount.getName.length <= 253)
       }
-
-    }
-  }
-
-  "Custom resources" should {
-    "have long names truncate to 253 characters when coming from SparkRunner" in {
-      val deployment = sparkRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
-      // name of pod is dns 1039 and max 63
-      deployment.getMetadata.getName.length mustEqual 63
 
     }
   }

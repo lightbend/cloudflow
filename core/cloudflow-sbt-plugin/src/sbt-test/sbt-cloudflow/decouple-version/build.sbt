@@ -1,12 +1,13 @@
 lazy val helloWorld =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.12.15",
       cloudflowVersion := "2.0.19",
       name := "hello-world",
-
+      // sbt 1.5: Do not fail when mixing versions of Cloudflow and dependencies
+      evictionErrorLevel := Level.Info,
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3"
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.10"
       )
     )
 

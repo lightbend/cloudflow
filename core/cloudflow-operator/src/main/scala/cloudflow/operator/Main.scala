@@ -19,7 +19,6 @@ package cloudflow.operator
 import akka.actor._
 import akka.datap.crd.App
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.{ FlinkApp, SparkApp }
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import io.fabric8.kubernetes.api.model.OwnerReference
@@ -55,8 +54,6 @@ object Main extends {
 
       // this registers deserializer
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
-      client.customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
-      client.customResources(FlinkApp.customResourceDefinitionContext, classOf[FlinkApp.Cr], classOf[FlinkApp.List])
 
       checkCRD(settings, client)
 
@@ -64,22 +61,8 @@ object Main extends {
       installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
-      val flinkRunner = {
-        if (settings.flinkEnabled) {
-          Map(FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
-        } else {
-          Map.empty
-        }
-      }
-      val sparkRunner = {
-        if (settings.sparkEnabled) {
-          Map(SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults))
-        } else {
-          Map.empty
-        }
-      }
 
-      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults)) ++ flinkRunner ++ sparkRunner
+      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults))
 
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {

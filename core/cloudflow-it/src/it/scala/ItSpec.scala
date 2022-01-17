@@ -49,14 +49,6 @@ class ItGlobalSpec
 
 trait ItDeploySpec extends ItSpec {
 
-  "Deploy without PVCs should fail" in {
-    val res = cli.run(commands.Deploy(crFile = resource.cr, confs = Seq(resource.defaultConfiguration)))
-    res.failure.exception.getMessage() should {
-      include("contains pvcs") and include("cloudflow-spark") and include("cloudflow-flink") and include(
-        "that are not present in the namespace")
-    }
-  }
-
   "PVC setup" - {
     "should create namespace to hold pvcs" in {
       withK8s { k8s =>
@@ -64,24 +56,6 @@ trait ItDeploySpec extends ItSpec {
       }
       withK8s { k8s =>
         noException should be thrownBy k8s.namespaces().create(resource.alternativeNamespace)
-      }
-    }
-
-    "should deploy a pvc for spark" in {
-      withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, appName, resource.pvcResourceSpark)
-      }
-      withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, "my-ns", resource.pvcResourceSpark)
-      }
-    }
-
-    "should deploy a pvc for flink" in {
-      withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, appName, resource.pvcResourceFlink)
-      }
-      withK8s { k8s =>
-        noException should be thrownBy loadResource(k8s, "my-ns", resource.pvcResourceFlink)
       }
     }
   }
@@ -177,8 +151,6 @@ trait ItDeploySpec extends ItSpec {
 trait ItBaseSpec extends ItSpec {
   "should contain these processes:" - {
     def check(proc: String) = withRunningApp { _ should containStreamlet(proc) }
-    "spark" in check("spark-process")
-    "flink" in check("flink-process")
     "akka" in check("akka-process")
   }
 
@@ -190,28 +162,7 @@ trait ItBaseSpec extends ItSpec {
     }
     "raw" in check("raw-egress")
     "akka" in check("akka-egress")
-    "spark" in check("spark-egress")
-    "flink" in check("flink-egress")
   }
-
-  "is configurable" - {
-    "reconfiguration should succeed" in {
-      configureApp() { _ =>
-        cli.run(commands.Configure(appName, confs = Seq(resource.updateConfig, resource.defaultConfiguration)))
-      }
-    }
-    "reconfiguration should affect these streamlets:" - {
-      def check(streamlet: String, wait: Span = resource.patience) = withRunningApp { status =>
-        eventually(timeout(wait)) {
-          streamletPodLog(status, streamlet) should include("payload: updated_config")
-        }
-      }
-      "akka" in check("akka-egress")
-      "spark" in check("spark-egress")
-      "flink" ignore check("flink-egress")
-    }
-  }
-
 }
 
 trait ItSecretsSpec extends ItSpec {
@@ -245,12 +196,6 @@ trait ItSecretsSpec extends ItSpec {
 }
 
 trait ItPvcSpec extends ItSpec {
-  "should try to reconfigure spark streamlets to add a pvc, but find there is no pvc in the cluster" in {
-    configureAppExpectFail() { _ =>
-      cli.run(commands.Configure(appName, confs = Seq(resource.updateMountingPvc, resource.defaultConfiguration)))
-    }
-  }
-
   "should deploy a pvc" in {
     withRunningApp { _ =>
       withK8s { k8s =>
@@ -270,22 +215,6 @@ trait ItPvcSpec extends ItSpec {
       withStreamletPod(status, "akka-process") {
         noException should be thrownBy _.file(resource.pvcResourceAkkaFileMountPath)
           .upload(resource.pvcResourceLocal.toPath())
-      }
-    }
-  }
-
-  "should find specific content in any spark streamlet" in {
-    eventually {
-      withRunningApp { status =>
-        streamletPodFileContent(status, "spark-process", resource.pvcResourceSparkFileMountPath) shouldBe resource.pvcResourceLocalContent
-      }
-    }
-  }
-
-  "should find specific content in any flink streamlet" ignore {
-    eventually {
-      withRunningApp { status =>
-        streamletPodFileContent(status, "flink-process", resource.pvcResourceFlinkFileMountPath) shouldBe resource.pvcResourceLocalContent
       }
     }
   }
@@ -327,7 +256,7 @@ trait ItCliConfigSpec extends ItSpec {
   }
 
   "should reconfigure the akka runtime of the complete application" in {
-    val streamlets = Seq("akka-process", "akka-egress", "spark-egress", "raw-egress", "flink-egress")
+    val streamlets = Seq("akka-process", "akka-egress", "raw-egress")
 
     note("register current cpu and memory for all akka streamlets")
     val resourceConfigMap = withRunningApp { status =>
@@ -360,21 +289,6 @@ trait ItCliConfigSpec extends ItSpec {
 }
 
 trait ItFrameworkConfigSpec extends ItSpec {
-  "should reconfigure a spark application" in {
-    note("reconfigure spark-specific configuration")
-    configureApp() { _ =>
-      cli.run(
-        commands.Configure(appName, confs = Seq(resource.updateSparkConfiguration, resource.defaultConfiguration)))
-    }
-
-    note("verifying configuration update")
-    withRunningApp { status =>
-      eventually {
-        matchingStreamletPodLog(status, "spark-config-output", "driver") should include("locality=[5s]")
-      }
-    }
-  }
-
   "should reconfigure an akka application" in {
     note("reconfigure akka-specific configuration")
     configureApp() { _ =>
@@ -423,13 +337,5 @@ trait ItStreamletScaleSpec extends ItSpec {
 
   "should scale an akka streamlet up and down" in {
     scaleCheck("akka-process", noCorrection)
-  }
-
-  "should scale a spark streamlet up and down" in {
-    scaleCheck("spark-process", coordinatorCorrection)
-  }
-
-  "should scale a flink streamlet up and down" ignore {
-    scaleCheck("flink-process", coordinatorCorrection)
   }
 }
