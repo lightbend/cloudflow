@@ -1,0 +1,4 @@
+-J-XX:+UseG1GC
+-J-Xms3G
+-J-Xmx3G
+-J-Xss2M
