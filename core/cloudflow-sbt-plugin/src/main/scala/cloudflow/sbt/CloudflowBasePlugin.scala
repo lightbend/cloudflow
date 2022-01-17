@@ -29,8 +29,7 @@ import cloudflow.blueprint.StreamletDescriptor
 
 /**
  * Base class for all Cloudflow runtime plugins for multi-image use case. Contains some
- * methods which are reused across the runtime plugins, `CloudflowFlinkPlugin`,
- * `CloudflowAkkaPlugin` and `CloudflowSparkPlugin`.
+ * methods which are reused across the runtime plugins.
  */
 object CloudflowBasePlugin extends AutoPlugin {
   final val AppHome = "${app_home}"
