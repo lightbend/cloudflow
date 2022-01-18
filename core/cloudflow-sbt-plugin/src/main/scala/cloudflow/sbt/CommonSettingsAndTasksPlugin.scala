@@ -17,7 +17,6 @@
 package cloudflow.sbt
 import sbt.Keys._
 import sbt._
-import scalapb.ScalaPbCodeGenerator
 
 /**
  * SBT Plugin that centralizes the use of common keys for Cloudflow projects.
