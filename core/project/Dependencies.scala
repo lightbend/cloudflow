@@ -80,7 +80,7 @@ object Dependencies {
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
-    val avro = "org.apache.avro" % "avro" % "1.8.2"
+    val avro = "org.apache.avro" % "avro" % "1.11.0"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
