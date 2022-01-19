@@ -32,6 +32,7 @@ lazy val templateJavaProject = (project in file("."))
       ),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
       Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      avroStringType := "String",
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 

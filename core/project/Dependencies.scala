@@ -80,7 +80,7 @@ object Dependencies {
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
-    val avro = "org.apache.avro" % "avro" % "1.8.2"
+    val avro = "org.apache.avro" % "avro" % "1.11.0"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
@@ -159,17 +159,19 @@ object Dependencies {
         Compile.kafkaClient % Test,
         TestDeps.avro4s)
 
-  val cloudflowOperator =
+  val cloudflowOperator = Seq(
     libraryDependencies ++= Seq(
         Compile.akkaActor,
         Compile.akkaStream,
         Compile.akkaHttp,
         Compile.akkaSlf4j,
         Compile.logback,
+        Compile.jacksonDatabind,
         Compile.kubeActions,
         Compile.kafkaClient,
         Compile.scalatest % Test,
-        TestDeps.avro4s)
+        TestDeps.avro4s),
+    dependencyOverrides += Compile.jacksonDatabind)
 
   val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)

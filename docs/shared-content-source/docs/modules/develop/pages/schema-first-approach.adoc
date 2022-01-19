@@ -11,16 +11,8 @@ However since Cloudflow takes the schema as the input, it needs to ensure that t
 
 == Schema code generation
 
-You can choose what programming language to generate their schemas into by defining settings in the SBT project.  When no settings are defined, by default the `sbt-cloudflow` plugin will look for Avro schemas in `src/main/avro` and will generate Scala classes.
-
-If you wish to override the location of your Avro schemas in your project, or if you wish to generate Java classes instead, you can do so by defining a `Setting` in your SBT project.
-
-* `schemaCodeGenerator` (Default: `SchemaCodeGenerator.Scala`) - The programming language to generate Avro schemas classes into.
-* `schemaPaths` (Default: `Map(SchemaFormat.Avro -> "src/main/avro")`) - The relative path to the Avro schemas.
-* `schemaFormat` (Default: `Seq(SchemaFormat.Avro)`) - The schema formats to generate.  Avro is the default format. 
-Since Cloudflow 2.0, there's experimental support for Protobuf (`SchemaFormat.Proto`).
-
-For example, to generate Java classes from Avro schemas in a non-default location, you can use a configuration similar to the following:
+You can choose what programming language to generate their schemas into by defining settings in the SBT project.
+For example, to generate Java classes from Avro schemas, you can use a configuration similar to the following:
 
 [source,scala]
 ----

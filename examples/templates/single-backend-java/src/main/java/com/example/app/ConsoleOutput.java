@@ -49,7 +49,7 @@ public class ConsoleOutput extends AkkaStreamlet {
     return new RunnableGraphStreamletLogic(getContext()) {
 
       public String format(Data data) {
-        return data.id() + "-> " +data.value();
+        return data.getId() + "-> " +data.getValue();
       }
       public RunnableGraph<NotUsed> createRunnableGraph() {
         return getPlainSource(inlet)

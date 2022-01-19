@@ -13,6 +13,7 @@ lazy val sensorData =  (project in file("."))
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
+        "org.apache.avro"        %  "avro"                      % "1.11.0", 
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
       )
@@ -39,6 +40,7 @@ lazy val sensorData =  (project in file("."))
       ),
 
       Compile / console / scalacOptions --= Seq("-Ywarn-unused"),
+      Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 

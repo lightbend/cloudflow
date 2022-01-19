@@ -11,8 +11,8 @@ lazy val sensorData =  (project in file("."))
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
-        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-
+        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test",
+        "org.apache.avro"        %  "avro"                      % "1.11.0"
 //tag::docs-projectName-example[]
       ),
       name := "akkastreams-doc",
@@ -20,7 +20,6 @@ lazy val sensorData =  (project in file("."))
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
-      schemaCodeGenerator := SchemaCodeGenerator.Java,
       scalaVersion := "2.12.15",
       crossScalaVersions := Vector(scalaVersion.value),
       javacOptions ++= Seq("-Xlint:deprecation"),
@@ -43,6 +42,7 @@ lazy val sensorData =  (project in file("."))
         "junit"                  % "junit"                      % "4.12"     % "test"),
 
       Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      avroStringType := "String",
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
 
     )

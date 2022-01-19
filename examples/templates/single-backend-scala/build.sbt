@@ -6,8 +6,9 @@ lazy val templateScala = (project in file("."))
   .settings(
     scalafmtOnCompile := true,
     libraryDependencies ++= Seq(
-          "ch.qos.logback" % "logback-classic" % "1.2.10",
-          "org.scalatest"  %% "scalatest"      % "3.0.8" % "test"
+          "org.apache.avro"%  "avro"            % "1.11.0", 
+          "ch.qos.logback" %  "logback-classic" % "1.2.10",
+          "org.scalatest"  %% "scalatest"       % "3.0.8"   % "test"
         ),
     name := "template-scala",
     organization := "com.lightbend.cloudflow",
@@ -29,6 +30,7 @@ lazy val templateScala = (project in file("."))
         ),
     runLocalConfigFile := Some("src/main/resources/local.conf"),
     Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+    Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
     Test / console / scalacOptions := (Compile / console / scalacOptions).value
   )
 

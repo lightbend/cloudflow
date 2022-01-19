@@ -4,14 +4,14 @@ import sbt.Keys._
 enablePlugins(
   CloudflowApplicationPlugin,
   CloudflowAkkaPlugin,
+  AkkaGrpcPlugin
 )
 
 scalaVersion := "2.12.15"
 
-schemaCodeGenerator := SchemaCodeGenerator.Java
-
+akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java)
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http2-support" % "10.2.0",
+  "com.typesafe.akka" %% "akka-http2-support" % "10.2.0"
 )
 
 ThisBuild / dynverSeparator := "-"

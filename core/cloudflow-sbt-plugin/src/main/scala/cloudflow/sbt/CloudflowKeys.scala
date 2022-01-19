@@ -30,25 +30,10 @@ case class DockerImageName(name: String, tag: String) {
 
 trait CloudflowSettingKeys {
 
-  object SchemaCodeGenerator {
-    sealed trait Language
-    case object Java extends Language
-    case object Scala extends Language
-  }
-
-  object SchemaFormat {
-    sealed trait Format
-    case object Avro extends Format
-    case object Proto extends Format
-  }
-
   val cloudflowDockerBaseImage = settingKey[String]("The base Docker image to use for Cloudflow images.")
   val cloudflowVersion =
     settingKey[String]("The version of Cloudflow, for development purposes, change it at your own risk")
   val blueprint = settingKey[Option[String]]("The path to the blueprint file to use in this Cloudflow application.")
-  val schemaCodeGenerator =
-    settingKey[SchemaCodeGenerator.Language]("The language to generate data model schemas into.")
-  val schemaPaths = settingKey[Map[SchemaFormat.Format, String]]("A Map of paths to your data model schemas.")
   val runLocalKafka = settingKey[Option[String]]("The external Kafka to use with the local runner Sandbox.")
   val runLocalConfigFile =
     settingKey[Option[String]]("The HOCON configuration file to use with the local runner Sandbox.")
