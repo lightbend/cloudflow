@@ -11,8 +11,8 @@ lazy val sensorData =  (project in file("."))
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
-        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-
+        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test",
+        "org.apache.avro"        %  "avro"                      % "1.11.0" 
 // tag::docs-projectName-example[]
       ),
       name := "akkastreams-doc",
@@ -35,6 +35,7 @@ lazy val sensorData =  (project in file("."))
         "-unchecked"
       ),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
+      Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
       Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
