@@ -26,8 +26,11 @@ lazy val app = (project in file("./app"))
   )
   
 lazy val datamodel = (project in file("datamodel"))
-  .enablePlugins(CloudflowLibraryPlugin)
-  .settings(commonSettings)
+  .settings(
+    commonSettings,
+    Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
+    libraryDependencies += "org.apache.avro" % "avro" % "1.11.0"
+  )
 
 lazy val akka = (project in file("./akka"))
   .enablePlugins(CloudflowAkkaPlugin)
