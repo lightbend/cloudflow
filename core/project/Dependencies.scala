@@ -38,7 +38,7 @@ object Dependencies {
     // Reference:
     // https://github.com/fabric8io/kubernetes-client/blob/0c4513ff30ac9229426f1481a46fde2eb54933d9/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/internal/core/v1/PodOperationsImpl.java#L451
     val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
-    val commonsCompress = "org.apache.commons" % "commons-compress" % "1.20"
+    val commonsCompress = "org.apache.commons" % "commons-compress" % "1.21"
 
     val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
@@ -93,7 +93,7 @@ object Dependencies {
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.104"
 
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
-    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.15.2"
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.16.3"
     val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
 
     val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
