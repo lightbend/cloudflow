@@ -8,12 +8,12 @@ lazy val tensorflowAkka =  (project in file("."))
 //end::docs-projectSetup-example[]
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
+        Cloudflow.library.CloudflowAvro,
         "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.tensorflow"         %  "tensorflow"                % "1.15.0",
         "org.tensorflow"         %  "proto"                     % "1.15.0",
-        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test",
-        "org.apache.avro"        %  "avro"                      % "1.11.0" 
+        "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 //tag::docs-projectName-example[]
       ),
       name := "tensorflow-akka",

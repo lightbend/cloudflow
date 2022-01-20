@@ -6,10 +6,10 @@ lazy val templateScala = (project in file("."))
   .settings(
     scalafmtOnCompile := true,
     libraryDependencies ++= Seq(
-          "org.apache.avro"%  "avro"            % "1.11.0", 
-          "ch.qos.logback" %  "logback-classic" % "1.2.10",
-          "org.scalatest"  %% "scalatest"       % "3.0.8"   % "test"
-        ),
+      Cloudflow.library.CloudflowAvro,
+      "ch.qos.logback" %  "logback-classic" % "1.2.10",
+      "org.scalatest"  %% "scalatest"       % "3.0.8"   % "test"
+    ),
     name := "template-scala",
     organization := "com.lightbend.cloudflow",
     headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),

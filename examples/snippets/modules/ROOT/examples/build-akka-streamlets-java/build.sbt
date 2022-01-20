@@ -66,7 +66,7 @@ lazy val app = appModule("app")
 //tag::avro-config[]
 lazy val datamodel = (project in file("./my-cloudflow-library"))
   .settings(
-    libraryDependencies += "org.apache.avro" % "avro" % "1.11.0",
+    libraryDependencies += Cloudflow.library.CloudflowAvro
   )
 //end::avro-config[]
 

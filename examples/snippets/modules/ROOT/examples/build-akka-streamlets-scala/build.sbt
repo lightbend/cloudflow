@@ -70,7 +70,7 @@ lazy val commonSettings = Seq(
   ),
   
   libraryDependencies ++= Seq(
-    "org.apache.avro" % "avro"      % "1.11.0",
+    Cloudflow.library.CloudflowAvro,
     "org.scalatest"  %% "scalatest" % "3.0.8"   % "test"
   ), 
 

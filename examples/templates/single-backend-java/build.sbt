@@ -8,6 +8,7 @@ lazy val templateJavaProject = (project in file("."))
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
+        Cloudflow.library.CloudflowAvro,
 	      "ch.qos.logback" % "logback-classic" % "1.2.10",
         "org.scalatest" %% "scalatest"       % "3.0.8" % "test"
       ),
