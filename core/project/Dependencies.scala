@@ -78,7 +78,7 @@ object Dependencies {
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
-    
+
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
@@ -120,10 +120,7 @@ object Dependencies {
   }
   // TODO
   val cloudflowAvro =
-    libraryDependencies ++= Seq(
-        Compile.avro,
-        Compile.bijection
-    )
+    libraryDependencies ++= Seq(Compile.avro, Compile.bijection)
 
   val cloudflowConfig =
     libraryDependencies ++= Seq(
@@ -181,11 +178,9 @@ object Dependencies {
 
   val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
-  
+
   val cloudflowProto =
-    libraryDependencies ++= Seq(
-      Compile.scalaPbRuntime,
-    )
+    libraryDependencies ++= Seq(Compile.scalaPbRuntime)
 
   val cloudflowSbtPlugin =
     libraryDependencies ++= Seq(
