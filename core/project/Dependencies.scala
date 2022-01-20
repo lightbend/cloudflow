@@ -109,7 +109,7 @@ object Dependencies {
 
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
-    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.0" % Test
+    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.12" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
