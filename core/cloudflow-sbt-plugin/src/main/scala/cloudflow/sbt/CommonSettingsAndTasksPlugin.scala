@@ -28,12 +28,10 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
 
   import autoImport._
 
-  private final val CloudflowVersion = BuildInfo.version
-
   /** Set default values for keys. */
   override def projectSettings =
     Seq(
-      cloudflowVersion := CloudflowVersion,
+      cloudflowVersion := Cloudflow.Version,
       cloudflowDockerImageName := Def.task {
           Some(DockerImageName((ThisProject / name).value.toLowerCase, (ThisProject / version).value))
         }.value,
@@ -52,5 +50,14 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
       Compile / packageSrc / publishArtifact := false)
 }
 
-trait CloudflowKeys extends CloudflowSettingKeys with CloudflowTaskKeys
+trait CloudflowKeys extends CloudflowSettingKeys with CloudflowTaskKeys {
+  object Cloudflow {
+    final val Version = BuildInfo.version
+    object library {
+      final val CloudflowAvro = "com.lightbend.cloudflow" %% "cloudflow-avro" % Version
+      final val CloudflowProto = "com.lightbend.cloudflow" %% "cloudflow-proto" % Version
+    }
+  }
+}
+
 object CloudflowKeys extends CloudflowKeys
