@@ -31,7 +31,6 @@ object Dependencies {
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
-    val log4jOverSlf4j = "org.slf4j" % "log4j-over-slf4j" % "1.7.30"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest
     val scalatestMustMatchers = "org.scalatest" %% "scalatest-mustmatchers" % Versions.scalaTest
@@ -74,13 +73,14 @@ object Dependencies {
     val akkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Versions.akkaGrpc
 
     val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.10"
+    val avro = "org.apache.avro" % "avro" % "1.11.0"
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
-
+    
+    val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
-    val avro = "org.apache.avro" % "avro" % "1.11.0"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
@@ -118,6 +118,12 @@ object Dependencies {
     val jodaTime = "joda-time" % "joda-time" % "2.10.6"
 
   }
+  // TODO
+  val cloudflowAvro =
+    libraryDependencies ++= Seq(
+        Compile.avro,
+        Compile.bijection
+    )
 
   val cloudflowConfig =
     libraryDependencies ++= Seq(
@@ -175,6 +181,11 @@ object Dependencies {
 
   val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
+  
+  val cloudflowProto =
+    libraryDependencies ++= Seq(
+      Compile.scalaPbRuntime,
+    )
 
   val cloudflowSbtPlugin =
     libraryDependencies ++= Seq(
@@ -190,10 +201,8 @@ object Dependencies {
   val cloudflowStreamlet =
     libraryDependencies ++= Seq(
         Compile.sprayJson,
-        Compile.bijection,
-        Compile.avro,
-        Compile.scalaPbRuntime,
         Compile.typesafeConfig,
+        Compile.slf4jApi,
         Compile.ficus,
         Compile.scalatest % Test)
 

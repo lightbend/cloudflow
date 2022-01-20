@@ -197,6 +197,16 @@ lazy val cloudflowBlueprintCross = cloudflowBlueprint.cross
 lazy val cloudflowBlueprint213 = cloudflowBlueprintCross(Dependencies.Scala213)
 lazy val cloudflowBlueprint212 = cloudflowBlueprintCross(Dependencies.Scala212)
 
+lazy val cloudflowAvro =
+  Project(id = "cloudflow-avro", base = file("cloudflow-avro"))
+    .dependsOn(cloudflowStreamlets)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowAvro)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true)
+
 lazy val cloudflowBlueprint =
   Project(id = "cloudflow-blueprint", base = file("cloudflow-blueprint"))
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
@@ -246,6 +256,16 @@ lazy val cloudflowExtractor =
       scalafmtOnCompile := true,
       run / fork := true,
       Global / cancelable := true)
+
+lazy val cloudflowProto =
+  Project(id = "cloudflow-proto", base = file("cloudflow-proto"))
+    .dependsOn(cloudflowStreamlets)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowProto)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true)
 
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
@@ -305,7 +325,7 @@ lazy val cloudflowAkka =
 lazy val cloudflowAkkaTestkit =
   Project(id = "cloudflow-akka-testkit", base = file("cloudflow-akka-testkit"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowAkka)
+    .dependsOn(cloudflowAkka, (cloudflowAvro % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaTestkit)
     .settings(
       scalaVersion := Dependencies.Scala212,
@@ -431,6 +451,7 @@ lazy val root = Project(id = "root", base = file("."))
         cloudflowAkkaTestkit),
     JavaUnidoc / unidoc / unidocProjectFilter := (ScalaUnidoc / unidoc / unidocProjectFilter).value)
   .aggregate(
+    cloudflowAvro,
     cloudflowBlueprint,
     cloudflowCli,
     cloudflowConfig,
@@ -440,6 +461,7 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowNewIt,
     cloudflowNewItLibrary,
     cloudflowOperator,
+    cloudflowProto,
     cloudflowSbtPlugin,
     cloudflowRunnerConfig,
     cloudflowStreamlets,
