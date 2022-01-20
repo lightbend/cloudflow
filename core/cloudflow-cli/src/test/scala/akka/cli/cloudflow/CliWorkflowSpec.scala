@@ -133,41 +133,13 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
     res.failure.exception.getMessage.contains("version of kubectl cloudflow is not compatible") shouldBe true
   }
 
-  it should "fail a mocked deploy if spark version is not supported" in {
-    // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(sparkVersion = "1"))
-
-    // Act
-    val res =
-      cli.run(commands.Deploy(crFile = crFile))
-
-    // Assert
-    res.isFailure shouldBe true
-    res.failure.exception.getMessage.contains("spark") shouldBe true
-    res.failure.exception.getMessage.contains("required version") shouldBe true
-  }
-
-  it should "fail a mocked deploy if flink version is not supported" in {
+  it should "succeed a mocked deploy" in {
     // Arrange
     val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
 
     // Act
     val res =
       cli.run(commands.Deploy(crFile = crFile))
-
-    // Assert
-    res.isFailure shouldBe true
-    res.failure.exception.getMessage.contains("flink") shouldBe true
-    res.failure.exception.getMessage.contains("required version") shouldBe true
-  }
-
-  it should "succeed a mocked deploy if flink is an unmanaged runtime" in {
-    // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
-
-    // Act
-    val res =
-      cli.run(commands.Deploy(crFile = crFile, unmanagedRuntimes = Seq("flink")))
 
     // Assert
     res.isSuccess shouldBe true

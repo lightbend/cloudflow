@@ -69,8 +69,6 @@ deploy a cloudflow applications from a cr file
  * ``  config-key               ``the configuration keys for the overrides
  * ``  --logback-config <value>
                            ``the logback configuration to be applied
- * ``  --unmanaged-runtimes <value>
-                           ``The runtimes that should not be checked
  * ``  --microservices          ``EXPERIMENTAL: Deploy on Akka Cloud Platform
  * ``  -n, --namespace <value>  ``the namespace to be used
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml

@@ -223,10 +223,6 @@ object OptionsParser {
         commandParse[commands.Deploy, File](opt("logback-config"))((c, f) => c.copy(logbackConfig = Some(f)))
           .optional()
           .text("the logback configuration to be applied"),
-        commandParse[commands.Deploy, Seq[String]](opt("unmanaged-runtimes"))((c, r) =>
-          c.copy(unmanagedRuntimes = c.unmanagedRuntimes ++ r))
-          .optional()
-          .text("The runtimes that should not be checked"),
         commandParse[commands.Deploy, String](opt("serviceaccount"))((c, sa) => c.copy(serviceAccount = Some(sa)))
           .optional()
           .text("the serviceaccount to be used"),
@@ -543,7 +539,6 @@ object commands {
       confs: Seq[File] = Seq(),
       configKeys: Map[String, String] = Map(),
       logbackConfig: Option[File] = None,
-      unmanagedRuntimes: Seq[String] = Seq(),
       serviceAccount: Option[String] = None,
       output: format.Format = format.Default)
       extends Command[DeployResult]
