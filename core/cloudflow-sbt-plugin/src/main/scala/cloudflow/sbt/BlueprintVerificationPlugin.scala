@@ -80,7 +80,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
           val res = verificationResult.value
           writeVerifiedBlueprintFile(res)
         }.value,
-      mappings in (Compile, packageBin) ++= {
+      Compile / packageBin / mappings ++= {
         val _ = verifyBlueprint.value // dependency
         verifiedBlueprintFile.value.map { bpFile =>
           bpFile -> bpFile.getName
@@ -104,7 +104,7 @@ object BlueprintVerificationPlugin extends AutoPlugin {
           agentPathsMap,
           libraryVersion)
       },
-      fork in Compile := true)
+      Compile / fork := true)
 
   private def composeExtractResults(results: Seq[ExtractResult]): ExtractResult =
     results.foldLeft(ExtractResult()) { (acc, el) =>
@@ -148,13 +148,13 @@ object BlueprintVerificationPlugin extends AutoPlugin {
         .getOrElse {
           Left(BlueprintDoesNotExist(bpFile))
         }
-
     }
 
   private def writeVerifiedBlueprintFile(
       results: Either[BlueprintVerificationFailed, BlueprintVerified]): Def.Initialize[Task[Option[File]]] = Def.task {
     results.toOption.map { blueprintVerified =>
-      val file = (target in Compile).value / "blueprint" / blueprintVerified.file.getName
+      val compileTarget = (Compile / target).value
+      val file = compileTarget / "blueprint" / blueprintVerified.file.getName
       IO.copyFile(blueprintVerified.file, file)
       file
     }

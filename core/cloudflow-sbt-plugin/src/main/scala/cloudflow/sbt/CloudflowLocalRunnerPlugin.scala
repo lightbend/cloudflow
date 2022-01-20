@@ -83,7 +83,7 @@ object CloudflowLocalRunnerPlugin extends AutoPlugin {
               throw new IllegalStateException("ApplicationDescriptor is not present")
             }
 
-            val logDependencies = findLogLibsInPluginClasspath((fullClasspath in Test).value)
+            val logDependencies = findLogLibsInPluginClasspath((Test / fullClasspath).value)
 
             val projects = streamletDescriptorsByProject.keys
 

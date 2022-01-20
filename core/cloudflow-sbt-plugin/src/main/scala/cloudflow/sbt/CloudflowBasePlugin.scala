@@ -57,11 +57,11 @@ object CloudflowBasePlugin extends AutoPlugin {
       libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" % s"cloudflow-runner_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value,
           "com.lightbend.cloudflow" % s"cloudflow-localrunner_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value),
-      buildOptions in docker := BuildOptions(
+      docker / buildOptions := BuildOptions(
           cache = true,
           removeIntermediateContainers = BuildOptions.Remove.OnSuccess,
           pullBaseImage = BuildOptions.Pull.IfMissing),
-      imageNames in docker := {
+      docker / imageNames := {
         val registry = cloudflowDockerRegistry.value
         val namespace = cloudflowDockerRepository.value
 
@@ -123,17 +123,17 @@ object CloudflowBasePlugin extends AutoPlugin {
               (imageRef -> streamletDescriptors): (ImageRef, Map[String, StreamletDescriptor])
             }
         }.value,
-      fork in Compile := true,
+      Compile / fork := true,
       extraDockerInstructions := Seq(),
       ownerInDockerImage := userAsOwner(UserInImage))
 
   private[sbt] val verifyDockerImage = Def.task {
-    (imageNames in docker).value.headOption.getOrElse(throw DockerRegistryNotSet)
+    (docker / imageNames).value.headOption.getOrElse(throw DockerRegistryNotSet)
   }
 
   private[sbt] val showResultOfBuild = Def.task {
     val log = streams.value.log
-    val imagePushed = (imageNames in docker).value.head // assuming we only build a single image!
+    val imagePushed = (docker / imageNames).value.head // assuming we only build a single image!
 
     log.info(" ") // if you remove the space, the empty line will be auto-removed by SBT somehow...
     log.info("Successfully built the following image:")

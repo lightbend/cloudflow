@@ -64,7 +64,6 @@ class ResourceNamesSpec
       .use(egressRef)
       .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
-      .right
       .value
 
     App.Cr(
@@ -91,7 +90,6 @@ class ResourceNamesSpec
       .use(egressRef)
       .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
-      .right
       .value
 
     App.Cr(

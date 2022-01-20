@@ -32,6 +32,7 @@
 
 package cloudflow.blueprint.deployment
 
+import scala.language.higherKinds
 import com.typesafe.config._
 import org.scalatest._
 import org.scalatest.wordspec._
@@ -181,7 +182,6 @@ class ApplicationDescriptorSpec
         .connect(BTopic("bars1"), processorRef.out, processor2Ref.in, egressRef.in)
         .connect(BTopic("foos2"), processor2Ref.out)
         .verified
-        .right
         .value
 
       When("I create a deployment descriptor from that blueprint")
@@ -232,7 +232,6 @@ class ApplicationDescriptorSpec
         .connect(BTopic("foos"), ingressRef.out, processorRef.in)
         .connect(BTopic("bars1"), processorRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       When("I create a deployment descriptor from that blueprint")

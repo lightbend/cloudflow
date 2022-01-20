@@ -35,7 +35,7 @@ object StreamletScannerPlugin extends AutoPlugin {
       cloudflowApplicationClasspath := applicationClasspath.value,
       cloudflowApplicationClasspathByProject := (ThisProject / name).value -> applicationClasspath.value,
       streamletDescriptorsByProject := streamletsByProject.value,
-      mappings in (Compile, packageBin) += {
+      Compile / packageBin / mappings += {
         streamletDescriptorsFile.value -> "streamlet-descriptors.conf"
       })
 
@@ -57,7 +57,8 @@ object StreamletScannerPlugin extends AutoPlugin {
   }
 
   private def streamletDescriptorsFile: Def.Initialize[Task[File]] = Def.task {
-    val file = (classDirectory in Compile).value / "streamlet-descriptors.conf"
+    val compileClassDirectory = (Compile / classDirectory).value
+    val file = compileClassDirectory / "streamlet-descriptors.conf"
 
     val config = DescriptorExtractor.resolve(
       DescriptorExtractor.ResolveConfiguration(dockerImageName =

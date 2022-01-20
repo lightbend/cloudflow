@@ -43,7 +43,7 @@ object ActionExtension {
           case _ if retry <= 0 =>
             Action.log.error(s"Retry exhausted while trying to get $name in $namespace, giving up")
             throw new Exception(s"Retry exhausted while trying to get $name in $namespace, giving up")
-          case Success(null) =>
+          case Success(_) => // because above s!=null this must be s == null, done to remove warning.
             Action.log.error(s"Retry to get $name in $namespace, was null, retries: $retry")
             // TODO: remove the Thread.sleep when we move the operator to Actors
             Thread.sleep(200)

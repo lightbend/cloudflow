@@ -66,7 +66,6 @@ class AkkaRunnerSpec
       .use(egressRef)
       .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
-      .right
       .value
 
     val app = App.Cr(

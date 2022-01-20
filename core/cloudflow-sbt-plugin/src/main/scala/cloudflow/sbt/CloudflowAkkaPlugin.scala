@@ -109,7 +109,7 @@ object CloudflowAkkaPlugin extends AutoPlugin {
           Instructions
             .Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))))
       },
-      dockerfile in docker := {
+      docker / dockerfile := {
         val log = streams.value.log
 
         // this triggers side-effects, e.g. files being created in the staging area

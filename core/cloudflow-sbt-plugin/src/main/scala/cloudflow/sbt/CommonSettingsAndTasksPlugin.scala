@@ -48,8 +48,8 @@ object CommonSettingsAndTasksPlugin extends AutoPlugin {
               }
           }
         }.value,
-      publishArtifact in (Compile, packageDoc) := false,
-      publishArtifact in (Compile, packageSrc) := false)
+      Compile / packageDoc / publishArtifact := false,
+      Compile / packageSrc / publishArtifact := false)
 }
 
 trait CloudflowKeys extends CloudflowSettingKeys with CloudflowTaskKeys
