@@ -23,13 +23,8 @@
 
 :supported-akka-v: 2.6.6 
 
-:supported-apache-spark-v: 2.4.5
 :supported-gcp-spark-v: v1beta2-1.1.2-2.4.5
 :supported-helm-spark-v: 0.6.7
-
-:supported-apache-flink-v: 1.10.3
-:supported-flink-8-v: 0.5.0
-:supported-helm-flink-8-v: 0.8.2
 
 :supported-apache-kafka-v: 2.4.1
 :supported-strimzi-kafka-v: 0.16.2
