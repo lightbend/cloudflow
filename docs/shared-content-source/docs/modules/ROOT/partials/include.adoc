@@ -20,11 +20,7 @@
 :minimum-sbt-version:                      0.13.7
 :latest-sbt-version: 					   1.3.13
 
-
 :supported-akka-v: 2.6.6 
-
-:supported-gcp-spark-v: v1beta2-1.1.2-2.4.5
-:supported-helm-spark-v: 0.6.7
 
 :supported-apache-kafka-v: 2.4.1
 :supported-strimzi-kafka-v: 0.16.2
