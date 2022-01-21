@@ -13,10 +13,6 @@ object KubeClient {
 
   val CloudflowResource = App.ResourceName
 
-  val SparkResource = "sparkapplications.sparkoperator.k8s.io"
-
-  val FlinkResource = "flinkapplications.flink.k8s.io"
-
   val ImagePullSecretName = "cloudflow-image-pull-secret"
 
   val LoggingSecretName = "logging"
