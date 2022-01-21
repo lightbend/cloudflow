@@ -10,7 +10,7 @@ object Dependencies {
     val akka = "2.6.17"
     val akkaHttp = "10.2.7"
     val akkaGrpc = "2.1.3"
-    val alpakkaKafka = "2.0.5"
+    val alpakkaKafka = "2.1.1"
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
     val fabric8 = "5.0.0"
@@ -38,7 +38,7 @@ object Dependencies {
     // Reference:
     // https://github.com/fabric8io/kubernetes-client/blob/0c4513ff30ac9229426f1481a46fde2eb54933d9/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/dsl/internal/core/v1/PodOperationsImpl.java#L451
     val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
-    val commonsCompress = "org.apache.commons" % "commons-compress" % "1.20"
+    val commonsCompress = "org.apache.commons" % "commons-compress" % "1.21"
 
     val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.68"
@@ -55,7 +55,6 @@ object Dependencies {
 
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
     val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % Versions.akkaHttp
-    val akkaHttpJackson = "com.typesafe.akka" %% "akka-http-jackson" % Versions.akkaHttp
     val akkaHttp2Support = "com.typesafe.akka" %% "akka-http2-support" % Versions.akkaHttp
 
     val akkaStreamKafka = ("com.typesafe.akka" %% "akka-stream-kafka" % Versions.alpakkaKafka)
@@ -88,12 +87,12 @@ object Dependencies {
     val ficus = "com.iheart" %% "ficus" % "1.4.7"
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
-    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.5.1"
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.8.1"
 
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.104"
 
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
-    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.15.2"
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.16.3"
     val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
 
     val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
@@ -109,14 +108,15 @@ object Dependencies {
 
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
+    val akkaHttpJackson = "com.typesafe.akka" %% "akka-http-jackson" % Versions.akkaHttp % Test
+
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
+
     val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.12" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
-
     val jodaTime = "joda-time" % "joda-time" % "2.10.6"
-
   }
 
   val cloudflowAvro =
@@ -238,13 +238,13 @@ object Dependencies {
   val cloudflowAkkaUtil =
     libraryDependencies ++= Vector(
         Compile.akkaHttp,
-        Compile.akkaHttpJackson,
         Compile.akkaHttp2Support,
         Compile.akkaGrpcRuntime,
         Compile.akkaStreamContrib,
         Compile.akkaStreamTestkit % Test,
-        TestDeps.akkaHttpTestkit,
         Compile.scalatest % Test,
+        TestDeps.akkaHttpTestkit,
+        TestDeps.akkaHttpJackson,
         TestDeps.scalatestJunit)
 
   val cloudflowAkkaTests =
