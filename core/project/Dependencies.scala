@@ -14,7 +14,7 @@ object Dependencies {
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
     val fabric8 = "5.0.0"
-    val jackson = "2.12.5"
+    val jackson = "2.12.6"
     val jacksonFabric8 = "2.11.4"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
