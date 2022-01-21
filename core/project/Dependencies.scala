@@ -55,7 +55,6 @@ object Dependencies {
 
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttp
     val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % Versions.akkaHttp
-    val akkaHttpJackson = "com.typesafe.akka" %% "akka-http-jackson" % Versions.akkaHttp
     val akkaHttp2Support = "com.typesafe.akka" %% "akka-http2-support" % Versions.akkaHttp
 
     val akkaStreamKafka = ("com.typesafe.akka" %% "akka-stream-kafka" % Versions.alpakkaKafka)
@@ -109,14 +108,15 @@ object Dependencies {
 
     val fabric8KubernetesServerMock = "io.fabric8" % "kubernetes-server-mock" % Versions.fabric8 % Test
 
+    val akkaHttpJackson = "com.typesafe.akka" %% "akka-http-jackson" % Versions.akkaHttp % Test
+
+    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
+
     val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.12" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
-    val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
-
     val jodaTime = "joda-time" % "joda-time" % "2.10.6"
-
   }
 
   val cloudflowAvro =
@@ -238,13 +238,13 @@ object Dependencies {
   val cloudflowAkkaUtil =
     libraryDependencies ++= Vector(
         Compile.akkaHttp,
-        Compile.akkaHttpJackson,
         Compile.akkaHttp2Support,
         Compile.akkaGrpcRuntime,
         Compile.akkaStreamContrib,
         Compile.akkaStreamTestkit % Test,
-        TestDeps.akkaHttpTestkit,
         Compile.scalatest % Test,
+        TestDeps.akkaHttpTestkit,
+        TestDeps.akkaHttpJackson,
         TestDeps.scalatestJunit)
 
   val cloudflowAkkaTests =
