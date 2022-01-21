@@ -84,7 +84,6 @@ class OptionsParserSpec extends AnyFlatSpec with Matchers {
 
   it should "parse configurations keys passed as k/v" in {
     // Arrange
-    // TODO: check with Ray, the example : "='SPARK-OUTPUT:'" doesn't parse in HOCON
     val input = Array(
       "deploy",
       crFile.getAbsolutePath,
