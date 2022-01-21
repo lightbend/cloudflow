@@ -7,14 +7,15 @@ object Dependencies {
   val Scala213 = "2.13.8"
 
   object Versions {
-    val akka = "2.6.17"
+    val akka = "2.6.18"
     val akkaHttp = "10.2.7"
     val akkaGrpc = "2.1.3"
     val alpakkaKafka = "2.1.1"
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
     val fabric8 = "5.0.0"
-    val jackson = "2.11.4" // same major.minor as used in fabric8
+    val jackson = "2.12.5"
+    val jacksonFabric8 = "2.11.4"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
     val maven = "3.8.1"
@@ -76,6 +77,7 @@ object Dependencies {
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson
+    val jacksonDatabindOperator = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonFabric8
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
@@ -169,6 +171,7 @@ object Dependencies {
         Compile.akkaHttp,
         Compile.akkaSlf4j,
         Compile.logback,
+        Compile.jacksonScala,
         Compile.jacksonDatabind,
         Compile.kubeActions,
         Compile.kafkaClient,
