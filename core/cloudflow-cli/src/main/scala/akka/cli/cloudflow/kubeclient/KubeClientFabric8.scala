@@ -128,18 +128,6 @@ class KubeClientFabric8(
         Failure(CliException("Cannot find cloudflow", ex))
     }
 
-  private def getCrdAppVersion(name: String, client: KubernetesClient) =
-    Try {
-      val crd =
-        getCrd(name, client)
-          .getOrElse(throw CliException("Application resource not found in the cluster"))
-
-      crd.getSpec.getVersion
-    }.recoverWith {
-      case ex =>
-        Failure(CliException("Cannot find spark application", ex))
-    }
-
   private lazy val cloudflowApplicationsClient: Try[MixedOperation[App.Cr, App.List, Resource[App.Cr]]] = {
     for {
       client <- kubeClient
@@ -236,14 +224,6 @@ class KubeClientFabric8(
     } yield {
       version
     }
-  }
-
-  def sparkAppVersion() = withClient { client =>
-    getCrdAppVersion(SparkResource, client)
-  }
-
-  def flinkAppVersion() = withClient { client =>
-    getCrdAppVersion(FlinkResource, client)
   }
 
   private def cloudflowLabels(name: String) = {

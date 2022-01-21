@@ -30,8 +30,6 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
 
   @nowarn def testingKubeClientFactory(
       protocolVersion: String = App.ProtocolVersion,
-      sparkVersion: String = Cli.RequiredSparkVersion,
-      flinkVersion: String = Cli.RequiredFlinkVersion,
       providedPvcs: List[String] = defaultPvcMounts,
       providedKafkaClusters: Map[String, String] = defaultProvidedKafkaClusters,
       providedApplication: Option[App.Cr] = None,
@@ -47,8 +45,6 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
           dockerUsername: String,
           dockerPassword: String): Try[Unit] = Success(())
       def createNamespace(name: String): Try[Unit] = Success(())
-      def sparkAppVersion(): Try[String] = Success(sparkVersion)
-      def flinkAppVersion(): Try[String] = Success(flinkVersion)
       def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = Success(protocolVersion)
       def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
       def uidCloudflowApp(name: String, namespace: String) = Success("1")
@@ -135,7 +131,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
 
   it should "succeed a mocked deploy" in {
     // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
+    val cli = new TestingCli(testingKubeClientFactory())
 
     // Act
     val res =
