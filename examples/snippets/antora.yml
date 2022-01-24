@@ -1,10 +1,10 @@
 name: "docsnippets"
 title: ""
 prerelease: Beta
-version: dev
+version: 2.3.0
 asciidoc:
   attributes:
-    cloudflow-version: dev
-    cloudflow-examples-version: dev
-    cloudflow-branch-version: dev
-    kubectl-plugin-version: not-available
+    cloudflow-version: 2.3.0
+    cloudflow-examples-version: 2.3.0
+    cloudflow-branch-version: v2.3.0
+    kubectl-plugin-version: 2.3.0
