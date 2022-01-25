@@ -6,7 +6,7 @@ include::{cloudflow-version}@shared-content:develop:page$developing-streamlets.a
 
 == What's next
 
-Learn more about the specifics of using xref:use-akka-streamlets.adoc[Akka], xref:use-spark-streamlets.adoc[Spark], and xref:use-flink-streamlets.adoc[Flink] streamlets.
+Learn more about the specifics of using xref:use-akka-streamlets.adoc[Akka] streamlets.
 Cloudflow also offers a way to test your application without the need of a cluster in a xref:cloudflow-local-sandbox.adoc[local sandbox].
 
 // Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.
