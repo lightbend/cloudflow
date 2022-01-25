@@ -3,15 +3,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-When you develop your Cloudflow application, you have the option to use Akka Streams, Spark, Flink and Kafka. This chapter contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools. It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow and how to expose your services to external access.
+This chapter contains the steps to install Cloudflow, using the `Helm` and `kubectl` command-line tools. It also shows how to integrate with Cloudflow and how to expose your services to external access.
 
 
 * xref:installation-prerequisites.adoc[]
 * xref:versions.adoc[]
 * xref:installing-cloudflow.adoc[]
 * xref:how-to-install-and-use-strimzi.adoc[]
-* xref:installing-spark-operator.adoc[]
-* xref:installing-flink-operator.adoc[]
 * xref:providing-external-access-to-cloudflow-services.adoc[]
 
 For information on upgrading Cloudflow and migrating applications, see:

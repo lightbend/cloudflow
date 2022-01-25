@@ -1,6 +1,0 @@
-= Adding Flink Support
-
-
-include::ROOT:partial$include.adoc[]
-
-include::{cloudflow-version}@shared-content:administration:page$installing-flink-operator.adoc[]

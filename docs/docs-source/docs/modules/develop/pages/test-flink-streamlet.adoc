@@ -1,7 +1,0 @@
-= Testing a Flink Streamlet
-
-
-include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:develop:page$test-flink-streamlet.adoc[]
-
-// Authors: content in this file is included from the ./../shared-content-source directory. Please see the readme in that folder before editing shared content.
