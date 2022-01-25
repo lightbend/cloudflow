@@ -50,6 +50,7 @@ lazy val step2 = appModule("step2")
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
+      libraryDependencies += Cloudflow.library.CloudflowAvro,
       Test / parallelExecution := false,
       Test / fork := true
     )
