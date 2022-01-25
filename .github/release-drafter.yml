@@ -16,8 +16,6 @@ categories:
     labels:
       - 'streamlets'
       - 'akka'
-      - 'flink'
-      - 'spark'
   - title: ':book: Documentation'
     labels:
       - 'kind/documentation'

@@ -295,8 +295,6 @@ In this way, we provide the same classpath isolation guarantee when you run your
 The new `runLocal` implementation reports the output of streamlets grouped by the sub-projects where they belong.
 As an additional improvement, the execution output also shows an ASCII-art representation of the application graph that connects streamlets and topics.
 
-See xref:ROOT:app-development-process.adoc#local-testing[Local Testing] to learn more about the _sandbox_ provided by Cloudflow.
-
 == Getting Help
 
 The Cloudflow community is there to help you out. 
