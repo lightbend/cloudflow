@@ -2,7 +2,6 @@
 include::ROOT:partial$include.adoc[]
 
 This guide shows how to install Cloudflow, using the `Helm` and `kubectl` command-line tools.
-It also shows how to install Kafka, Spark, and Flink operators that integrate with Cloudflow.
 
 == Installing Cloudflow
 
@@ -125,17 +124,3 @@ cloudflow-operator-6b7d7cbdfc-xb6w5                 1/1     Running   0         
 ----
 
 You can now deploy an Akka-based Cloudflow application into the cluster as it only requires Kafka to be set up. More on this in the development section of the documentation.
-
-== Adding Spark support
-
-If you plan to write applications that utilize Spark, you will need to install the Spark operator before deploying your Cloudflow application.
-
-Continue with xref:installing-spark-operator.adoc[Adding Spark Support].
-
-== Adding Flink support
-
-If you plan to write applications that utilize Flink you will need to install the Flink operator before deploying your Cloudflow application.
-
-Continue with xref:installing-flink-operator.adoc[Adding Flink Support].
-
-

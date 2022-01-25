@@ -72,7 +72,6 @@ NOTE: The default build tool for Cloudflow applications is `sbt` but there is su
 
 Choose from the following topics:
 
-* xref:app-development-process.adoc[The Cloudflow development process]
 * xref:get-started:index.adoc[How to get started with an example application]
 * xref:develop:index.adoc[How to create Cloudflow applications using streamlets and blueprints].
 

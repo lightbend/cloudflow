@@ -2,7 +2,6 @@ include::partial$include.adoc[]
 .Cloudflow Docs - version {cloudflow-version}
 
 * xref:index.adoc[Introducing Cloudflow]
-* xref:app-development-process.adoc[The Cloudflow development process]
 
 * xref:get-started:index.adoc[Getting started with Cloudflow]
 ** xref:get-started:prepare-development-environment.adoc[Prepare a development environment]

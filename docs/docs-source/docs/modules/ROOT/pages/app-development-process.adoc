@@ -1,6 +1,0 @@
-= The Cloudflow development process
-:imagesdir: assets/images
-
-include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:ROOT:page$app-development-process.adoc[]
-

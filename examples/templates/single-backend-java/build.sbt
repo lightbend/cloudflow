@@ -2,8 +2,6 @@ import sbt._
 import sbt.Keys._
 
 lazy val templateJavaProject = (project in file("."))
-     //enable here the backend you want to use in your application:
-     //CloudflowAkkaStreamsApplicationPlugin, CloudflowSparkApplicationPlugin, CloudflowFlinkApplicationPlugin
     .enablePlugins(CloudflowAkkaPlugin, CloudflowApplicationPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
