@@ -1,7 +1,7 @@
 lazy val helloWorld =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.12.15",
+      scalaVersion := "2.13.8",
       cloudflowVersion := "2.0.19",
       name := "hello-world",
       // sbt 1.5: Do not fail when mixing versions of Cloudflow and dependencies
