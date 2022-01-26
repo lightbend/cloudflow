@@ -35,13 +35,13 @@ sealed trait AppEvent {
 }
 
 case class DeployEvent(app: App.Cr, currentApp: Option[App.Cr], cause: ObjectReference) extends AppEvent {
-  override def toString() = s"DeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
+  override def toString() = s"DeployEvent for application ${app.getSpec.appId} in namespace ${app.namespace}"
   def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String): Seq[Action] =
     Actions.deploy(app, currentApp, runners, podName, podNamespace, cause)
 }
 
 case class UndeployEvent(app: App.Cr, cause: ObjectReference) extends AppEvent {
-  override def toString() = s"UndeployEvent for application ${app.spec.appId} in namespace ${app.namespace}"
+  override def toString() = s"UndeployEvent for application ${app.getSpec.appId} in namespace ${app.namespace}"
   def toActionList(runners: Map[String, runner.Runner[_]], podName: String, podNamespace: String): Seq[Action] =
     Actions.undeploy(app, podName, cause)
 }
@@ -62,7 +62,7 @@ object AppEvent {
       currentApps: Map[String, WatchEvent[App.Cr]],
       watchEvent: WatchEvent[App.Cr]): (Map[String, WatchEvent[App.Cr]], List[AppEvent]) = {
     val cr = watchEvent.obj
-    val appId = cr.spec.appId
+    val appId = cr.getSpec.appId
     val currentApp = currentApps.get(appId).map(_.obj)
 
     def hasChanged = currentApps.get(appId).forall { _existingEvent =>
@@ -70,7 +70,7 @@ object AppEvent {
 
       existingEventObject.getMetadata.getResourceVersion != watchEvent.obj.getMetadata.getResourceVersion &&
       // the spec must change, otherwise it is not a deploy event (but likely a status update).
-      existingEventObject.spec != watchEvent.obj.spec
+      existingEventObject.getSpec != watchEvent.obj.getSpec
     }
 
     watchEvent.eventType match {

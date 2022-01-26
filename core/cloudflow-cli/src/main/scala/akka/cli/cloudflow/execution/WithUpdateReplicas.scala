@@ -15,7 +15,7 @@ trait WithUpdateReplicas {
     appCr
       .map { app =>
         (for {
-          streamlet <- app.spec.deployments
+          streamlet <- app.getSpec.deployments
         } yield {
           streamlet.replicas match {
             case Some(r) => Some(streamlet.streamletName -> r)
@@ -27,18 +27,18 @@ trait WithUpdateReplicas {
   }
 
   def updateReplicas(crApp: App.Cr, replicas: Map[String, Int]): Try[App.Cr] = {
-    val allStreamlets = crApp.spec.deployments.map { streamlet => streamlet.streamletName }.distinct
+    val allStreamlets = crApp.getSpec.deployments.map { streamlet => streamlet.streamletName }.distinct
 
     (replicas.keys.toList.distinct.diff(allStreamlets)) match {
       case Nil =>
-        val clusterDeployments = crApp.spec.deployments.map { streamlet =>
+        val clusterDeployments = crApp.getSpec.deployments.map { streamlet =>
           streamlet.streamletName match {
             case sname if replicas.contains(sname) =>
               streamlet.copy(replicas = Some(replicas(sname)))
             case _ => streamlet
           }
         }
-        val res = crApp.copy(spec = crApp.spec.copy(deployments = clusterDeployments))
+        val res = crApp.copy(_spec = crApp.getSpec.copy(deployments = clusterDeployments))
         Success(res)
       case missings =>
         Failure(

@@ -67,8 +67,8 @@ class ResourceNamesSpec
       .value
 
     App.Cr(
-      spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-      metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+      _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
   }
   val akkaRunner = new AkkaRunner(ctx.akkaRunnerDefaults)
 
@@ -93,15 +93,15 @@ class ResourceNamesSpec
       .value
 
     App.Cr(
-      spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint2, agentPaths),
-      metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint2, agentPaths),
+      _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
   }
 
   val secret = new SecretBuilder().build()
 
   "Deployments" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
+      val deployment = akkaRunner.resource(testApp01.getSpec.deployments.head, testApp01, secret)
 
       deployment.getMetadata.getName.length mustEqual 63
     }
@@ -110,7 +110,7 @@ class ResourceNamesSpec
   "Pod templates" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
 
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
+      val deployment = akkaRunner.resource(testApp01.getSpec.deployments.head, testApp01, secret)
 
       deployment.getSpec.getTemplate.getMetadata.getName.length mustEqual 63
 
@@ -119,7 +119,7 @@ class ResourceNamesSpec
 
   "Containers" should {
     "have long names truncate to 63 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
+      val deployment = akkaRunner.resource(testApp01.getSpec.deployments.head, testApp01, secret)
 
       deployment.getSpec.getTemplate.getSpec.getContainers.asScala.head.getName.length mustEqual 63
 
@@ -128,7 +128,7 @@ class ResourceNamesSpec
 
   "Volumes" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
+      val deployment = akkaRunner.resource(testApp01.getSpec.deployments.head, testApp01, secret)
 
       deployment.getSpec.getTemplate.getSpec.getVolumes.asScala.foreach { vol =>
         assert(vol.getName.length <= 253)
@@ -139,7 +139,7 @@ class ResourceNamesSpec
 
   "Volume mounts" should {
     "have long names truncate to 253 characters when coming from AkkaRunner" in {
-      val deployment = akkaRunner.resource(testApp01.spec.deployments.head, testApp01, secret)
+      val deployment = akkaRunner.resource(testApp01.getSpec.deployments.head, testApp01, secret)
 
       deployment.getSpec.getTemplate.getSpec.getContainers.asScala.head.getVolumeMounts.asScala.foreach { mount =>
         assert(mount.getName.length <= 253)

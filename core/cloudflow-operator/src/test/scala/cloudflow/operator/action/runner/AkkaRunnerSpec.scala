@@ -69,8 +69,8 @@ class AkkaRunnerSpec
       .value
 
     val app = App.Cr(
-      spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-      metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+      _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
     val deployment = App.Deployment(
       name = appId,
