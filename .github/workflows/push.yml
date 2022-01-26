@@ -96,7 +96,7 @@ jobs:
       if: ${{ github.event_name != 'pull_request' }}
       run: |-
         cd core
-        curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/spectrometer/master/install.sh | bash
+        curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-v1.sh | bash
         fossa analyze && fossa test
       env:
         FOSSA_API_KEY: "${{secrets.FOSSA_API_KEY}}"
