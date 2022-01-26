@@ -63,7 +63,6 @@ class RunnerActionsSpec
         .use(egressRef)
         .connect(BTopic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val appId = "def-jux-12345"
@@ -117,7 +116,6 @@ class RunnerActionsSpec
         .use(egressRef)
         .connect(BTopic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val appId = "def-jux-12345"

@@ -9,8 +9,6 @@ build stateful Akka Streamlets.
 
 == Akka Cluster
 
-WARNING: The features on this page feature are experimental and may change.  It is not recommended to use these features in production just yet.
-
 === Use Case
 
 Akka Clustering in a Cloudflow Akka Streamlet gives you the ability to leverage existing Akka tools for managing

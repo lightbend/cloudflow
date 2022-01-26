@@ -13,10 +13,6 @@ object KubeClient {
 
   val CloudflowResource = App.ResourceName
 
-  val SparkResource = "sparkapplications.sparkoperator.k8s.io"
-
-  val FlinkResource = "flinkapplications.flink.k8s.io"
-
   val ImagePullSecretName = "cloudflow-image-pull-secret"
 
   val LoggingSecretName = "logging"
@@ -70,8 +66,4 @@ trait KubeClient {
   def getPvcs(namespace: String): Try[List[String]]
 
   def getKafkaClusters(namespace: Option[String]): Try[Map[String, String]]
-
-  def sparkAppVersion(): Try[String]
-
-  def flinkAppVersion(): Try[String]
 }

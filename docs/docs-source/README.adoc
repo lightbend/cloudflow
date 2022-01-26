@@ -137,28 +137,30 @@ As a general rule, limit the number of projects at this location: one project pe
 
 === Including a file, or file section, in the documentation
 
-For a file at `examples/snippets/modules/ROOT/examples/spark-scala/src/main/scala/com/example/Feature.scala`, the following statement is used to include the whole file:
+For a file at `examples/snippets/modules/ROOT/examples/akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala`, the following statement is used to include the whole file:
 
 ```
- include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[]
+ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala[]
 ```
 
 In most case, including the complete file is not optimal. It is better to include only section of it. To do this, use tags.
 
 With the following file
 ```
-package com.example
+object RecordSumFlow extends AkkaStreamlet {
 
-class Feature {
-    //tag::something_interesting[]
-    val abc = new Greatness()
-    //end::something_interesting[]
-}
+  //tag::definition[]
+  val recordsInWindowParameter = IntegerConfigParameter(
+    "records-in-window",
+    "This value describes how many records of data should be processed together, default 64 records",
+    Some(64)
+  )
+  //end::definition[]
 ```
 
 the relevant part is added using:
 ```
- include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/main/scala/com/example/Feature.scala[tag=something_interesting]
+ include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/main/scala/cloudflow/akkastreamsdoc/RecordSumFlow.scala[tag=definition]
 ```
 
 Antora has a good support for the tags:

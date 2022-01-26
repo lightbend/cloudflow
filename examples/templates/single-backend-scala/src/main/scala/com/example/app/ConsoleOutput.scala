@@ -15,17 +15,11 @@
  */
 package com.example.app
 
-// pick the streamlet implementation corresponding to your chosen backend
-// import cloudflow.spark._
-// import cloudflow.flink._
-
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
 
-// Implement the streamlet extending the corresponding base to the chosen backend:
-// AkkaStreamlet, SparkSteamlet, FlinkStreamlet
 class ConsoleOutput extends AkkaStreamlet {
 
   // declare inputs, outputs, and a shape

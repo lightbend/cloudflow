@@ -25,14 +25,9 @@ import akka.stream.scaladsl._
 import scala.util.Random
 import scala.concurrent.duration._
 
-// pick the streamlet implementation corresponding to your chosen backend
-// import cloudflow.spark._
-// import cloudflow.flink._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 
-// Implement the streamlet extending the corresponding base to the chosen backend:
-// AkkaStreamlet, SparkSteamlet, FlinkStreamlet
 class DataInput extends AkkaStreamlet {
 
   // declare inputs and outputs

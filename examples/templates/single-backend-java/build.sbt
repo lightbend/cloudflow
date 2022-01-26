@@ -2,12 +2,11 @@ import sbt._
 import sbt.Keys._
 
 lazy val templateJavaProject = (project in file("."))
-     //enable here the backend you want to use in your application:
-     //CloudflowAkkaStreamsApplicationPlugin, CloudflowSparkApplicationPlugin, CloudflowFlinkApplicationPlugin
     .enablePlugins(CloudflowAkkaPlugin, CloudflowApplicationPlugin, ScalafmtPlugin)
     .settings(
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
+        Cloudflow.library.CloudflowAvro,
 	      "ch.qos.logback" % "logback-classic" % "1.2.10",
         "org.scalatest" %% "scalatest"       % "3.0.8" % "test"
       ),
@@ -32,6 +31,7 @@ lazy val templateJavaProject = (project in file("."))
       ),
       runLocalConfigFile := Some("src/main/resources/local.conf"),
       Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      avroStringType := "String",
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 

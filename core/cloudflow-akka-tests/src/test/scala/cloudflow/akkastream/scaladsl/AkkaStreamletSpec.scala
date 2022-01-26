@@ -33,7 +33,6 @@ import org.scalatest.matchers.must._
 
 import cloudflow.streamlets._
 import cloudflow.streamlets.avro._
-import cloudflow.streamlets.proto._
 import cloudflow.akkastream._
 import cloudflow.akkastream.scaladsl._
 import cloudflow.akkastream.testdata._
@@ -175,19 +174,6 @@ class AkkaStreamletSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll
       val in = testkit.inletFromSource(egress.in, source)
       testkit.run(egress, in, () => egress.result mustBe data)
     }
-
-    "Allow for several formats" in {
-      val data = Vector(Data(1, "a"), Data(2, "b"), Data(3, "c"))
-      val pdata = data.map(d => PData(d.name))
-      val source = Source(data)
-      val proc = new TestMix
-      val in = testkit.inletFromSource(proc.in, source)
-      val out = testkit.outletAsTap(proc.out)
-
-      testkit.run(proc, in, out, () => out.probe.receiveN(3) mustBe pdata.map(d => proc.out.partitioner(d) -> d))
-
-      out.probe.expectMsg(Completed)
-    }
   }
 
   class TestProcessorWithParameters extends AkkaStreamlet {
@@ -229,17 +215,6 @@ class AkkaStreamletSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll
     override final def createLogic = new AkkaStreamletLogic() {
       def run() =
         result = scala.concurrent.Await.result(plainSource(in).toMat(sink)(Keep.right).run, timeout)
-    }
-  }
-
-  class TestMix extends AkkaStreamlet {
-    val in = AvroInlet[Data]("in")
-    val out = ProtoOutlet[PData]("out", _.name.toString)
-    final override val shape = StreamletShape.withInlets(in).withOutlets(out)
-
-    val flow = Flow[Data].map(d => PData(d.name))
-    override final def createLogic = new RunnableGraphStreamletLogic() {
-      def runnableGraph = plainSource(in).via(flow).to(plainSink(out))
     }
   }
 }

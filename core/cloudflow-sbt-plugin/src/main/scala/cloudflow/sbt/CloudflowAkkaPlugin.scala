@@ -33,7 +33,6 @@ object CloudflowAkkaPlugin extends AutoPlugin {
 
   override def projectSettings =
     Seq(
-      cloudflowAkkaBaseImage := None,
       libraryDependencies ++= Vector(
           "com.lightbend.cloudflow" % s"cloudflow-akka-util_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value,
           "com.lightbend.cloudflow" % s"cloudflow-akka_${(ThisProject / scalaBinaryVersion).value}" % (ThisProject / cloudflowVersion).value,
@@ -110,33 +109,16 @@ object CloudflowAkkaPlugin extends AutoPlugin {
           Instructions
             .Copy(sources = Seq(CopyFile(appJarsDir)), destination = OptAppDir, chown = Some(userAsOwner(UserInImage))))
       },
-      dockerfile in docker := {
+      docker / dockerfile := {
         val log = streams.value.log
 
         // this triggers side-effects, e.g. files being created in the staging area
         cloudflowStageAppJars.value
 
-        cloudflowAkkaBaseImage.value match {
-          case Some(baseImage) =>
-            log.warn("'cloudflowAkkaBaseImage' is defined, 'cloudflowDockerBaseImage' setting is going to be ignored")
-
-            val appDir: File = stage.value
-            val appJarsDir: File = new File(appDir, AppJarsDir)
-            val depJarsDir: File = new File(appDir, DepJarsDir)
-
-            new Dockerfile {
-              from(baseImage)
-              user(UserInImage)
-              copy(depJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-              copy(appJarsDir, OptAppDir, chown = userAsOwner(UserInImage))
-              addInstructions(extraDockerInstructions.value)
-            }
-          case _ =>
-            new Dockerfile {
-              from(cloudflowDockerBaseImage.value)
-              addInstructions((ThisProject / baseDockerInstructions).value)
-              addInstructions((ThisProject / extraDockerInstructions).value)
-            }
+        new Dockerfile {
+          from(cloudflowDockerBaseImage.value)
+          addInstructions((ThisProject / baseDockerInstructions).value)
+          addInstructions((ThisProject / extraDockerInstructions).value)
         }
       })
 

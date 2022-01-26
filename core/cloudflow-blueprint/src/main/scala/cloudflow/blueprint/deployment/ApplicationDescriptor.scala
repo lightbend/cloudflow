@@ -176,7 +176,7 @@ object StreamletDeployment {
 
 object Topic {
   def pathAsMap(config: Config, section: String): Map[String, String] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     if (config.hasPath(section)) {
       config
         .getConfig(section)

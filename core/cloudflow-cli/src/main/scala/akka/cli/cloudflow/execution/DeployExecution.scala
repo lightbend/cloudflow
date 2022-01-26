@@ -76,43 +76,6 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             ex))
     }
 
-  private def validateStreamlet(name: String, required: String)(
-      getVersion: () => Try[String]): Option[(String, Option[Throwable])] = {
-    getVersion() match {
-      case Success(version) if (version != required) =>
-        Some((
-          s"${name} is installed but does not support the required version of the CRD, required ${required}, installed ${version}",
-          None))
-      case Failure(ex) =>
-        Some(
-          (
-            s"cannot detect that ${name} is installed, please install it at version ${required} before continuing",
-            Some(ex)))
-      case _ => None
-    }
-  }
-
-  private def validateStreamletsDependencies(
-      crApp: App.Cr,
-      streamletChecks: Map[String, StreamletVersion]): Try[Unit] = {
-    val res = crApp.spec.streamlets
-      .map(_.descriptor.runtime)
-      .distinct
-      .map { s =>
-        streamletChecks.get(s).fold[Option[(String, Option[Throwable])]](None) { check =>
-          validateStreamlet(s, check.required)(check.thunk)
-        }
-      }
-      .flatten
-
-    if (!res.isEmpty) {
-      val ex: Throwable = res.flatMap(_._2).headOption.getOrElse(null)
-      Failure(CliException(res.map(_._1).mkString("\n"), ex))
-    } else {
-      Success(())
-    }
-  }
-
   private def referencedKafkaSecretExists(appCr: App.Cr, kafkaClusters: () => Try[List[String]]): Try[Unit] = {
     val expectedClusters = appCr.spec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
 
@@ -180,13 +143,6 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
 
       // validation of the CR
       _ <- applicationDescriptorValidation(applicationCr)
-      streamletChecks = Map(
-        ("spark", StreamletVersion(Cli.RequiredSparkVersion, (() => client.sparkAppVersion()))),
-        ("flink", StreamletVersion(Cli.RequiredFlinkVersion, (() => client.flinkAppVersion())))).filter {
-        case (k, _) => !d.unmanagedRuntimes.contains(k)
-      }
-      _ <- validateStreamletsDependencies(applicationCr, streamletChecks)
-
       // validate the Cr against the cluster
       _ <- referencedKafkaSecretExists(
         applicationCr,

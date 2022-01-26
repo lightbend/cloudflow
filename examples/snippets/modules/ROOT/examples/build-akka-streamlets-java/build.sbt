@@ -50,6 +50,7 @@ lazy val step2 = appModule("step2")
 lazy val step3 = appModule("step3")
     .enablePlugins(CloudflowAkkaPlugin)
     .settings(
+      libraryDependencies += Cloudflow.library.CloudflowAvro,
       Test / parallelExecution := false,
       Test / fork := true
     )
@@ -65,13 +66,8 @@ lazy val app = appModule("app")
 // not used. Only to show avro configuration
 //tag::avro-config[]
 lazy val datamodel = (project in file("./my-cloudflow-library"))
-  .enablePlugins(CloudflowLibraryPlugin)
   .settings(
-    schemaCodeGenerator := SchemaCodeGenerator.Java,
-    schemaPaths := Map(
-      SchemaFormat.Avro -> "src/main/resources/avroschemas",
-      SchemaFormat.Proto -> "src/main/resources/protobuf"
-    )
+    libraryDependencies += Cloudflow.library.CloudflowAvro
   )
 //end::avro-config[]
 
@@ -92,15 +88,15 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
-
   Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
   Test / console / scalacOptions := (Compile / console / scalacOptions).value,
+  avroStringType := "String", 
 
   libraryDependencies ++= Seq(
         "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
-        "junit"                  % "junit"                      % "4.12"     % "test"),
+        "junit"                  %  "junit"                     % "4.12"     % "test"
+  ),
 
-  schemaCodeGenerator := SchemaCodeGenerator.Java,
   javacOptions ++= Seq("-Xlint:deprecation")
 )
 

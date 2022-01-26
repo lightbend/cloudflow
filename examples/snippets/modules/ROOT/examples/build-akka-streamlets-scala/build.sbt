@@ -68,10 +68,14 @@ lazy val commonSettings = Seq(
     "-language:_",
     "-unchecked"
   ),
-  libraryDependencies += ("org.scalatest" %% "scalatest" % "3.0.8"  % "test"),
-
+  
+  libraryDependencies ++= Seq(
+    Cloudflow.library.CloudflowAvro,
+    "org.scalatest"  %% "scalatest" % "3.0.8"   % "test"
+  ), 
 
   Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+  Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
   Test / console / scalacOptions := (Compile / console / scalacOptions).value
 )
 

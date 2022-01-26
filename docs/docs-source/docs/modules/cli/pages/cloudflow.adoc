@@ -32,6 +32,8 @@ list [options]
 list available cloudflow applications
 
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: status
@@ -45,6 +47,8 @@ show the status of a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: deploy
@@ -69,10 +73,11 @@ deploy a cloudflow applications from a cr file
  * ``  config-key               ``the configuration keys for the overrides
  * ``  --logback-config <value>
                            ``the logback configuration to be applied
- * ``  --unmanaged-runtimes <value>
-                           ``The runtimes that should not be checked
- * ``  --microservices          ``EXPERIMENTAL: Deploy on Akka Cloud Platform
+ * ``  --serviceaccount <value>
+                           ``the serviceaccount to be used
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: undeploy
@@ -86,6 +91,8 @@ undeploy a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: update-docker-credentials
@@ -104,6 +111,8 @@ updates docker registry credentials that are used to pull Cloudflow application 
  * ``  -p, --password <value>   ``the docker registry password
  * ``  --password-stdin         ``Take the docker registry password from std-in
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: scale
@@ -118,6 +127,8 @@ scales a streamlet of a deployed Cloudflow application to the specified number o
  * ``  <cloudflowApp>           ``the cloudflow application
  * ``  <streamlet>=<replicas>   ``Key/value pairs of streamlets replicas
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: configure
@@ -135,8 +146,11 @@ configures a deployed cloudflow application
  * ``  config-key               ``the configuration keys for the overrides
  * ``  --logback-config <value>
                            ``the logback configuration to be applied
- * ``  --microservices          ``EXPERIMENTAL: Deploy on Akka Cloud Platform
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml
 
 == Command: configuration
@@ -150,4 +164,6 @@ show the current configuration of a cloudflow application
 
  * ``  <cloudflowApp>           ``the name of the cloudflow application
  * ``  -n, --namespace <value>  ``the namespace to be used
+ * ``  --operator-namespace <value>
+                           ``the namespace where the operator is deployed
  * ``  -o, --output <value>     ``available options are: c or classic, t or table, json, yaml

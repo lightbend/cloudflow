@@ -307,4 +307,4 @@ include::{cloudflow-examples-version}@docsnippets:ROOT:example$sensor-data-scala
 
 == What's next
 
-Learn more about the specifics of using xref:use-akka-streamlets.adoc[Akka], xref:use-spark-streamlets.adoc[Spark], and xref:use-flink-streamlets.adoc[Flink] streamlets. 
+Learn more about the specifics of using xref:use-akka-streamlets.adoc[Akka] streamlets. 

@@ -10,6 +10,7 @@ lazy val sensorData =  (project in file("."))
 //end::local-conf[]      
 
       libraryDependencies ++= Seq(
+        Cloudflow.library.CloudflowAvro,
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
         "ch.qos.logback"         %  "logback-classic"           % "1.2.10",
@@ -39,6 +40,7 @@ lazy val sensorData =  (project in file("."))
       ),
 
       Compile / console / scalacOptions --= Seq("-Ywarn-unused"),
+      Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
       Test / console / scalacOptions := (Compile / console / scalacOptions).value
     )
 

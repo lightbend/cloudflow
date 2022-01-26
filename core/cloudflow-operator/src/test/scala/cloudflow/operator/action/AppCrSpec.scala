@@ -66,7 +66,6 @@ class AppCrSpec
         .use(egressRef)
         .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val newApp = mkApp(verifiedBlueprint)
@@ -228,7 +227,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, egress1Ref.in)
       .connect(Topic("foos2"), egress2Ref.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -252,7 +250,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -276,7 +273,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -300,7 +296,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)

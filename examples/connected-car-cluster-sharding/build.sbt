@@ -30,7 +30,10 @@ lazy val connectedCarExample = (project in file("./akka-connected-car"))
   )
 
 lazy val datamodel = (project in file("./datamodel"))
-  .enablePlugins(CloudflowLibraryPlugin)
+  .settings(
+    Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
+    libraryDependencies += Cloudflow.library.CloudflowAvro
+  )
 
 lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
   .enablePlugins(CloudflowAkkaPlugin)

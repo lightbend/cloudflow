@@ -20,18 +20,11 @@ import akka.NotUsed;
 import akka.stream.*;
 import akka.stream.javadsl.*;
 
-// pick the streamlet implementation corresponding to your chosen backend
-// import cloudflow.spark._
-// import cloudflow.flink._
-
 import cloudflow.akkastream.*;
 import cloudflow.akkastream.javadsl.*;
 import cloudflow.streamlets.*;
 import cloudflow.streamlets.avro.*;
 
-
-// Implement the streamlet extending the corresponding base to the chosen backend:
-// AkkaStreamlet, SparkSteamlet, FlinkStreamlet
 public class ConsoleOutput extends AkkaStreamlet {
 
   // Create inputs and outputs by declaring inlets and outlets
@@ -49,7 +42,7 @@ public class ConsoleOutput extends AkkaStreamlet {
     return new RunnableGraphStreamletLogic(getContext()) {
 
       public String format(Data data) {
-        return data.id() + "-> " +data.value();
+        return data.getId() + "-> " +data.getValue();
       }
       public RunnableGraph<NotUsed> createRunnableGraph() {
         return getPlainSource(inlet)

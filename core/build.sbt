@@ -197,6 +197,16 @@ lazy val cloudflowBlueprintCross = cloudflowBlueprint.cross
 lazy val cloudflowBlueprint213 = cloudflowBlueprintCross(Dependencies.Scala213)
 lazy val cloudflowBlueprint212 = cloudflowBlueprintCross(Dependencies.Scala212)
 
+lazy val cloudflowAvro =
+  Project(id = "cloudflow-avro", base = file("cloudflow-avro"))
+    .dependsOn(cloudflowStreamlets)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowAvro)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true)
+
 lazy val cloudflowBlueprint =
   Project(id = "cloudflow-blueprint", base = file("cloudflow-blueprint"))
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
@@ -247,6 +257,16 @@ lazy val cloudflowExtractor =
       run / fork := true,
       Global / cancelable := true)
 
+lazy val cloudflowProto =
+  Project(id = "cloudflow-proto", base = file("cloudflow-proto"))
+    .dependsOn(cloudflowStreamlets)
+    .enablePlugins(GenJavadocPlugin, ScalafmtPlugin)
+    .settings(Dependencies.cloudflowProto)
+    .settings(
+      scalaVersion := Dependencies.Scala212,
+      crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
+      scalafmtOnCompile := true)
+
 lazy val cloudflowSbtPlugin =
   Project(id = "cloudflow-sbt-plugin", base = file("cloudflow-sbt-plugin"))
     .settings(name := "sbt-cloudflow")
@@ -262,10 +282,6 @@ lazy val cloudflowSbtPlugin =
       buildInfoPackage := "cloudflow.sbt",
       addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.8.2"),
       addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.25"),
-      addSbtPlugin("com.cavorite" % "sbt-avro-1-8" % "1.1.9"),
-      addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % Dependencies.Versions.akkaGrpc),
-      addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0-RC18"),
-      addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5"),
       addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0"),
       scriptedLaunchOpts := {
         scriptedLaunchOpts.value ++
@@ -309,7 +325,7 @@ lazy val cloudflowAkka =
 lazy val cloudflowAkkaTestkit =
   Project(id = "cloudflow-akka-testkit", base = file("cloudflow-akka-testkit"))
     .enablePlugins(GenJavadocPlugin, JavaFormatterPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowAkka)
+    .dependsOn(cloudflowAkka, (cloudflowAvro % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaTestkit)
     .settings(
       scalaVersion := Dependencies.Scala212,
@@ -348,7 +364,7 @@ lazy val cloudflowAkkaTests =
 lazy val cloudflowRunner =
   Project(id = "cloudflow-runner", base = file("cloudflow-runner"))
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowStreamlets, cloudflowBlueprint)
+    .dependsOn(cloudflowStreamlets)
     .settings(
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
@@ -435,6 +451,7 @@ lazy val root = Project(id = "root", base = file("."))
         cloudflowAkkaTestkit),
     JavaUnidoc / unidoc / unidocProjectFilter := (ScalaUnidoc / unidoc / unidocProjectFilter).value)
   .aggregate(
+    cloudflowAvro,
     cloudflowBlueprint,
     cloudflowCli,
     cloudflowConfig,
@@ -444,6 +461,7 @@ lazy val root = Project(id = "root", base = file("."))
     cloudflowNewIt,
     cloudflowNewItLibrary,
     cloudflowOperator,
+    cloudflowProto,
     cloudflowSbtPlugin,
     cloudflowRunnerConfig,
     cloudflowStreamlets,

@@ -13,14 +13,5 @@ ifdef::review[REVIEWERS: I've moved the version numbers into modules/ROOT/partia
 
 === Certified Integrations
 
-* https://github.com/apache/spark[Apache Spark]: {supported-apache-spark-v}
-* https://github.com/apache/flink[Apache Flink]: {supported-apache-flink-v}
 * https://github.com/apache/kafka[Apache Kafka]: {supported-apache-kafka-v}
 * https://github.com/strimzi/strimzi-kafka-operator[Strimzi Kafka Operator]: {supported-strimzi-kafka-v}
-
-=== Incubating
-
-* https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/[Google Spark Kubernetes Operator]: {supported-gcp-spark-v}
-* https://github.com/helm/charts/tree/master/incubator/sparkoperator[Google Spark Kubernetes Operator Helm chart]: {supported-helm-spark-v}
-* https://github.com/lyft/flinkk8soperator[Lyft Flink Kubernetes Operator]: {supported-flink-8-v}
-* https://github.com/lightbend/flink-operator[Lyft FLink Kubernetes Operator Helm chart]: {supported-helm-flink-8-v}

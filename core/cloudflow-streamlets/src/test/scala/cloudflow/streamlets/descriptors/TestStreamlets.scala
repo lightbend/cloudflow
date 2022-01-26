@@ -17,26 +17,13 @@
 package cloudflow.streamlets.descriptors
 
 import scala.collection.immutable
-import org.apache.avro.SchemaBuilder
+
 import com.typesafe.config.Config
 import cloudflow.streamlets._
-import cloudflow.streamlets.avro.AvroUtil
+
 import cloudflow.streamlets.bytearray.{ ExternalInlet, ExternalOutlet }
 
 case class Coffee(espressos: Int)
-
-object Schemas {
-  val coffeeSchema = SchemaBuilder
-    .record("Coffee")
-    .namespace("cloudflow.sbt")
-    .fields()
-    .name("expressos")
-    .`type`()
-    .nullable()
-    .intType()
-    .noDefault()
-    .endRecord()
-}
 
 case object TestRuntime extends StreamletRuntime {
   override val name = "test-runtime"
@@ -52,7 +39,8 @@ trait TestStreamlet extends Streamlet[StreamletContext] {
 
 class CoffeeIngress extends Streamlet[StreamletContext] with TestStreamlet {
   case class TestOutlet(name: String, schemaDefinition: SchemaDefinition) extends Outlet
-  override val shape = StreamletShape(TestOutlet("out", AvroUtil.createSchemaDefinition(Schemas.coffeeSchema)))
+  override val shape = StreamletShape(
+    TestOutlet("out", SchemaDefinition("coffee", "fake-schema", "fingerprint", "fake")))
   override val labels: immutable.IndexedSeq[String] = Vector("test", "coffee")
   override val description: String = "Coffee Ingress Test"
 }

@@ -95,7 +95,6 @@ The streamlet references assigned in the `streamlets` section can be used in the
 == The `topics` Section
 
 In the `topics` section, we define the connections of an application.
-As we explained in xref:ROOT:app-development-process.adoc[the Cloudflow development process], streamlets have `inlet`{empty}s and `outlet`{empty}s.
 
 === Consumers and Producers
 
