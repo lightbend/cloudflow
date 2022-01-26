@@ -15,7 +15,7 @@ object Dependencies {
     val spark = "2.4.5"
     val fabric8 = "5.12.0"
     val jackson = "2.12.6"
-    val jacksonFabric8 = "2.11.4"
+    val jacksonFabric8 = "2.12.6"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
     val maven = "3.8.1"
