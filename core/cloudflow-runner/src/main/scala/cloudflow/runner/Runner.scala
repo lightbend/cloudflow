@@ -19,12 +19,12 @@ package cloudflow.runner
 import scala.util.{ Failure, Success, Try }
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.io.Source
 import java.nio.file.{ Files, Paths }
 
 import org.slf4j.LoggerFactory
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigFactory }
 import cloudflow.streamlets._
-import cloudflow.blueprint.RunnerConfigUtils._
 
 /**
  * Runner for cluster deployments. Assumes Linux-style paths!
@@ -100,5 +100,44 @@ object Runner extends RunnerConfigResolver with StreamletLoader {
     |Build User    : $buildUser
     """.stripMargin
   }
+
+  def addStorageConfig(config: Config, pvcVolumeMountPath: String): Config = {
+    val storageConfig = ConfigFactory.parseString(s"""$StorageMountPathKey:"$pvcVolumeMountPath"""")
+    config.withFallback(storageConfig)
+  }
+
+  def addPodRuntimeConfig(config: Config, downwardApiVolumeMountPath: String): Config = {
+    val (name, namespace, uid) = getPodMetadata(downwardApiVolumeMountPath)
+    val podRuntimeConfig = ConfigFactory.parseString(s"""
+                                                              |cloudflow.runner.pod: {
+                                                              |  $MetadataName:"$name"
+                                                              |  $MetadataNamespace:"$namespace"
+                                                              |  $MetadataUid:"$uid"
+                                                              |}
+                                                              |""".stripMargin)
+    config.withFallback(podRuntimeConfig)
+  }
+  def getPodMetadata(downwardApiVolumeMountPath: String): (String, String, String) = {
+    val name = readDownwardApi(downwardApiVolumeMountPath, MetadataName)
+    val namespace = readDownwardApi(downwardApiVolumeMountPath, MetadataNamespace)
+    val uid = readDownwardApi(downwardApiVolumeMountPath, MetadataUid)
+    (name, namespace, uid)
+  }
+
+  private def readDownwardApi(downwardApiVolumeMountPath: String, filename: String): String = {
+    val path = s"$downwardApiVolumeMountPath/$filename"
+    Try(Source.fromFile(path).getLines().mkString) match {
+      case Success(contents) => contents
+      case Failure(ex) =>
+        throw new Exception(
+          s"An error occurred while attempting to access the downward API volume mount with path '$path'",
+          ex)
+    }
+  }
+
+  val StorageMountPathKey = "storage.mountPath"
+  val MetadataName = "metadata.name"
+  val MetadataNamespace = "metadata.namespace"
+  val MetadataUid = "metadata.uid"
 
 }
