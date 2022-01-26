@@ -82,6 +82,7 @@ jobs:
 
     - name: test-maven-examples
       run: ./scripts/build-mvn-examples.sh test
+  
   fossa-checks:
     name: "FOSSA checks"
     runs-on: ubuntu-20.04
@@ -90,6 +91,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    
     - name: FOSSA policy check
       if: ${{ github.event_name != 'pull_request' }}
       run: |-
