@@ -18,7 +18,7 @@ trait WithUpdateVolumeMounts {
     for {
       streamletVolumeNameToPvc <- streamletVolumeNameToPvcMap(crApp, volumeMountsArgs, pvcs)
       _ <- missingStreamletVolumeMountNames(crApp, streamletVolumeNameToPvc.keys)
-    } yield crApp.copy(spec = crApp.spec.copy(
+    } yield crApp.copy(_spec = crApp.getSpec.copy(
       deployments = updatedDeployments(crApp, streamletVolumeNameToPvc),
       streamlets = updatedStreamlets(crApp, streamletVolumeNameToPvc)))
   }
@@ -44,11 +44,11 @@ trait WithUpdateVolumeMounts {
             }
             val streamletName = parts(0)
             val volumeMountName = parts(1)
-            if (crApp.spec.deployments.find(_.streamletName == streamletName).isEmpty) {
+            if (crApp.getSpec.deployments.find(_.streamletName == streamletName).isEmpty) {
               throw new CliException(s"Cannot find streamlet '$streamletName' in --volume-mount argument")
             }
 
-            if (crApp.spec.deployments
+            if (crApp.getSpec.deployments
                   .filter(_.streamletName == streamletName)
                   .flatMap(_.volumeMounts)
                   .find(_.name == volumeMountName)
@@ -82,7 +82,7 @@ trait WithUpdateVolumeMounts {
   }
 
   private def streamletVolumeMountNamesInCr(crApp: App.Cr): Set[(String, String)] = {
-    crApp.spec.deployments
+    crApp.getSpec.deployments
       .flatMap(deployment => deployment.volumeMounts.map(vm => deployment.streamletName -> vm.name))
       .toSet
   }
@@ -90,7 +90,7 @@ trait WithUpdateVolumeMounts {
   private def updatedDeployments(
       crApp: App.Cr,
       streamletVolumeNameToPvc: Map[(String, String), String]): Seq[App.Deployment] = {
-    crApp.spec.deployments.map { deployment =>
+    crApp.getSpec.deployments.map { deployment =>
       deployment.copy(volumeMounts = deployment.volumeMounts.map { vmd =>
         streamletVolumeNameToPvc
           .get((deployment.streamletName, vmd.name))
@@ -103,7 +103,7 @@ trait WithUpdateVolumeMounts {
   private def updatedStreamlets(
       crApp: App.Cr,
       streamletVolumeNameToPvc: Map[(String, String), String]): Seq[App.Streamlet] = {
-    crApp.spec.streamlets.map { streamlet =>
+    crApp.getSpec.streamlets.map { streamlet =>
       streamlet.copy(descriptor = streamlet.descriptor.copy(volumeMounts = streamlet.descriptor.volumeMounts.map {
         vmd =>
           streamletVolumeNameToPvc

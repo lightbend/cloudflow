@@ -43,7 +43,7 @@ object Actions {
       podName: String,
       podNamespace: String,
       cause: ObjectReference): Seq[Action] = {
-    require(currentApp.forall(_.spec.appId == newApp.spec.appId))
+    require(currentApp.forall(_.getSpec.appId == newApp.getSpec.appId))
     val labels = CloudflowLabels(newApp)
     val ownerReferences = List(AppOwnerReference(newApp.name, newApp.getMetadata.getUid))
     prepareNamespace(newApp, runners, labels, ownerReferences) ++
@@ -52,7 +52,7 @@ object Actions {
     // If an existing status is there, update status based on app (expected pod counts)
     // in case pod events do not occur, for instance when a operator delegated to is not responding
     Option(newApp.getStatus).flatMap { st =>
-      val newStatus = CloudflowStatus.updateApp(newApp, runners).status
+      val newStatus = CloudflowStatus.updateApp(newApp, runners).getStatus
       if (newStatus != st) Some(CloudflowStatus.statusUpdateAction(newApp)())
       else None
     }.toList ++

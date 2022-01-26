@@ -111,9 +111,9 @@ trait Runner[T <: HasMetadata] {
   def actions(newApp: App.Cr, currentApp: Option[App.Cr], runners: Map[String, Runner[_]])(
       implicit ct: ClassTag[T]): Seq[Action] = {
 
-    val newDeployments = newApp.spec.deployments.filter(_.runtime == runtime)
+    val newDeployments = newApp.getSpec.deployments.filter(_.runtime == runtime)
 
-    val currentDeployments = currentApp.map(_.spec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
+    val currentDeployments = currentApp.map(_.getSpec.deployments.filter(_.runtime == runtime)).getOrElse(Vector())
     val currentDeploymentNames = currentDeployments.map(_.name)
     val newDeploymentNames = newDeployments.map(_.name)
 
@@ -133,7 +133,7 @@ trait Runner[T <: HasMetadata] {
             createOrReplaceResource(resource(deployment, newApp, secret))
           case None =>
             val msg =
-              s"Deployment of ${newApp.spec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
+              s"Deployment of ${newApp.getSpec.appId} is pending, secret ${deployment.secretName} is missing for streamlet deployment '${deployment.name}'."
             log.info(msg)
             CloudflowStatus.pendingAction(
               newApp,

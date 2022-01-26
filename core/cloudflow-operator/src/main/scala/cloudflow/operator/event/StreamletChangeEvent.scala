@@ -108,10 +108,10 @@ object StreamletChangeEvent extends Event {
       runners: Map[String, Runner[_]]) = {
     import streamletChangeEvent._
     val secret = watchEvent.obj
-    app.spec.deployments
+    app.getSpec.deployments
       .find(_.streamletName == streamletName)
       .map { streamletDeployment =>
-        log.info(s"[app: ${app.spec.appId} configuration changed for streamlet $streamletName]")
+        log.info(s"[app: ${app.getSpec.appId} configuration changed for streamlet $streamletName]")
         val updateAction = runners
           .get(streamletDeployment.runtime)
           .map(_.streamletChangeAction(app, runners, streamletDeployment, secret))
