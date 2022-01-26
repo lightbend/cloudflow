@@ -86,10 +86,11 @@ jobs:
     name: "FOSSA checks"
     runs-on: ubuntu-20.04
     steps:
-      
+
     - name: FOSSA policy check
       if: ${{ github.event_name != 'pull_request' }}
       run: |-
+        cd core
         curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/spectrometer/master/install.sh | bash
         fossa analyze && fossa test
       env:
