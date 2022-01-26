@@ -22,12 +22,6 @@ jobs:
         sudo snap install yq
         cd docs
         make all
-    - name: FOSSA policy check
-      run: |-
-        curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/spectrometer/master/install.sh | bash
-        fossa analyze && fossa test
-      env:
-        FOSSA_API_KEY: "${{secrets.FOSSA_API_KEY}}"    
     - name: Publish to cloudflow.io  
       env:
          CFIO_USER: ${{ secrets.CLOUDFLOWIO_USER }}
