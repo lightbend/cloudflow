@@ -1000,7 +1000,8 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val appCr = Serialization.jsonMapper().readValue(crFile, classOf[App.Cr])
 
     // Act
-    val res = ConfigFactory.empty().withFallback(writeConfig(defaultMountsConfig(appCr.spec, List("flink", "spark"))))
+    val res =
+      ConfigFactory.empty().withFallback(writeConfig(defaultMountsConfig(appCr.getSpec, List("flink", "spark"))))
 
     def getPvcPath(runtime: String) =
       s"cloudflow.runtimes.$runtime.kubernetes.pods.pod.volumes.default.pvc.name"

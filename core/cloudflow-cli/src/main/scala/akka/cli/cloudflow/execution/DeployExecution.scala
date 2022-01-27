@@ -29,7 +29,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
   import DeployExecution._
 
   private def applicationDescriptorValidation(crApp: App.Cr): Try[Unit] = {
-    crApp.spec.version match {
+    crApp.getSpec.version match {
       case None =>
         Failure(CliException("Application file parse error: spec.version is missing or empty"))
 
@@ -42,7 +42,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             case _ => Failure(CliException("Application file parse error: spec.version is invalid"))
           }
           libraryVersion <- Try {
-            val libraryVersion = crApp.spec.libraryVersion.get
+            val libraryVersion = crApp.getSpec.libraryVersion.get
             require { !libraryVersion.contains(' ') }
             libraryVersion
           }.recoverWith {
@@ -77,7 +77,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     }
 
   private def referencedKafkaSecretExists(appCr: App.Cr, kafkaClusters: () => Try[List[String]]): Try[Unit] = {
-    val expectedClusters = appCr.spec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
+    val expectedClusters = appCr.getSpec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
 
     if (expectedClusters.nonEmpty) {
       (for {
@@ -95,11 +95,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
   }
 
   private def getImageReference(crApp: App.Cr) = {
-    if (crApp.spec.deployments.size < 1) {
+    if (crApp.getSpec.deployments.size < 1) {
       Failure(CliException("The application specification doesn't contains deployments"))
     } else {
       // Get the first available image, all images must be present in the same repository.
-      val imageRef = crApp.spec.deployments(0).image
+      val imageRef = crApp.getSpec.deployments(0).image
 
       Image(imageRef)
     }
@@ -115,14 +115,14 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       baseApplicationCr <- loadCrFile(d.crFile)
       localApplicationCr = {
         d.serviceAccount match {
-          case Some(sa) => baseApplicationCr.copy(spec = baseApplicationCr.spec.copy(serviceAccount = Some(sa)))
+          case Some(sa) => baseApplicationCr.copy(_spec = baseApplicationCr.getSpec.copy(serviceAccount = Some(sa)))
           case _        => baseApplicationCr
         }
       }
-      namespace = d.namespace.getOrElse(localApplicationCr.spec.appId)
+      namespace = d.namespace.getOrElse(localApplicationCr.getSpec.appId)
 
       // update the replicas
-      currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId, namespace)
+      currentAppCr <- client.readCloudflowApp(localApplicationCr.getSpec.appId, namespace)
       clusterReplicas = getStreamletsReplicas(currentAppCr)
       clusterApplicationCr <- updateReplicas(localApplicationCr, clusterReplicas)
       applicationCrReplicas <- updateReplicas(clusterApplicationCr, d.scales)
@@ -154,7 +154,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
       })
 
       // Operations on the cluster
-      name = applicationCr.spec.appId
+      name = applicationCr.getSpec.appId
       _ <- client.createNamespace(namespace)
       _ <- {
         if (d.noRegistryCredentials) Success(())
@@ -166,7 +166,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             dockerPassword = d.dockerPassword)
         }
       }
-      uid <- client.createCloudflowApp(applicationCr.spec, namespace)
+      uid <- client.createCloudflowApp(applicationCr.getSpec, namespace)
       _ <- client.configureCloudflowApp(name, namespace, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")

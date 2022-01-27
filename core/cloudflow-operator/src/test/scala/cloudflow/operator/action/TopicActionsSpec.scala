@@ -85,10 +85,10 @@ class TopicActionsSpec
               .collect { case act: CreateOrReplaceAction[TopicActions.TopicResource] => act }
               .head
         }
-      val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
+      val topics = newApp.getSpec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size
       // topics must be created to connect ingress, processor, egress
-      createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.id)).distinct.size
+      createActions.size mustBe newApp.getSpec.deployments.flatMap(d => d.portMappings.values.map(_.id)).distinct.size
       topics.foreach { topic =>
         val resource = createActions
           .find(_.resource.getMetadata.getName == s"topic-${topic.id}")
@@ -96,7 +96,7 @@ class TopicActionsSpec
           .value
           .resource
           .asInstanceOf[TopicActions.TopicResource]
-        assertTopic(topic, resource, newApp.spec.appId)
+        assertTopic(topic, resource, newApp.getSpec.appId)
       }
     }
 
@@ -129,11 +129,11 @@ class TopicActionsSpec
       metadata.setNamespace("testing-app")
       val newApp =
         App.Cr(
-          spec = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.value, agentPaths),
-          metadata = metadata)
-      val in = newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.in.name)
+          _spec = CloudflowApplicationSpecBuilder.create(appId, newAppVersion, image, newBp.verified.value, agentPaths),
+          _metadata = metadata)
+      val in = newApp.getSpec.deployments.find(_.streamletName == "processor").value.portMappings(processor.in.name)
       val savepoint =
-        newApp.spec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
+        newApp.getSpec.deployments.find(_.streamletName == "processor").value.portMappings(processor.out.name)
 
       Then("create actions for both topics should be created for the new savepoint between processor and egress")
       val Seq(foosAction, barsAction) = TopicActions(newApp, runners, ctx.podNamespace)
@@ -223,10 +223,10 @@ class TopicActionsSpec
               .collect { case act: CreateOrReplaceAction[TopicActions.TopicResource] => act }
               .head
         }
-      val topics = newApp.spec.deployments.flatMap(_.portMappings.values).distinct
+      val topics = newApp.getSpec.deployments.flatMap(_.portMappings.values).distinct
       createActions.size mustBe actions.size
       // topics must be created to connect ingress, processor, egress
-      createActions.size mustBe newApp.spec.deployments.flatMap(d => d.portMappings.values.map(_.id)).distinct.size
+      createActions.size mustBe newApp.getSpec.deployments.flatMap(d => d.portMappings.values.map(_.id)).distinct.size
       topics.foreach { topic =>
         val resource = createActions
           .find(_.resource.getMetadata.getName == s"topic-${topic.id}")
@@ -236,7 +236,7 @@ class TopicActionsSpec
         assertTopic(
           topic,
           resource,
-          newApp.spec.appId,
+          newApp.getSpec.appId,
           bootstrapServers = "localhost:19092",
           partitions = 100,
           replicas = 3)
@@ -293,7 +293,7 @@ class TopicActionsSpec
     metadata.setNamespace("testing-app")
 
     App.Cr(
-      spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-      metadata = metadata)
+      _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+      _metadata = metadata)
   }
 }

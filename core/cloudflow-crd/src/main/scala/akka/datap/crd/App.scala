@@ -92,18 +92,19 @@ object App {
   @Kind(Kind)
   @Plural(Plural)
   final case class Cr(
-      @JsonProperty("spec")
-      spec: Spec,
+      _spec: Spec,
       @JsonProperty("metadata")
-      metadata: ObjectMeta,
-      @JsonProperty("status")
-      status: AppStatus = null)
+      _metadata: ObjectMeta,
+      _status: AppStatus = null)
       extends CustomResource[Spec, AppStatus]
       with Namespaced {
-    this.setMetadata(metadata)
-
-    def name: String = metadata.getName()
-    def namespace: String = metadata.getNamespace()
+    this.setMetadata(_metadata)
+    this.setSpec(_spec)
+    this.setStatus(_status)
+    override def initSpec = _spec
+    override def initStatus = _status
+    def name: String = getMetadata.getName()
+    def namespace: String = getMetadata.getNamespace()
   }
 
   @JsonCreator

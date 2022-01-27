@@ -64,7 +64,7 @@ class EventActionsSpec
     "create event resources for a new deployed app" in {
       Given("a new app")
       val app = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
-      val appCr = App.Cr(spec = app, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val appCr = App.Cr(_spec = app, _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
       val actions = EventActions.deployEvents(appCr, None, runners, ctx.podNamespace, toObjectReference(appCr))
@@ -81,11 +81,11 @@ class EventActionsSpec
     "create event resources for an updated app that's already been deployed" in {
       Given("a new app")
       val appCr = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
 
-      val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val currentAppCr = App.Cr(_spec = currentApp, _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
       val actions =
@@ -105,11 +105,11 @@ class EventActionsSpec
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
       val app =
         App.Cr(
-          spec = currentApp.copy(deployments =
+          _spec = currentApp.copy(deployments =
             currentApp.deployments.map(deployment => deployment.copy(replicas = Some(2)))),
-          metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+          _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
-      val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val currentAppCr = App.Cr(_spec = currentApp, _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created from a new app")
       val actions =
@@ -132,7 +132,7 @@ class EventActionsSpec
     "create event resources when streamlet configuration changes" in {
       Given("a current app")
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
-      val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val currentAppCr = App.Cr(_spec = currentApp, _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created for a streamlet")
       val action =
@@ -153,7 +153,7 @@ class EventActionsSpec
     "create event resources for an app that is undeployed" in {
       Given("a current app")
       val currentApp = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths)
-      val currentAppCr = App.Cr(spec = currentApp, metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      val currentAppCr = App.Cr(_spec = currentApp, _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("Event actions are created for a streamlet")
       val action = EventActions.undeployEvent(currentAppCr, ctx.podName, toObjectReference(currentAppCr))

@@ -64,8 +64,8 @@ class EndpointActionsSpec
 
       val currentApp = None
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("endpoint actions are created from a new app")
       val actions = EndpointActions(newApp, currentApp)
@@ -74,12 +74,12 @@ class EndpointActionsSpec
       val createActions = actions.collect { case c: CreateServiceAction => c }
 
       val services = createActions.map(_.service)
-      val endpoints = newApp.spec.deployments.flatMap(_.endpoint).distinct
+      val endpoints = newApp.getSpec.deployments.flatMap(_.endpoint).distinct
 
       createActions.size mustBe actions.size
       services.size mustBe endpoints.size
       services.foreach { service =>
-        assertService(service, newApp.spec)
+        assertService(service, newApp.getSpec)
       }
     }
 
@@ -105,8 +105,8 @@ class EndpointActionsSpec
       val image = "image-1"
 
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
       val currentApp = Some(newApp)
 
       When("nothing changes in the new app")
@@ -136,15 +136,15 @@ class EndpointActionsSpec
       val newAppVersion = "43-abcdef0"
       val image = "image-1"
       val currentApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("the new app removes the egress")
       val newBp =
         bp.disconnect(egressRef.in).remove(egressRef.name)
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
       val actions = EndpointActions(newApp, Some(currentApp))
 
       Then("delete actions should be created")
@@ -174,8 +174,8 @@ class EndpointActionsSpec
       val appVersion = "42-abcdef0"
       val image = "image-1"
       val currentApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       When("the new app adds an endpoint, ingress -> egress")
       val egressRef = egress.ref("egress")
@@ -184,8 +184,8 @@ class EndpointActionsSpec
         .connect(Topic("foos"), egressRef.in)
       val newAppVersion = "43-abcdef0"
       val newApp = App.Cr(
-        spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
-        metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+        _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, newBp.verified.value, agentPaths),
+        _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
       Then("create actions for service should be created for the new endpoint")
       val actions = EndpointActions(newApp, Some(currentApp))
@@ -196,7 +196,7 @@ class EndpointActionsSpec
 
       services.size mustBe 1
       services.foreach { service =>
-        assertService(service, newApp.spec)
+        assertService(service, newApp.getSpec)
       }
     }
   }

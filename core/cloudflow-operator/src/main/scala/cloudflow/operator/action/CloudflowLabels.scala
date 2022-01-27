@@ -41,7 +41,7 @@ object CloudflowLabels {
   val ConfigUpdateLabel = "com.lightbend.cloudflow/config-update"
 
   def apply(app: App.Cr): CloudflowLabels =
-    CloudflowLabels(app.spec.appId, app.spec.appVersion)
+    CloudflowLabels(app.getSpec.appId, app.getSpec.appVersion)
 
   // The name of the application
   val Name = "app.kubernetes.io/name"

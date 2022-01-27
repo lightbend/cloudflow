@@ -82,3 +82,21 @@ jobs:
 
     - name: test-maven-examples
       run: ./scripts/build-mvn-examples.sh test
+  
+  fossa-checks:
+    name: "FOSSA checks"
+    runs-on: ubuntu-20.04
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    
+    - name: FOSSA policy check
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |-
+        cd core
+        curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/spectrometer/master/install.sh | bash
+        fossa analyze && fossa test
+      env:
+        FOSSA_API_KEY: "${{secrets.FOSSA_API_KEY}}"
