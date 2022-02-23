@@ -364,7 +364,7 @@ lazy val cloudflowAkkaTests =
 lazy val cloudflowRunner =
   Project(id = "cloudflow-runner", base = file("cloudflow-runner"))
     .enablePlugins(BuildInfoPlugin, ScalafmtPlugin)
-    .dependsOn(cloudflowStreamlets, cloudflowBlueprint)
+    .dependsOn(cloudflowStreamlets)
     .settings(
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),

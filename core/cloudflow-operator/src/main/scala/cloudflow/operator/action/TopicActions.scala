@@ -55,7 +55,7 @@ object TopicActions {
     def deploymentOf(topicId: String)(deployment: App.Deployment) =
       deployment.portMappings.values.exists(_.id == topicId)
 
-    val managedTopics = distinctTopics(newApp.spec)
+    val managedTopics = distinctTopics(newApp.getSpec)
 
     val labels = CloudflowLabels(newApp)
     val actions =
@@ -63,7 +63,7 @@ object TopicActions {
         // find a config (secret) for the topic, all deployments should have the same configuration for the same topic,
         // since topics are defined once, deployments refer to the topics by port mappings.
         // So it is ok to just take the first one found, that uses the topic.
-        val appConfigSecretName = newApp.spec.deployments
+        val appConfigSecretName = newApp.getSpec.deployments
           .filter(deploymentOf(topic.id))
           .headOption
           .map(_.secretName)

@@ -13,7 +13,7 @@ object Dependencies {
     val alpakkaKafka = "2.1.1"
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
-    val fabric8 = "5.0.0"
+    val fabric8 = "5.0.3"
     val jackson = "2.12.6"
     val jacksonFabric8 = "2.11.4"
     val slf4j = "1.7.30"
@@ -103,7 +103,7 @@ object Dependencies {
     val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.6.1"
     val mavenProject = "org.apache.maven" % "maven-project" % "2.2.1"
     val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.3.1"
-    val junit = "junit" % "junit" % "4.13"
+    val junit = "junit" % "junit" % "4.13.1"
   }
 
   object TestDeps {

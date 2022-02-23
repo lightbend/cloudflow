@@ -76,22 +76,21 @@ It is an _autoplugin_ that becomes enabled when the `CloudflowApplicationPlugin`
 
 === Runtime-specific Plugins
 
-Cloudflow provides out-of-the-box support for Akka, Apache Spark Structured Streaming, and Apache Flink in the form of specific implementations of the Streamlet API and supporting elements, like Docker base images and _runners_ that are able to launch each specific technology stack on Kubernetes.
+Cloudflow provides out-of-the-box support for Akka with Docker base images and _runners_ that are able to launch each specific technology stack on Kubernetes.
+
 
 To develop `Streamlet`{empty}s for a specific runtime, we add the corresponding plugin to the project.
 To ensure proper isolation of the different runtimes, we require a different structural approach when using only one runtime or when mixing `Streamlet`{empty}s implementations that use two or more runtimes.
 We explore these differences in the next section. 
-Before delving into that, here we list the runtime plugins:
+The Akka plugins is:
 
-`CloudflowAkkaPlugin`:: SBT plugin for creating Akka-based streamlets. 
-`CloudflowSparkPlugin`:: SBT plugin for creating Spark Structured Streaming based streamlets.
-`CloudflowFlinkPlugin`:: SBT plugin for creating Flink-based streamlets.
+`CloudflowAkkaPlugin`:: SBT plugin for creating Akka-based streamlets.
 
 [NOTE]
 ====
-Each runtime plugin uses its own default base image. It's `lightbend/akka-base` for Akka, `lightbend/spark` for Spark and `lightbend/flink` for Flink. It could be the case that you're working against your own container registry and therefore prefer to point to your copy or customized version of our base images. To use your base images, set `cloudflowAkkaBaseImage`, `cloudflowSparkBaseImage`, and `cloudflowFlinkBaseImage` in `settings` of the respective runtime plugins in your application `build.sbt`.
+Each runtime plugin uses its own default base image. It's `lightbend/akka-base` for Akka. It could be the case that you're working against your own container registry and therefore prefer to point to your copy or customized version of our base images. To use your base images, set `cloudflowAkkaBaseImage` in `settings` of the `CloudflowAkkaPlugin` in your application `build.sbt`.
 
-In an Akka-based streamlet the default base image value is `lightbend/akka-base:${CloudflowBasePlugin.CloudflowVersion}-cloudflow-akka-$AkkaVersion-scala-${CloudflowBasePlugin.ScalaVersion}`. This may be set to `lightbend/akka-base:2.0.10-cloudflow-akka-2.6.6-scala-2.12` depending on your Cloudflow, Akka and Scala versions. To override this base image in your cloudflow application go to its build.sbt and set up a value in settings such as:
+In an any streamlet the default base image value is `adoptopenjdk/openjdk8:alpine`. To override this base image in your cloudflow application go to its build.sbt and set up a value in settings such as:
 ====
 
 [source, scala]
@@ -123,54 +122,7 @@ https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/
 Applications that combine multiple streamlet runtimes *must be* organized using `sbt` https://www.scala-sbt.org/1.x/docs/Multi-Project.html[multi-projects builds].
 Streamlets for each runtime must added be into their own separate sub-project.
 
-IMPORTANT: The multi-project build organization is necessary to ensure the correct isolation of the dependencies required by each runtime in their own classpath.
-Frameworks like Spark and Flink pack a long list of library dependencies and some of them conflict with each other when placed in the same classloader.
-Using multi-project builds ensures the correct functioning of the local _sandbox_ and informs the generation of a Docker image per sub-project with the correct dependencies.
-
-Next to that, we recommend separating the data-oriented schemas into their own sub-project so that streamlet sub-projects can easily import these common data definitions.
-
-For example, if we have an application that uses Akka and Structured Streaming, we could have the following structure:
-
-.Project Structure using Multiple Runtimes
-[source, text]
-----
-.
-├── my-application        #<1>
-│   └── src
-│       └── main
-│           └── blueprint #<2>
-├── datamodel             #<3>
-│   └── src
-│       └── main
-│           └── avro      #<4>
-├── akka-ingestor         #<5>
-│   └── src
-│       ├── main
-│       │   └── scala
-│       └── test
-│           └── scala
-├── spark-aggregation     #<6>
-│   └── src
-│       ├── main
-│       │   └── scala
-│       └── test
-│           └── scala
-├── project               #<7>
-│   ├── build.properties
-│   └── cloudflow-plugins.sbt
-├── build.sbt             #<8> 
-└── target-env.sbt        #<9>
-----
-<1> The application 'root' project that contains the `blueprint` definition.
-<2> The `blueprint.conf` is expected in a `src/main/blueprint` directory by default.
-<3> The `datamodel/` folder contains the shared schema definitions.
-<4> The `avro/` folder contains the schema definitions in AVRO format. 
-<5> `akka-ingestor` is a sub-project that contains Akka-based streamlets
-<6> `spark-aggregation` is a sub-project that contains Spark-based streamlets
-<7> The `project/` folder contains the `cloudflow-plugins.sbt` and other necessary files as we saw previously.
-<8> The `target-env.sbt` contains the Docker repository configuration, as we saw at the start of the chapter.
-
-We can find a `build.sbt` definition that exemplifies the use of a multi-project setup in this https://github.com/lightbend/cloudflow/blob/{cloudflow-branch-version}/examples/call-record-aggregator[Cloudflow example]
+You can find how-to on https://lightbend.github.io/cloudflow-contrib/docs/0.2.0/get-started/index.html[Cloudflow contrib project]. 
 
 
 == Where to go next?

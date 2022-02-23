@@ -81,7 +81,7 @@ kubectl cloudflow deploy ./target/<your-application-name>.json
 
 == Archetype
 
-You can easily generate a full project with akka, spark and flink streamlets using the Cloudflow Maven Archetype:
+You can easily generate a full project with akka streamlets using the Cloudflow Maven Archetype:
 
 [source,bash,subs=attributes+]
 ----

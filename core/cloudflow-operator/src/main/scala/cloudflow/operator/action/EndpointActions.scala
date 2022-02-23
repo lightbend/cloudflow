@@ -42,13 +42,13 @@ object EndpointActions {
       app.deployments.flatMap(deployment => deployment.endpoint).toSet
 
     val currentEndpoints: Set[App.Endpoint] =
-      currentApp.map(cr => distinctEndpoints(cr.spec)).getOrElse(Set.empty[App.Endpoint])
-    val newEndpoints: Set[App.Endpoint] = distinctEndpoints(newApp.spec)
+      currentApp.map(cr => distinctEndpoints(cr.getSpec)).getOrElse(Set.empty[App.Endpoint])
+    val newEndpoints: Set[App.Endpoint] = distinctEndpoints(newApp.getSpec)
 
     val deleteActions = (currentEndpoints -- newEndpoints).flatMap { endpoint: App.Endpoint =>
       Seq(
         Action.delete[Service](
-          Name.ofService(StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet.getOrElse("no-name"))),
+          Name.ofService(StreamletDeployment.name(newApp.getSpec.appId, endpoint.streamlet.getOrElse("no-name"))),
           newApp.namespace))
     }.toList
     val createActions = (newEndpoints -- currentEndpoints).flatMap { endpoint =>
@@ -56,7 +56,7 @@ object EndpointActions {
         createServiceAction(
           endpoint,
           newApp,
-          StreamletDeployment.name(newApp.spec.appId, endpoint.streamlet.getOrElse("no-name"))))
+          StreamletDeployment.name(newApp.getSpec.appId, endpoint.streamlet.getOrElse("no-name"))))
     }.toList
     deleteActions ++ createActions
   }

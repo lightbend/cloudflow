@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
 
 addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0-RC25")
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.5")
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.7"
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.8"
 
 addSbtPlugin("com.lucidchart" % "sbt-cross" % "4.0")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")

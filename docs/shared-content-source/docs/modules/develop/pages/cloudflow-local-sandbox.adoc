@@ -14,7 +14,7 @@ As a rough guideline, we can run a 5-streamlet application in 1 GB of memory.
 The Cloudflow _Sandbox_ accelerates the development of streaming applications by shortening the deployment and test cycle of functional requirements.
 
 The _Sandbox_ is provided as an auto-plugin included in the `sbt-cloudflow` plugin. 
-It is automatically available when an application enables support for Akka, Spark, or Flink streamlets.
+It is automatically available when an application enables support for Akka.
 
 == Using the _Sandbox_
 

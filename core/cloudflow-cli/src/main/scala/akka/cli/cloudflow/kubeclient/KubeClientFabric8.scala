@@ -178,17 +178,17 @@ class KubeClientFabric8(
           .find(_.getMetadata.getName == appName)
           .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
 
-        val appStatus: String = Try(app.status.appStatus).toOption.getOrElse("Unknown")
+        val appStatus: String = Try(app.getStatus.appStatus).toOption.getOrElse("Unknown")
 
         val res = models.ApplicationStatus(
           summary = getCRSummary(app),
           status = appStatus,
           // FIXME, remove in a breaking CRD change, the endpoint statuses are not updated anymore.
-          endpointsStatuses = Try(app.status.endpointStatuses).toOption
+          endpointsStatuses = Try(app.getStatus.endpointStatuses).toOption
             .filterNot(_ == null)
             .map(_.map(getEndpointStatus))
             .getOrElse(Seq.empty),
-          streamletsStatuses = Try(app.status.streamletStatuses).toOption
+          streamletsStatuses = Try(app.getStatus.streamletStatuses).toOption
             .filterNot(_ == null)
             .map(_.map(getStreamletStatus))
             .getOrElse(Seq.empty))
@@ -512,7 +512,7 @@ class KubeClientFabric8(
       endpointStatuses = Seq(),
       streamletStatuses = Seq())
 
-    App.Cr(spec = spec, metadata = metadata, status = status)
+    App.Cr(_spec = spec, _metadata = metadata, _status = status)
   }
 
   private def createCFApp(spec: App.Spec, namespace: String): Try[String] =
@@ -580,7 +580,7 @@ class KubeClientFabric8(
     Try {
       cloudflowApps
         .inNamespace(namespace)
-        .withName(app.spec.appId)
+        .withName(app.getSpec.appId)
         // NOTE: Patch doesn't work
         //.patch(app)
         .replace(app)
@@ -663,7 +663,7 @@ private object ModelConversions {
     models.CRSummary(
       name = app.name,
       namespace = app.namespace,
-      version = app.spec.appVersion,
+      version = app.getSpec.appVersion,
       creationTime = app.getMetadata.getCreationTimestamp)
   }
 

@@ -69,11 +69,11 @@ class AppCrSpec
         .value
 
       val newApp = mkApp(verifiedBlueprint)
-      val cr = App.Cr(spec = newApp, metadata = null)
+      val cr = App.Cr(_spec = newApp, _metadata = null)
       val mapper = Serialization.jsonMapper()
       val str = mapper.writeValueAsString(cr)
       val customResource = mapper.readValue(str, classOf[App.Cr])
-      customResource.spec mustBe cr.spec
+      customResource.getSpec mustBe cr.getSpec
     }
 
     "report its status as Pending when there are no pod statuses yet" in {
