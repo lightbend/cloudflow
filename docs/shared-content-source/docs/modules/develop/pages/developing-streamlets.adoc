@@ -5,5 +5,5 @@ include::ROOT:partial$include.adoc[]
 Please read xref:ROOT:index.adoc[the introduction] to get an overview of Cloudflow. 
 This section goes into more depth on streamlets and how to develop them. 
 
-Akka and Flink streamlets can be developed in Scala or Java, Spark streamlets can only be developed in Scala.
+Akka streamlets can be developed in Scala or Java.
 
