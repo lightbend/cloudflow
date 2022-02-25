@@ -5,7 +5,7 @@ import sbt.Keys._
 lazy val sampleApp = (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin)
     .settings(
-      cloudflowDockerBaseImage := "myRepositoryUrl/myRepositoryPath:2.0.10-cloudflow-akka-2.6.6-scala-2.12",
+      cloudflowDockerBaseImage := "myRepositoryUrl/myRepositoryPath:adoptopenjdk/openjdk11:alpine",
     //end::docs-projectSetup-example[]
       name := "sample-app",
       organization := "com.lightbend.cloudflow",

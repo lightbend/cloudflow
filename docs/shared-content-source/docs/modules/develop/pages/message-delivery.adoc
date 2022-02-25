@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 Cloudflow follows the 'let it crash' principle and can recover from most failure scenarios, except those deemed catastrophic, where the data used for recovery (snapshots) may have been lost.
 This approach also follows the general policy of Kubernetes, where processes are ephemeral and can be restarted, replaced, or scaled up/down at any time.
 
-The sections that follow mention different models for message delivery semantics provided by Spark-based and Akka-based streamlets. 
+The sections that follow mention different models for message delivery semantics provided by Akka-based streamlets. 
 By _message delivery semantics_, we refer to the expected message delivery guaranties in the case of failure recovery. 
 In a distributed application such as Cloudflow, failure may happen at several different execution levels: from a failed task in an individual executor, to a pod that goes down, to a complete application crash.
 
