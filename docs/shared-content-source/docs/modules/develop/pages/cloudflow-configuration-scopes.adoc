@@ -99,18 +99,3 @@ cloudflow {
   } 
 }
 ----
-
-Another example shows that you can provide configuration for all the runtimes your application uses. In this case, will cover Akka and Spark:
-[source, hocon]
-----
-cloudflow.runtimes {
-  spark.config {
-    spark.driver.memoryOverhead=384
-  }
-  akka.config {
-    akka { 
-      log-level = "INFO"  
-    }
-  }
-} 
-----
