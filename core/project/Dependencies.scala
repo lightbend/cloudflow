@@ -76,7 +76,7 @@ object Dependencies {
     val avro = "org.apache.avro" % "avro" % "1.11.0"
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
-    val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonDatabind //TODO put back to jackson when both, databind and core, get merged with no vulnerabilities. 
+    val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonDatabind
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
