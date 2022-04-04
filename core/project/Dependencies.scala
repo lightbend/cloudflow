@@ -13,7 +13,7 @@ object Dependencies {
     val alpakkaKafka = "2.1.1"
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
-    val fabric8 = "5.0.3"
+    val fabric8 = "5.12.1"
     val jackson = "2.13.2"
     val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
