@@ -85,7 +85,7 @@ object Dependencies {
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
 
-    val ficus = "com.iheart" %% "ficus" % "1.4.7"
+    val ficus = "com.iheart" %% "ficus" % "1.5.2"
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.8.1"
