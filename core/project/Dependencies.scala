@@ -14,8 +14,8 @@ object Dependencies {
     val akkaMgmt = "1.0.8"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
-    val jackson = "2.12.6"
-    val jacksonFabric8 = "2.11.4"
+    val jackson = "2.13.2"
+    val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
     val maven = "3.8.1"
@@ -76,8 +76,7 @@ object Dependencies {
     val avro = "org.apache.avro" % "avro" % "1.11.0"
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
-    val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson
-    val jacksonDatabindOperator = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonFabric8
+    val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonDatabind
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
