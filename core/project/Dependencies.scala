@@ -79,7 +79,7 @@ object Dependencies {
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonDatabind
     val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
 
-    val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
+    val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.36"
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
