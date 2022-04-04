@@ -16,7 +16,7 @@ object Dependencies {
     val fabric8 = "5.0.3"
     val jackson = "2.13.2"
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
-    val jacksonDatabind = "2.13.2.2" 
+    val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
     val maven = "3.8.1"
@@ -126,7 +126,7 @@ object Dependencies {
   val cloudflowAvro =
     libraryDependencies ++= Seq(Compile.avro, Compile.bijection)
 
-  val cloudflowConfig = 
+  val cloudflowConfig =
     libraryDependencies ++= Seq(
         Compile.fabric8KubernetesClient,
         Compile.jacksonScala,
@@ -147,7 +147,11 @@ object Dependencies {
         Compile.scalatest % Test)
 
   val cloudflowCrd =
-    libraryDependencies ++= Seq(Compile.fabric8KubernetesClient, Compile.jacksonScala, Compile.jacksonDatabind, Compile.scalatest % Test)
+    libraryDependencies ++= Seq(
+        Compile.fabric8KubernetesClient,
+        Compile.jacksonScala,
+        Compile.jacksonDatabind,
+        Compile.scalatest % Test)
 
   val cloudflowIt =
     libraryDependencies ++= Seq(Compile.commonsCodec % Test, Compile.commonsCompress % Test, Compile.scalatest % Test)
@@ -155,7 +159,7 @@ object Dependencies {
   val cloudflowNewItLibrary =
     libraryDependencies ++= Seq(Compile.commonsCodec, Compile.commonsCompress, Compile.scalatest)
 
-  val cloudflowBlueprint = 
+  val cloudflowBlueprint =
     libraryDependencies ++= Seq(
         Compile.typesafeConfig,
         Compile.sprayJson,
@@ -196,8 +200,12 @@ object Dependencies {
         Compile.kafkaClient,
         Compile.scalatest % Test)
 
-  val cloudflowRunnerConfig = 
-    libraryDependencies ++= Seq(Compile.jacksonScala, Compile.jacksonDatabind, Compile.typesafeConfig % Test, Compile.scalatest % Test)
+  val cloudflowRunnerConfig =
+    libraryDependencies ++= Seq(
+        Compile.jacksonScala,
+        Compile.jacksonDatabind,
+        Compile.typesafeConfig % Test,
+        Compile.scalatest % Test)
 
   val cloudflowStreamlet =
     libraryDependencies ++= Seq(
