@@ -4,7 +4,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.6.0")
 // discipline
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.2")
-addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.0")
+addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.6.5")
 
 // publishing
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
