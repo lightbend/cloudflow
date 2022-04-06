@@ -15,6 +15,7 @@ object Dependencies {
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
     val jackson = "2.13.2"
+    //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
     val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
@@ -31,7 +32,7 @@ object Dependencies {
     val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.10.0"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
-    val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
+    val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest
     val scalatestMustMatchers = "org.scalatest" %% "scalatest-mustmatchers" % Versions.scalaTest
@@ -73,11 +74,13 @@ object Dependencies {
     val akkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Versions.akkaGrpc
 
     val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.10"
-    val avro = "org.apache.avro" % "avro" % "1.11.0"
+    val avro = ("org.apache.avro" % "avro" % "1.11.0")
+      .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
     val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jacksonDatabind
-    val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
+    val jacksonScala = ("com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson)
+      .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.33"
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
@@ -127,6 +130,7 @@ object Dependencies {
     libraryDependencies ++= Seq(
         Compile.fabric8KubernetesClient,
         Compile.jacksonScala,
+        Compile.jacksonDatabind,
         Compile.typesafeConfig,
         Compile.pureConfig,
         Compile.scalatest % Test)
@@ -143,7 +147,11 @@ object Dependencies {
         Compile.scalatest % Test)
 
   val cloudflowCrd =
-    libraryDependencies ++= Seq(Compile.fabric8KubernetesClient, Compile.jacksonScala, Compile.scalatest % Test)
+    libraryDependencies ++= Seq(
+        Compile.fabric8KubernetesClient,
+        Compile.jacksonScala,
+        Compile.jacksonDatabind,
+        Compile.scalatest % Test)
 
   val cloudflowIt =
     libraryDependencies ++= Seq(Compile.commonsCodec % Test, Compile.commonsCompress % Test, Compile.scalatest % Test)
@@ -157,13 +165,14 @@ object Dependencies {
         Compile.sprayJson,
         // TODO: check if Avro and ScalaPB can stay in a separate module
         Compile.avro,
+        Compile.jacksonDatabind,
         Compile.scalaPbRuntime,
         Compile.logback % Test,
         Compile.scalatest % Test,
         Compile.kafkaClient % Test,
         TestDeps.avro4s)
 
-  val cloudflowOperator = Seq(
+  val cloudflowOperator =
     libraryDependencies ++= Seq(
         Compile.akkaActor,
         Compile.akkaStream,
@@ -175,8 +184,7 @@ object Dependencies {
         Compile.kubeActions,
         Compile.kafkaClient,
         Compile.scalatest % Test,
-        TestDeps.avro4s),
-    dependencyOverrides += Compile.jacksonDatabind)
+        TestDeps.avro4s)
 
   val cloudflowExtractor =
     libraryDependencies ++= Seq(Compile.typesafeConfig, Compile.classgraph, Compile.scalatest % Test)
@@ -193,7 +201,11 @@ object Dependencies {
         Compile.scalatest % Test)
 
   val cloudflowRunnerConfig =
-    libraryDependencies ++= Seq(Compile.jacksonScala, Compile.typesafeConfig % Test, Compile.scalatest % Test)
+    libraryDependencies ++= Seq(
+        Compile.jacksonScala,
+        Compile.jacksonDatabind,
+        Compile.typesafeConfig % Test,
+        Compile.scalatest % Test)
 
   val cloudflowStreamlet =
     libraryDependencies ++= Seq(
@@ -220,6 +232,7 @@ object Dependencies {
         Compile.akkaDiscoveryK8,
         Compile.logback,
         Compile.jacksonScala,
+        Compile.jacksonDatabind,
         Compile.sprayJson,
         Compile.ficus)
 
