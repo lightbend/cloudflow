@@ -18,7 +18,7 @@ object Dependencies {
     val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.3"
-    val maven = "3.8.5"
+    val maven = "3.8.1"
   }
 
   object Compile {
