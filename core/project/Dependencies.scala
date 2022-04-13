@@ -25,7 +25,7 @@ object Dependencies {
   object Compile {
     val fabric8KubernetesClient = "io.fabric8" % "kubernetes-client" % Versions.fabric8
 
-    val typesafeConfig = "com.typesafe" % "config" % "1.4.1"
+    val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.1"
     val scopt =
       "com.github.scopt" %% "scopt" % "4.0.1" // FIXME generating docs for CLI fails with concurrent modification with 2.13 and this version.
