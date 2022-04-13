@@ -29,7 +29,7 @@ object Dependencies {
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.1"
     val scopt =
       "com.github.scopt" %% "scopt" % "4.0.1" // FIXME generating docs for CLI fails with concurrent modification with 2.13 and this version.
-    val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.10.3"
+    val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "20.12.2"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
@@ -73,7 +73,7 @@ object Dependencies {
 
     val akkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Versions.akkaGrpc
 
-    val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.10"
+    val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.11"
     val avro = ("org.apache.avro" % "avro" % "1.11.0")
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
@@ -104,7 +104,7 @@ object Dependencies {
     val mavenEmbedder = "org.apache.maven" % "maven-embedder" % Versions.maven
     val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.6.1"
     val mavenProject = "org.apache.maven" % "maven-project" % "2.2.1"
-    val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.3.3"
+    val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.4.0"
     val junit = "junit" % "junit" % "4.13.1"
   }
 
