@@ -83,7 +83,7 @@ object Dependencies {
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.36"
-    val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
+    val sprayJson = "io.spray" %% "spray-json" % "1.3.6"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
     val bijection = "com.twitter" %% "bijection-avro" % "0.9.7"
