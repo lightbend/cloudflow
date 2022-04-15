@@ -29,7 +29,7 @@ object Dependencies {
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.1"
     val scopt =
       "com.github.scopt" %% "scopt" % "4.0.1" // FIXME generating docs for CLI fails with concurrent modification with 2.13 and this version.
-    val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "22.4.1"
+    val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "22.4.2"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
