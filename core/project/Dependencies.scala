@@ -11,7 +11,7 @@ object Dependencies {
     val akkaHttp = "10.2.9"
     val akkaGrpc = "2.1.4"
     val alpakkaKafka = "2.1.1"
-    val akkaMgmt = "1.0.8"
+    val akkaMgmt = "1.0.10"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
     val jackson = "2.13.2"
