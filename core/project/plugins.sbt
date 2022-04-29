@@ -7,7 +7,7 @@ addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.7.0")
 
 // publishing
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.2")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.1.1")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.12")
 
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.3")
