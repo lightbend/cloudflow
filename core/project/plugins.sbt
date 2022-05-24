@@ -8,7 +8,7 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.7.0")
 
 // publishing
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.1.1")
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.12")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.13")
 
 addSbtPlugin("com.github.sbt" % "sbt-unidoc" % "0.5.0")
 
