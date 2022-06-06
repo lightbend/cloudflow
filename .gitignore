@@ -63,3 +63,9 @@ docs/docs-source/docs/modules/ROOT/examples/
 ##
 docs/view.sh
 docs/shared-content-source/docs/modules/develop/examples
+
+/examples/call-record-aggregator/project/
+/examples/spark-sensors/project/.boot/
+/examples/spark-sensors/project/.sbtboot/java9-rt-ext-amazon_com_inc__11_0_10/
+/examples/spark-sensors/project/.sbtboot/zinc/org.scala-sbt/
+/examples/spark-sensors/project/.sbtboot/zinc/.sbt.cache.lock
