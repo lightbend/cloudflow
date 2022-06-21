@@ -96,7 +96,7 @@ object Dependencies {
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.147"
 
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
-    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.17.1"
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.17.2"
     val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
 
     val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
