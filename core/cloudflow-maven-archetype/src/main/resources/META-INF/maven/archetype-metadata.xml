@@ -21,45 +21,6 @@
             <include>pom.xml</include>
           </includes>
         </fileSet>
-
-        <fileSet filtered="true">
-          <directory>flink/src/main/scala</directory>
-          <includes>
-            <include>**/*.scala</include>
-          </includes>
-        </fileSet>
-        <fileSet>
-          <directory>flink/src/main/resources</directory>
-          <includes>
-            <include>*.*</include>
-          </includes>
-        </fileSet>
-        <fileSet filtered="true">
-          <directory>flink</directory>
-          <includes>
-            <include>pom.xml</include>
-          </includes>
-        </fileSet>
-
-        <fileSet filtered="true">
-          <directory>spark/src/main/scala</directory>
-          <includes>
-            <include>**/*.scala</include>
-          </includes>
-        </fileSet>
-        <fileSet>
-          <directory>spark/src/main/resources</directory>
-          <includes>
-            <include>*.*</include>
-          </includes>
-        </fileSet>
-        <fileSet filtered="true">
-          <directory>spark</directory>
-          <includes>
-            <include>pom.xml</include>
-          </includes>
-        </fileSet>
-
         <fileSet>
           <directory>datamodel/src/main/avro</directory>
           <includes>

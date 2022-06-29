@@ -1,5 +1,0 @@
-= Adding Spark Support
-
-
-include::ROOT:partial$include.adoc[]
-include::{cloudflow-version}@shared-content:administration:page$installing-spark-operator.adoc[]

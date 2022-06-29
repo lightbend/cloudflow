@@ -243,7 +243,7 @@ trait StreamletDescriptorBuilder extends EitherValues with OptionValues {
     OutletDescriptor(name, createSchemaDescriptor(schemaName))
 
   def createSchemaDescriptor[T: ClassTag: SchemaFor](schemaName: String) = {
-    implicit val schema = implicitly[SchemaFor[T]].schema(DefaultFieldMapper)
+    implicit val schema = implicitly[SchemaFor[T]].schema
     SchemaDescriptor(schemaName, schema.toString, fingerprintSha256(schema), "avro")
   }
 

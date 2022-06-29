@@ -27,7 +27,7 @@ class ConnectedCarClusterTest extends AnyWordSpec with Matchers with BeforeAndAf
   "A ConnectedCarCluster streamlet" should {
 
     val testkit = AkkaStreamletTestKit(system)
-
+    // flaky test
     "Allow for creating a 'flow processor'" in {
       val record = generateCarERecord()
       val data   = Vector(record)

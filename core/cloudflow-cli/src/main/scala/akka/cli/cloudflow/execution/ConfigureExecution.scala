@@ -17,7 +17,7 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
   def run(): Try[ConfigureResult] = {
     logger.info("Executing command Configure")
     for {
-      _ <- validateProtocolVersion(client)
+      _ <- validateProtocolVersion(client, c.operatorNamespace, logger)
       namespace = c.namespace.getOrElse(c.cloudflowApp)
 
       currentCr <- client.readCloudflowApp(c.cloudflowApp, namespace).map {
@@ -30,18 +30,17 @@ final case class ConfigureExecution(c: Configure, client: KubeClient, logger: Cl
         c.aggregatedConfig,
         currentCr,
         logbackContent,
-        () => client.getPvcs(namespace = currentCr.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       // streamlets configurations
       streamletsConfigs <- streamletsConfigs(
         currentCr,
         cloudflowConfig,
-        c.microservices,
-        () => client.getKafkaClusters(None).map(parseValues))
+        () => client.getKafkaClusters(namespace = c.operatorNamespace).map(parseValues))
 
-      uid <- client.uidCloudflowApp(currentCr.spec.appId, namespace)
+      uid <- client.uidCloudflowApp(currentCr.getSpec.appId, namespace)
       _ <- client.configureCloudflowApp(
-        currentCr.spec.appId,
+        currentCr.getSpec.appId,
         namespace,
         uid,
         configStr,

@@ -7,7 +7,7 @@
 </p>
 Cloudflow enables users to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.
 Cloudflow allows you to easily break down your streaming application to smaller composable components and wire them together with schema-based contracts.
-Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime.
+It also comes with a powerful CLI tool to easily manage, scale and configure your streaming applications at runtime.
 With its powerful abstractions, Cloudflow allows to define, build and deploy the most complex streaming applications.
 
 - Develop: Focus only on business logic, leave the boilerplate to us.
@@ -18,7 +18,7 @@ As data pipelines become first-class citizens in microservices architectures, Cl
 In a nutshell, Cloudflow is an application development toolkit comprising:
 
 - An API definition for `Streamlet`, the core abstraction in Cloudflow.
-- An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Spark's Structured Streaming, Flink, and Akka.
+- An extensible set of runtime implementations for `Streamlet`(s).
 - A `Streamlet` composition model driven by a `blueprint` definition.
 - A sandbox execution mode that accelerates the development and testing of your applications.
 - A set of `sbt` plugins that are able to package your application into a deployable container.
@@ -53,7 +53,7 @@ The underlying data streams are partitioned to allow for parallelism in a distri
 
 The `Streamlet` logic can be written using an extensible choice of streaming runtimes, such as Akka Streams and Spark.
 The lightweight API exposes the raw power of the underlying runtime and its libraries while providing a higher-level abstraction for composing `streamlets` and expressing data schemas.
-Your code is written in your familiar Structured Streaming, Flink, or Akka Streams native API.
+Your code is written in your familiar API.
 
 Applications are deployed as a whole. Cloudflow takes care of deploying the individual `streamlets` and making sure connections get translated into data flowing between them at runtime.
 

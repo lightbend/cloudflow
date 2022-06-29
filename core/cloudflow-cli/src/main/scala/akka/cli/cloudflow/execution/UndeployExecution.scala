@@ -16,7 +16,7 @@ final case class UndeployExecution(u: Undeploy, client: KubeClient, logger: CliL
   def run(): Try[UndeployResult] = {
     logger.info("Executing command Undeploy")
     for {
-      _ <- validateProtocolVersion(client)
+      _ <- validateProtocolVersion(client, u.operatorNamespace, logger)
       _ <- client.deleteCloudflowApp(u.cloudflowApp, u.namespace.getOrElse(u.cloudflowApp))
     } yield {
       UndeployResult()

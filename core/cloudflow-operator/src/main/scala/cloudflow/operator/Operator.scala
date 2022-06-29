@@ -47,20 +47,6 @@ import scala.util._
 object Operator {
   lazy val log = LoggerFactory.getLogger("Operator")
 
-  val ProtocolVersion = "6"
-  val ProtocolVersionKey = "protocol-version"
-  val ProtocolVersionConfigMapName = "cloudflow-protocol-version"
-  def ProtocolVersionConfigMap(ownerReferences: List[OwnerReference]) = {
-    new ConfigMapBuilder()
-      .withNewMetadata()
-      .withName(ProtocolVersionConfigMapName)
-      .withLabels((Map(ProtocolVersionConfigMapName -> ProtocolVersionConfigMapName)).asJava)
-      .withOwnerReferences(ownerReferences: _*)
-      .endMetadata()
-      .withData(Map(ProtocolVersionKey -> ProtocolVersion).asJava)
-      .build()
-  }
-
   val AppIdLabel = "com.lightbend.cloudflow/app-id"
   val ConfigFormatLabel = "com.lightbend.cloudflow/config-format"
   val StreamletNameLabel = "com.lightbend.cloudflow/streamlet-name"
@@ -75,6 +61,17 @@ object Operator {
   val StreamAttributes = ActorAttributes.supervisionStrategy(decider)
 
   private lazy val fabric8ExecutionContext = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+
+  def ProtocolVersionSecret(ownerReferences: List[OwnerReference]) = {
+    new SecretBuilder()
+      .withNewMetadata()
+      .withName(App.CloudflowProtocolVersion)
+      .withLabels((Map(App.CloudflowProtocolVersion -> App.CloudflowProtocolVersion)).asJava)
+      .withOwnerReferences(ownerReferences: _*)
+      .endMetadata()
+      .withStringData(Map(App.ProtocolVersionKey -> App.ProtocolVersion).asJava)
+      .build()
+  }
 
   def handleEvents(client: KubernetesClient, runners: Map[String, Runner[_]], podName: String, podNamespace: String)(
       implicit system: ActorSystem,

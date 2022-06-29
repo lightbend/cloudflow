@@ -77,13 +77,6 @@ If we want to write a test for the example streamlet `RecordSumFlow`, we could a
 include::{cloudflow-examples-version}@docsnippets:ROOT:example$akkastreams-scala/src/test/scala/com/example/SampleSpec.scala[tag=config-value]
 --
 
-The Spark testkit has a similar function for adding values to configuration parameters when testing a streamlet.
-
-[source,scala]
---
-include::{cloudflow-examples-version}@docsnippets:ROOT:example$spark-scala/src/test/scala/com/example/SampleSpec.scala[tag=config-value]
---
-
 The Java API is slightly different as you can see in the example below:
 
 [source,java]

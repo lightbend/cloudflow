@@ -58,10 +58,14 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     Action.delete[Deployment](name, namespace)
 
   def appActions(app: App.Cr, labels: CloudflowLabels, ownerReferences: List[OwnerReference]): Seq[Action] = {
-    val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
-    Seq(
-      Action.createOrReplace(roleAkka),
-      Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
+    app.getSpec.serviceAccount match {
+      case Some(_) => Seq()
+      case _ =>
+        val roleAkka = akkaRole(app.namespace, labels, ownerReferences)
+        Seq(
+          Action.createOrReplace(roleAkka),
+          Action.createOrReplace(akkaRoleBinding(app.namespace, roleAkka, labels, ownerReferences)))
+    }
   }
 
   case class PatchDeploymentAction(deployment: Deployment)(
@@ -165,7 +169,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val labels = CloudflowLabels(app)
     val ownerReferences = List(AppOwnerReference(app.getMetadata.getName, app.getMetadata.getUid))
-    val appId = app.spec.appId
+    val appId = app.getSpec.appId
     val podName = Name.ofPod(deployment.name)
     val k8sStreamletPorts =
       deployment.endpoint
@@ -191,7 +195,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
     val podsConfig = getPodsConfig(configSecret)
 
-    val streamletToDeploy = app.spec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
+    val streamletToDeploy = app.getSpec.streamlets.find(streamlet => streamlet.name == deployment.streamletName)
 
     val userConfiguredPorts = getContainerPorts(podsConfig, PodsConfig.CloudflowPodName)
     // Streamlet volume mounting (Defined by Streamlet.volumeMounts API)
@@ -301,7 +305,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         configSecretVolumes
 
       val podSpecBuilder = new PodSpecBuilder()
-        .withServiceAccount(Name.ofServiceAccount)
+        .withServiceAccount(app.getSpec.serviceAccount.getOrElse(Name.ofServiceAccount))
         .withVolumes(allVolumes.asJava)
         .withContainers(container)
 
@@ -415,7 +419,7 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
   }
 
   private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {
-    val agentPaths = app.spec.agentPaths
+    val agentPaths = app.getSpec.agentPaths
     val prometheusEnvVars = if (agentPaths.contains(PrometheusAgentKey)) {
       List(
         new EnvVarBuilder()

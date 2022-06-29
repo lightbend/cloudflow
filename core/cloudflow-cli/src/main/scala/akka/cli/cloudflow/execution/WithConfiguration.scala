@@ -87,7 +87,7 @@ trait WithConfiguration {
 
   private def validateConfiguredStreamlets(crApp: App.Cr, cloudflowConfig: CloudflowConfig.CloudflowRoot): Try[Unit] = {
     val configStreamlets = cloudflowConfig.cloudflow.streamlets.keys.toSeq.distinct
-    val crStreamlets = crApp.spec.streamlets.map(_.name).toSeq.distinct
+    val crStreamlets = crApp.getSpec.streamlets.map(_.name).toSeq.distinct
 
     configStreamlets.diff(crStreamlets) match {
       case Nil => Success(())
@@ -99,7 +99,7 @@ trait WithConfiguration {
 
   private def validateTopicIds(crApp: App.Cr, cloudflowConfig: CloudflowConfig.CloudflowRoot): Try[Unit] = {
     val configTopics = cloudflowConfig.cloudflow.topics.keys.toSeq.distinct
-    val crTopics = crApp.spec.deployments.flatMap(_.portMappings.values.map(_.id)).distinct
+    val crTopics = crApp.getSpec.deployments.flatMap(_.portMappings.values.map(_.id)).distinct
 
     configTopics.diff(crTopics) match {
       case Nil => Success(())
@@ -161,7 +161,7 @@ trait WithConfiguration {
 
   def validateConfigParameters(crApp: App.Cr, cloudflowConfig: CloudflowConfig.CloudflowRoot): Try[Unit] = {
     Try {
-      crApp.spec.streamlets.foreach { streamlet =>
+      crApp.getSpec.streamlets.foreach { streamlet =>
         cloudflowConfig.cloudflow.streamlets.get(streamlet.name).foreach { s =>
           val configParameters = streamlet.descriptor.configParameters
           val detectedConfigParameters =
@@ -212,8 +212,8 @@ trait WithConfiguration {
     for {
       userConfig <- tryUserConfig
       cloudflowConfig <- CloudflowConfig.loadAndValidate(userConfig)
-      defaultConfig = CloudflowConfig.defaultConfig(appCr.spec)
-      defaultMounts = CloudflowConfig.defaultMountsConfig(appCr.spec, allowedRuntimes = List("flink", "spark"))
+      defaultConfig = CloudflowConfig.defaultConfig(appCr.getSpec)
+      defaultMounts = CloudflowConfig.defaultMountsConfig(appCr.getSpec, allowedRuntimes = List("flink", "spark"))
       config = userConfig
         .withFallback(CloudflowConfig.writeConfig(defaultConfig))
         .withFallback(CloudflowConfig.writeConfig(defaultMounts))
@@ -221,7 +221,7 @@ trait WithConfiguration {
           loggingConfig match {
             case Some(s) =>
               CloudflowConfig.writeConfig(
-                CloudflowConfig.loggingMountsConfig(appCr.spec, s"${MurmurHash3.stringHash(s)}"))
+                CloudflowConfig.loggingMountsConfig(appCr.getSpec, s"${MurmurHash3.stringHash(s)}"))
             case None => ConfigFactory.empty()
           }
         }
@@ -323,23 +323,16 @@ trait WithConfiguration {
   def streamletsConfigs(
       appCr: App.Cr,
       appConfig: CloudflowConfig.CloudflowRoot,
-      microservices: Boolean,
       clusterSecretConfigs: () => Try[Map[String, Config]]): Try[Map[App.Deployment, Map[String, String]]] = {
 
     val allReferencedClusters = {
       appConfig.cloudflow.topics.flatMap { case (_, topic) => topic.cluster } ++
-      appCr.spec.deployments.flatMap(_.portMappings.values.flatMap(_.cluster)) ++
+      appCr.getSpec.deployments.flatMap(_.portMappings.values.flatMap(_.cluster)) ++
       Seq(DefaultConfigurationName)
     }
 
     for {
-      clusterSecrets <- {
-        if (!microservices) {
-          clusterSecretConfigs()
-        } else {
-          Success(Map("default" -> ConfigFactory.parseString("""bootstrap.servers = "not-provided-kafka-host"""")))
-        }
-      }
+      clusterSecrets <- clusterSecretConfigs()
       clustersConfig <- Try {
         allReferencedClusters.flatMap { name =>
           clusterSecrets.find { case (k, _) => k == name } match {
@@ -352,10 +345,10 @@ trait WithConfiguration {
         }.toMap
       }
       res <- Try {
-        appCr.spec.deployments.map { deployment =>
+        appCr.getSpec.deployments.map { deployment =>
           val streamletConfig = CloudflowConfig.streamletConfig(deployment.streamletName, deployment.runtime, appConfig)
           val streamletWithPortMappingsConfig = portMappings(deployment, appConfig, streamletConfig, clustersConfig)
-          val applicationConfig = applicationRunnerConfig(appCr.name, appCr.spec.appVersion, deployment)
+          val applicationConfig = applicationRunnerConfig(appCr.name, appCr.getSpec.appVersion, deployment)
           deployment -> StreamletConfigs(
             streamlet = streamletWithPortMappingsConfig,
             runtime = CloudflowConfig.runtimeConfig(deployment.streamletName, deployment.runtime, appConfig),

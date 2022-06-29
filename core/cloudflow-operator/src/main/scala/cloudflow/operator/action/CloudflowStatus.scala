@@ -18,7 +18,7 @@ package cloudflow.operator.action
 
 import akka.datap.crd.App
 import akka.kube.actions.{ Action, CustomResourceAdapter }
-import cloudflow.operator.action.runner.{ FlinkRunner, Runner }
+import cloudflow.operator.action.runner.Runner
 import io.fabric8.kubernetes.api.model.{ ContainerState, Pod }
 import io.fabric8.kubernetes.api.{ model => fabric8 }
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -154,17 +154,17 @@ object CloudflowStatus {
   }
 
   def pendingAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
-    log.info(s"Setting pending status for app ${app.spec.appId}")
+    log.info(s"Setting pending status for app ${app.getSpec.appId}")
     val newStatus =
-      freshStatus(app.spec, runners).copy(appStatus = Status.Pending, appMessage = msg)
+      freshStatus(app.getSpec, runners).copy(appStatus = Status.Pending, appMessage = msg)
     app.setStatus(newStatus)
 
     statusUpdateAction(app)()
   }
 
   def errorAction(app: App.Cr, runners: Map[String, Runner[_]], msg: String): Action = {
-    log.info(s"Setting error status for app ${app.spec.appId}")
-    val newStatus = freshStatus(app.spec, runners)
+    log.info(s"Setting error status for app ${app.getSpec.appId}")
+    val newStatus = freshStatus(app.getSpec, runners)
       .copy(
         appStatus = Status.Error,
         appMessage = s"An unrecoverable error has occured, please undeploy the application. Reason: ${msg}")
@@ -218,7 +218,7 @@ object CloudflowStatus {
   }
 
   def updateApp(newApp: App.Cr, runners: Map[String, Runner[_]]): App.Cr = {
-    val newStreamletStatuses = createStreamletStatuses(newApp.spec, runners).map { newStreamletStatus =>
+    val newStreamletStatuses = createStreamletStatuses(newApp.getSpec, runners).map { newStreamletStatus =>
       Try { newApp.getStatus.streamletStatuses }
         .getOrElse(Nil)
         .find(_.streamletName == newStreamletStatus.streamletName)
@@ -228,8 +228,8 @@ object CloudflowStatus {
         .getOrElse(newStreamletStatus)
     }
     val newStatus = newApp.getStatus.copy(
-      appId = newApp.spec.appId,
-      appVersion = newApp.spec.appVersion,
+      appId = newApp.getSpec.appId,
+      appVersion = newApp.getSpec.appVersion,
       streamletStatuses = newStreamletStatuses,
       appStatus = calcAppStatus(newStreamletStatuses))
 
@@ -288,7 +288,7 @@ object CloudflowStatus {
             case Some(curr) =>
               curr.setStatus(app.getStatus)
 
-              val newAppWithStatus = App.Cr(spec = null, metadata = curr.getMetadata, status = curr.getStatus)
+              val newAppWithStatus = App.Cr(_spec = null, _metadata = curr.getMetadata, _status = curr.getStatus)
               Some(current.updateStatus(newAppWithStatus))
             case _ =>
               if (retry <= 0) {

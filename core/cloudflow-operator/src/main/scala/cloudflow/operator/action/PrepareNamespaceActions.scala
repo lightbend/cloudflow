@@ -33,7 +33,7 @@ object PrepareNamespaceActions {
       runners: Map[String, Runner[_]],
       labels: CloudflowLabels,
       ownerReferences: List[OwnerReference]): Seq[Action] =
-    app.spec.streamlets
+    app.getSpec.streamlets
       .map(streamlet => streamlet.descriptor.runtime)
       .distinct
       .flatMap { runtime =>

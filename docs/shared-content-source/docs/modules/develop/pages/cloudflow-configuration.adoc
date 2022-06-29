@@ -25,8 +25,8 @@ You can learn more about it in xref:develop:cloudflow-configuration-scopes.adoc[
 
 Using this model, you can configure the following settings:
 
-    - Runtime settings (for Akka, Spark, Flink, or any user-provided one)
-    - Kubernetes pod and container configuration
+    - Runtime settings
+    - Kubernetes pod and container configuration for Akka Streamlet
     - Streamlet Configuration Parameters for a particular instance
 
 Cloudflow uses https://github.com/lightbend/config/blob/main/HOCON.md[HOCON] as the syntax to specify the configuration.
@@ -49,7 +49,7 @@ cloudflow {
   streamlets {
     my-streamlet {
       config {                             
-        spark.broadcast.compress = "true"
+        akka.loglevel = "DEBUG"
       }
     //...
     }
@@ -57,7 +57,7 @@ cloudflow {
 }
 ----
 
-With this configuration, the setting `spark.broadcast.compress = "true"` is passed to the Spark runtime session of the specific `my-streamlet` instance.  
+With this configuration, the setting `akka.loglevel = "DEBUG"` is passed to the Akka runtime session of the specific `my-streamlet` instance.  
 
 It follows, that the configuration options that you can use in this section are dependent on the runtime used. 
 Consult the documentation of your runtime of choice for more information.
@@ -170,21 +170,6 @@ Let's see some examples:
 ----
 $ {cli-plugin} cloudflow deploy target/swiss-knife.json \
   cloudflow.streamlets.akka-process.config.akka.log-level = "DEBUG"
-----
-
-.Set the `memoryOverhead` of the Spark `driver` runtime configuration to `512` (Mb)
-[source, bash]
-----
-$ {cli-plugin} cloudflow deploy target/swiss-knife.json \
-  cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512
-----
-
-.Set the streamlet configuration parameter `configurable-message` for streamlet `spark-process` to `SPARK-OUTPUT:`
-[source, bash]
-----
-$ {cli-plugin} cloudflow deploy target/swiss-knife.json \ 
-  cloudflow.runtimes.spark.config.spark.driver.memoryOverhead=512 \
-  cloudflow.streamlets.spark-process.config-parameters.configurable-message='SPARK-OUTPUT:'
 ----
 
 The arguments passed with `[config-key]=[value]` pairs take precedence over the files passed through with the `--conf` flags.

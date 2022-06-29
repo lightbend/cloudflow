@@ -16,14 +16,15 @@ class ConfigValidationSpec extends AnyFlatSpec with Matchers with TryValues {
 
   def crWithCPDescriptors(cpDescriptors: Seq[App.ConfigParameterDescriptor]) = {
     App.Cr(
-      metadata = null,
-      spec = App.Spec(
+      _metadata = null,
+      _spec = App.Spec(
         appId = "",
         appVersion = "",
         deployments = Seq(),
         agentPaths = Map(),
         version = None,
         libraryVersion = None,
+        serviceAccount = None,
         streamlets = Seq(
           App.Streamlet(
             name = "my-streamlet",

@@ -66,15 +66,14 @@ class AppCrSpec
         .use(egressRef)
         .connect(Topic("foos"), ingressRef.out, egressRef.in)
         .verified
-        .right
         .value
 
       val newApp = mkApp(verifiedBlueprint)
-      val cr = App.Cr(spec = newApp, metadata = null)
+      val cr = App.Cr(_spec = newApp, _metadata = null)
       val mapper = Serialization.jsonMapper()
       val str = mapper.writeValueAsString(cr)
       val customResource = mapper.readValue(str, classOf[App.Cr])
-      customResource.spec mustBe cr.spec
+      customResource.getSpec mustBe cr.getSpec
     }
 
     "report its status as Pending when there are no pod statuses yet" in {
@@ -176,52 +175,6 @@ class AppCrSpec
       CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
     }
 
-    "report its status as Running when all streamlet pods are running and ready in a mixed app" in {
-      var status = mkTestStatusMixedApp()
-      status = CloudflowStatus.updatePod(status)("ingress", mkRunningReadyPod("ingress"))
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      (1 to SparkRunner.DefaultNrOfExecutorInstances + 1).foreach { _ =>
-        status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
-        CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      }
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      (1 to FlinkRunner.DefaultTaskManagerReplicas + 1).foreach { _ =>
-        status = CloudflowStatus.updatePod(status)("flink-egress", mkRunningReadyPod("flink-egress"))
-      }
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
-    }
-
-    "report its status as Running when all streamlet pods but flink are running and ready in a mixed app" in {
-      var status = mkTestStatusExternalFlinkApp()
-      status = CloudflowStatus.updatePod(status)("ingress", mkRunningReadyPod("ingress"))
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      (1 to SparkRunner.DefaultNrOfExecutorInstances).foreach { _ =>
-        status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
-        CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      }
-      status = CloudflowStatus.updatePod(status)("spark-egress", mkRunningReadyPod("spark-egress"))
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
-    }
-
-    "report its status as Running when all streamlet pods but spark are running and ready in a mixed app" in {
-      var status = mkTestStatusExternalSparkApp()
-      status = CloudflowStatus.updatePod(status)("ingress", mkRunningReadyPod("ingress"))
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      (1 to FlinkRunner.DefaultTaskManagerReplicas).foreach { _ =>
-        status = CloudflowStatus.updatePod(status)("flink-egress", mkRunningReadyPod("flink-egress"))
-        CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Pending
-      }
-      status = CloudflowStatus.updatePod(status)("flink-egress", mkRunningReadyPod("flink-egress"))
-
-      CloudflowStatus.aggregatedStatus(status) mustBe CloudflowStatus.Status.Running
-    }
-
     "report pod status as Running" in {
       val podStatus = CloudflowStatus.fromPod(mkRunningReadyPod("s1"))
       podStatus.status mustBe CloudflowStatus.PodStatus.Running
@@ -274,7 +227,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, egress1Ref.in)
       .connect(Topic("foos2"), egress2Ref.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -298,7 +250,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -322,7 +273,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)
@@ -346,7 +296,6 @@ class AppCrSpec
       .connect(Topic("foos1"), ingressRef.out, sparkEgressRef.in)
       .connect(Topic("foos2"), flinkEgressRef.in)
       .verified
-      .right
       .value
 
     val newApp = mkApp(verifiedBlueprint)

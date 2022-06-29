@@ -42,9 +42,9 @@ object EventActions {
 
     val (reason, message) = currentApp match {
       case Some(_) =>
-        ("ApplicationUpdated", s"Updated Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
+        ("ApplicationUpdated", s"Updated Cloudflow Application ${app.getSpec.appId} to namespace ${app.namespace}")
       case _ =>
-        ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.spec.appId} to namespace ${app.namespace}")
+        ("ApplicationDeployed", s"Deployed Cloudflow Application ${app.getSpec.appId} to namespace ${app.namespace}")
     }
 
     val deployEvent =
@@ -65,8 +65,8 @@ object EventActions {
       cause: ObjectReference): Seq[Action] =
     for {
       currentApp <- currentAppOpt.toVector
-      streamlet <- app.spec.deployments
-      currentStreamlet <- currentApp.spec.deployments.find(_.name == streamlet.name)
+      streamlet <- app.getSpec.deployments
+      currentStreamlet <- currentApp.getSpec.deployments.find(_.name == streamlet.name)
       if currentStreamlet.replicas != streamlet.replicas
       replicas = replicasOrRunnerDefault(streamlet, runners)
       currentReplicas = replicasOrRunnerDefault(currentStreamlet, runners)
@@ -75,7 +75,7 @@ object EventActions {
       podName = podName,
       reason = "StreamletScaled",
       message =
-        s"Scaled Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${app.namespace} from ${currentReplicas} to ${replicas}",
+        s"Scaled Cloudflow Application ${app.getSpec.appId} streamlet ${streamlet.name} in namespace ${app.namespace} from ${currentReplicas} to ${replicas}",
       objectReference = cause,
       fieldPath = Some(s"spec.deployments{${streamlet.name}}"))
 
@@ -87,7 +87,7 @@ object EventActions {
       app = app,
       podName = podName,
       reason = "ApplicationUndeployed",
-      message = s"Undeployed Cloudflow Application ${app.spec.appId} from namespace ${app.namespace}",
+      message = s"Undeployed Cloudflow Application ${app.getSpec.appId} from namespace ${app.namespace}",
       objectReference = cause)
 
   def streamletChangeEvent(app: App.Cr, streamlet: App.Deployment, podName: String, cause: ObjectReference): Action =
@@ -96,7 +96,7 @@ object EventActions {
       podName = podName,
       reason = "StreamletConfigurationChanged",
       message =
-        s"Changed streamlet configuration of Cloudflow Application ${app.spec.appId} streamlet ${streamlet.name} in namespace ${app.namespace}",
+        s"Changed streamlet configuration of Cloudflow Application ${app.getSpec.appId} streamlet ${streamlet.name} in namespace ${app.namespace}",
       objectReference = cause)
 
   private[operator] def createEvent(
@@ -108,7 +108,7 @@ object EventActions {
       objectReference: ObjectReference,
       fieldPath: Option[String] = None): Action = {
     val eventTime = ZonedDateTime.now()
-    val metadataName = newEventName(podName, app.spec.appId)
+    val metadataName = newEventName(podName, app.getSpec.appId)
 
     // the object reference fieldPath is irrelevant for application events.
     fieldPath.foreach(path => objectReference.setFieldPath(path))

@@ -30,8 +30,6 @@ prepare-cluster:
 	@echo '****** Cluster setup, kubectl needs to be configured'
 	@echo '****** Creating namespace'
 	kubectl create ns cloudflow | true
-	helm uninstall spark-operator --namespace cloudflow | true
-	kubectl delete job cloudflow-patch-spark-mutatingwebhookconfig -n cloudflow | true
 	@echo '****** Installing Kafka'
 	helm repo add strimzi https://strimzi.io/charts/ | true
 	helm repo update
@@ -41,11 +39,8 @@ prepare-cluster:
 	helm repo add stable https://charts.helm.sh/stable --force-update | true
 	helm repo update
 	helm upgrade -i nfs-server-provisioner stable/nfs-server-provisioner --set storageClass.provisionerName=cloudflow-nfs --namespace cloudflow
-	@echo '****** Installing Flink Operator'
-	(helm upgrade -i flink-operator \
-		https://github.com/lightbend/flink-operator/releases/download/v0.8.2/flink-operator-0.8.2.tgz \
-		--set operatorVersion="v0.5.0" \
-		--namespace cloudflow)
+	@echo '****** Installing Cloudflow CRD'
+	kubectl apply -f ../cloudflow-crd/kubernetes/cloudflow-crd.yaml
 	@echo '****** Installing Cloudflow Operator'
 	helm repo add cloudflow-helm-charts https://lightbend.github.io/cloudflow-helm-charts/ | true
 	helm repo update
@@ -54,12 +49,6 @@ prepare-cluster:
 		--version "${version}" \
 		--set kafkaClusters.default.bootstrapServers=cloudflow-strimzi-kafka-bootstrap.cloudflow:9092 \
 		--namespace cloudflow)
-	@echo '****** Installing Spark Operator'
-	helm repo add incubator https://charts.helm.sh/incubator | true
-	helm repo update
-	helm upgrade -i spark-operator incubator/sparkoperator --values="spark-values.yaml" --namespace cloudflow
-	@echo '****** Patch Mutating webhooks'
-	kubectl apply -f spark-mutating-webhook.yaml --namespace cloudflow
 	@echo '****** The cluster is ready for integration tests!'
 
 .PHONY: spawn-gke-cluster

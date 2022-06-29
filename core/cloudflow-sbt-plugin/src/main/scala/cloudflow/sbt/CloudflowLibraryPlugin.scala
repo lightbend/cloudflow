@@ -22,8 +22,7 @@ import sbt.Keys._
 import cloudflow.sbt.CloudflowKeys.cloudflowVersion
 
 /**
- * SBT Plugin for building generic libraries that use Cloudflow concepts, such as data definitions (e.g. `Codec`),
- * AVRO support, etc.
+ * SBT Plugin for building generic libraries that use Cloudflow concepts.
  *
  * This library is assumed to not contain any runtime-specific streamlet implementation.
  */

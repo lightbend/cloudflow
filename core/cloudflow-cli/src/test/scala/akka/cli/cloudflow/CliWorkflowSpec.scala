@@ -10,7 +10,6 @@ import scala.util.{ Success, Try }
 import akka.datap.crd.App
 import akka.cli.cloudflow.kubeclient.KubeClient
 import akka.cli.cloudflow.models.ApplicationStatus
-import akka.cli.microservice.AkkaMicroserviceSpec
 import buildinfo.BuildInfo
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest._
@@ -30,9 +29,7 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
   val defaultProvidedKafkaClusters = Map("default" -> """bootstrap.servers = "localhost:9092"""")
 
   @nowarn def testingKubeClientFactory(
-      protocolVersion: String = Cli.ProtocolVersion,
-      sparkVersion: String = Cli.RequiredSparkVersion,
-      flinkVersion: String = Cli.RequiredFlinkVersion,
+      protocolVersion: String = App.ProtocolVersion,
       providedPvcs: List[String] = defaultPvcMounts,
       providedKafkaClusters: Map[String, String] = defaultProvidedKafkaClusters,
       providedApplication: Option[App.Cr] = None,
@@ -48,15 +45,10 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
           dockerUsername: String,
           dockerPassword: String): Try[Unit] = Success(())
       def createNamespace(name: String): Try[Unit] = Success(())
-      def sparkAppVersion(): Try[String] = Success(sparkVersion)
-      def flinkAppVersion(): Try[String] = Success(flinkVersion)
-      def getOperatorProtocolVersion(): Try[String] = Success(protocolVersion)
+      def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = Success(protocolVersion)
       def createCloudflowApp(spec: App.Spec, namespace: String) = Success("1")
       def uidCloudflowApp(name: String, namespace: String) = Success("1")
-      def createMicroservicesApp(
-          cfSpec: App.Spec,
-          namespace: String,
-          specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] =
+      def createMicroservicesApp(cfSpec: App.Spec, namespace: String): Try[String] =
         Success("1")
       def configureCloudflowApp(
           name: String,
@@ -137,41 +129,13 @@ class CliWorkflowSpec extends AnyFlatSpec with Matchers with TryValues {
     res.failure.exception.getMessage.contains("version of kubectl cloudflow is not compatible") shouldBe true
   }
 
-  it should "fail a mocked deploy if spark version is not supported" in {
+  it should "succeed a mocked deploy" in {
     // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(sparkVersion = "1"))
+    val cli = new TestingCli(testingKubeClientFactory())
 
     // Act
     val res =
       cli.run(commands.Deploy(crFile = crFile))
-
-    // Assert
-    res.isFailure shouldBe true
-    res.failure.exception.getMessage.contains("spark") shouldBe true
-    res.failure.exception.getMessage.contains("required version") shouldBe true
-  }
-
-  it should "fail a mocked deploy if flink version is not supported" in {
-    // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
-
-    // Act
-    val res =
-      cli.run(commands.Deploy(crFile = crFile))
-
-    // Assert
-    res.isFailure shouldBe true
-    res.failure.exception.getMessage.contains("flink") shouldBe true
-    res.failure.exception.getMessage.contains("required version") shouldBe true
-  }
-
-  it should "succeed a mocked deploy if flink is an unmanaged runtime" in {
-    // Arrange
-    val cli = new TestingCli(testingKubeClientFactory(flinkVersion = "2"))
-
-    // Act
-    val res =
-      cli.run(commands.Deploy(crFile = crFile, unmanagedRuntimes = Seq("flink")))
 
     // Assert
     res.isSuccess shouldBe true

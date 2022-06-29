@@ -7,12 +7,13 @@ lazy val sensorData =  (project in file("."))
     .settings(
 //end::docs-projectSetup-example[]
       libraryDependencies ++= Seq(
+        Cloudflow.library.CloudflowAvro,
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
+        "com.typesafe.akka"      %% "akka-http-jackson"         % "10.1.12",
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.11",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
-
 //tag::docs-projectName-example[]
       ),
       name := "akkastreams-doc",
@@ -20,8 +21,7 @@ lazy val sensorData =  (project in file("."))
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
-      schemaCodeGenerator := SchemaCodeGenerator.Java,
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.12.15",
       crossScalaVersions := Vector(scalaVersion.value),
       javacOptions ++= Seq("-Xlint:deprecation"),
       scalacOptions ++= Seq(
@@ -42,9 +42,10 @@ lazy val sensorData =  (project in file("."))
         "org.scalatest"          %% "scalatest"                 % "3.0.8"    % "test",
         "junit"                  % "junit"                      % "4.12"     % "test"),
 
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      avroStringType := "String",
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value
 
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

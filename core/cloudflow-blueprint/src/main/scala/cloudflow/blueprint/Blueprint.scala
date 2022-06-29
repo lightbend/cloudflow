@@ -19,7 +19,7 @@ package cloudflow.blueprint
 import java.io._
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable
 import scala.util._
 

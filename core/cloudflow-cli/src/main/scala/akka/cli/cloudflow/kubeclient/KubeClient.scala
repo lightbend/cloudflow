@@ -8,19 +8,10 @@ import akka.datap.crd.App
 
 import scala.util.Try
 import akka.cli.cloudflow.models
-import akka.cli.microservice.AkkaMicroserviceSpec
 
 object KubeClient {
 
   val CloudflowResource = App.ResourceName
-
-  val CloudflowProtocolVersionConfigMap = "cloudflow-protocol-version"
-
-  val ProtocolVersionKey = "protocol-version"
-
-  val SparkResource = "sparkapplications.sparkoperator.k8s.io"
-
-  val FlinkResource = "flinkapplications.flink.k8s.io"
 
   val ImagePullSecretName = "cloudflow-image-pull-secret"
 
@@ -44,15 +35,10 @@ trait KubeClient {
 
   def getAppInputSecret(name: String, namespace: String): Try[String]
 
-  def getOperatorProtocolVersion(): Try[String]
+  def getOperatorProtocolVersion(namespace: Option[String]): Try[String]
 
   // C
   def createCloudflowApp(spec: App.Spec, namespace: String): Try[String]
-
-  def createMicroservicesApp(
-      cfSpec: App.Spec,
-      namespace: String,
-      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String]
 
   def uidCloudflowApp(name: String, namespace: String): Try[String]
 
@@ -80,8 +66,4 @@ trait KubeClient {
   def getPvcs(namespace: String): Try[List[String]]
 
   def getKafkaClusters(namespace: Option[String]): Try[Map[String, String]]
-
-  def sparkAppVersion(): Try[String]
-
-  def flinkAppVersion(): Try[String]
 }

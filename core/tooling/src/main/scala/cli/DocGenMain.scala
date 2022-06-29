@@ -46,7 +46,7 @@ object DocGenMain extends App {
     while (!remaining.isEmpty && continue) {
       continue = false
       for {
-        parent <- sorted
+        parent <- sorted.toList
       } {
         val childrenOfThisParent = remaining.filter { _.getParentId == Some(parent.id) }
         if (childrenOfThisParent.nonEmpty) {

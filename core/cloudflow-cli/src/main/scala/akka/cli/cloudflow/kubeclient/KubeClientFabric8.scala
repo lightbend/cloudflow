@@ -11,7 +11,6 @@ import akka.cli.cloudflow.kubeclient.KubeClient._
 import akka.datap.crd.App
 import akka.cli.cloudflow.{ models, CliException, CliLogger }
 import akka.cli.common.Base64Helper
-import akka.cli.microservice.{ AkkaMicroservice, AkkaMicroserviceList, AkkaMicroserviceSpec }
 import buildinfo.BuildInfo
 import com.fasterxml.jackson.annotation.{ JsonCreator, JsonProperty }
 import com.fasterxml.jackson.databind.JsonDeserializer
@@ -67,7 +66,7 @@ class KubeClientFabric8(
     val client = {
       val _client = clientFactory(getConfig())
       Try {
-        _client.endpoints().list().getItems()
+        _client.secrets().list().getItems()
         _client
       }.recover {
         case ex: Throwable =>
@@ -129,18 +128,6 @@ class KubeClientFabric8(
         Failure(CliException("Cannot find cloudflow", ex))
     }
 
-  private def getCrdAppVersion(name: String, client: KubernetesClient) =
-    Try {
-      val crd =
-        getCrd(name, client)
-          .getOrElse(throw CliException("Application resource not found in the cluster"))
-
-      crd.getSpec.getVersion
-    }.recoverWith {
-      case ex =>
-        Failure(CliException("Cannot find spark application", ex))
-    }
-
   private lazy val cloudflowApplicationsClient: Try[MixedOperation[App.Cr, App.List, Resource[App.Cr]]] = {
     for {
       client <- kubeClient
@@ -191,17 +178,17 @@ class KubeClientFabric8(
           .find(_.getMetadata.getName == appName)
           .getOrElse(throw CliException(s"""Cloudflow application "${appName}" not found"""))
 
-        val appStatus: String = Try(app.status.appStatus).toOption.getOrElse("Unknown")
+        val appStatus: String = Try(app.getStatus.appStatus).toOption.getOrElse("Unknown")
 
         val res = models.ApplicationStatus(
           summary = getCRSummary(app),
           status = appStatus,
           // FIXME, remove in a breaking CRD change, the endpoint statuses are not updated anymore.
-          endpointsStatuses = Try(app.status.endpointStatuses).toOption
+          endpointsStatuses = Try(app.getStatus.endpointStatuses).toOption
             .filterNot(_ == null)
             .map(_.map(getEndpointStatus))
             .getOrElse(Seq.empty),
-          streamletsStatuses = Try(app.status.streamletStatuses).toOption
+          streamletsStatuses = Try(app.getStatus.streamletStatuses).toOption
             .filterNot(_ == null)
             .map(_.map(getStreamletStatus))
             .getOrElse(Seq.empty))
@@ -210,38 +197,33 @@ class KubeClientFabric8(
       }
   }
 
-  def getOperatorProtocolVersion(): Try[String] = withClient { client =>
+  def getOperatorProtocolVersion(namespace: Option[String]): Try[String] = withClient { client =>
+    val secrets = namespace match {
+      case Some(ns) => client.secrets().inNamespace(ns)
+      case _        => client.secrets().inAnyNamespace()
+    }
+
     for {
-      protocolVersionCM <- Try {
-        client
-          .configMaps()
-          .inAnyNamespace()
-          .withLabel(KubeClient.CloudflowProtocolVersionConfigMap)
+      protocolVersionSecret <- Try {
+        secrets
+          .withLabel(App.CloudflowProtocolVersion)
           .list()
           .getItems()
       }
       protocolVersion <- {
-        protocolVersionCM.size() match {
-          case 1 => Success(protocolVersionCM.get(0))
+        protocolVersionSecret.size() match {
+          case 1 => Success(protocolVersionSecret.get(0))
           case x if x > 1 =>
-            Failure(
-              CliException("Multiple Cloudflow operators detected in the cluster. This is not supported. Exiting"))
+            Failure(CliException(
+              "Multiple Cloudflow operators detected in the cluster. Specify an 'operator-namespace' to select the correct one. Exiting"))
           case x if x < 1 => Failure(CliException("No Cloudflow operators detected in the cluster. Exiting"))
         }
       }
-      version <- Option(protocolVersion.getData.get(KubeClient.ProtocolVersionKey))
-        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the config map")))(Success(_))
+      version <- Option(Base64Helper.decode(protocolVersion.getData.get(App.ProtocolVersionKey)))
+        .fold[Try[String]](Failure(CliException("Cannot find the protocol version in the secret")))(Success(_))
     } yield {
       version
     }
-  }
-
-  def sparkAppVersion() = withClient { client =>
-    getCrdAppVersion(SparkResource, client)
-  }
-
-  def flinkAppVersion() = withClient { client =>
-    getCrdAppVersion(FlinkResource, client)
   }
 
   private def cloudflowLabels(name: String) = {
@@ -530,7 +512,7 @@ class KubeClientFabric8(
       endpointStatuses = Seq(),
       streamletStatuses = Seq())
 
-    App.Cr(spec = spec, metadata = metadata, status = status)
+    App.Cr(_spec = spec, _metadata = metadata, _status = status)
   }
 
   private def createCFApp(spec: App.Spec, namespace: String): Try[String] =
@@ -555,54 +537,12 @@ class KubeClientFabric8(
   def createCloudflowApp(spec: App.Spec, namespace: String): Try[String] =
     for {
       uid <- createCFApp(spec, namespace)
-      _ <- createCloudflowServiceAccount(spec.appId, namespace, getOwnerReference(spec.appId, uid))
-    } yield { uid }
-
-  def createMicroservicesApp(
-      cfSpec: App.Spec,
-      namespace: String,
-      specs: Map[String, Option[AkkaMicroserviceSpec]]): Try[String] = {
-    for {
-      uid <- createCFApp(cfSpec, namespace)
       _ <- {
-        withClient { client =>
-          val microservices = client.customResources(
-            AkkaMicroservice.customResourceDefinitionContext,
-            classOf[AkkaMicroservice],
-            classOf[AkkaMicroserviceList])
-
-          specs.foldLeft(Success(Map.empty[String, String]): Try[Map[String, String]]) {
-            case (last, (name, spec)) =>
-              last match {
-                case f: Failure[Map[String, String]] => f
-                case Success(l) =>
-                  spec match {
-                    case None => Success(l + (name -> uid))
-                    case Some(s) =>
-                      val metadata = new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(cloudflowLabels(name))
-                        .withAnnotations(CreatedByCliAnnotation)
-                        .withOwnerReferences(getOwnerReference(cfSpec.appId, uid))
-                        .build()
-
-                      val app = AkkaMicroservice(spec = s, metadata = metadata, status = None)
-
-                      val crd =
-                        microservices
-                          .inNamespace(namespace)
-                          .withName(name)
-                          .createOrReplace(app)
-
-                      Success(l + (name -> crd.getMetadata.getUid))
-                  }
-              }
-          }
-        }
+        if (spec.serviceAccount.isEmpty)
+          createCloudflowServiceAccount(spec.appId, namespace, getOwnerReference(spec.appId, uid))
+        else Success(())
       }
     } yield { uid }
-  }
 
   def uidCloudflowApp(name: String, namespace: String): Try[String] = {
     withApplicationClient { cloudflowApps =>
@@ -640,7 +580,7 @@ class KubeClientFabric8(
     Try {
       cloudflowApps
         .inNamespace(namespace)
-        .withName(app.spec.appId)
+        .withName(app.getSpec.appId)
         // NOTE: Patch doesn't work
         //.patch(app)
         .replace(app)
@@ -723,7 +663,7 @@ private object ModelConversions {
     models.CRSummary(
       name = app.name,
       namespace = app.namespace,
-      version = app.spec.appVersion,
+      version = app.getSpec.appVersion,
       creationTime = app.getMetadata.getCreationTimestamp)
   }
 

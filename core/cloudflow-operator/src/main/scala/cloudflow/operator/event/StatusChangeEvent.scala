@@ -85,9 +85,9 @@ object StatusChangeEvent extends Event {
       case (Some(app), statusChangeEvent)
           if Option(app.getStatus).flatMap(s => Option(s.appStatus)) != Some(CloudflowStatus.Status.Error) =>
         log.debug(
-          s"[Status changes] Handling StatusChange for ${app.spec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")
+          s"[Status changes] Handling StatusChange for ${app.getSpec.appId}: ${changeInfo(statusChangeEvent.watchEvent)}.")
 
-        val appId = app.spec.appId
+        val appId = app.getSpec.appId
 
         val appCr: App.Cr = currentStatuses
           .get(appId)
@@ -96,12 +96,12 @@ object StatusChangeEvent extends Event {
               app.setStatus(curr.getStatus)
               CloudflowStatus.updateApp(app, runners)
             } else {
-              app.setStatus(CloudflowStatus.freshStatus(app.spec, runners))
+              app.setStatus(CloudflowStatus.freshStatus(app.getSpec, runners))
               app
             }
           }
           .getOrElse {
-            app.setStatus(CloudflowStatus.freshStatus(app.spec, runners))
+            app.setStatus(CloudflowStatus.freshStatus(app.getSpec, runners))
             app
           }
 

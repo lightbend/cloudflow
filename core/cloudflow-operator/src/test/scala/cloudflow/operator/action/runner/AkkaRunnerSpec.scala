@@ -66,12 +66,11 @@ class AkkaRunnerSpec
       .use(egressRef)
       .connect(Topic("foos"), ingressRef.out, egressRef.in)
       .verified
-      .right
       .value
 
     val app = App.Cr(
-      spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
-      metadata = CloudflowApplicationSpecBuilder.demoMetadata)
+      _spec = CloudflowApplicationSpecBuilder.create(appId, appVersion, image, verifiedBlueprint, agentPaths),
+      _metadata = CloudflowApplicationSpecBuilder.demoMetadata)
 
     val deployment = App.Deployment(
       name = appId,
@@ -105,7 +104,7 @@ class AkkaRunnerSpec
       crd.getSpec.getTemplate.getMetadata.getLabels.get("key2") mustBe "value2"
     }
 
-    "read from config custom annotaions and add them to the pod spec" in {
+    "read from config custom annotations and add them to the pod spec" in {
 
       val crd =
         akkaRunner.resource(
@@ -196,6 +195,76 @@ class AkkaRunnerSpec
         .map(v => (v.getName, v.getSecret.getSecretName)) must contain allElementsOf List(
         ("foo", "mysecret"),
         ("bar", "yoursecret"))
+
+      crd.getSpec.getTemplate.getSpec.getContainers.asScala.head.getVolumeMounts.asScala.map(vm =>
+        (vm.getName, vm.getMountPath, vm.getReadOnly)) must contain allElementsOf List(
+        ("foo", "/etc/my/file", true),
+        ("bar", "/etc/mc/fly", false))
+
+    }
+
+    "read from config custom config maps and mount them" in {
+
+      val crd = akkaRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = getSecret("""
+                                   |kubernetes.pods.pod {
+                                   |   volumes {
+                                   |     foo {
+                                   |       config-map {
+                                   |         name = myconfigmap
+                                   |       }
+                                   |     },
+                                   |     bar {
+                                   |       config-map {
+                                   |         name = yourconfigmap
+                                   |         optional = true
+                                   |         items {
+                                   |           "app.conf" {
+                                   |             path = my-app.conf
+                                   |           }
+                                   |           barkey2 {
+                                   |             path = barpath2
+                                   |           }
+                                   |         }
+                                   |       }
+                                   |     }
+                                   |   }
+                                   |   containers.container {
+                                   |     volume-mounts {
+                                   |       foo {
+                                   |         mount-path = "/etc/my/file"
+                                   |         read-only = true
+                                   |       },
+                                   |       bar {
+                                   |         mount-path = "/etc/mc/fly"
+                                   |         read-only =  false
+                                   |       }
+                                   |     }
+                                   |   }
+                                   |}
+                """.stripMargin))
+
+      val configMapVols = crd.getSpec.getTemplate.getSpec.getVolumes.asScala.collect {
+        case v if v.getConfigMap != null => v -> v.getConfigMap
+      }
+
+      configMapVols
+        .map { case (v, cm) => (v.getName, cm.getName, cm.getOptional) } must contain allElementsOf List(
+        ("foo", "myconfigmap", false),
+        ("bar", "yourconfigmap", true))
+
+      configMapVols
+        .collectFirst {
+          case (v, cm) if v.getName == "bar" => cm
+        }
+        .value
+        .getItems
+        .asScala
+        .map(i => (i.getKey, i.getPath)) must contain allElementsOf List(
+        ("app.conf", "my-app.conf"),
+        ("barkey2", "barpath2"))
 
       crd.getSpec.getTemplate.getSpec.getContainers.asScala.head.getVolumeMounts.asScala.map(vm =>
         (vm.getName, vm.getMountPath, vm.getReadOnly)) must contain allElementsOf List(

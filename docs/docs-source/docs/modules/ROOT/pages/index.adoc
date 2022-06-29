@@ -14,7 +14,6 @@ Cloudflow alleviates that pain for distributed streaming applications, which are
 
 link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
 
-Cloudflow integrates with popular streaming engines like Akka, Apache Spark, and Apache Flink. 
 Using Cloudflow, you can easily break down your streaming application into small composable components and wire them together with schema-based contracts. 
 With those powerful abstractions, Cloudflow enables you to define, build and deploy the most complex streaming applications. 
 
@@ -52,7 +51,7 @@ Cloudflow dramatically accelerates your application development efforts, reducin
 
 * The Cloudflow application development toolkit includes:
 ** An SDK definition for `Streamlet`, the core abstraction in Cloudflow.
-** An extensible set of runtime implementations for `Streamlet`(s). Cloudflow provides support for popular streaming runtimes, like Apache Spark Structured Streaming, Apache Flink, and Akka.
+** An extensible set of runtime implementations for `Streamlet`(s).
 ** A `Streamlet` composition model driven by a `blueprint` definition. 
 ** A _Sandbox_ execution mode that accelerates the execution and testing of your applications on your development machine.
 ** A set of `sbt` plugins for packaging Cloudflow applications into deployable containers and generating an application descriptor that informs the deployment.
@@ -73,7 +72,6 @@ NOTE: The default build tool for Cloudflow applications is `sbt` but there is su
 
 Choose from the following topics:
 
-* xref:app-development-process.adoc[The Cloudflow development process]
 * xref:get-started:index.adoc[How to get started with an example application]
 * xref:develop:index.adoc[How to create Cloudflow applications using streamlets and blueprints].
 

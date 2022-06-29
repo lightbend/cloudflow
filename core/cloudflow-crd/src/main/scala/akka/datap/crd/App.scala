@@ -46,6 +46,10 @@ object App {
 
   final val Scope = "Namespaced"
 
+  final val CloudflowProtocolVersion = "cloudflow-protocol-version"
+  final val ProtocolVersionKey = "protocol-version"
+  final val ProtocolVersion = "7"
+
   val customResourceDefinitionContext: CustomResourceDefinitionContext =
     new CustomResourceDefinitionContext.Builder()
       .withVersion(GroupVersion)
@@ -88,18 +92,19 @@ object App {
   @Kind(Kind)
   @Plural(Plural)
   final case class Cr(
-      @JsonProperty("spec")
-      spec: Spec,
+      _spec: Spec,
       @JsonProperty("metadata")
-      metadata: ObjectMeta,
-      @JsonProperty("status")
-      status: AppStatus = null)
+      _metadata: ObjectMeta,
+      _status: AppStatus = null)
       extends CustomResource[Spec, AppStatus]
       with Namespaced {
-    this.setMetadata(metadata)
-
-    def name: String = metadata.getName()
-    def namespace: String = metadata.getNamespace()
+    this.setMetadata(_metadata)
+    this.setSpec(_spec)
+    this.setStatus(_status)
+    override def initSpec = _spec
+    override def initStatus = _status
+    def name: String = getMetadata.getName()
+    def namespace: String = getMetadata.getNamespace()
   }
 
   @JsonCreator
@@ -263,7 +268,9 @@ object App {
       @JsonProperty("version")
       version: Option[String],
       @JsonProperty("library_version")
-      libraryVersion: Option[String])
+      libraryVersion: Option[String],
+      @JsonProperty("service_account")
+      serviceAccount: Option[String])
       extends KubernetesResource {}
 
   @JsonDeserialize(using = classOf[JsonDeserializer.None])

@@ -1,7 +1,7 @@
 = Cloudflow -- streaming data pipelines on Kubernetes
 :page-layout: home
-:description: Quickly develop, orchestrate, and operate distributed streaming data pipelines with Apache Spark, Apache Flink, and Akka Streams on Kubernetes
-:keywords: spark, kubernetes, stream, streaming, stream processing, apache spark, apache flink, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
+:description: Quickly develop, orchestrate, and operate distributed streaming data pipelines on Kubernetes
+:keywords: kubernetes, stream, streaming, stream processing, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
 
 Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes. 
 With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts. 
@@ -15,12 +15,11 @@ With its powerful abstractions, Cloudflow allows you to easily define the most c
 * Build: We provide a rich development kit for going from business logic to a deployable application.
 * Deploy: Cloudflow comes with Kubernetes extensions for the cluster and the client to deploy your distributed system with a single command.
 
-Cloudflow integrates with popular streaming engines like Akka, Spark and Flink. 
-It also comes with a powerful CLI tool to easily manage, scale and configure streaming applications at runtime. 
+Cloudflow comes with a powerful CLI tool to easily manage, scale and configure streaming applications at runtime. 
 In a nutshell, Cloudflow is an application development toolkit composed of:
 
 * A definition for `Streamlet`, the core component model in Cloudflow.
-* An extensible runtime for `Streamlet`(s) and out-of-the-box implementations for popular streaming runtimes, like Spark's Structured Streaming, Flink, and Akka.
+* An extensible runtime for `Streamlet`(s).
 * A `Streamlet` composition model driven by a `blueprint` definition.
 * A _sandbox_ local execution mode that accelerates the development and testing of your applications without requiring a cluster.
 * A set of `sbt` plugins that are able to package your application into deployable units.
@@ -29,7 +28,6 @@ In a nutshell, Cloudflow is an application development toolkit composed of:
 
 == Where To Go Next?
 * link:./docs/current/index.html[Introducing Cloudflow]
-* link:./docs/current/app-development-process.html[The Cloudflow development process]
 * link:./docs/current/get-started/index.html[Getting started with Cloudflow]
 * link:./docs/current/develop/cloudflow-streamlets.html[Developing applications with Cloudflow]
 * https://cloudflow.io/docs/current/administration/index.html[Setup Cloudflow on a Kubernetes Cluster]

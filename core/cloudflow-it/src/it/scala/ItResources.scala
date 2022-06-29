@@ -27,12 +27,8 @@ trait ItResources {
   val updateAkkaConfiguration = new File(s"$prefix/update_akka_config.conf")
   val defaultConfiguration = new File(s"$prefix/default_config.conf")
   val pvcResourceAkkaFileMountPath = "/tmp/some-akka/file.txt"
-  val pvcResourceSparkFileMountPath = "/tmp/some-spark/file.txt"
-  val pvcResourceFlinkFileMountPath = "/tmp/some-flink/file.txt"
   val pvcResourceLocal = new File(s"$prefix/imhere.txt")
   val pvcResourceLocalContent = Using(Source.fromFile(pvcResourceLocal)) { _.mkString }.get
-  val pvcResourceSpark = new File(s"$prefix/spark-pvc.yaml")
-  val pvcResourceFlink = new File(s"$prefix/flink-pvc.yaml")
   val secretFileMountPath = "/tmp/some/password"
   val secretFilePassword = "1f2d1e2e67df"
   private val mult = 1

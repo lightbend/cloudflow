@@ -19,8 +19,8 @@ class WithUpdateVolumesMountsSpec extends AnyFlatSpec with WithUpdateVolumeMount
   val streamletName = "my-streamlet"
   def crWithVolumeMounts(volumeMounts: Seq[App.VolumeMountDescriptor]) = {
     App.Cr(
-      metadata = null,
-      spec = App.Spec(
+      _metadata = null,
+      _spec = App.Spec(
         appId = "",
         appVersion = "",
         deployments = Seq(
@@ -40,6 +40,7 @@ class WithUpdateVolumesMountsSpec extends AnyFlatSpec with WithUpdateVolumeMount
         agentPaths = Map(),
         version = None,
         libraryVersion = None,
+        serviceAccount = None,
         streamlets = Seq(
           App.Streamlet(
             name = streamletName,
@@ -82,13 +83,13 @@ class WithUpdateVolumesMountsSpec extends AnyFlatSpec with WithUpdateVolumeMount
 
     // Assert
     val volumeMountsInDescriptor =
-      updatedCr.success.value.spec.streamlets
+      updatedCr.success.value.getSpec.streamlets
         .find(_.name == streamletName)
         .map(_.descriptor.volumeMounts)
         .getOrElse(Seq())
     volumeMountsInDescriptor should contain(expectedVolumeMount)
     val volumeMountsInDeployment =
-      updatedCr.success.value.spec.deployments
+      updatedCr.success.value.getSpec.deployments
         .find(_.streamletName == streamletName)
         .map(_.volumeMounts)
         .getOrElse(Seq())

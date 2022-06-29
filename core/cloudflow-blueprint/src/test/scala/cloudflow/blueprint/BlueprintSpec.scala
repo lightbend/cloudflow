@@ -16,6 +16,7 @@
 
 package cloudflow.blueprint
 
+import scala.language.higherKinds
 import com.typesafe.config._
 import org.scalatest._
 import org.scalatest.wordspec._

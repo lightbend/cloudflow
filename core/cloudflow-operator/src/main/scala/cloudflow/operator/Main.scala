@@ -19,7 +19,6 @@ package cloudflow.operator
 import akka.actor._
 import akka.datap.crd.App
 import cloudflow.operator.action._
-import cloudflow.operator.action.runner.{ FlinkApp, SparkApp }
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import io.fabric8.kubernetes.api.model.OwnerReference
@@ -28,7 +27,7 @@ import io.fabric8.kubernetes.client.{ Config, DefaultKubernetesClient, Kubernete
 
 import java.lang.management.ManagementFactory
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{ Success, Try }
 
 object Main extends {
 
@@ -51,12 +50,10 @@ object Main extends {
       // TODO: Needed for Spark?
       Serialization.jsonMapper().setSerializationInclusion(Include.NON_ABSENT)
 
-      val client = connectToKubernetes()
+      val client = connectToKubernetes(settings)
 
       // this registers deserializer
       client.customResources(App.customResourceDefinitionContext, classOf[App.Cr], classOf[App.List])
-      client.customResources(SparkApp.customResourceDefinitionContext, classOf[SparkApp.Cr], classOf[SparkApp.List])
-      client.customResources(FlinkApp.customResourceDefinitionContext, classOf[FlinkApp.Cr], classOf[FlinkApp.List])
 
       checkCRD(settings, client)
 
@@ -64,22 +61,8 @@ object Main extends {
       installProtocolVersion(settings, client, ownerReferences)
 
       import cloudflow.operator.action.runner._
-      val flinkRunner = {
-        if (settings.flinkEnabled) {
-          Map(FlinkRunner.Runtime -> new FlinkRunner(ctx.flinkRunnerDefaults))
-        } else {
-          Map.empty
-        }
-      }
-      val sparkRunner = {
-        if (settings.sparkEnabled) {
-          Map(SparkRunner.Runtime -> new SparkRunner(ctx.sparkRunnerDefaults))
-        } else {
-          Map.empty
-        }
-      }
 
-      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults)) ++ flinkRunner ++ sparkRunner
+      val runners = Map(AkkaRunner.Runtime -> new AkkaRunner(ctx.akkaRunnerDefaults))
 
       Operator.handleEvents(client, runners, ctx.podName, ctx.podNamespace)
     } catch {
@@ -122,9 +105,18 @@ object Main extends {
       .getOrElse(List())
   }
 
-  private def connectToKubernetes()(implicit system: ActorSystem): KubernetesClient = {
+  private def connectToKubernetes(settings: Settings)(implicit system: ActorSystem): KubernetesClient = {
     val conf = Config.autoConfigure(null)
-    val client = new DefaultKubernetesClient(conf).inAnyNamespace()
+    val client = {
+      settings.controlledNamespace match {
+        case Some(ns) =>
+          system.log.info(s"Connecting to namespace $ns")
+          new DefaultKubernetesClient(conf).inNamespace(ns)
+        case _ =>
+          system.log.info(s"Connecting to all namespaces")
+          new DefaultKubernetesClient(conf).inAnyNamespace()
+      }
+    }
     val cluster = Try { s": ${conf.getCurrentContext.getContext.getCluster}" }.getOrElse("")
     system.log.info(s"Connected to Kubernetes cluster $cluster")
     client
@@ -144,13 +136,9 @@ object Main extends {
       case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
         system.log.info(s"CRD found at version ${App.GroupVersion}")
       case _ =>
-        client
-          .apiextensions()
-          .v1beta1()
-          .customResourceDefinitions()
-          .inNamespace(settings.podNamespace)
-          .withName(App.ResourceName)
-          .create(App.Crd)
+        system.log.error(
+          s"Cloudflow CRD not found, please install it: 'kubectl apply -f https://raw.githubusercontent.com/lightbend/cloudflow/v${BuildInfo.version}/core/cloudflow-crd/kubernetes/cloudflow-crd.yaml'")
+        throw new Exception("Cloudflow CRD not found")
     }
   }
 
@@ -159,10 +147,10 @@ object Main extends {
       client: KubernetesClient,
       ownerReferences: List[OwnerReference]): Unit = {
     client
-      .configMaps()
+      .secrets()
       .inNamespace(settings.podNamespace)
-      .withName(Operator.ProtocolVersionConfigMapName)
-      .createOrReplace(Operator.ProtocolVersionConfigMap(ownerReferences))
+      .withName(App.CloudflowProtocolVersion)
+      .createOrReplace(Operator.ProtocolVersionSecret(ownerReferences))
   }
 
   private def getGCInfo: List[(String, javax.management.ObjectName)] = {

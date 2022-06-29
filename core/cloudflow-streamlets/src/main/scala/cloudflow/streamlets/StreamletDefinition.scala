@@ -50,7 +50,7 @@ object Topic {
   def apply(name: String): Topic = Topic(name, ConfigFactory.parseString("managed=true"))
 
   private def pathAsMap(config: Config, path: String): Map[String, String] = {
-    import scala.jdk.CollectionConverters._
+    import scala.collection.JavaConverters._
     if (config.hasPath(path)) {
       config
         .getConfig(path)

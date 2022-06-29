@@ -52,6 +52,10 @@
             <image>
               <name>%a:%v</name>
               <registry>docker.io/${docker.username}</registry>
+              <!--
+                To use a different image registry, you can make the desired changes to the
+                <registry> subelement above. For more information, please see https://dmp.fabric8.io/#registry.
+              -->
               <build>
                 <from>adoptopenjdk/openjdk8:alpine</from>
 
@@ -165,6 +169,11 @@
     </dependency>
     <dependency>
       <groupId>com.lightbend.cloudflow</groupId>
+      <artifactId>cloudflow-avro_${scala.binary.version}</artifactId>
+      <version>${cloudflow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.lightbend.cloudflow</groupId>
       <artifactId>cloudflow-akka-util_${scala.binary.version}</artifactId>
       <version>${cloudflow.version}</version>
     </dependency>
@@ -191,7 +200,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.10</version>
     </dependency>
   </dependencies>
 </project>

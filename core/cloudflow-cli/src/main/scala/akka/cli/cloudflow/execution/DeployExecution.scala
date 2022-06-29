@@ -29,7 +29,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
   import DeployExecution._
 
   private def applicationDescriptorValidation(crApp: App.Cr): Try[Unit] = {
-    crApp.spec.version match {
+    crApp.getSpec.version match {
       case None =>
         Failure(CliException("Application file parse error: spec.version is missing or empty"))
 
@@ -42,7 +42,7 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             case _ => Failure(CliException("Application file parse error: spec.version is invalid"))
           }
           libraryVersion <- Try {
-            val libraryVersion = crApp.spec.libraryVersion.get
+            val libraryVersion = crApp.getSpec.libraryVersion.get
             require { !libraryVersion.contains(' ') }
             libraryVersion
           }.recoverWith {
@@ -53,10 +53,10 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
           lazy val lvMsg = s"built with sbt-cloudflow version ${libraryVersion},"
 
           version match {
-            case v if Cli.SupportedApplicationDescriptorVersion > v =>
+            case v if Cli.ApplicationDescriptorVersion > v =>
               Failure(CliException(
                 s"Application ${lvMsg} is incompatible and requires a newer version of the kubectl cloudflow plugin. Please upgrade and try again"))
-            case v if Cli.SupportedApplicationDescriptorVersion < v =>
+            case v if Cli.ApplicationDescriptorVersion < v =>
               Failure(CliException(
                 s"Application ${lvMsg} is incompatible and no longer supported. Please upgrade sbt-cloudflow and rebuild the application with 'sbt buildApp'"))
             case _ => Success(())
@@ -76,45 +76,8 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
             ex))
     }
 
-  private def validateStreamlet(name: String, required: String)(
-      getVersion: () => Try[String]): Option[(String, Option[Throwable])] = {
-    getVersion() match {
-      case Success(version) if (version != required) =>
-        Some((
-          s"${name} is installed but does not support the required version of the CRD, required ${required}, installed ${version}",
-          None))
-      case Failure(ex) =>
-        Some(
-          (
-            s"cannot detect that ${name} is installed, please install it at version ${required} before continuing",
-            Some(ex)))
-      case _ => None
-    }
-  }
-
-  private def validateStreamletsDependencies(
-      crApp: App.Cr,
-      streamletChecks: Map[String, StreamletVersion]): Try[Unit] = {
-    val res = crApp.spec.streamlets
-      .map(_.descriptor.runtime)
-      .distinct
-      .map { s =>
-        streamletChecks.get(s).fold[Option[(String, Option[Throwable])]](None) { check =>
-          validateStreamlet(s, check.required)(check.thunk)
-        }
-      }
-      .flatten
-
-    if (!res.isEmpty) {
-      val ex: Throwable = res.flatMap(_._2).headOption.getOrElse(null)
-      Failure(CliException(res.map(_._1).mkString("\n"), ex))
-    } else {
-      Success(())
-    }
-  }
-
   private def referencedKafkaSecretExists(appCr: App.Cr, kafkaClusters: () => Try[List[String]]): Try[Unit] = {
-    val expectedClusters = appCr.spec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
+    val expectedClusters = appCr.getSpec.deployments.flatMap(_.portMappings.values.map(_.cluster)).flatten.distinct
 
     if (expectedClusters.nonEmpty) {
       (for {
@@ -132,11 +95,11 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
   }
 
   private def getImageReference(crApp: App.Cr) = {
-    if (crApp.spec.deployments.size < 1) {
+    if (crApp.getSpec.deployments.size < 1) {
       Failure(CliException("The application specification doesn't contains deployments"))
     } else {
       // Get the first available image, all images must be present in the same repository.
-      val imageRef = crApp.spec.deployments(0).image
+      val imageRef = crApp.getSpec.deployments(0).image
 
       Image(imageRef)
     }
@@ -146,27 +109,27 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
     logger.info("Executing command Deploy")
     for {
       // Default protocol validation
-      _ <- {
-        if (d.microservices) {
-          Success("")
-        } else {
-          validateProtocolVersion(client)
-        }
-      }
+      _ <- validateProtocolVersion(client, d.operatorNamespace, logger)
 
       // prepare the data
-      localApplicationCr <- loadCrFile(d.crFile)
-      namespace = d.namespace.getOrElse(localApplicationCr.spec.appId)
+      baseApplicationCr <- loadCrFile(d.crFile)
+      localApplicationCr = {
+        d.serviceAccount match {
+          case Some(sa) => baseApplicationCr.copy(_spec = baseApplicationCr.getSpec.copy(serviceAccount = Some(sa)))
+          case _        => baseApplicationCr
+        }
+      }
+      namespace = d.namespace.getOrElse(localApplicationCr.getSpec.appId)
 
       // update the replicas
-      currentAppCr <- client.readCloudflowApp(localApplicationCr.spec.appId, namespace)
+      currentAppCr <- client.readCloudflowApp(localApplicationCr.getSpec.appId, namespace)
       clusterReplicas = getStreamletsReplicas(currentAppCr)
       clusterApplicationCr <- updateReplicas(localApplicationCr, clusterReplicas)
       applicationCrReplicas <- updateReplicas(clusterApplicationCr, d.scales)
       applicationCr <- updateVolumeMounts(
         applicationCrReplicas,
         d.volumeMounts,
-        () => client.getPvcs(namespace = applicationCrReplicas.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       image <- getImageReference(applicationCr)
 
@@ -176,51 +139,34 @@ final case class DeployExecution(d: Deploy, client: KubeClient, logger: CliLogge
         d.aggregatedConfig,
         applicationCr,
         logbackContent,
-        () => client.getPvcs(namespace = applicationCr.spec.appId))
+        () => client.getPvcs(namespace = namespace))
 
       // validation of the CR
       _ <- applicationDescriptorValidation(applicationCr)
-      streamletChecks = Map(
-        ("spark", StreamletVersion(Cli.RequiredSparkVersion, (() => client.sparkAppVersion()))),
-        ("flink", StreamletVersion(Cli.RequiredFlinkVersion, (() => client.flinkAppVersion())))).filter {
-        case (k, _) => !d.unmanagedRuntimes.contains(k)
-      }
-      _ <- validateStreamletsDependencies(applicationCr, streamletChecks)
-
       // validate the Cr against the cluster
       _ <- referencedKafkaSecretExists(
         applicationCr,
-        () => client.getKafkaClusters(namespace = Some(applicationCr.spec.appId)).map(_.keys.toList))
+        () => client.getKafkaClusters(namespace = d.operatorNamespace).map(_.keys.toList))
 
       // streamlets configurations
-      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, d.microservices, () => {
-        client.getKafkaClusters(None).map(parseValues)
+      streamletsConfigs <- streamletsConfigs(applicationCr, cloudflowConfig, () => {
+        client.getKafkaClusters(namespace = d.operatorNamespace).map(parseValues)
       })
 
       // Operations on the cluster
-      name = applicationCr.spec.appId
+      name = applicationCr.getSpec.appId
       _ <- client.createNamespace(namespace)
       _ <- {
         if (d.noRegistryCredentials) Success(())
         else {
           client.createImagePullSecret(
-            namespace = name,
+            namespace = namespace,
             dockerRegistryURL = image.registry.getOrElse(""),
             dockerUsername = d.dockerUsername,
             dockerPassword = d.dockerPassword)
         }
       }
-      uid <- {
-        if (d.microservices) {
-          client.createMicroservicesApp(
-            applicationCr.spec,
-            namespace,
-            CloudflowToMicroservicesCR
-              .convert(applicationCr.spec, logbackContent.map(_ => KubeClient.LoggingSecretName)))
-        } else {
-          client.createCloudflowApp(applicationCr.spec, namespace)
-        }
-      }
+      uid <- client.createCloudflowApp(applicationCr.getSpec, namespace)
       _ <- client.configureCloudflowApp(name, namespace, uid, configStr, logbackContent, streamletsConfigs)
     } yield {
       logger.trace("Command Deploy executed successfully")

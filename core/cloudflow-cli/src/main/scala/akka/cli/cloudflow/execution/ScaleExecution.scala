@@ -17,7 +17,7 @@ final case class ScaleExecution(s: Scale, client: KubeClient, logger: CliLogger)
   def run(): Try[ScaleResult] = {
     logger.info("Executing command Status")
     for {
-      _ <- validateProtocolVersion(client)
+      _ <- validateProtocolVersion(client, s.operatorNamespace, logger)
       namespace = s.namespace.getOrElse(s.cloudflowApp)
 
       currentAppCrOpt <- client.readCloudflowApp(s.cloudflowApp, namespace)

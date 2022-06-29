@@ -8,10 +8,11 @@ lazy val tensorflowAkka =  (project in file("."))
 //end::docs-projectSetup-example[]
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.3",
+        Cloudflow.library.CloudflowAvro,
+        "ch.qos.logback"         %  "logback-classic"           % "1.2.11",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
-        "org.tensorflow"         % "tensorflow"                 % "1.15.0",
-        "org.tensorflow"         % "proto"                      % "1.15.0",
+        "org.tensorflow"         %  "tensorflow"                % "1.15.0",
+        "org.tensorflow"         %  "proto"                     % "1.15.0",
         "org.scalatest"          %% "scalatest"                 % "3.0.8"  % "test"
 //tag::docs-projectName-example[]
       ),
@@ -20,7 +21,7 @@ lazy val tensorflowAkka =  (project in file("."))
       organization := "com.lightbend.cloudflow",
       headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
 
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.12.15",
       crossScalaVersions := Vector(scalaVersion.value),
       scalacOptions ++= Seq(
         "-encoding", "UTF-8",
@@ -34,10 +35,10 @@ lazy val tensorflowAkka =  (project in file("."))
         "-language:_",
         "-unchecked"
       ),
-
+      Compile / sourceGenerators += (Compile / avroScalaGenerateSpecific).taskValue,
       runLocalConfigFile := Some("src/main/resources/local.conf"),
-      scalacOptions in (Compile, console) --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
-      scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+      Compile / console / scalacOptions --= Seq("-Ywarn-unused", "-Ywarn-unused-import"),
+      Test / console / scalacOptions := (Compile / console / scalacOptions).value,
     )
 
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"

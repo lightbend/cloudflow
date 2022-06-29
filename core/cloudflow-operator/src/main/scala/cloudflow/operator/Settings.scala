@@ -23,6 +23,7 @@ import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.Quantity
 
 import scala.io.{ BufferedSource, Source }
+import scala.util.Try
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   override def lookup = Settings
@@ -60,46 +61,10 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
       Quantity.parse(getNonEmptyString(config, "requests-memory")),
       getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
       getOptionalString(config, "limits-memory").map(v => Quantity.parse(v)))
-  private def getSparkPodDefaults(config: Config): SparkPodDefaults =
-    SparkPodDefaults(
-      getOptionalString(config, "requests-cpu").map(v => Quantity.parse(v)),
-      getOptionalString(config, "requests-memory").map(v => Quantity.parse(v)),
-      getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
-      getOptionalString(config, "memory-overhead").map(v => Quantity.parse(v)),
-      getOptionalString(config, "java-opts"))
-  private def getFlinkPodResourceDefaults(config: Config): FlinkPodResourceDefaults =
-    FlinkPodResourceDefaults(
-      getOptionalString(config, "requests-cpu").map(v => Quantity.parse(v)),
-      getOptionalString(config, "requests-memory").map(v => Quantity.parse(v)),
-      getOptionalString(config, "limits-cpu").map(v => Quantity.parse(v)),
-      getOptionalString(config, "limits-memory").map(v => Quantity.parse(v)))
 
   private def getAkkaRunnerDefaults(config: Config, runnerPath: String, runnerStr: String): AkkaRunnerDefaults = {
     val runnerConfig = config.getConfig(runnerPath)
     AkkaRunnerDefaults(getResourceConstraints(runnerConfig), getNonEmptyString(runnerConfig, "java-opts"))
-  }
-
-  private def getSparkRunnerDefaults(config: Config, root: String, runnerStr: String): SparkRunnerDefaults = {
-    val driverPath = s"$root.deployment.spark-runner-driver"
-    val executorPath = s"$root.deployment.spark-runner-executor"
-
-    val driverConfig = config.getConfig(driverPath)
-    val executorConfig = config.getConfig(executorPath)
-
-    SparkRunnerDefaults(getSparkPodDefaults(driverConfig), getSparkPodDefaults(executorConfig))
-  }
-
-  private def getFlinkRunnerDefaults(config: Config, root: String, runnerStr: String): FlinkRunnerDefaults = {
-    val flinkRunnerConfig = config.getConfig(s"$root.deployment.flink-runner")
-
-    val jobManagerConfig = flinkRunnerConfig.getConfig("jobmanager")
-    val taskManagerConfig = flinkRunnerConfig.getConfig("taskmanager")
-    val parallelism = flinkRunnerConfig.getInt("parallelism")
-
-    FlinkRunnerDefaults(
-      parallelism,
-      FlinkJobManagerDefaults(jobManagerConfig.getInt("replicas"), getFlinkPodResourceDefaults(jobManagerConfig)),
-      FlinkTaskManagerDefaults(taskManagerConfig.getInt("task-slots"), getFlinkPodResourceDefaults(taskManagerConfig)))
   }
 
   private def appendResourcesToString(paths: String*): String =
@@ -125,16 +90,13 @@ final case class Settings(config: Config) extends Extension {
   val podNamespace = getNonEmptyString(config, s"$root.pod-namespace")
 
   val akkaRunnerSettings = getAkkaRunnerDefaults(config, s"$root.deployment.akka-runner", AkkaRunner.Runtime)
-  val sparkRunnerSettings = getSparkRunnerDefaults(config, root, SparkRunner.Runtime)
-  val flinkRunnerSettings = getFlinkRunnerDefaults(config, root, FlinkRunner.Runtime)
 
-  val flinkEnabled = config.getBoolean(s"$root.flink-enabled")
-  val sparkEnabled = config.getBoolean(s"$root.spark-enabled")
+  val controlledNamespace = Try(config.getString(s"$root.controlled-namespace")).toOption
 
   val api = ApiSettings(getNonEmptyString(config, s"$root.api.bind-interface"), getPort(config, s"$root.api.bind-port"))
 
   val deploymentContext = {
-    DeploymentContext(akkaRunnerSettings, sparkRunnerSettings, flinkRunnerSettings, podName, podNamespace)
+    DeploymentContext(akkaRunnerSettings, podName, podNamespace)
   }
 }
 
