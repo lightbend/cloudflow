@@ -45,6 +45,20 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                   |              memory = "1024M"
                   |            }
                   |          }
+                  |          // probe settings
+                  |          probes {
+                  |            readiness-probe {
+                  |              executable = ["some-executable"]
+                  |              initial-delay-seconds = 10
+                  |              timeout-seconds = 1
+                  |              period-seconds = 10
+                  |            }
+                  |            liveness-probe {
+                  |              initial-delay-seconds = 10
+                  |              timeout-seconds = 1
+                  |              period-seconds = 10
+                  |            }
+                  |          }
                   |        }
                   |      }
                   |    }
@@ -53,6 +67,10 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
+    res match {
+      case scala.util.Failure(e) => println(e)
+      case _                     =>
+    }
 
     // Assert
     res.isSuccess shouldBe true
