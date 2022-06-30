@@ -50,7 +50,8 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
 protected final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem)
-    extends AkkaStreamletContext {
+    extends AkkaStreamletContext
+    with ProducerHelper {
   private val log = LoggerFactory.getLogger(classOf[AkkaStreamletContextImpl])
   private val streamletDefinitionMsg: String =
     s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
@@ -216,10 +217,7 @@ protected final class AkkaStreamletContextImpl(
     Flow[(T, Committable)]
       .map {
         case (value, committable) =>
-          val key = outlet.partitioner(value)
-          val bytesKey = keyBytes(key)
-          val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
       .via(handleTermination)
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
@@ -245,13 +243,6 @@ protected final class AkkaStreamletContextImpl(
       .map(results => ((), results.passThrough))
   }
 
-  private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
-    val key = outlet.partitioner(value)
-    val bytesKey = keyBytes(key)
-    val bytesValue = outlet.codec.encode(value)
-    new ProducerRecord(topic.name, bytesKey, bytesValue)
-  }
-
   private[akkastream] def sinkWithOffsetContext[T](
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
@@ -263,10 +254,7 @@ protected final class AkkaStreamletContextImpl(
     Flow[(T, CommittableOffset)]
       .map {
         case (value, committable) =>
-          val key = outlet.partitioner(value)
-          val bytesKey = keyBytes(key)
-          val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
       .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
   }
@@ -350,10 +338,7 @@ protected final class AkkaStreamletContextImpl(
 
     Flow[T]
       .map { value =>
-        val key = outlet.partitioner(value)
-        val bytesKey = keyBytes(key)
-        val bytesValue = outlet.codec.encode(value)
-        new ProducerRecord(topic.name, bytesKey, bytesValue)
+        producerRecord(outlet, topic, value)
       }
       .via(handleTermination)
       .to(Producer.plainSink(producerSettings))
@@ -365,8 +350,6 @@ protected final class AkkaStreamletContextImpl(
 
     new KafkaSinkRef(system, outlet, runtimeBootstrapServers(topic), topic, killSwitch, execution.completionPromise)
   }
-
-  private def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
 
   private def handleTermination[T]: Flow[T, T, NotUsed] =
     Flow[T]
@@ -471,5 +454,20 @@ protected final class AkkaStreamletContextImpl(
         .withGroupId(groupId(inlet, topic))
         .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset)
         .withProperties(topic.kafkaConsumerProperties))
+  }
+}
+
+trait ProducerHelper {
+
+  protected def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
+
+  protected def producerRecord[T](
+      outlet: CodecOutlet[T],
+      topic: Topic,
+      value: T): ProducerRecord[Array[Byte], Array[Byte]] = {
+    val key = outlet.partitioner(value)
+    val bytesKey = keyBytes(key)
+    val bytesValue = outlet.codec.encode(value)
+    new ProducerRecord(topic.name, bytesKey, bytesValue)
   }
 }
