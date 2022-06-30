@@ -47,6 +47,20 @@ cloudflow {
               memory = "1024M"
             }
           }
+          probes {
+            readiness-probe {
+              executable = "<your shell command>"
+              initial-delay-seconds = 10
+              timeout-seconds = 1
+              period-seconds = 10
+            }
+            liveness-probe {
+              executable = "<your shell command>"
+              initial-delay-seconds = 10
+              timeout-seconds = 1
+              period-seconds = 10
+            }
+          }
         }
       }
     }    
@@ -91,6 +105,21 @@ cloudflow {
             }
             limits {
               memory = "1024M"
+            }
+          }
+          
+          probes {
+            readiness-probe {
+              executable = "<your shell command>"
+              initial-delay-seconds = 10
+              timeout-seconds = 1
+              period-seconds = 10
+            }
+            liveness-probe {
+              executable = "<your shell command>"
+              initial-delay-seconds = 10
+              timeout-seconds = 1
+              period-seconds = 10
             }
           }
         }
