@@ -264,8 +264,10 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val tempDir = "/tmp"
     val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
-    def getLivenessProbe(podsConfig: PodsConfig) = getProbe(_.livenessProbe, "/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")(podsConfig)
-    def getReadinessProbe(podsConfig: PodsConfig) = getProbe(_.readinessProbe, "/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")(podsConfig)
+    def getLivenessProbe(podsConfig: PodsConfig) =
+      getProbe(_.livenessProbe, "/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")(podsConfig)
+    def getReadinessProbe(podsConfig: PodsConfig) =
+      getProbe(_.readinessProbe, "/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")(podsConfig)
     val container = c
       .withImagePullPolicy(ImagePullPolicy)
       .withLivenessProbe(getLivenessProbe(podsConfig))
@@ -402,7 +404,8 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     }).getOrElse(resourceRequirementsFromDefaults)
   }
 
-  private def getProbe(getProbeDefinitionFrom: ContainerConfig => Option[Probe], defaultCommand: String*)(podsConfig: PodsConfig): Probe = {
+  private def getProbe(getProbeDefinitionFrom: ContainerConfig => Option[Probe], defaultCommand: String*)(
+      podsConfig: PodsConfig): Probe = {
     (for {
       pod <- podsConfig.pods.get(PodsConfig.CloudflowPodName)
       containerConfig <- pod.containers.get(PodsConfig.CloudflowContainerName)
