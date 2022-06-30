@@ -11,12 +11,12 @@ object Dependencies {
     val akkaHttp = "10.2.9"
     val akkaGrpc = "2.1.4"
     val alpakkaKafka = "2.1.1"
-    val akkaMgmt = "1.0.10"
+    val akkaMgmt = "1.1.3"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
-    val jackson = "2.13.2"
+    val jackson = "2.13.3"
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
-    val jacksonDatabind = "2.13.2.2"
+    val jacksonDatabind = "2.13.3"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.12"
     val maven = "3.8.5"
@@ -91,7 +91,8 @@ object Dependencies {
     val ficus = "com.iheart" %% "ficus" % "1.5.2"
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
-    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.1.0"
+
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.0"
 
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.147"
 
@@ -116,7 +117,7 @@ object Dependencies {
 
     val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
 
-    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.12" % Test
+    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.13" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
