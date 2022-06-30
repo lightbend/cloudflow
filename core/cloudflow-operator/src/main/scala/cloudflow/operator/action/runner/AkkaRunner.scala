@@ -16,6 +16,7 @@
 
 package cloudflow.operator.action.runner
 
+import akka.cloudflow.config.CloudflowConfig
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.deployment.PrometheusConfig
@@ -25,6 +26,7 @@ import io.fabric8.kubernetes.api.model.apps._
 import io.fabric8.kubernetes.api.model.rbac._
 import io.fabric8.kubernetes.client.KubernetesClient
 
+import java.nio.file.Path
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
@@ -35,10 +37,6 @@ object AkkaRunner {
   val PrometheusExporterPortEnvVar = "PROMETHEUS_JMX_AGENT_PORT"
   val DefaultReplicas = 1
   val ImagePullPolicy = "Always"
-
-  val ProbeInitialDelaySeconds = 10
-  val ProbeTimeoutSeconds = 1
-  val ProbePeriodSeconds = 10
 }
 
 /**
@@ -266,26 +264,12 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val tempDir = "/tmp"
     val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
+    def getLivenessProbe(podsConfig: PodsConfig) = getProbe(_.livenessProbe, "/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")(podsConfig)
+    def getReadinessProbe(podsConfig: PodsConfig) = getProbe(_.readinessProbe, "/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")(podsConfig)
     val container = c
       .withImagePullPolicy(ImagePullPolicy)
-      .withLivenessProbe(
-        new ProbeBuilder()
-          .withExec(new ExecActionBuilder()
-            .withCommand("/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")
-            .build())
-          .withInitialDelaySeconds(ProbeInitialDelaySeconds)
-          .withTimeoutSeconds(ProbeTimeoutSeconds)
-          .withPeriodSeconds(ProbePeriodSeconds)
-          .build())
-      .withReadinessProbe(
-        new ProbeBuilder()
-          .withExec(new ExecActionBuilder()
-            .withCommand("/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")
-            .build())
-          .withInitialDelaySeconds(ProbeInitialDelaySeconds)
-          .withTimeoutSeconds(ProbeTimeoutSeconds)
-          .withPeriodSeconds(ProbePeriodSeconds)
-          .build())
+      .withLivenessProbe(getLivenessProbe(podsConfig))
+      .withReadinessProbe(getReadinessProbe(podsConfig))
       .build()
 
     // This is the group id of the user in the streamlet container,
@@ -416,6 +400,36 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
 
       resources
     }).getOrElse(resourceRequirementsFromDefaults)
+  }
+
+  private def getProbe(getProbeDefinitionFrom: ContainerConfig => Option[Probe], defaultCommand: String*)(podsConfig: PodsConfig): Probe = {
+    (for {
+      pod <- podsConfig.pods.get(PodsConfig.CloudflowPodName)
+      containerConfig <- pod.containers.get(PodsConfig.CloudflowContainerName)
+      probe <- getProbeDefinitionFrom(containerConfig)
+    } yield probe) match {
+      case Some(probe) =>
+        if (Option(probe.getExec).isDefined) { // use fully-qualified probe
+          probe
+        } else { // fill in default executable
+          new ProbeBuilder(probe)
+            .withExec(
+              new ExecActionBuilder()
+                .withCommand(defaultCommand: _*)
+                .build())
+            .build()
+        }
+      case None => // create default
+        new ProbeBuilder()
+          .withExec(
+            new ExecActionBuilder()
+              .withCommand(defaultCommand: _*)
+              .build())
+          .withInitialDelaySeconds(CloudflowConfig.ProbeDefaultInitialDelaySeconds)
+          .withTimeoutSeconds(CloudflowConfig.ProbeDefaultTimeoutSeconds)
+          .withPeriodSeconds(CloudflowConfig.ProbeDefaultPeriodSeconds)
+          .build()
+    }
   }
 
   private def createEnvironmentVariables(app: App.Cr, podsConfig: PodsConfig) = {
