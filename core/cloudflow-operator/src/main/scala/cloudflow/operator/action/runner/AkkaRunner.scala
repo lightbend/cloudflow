@@ -264,10 +264,12 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
     val tempDir = "/tmp"
     val pathToLivenessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckLiveness)
     val pathToReadinessCheck = java.nio.file.Paths.get(tempDir, fileNameToCheckReadiness)
+
     def getLivenessProbe(podsConfig: PodsConfig) =
       getProbe(_.livenessProbe, "/bin/sh", "-c", s"cat ${pathToLivenessCheck.toString} > /dev/null")(podsConfig)
     def getReadinessProbe(podsConfig: PodsConfig) =
       getProbe(_.readinessProbe, "/bin/sh", "-c", s"cat ${pathToReadinessCheck.toString} > /dev/null")(podsConfig)
+
     val container = c
       .withImagePullPolicy(ImagePullPolicy)
       .withLivenessProbe(getLivenessProbe(podsConfig))
