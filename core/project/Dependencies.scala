@@ -14,7 +14,7 @@ object Dependencies {
     val akkaMgmt = "1.0.10"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
-    val jackson = "2.13.2"
+    val jackson = "2.13.3"
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
     val jacksonDatabind = "2.13.2.2"
     val slf4j = "1.7.30"
