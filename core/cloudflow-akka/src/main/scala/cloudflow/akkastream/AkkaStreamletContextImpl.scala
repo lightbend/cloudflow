@@ -47,7 +47,7 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
  * Implementation of the StreamletContext trait.
  */
 @InternalApi
-final class AkkaStreamletContextImpl(
+protected final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem)
     extends AkkaStreamletContext {
@@ -88,7 +88,7 @@ final class AkkaStreamletContextImpl(
      * already enqueued messages. It does not unsubscribe from any topics/partitions
      * as that could trigger a consumer group rebalance.
      */
-    def stopInflow()(implicit ec: ExecutionContext) = {
+    def stopInflow()(implicit ec: ExecutionContext): Future[Done.type] = {
       log.debug("Stopping inflow from {}", streamletDefinitionMsg)
       Future
         .sequence(controls.get.map(_.stop().recover {
@@ -119,16 +119,9 @@ final class AkkaStreamletContextImpl(
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, "earliest")
 
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      .withProperties(topic.kafkaConsumerProperties)
-
-    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating committable source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     Consumer
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
@@ -153,14 +146,8 @@ final class AkkaStreamletContextImpl(
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      .withProperties(topic.kafkaConsumerProperties)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, "earliest")
 
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
@@ -170,7 +157,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating sharded committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded committable source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
@@ -289,14 +276,7 @@ final class AkkaStreamletContextImpl(
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
-    // TODO clean this up, lot of copying code, refactor.
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
-      .withProperties(topic.kafkaConsumerProperties)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, resetPosition.autoOffsetReset)
 
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
@@ -318,14 +298,8 @@ final class AkkaStreamletContextImpl(
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest,
       kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
-      .withProperties(topic.kafkaConsumerProperties)
 
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, resetPosition.autoOffsetReset)
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
 
@@ -334,7 +308,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating sharded plain source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded plain source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
@@ -478,4 +452,24 @@ final class AkkaStreamletContextImpl(
       "app-id" -> streamletDefinition.appId,
       "app-version" -> streamletDefinition.appVersion,
       "streamlet-ref" -> streamletRef)
+
+  /**
+   * Helper function to encapsulate common logic
+   */
+  protected def groupId[T](inlet: CodecInlet[T], topic: Topic): String =
+    topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+
+  protected def makeConsumerSettings[T](
+      inlet: CodecInlet[T],
+      offsetReset: String): (Topic, ConsumerSettings[Array[Byte], Array[Byte]]) = {
+    val topic = findTopicForPort(inlet)
+
+    (
+      topic,
+      ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
+        .withBootstrapServers(runtimeBootstrapServers(topic))
+        .withGroupId(groupId(inlet, topic))
+        .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset)
+        .withProperties(topic.kafkaConsumerProperties))
+  }
 }
