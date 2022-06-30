@@ -25,6 +25,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{ GivenWhenThen, OptionValues }
 
+import scala.List
 import scala.jdk.CollectionConverters._
 
 class AkkaRunnerSpec
@@ -154,6 +155,63 @@ class AkkaRunnerSpec
       crd1.getSpec.getTemplate.getSpec.getContainers.asScala.head.getPorts.asScala
         .map(_.getContainerPort) must contain allElementsOf
       List(1234, 5678)
+    }
+
+    "read from config custom probes and add them to the pod spec" in {
+      val testExecutable = List("command", "arg1", "param1")
+      val crd = akkaRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = getSecret(s"""
+                                   |kubernetes.pods.pod.containers.container {
+                                   |  probes {
+                                   |    readiness-probe {
+                                   |      executable = [${testExecutable.mkString(", ")}]
+                                   |    }
+                                   |    liveness-probe {
+                                   |      initial-delay-seconds = 30
+                                   |      timeout-seconds = 3
+                                   |      period-seconds = 30
+                                   |    }
+                                   |  }
+                                   |}""".stripMargin))
+
+      val containers = crd.getSpec.getTemplate.getSpec.getContainers.asScala
+      containers must have size 1
+      val readinessProbe = containers.head.getReadinessProbe
+      readinessProbe.getExec.getCommand must contain theSameElementsAs testExecutable
+      readinessProbe.getInitialDelaySeconds mustEqual 10
+      readinessProbe.getTimeoutSeconds mustEqual 1
+      readinessProbe.getPeriodSeconds mustEqual 10
+
+      val livenessProbe = containers.head.getLivenessProbe
+      livenessProbe.getExec.getCommand must contain allElementsOf List("/bin/sh", "-c")
+      livenessProbe.getInitialDelaySeconds mustEqual 30
+      livenessProbe.getTimeoutSeconds mustEqual 3
+      livenessProbe.getPeriodSeconds mustEqual 30
+    }
+
+    "read from config without custom probes and add default probes to the pod spec" in {
+      val crd = akkaRunner.resource(
+        deployment = deployment,
+        app = app,
+        configSecret = getSecret(s"""
+                                    |kubernetes.pods.pod.containers.container {
+                                    |}""".stripMargin))
+
+      val containers = crd.getSpec.getTemplate.getSpec.getContainers.asScala
+      containers must have size 1
+      val readinessProbe = containers.head.getReadinessProbe
+      readinessProbe.getExec.getCommand must contain allElementsOf List("/bin/sh", "-c")
+      readinessProbe.getInitialDelaySeconds mustEqual 10
+      readinessProbe.getTimeoutSeconds mustEqual 1
+      readinessProbe.getPeriodSeconds mustEqual 10
+
+      val livenessProbe = containers.head.getLivenessProbe
+      livenessProbe.getExec.getCommand must contain allElementsOf List("/bin/sh", "-c")
+      livenessProbe.getInitialDelaySeconds mustEqual 10
+      livenessProbe.getTimeoutSeconds mustEqual 1
+      livenessProbe.getPeriodSeconds mustEqual 10
     }
 
     "read from config custom secrets and mount them" in {
