@@ -244,6 +244,8 @@ object CloudflowConfig {
   implicit val tolerationOperatorEqualsHint = new FieldCoproductHint[Toleration.Operators.Operator]("type") {
     override def fieldValue(name: String) = name
   }
+  implicit val operatorExistsHint = ProductHint[Toleration.Operators.Exists.type](allowUnknownKeys = false)
+  implicit val operatorEqualHint = ProductHint[Toleration.Operators.Equal](allowUnknownKeys = false)
   implicit val tolerationEffectReader =
     deriveEnumerationReader[Toleration.Effects.Effect](ConfigFieldMapping(PascalCase, PascalCase))
   implicit val tolerationHint = ProductHint[Toleration](
@@ -367,7 +369,7 @@ object CloudflowConfig {
       annotations: Map[AnnotationKey, AnnotationValue] = Map(),
       volumes: Map[String, Volume] = Map(),
       containers: Map[String, Container] = Map(),
-      toleration: Option[List[Toleration]] = None)
+      tolerations: List[Toleration] = List())
 
   implicit val podHint = ProductHint[Pod](allowUnknownKeys = false)
 

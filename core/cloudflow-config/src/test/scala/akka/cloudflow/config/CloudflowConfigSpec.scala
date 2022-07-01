@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
 import akka.datap.crd.App
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.typesafe.config.{ Config, ConfigFactory, ConfigObject, ConfigValueType }
+import com.typesafe.config.{ Config, ConfigFactory }
 import io.fabric8.kubernetes.client.utils.Serialization
 import org.scalatest.{ Assertion, OptionValues, TryValues }
 import org.scalatest.flatspec.AnyFlatSpec
@@ -47,7 +47,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                   |              }
                   |            }
                   |          }
-                  |          toleration = [
+                  |          tolerations = [
                   |            {
                   |              key = "key1"
                   |              operator = {
@@ -75,8 +75,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    res.get.cloudflow.streamlets.nonEmpty shouldBe true
+    res.success.value.cloudflow.streamlets.nonEmpty shouldBe true
     val myStreamlet = res.get.cloudflow.streamlets("my-streamlet")
     myStreamlet.configParameters.getString("my-config-parameter") shouldBe "some-value"
   }
@@ -94,8 +93,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
-    res.failed.get.getMessage.contains(MandatorySectionsText) shouldBe true
+    res.failure.exception.getMessage.contains(MandatorySectionsText) shouldBe true
   }
 
   it should "fail on extra keys" in {
@@ -122,8 +120,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
-    res.failed.get.getMessage.contains("Unknown key") shouldBe true
+    res.failure.exception.getMessage.contains("Unknown key") shouldBe true
   }
 
   it should "fail on extra keys in custom readers" in {
@@ -150,8 +147,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
-    res.failed.get.getMessage.contains("Unknown key") shouldBe true
+    res.failure.exception.getMessage.contains("Unknown key") shouldBe true
   }
 
   it should "fail on unknown volumes" in {
@@ -177,8 +173,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
-    res.failed.get.getMessage.contains("Cannot convert 'bar' to Volume") shouldBe true
+    res.failure.exception.getMessage.contains("Cannot convert 'bar' to Volume") shouldBe true
   }
 
   it should "parse properly the volumes in the kubernetes section" in {
@@ -344,7 +339,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains(InvalidMounts) shouldBe true
   }
 
@@ -383,8 +377,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val driver = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
+    val driver = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
     val foo = driver.containers("container").volumeMounts("foo")
     foo.mountPath shouldBe "/etc/my/file"
     foo.readOnly shouldBe true
@@ -436,8 +429,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val driver = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
+    val driver = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
     val foo = driver.containers("container").volumeMounts("foo")
     val bar = driver.containers("container").volumeMounts("bar")
     foo.mountPath shouldBe "/etc/my/file1"
@@ -497,8 +489,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val driver = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
+    val driver = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("driver")
     val executor = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("executor")
 
     driver.labels(LabelKey("key1")) shouldBe LabelValue("value1")
@@ -547,8 +538,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val resources = res.get.cloudflow
+    val resources = res.success.value.cloudflow
       .streamlets("my-streamlet")
       .kubernetes
       .pods("pod")
@@ -583,7 +573,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("not a valid Kubernetes quantity") shouldBe true
   }
 
@@ -609,7 +598,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("not a valid Kubernetes quantity") shouldBe true
   }
 
@@ -635,7 +623,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
+    res.success
   }
 
   it should "parse ports" in {
@@ -659,8 +647,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val ports = res.get.cloudflow
+    val ports = res.success.value.cloudflow
       .streamlets("my-streamlet")
       .kubernetes
       .pods("pod")
@@ -687,7 +674,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("-hello") shouldBe true
   }
 
@@ -701,7 +687,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("hello-i-am-someone") shouldBe true
   }
 
@@ -715,7 +700,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("hello--1") shouldBe true
   }
 
@@ -729,7 +713,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("hello_") shouldBe true
   }
 
@@ -773,8 +756,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val pod = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
+    val pod = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
 
     pod.labels(LabelKey("subdomain123/KEY1")) shouldBe LabelValue("VALUE1")
   }
@@ -787,7 +769,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("SUBDOMAIN123/KEY1") shouldBe true
   }
 
@@ -799,7 +780,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("key1") shouldBe true
   }
 
@@ -812,7 +792,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage
       .contains("keyabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz") shouldBe true
   }
@@ -825,7 +804,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("keyabcdefstuv+zabcdefghijklmnopqrstuvwxyz") shouldBe true
   }
 
@@ -837,7 +815,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage
       .contains("lkjsdfsdf..sdfsfd//keyabcdefstuvzabcdefghijklmnopqrstuvwxyz") shouldBe true
   }
@@ -850,8 +827,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val pod = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
+    val pod = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
 
     pod.labels(LabelKey("lkjsdfsdfsdfsfd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz")) shouldBe LabelValue("value2")
   }
@@ -864,7 +840,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("lkjsdfsdfsdfsfd/keyabcdefstuvzabcdefghijklmnopqrstuvwxyz/") shouldBe true
   }
 
@@ -877,8 +852,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isSuccess shouldBe true
-    val pod = res.get.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
+    val pod = res.success.value.cloudflow.streamlets("my-streamlet").kubernetes.pods("pod")
 
     pod.annotations(AnnotationKey("subdomain123/KEY1")) shouldBe AnnotationValue("VALUE1")
   }
@@ -891,7 +865,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("SUBDOMAIN123/KEY1") shouldBe true
   }
 
@@ -899,7 +872,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
   // metav1.ObjectMeta only exists in type `FlinkApplication` not in `TaskManagerConfig` nor `JobManagerConfig`
   it should "fail to parse job-manager pods with labels" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                    |  streamlets {
                    |    flink {
                    |      kubernetes.pods {
@@ -917,13 +890,12 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains(LabelsNotAllowedOnPod) shouldBe true
   }
 
   it should "write label values as plain strings" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                    |  streamlets {
                    |    flink {
                    |      kubernetes.pods {
@@ -946,7 +918,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
   it should "write config map volumes" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                     |  streamlets {
                     |    akka {
                     |      kubernetes.pods {
@@ -1037,7 +1009,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
   it should "parse valid topic configuration and preserve the structure" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                    |  topics {
                    |    my-topic {
                    |      producers = [streamlet-a1.out, streamlet-a2.out]
@@ -1076,7 +1048,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     lazy val afterKeys = configAfter.root().entrySet().asScala.map(_.getKey)
 
     // Assert
-    res.isSuccess shouldBe true
+    res.success
     beforeKeys should contain theSameElementsAs afterKeys
     val myTopic = res.get.cloudflow.topics("my-topic")
     myTopic.producers should contain theSameElementsAs List("streamlet-a1.out", "streamlet-a2.out")
@@ -1096,7 +1068,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
   it should "fail to parse invalid topic configurations" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                    |  topics {
                    |    my-topic {
                    |      producers = test
@@ -1108,13 +1080,12 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("cloudflow.topics.my-topic.producers") shouldBe true
   }
 
   it should "fail to parse invalid topicconfig configurations" in {
     // Arrange
-    val config = s"""cloudflow {
+    val config = """cloudflow {
                    |  topics {
                    |    my-topic {
                    |      topic { replicas = test }
@@ -1126,7 +1097,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     val res = loadAndValidate(ConfigSource.string(config))
 
     // Assert
-    res.isFailure shouldBe true
     res.failure.exception.getMessage.contains("cloudflow.topics.my-topic.topic.replicas") shouldBe true
   }
 
@@ -1185,4 +1155,135 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
       .getString("kubernetes.pods.pod.containers.cloudflow.resources.limits.memory") shouldBe "3G"
   }
 
+  it should "yield empty list of tolerations by default" in {
+    // Arrange
+    val config = "cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {}"
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    val streamlet = res.success.value.cloudflow.streamlets.head._2
+    val pod = streamlet.kubernetes.pods.head._2
+    pod.tolerations should have size 0
+  }
+
+  it should "parse Exist-tolerations" in {
+    // Arrange
+    val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+                   |  tolerations = [
+                   |    {
+                   |      key = "key1"
+                   |      operator = {
+                   |        type = "Exists"
+                   |      }
+                   |      effect = "NoExecute"
+                   |    }
+                   |  ]
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    val streamlet = res.success.value.cloudflow.streamlets.head._2
+    val pod = streamlet.kubernetes.pods.head._2
+    val tolerations = pod.tolerations
+    tolerations should have size 1
+    tolerations.head.operator shouldEqual Toleration.Operators.Exists
+    tolerations.head.tolerationSeconds shouldEqual None
+  }
+
+  it should "parse multiple Equal-tolerations with NoExecute and NoSchedule" in {
+    val key1 = "k2"
+    val key2 = "k2"
+    val value1 = "v1"
+    val value2 = "v2"
+    val effect1 = Toleration.Effects.NoExecute
+    val effect2 = Toleration.Effects.NoSchedule
+    // Arrange
+    val config = s"""cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+                   |  tolerations = [
+                   |    {
+                   |      key = "$key1"
+                   |      operator = {
+                   |        type = "Equal"
+                   |        value = "$value1"
+                   |      }
+                   |      effect = "${effect1.toString}"
+                   |    },
+                   |    {
+                   |      key = "$key2"
+                   |      operator = {
+                   |        type = "Equal"
+                   |        value = "$value2"
+                   |      }
+                   |      effect = "${effect2.toString}"
+                   |    }
+                   |  ]
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    val streamlet = res.success.value.cloudflow.streamlets.head._2
+    val pod = streamlet.kubernetes.pods.head._2
+    val tolerations = pod.tolerations
+    tolerations should have size 2
+    tolerations.head.key shouldEqual key1
+    tolerations.head.operator shouldEqual Toleration.Operators.Equal(value1)
+    tolerations.head.effect shouldEqual effect1
+    tolerations.last.key shouldEqual key2
+    tolerations.last.operator shouldEqual Toleration.Operators.Equal(value2)
+    tolerations.last.effect shouldEqual effect2
+  }
+
+  it should "parse tolerations with optional tolerationSeconds configured" in {
+    // Arrange
+    val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+                   |  tolerations = [
+                   |    {
+                   |      key = "key1"
+                   |      operator = {
+                   |        type = "Exists"
+                   |      }
+                   |      effect = "NoExecute"
+                   |      toleration-seconds = 13
+                   |    }
+                   |  ]
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    val streamlet = res.success.value.cloudflow.streamlets.head._2
+    val pod = streamlet.kubernetes.pods.head._2
+    val tolerations = pod.tolerations
+    tolerations should have size 1
+    tolerations.head.tolerationSeconds.value shouldEqual 13
+  }
+
+  it should "fail parsing Exists toleration with value defined" in {
+    // Arrange
+    val config = """cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+                   |  tolerations = [
+                   |    {
+                   |      key = "key1"
+                   |      operator = {
+                   |        type = "Exists"
+                   |        value = "should not be set"
+                   |      }
+                   |      effect = "NoExecute"
+                   |    }
+                   |  ]
+                   |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.failure
+  }
 }
