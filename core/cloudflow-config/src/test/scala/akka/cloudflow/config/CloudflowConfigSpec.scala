@@ -35,16 +35,36 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                   |        akka.loglevel = "DEBUG"
                   |      }
                   |      kubernetes {
-                  |        pods.pod.containers.container {
-                  |          // kubernetes container settings go here
-                  |          resources {
-                  |            requests {
-                  |              memory = "512M"
-                  |            }
-                  |            limits {
-                  |              memory = "1024M"
+                  |        pods.pod {
+                  |          containers.container {
+                  |            // kubernetes container settings go here
+                  |            resources {
+                  |              requests {
+                  |                memory = "512M"
+                  |              }
+                  |              limits {
+                  |                memory = "1024M"
+                  |              }
                   |            }
                   |          }
+                  |          toleration = [
+                  |            {
+                  |              key = "key1"
+                  |              operator = {
+                  |                type = "Equal"
+                  |                value = "value1"
+                  |              }
+                  |              effect = "NoExecute"
+                  |              toleration-seconds = 13
+                  |            },
+                  |            {
+                  |              key = "key2"
+                  |              operator = {
+                  |                type = "Exists"
+                  |              }
+                  |              effect = "NoExecute"
+                  |            }
+                  |          ]
                   |        }
                   |      }
                   |    }
