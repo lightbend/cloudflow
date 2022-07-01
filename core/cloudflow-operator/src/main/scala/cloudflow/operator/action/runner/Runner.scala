@@ -16,9 +16,7 @@
 
 package cloudflow.operator.action.runner
 
-import akka.cloudflow.config.CloudflowConfig.Cloudflow
-import akka.cloudflow.config.CloudflowConfig.Toleration.Operators.Exists
-import akka.cloudflow.config.{CloudflowConfig, UnsafeCloudflowConfigLoader}
+import akka.cloudflow.config.{ CloudflowConfig, UnsafeCloudflowConfigLoader }
 import akka.datap.crd.App
 import akka.kube.actions.Action
 import cloudflow.blueprint.VolumeMountDescriptor
@@ -27,7 +25,7 @@ import cloudflow.operator.action._
 import cloudflow.operator.event.ConfigInput
 import com.typesafe.config._
 import io.fabric8.kubernetes.api.model.rbac._
-import io.fabric8.kubernetes.api.model.{Config => _, _}
+import io.fabric8.kubernetes.api.model.{ Config => _, _ }
 import org.slf4j._
 
 import scala.jdk.CollectionConverters._
@@ -421,7 +419,7 @@ object PodsConfig {
   }
 
   private def getTolerationConfig(toleration: CloudflowConfig.Toleration): Toleration = {
-    import CloudflowConfig.Toleration.Operators.{Equal => EqualOp, Exists => ExistsOp}
+    import CloudflowConfig.Toleration.Operators.{ Equal => EqualOp }
     val tb = new TolerationBuilder()
       .withKey(toleration.key)
       .withOperator(toleration.operator.toString)
@@ -429,12 +427,12 @@ object PodsConfig {
 
     toleration.operator match {
       case EqualOp(value) => tb.withValue(value)
-      case _ =>
+      case _              =>
     }
 
     toleration.tolerationSeconds match {
       case Some(secs) => tb.withTolerationSeconds(secs)
-      case None =>
+      case None       =>
     }
     tb.build()
   }
@@ -486,8 +484,12 @@ object PodsConfig {
 
     val tolerations = pod.tolerations.map(getTolerationConfig(_))
 
-
-    PodConfig(containers = containers, labels = labels, annotations = annotations, volumes = volumes, tolerations = tolerations)
+    PodConfig(
+      containers = containers,
+      labels = labels,
+      annotations = annotations,
+      volumes = volumes,
+      tolerations = tolerations)
   }
 
   def fromKubernetes(kubernetes: CloudflowConfig.Kubernetes): Try[PodsConfig] = {
