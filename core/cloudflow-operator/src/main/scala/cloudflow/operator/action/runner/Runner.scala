@@ -244,10 +244,13 @@ trait Runner[T <: HasMetadata] {
     Base64Helper.decode(Option(secret.getData).map(_.getOrDefault(key, "")).getOrElse(""))
   }
 
-  def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
+  private def getPodConfig(podsConfig: PodsConfig, podName: String): Option[PodConfig] =
     podsConfig.pods
       .get(podName)
       .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+
+  def getEnvironmentVariables(podsConfig: PodsConfig, podName: String): Option[List[EnvVar]] =
+    getPodConfig(podsConfig, podName)
       .flatMap { podConfig =>
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
           // excluding JAVA_OPTS from env vars and passing it through via javaOptions.
@@ -256,9 +259,7 @@ trait Runner[T <: HasMetadata] {
       }
 
   def getVolumeMounts(podsConfig: PodsConfig, podName: String): List[VolumeMount] = {
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .flatMap { podConfig =>
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
           containerConfig.volumeMounts
@@ -268,9 +269,7 @@ trait Runner[T <: HasMetadata] {
   }
 
   def getContainerPorts(podsConfig: PodsConfig, podName: String): List[ContainerPort] = {
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .flatMap { podConfig =>
         podConfig.containers.get(PodsConfig.CloudflowContainerName).map { containerConfig =>
           containerConfig.ports
@@ -280,9 +279,7 @@ trait Runner[T <: HasMetadata] {
   }
 
   def getJavaOptions(podsConfig: PodsConfig, podName: String): Option[String] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .flatMap { podConfig =>
         podConfig.containers.get(PodsConfig.CloudflowContainerName).flatMap { containerConfig =>
           containerConfig.env.find(_.getName == JavaOptsEnvVarName).map(_.getValue)
@@ -290,29 +287,30 @@ trait Runner[T <: HasMetadata] {
       }
 
   def getLabels(podsConfig: PodsConfig, podName: String): Map[String, String] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .map { podConfig =>
         podConfig.labels
       }
       .getOrElse(Map())
 
   def getAnnotations(podsConfig: PodsConfig, podName: String): Map[String, String] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .map { podConfig =>
         podConfig.annotations
       }
       .getOrElse(Map())
 
   def getVolumes(podsConfig: PodsConfig, podName: String): List[Volume] =
-    podsConfig.pods
-      .get(podName)
-      .orElse(podsConfig.pods.get(PodsConfig.CloudflowPodName))
+    getPodConfig(podsConfig, podName)
       .map { podConfig =>
         podConfig.volumes
+      }
+      .getOrElse(List())
+
+  def getTolerations(podsConfig: PodsConfig, podName: String): List[Toleration] =
+    getPodConfig(podsConfig, podName)
+      .map { podConfig =>
+        podConfig.tolerations
       }
       .getOrElse(List())
 
