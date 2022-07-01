@@ -272,5 +272,48 @@ class AkkaRunnerSpec
         ("bar", "/etc/mc/fly", false))
 
     }
+
+    "read from config tolerations and add them to the pod spec" in {
+      val crd =
+        akkaRunner.resource(
+          deployment = deployment,
+          app = app,
+          configSecret = getSecret(s"""
+                                     |kubernetes.pods.pod {
+                                     |  tolerations = [
+                                     |    {
+                                     |      key = "key1"
+                                     |      operator = {
+                                     |        type = "Equal"
+                                     |        value = "value1"
+                                     |      }
+                                     |      effect = "NoSchedule"
+                                     |      toleration-seconds = 13
+                                     |    },
+                                     |    {
+                                     |      key = "key2"
+                                     |      operator = {
+                                     |        type = "Exists"
+                                     |      }
+                                     |      effect = "NoExecute"
+                                     |    }
+                                     |  ]
+                                     |}
+                                    """.stripMargin))
+
+      val tolerations = crd.getSpec.getTemplate.getSpec.getTolerations.asScala.toSeq
+      tolerations must have size 2
+      tolerations.head.getKey mustEqual "key1"
+      tolerations.head.getValue mustEqual "value1"
+      tolerations.head.getOperator mustEqual "Equal"
+      tolerations.head.getEffect mustEqual "NoSchedule"
+      tolerations.head.getTolerationSeconds mustEqual 13
+
+      tolerations.last.getKey mustEqual "key2"
+      tolerations.last.getValue mustBe null
+      tolerations.last.getOperator mustEqual "Exists"
+      tolerations.last.getEffect mustEqual "NoExecute"
+      tolerations.last.getTolerationSeconds mustBe null
+    }
   }
 }
