@@ -1286,4 +1286,9 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     // Assert
     res.failure
   }
+
+  "Toleration.Operator.toString" should "produce the standard K8S operator name" in {
+    Toleration.Operators.Exists.toString shouldEqual "Exists"
+    Toleration.Operators.Equal("some value").toString shouldEqual "Equal"
+  }
 }

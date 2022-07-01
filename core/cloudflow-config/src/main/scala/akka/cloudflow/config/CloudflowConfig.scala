@@ -223,7 +223,9 @@ object CloudflowConfig {
 
       final case object Exists extends Operator
 
-      case class Equal(value: String) extends Operator
+      case class Equal(value: String) extends Operator {
+        override def toString(): String = "Equal" // override toString to return the K8S-compliant operator string
+      }
     }
 
     object Effects {
@@ -239,7 +241,7 @@ object CloudflowConfig {
       key: String,
       operator: Toleration.Operators.Operator,
       effect: Toleration.Effects.Effect,
-      tolerationSeconds: Option[Int] = None)
+      tolerationSeconds: Option[Long] = None)
 
   implicit val tolerationOperatorEqualsHint = new FieldCoproductHint[Toleration.Operators.Operator]("type") {
     override def fieldValue(name: String) = name
