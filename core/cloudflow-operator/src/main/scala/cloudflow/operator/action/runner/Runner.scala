@@ -421,11 +421,15 @@ object PodsConfig {
     val tb = new TolerationBuilder()
       .withKey(toleration.key)
       .withOperator(toleration.operator.toString)
-      .withEffect(toleration.effect.toString)
 
     toleration.operator match {
       case EqualOp(value) => tb.withValue(value)
       case _              =>
+    }
+
+    toleration.effect match {
+      case Some(effect) => tb.withEffect(effect.toString)
+      case None         =>
     }
 
     toleration.tolerationSeconds match {

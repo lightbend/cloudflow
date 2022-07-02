@@ -240,7 +240,7 @@ object CloudflowConfig {
   final case class Toleration(
       key: String,
       operator: Toleration.Operators.Operator,
-      effect: Toleration.Effects.Effect,
+      effect: Option[Toleration.Effects.Effect],
       tolerationSeconds: Option[Long] = None)
 
   implicit val tolerationOperatorEqualsHint = new FieldCoproductHint[Toleration.Operators.Operator]("type") {

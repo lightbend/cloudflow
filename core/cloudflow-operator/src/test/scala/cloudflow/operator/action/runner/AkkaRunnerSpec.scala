@@ -278,7 +278,7 @@ class AkkaRunnerSpec
         akkaRunner.resource(
           deployment = deployment,
           app = app,
-          configSecret = getSecret(s"""
+          configSecret = getSecret("""
                                      |kubernetes.pods.pod {
                                      |  tolerations = [
                                      |    {
@@ -296,24 +296,36 @@ class AkkaRunnerSpec
                                      |        type = "Exists"
                                      |      }
                                      |      effect = "NoExecute"
+                                     |    },
+                                     |    {
+                                     |      key = "key3"
+                                     |      operator = {
+                                     |        type = "Exists"
+                                     |      }
                                      |    }
                                      |  ]
                                      |}
                                     """.stripMargin))
 
       val tolerations = crd.getSpec.getTemplate.getSpec.getTolerations.asScala.toSeq
-      tolerations must have size 2
-      tolerations.head.getKey mustEqual "key1"
-      tolerations.head.getValue mustEqual "value1"
-      tolerations.head.getOperator mustEqual "Equal"
-      tolerations.head.getEffect mustEqual "NoSchedule"
-      tolerations.head.getTolerationSeconds mustEqual 13
+      tolerations must have size 3
+      tolerations(0).getKey mustEqual "key1"
+      tolerations(0).getValue mustEqual "value1"
+      tolerations(0).getOperator mustEqual "Equal"
+      tolerations(0).getEffect mustEqual "NoSchedule"
+      tolerations(0).getTolerationSeconds mustEqual 13
 
-      tolerations.last.getKey mustEqual "key2"
-      tolerations.last.getValue mustBe null
-      tolerations.last.getOperator mustEqual "Exists"
-      tolerations.last.getEffect mustEqual "NoExecute"
-      tolerations.last.getTolerationSeconds mustBe null
+      tolerations(1).getKey mustEqual "key2"
+      tolerations(1).getValue mustBe null
+      tolerations(1).getOperator mustEqual "Exists"
+      tolerations(1).getEffect mustEqual "NoExecute"
+      tolerations(1).getTolerationSeconds mustBe null
+
+      tolerations(2).getKey mustEqual "key3"
+      tolerations(2).getValue mustBe null
+      tolerations(2).getOperator mustEqual "Exists"
+      tolerations(2).getEffect mustBe null
+      tolerations(2).getTolerationSeconds mustBe null
     }
   }
 }

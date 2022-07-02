@@ -62,7 +62,6 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                   |              operator = {
                   |                type = "Exists"
                   |              }
-                  |              effect = "NoExecute"
                   |            }
                   |          ]
                   |        }
@@ -1194,13 +1193,11 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     tolerations.head.tolerationSeconds shouldEqual None
   }
 
-  it should "parse multiple Equal-tolerations with NoExecute and NoSchedule" in {
+  it should "parse multiple Equal-tolerations" in {
     val key1 = "k2"
     val key2 = "k2"
     val value1 = "v1"
     val value2 = "v2"
-    val effect1 = Toleration.Effects.NoExecute
-    val effect2 = Toleration.Effects.NoSchedule
     // Arrange
     val config = s"""cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
                    |  tolerations = [
@@ -1210,7 +1207,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |        type = "Equal"
                    |        value = "$value1"
                    |      }
-                   |      effect = "${effect1.toString}"
+                   |      effect = "NoExecute"
                    |    },
                    |    {
                    |      key = "$key2"
@@ -1218,7 +1215,7 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                    |        type = "Equal"
                    |        value = "$value2"
                    |      }
-                   |      effect = "${effect2.toString}"
+                   |      effect = "NoExecute"
                    |    }
                    |  ]
                    |}""".stripMargin
@@ -1233,10 +1230,54 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
     tolerations should have size 2
     tolerations.head.key shouldEqual key1
     tolerations.head.operator shouldEqual Toleration.Operators.Equal(value1)
-    tolerations.head.effect shouldEqual effect1
     tolerations.last.key shouldEqual key2
     tolerations.last.operator shouldEqual Toleration.Operators.Equal(value2)
-    tolerations.last.effect shouldEqual effect2
+  }
+
+  it should "parse tolerations with different and no effects" in {
+    val effect1 = Toleration.Effects.NoExecute
+    val effect2 = Toleration.Effects.NoSchedule
+    // Arrange
+    val config =
+      s"""cloudflow.streamlets.my-streamlet.kubernetes.pods.pod {
+         |  tolerations = [
+         |    {
+         |      key = "key1"
+         |      operator = {
+         |        type = "Equal"
+         |        value = "value1"
+         |      }
+         |      effect = "${effect1.toString}"
+         |    },
+         |    {
+         |      key = "key2"
+         |      operator = {
+         |        type = "Equal"
+         |        value = "value2"
+         |      }
+         |      effect = "${effect2.toString}"
+         |    },
+         |    {
+         |      key = "key2"
+         |      operator = {
+         |        type = "Equal"
+         |        value = "value2"
+         |      }
+         |    }
+         |  ]
+         |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    val streamlet = res.success.value.cloudflow.streamlets.head._2
+    val pod = streamlet.kubernetes.pods.head._2
+    val tolerations = pod.tolerations
+    tolerations should have size 3
+    tolerations(0).effect shouldEqual Some(effect1)
+    tolerations(1).effect shouldEqual Some(effect2)
+    tolerations(2).effect shouldEqual None
   }
 
   it should "parse tolerations with optional tolerationSeconds configured" in {
