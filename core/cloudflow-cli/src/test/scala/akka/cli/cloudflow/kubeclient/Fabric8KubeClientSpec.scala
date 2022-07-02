@@ -28,7 +28,7 @@ class Fabric8KubeClientSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
       .mkString("\n")
 
     server.expect.get
-      .withPath("/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions")
+      .withPath("/apis/apiextensions.k8s.io/v1/customresourcedefinitions")
       .andReturn(
         HttpURLConnection.HTTP_OK,
         Source
