@@ -210,9 +210,6 @@ protected final class AkkaStreamletContextImpl(
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, Committable)]
       .map {
@@ -220,7 +217,8 @@ protected final class AkkaStreamletContextImpl(
           ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
       .via(handleTermination)
-      .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+      .toMat(Producer.committableSink(producerSettings(topic, runtimeBootstrapServers(topic)), committerSettings))(
+        Keep.left)
   }
 
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
@@ -229,9 +227,6 @@ protected final class AkkaStreamletContextImpl(
   override def flexiFlow[T](
       outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(immutable.Seq[T], Committable)]
       .map {
@@ -239,7 +234,7 @@ protected final class AkkaStreamletContextImpl(
           ProducerMessage.MultiMessage(values.map(value => producerRecord(outlet, topic, value)), committable)
       }
       .via(handleTermination)
-      .via(Producer.flexiFlow(producerSettings))
+      .via(Producer.flexiFlow(producerSettings(topic, runtimeBootstrapServers(topic))))
       .map(results => ((), results.passThrough))
   }
 
@@ -247,16 +242,14 @@ protected final class AkkaStreamletContextImpl(
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, CommittableOffset)]
       .map {
         case (value, committable) =>
           ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
-      .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+      .toMat(Producer.committableSink(producerSettings(topic, runtimeBootstrapServers(topic)), committerSettings))(
+        Keep.left)
   }
 
   private[akkastream] def sinkWithOffsetContext[T](
@@ -332,16 +325,13 @@ protected final class AkkaStreamletContextImpl(
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
       .map { value =>
         producerRecord(outlet, topic, value)
       }
       .via(handleTermination)
-      .to(Producer.plainSink(producerSettings))
+      .to(Producer.plainSink(producerSettings(topic, runtimeBootstrapServers(topic))))
       .mapMaterializedValue(_ => NotUsed)
   }
 
@@ -470,4 +460,11 @@ trait ProducerHelper {
     val bytesValue = outlet.codec.encode(value)
     new ProducerRecord(topic.name, bytesKey, bytesValue)
   }
+
+  def producerSettings(topic: Topic, bootstrapServers: String)(
+      implicit system: ActorSystem): ProducerSettings[Array[Byte], Array[Byte]] =
+    ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(bootstrapServers)
+      .withProperties(topic.kafkaProducerProperties)
+
 }

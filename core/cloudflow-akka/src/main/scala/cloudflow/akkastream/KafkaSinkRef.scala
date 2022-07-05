@@ -28,7 +28,6 @@ import akka.stream._
 import akka.stream.scaladsl._
 
 import org.apache.kafka.clients.producer.{ Callback, RecordMetadata }
-import org.apache.kafka.common.serialization._
 
 import cloudflow.streamlets._
 
@@ -41,9 +40,9 @@ final class KafkaSinkRef[T](
     completionPromise: Promise[Dun])
     extends WritableSinkRef[T]
     with ProducerHelper {
-  private val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-    .withBootstrapServers(bootstrapServers)
-    .withProperties(topic.kafkaProducerProperties)
+
+  private val producerSettings: ProducerSettings[Array[Byte], Array[Byte]] =
+    producerSettings(topic, bootstrapServers)(system)
   private val producer = producerSettings.createKafkaProducer()
 
   def sink: Sink[(T, Committable), NotUsed] = {
