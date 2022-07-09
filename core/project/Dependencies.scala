@@ -117,7 +117,7 @@ object Dependencies {
 
     val akkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % Versions.akkaHttp % Test
 
-    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.0.13" % Test
+    val avro4s = "com.sksamuel.avro4s" %% "avro4s-core" % "4.1.0" % Test
 
     val scalatestJunit = "org.scalatestplus" %% "junit-4-13" % s"${Versions.scalaTest}.0" % Test
 
