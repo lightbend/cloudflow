@@ -42,7 +42,7 @@ object Dependencies {
     val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
     val commonsCompress = "org.apache.commons" % "commons-compress" % "1.21"
 
-    val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
+    val bouncyCastleCore = "org.bouncycastle" % "bcpkix-jdk18on" % "1.71"
     val bouncyCastleExt = "org.bouncycastle" % "bcprov-ext-jdk15on" % "1.70"
 
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % Versions.akka
