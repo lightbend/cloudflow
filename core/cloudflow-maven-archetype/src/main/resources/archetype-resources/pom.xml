@@ -13,7 +13,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <scala.version>2.12.15</scala.version>
+    <scala.version>2.12.16</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
     <avro.version>1.11.0</avro.version>
     <docker.maven.plugin.version>0.36.0</docker.maven.plugin.version>
