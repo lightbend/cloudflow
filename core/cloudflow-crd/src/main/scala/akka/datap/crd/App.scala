@@ -13,13 +13,15 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder
+import io.fabric8.kubernetes.api.model.apiextensions.v1.{
+  CustomResourceDefinitionBuilder,
+  CustomResourceDefinitionVersion,
+  CustomResourceDefinitionVersionBuilder
+}
 import io.fabric8.kubernetes.api.model.{ KubernetesResource, Namespaced, ObjectMeta }
 import io.fabric8.kubernetes.client.{ CustomResource, CustomResourceList }
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext
 import io.fabric8.kubernetes.model.annotation.{ Group, Kind, Plural, Version }
-
-import scala.util.Try
 
 object App {
 
@@ -50,6 +52,15 @@ object App {
   final val ProtocolVersionKey = "protocol-version"
   final val ProtocolVersion = "7"
 
+  val customResourceDefinitionVersion: CustomResourceDefinitionVersion = {
+    new CustomResourceDefinitionVersionBuilder()
+      .withName(GroupVersion)
+      .withNewSubresources()
+      .withNewStatus()
+      .endStatus()
+      .endSubresources()
+      .build()
+  }
   val customResourceDefinitionContext: CustomResourceDefinitionContext =
     new CustomResourceDefinitionContext.Builder()
       .withVersion(GroupVersion)
@@ -73,13 +84,9 @@ object App {
       .withPlural(Plural)
       .withShortNames(Short)
       .endNames()
-      .withVersion(GroupVersion)
+      .withVersions(customResourceDefinitionVersion)
       .withScope("Namespaced")
       .withPreserveUnknownFields(true)
-      .withNewSubresources()
-      .withNewStatus()
-      .endStatus()
-      .endSubresources()
       .endSpec()
       .withNewStatus()
       .withStoredVersions(GroupVersion)
