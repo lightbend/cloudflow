@@ -74,7 +74,7 @@ object Dependencies {
     val akkaGrpcRuntime = "com.lightbend.akka.grpc" %% "akka-grpc-runtime" % Versions.akkaGrpc
 
     val akkaStreamContrib = "com.typesafe.akka" %% "akka-stream-contrib" % "0.11"
-    val avro = ("org.apache.avro" % "avro" % "1.11.0")
+    val avro = ("org.apache.avro" % "avro" % "1.11.1")
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
     val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % Versions.jackson
