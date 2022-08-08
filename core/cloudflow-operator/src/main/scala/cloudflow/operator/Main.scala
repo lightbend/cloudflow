@@ -129,11 +129,11 @@ object Main extends {
     Option(
       client
         .apiextensions()
-        .v1beta1()
+        .v1()
         .customResourceDefinitions()
         .withName(App.ResourceName)
         .get()) match {
-      case Some(crd) if crd.getSpec.getVersion == App.GroupVersion =>
+      case Some(crd) if crd.getSpec.getVersions().asScala.exists(_.getName == App.GroupVersion) =>
         system.log.info(s"CRD found at version ${App.GroupVersion}")
       case _ =>
         system.log.error(
