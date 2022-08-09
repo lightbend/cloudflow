@@ -28,7 +28,10 @@ object KafkaSupport {
         val c = getClass().getClassLoader()
         Thread.currentThread().setContextClassLoader(c)
 
-        val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+        // Confluent Platform 6.2.x supports Kafka 2.8.x
+        // compatibility matrix: https://docs.confluent.io/platform/current/installation/versions-interoperability.html
+        // for Apple Silicon (ARM64) compatibility, currently only containers tagged with "7.1.0-1-ubi8" are available, which implies Kafka 3.1!
+        val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4."))
           .withExposedPorts(KafkaPort)
           .waitingFor(Wait.forLogMessage(".*Kafka startTimeMs.*\\n", 1))
         k.start()
