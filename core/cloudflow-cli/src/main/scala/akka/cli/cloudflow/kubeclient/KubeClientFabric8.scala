@@ -100,22 +100,6 @@ class KubeClientFabric8(
     }
   }
 
-  private def getCrd(name: String, client: KubernetesClient) = {
-    client
-      .apiextensions()
-      .v1beta1()
-      .customResourceDefinitions()
-      .inAnyNamespace()
-      .list()
-      .getItems()
-      .asScala
-      .find { crd =>
-        val crdName = crd.getMetadata.getName
-        logger.trace(s"Scanning Custom Resources found: ${name}")
-        crdName == name
-      }
-  }
-
   private def getCloudflowApplicationsClient(client: KubernetesClient) =
     Try {
       val cloudflowClient = {

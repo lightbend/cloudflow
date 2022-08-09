@@ -143,7 +143,7 @@ object CodepathCoverageMain extends App {
 
   Serialization
     .jsonMapper()
-    .readValue("{}", classOf[io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionList])
+    .readValue("{}", classOf[io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList])
 
   Serialization
     .jsonMapper()
