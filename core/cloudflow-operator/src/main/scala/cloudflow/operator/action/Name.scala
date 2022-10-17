@@ -126,7 +126,7 @@ object Name {
   val ofContainerPrometheusExporterPort = max15Chars("prom-metrics")
 
   def ofService(streamletDeploymentName: String) =
-    truncateTo63CharactersWithSuffix(makeDNS1039Compatible(ofPod(streamletDeploymentName)), "-service")
+    truncateTo63CharactersWithSuffix(ofPod(streamletDeploymentName), "-service")
 
   def ofAdminService(streamletDeploymentName: String) =
     s"${ofPod(streamletDeploymentName)}-admin-service"
