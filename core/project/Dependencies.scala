@@ -7,16 +7,16 @@ object Dependencies {
   val Scala213 = "2.13.8"
 
   object Versions {
-    val akka = "2.6.19"
-    val akkaHttp = "10.2.9"
+    val akka = "2.6.20"
+    val akkaHttp = "10.2.10"
     val akkaGrpc = "2.1.4"
     val alpakkaKafka = "2.1.1"
     val akkaMgmt = "1.1.3"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
-    val jackson = "2.13.3"
+    val jackson = "2.13.4"
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
-    val jacksonDatabind = "2.13.3"
+    val jacksonDatabind = "2.13.4"
     val slf4j = "1.7.30"
     val scalaTest = "3.2.13"
     val maven = "3.8.5"
@@ -92,7 +92,7 @@ object Dependencies {
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
 
-    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.1"
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.2"
 
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.149"
 
