@@ -41,7 +41,7 @@ lazy val akkaConnectedCar= (project in file("./akka-connected-car-streamlet"))
     commonSettings,
     name := "akka-connected-car-streamlet",
     libraryDependencies ++= Seq(
-      "ch.qos.logback" %  "logback-classic" % "1.2.11",
+      "ch.qos.logback" %  "logback-classic" % "1.4.4",
       "org.scalatest"  %% "scalatest"       % "3.0.8"  % "test"
     )
   )
