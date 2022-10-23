@@ -14,7 +14,7 @@ addSbtPlugin("com.github.sbt" % "sbt-unidoc" % "0.5.0")
 
 libraryDependencies ++= Seq(
   "org.codehaus.plexus" % "plexus-container-default" % "2.1.1",
-  "org.codehaus.plexus" % "plexus-archiver" % "4.2.7")
+  "org.codehaus.plexus" % "plexus-archiver" % "4.5.0")
 
 addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0")
 addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.6")
