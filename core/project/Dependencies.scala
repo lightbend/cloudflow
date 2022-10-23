@@ -3,7 +3,7 @@ import sbt._
 
 object Dependencies {
 
-  val Scala212 = "2.12.15" // has to be the very same as sbt
+  val Scala212 = "2.12.17" // has to be the very same as sbt
   val Scala213 = "2.13.8"
 
   object Versions {

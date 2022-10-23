@@ -7,7 +7,7 @@ enablePlugins(
   AkkaGrpcPlugin
 )
 
-scalaVersion := "2.12.15"
+scalaVersion := "2.12.17"
 
 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java)
 libraryDependencies ++= Seq(

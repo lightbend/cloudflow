@@ -9,7 +9,7 @@ lazy val sampleApp = (project in file("."))
     //end::docs-projectSetup-example[]
       name := "sample-app",
       organization := "com.lightbend.cloudflow",
-      scalaVersion := "2.12.15",
+      scalaVersion := "2.12.17",
       libraryDependencies ++= Seq(
         "com.lightbend.akka"     %% "akka-stream-alpakka-file"  % "1.1.2",
         "com.typesafe.akka"      %% "akka-http-spray-json"      % "10.1.12",

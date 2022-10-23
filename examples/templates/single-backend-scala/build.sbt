@@ -13,7 +13,7 @@ lazy val templateScala = (project in file("."))
     name := "template-scala",
     organization := "com.lightbend.cloudflow",
     headerLicense := Some(HeaderLicense.ALv2("(C) 2016-2020", "Lightbend Inc. <https://www.lightbend.com>")),
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.12.17",
     crossScalaVersions := Vector(scalaVersion.value),
     scalacOptions ++= Seq(
           "-encoding",
