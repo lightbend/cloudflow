@@ -92,7 +92,7 @@ object Dependencies {
 
     val kubeActions = "com.lightbend.akka" %% "kube-actions" % "0.1.1"
 
-    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.2"
+    val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.3"
 
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.149"
 
