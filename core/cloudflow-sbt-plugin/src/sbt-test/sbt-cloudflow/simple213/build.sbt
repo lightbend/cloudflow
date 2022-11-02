@@ -1,7 +1,7 @@
 lazy val helloWorld =  (project in file("."))
     .enablePlugins(CloudflowApplicationPlugin, CloudflowAkkaPlugin)
     .settings(
-      scalaVersion := "2.13.8",
+      scalaVersion := "2.13.10",
       name := "hello-world",
       version := "0.0.1",
 

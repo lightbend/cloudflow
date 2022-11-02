@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val Scala212 = "2.12.15" // has to be the very same as sbt
-  val Scala213 = "2.13.8"
+  val Scala213 = "2.13.10"
 
   object Versions {
     val akka = "2.6.20"

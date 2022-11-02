@@ -18,7 +18,7 @@ val testLibraryVersion = {
 
 lazy val iTest = (project in file("it-test"))
     .settings(
-      scalaVersion := "2.13.8",
+      scalaVersion := "2.13.10",
       libraryDependencies ++= Seq(
         "com.lightbend.cloudflow" %% "cloudflow-new-it-library" % testLibraryVersion % Test,
         "com.lightbend.cloudflow" %% "kubectl-cloudflow" % testLibraryVersion % Test
