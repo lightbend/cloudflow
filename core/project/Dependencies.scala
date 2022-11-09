@@ -9,16 +9,16 @@ object Dependencies {
   object Versions {
     val akka = "2.6.20"
     val akkaHttp = "10.2.10"
-    val akkaGrpc = "2.1.4"
+    val akkaGrpc = "2.1.6"
     val alpakkaKafka = "2.1.1"
-    val akkaMgmt = "1.1.3"
+    val akkaMgmt = "1.1.4"
     val spark = "2.4.5"
     val fabric8 = "5.0.3"
     val jackson = "2.13.4"
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
     val jacksonDatabind = "2.13.4"
     val slf4j = "1.7.30"
-    val scalaTest = "3.2.13"
+    val scalaTest = "3.2.14"
     val maven = "3.8.5"
   }
 
@@ -82,7 +82,7 @@ object Dependencies {
     val jacksonScala = ("com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson)
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
 
-    val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.36"
+    val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.3"
     val sprayJson = "io.spray" %% "spray-json" % "1.3.6"
     val scalaPbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
 
@@ -97,7 +97,7 @@ object Dependencies {
     val classgraph = "io.github.classgraph" % "classgraph" % "4.8.149"
 
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
-    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.17.3"
+    val testcontainersKafka = "org.testcontainers" % "kafka" % "1.17.5"
     val asciigraphs = "com.github.mutcianm" %% "ascii-graphs" % "0.0.6"
 
     val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
