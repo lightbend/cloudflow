@@ -64,6 +64,7 @@ lazy val cloudflowCli =
           "-H:+JNI",
           "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
           "-H:+ReportExceptionStackTraces",
+          "-H:+AddAllCharsets",
           "--no-fallback",
           "--initialize-at-build-time",
           "--report-unsupported-elements-at-runtime",
