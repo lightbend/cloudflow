@@ -8,7 +8,7 @@ content:
         - docs/docs-source/docs
         - docs/shared-content-source/docs
         - examples/snippets
-      branches: [v1.3.3-docs, v2.0.0-docs, v2.0.25-docs, v2.1.0-docs, v2.1.2-docs, v2.2.0-docs, v2.2.2-docs, v2.3.0-docs, v2.3.1-docs] # versioned content - add branches here
+      branches: [v1.3.3-docs, v2.0.0-docs, v2.0.25-docs, v2.1.0-docs, v2.1.2-docs, v2.2.0-docs, v2.2.2-docs, v2.3.0-docs, v2.3.1-docs, v2.3.2-docs] # versioned content - add branches here
     - url: git@github.com:lightbend/cloudflow.git
       start-path: docs/homepage-source/docs
       branches: [main] # should always remain as main
