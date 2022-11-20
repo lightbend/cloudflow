@@ -7,7 +7,7 @@ lazy val helloWorld =  (project in file("."))
 
       cloudflowDockerImageName := Some(cloudflow.sbt.DockerImageName(s"localhost:5000/hello-world", "0.0.1")),
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.11"
+        "ch.qos.logback"         %  "logback-classic"           % "1.4.5"
       )
     )
 

@@ -7,7 +7,7 @@ lazy val helloWorld =  (project in file("."))
       // sbt 1.5: Do not fail when mixing versions of Cloudflow and dependencies
       evictionErrorLevel := Level.Info,
       libraryDependencies ++= Seq(
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.11"
+        "ch.qos.logback"         %  "logback-classic"           % "1.4.5"
       )
     )
 

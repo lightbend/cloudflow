@@ -32,7 +32,7 @@ object Dependencies {
     val airframeLog = "org.wvlet.airframe" %% "airframe-log" % "22.5.0"
     val asciiTable = "de.vandermeer" % "asciitable" % "0.3.2"
 
-    val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
+    val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
     val scalatest = "org.scalatest" %% "scalatest" % Versions.scalaTest
     val scalatestMustMatchers = "org.scalatest" %% "scalatest-mustmatchers" % Versions.scalaTest

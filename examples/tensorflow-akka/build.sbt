@@ -9,7 +9,7 @@ lazy val tensorflowAkka =  (project in file("."))
       scalafmtOnCompile := true,
       libraryDependencies ++= Seq(
         Cloudflow.library.CloudflowAvro,
-        "ch.qos.logback"         %  "logback-classic"           % "1.2.11",
+        "ch.qos.logback"         %  "logback-classic"           % "1.4.5",
         "com.typesafe.akka"      %% "akka-http-testkit"         % "10.1.12" % "test",
         "org.tensorflow"         %  "tensorflow"                % "1.15.0",
         "org.tensorflow"         %  "proto"                     % "1.15.0",
