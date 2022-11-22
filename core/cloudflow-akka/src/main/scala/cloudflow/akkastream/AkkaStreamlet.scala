@@ -56,10 +56,12 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
         val system = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
+        val factory = new AkkaStreamletContextFactory(system)
+
         val cluster = Cluster(system)
         cluster.join(cluster.selfAddress)
 
-        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+        factory.newContext(updatedStreamletDefinition)
       } else if (activateCluster) {
         val clusterConfig = ConfigFactory
           .parseString(
@@ -69,14 +71,18 @@ abstract class AkkaStreamlet extends Streamlet[AkkaStreamletContext] {
         val fullConfig = clusterConfig.withFallback(updatedStreamletDefinition.config)
 
         val system = ActorSystem(streamletDefinition.streamletRef, ConfigFactory.load(fullConfig))
+        val factory = new AkkaStreamletContextFactory(system)
+
         AkkaManagement(system).start()
         ClusterBootstrap(system).start()
         Discovery(system).loadServiceDiscovery("kubernetes-api")
 
-        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+        factory.newContext(updatedStreamletDefinition)
       } else {
         val system = ActorSystem(streamletDefinition.streamletRef, updatedStreamletDefinition.config)
-        new AkkaStreamletContextImpl(updatedStreamletDefinition, system)
+        val factory = new AkkaStreamletContextFactory(system)
+
+        factory.newContext(updatedStreamletDefinition)
       }
     }).recoverWith {
       case th => Failure(new Exception(s"Failed to create context from $config", th))

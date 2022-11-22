@@ -28,6 +28,8 @@ abstract class Streamlet[Context <: StreamletContext] {
 
   @transient @volatile private var ctx: Context = _
 
+  //def factory: StreamletContextFactory
+
   /**
    * Returns the [[StreamletContext]] in which this streamlet is run. It can only be accessed when the streamlet is run.
    */

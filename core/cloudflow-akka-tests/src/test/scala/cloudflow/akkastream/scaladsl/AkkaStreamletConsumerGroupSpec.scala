@@ -47,6 +47,8 @@ import AkkaStreamletConsumerGroupSpec._
 class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem("test", config)) {
   import system.dispatcher
 
+  val factory = new AkkaStreamletContextFactory(system)
+
   implicit override val patienceConfig = PatienceConfig(timeout = Span(10, Seconds), interval = Span(20, Millis))
 
   "Akka streamlet instances" should {
@@ -142,7 +144,7 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
 
     def run(testData: List[Data], outlet: String): StreamletExecution = {
       val gen = new Generator(testData)
-      val context = new AkkaStreamletContextImpl(definition(outlet), system)
+      val context = factory.newContext(definition(outlet))
       gen.setContext(context)
       gen.run(context)
     }
@@ -176,7 +178,7 @@ class AkkaStreamletConsumerGroupSpec extends TestcontainersKafkaSpec(ActorSystem
 
     def run(streamletRef: String, receiver: TestReceiver, genOutlet: String): StreamletExecution = {
       val streamletDef = definition(streamletRef, genOutlet)
-      val context = new AkkaStreamletContextImpl(streamletDef, system)
+      val context = factory.newContext(streamletDef)
       receiver.setContext(context)
       receiver.run(context)
     }

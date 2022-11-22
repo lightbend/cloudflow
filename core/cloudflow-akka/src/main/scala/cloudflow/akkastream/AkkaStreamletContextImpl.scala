@@ -47,10 +47,11 @@ import scala.concurrent.duration.{ DurationInt, FiniteDuration }
  * Implementation of the StreamletContext trait.
  */
 @InternalApi
-final class AkkaStreamletContextImpl(
+protected final class AkkaStreamletContextImpl(
     private[cloudflow] override val streamletDefinition: StreamletDefinition,
     sys: ActorSystem)
-    extends AkkaStreamletContext {
+    extends AkkaStreamletContext
+    with ProducerHelper {
   private val log = LoggerFactory.getLogger(classOf[AkkaStreamletContextImpl])
   private val streamletDefinitionMsg: String =
     s"${streamletDefinition.streamletRef} (${streamletDefinition.streamletClass})"
@@ -88,7 +89,7 @@ final class AkkaStreamletContextImpl(
      * already enqueued messages. It does not unsubscribe from any topics/partitions
      * as that could trigger a consumer group rebalance.
      */
-    def stopInflow()(implicit ec: ExecutionContext) = {
+    def stopInflow()(implicit ec: ExecutionContext): Future[Done.type] = {
       log.debug("Stopping inflow from {}", streamletDefinitionMsg)
       Future
         .sequence(controls.get.map(_.stop().recover {
@@ -119,16 +120,9 @@ final class AkkaStreamletContextImpl(
 
   // internal implementation that uses the CommittableOffset implementation to provide access to the underlying offsets
   private[akkastream] def sourceWithContext[T](inlet: CodecInlet[T]): SourceWithContext[T, CommittableOffset, _] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, "earliest")
 
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      .withProperties(topic.kafkaConsumerProperties)
-
-    system.log.info(s"Creating committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating committable source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     Consumer
       .sourceWithOffsetContext(consumerSettings, Subscriptions.topics(topic.name))
@@ -153,14 +147,8 @@ final class AkkaStreamletContextImpl(
       inlet: CodecInlet[T],
       shardEntity: Entity[M, E],
       kafkaTimeout: FiniteDuration = 10.seconds): SourceWithContext[T, CommittableOffset, Future[NotUsed]] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
 
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-      .withProperties(topic.kafkaConsumerProperties)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, "earliest")
 
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
@@ -170,7 +158,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating sharded committable source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded committable source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
@@ -222,20 +210,15 @@ final class AkkaStreamletContextImpl(
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, Committable)]
       .map {
         case (value, committable) =>
-          val key = outlet.partitioner(value)
-          val bytesKey = keyBytes(key)
-          val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
       .via(handleTermination)
-      .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+      .toMat(Producer.committableSink(producerSettings(topic, runtimeBootstrapServers(topic)), committerSettings))(
+        Keep.left)
   }
 
   def committableSink[T](committerSettings: CommitterSettings): Sink[(T, Committable), NotUsed] =
@@ -244,9 +227,6 @@ final class AkkaStreamletContextImpl(
   override def flexiFlow[T](
       outlet: CodecOutlet[T]): Flow[(immutable.Seq[_ <: T], Committable), (Unit, Committable), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(immutable.Seq[T], Committable)]
       .map {
@@ -254,34 +234,22 @@ final class AkkaStreamletContextImpl(
           ProducerMessage.MultiMessage(values.map(value => producerRecord(outlet, topic, value)), committable)
       }
       .via(handleTermination)
-      .via(Producer.flexiFlow(producerSettings))
+      .via(Producer.flexiFlow(producerSettings(topic, runtimeBootstrapServers(topic))))
       .map(results => ((), results.passThrough))
-  }
-
-  private def producerRecord[T](outlet: CodecOutlet[T], topic: Topic, value: T) = {
-    val key = outlet.partitioner(value)
-    val bytesKey = keyBytes(key)
-    val bytesValue = outlet.codec.encode(value)
-    new ProducerRecord(topic.name, bytesKey, bytesValue)
   }
 
   private[akkastream] def sinkWithOffsetContext[T](
       outlet: CodecOutlet[T],
       committerSettings: CommitterSettings): Sink[(T, CommittableOffset), NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[(T, CommittableOffset)]
       .map {
         case (value, committable) =>
-          val key = outlet.partitioner(value)
-          val bytesKey = keyBytes(key)
-          val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message(new ProducerRecord(topic.name, bytesKey, bytesValue), committable)
+          ProducerMessage.Message(producerRecord(outlet, topic, value), committable)
       }
-      .toMat(Producer.committableSink(producerSettings, committerSettings))(Keep.left)
+      .toMat(Producer.committableSink(producerSettings(topic, runtimeBootstrapServers(topic)), committerSettings))(
+        Keep.left)
   }
 
   private[akkastream] def sinkWithOffsetContext[T](
@@ -289,14 +257,7 @@ final class AkkaStreamletContextImpl(
     Flow[(T, CommittableOffset)].toMat(Committer.sinkWithOffsetContext(committerSettings))(Keep.left)
 
   def plainSource[T](inlet: CodecInlet[T], resetPosition: ResetPosition = Latest): Source[T, NotUsed] = {
-    // TODO clean this up, lot of copying code, refactor.
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
-      .withProperties(topic.kafkaConsumerProperties)
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, resetPosition.autoOffsetReset)
 
     Consumer
       .plainSource(consumerSettings, Subscriptions.topics(topic.name))
@@ -318,14 +279,8 @@ final class AkkaStreamletContextImpl(
       shardEntity: Entity[M, E],
       resetPosition: ResetPosition = Latest,
       kafkaTimeout: FiniteDuration = 10.seconds): Source[T, Future[NotUsed]] = {
-    val topic = findTopicForPort(inlet)
-    val gId = topic.groupId(streamletDefinition.appId, streamletRef, inlet)
-    val consumerSettings = ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withGroupId(gId)
-      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resetPosition.autoOffsetReset)
-      .withProperties(topic.kafkaConsumerProperties)
 
+    val (topic, consumerSettings) = makeConsumerSettings(inlet, resetPosition.autoOffsetReset)
     val rebalanceListener: akka.actor.typed.ActorRef[ConsumerRebalanceEvent] =
       KafkaClusterSharding(system).rebalanceListener(shardEntity.typeKey)
 
@@ -334,7 +289,7 @@ final class AkkaStreamletContextImpl(
       .topics(topic.name)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-    system.log.info(s"Creating sharded plain source for group: $gId topic: ${topic.name}")
+    system.log.info(s"Creating sharded plain source for group: ${groupId(inlet, topic)} topic: ${topic.name}")
 
     val messageExtractor: Future[KafkaClusterSharding.KafkaShardingMessageExtractor[M]] =
       KafkaClusterSharding(system).messageExtractor(
@@ -370,19 +325,13 @@ final class AkkaStreamletContextImpl(
 
   def plainSink[T](outlet: CodecOutlet[T]): Sink[T, NotUsed] = {
     val topic = findTopicForPort(outlet)
-    val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-      .withBootstrapServers(runtimeBootstrapServers(topic))
-      .withProperties(topic.kafkaProducerProperties)
 
     Flow[T]
       .map { value =>
-        val key = outlet.partitioner(value)
-        val bytesKey = keyBytes(key)
-        val bytesValue = outlet.codec.encode(value)
-        new ProducerRecord(topic.name, bytesKey, bytesValue)
+        producerRecord(outlet, topic, value)
       }
       .via(handleTermination)
-      .to(Producer.plainSink(producerSettings))
+      .to(Producer.plainSink(producerSettings(topic, runtimeBootstrapServers(topic))))
       .mapMaterializedValue(_ => NotUsed)
   }
 
@@ -391,8 +340,6 @@ final class AkkaStreamletContextImpl(
 
     new KafkaSinkRef(system, outlet, runtimeBootstrapServers(topic), topic, killSwitch, execution.completionPromise)
   }
-
-  private def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
 
   private def handleTermination[T]: Flow[T, T, NotUsed] =
     Flow[T]
@@ -478,4 +425,46 @@ final class AkkaStreamletContextImpl(
       "app-id" -> streamletDefinition.appId,
       "app-version" -> streamletDefinition.appVersion,
       "streamlet-ref" -> streamletRef)
+
+  /**
+   * Helper function to encapsulate common logic
+   */
+  protected def groupId[T](inlet: CodecInlet[T], topic: Topic): String =
+    topic.groupId(streamletDefinition.appId, streamletRef, inlet)
+
+  protected def makeConsumerSettings[T](
+      inlet: CodecInlet[T],
+      offsetReset: String): (Topic, ConsumerSettings[Array[Byte], Array[Byte]]) = {
+    val topic = findTopicForPort(inlet)
+
+    (
+      topic,
+      ConsumerSettings(system, new ByteArrayDeserializer, new ByteArrayDeserializer)
+        .withBootstrapServers(runtimeBootstrapServers(topic))
+        .withGroupId(groupId(inlet, topic))
+        .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset)
+        .withProperties(topic.kafkaConsumerProperties))
+  }
+}
+
+trait ProducerHelper {
+
+  protected def keyBytes(key: String) = if (key != null) key.getBytes(StandardCharsets.UTF_8) else null
+
+  protected def producerRecord[T](
+      outlet: CodecOutlet[T],
+      topic: Topic,
+      value: T): ProducerRecord[Array[Byte], Array[Byte]] = {
+    val key = outlet.partitioner(value)
+    val bytesKey = keyBytes(key)
+    val bytesValue = outlet.codec.encode(value)
+    new ProducerRecord(topic.name, bytesKey, bytesValue)
+  }
+
+  def producerSettings(topic: Topic, bootstrapServers: String)(
+      implicit system: ActorSystem): ProducerSettings[Array[Byte], Array[Byte]] =
+    ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
+      .withBootstrapServers(bootstrapServers)
+      .withProperties(topic.kafkaProducerProperties)
+
 }
