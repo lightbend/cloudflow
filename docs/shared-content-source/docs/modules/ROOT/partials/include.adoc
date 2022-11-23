@@ -22,5 +22,5 @@
 
 :supported-akka-v: 2.6.6 
 
-:supported-apache-kafka-v: 2.4.1
+:supported-apache-kafka-v: 2.8.1
 :supported-strimzi-kafka-v: 0.16.2

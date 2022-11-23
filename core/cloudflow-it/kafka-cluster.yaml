@@ -5,6 +5,7 @@ metadata:
   namespace: cloudflow
 spec:
   kafka:
+    version: 2.8.1
     config:
       auto.create.topics.enable: false
       log.message.format.version: "2.3"
