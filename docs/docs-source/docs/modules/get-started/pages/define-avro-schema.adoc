@@ -6,6 +6,20 @@ include::ROOT:partial$include.adoc[]
 Let's start building the avro schema for the domain objects that we need for the application. 
 These schema files have the extension `.avsc` and go directly under `src/main/avro` in the project structure that we discussed earlier.
 
+When using Avro for serialization of domain objects (and reading/writing them from/to Kafka), it is necessary to add a dependency to the `cloudflow-avro` library to your sbt project:
+- either use the dependency variable defined in the Cloudflow sbt-plugin: `Cloudflow.library.CloudflowAvro`
+- or explicitly add libraryDependency `"com.lightbend.cloudflow" %% "cloudflow-avro" % <Cloudflow.Version>`
+In order to get Scala case classes generated from Avro Schemas, add the `sbt-avrohugger` plugin to your project's `plugin.sbt` file:
+```
+addSbtPlugin("com.julianpeeters" % "sbt-avrohugger" % "2.0.0")
+```
+
+Note:
+It is also possible to use Protobuf instead of Avro.
+In this scenario, the `cloudflow-proto` dependency needs to be added to your sbt project:
+- either use the dependency variable defined in the Cloudflow sbt-plugin: `Cloudflow.library.CloudflowProto`
+- or explicitly add libraryDependency `"com.lightbend.cloudflow" %% "cloudflow-proto" % <Cloudflow.Version>`
+
 In the Wind Turbine example, we will use the following domain objects:
 
 * **SensorData:** The data that we receive from the source and ingest through our ingress.
