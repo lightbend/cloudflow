@@ -94,7 +94,7 @@ object Dependencies {
 
     val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.2.2"
 
-    val classgraph = "io.github.classgraph" % "classgraph" % "4.8.149"
+    val classgraph = "io.github.classgraph" % "classgraph" % "4.8.155"
 
     val scalaPbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
     val testcontainersKafka = "org.testcontainers" % "kafka" % "1.17.5"
