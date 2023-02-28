@@ -103,7 +103,7 @@ object Dependencies {
     val mavenPluginApi = "org.apache.maven" % "maven-plugin-api" % Versions.maven
     val mavenCore = "org.apache.maven" % "maven-core" % Versions.maven
     val mavenEmbedder = "org.apache.maven" % "maven-embedder" % Versions.maven
-    val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.6.4"
+    val mavenPluginAnnotations = "org.apache.maven.plugin-tools" % "maven-plugin-annotations" % "3.8.1"
     val mavenProject = "org.apache.maven" % "maven-project" % "2.2.1"
     val mojoExecutor = "org.twdata.maven" % "mojo-executor" % "2.4.0"
     val junit = "junit" % "junit" % "4.13.2"
