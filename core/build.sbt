@@ -280,7 +280,7 @@ lazy val cloudflowSbtPlugin =
       crossSbtVersions := Vector("1.4.9"),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "cloudflow.sbt",
-      addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.9.0"),
+      addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.10.0"),
       addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.25"),
       addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.2.0"),
       scriptedLaunchOpts := {
