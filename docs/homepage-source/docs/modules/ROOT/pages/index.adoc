@@ -3,6 +3,10 @@
 :description: Quickly develop, orchestrate, and operate distributed streaming data pipelines on Kubernetes
 :keywords: kubernetes, stream, streaming, stream processing, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
 
+== Deprecated - The Cloudflow project is deprecated
+
+If you are an existing customer of Lightbend and we have not contacted, please reach out to support. All existing contacts will be honored and assistance with migration to new tools is available.
+
 Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes. 
 With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts. 
 Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours. 
