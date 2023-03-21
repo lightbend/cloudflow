@@ -2,7 +2,7 @@
 
 ```
 If you are an existing customer of Lightbend and we have not contacted, please reach out to support.
-All existing contacts will be honored and assistance with migration to new tools is available.
+All existing contracts will be honored and assistance with migration to new tools is available.
 ```
 
 [![Join the chat at https://cloudflow.zulipchat.com/](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://cloudflow.zulipchat.com/)
