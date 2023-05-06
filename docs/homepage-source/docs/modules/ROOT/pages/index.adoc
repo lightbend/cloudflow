@@ -3,9 +3,13 @@
 :description: Quickly develop, orchestrate, and operate distributed streaming data pipelines on Kubernetes
 :keywords: kubernetes, stream, streaming, stream processing, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
 
-Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes. 
-With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts. 
-Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours. 
+== Deprecated - The Cloudflow project is deprecated
+
+If you are an existing customer of Lightbend and we have not contacted, please reach out to support. All existing contracts will be honored and assistance with migration to new tools is available.
+
+Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.
+With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts.
+Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours.
 
 link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
 
@@ -15,7 +19,7 @@ With its powerful abstractions, Cloudflow allows you to easily define the most c
 * Build: We provide a rich development kit for going from business logic to a deployable application.
 * Deploy: Cloudflow comes with Kubernetes extensions for the cluster and the client to deploy your distributed system with a single command.
 
-Cloudflow comes with a powerful CLI tool to easily manage, scale and configure streaming applications at runtime. 
+Cloudflow comes with a powerful CLI tool to easily manage, scale and configure streaming applications at runtime.
 In a nutshell, Cloudflow is an application development toolkit composed of:
 
 * A definition for `Streamlet`, the core component model in Cloudflow.
