@@ -199,11 +199,40 @@ object CloudflowConfig {
 
   implicit val requirementsHint = ProductHint[Requirements](allowUnknownKeys = false)
 
+  // Probe - defaults are derived from https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+  val ProbeDefaultInitialDelaySeconds = 10
+  val ProbeDefaultTimeoutSeconds = 1
+  val ProbeDefaultPeriodSeconds = 10
+
+  final case class Probe(
+      executable: Option[Seq[String]] = None, // if unset the default executable is used -> this allows to override only the timeouts
+      initialDelaySeconds: Int = ProbeDefaultInitialDelaySeconds,
+      timeoutSeconds: Int = ProbeDefaultTimeoutSeconds,
+      periodSeconds: Int = ProbeDefaultPeriodSeconds)
+
+  implicit val probeHint = ProductHint[Probe](
+    ConfigFieldMapping(
+      Map(
+        "executable" -> "executable",
+        "initialDelaySeconds" -> "initial-delay-seconds",
+        "timeoutSeconds" -> "timeout-seconds",
+        "periodSeconds" -> "period-seconds")),
+    useDefaultArgs = true,
+    allowUnknownKeys = false)
+
+  // Probes
+  final case class Probes(readinessProbe: Option[Probe] = None, livenessProbe: Option[Probe] = None)
+  implicit val probesHint = ProductHint[Probes](
+    ConfigFieldMapping(Map("readinessProbe" -> "readiness-probe", "livenessProbe" -> "liveness-probe")),
+    useDefaultArgs = true,
+    allowUnknownKeys = false)
+
   // Container
   final case class Container(
       env: Option[List[EnvVar]] = None,
       ports: Option[List[ContainerPort]] = None,
       resources: Requirements = Requirements(),
+      probes: Probes = Probes(),
       volumeMounts: Map[String, VolumeMount] = Map())
 
   implicit val containerHint = ProductHint[Container](allowUnknownKeys = false)
