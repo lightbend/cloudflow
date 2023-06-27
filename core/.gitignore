@@ -16,6 +16,7 @@
 .bsp
 .bloop
 .metals
+.sbtopts
 logs
 tmp
 target
