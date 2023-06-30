@@ -246,6 +246,11 @@ lazy val cloudflowOperator =
       dockerUsername := sys.props.get("docker.username"),
       dockerRepository := sys.props.get("docker.registry"),
       dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")
+    .settings(
+      dependencyOverrides ++= Seq(
+        "org.yaml" % "snakeyaml" % "1.31"
+      )
+    )
 
 lazy val cloudflowExtractor =
   Project(id = "cloudflow-extractor", base = file("cloudflow-extractor"))
