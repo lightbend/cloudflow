@@ -245,7 +245,7 @@ lazy val cloudflowOperator =
       dockerUpdateLatest := false,
       dockerUsername := sys.props.get("docker.username"),
       dockerRepository := sys.props.get("docker.registry"),
-      dockerBaseImage := "adoptopenjdk/openjdk11:alpine-jre")
+      dockerBaseImage := "adoptopenjdk/openjdk:17-alpine")
     .settings(dependencyOverrides ++= Seq("org.yaml" % "snakeyaml" % "1.31"))
 
 lazy val cloudflowExtractor =
