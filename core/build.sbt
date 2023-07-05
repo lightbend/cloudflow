@@ -1,11 +1,5 @@
 Global / cancelable := true
 
-val debugPGPTask = TaskKey[Unit]("debugPGPTask", "DebugGPGTask")
-val debugPGPTaskSettings = debugPGPTask := {
-    import sys.process._
-    Seq("gpg", "--detach-sign", "--armor", "--use-agent", "--output", "/home/runner/work/cloudflow-release/cloudflow-release/target/cloudflow/core/cloudflow-akka-testkit/target/scala-2.12/cloudflow-akka-testkit_2.12-2.3.4.pom.asc", "/home/runner/work/cloudflow-release/cloudflow-release/target/cloudflow/core/cloudflow-akka-testkit/target/scala-2.12/cloudflow-akka-testkit_2.12-2.3.4.pom") !
-}
-
 lazy val tooling =
   Project(id = "tooling", base = file("tooling"))
     .dependsOn(cloudflowCli)
@@ -335,8 +329,6 @@ lazy val cloudflowAkkaTestkit =
     .dependsOn(cloudflowAkka, (cloudflowAvro % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaTestkit)
     .settings(
-      debugPGPTaskSettings,
-      PgpKeys.signedArtifacts := ((PgpKeys.signedArtifacts).dependsOn(debugPGPTask)).value,
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
