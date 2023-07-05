@@ -324,8 +324,6 @@ lazy val cloudflowAkka =
     .dependsOn(cloudflowStreamlets)
     .settings(Dependencies.cloudflowAkka)
     .settings(
-      debugPGPTaskSettings,
-      PgpKeys.signedArtifacts := ((PgpKeys.signedArtifacts).dependsOn(debugPGPTask)).value,
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       javacOptions += "-Xlint:deprecation",
@@ -337,6 +335,8 @@ lazy val cloudflowAkkaTestkit =
     .dependsOn(cloudflowAkka, (cloudflowAvro % "test->test").classpathDependency)
     .settings(Dependencies.cloudflowAkkaTestkit)
     .settings(
+      debugPGPTaskSettings,
+      PgpKeys.signedArtifacts := ((PgpKeys.signedArtifacts).dependsOn(debugPGPTask)).value,
       scalaVersion := Dependencies.Scala212,
       crossScalaVersions := Vector(Dependencies.Scala212, Dependencies.Scala213),
       scalafmtOnCompile := true,
