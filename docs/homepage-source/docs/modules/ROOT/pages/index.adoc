@@ -3,38 +3,8 @@
 :description: Quickly develop, orchestrate, and operate distributed streaming data pipelines on Kubernetes
 :keywords: kubernetes, stream, streaming, stream processing, akka, akka streams, akka-streams, pipelines, streaming pipelines, streaming pipelines on kubernetes, developer, streaming applications
 
-== Deprecated - The Cloudflow project is deprecated
+== Cloudflow is no longer Actively Developed
 
-If you are an existing customer of Lightbend and we have not contacted, please reach out to support. All existing contracts will be honored and assistance with migration to new tools is available.
+Cloudflow was a tool for managing streaming data originally developed by Lightbend.
 
-Cloudflow enables you to quickly develop, orchestrate, and operate distributed streaming applications on Kubernetes.
-With Cloudflow, streaming applications are comprised of small composable components wired together with schema-based contracts.
-Cloudflow can dramatically accelerate streaming application development--reducing the time required to create, package, and deploy--from weeks to hours.
-
-link:https://www.youtube.com/watch?v=-9pVwCkkE1I[Watch on YouTube ,role=yt-widget]
-
-With its powerful abstractions, Cloudflow allows you to easily define the most complex streaming applications:
-
-* Develop: Focus only on business logic, leave the boilerplate to us.
-* Build: We provide a rich development kit for going from business logic to a deployable application.
-* Deploy: Cloudflow comes with Kubernetes extensions for the cluster and the client to deploy your distributed system with a single command.
-
-Cloudflow comes with a powerful CLI tool to easily manage, scale and configure streaming applications at runtime.
-In a nutshell, Cloudflow is an application development toolkit composed of:
-
-* A definition for `Streamlet`, the core component model in Cloudflow.
-* An extensible runtime for `Streamlet`(s).
-* A `Streamlet` composition model driven by a `blueprint` definition.
-* A _sandbox_ local execution mode that accelerates the development and testing of your applications without requiring a cluster.
-* A set of `sbt` plugins that are able to package your application into deployable units.
-* The Cloudflow operator, a Kubernetes operator that manages the application lifecycle on Kubernetes.
-* A CLI, in the form of a `kubectl plugin`, that facilitates manual, scripted, and automated (CI/CD) management of the application.
-
-== Where To Go Next?
-* link:./docs/current/index.html[Introducing Cloudflow]
-* link:./docs/current/get-started/index.html[Getting started with Cloudflow]
-* link:./docs/current/develop/cloudflow-streamlets.html[Developing applications with Cloudflow]
-* https://cloudflow.io/docs/current/administration/index.html[Setup Cloudflow on a Kubernetes Cluster]
-* Chat with us on https://cloudflow.zulipchat.com/[Zulip]
-* Ask us a question on https://discuss.lightbend.com/c/cloudflow[Discuss]
-* Want to https://github.com/lightbend/cloudflow/blob/main/CONTRIBUTING.md[contribute]?
+For an alternative please consider using https://akka.io/[Akka] and https://doc.akka.io/docs/akka/current/stream/index.html[Akka Streams]
