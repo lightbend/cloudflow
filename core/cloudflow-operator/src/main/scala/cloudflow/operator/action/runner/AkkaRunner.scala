@@ -304,10 +304,13 @@ final class AkkaRunner(akkaRunnerDefaults: AkkaRunnerDefaults) extends Runner[De
         pvcRefVolumes.getOrElse(List.empty) ++
         configSecretVolumes
 
+      val tolerations: List[Toleration] = getTolerations(podsConfig, PodsConfig.CloudflowPodName)
+
       val podSpecBuilder = new PodSpecBuilder()
         .withServiceAccount(app.getSpec.serviceAccount.getOrElse(Name.ofServiceAccount))
         .withVolumes(allVolumes.asJava)
         .withContainers(container)
+        .withTolerations(tolerations: _*)
 
       (securityContext match {
         case Some(sc) =>
