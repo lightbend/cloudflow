@@ -4,6 +4,8 @@
 
 package akka.cloudflow.config
 
+import akka.cloudflow
+
 import java.io.File
 import scala.jdk.CollectionConverters._
 import scala.annotation.nowarn
@@ -45,6 +47,20 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
                   |              memory = "1024M"
                   |            }
                   |          }
+                  |          // probe settings
+                  |          probes {
+                  |            readiness-probe {
+                  |              executable = ["some-executable"]
+                  |              initial-delay-seconds = 10
+                  |              timeout-seconds = 1
+                  |              period-seconds = 10
+                  |            }
+                  |            liveness-probe {
+                  |              initial-delay-seconds = 10
+                  |              timeout-seconds = 1
+                  |              period-seconds = 10
+                  |            }
+                  |          }
                   |        }
                   |      }
                   |    }
@@ -53,6 +69,10 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
 
     // Act
     val res = loadAndValidate(ConfigSource.string(config))
+    res match {
+      case scala.util.Failure(e) => println(e)
+      case _                     =>
+    }
 
     // Assert
     res.isSuccess shouldBe true
@@ -727,6 +747,88 @@ class CloudflowConfigSpec extends AnyFlatSpec with Matchers with OptionValues wi
      |    }
      |  }
      |}""".stripMargin
+  }
+
+  it should "parse complete probe configs" in {
+    // Arrange
+    val testExecutable = List("command", "arg1", "param1")
+    @nowarn val config = s"""cloudflow.streamlets {
+                           |  my-streamlet {
+                           |    kubernetes.pods.pod.containers.container {
+                           |      probes {
+                           |        readiness-probe {
+                           |          executable = [${testExecutable.mkString(", ")}]
+                           |          initial-delay-seconds = 10
+                           |          timeout-seconds = 1
+                           |          period-seconds = 10
+                           |        }
+                           |        liveness-probe {
+                           |          executable = [${testExecutable.mkString(", ")}]
+                           |          initial-delay-seconds = 10
+                           |          timeout-seconds = 1
+                           |          period-seconds = 10
+                           |        }
+                           |      }
+                           |    }
+                           |  }
+                           |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isSuccess shouldBe true
+    val streamlets = res.success.value.cloudflow.streamlets
+    streamlets should not be empty
+    val pods = streamlets.head._2.kubernetes.pods
+    pods should not be empty
+    val containers = pods.head._2.containers
+    containers should not be empty
+    val probes = containers.head._2.probes
+    probes.readinessProbe.value.executable.value should contain theSameElementsAs testExecutable
+    probes.readinessProbe.value.initialDelaySeconds shouldEqual 10
+    probes.readinessProbe.value.timeoutSeconds shouldEqual 1
+    probes.readinessProbe.value.periodSeconds shouldEqual 10
+    probes.livenessProbe.value.executable.value should contain theSameElementsAs testExecutable
+    probes.livenessProbe.value.initialDelaySeconds shouldEqual 10
+    probes.livenessProbe.value.timeoutSeconds shouldEqual 1
+    probes.livenessProbe.value.periodSeconds shouldEqual 10
+  }
+
+  it should "parse partial probe configs without executable" in {
+    // Arrange
+    val testExecutable = List("command", "arg1", "param1")
+    @nowarn val config = s"""cloudflow.streamlets {
+                            |  my-streamlet {
+                            |    kubernetes.pods.pod.containers.container {
+                            |      probes {
+                            |        readiness-probe {
+                            |          executable = [${testExecutable.mkString(", ")}]
+                            |        }
+                            |        liveness-probe {
+                            |          initial-delay-seconds = 30
+                            |          timeout-seconds = 3
+                            |          period-seconds = 30
+                            |        }
+                            |      }
+                            |    }
+                            |  }
+                            |}""".stripMargin
+
+    // Act
+    val res = loadAndValidate(ConfigSource.string(config))
+
+    // Assert
+    res.isSuccess shouldBe true
+    val probes = res.success.value.cloudflow.streamlets.head._2.kubernetes.pods.head._2.containers.head._2.probes
+    probes.readinessProbe.value.executable.value should contain theSameElementsAs testExecutable
+    probes.readinessProbe.value.initialDelaySeconds shouldEqual CloudflowConfig.ProbeDefaultInitialDelaySeconds
+    probes.readinessProbe.value.timeoutSeconds shouldEqual CloudflowConfig.ProbeDefaultTimeoutSeconds
+    probes.readinessProbe.value.periodSeconds shouldEqual CloudflowConfig.ProbeDefaultPeriodSeconds
+    probes.livenessProbe.value.executable shouldEqual None
+    probes.livenessProbe.value.initialDelaySeconds shouldEqual 30
+    probes.livenessProbe.value.timeoutSeconds shouldEqual 3
+    probes.livenessProbe.value.periodSeconds shouldEqual 30
   }
 
   def getConfigWithAnnotation(str: String) = {
