@@ -1,4 +1,4 @@
-## Deprecated - The Cloudflow project is deprecated
+## Deprecated - The Cloudflow project is deprecated 
 
 ```
 If you are an existing customer of Lightbend and we have not contacted, please reach out to support.
