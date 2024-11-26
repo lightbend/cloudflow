@@ -27,8 +27,7 @@ import akka.kafka.scaladsl._
 import akka.stream._
 import akka.stream.scaladsl._
 
-import org.apache.kafka.clients.producer.{ Callback, ProducerRecord, RecordMetadata }
-import org.apache.kafka.common.serialization._
+import org.apache.kafka.clients.producer.{ Callback, RecordMetadata }
 
 import cloudflow.streamlets._
 
@@ -39,10 +38,11 @@ final class KafkaSinkRef[T](
     topic: Topic,
     killSwitch: SharedKillSwitch,
     completionPromise: Promise[Dun])
-    extends WritableSinkRef[T] {
-  private val producerSettings = ProducerSettings(system, new ByteArraySerializer, new ByteArraySerializer)
-    .withBootstrapServers(bootstrapServers)
-    .withProperties(topic.kafkaProducerProperties)
+    extends WritableSinkRef[T]
+    with ProducerHelper {
+
+  private val producerSettings: ProducerSettings[Array[Byte], Array[Byte]] =
+    producerSettings(topic, bootstrapServers)(system)
   private val producer = producerSettings.createKafkaProducer()
 
   def sink: Sink[(T, Committable), NotUsed] = {
@@ -51,11 +51,7 @@ final class KafkaSinkRef[T](
     Flow[(T, Committable)]
       .map {
         case (value, offset) =>
-          val key = outlet.partitioner(value)
-          val bytesValue = outlet.codec.encode(value)
-          ProducerMessage.Message[Array[Byte], Array[Byte], Committable](
-            new ProducerRecord(topic.name, key.getBytes("UTF8"), bytesValue),
-            offset)
+          ProducerMessage.Message(producerRecord(outlet, topic, value), offset)
       }
       .via(Producer.flexiFlow(producerSettings.withProducer(producer)))
       .via(handleTermination)
@@ -76,13 +72,9 @@ final class KafkaSinkRef[T](
       })
 
   def write(value: T): Future[T] = {
-    val key = outlet.partitioner(value)
-    val bytesKey = keyBytes(key)
-    val bytesValue = outlet.codec.encode(value)
-    val record = new ProducerRecord(topic.name, bytesKey, bytesValue)
     val promise = Promise[T]()
 
-    producer.send(record, new Callback() {
+    producer.send(producerRecord(outlet, topic, value), new Callback() {
       def onCompletion(metadata: RecordMetadata, exception: Exception) {
         if (exception == null) promise.success(value)
         else promise.failure(exception)
@@ -91,6 +83,4 @@ final class KafkaSinkRef[T](
 
     promise.future
   }
-
-  private def keyBytes(key: String) = if (key != null) key.getBytes("UTF8") else null
 }

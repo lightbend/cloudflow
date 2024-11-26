@@ -25,3 +25,7 @@ cloudflow-cli/src/graal
 cloudflow-it/src/it/resources/swiss-knife.json
 cloudflow-it/generated-spark-values.yaml
 /project/metals.sbt
+
+project/.boot/
+project/.ivy/
+project/.sbtboot/
