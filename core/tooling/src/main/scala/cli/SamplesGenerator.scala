@@ -31,6 +31,7 @@ object SamplesGenerator extends App {
                 resources = Requirements(
                   requests = Requirement(cpu = Some(Quantity("1")), memory = Some(Quantity("1Gb"))),
                   limits = Requirement(cpu = Some(Quantity("2")), memory = Some(Quantity("2Gb")))),
+                probes = Probes(),
                 volumeMounts = Map("my-pvc" ->
                 VolumeMount(mountPath = "/mnt", readOnly = false, subPath = "/tmp"))))))))),
       runtimes = Map(
@@ -48,6 +49,7 @@ object SamplesGenerator extends App {
                 resources = Requirements(
                   requests = Requirement(cpu = Some(Quantity("1")), memory = Some(Quantity("1Gb"))),
                   limits = Requirement(cpu = Some(Quantity("2")), memory = Some(Quantity("2Gb")))),
+                probes = Probes(),
                 volumeMounts = Map("my-pvc" ->
                 VolumeMount(mountPath = "/mnt", readOnly = false, subPath = "/tmp"))))))))),
       topics = Map("my-topic" -> Topic())))

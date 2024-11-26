@@ -178,6 +178,7 @@ trait Runner[T <: HasMetadata] {
       secret: Secret): Action
 
   def defaultReplicas: Int
+
   def expectedPodCount(deployment: App.Deployment): Int
 
   val createEventPolicyRule =
@@ -212,7 +213,9 @@ trait Runner[T <: HasMetadata] {
     val str = getData(secret, ConfigInput.PodsConfigDataKey)
 
     (for {
-      configStr <- Try { ConfigFactory.parseString(str) }
+      configStr <- Try {
+        ConfigFactory.parseString(str)
+      }
       config <- UnsafeCloudflowConfigLoader.loadPodConfig(configStr)
       podConfig <- PodsConfig.fromKubernetes(config)
     } yield {
@@ -354,6 +357,20 @@ object PodsConfig {
    *  }}}
    */
 
+  private def probeFrom(probeConfig: Option[CloudflowConfig.Probe]): Option[Probe] = probeConfig.map { pc =>
+    val pb = new ProbeBuilder()
+      .withInitialDelaySeconds(pc.initialDelaySeconds)
+      .withPeriodSeconds(pc.periodSeconds)
+      .withTimeoutSeconds(pc.timeoutSeconds)
+    pc.executable.map(
+      exec =>
+        pb.withExec(
+          new ExecActionBuilder()
+            .withCommand(exec: _*)
+            .build()))
+    pb.build()
+  }
+
   private def getContainerConfig(container: CloudflowConfig.Container): ContainerConfig = {
     val env = container.env
       .map {
@@ -388,6 +405,9 @@ object PodsConfig {
       }
     }
 
+    val readinessProbe = probeFrom(container.probes.readinessProbe)
+    val livenessProbe = probeFrom(container.probes.livenessProbe)
+
     val volumeMounts = container.volumeMounts.map {
       case (name, vm) =>
         new VolumeMountBuilder()
@@ -415,7 +435,13 @@ object PodsConfig {
       }
       .getOrElse(List())
 
-    ContainerConfig(env = env, resources = resources, volumeMounts = volumeMounts, ports = ports)
+    ContainerConfig(
+      env = env,
+      resources = resources,
+      volumeMounts = volumeMounts,
+      ports = ports,
+      readinessProbe = readinessProbe,
+      livenessProbe = livenessProbe)
   }
 
   private def getPodConfig(pod: CloudflowConfig.Pod): PodConfig = {
@@ -475,7 +501,9 @@ object PodsConfig {
 
 final case class PodsConfig(pods: Map[String, PodConfig] = Map()) {
   def isEmpty = pods.isEmpty
+
   def nonEmpty = pods.nonEmpty
+
   def size = pods.size
 }
 
@@ -489,4 +517,6 @@ final case class ContainerConfig(
     env: List[EnvVar] = List(),
     resources: Option[ResourceRequirements] = None,
     volumeMounts: List[VolumeMount] = List(),
-    ports: List[ContainerPort] = List())
+    ports: List[ContainerPort] = List(),
+    readinessProbe: Option[Probe],
+    livenessProbe: Option[Probe])

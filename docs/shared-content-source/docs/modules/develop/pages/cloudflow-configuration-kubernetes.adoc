@@ -34,7 +34,38 @@ cloudflow.streamlets.my-streamlet {
 }
 ----
 
-The above example shows that `500mcpu` and `512Mi` of memory is requested, while the memory limit is set to `4Gi`.   
+The above example shows that `500mcpu` and `512Mi` of memory is requested, while the memory limit is set to `4Gi`.
+
+=== Liveness and Readiness Probes
+
+Probes for detecting if a container is ready or still alive can be configured in the `cloudflow.streamlets.[streamlet-name].kubernetes.pods.pod.containers.container` section.
+The entire section, as well as each single parameter, are optional. - Default values for timeouts conform to standard Kubernetes defaults: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+
+Unless a different mechnism for detection of readiness/liveness is required, it is recommended to only configfure/override timeouts (e.g. `initial-delay-seconds`) and leave the default executable for probing.
+
+[source, hocon]
+---
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    containers.container {
+      probes {
+        readiness-probe {
+          executable = ["<your>", "<optional>", "<shell>", "<command>"]
+          initial-delay-seconds = 10
+          timeout-seconds = 1
+          period-seconds = 10
+        }
+        liveness-probe {
+          executable = ["<your>", "<optional>", "<shell>", "<command>"]
+          initial-delay-seconds = 10
+          timeout-seconds = 1
+          period-seconds = 10
+        }
+      }
+    }
+  }
+}
+
 
 === Environment Variables
 
