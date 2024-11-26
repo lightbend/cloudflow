@@ -300,3 +300,49 @@ This configuration will mount an existing Persistent Volume Claim `myclaim1` int
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].mount-path = [some-path]`
 | `volume-mounts` | `pod.containers.container.volume-mounts.[name].read-only = [true or false]`
 |===
+
+
+==== **Defining Pod Tolerations**
+
+It is possible to define Pod tolerations in order to allow execution on tainted K8S nodes.
+The related Cloudflow configuration is similar to the standard K8S config and provides all available parameters: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+
+The only difference is that Cloudflow configuration **nests the `value` property within the `operation`** (see sample below).
+Thus, it does not allow definition of a toleration `value` in combination with the `Exists` operator, which does not make sense anyway.
+
+[source, hocon]
+----
+cloudflow.streamlets.my-streamlet {
+  kubernetes.pods.pod {
+    containers.container {
+      ...
+    }
+    tolerations = [
+      {
+        key = "key1"
+        operator = {
+          type = "Equal"
+          value = "value1"
+        }
+        effect = "NoSchedule"
+        toleration-seconds = 13
+      },
+      {
+        key = "key2"
+        operator = {
+          type = "Exists"
+        }
+        effect = "NoExecute"
+      },
+      {
+        key = "key3"
+        operator = {
+          type = "Exists"
+        }
+      }
+    ]
+  } 
+}
+----
+
+This config will allow execution of that Streamlet on k8s nodes which define taint `key1=value1:NoSchedule`, `key2=<value-is-ignored>:NoExecute`, or `key3=<value-is-ignored>:<effect-is-ignored>`.

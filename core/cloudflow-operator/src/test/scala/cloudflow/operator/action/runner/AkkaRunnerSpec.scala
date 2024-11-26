@@ -272,5 +272,60 @@ class AkkaRunnerSpec
         ("bar", "/etc/mc/fly", false))
 
     }
+
+    "read from config tolerations and add them to the pod spec" in {
+      val crd =
+        akkaRunner.resource(
+          deployment = deployment,
+          app = app,
+          configSecret = getSecret("""
+                                     |kubernetes.pods.pod {
+                                     |  tolerations = [
+                                     |    {
+                                     |      key = "key1"
+                                     |      operator = {
+                                     |        type = "Equal"
+                                     |        value = "value1"
+                                     |      }
+                                     |      effect = "NoSchedule"
+                                     |      toleration-seconds = 13
+                                     |    },
+                                     |    {
+                                     |      key = "key2"
+                                     |      operator = {
+                                     |        type = "Exists"
+                                     |      }
+                                     |      effect = "NoExecute"
+                                     |    },
+                                     |    {
+                                     |      key = "key3"
+                                     |      operator = {
+                                     |        type = "Exists"
+                                     |      }
+                                     |    }
+                                     |  ]
+                                     |}
+                                    """.stripMargin))
+
+      val tolerations = crd.getSpec.getTemplate.getSpec.getTolerations.asScala.toSeq
+      tolerations must have size 3
+      tolerations(0).getKey mustEqual "key1"
+      tolerations(0).getValue mustEqual "value1"
+      tolerations(0).getOperator mustEqual "Equal"
+      tolerations(0).getEffect mustEqual "NoSchedule"
+      tolerations(0).getTolerationSeconds mustEqual 13
+
+      tolerations(1).getKey mustEqual "key2"
+      tolerations(1).getValue mustBe null
+      tolerations(1).getOperator mustEqual "Exists"
+      tolerations(1).getEffect mustEqual "NoExecute"
+      tolerations(1).getTolerationSeconds mustBe null
+
+      tolerations(2).getKey mustEqual "key3"
+      tolerations(2).getValue mustBe null
+      tolerations(2).getOperator mustEqual "Exists"
+      tolerations(2).getEffect mustBe null
+      tolerations(2).getTolerationSeconds mustBe null
+    }
   }
 }

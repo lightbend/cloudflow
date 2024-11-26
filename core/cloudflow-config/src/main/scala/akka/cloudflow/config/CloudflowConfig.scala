@@ -17,11 +17,13 @@ import pureconfig.{
   ConfigObjectSource,
   ConfigReader,
   ConfigSource,
-  ConfigWriter
+  ConfigWriter,
+  PascalCase
 }
 import pureconfig.error.{ CannotConvert, ConfigReaderFailures, ExceptionThrown, FailureReason }
-import pureconfig.generic.ProductHint
+import pureconfig.generic.{ FieldCoproductHint, ProductHint }
 import pureconfig.generic.auto.{ exportReader, exportWriter }
+import pureconfig.generic.semiauto.deriveEnumerationReader
 
 // The order of the elements in this file matter, please make sure you go from leaf to nodes
 object CloudflowConfig {
@@ -39,7 +41,9 @@ object CloudflowConfig {
     cur.asString.flatMap { str =>
       Try {
         val q = io.fabric8.kubernetes.api.model.Quantity.parse(str)
-        assert { validQuantityFormats.contains(q.getFormat) }
+        assert {
+          validQuantityFormats.contains(q.getFormat)
+        }
         io.fabric8.kubernetes.api.model.Quantity.getAmountInBytes(q)
       } match {
         case Success(v) if v != null => Right(Quantity(str))
@@ -65,13 +69,17 @@ object CloudflowConfig {
 
   // Volumes
   sealed trait Volume
+
   final case class SecretVolume(name: String) extends Volume
+
   final case class ConfigMapVolume(
       name: String,
       optional: Boolean = false,
       items: Map[String, ConfigMapVolumeKeyToPath] = Map.empty)
       extends Volume
+
   final case class ConfigMapVolumeKeyToPath(path: String)
+
   final case class PvcVolume(name: String, readOnly: Boolean = true) extends Volume
 
   implicit val secretVolumeHint = ProductHint[SecretVolume](allowUnknownKeys = false)
@@ -208,6 +216,46 @@ object CloudflowConfig {
 
   implicit val containerHint = ProductHint[Container](allowUnknownKeys = false)
 
+  // Toleration - see https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  object Toleration {
+    object Operators {
+      sealed trait Operator
+
+      final case object Exists extends Operator
+
+      case class Equal(value: String) extends Operator {
+        override def toString(): String = "Equal" // override toString to return the K8S-compliant operator string
+      }
+    }
+
+    object Effects {
+      sealed trait Effect
+
+      case object NoExecute extends Effect
+
+      case object NoSchedule extends Effect
+    }
+  }
+
+  final case class Toleration(
+      key: String,
+      operator: Toleration.Operators.Operator,
+      effect: Option[Toleration.Effects.Effect],
+      tolerationSeconds: Option[Long] = None)
+
+  implicit val tolerationOperatorEqualsHint = new FieldCoproductHint[Toleration.Operators.Operator]("type") {
+    override def fieldValue(name: String) = name
+  }
+  implicit val operatorExistsHint = ProductHint[Toleration.Operators.Exists.type](allowUnknownKeys = false)
+  implicit val operatorEqualHint = ProductHint[Toleration.Operators.Equal](allowUnknownKeys = false)
+  implicit val tolerationEffectReader =
+    deriveEnumerationReader[Toleration.Effects.Effect](ConfigFieldMapping(PascalCase, PascalCase))
+  implicit val tolerationHint = ProductHint[Toleration](
+    ConfigFieldMapping(
+      Map("key" -> "key", "operator" -> "operator", "effect" -> "effect", "tolerationSeconds" -> "toleration-seconds")),
+    allowUnknownKeys = false,
+    useDefaultArgs = true)
+
   // LabelValue
 
   final case class LabelValue(value: String)
@@ -322,7 +370,8 @@ object CloudflowConfig {
       labels: Map[LabelKey, LabelValue] = Map(),
       annotations: Map[AnnotationKey, AnnotationValue] = Map(),
       volumes: Map[String, Volume] = Map(),
-      containers: Map[String, Container] = Map())
+      containers: Map[String, Container] = Map(),
+      tolerations: List[Toleration] = List())
 
   implicit val podHint = ProductHint[Pod](allowUnknownKeys = false)
 
