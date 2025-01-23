@@ -18,7 +18,7 @@ object Dependencies {
     //TODO remove jacksonDatabind when jackson 2.13.3 plus excludes in avro and jacksonScala
     val jacksonDatabind = "2.14.1"
     val slf4j = "1.7.30"
-    val scalaTest = "3.2.14"
+    val scalaTest = "3.2.15"
     val maven = "3.8.5"
   }
 
