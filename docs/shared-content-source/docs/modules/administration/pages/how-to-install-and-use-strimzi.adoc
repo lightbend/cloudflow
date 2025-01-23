@@ -30,9 +30,12 @@ Add the Strimzi Helm repository and update the local index.
   helm repo add strimzi https://strimzi.io/charts/
   helm repo update
 
-Install the latest version of Strimzi.
+Install the latest version of Strimzi which is compatible with the Kafka broker version to be used.
+Right now, Cloudflow supports up to Kafka 2.8.1, which is supported since strimzi https://github.com/strimzi/strimzi-kafka-operator/blob/main/CHANGELOG.md#0260[0.26.0] and up to https://github.com/strimzi/strimzi-kafka-operator/blob/main/CHANGELOG.md#0270[strimzi 0.27.0].
+Strimzi 0.27 also adds support for Arm64 which is required for testing on Apple Silicone machines.
+Note: Supporting a newer version of Kafka in Cloudflow, will require updating `alpakka-kafka` to version 3.x which implies dropping support for Scala 2.12.
 
-  helm install strimzi strimzi/strimzi-kafka-operator --namespace cloudflow
+  helm install strimzi strimzi/strimzi-kafka-operator --namespace cloudflow --version 0.27.0
 
 After the install complete, the Strimzi Kafka operator should be running in the `cloudflow` namespace.
 
@@ -60,6 +63,7 @@ metadata:
   namespace: cloudflow
 spec:
   kafka:
+    version: 2.8.1
     config:
       auto.create.topics.enable: false
       log.message.format.version: "2.3"

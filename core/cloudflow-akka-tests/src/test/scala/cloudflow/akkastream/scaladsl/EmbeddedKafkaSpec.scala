@@ -48,7 +48,10 @@ abstract class TestcontainersKafkaSpec(system: ActorSystem)
   lazy val kafkaPort = kafka.get().getMappedPort(KafkaPort)
 
   override def setUp() = {
-    val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+    // Confluent Platform 6.2.x supports Kafka 2.8.x
+    // compatibility matrix: https://docs.confluent.io/platform/current/installation/versions-interoperability.html
+    // for Apple Silicon (ARM64) compatibility, currently only containers tagged with "7.1.0-1-ubi8" are available, which implies Kafka 3.1!
+    val k = new KafkaContainer(tcutility.DockerImageName.parse("confluentinc/cp-kafka:6.2.1"))
       .withExposedPorts(KafkaPort)
       .withEnv("KAFKA_BROKER_ID", "1")
       .withEnv("KAFKA_NUM_PARTITIONS", "53")
